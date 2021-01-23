@@ -177,14 +177,10 @@ class RotarySettings(wx.Frame, Module):
         event.Skip()
 
     def on_spin_rotary_roller_circumference(self, event):  # wxGlade: RotarySettings.<event_handler>
-        if self.device is None:
-            return
         print("Event handler 'on_spin_rotary_roller_circumference' not implemented!")
         event.Skip()
 
     def on_spin_rotary_object_circumference(self, event):  # wxGlade: RotarySettings.<event_handler>
-        if self.device is None:
-            return
         print("Event handler 'on_spin_rotary_object_circumference' not implemented!")
         event.Skip()
 

@@ -274,8 +274,6 @@ class Controller(wx.Frame, Module):
         self.device.buffer_limit = not self.device.buffer_limit
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.device is None:
-            return
         self.device.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>

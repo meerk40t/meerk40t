@@ -98,7 +98,6 @@ class Module:
         :return:
         """
         self.finalize(channel=channel)
-        self.device = None
         self.state = STATE_END
 
     def initialize(self, channel=None):
