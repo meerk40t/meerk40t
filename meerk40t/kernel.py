@@ -690,6 +690,7 @@ class Kernel:
         """
         for plugin in self.plugins:
             plugin(self, lifecycle)
+        self.signal("lifecycle;%s" % lifecycle, True)
 
     def boot(self):
         """

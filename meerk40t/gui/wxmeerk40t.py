@@ -155,7 +155,7 @@ def plugin(kernel, lifecycle):
     if lifecycle == "boot":
         kernel_root = kernel.get_context("/")
         kernel_root.open("module/wxMeerK40t")
-    elif lifecycle == "ready":
+    elif lifecycle == "mainloop":
         kernel_root = kernel.get_context("/")
         meerk40tgui = kernel_root.open("module/wxMeerK40t")
         kernel_root.open("window/MeerK40t", None)

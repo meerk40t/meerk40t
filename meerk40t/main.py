@@ -80,6 +80,7 @@ parser.add_argument("-S", "--speed", type=float, help="set the speed of all oper
 
 def run():
     argv = sys.argv[1:]
+    # argv = "-zac laser_bowl_inner.svg".split()
     args = parser.parse_args(argv)
 
     if args.version:
@@ -296,3 +297,4 @@ def run():
         kernel_root.channel("console").unwatch(print)
 
     kernel.bootstrap("ready")
+    kernel.bootstrap("mainloop")

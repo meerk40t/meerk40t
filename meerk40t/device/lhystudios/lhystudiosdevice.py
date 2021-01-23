@@ -540,6 +540,12 @@ class LhymicroInterpreter(Interpreter, Modifier):
         self.context.register("control/Realtime Resume", self.resume)
         self.context.register("control/Update Codes", self.update_codes)
 
+        self.context.get_context("/").listen("lifecycle;ready", self.on_interpreter_ready)
+
+    def detach(self, *args, **kwargs):
+        self.context.get_context("/").unlisten("lifecycle;ready", self.on_interpreter_ready)
+
+    def on_interpreter_ready(self, *args):
         self.start_interpreter()
         self.context.schedule(Job(self.start_interpreter, job_name="Interpreter-Persist"))
 
