@@ -72,7 +72,8 @@ class Interpreter:
         if self.thread is None:
             def clear_thread(*args):
                 self.thread = None
-            self.thread = self.context.threaded(self._interpret_threaded, result=clear_thread)
+            self.thread = self.context.threaded(self._interpret_threaded, result=clear_thread,
+                                                thread_name="Interpreter(%s)" % (self.context._path))
             self.thread.stop = clear_thread
 
     def _interpret_threaded(self, *args):

@@ -544,6 +544,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
 
     def detach(self, *args, **kwargs):
         self.context.get_context("/").unlisten("lifecycle;ready", self.on_interpreter_ready)
+        self.thread = None
 
     def on_interpreter_ready(self, *args):
         self.start_interpreter()
