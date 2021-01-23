@@ -430,7 +430,7 @@ class DxfLoader:
                 except (AttributeError, TypeError):
                     # Fallback for rational b-splines.
                     try:
-                        for bezier in entity.construction_tool().cubic_bezier_approximation(3):
+                        for bezier in entity.construction_tool().cubic_bezier_approximation(5):
                             b = bezier.control_points
                             element.cubic(
                                 (b[1][0], b[1][1]),
