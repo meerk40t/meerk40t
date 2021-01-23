@@ -547,7 +547,6 @@ class LhymicroInterpreter(Interpreter, Modifier):
 
     def on_interpreter_ready(self, *args):
         self.start_interpreter()
-        self.context.schedule(Job(self.start_interpreter, job_name="Interpreter-Persist"))
 
     def __repr__(self):
         return "LhymicroInterpreter()"
