@@ -1563,6 +1563,15 @@ class LhystudioController(Module):
 
         context.register("control/Resume", resume_k40)
 
+        self.context.get_context("/").listen("lifecycle;ready", self.on_interpreter_ready)
+
+    def detach(self, *args, **kwargs):
+        self.context.get_context("/").unlisten("lifecycle;ready", self.on_interpreter_ready)
+        self.stop()
+
+    def on_interpreter_ready(self, *args):
+        self.start()
+
     def finalize(self, *args, **kwargs):
         if self._thread is not None:
             self.write(b"\x18\n")
@@ -1631,7 +1640,8 @@ class LhystudioController(Module):
         :return:
         """
         if self._thread is None or not self._thread.is_alive():
-            self._thread = self.context._kernel.threaded(self._thread_data_send)
+            self._thread = self.context._kernel.threaded(self._thread_data_send,
+                                                         thread_name="LhyPipe(%s)" % (self.context._path))
             self.update_state(STATE_INITIALIZE)
 
     def _pause_busy(self):

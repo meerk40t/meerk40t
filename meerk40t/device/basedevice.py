@@ -61,16 +61,17 @@ class Interpreter:
         context.current_y = 0
         self.rapid = self.context.opt_rapid_between
         self.jog = self.context.opt_jog_mode
-        self.thread = None
+        self._thread = None
         self._shutdown = False
 
     def start_interpreter(self, *args):
-        if self.thread is None:
+        if self._thread is None:
             def clear_thread(*args):
-                self.thread = None
-            self.thread = self.context.threaded(self._interpret_threaded, result=clear_thread,
-                                                thread_name="Interpreter(%s)" % (self.context._path))
-            self.thread.stop = clear_thread
+                print("THREAD DIED!")
+                self._thread = None
+            self._thread = self.context.threaded(self._interpret_threaded, result=clear_thread,
+                                                 thread_name="Interpreter(%s)" % (self.context._path))
+            self._thread.stop = clear_thread
 
     def _interpret_threaded(self, *args):
         """
@@ -82,9 +83,9 @@ class Interpreter:
         while True:
             if self._shutdown:
                 return
-            if self.thread is None:
+            if self._thread is None:
                 return
-            if self.thread is not threading.currentThread():
+            if self._thread is not threading.currentThread():
                 return
             if self.spooled_item is None:
                 self._fetch_next_item_from_spooler()

@@ -79,6 +79,8 @@ class Planner(Modifier):
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_start_from_position", False)
         self.context.setting(bool, "opt_rapid_between", False)
+        self.context.setting(int, "opt_jog_minimum", 127)
+        self.context.setting(int, "opt_jog_mode", 0)
 
         kernel.register("plan/home", self.home)
         kernel.register("plan/origin", self.origin)
@@ -242,10 +244,10 @@ class Planner(Modifier):
                 self.context.signal("plan", self._default_plan, 3)
                 return
             elif args[0] == "blob":
-                self.context.setting(bool, "opt_rapid_between", True)
                 blob = CutCode()
                 first_index = None
                 for i, c in enumerate(plan):
+                    # try:
                     try:
                         c.settings.jog_distance = self.context.opt_jog_minimum
                         c.settings.jog_enable = self.context.opt_rapid_between
@@ -256,7 +258,7 @@ class Planner(Modifier):
                                 first_index = i
                         plan[i] = None
                     except AttributeError:
-                        continue
+                        pass
                 if first_index is not None:
                     plan.insert(first_index, blob)
                 for i in range(len(plan) - 1, -1, -1):

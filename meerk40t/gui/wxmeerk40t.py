@@ -161,6 +161,7 @@ def plugin(kernel, lifecycle):
         kernel_root.open("window/MeerK40t", None)
         meerk40tgui.MainLoop()
 
+
 class IdInc:
     """
     Id Incrementor

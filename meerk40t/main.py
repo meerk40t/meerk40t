@@ -80,7 +80,7 @@ parser.add_argument("-S", "--speed", type=float, help="set the speed of all oper
 
 def run():
     argv = sys.argv[1:]
-    # argv = "-zac laser_bowl_inner.svg".split()
+    # argv = "-zamv laser_bowl_inner.svg".split()
     args = parser.parse_args(argv)
 
     if args.version:
@@ -251,11 +251,17 @@ def run():
         # Automatically classify and start the job.
         elements = kernel_root.elements
         elements.classify(list(elements.elems()))
-        ops = list(elements.ops())
+
         if args.speed is not None:
-            for o in ops:
+            for o in elements.ops():
                 o.speed = args.speed
-        device.spooler.jobs(ops)
+        device.console("plan copy\n")
+        device.console("plan preprocess\n")
+        device.console("plan validate\n")
+        device.console("plan blob\n")
+        device.console("plan preopt\n")
+        device.console("plan optimize\n")
+        device.console("plan spool\n")
         device._quit = True
 
     if args.origin:
