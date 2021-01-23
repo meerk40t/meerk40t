@@ -202,31 +202,38 @@ class Elemental(Modifier):
             return
 
         @self.context.console_argument("subcommand")
-        @self.context.console_command("clipboard.*", regex=True, help="clipboard<N> (copy|paste|cut|clear)", output_type='elements')
+        @self.context.console_command(
+            "clipboard.*",
+            regex=True,
+            help="clipboard<N> (copy|paste|cut|clear)",
+            output_type="elements",
+        )
         def clipboard(command, channel, _, subcommand, args=tuple(), **kwargs):
             if subcommand is None:
                 raise SyntaxError
             if len(command) > 9:
                 self._clipboard_default = command[9:]
             destination = self._clipboard_default
-            if subcommand == 'copy':
-                self._clipboard[destination] = [copy(e) for e in self.elems(emphasized=True)]
-                return 'elements', self._clipboard[destination]
-            elif subcommand == 'cut':
-                self._clipboard[destination] = [copy(e) for e in self.elems(emphasized=True)]
-                elements.remove_elements(
-                    list(elements.elems(emphasized=True))
-                )
-                return 'elements', self._clipboard[destination]
-            elif subcommand == 'paste':
+            if subcommand == "copy":
+                self._clipboard[destination] = [
+                    copy(e) for e in self.elems(emphasized=True)
+                ]
+                return "elements", self._clipboard[destination]
+            elif subcommand == "cut":
+                self._clipboard[destination] = [
+                    copy(e) for e in self.elems(emphasized=True)
+                ]
+                elements.remove_elements(list(elements.elems(emphasized=True)))
+                return "elements", self._clipboard[destination]
+            elif subcommand == "paste":
                 elements.add_elems([copy(e) for e in self._clipboard[destination]])
-            elif subcommand == 'contents':
-                return 'elements', self._clipboard[destination]
-            elif subcommand == 'clear':
+            elif subcommand == "contents":
+                return "elements", self._clipboard[destination]
+            elif subcommand == "clear":
                 old = self._clipboard[destination]
                 self._clipboard[destination] = None
-                return 'elements', old
-            elif subcommand == 'list':
+                return "elements", old
+            elif subcommand == "list":
                 for v in self._clipboard:
                     k = self._clipboard[v]
                     channel("%s: %s" % (str(v).ljust(5), str(k)))
@@ -283,7 +290,9 @@ class Elemental(Modifier):
         @self.context.console_option("rx", "x", type=Length)
         @self.context.console_option("stroke", "s", type=Color)
         @self.context.console_option("fill", "f", type=Color)
-        @self.context.console_command("rect", help="adds rectangle to scene", output_type='path')
+        @self.context.console_command(
+            "rect", help="adds rectangle to scene", output_type="path"
+        )
         def rect(
             command,
             x_pos,
@@ -311,7 +320,7 @@ class Elemental(Modifier):
             rect.stroke = stroke
             rect.fill = fill
             self.add_element(rect)
-            return 'path', rect
+            return "path", rect
 
         @self.context.console_command("text", help="text <text>")
         def text(command, channel, _, args=tuple(), **kwargs):
@@ -333,7 +342,9 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        @self.context.console_command("stroke", help="stroke <svg color>", input_type=(None, 'path'))
+        @self.context.console_command(
+            "stroke", help="stroke <svg color>", input_type=(None, "path")
+        )
         def stroke(command, channel, _, args=tuple(), data=None, **kwargs):
             if data is not None:
                 data.stroke = Color(args[0])

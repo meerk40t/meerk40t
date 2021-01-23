@@ -830,7 +830,9 @@ class Kernel:
         self.last_message = {}
         self.listeners = {}
         self.state = STATE_TERMINATE
-        if self.scheduler_thread != threading.current_thread():  # Join if not this thread.
+        if (
+            self.scheduler_thread != threading.current_thread()
+        ):  # Join if not this thread.
             self.scheduler_thread.join()
         channel(_("Shutdown."))
 

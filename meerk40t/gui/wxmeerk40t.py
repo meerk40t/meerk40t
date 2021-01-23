@@ -4080,20 +4080,23 @@ def send_file_to_developers(filename):
     :return:
     """
     import socket
-    with open(filename, 'r') as f:
+
+    with open(filename, "r") as f:
         data = f.read()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        ipaddr = socket.gethostbyname('api.anonfiles.com')
+        ipaddr = socket.gethostbyname("api.anonfiles.com")
         s.connect((ipaddr, 80))
-        boundary = '----------------meerk40t-boundary'
+        boundary = "----------------meerk40t-boundary"
         file_head = list()
-        file_head.append('--' + boundary)
-        file_head.append('Content-Disposition: form-data; name="file"; filename="%s"' % filename)
-        file_head.append('Content-Type: text/plain')
-        file_head.append('')
+        file_head.append("--" + boundary)
+        file_head.append(
+            'Content-Disposition: form-data; name="file"; filename="%s"' % filename
+        )
+        file_head.append("Content-Type: text/plain")
+        file_head.append("")
         part = "\x0D\x0A".join(file_head)
-        terminal = '--' + boundary + '--'
-        payload = '\x0D\x0A'.join((part, data, terminal, ''))
+        terminal = "--" + boundary + "--"
+        payload = "\x0D\x0A".join((part, data, terminal, ""))
         http_req = list()
         http_req.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
         http_req.append("Host: api.anonfiles.com")
@@ -4101,21 +4104,21 @@ def send_file_to_developers(filename):
         http_req.append("Accept: */*")
         http_req.append("Content-Length: %d" % (len(payload)))
         http_req.append("Content-Type: multipart/form-data; boundary=%s" % boundary)
-        http_req.append('')
+        http_req.append("")
         header = "\x0D\x0A".join(http_req)
-        request = '\x0D\x0A'.join((header, payload))
-        s.send(bytes(request, 'utf-8'))
+        request = "\x0D\x0A".join((header, payload))
+        s.send(bytes(request, "utf-8"))
         response = s.recv(4096)
-        response = response.decode('utf-8')
+        response = response.decode("utf-8")
         print(response)
         s.close()
     if response is None or len(response) == 0:
         http_code = "No Response."
     else:
-        http_code = response.split('\n')[0]
+        http_code = response.split("\n")[0]
 
-    if http_code.startswith('HTTP/1.1 200 OK'):
-        http_code = response.split('\n')[0]
+    if http_code.startswith("HTTP/1.1 200 OK"):
+        http_code = response.split("\n")[0]
         dlg = wx.MessageDialog(
             None,
             _("We got your message. Thank you for helping\n\n") + str(http_code),
@@ -4128,7 +4131,12 @@ def send_file_to_developers(filename):
 
         dlg = wx.MessageDialog(
             None,
-            _("We're sorry, that didn't work. Raise an issue on the github please.\n\n The log file will be in your working directory.\n" + MEERK40T_ISSUES + '\n\n' + str(http_code)),
+            _(
+                "We're sorry, that didn't work. Raise an issue on the github please.\n\n The log file will be in your working directory.\n"
+                + MEERK40T_ISSUES
+                + "\n\n"
+                + str(http_code)
+            ),
             _("Thanks"),
             wx.OK,
         )
@@ -4175,9 +4183,11 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     ------
     """
     message += error_log
-    answer = wx.MessageBox(message, _("Crash Detected! Send Log?"),
-                        wx.YES_NO | wx.CANCEL, None)
+    answer = wx.MessageBox(
+        message, _("Crash Detected! Send Log?"), wx.YES_NO | wx.CANCEL, None
+    )
     if answer == wx.YES:
         send_file_to_developers(filename)
+
 
 sys.excepthook = handleGUIException

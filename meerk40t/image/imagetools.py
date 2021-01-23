@@ -22,7 +22,7 @@ def plugin(kernel, lifecycle=None):
     kernel.register("raster_script/Newsy", RasterScripts.raster_script_newsy())
     kernel.register("raster_script/Simple", RasterScripts.raster_script_simple())
     kernel.register("load/ImageLoader", ImageLoader)
-    context = kernel.get_context('/')
+    context = kernel.get_context("/")
 
     @context.console_command("image", help="image <operation>")
     def image(command, channel, _, args=tuple(), **kwargs):
@@ -595,6 +595,7 @@ def plugin(kernel, lifecycle=None):
         of possible dot sizes). So sample=1 will presevere the original image
         resolution, but scale must be >1 to allow variation in dot size."""
         from PIL import Image, ImageDraw, ImageStat
+
         elements = context.elements
         oversample = 2
         sample = 10

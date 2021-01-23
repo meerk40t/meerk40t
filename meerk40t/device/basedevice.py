@@ -66,11 +66,16 @@ class Interpreter:
 
     def start_interpreter(self, *args):
         if self._thread is None:
+
             def clear_thread(*args):
                 print("THREAD DIED!")
                 self._thread = None
-            self._thread = self.context.threaded(self._interpret_threaded, result=clear_thread,
-                                                 thread_name="Interpreter(%s)" % (self.context._path))
+
+            self._thread = self.context.threaded(
+                self._interpret_threaded,
+                result=clear_thread,
+                thread_name="Interpreter(%s)" % (self.context._path),
+            )
             self._thread.stop = clear_thread
 
     def _interpret_threaded(self, *args):

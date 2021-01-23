@@ -218,26 +218,27 @@ class DxfLoader:
                 element.line((entity[3][0], entity[3][1]))
                 element.closed()
                 element.fill = Color("Black")
-            elif entity.dxftype() == 'SPLINE':
+            elif entity.dxftype() == "SPLINE":
                 element = Path()
                 try:
                     for b in entity.construction_tool().bezier_decomposition():
                         if len(element) == 0:
                             element.move((b[0][0], b[0][1]))
                         element.cubic(
-                            (b[1][0], b[1][1]),
-                            (b[2][0], b[2][1]),
-                            (b[3][0], b[3][1])
+                            (b[1][0], b[1][1]), (b[2][0], b[2][1]), (b[3][0], b[3][1])
                         )
                 except (AttributeError, TypeError):
                     # Fallback for rational b-splines.
                     try:
-                        for bezier in entity.construction_tool().cubic_bezier_approximation(4):
+                        for (
+                            bezier
+                        ) in entity.construction_tool().cubic_bezier_approximation(4):
                             b = bezier.control_points
                             element.cubic(
                                 (b[1][0], b[1][1]),
                                 (b[2][0], b[2][1]),
-                                (b[3][0], b[3][1]))
+                                (b[3][0], b[3][1]),
+                            )
                     except (AttributeError, TypeError):
                         # Fallback for versions of EZDXF prior to 0.13
                         element.move(entity.control_points[0])

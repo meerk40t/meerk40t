@@ -107,48 +107,56 @@ def run():
         """
         try:
             from . import kernelserver
+
             kernel.plugins.append(kernelserver.plugin)
         except ImportError:
             pass
 
         try:
             from .device import basedevice
+
             kernel.plugins.append(basedevice.plugin)
         except ImportError:
             pass
 
         try:
             from .core import elements
+
             kernel.plugins.append(elements.plugin)
         except ImportError:
             pass
 
         try:
             from .core import bindalias
+
             kernel.plugins.append(bindalias.plugin)
         except ImportError:
             pass
 
         try:
             from .core import cutplanner
+
             kernel.plugins.append(cutplanner.plugin)
         except ImportError:
             pass
 
         try:
             from .image import imagetools
+
             kernel.plugins.append(imagetools.plugin)
         except ImportError:
             pass
 
         try:
             from .core import svg_io
+
             kernel.plugins.append(svg_io.plugin)
         except ImportError:
             pass
 
         try:
             from .dxf import dxf_io
+
             kernel.plugins.append(dxf_io.plugin)
         except ImportError:
             # This module cannot be loaded. ezdxf missing.
@@ -156,30 +164,35 @@ def run():
 
         try:
             from .device.lhystudios import lhystudiosdevice
+
             kernel.plugins.append(lhystudiosdevice.plugin)
         except ImportError:
             pass
 
         try:
             from .device.moshi import moshiboarddevice
+
             kernel.plugins.append(moshiboarddevice.plugin)
         except ImportError:
             pass
 
         try:
             from .device.grbl import grbldevice
+
             kernel.plugins.append(grbldevice.plugin)
         except ImportError:
             pass
 
         try:
             from .device.ruida import ruidadevice
+
             kernel.plugins.append(ruidadevice.plugin)
         except ImportError:
             pass
 
         try:
             from camera import camera
+
             kernel.plugins.append(camera.plugin)
         except ImportError:
             pass
@@ -192,6 +205,7 @@ def run():
         # This isn't registered with an entry point. It's only directly included.
         try:
             from .gui import wxmeerk40t
+
             kernel.plugins.append(wxmeerk40t.plugin)
         except ImportError:
             pass
@@ -265,6 +279,7 @@ def run():
         device._quit = True
 
     if args.origin:
+
         def origin():
             yield COMMAND_WAIT_FINISH
             yield COMMAND_MODE_RAPID
