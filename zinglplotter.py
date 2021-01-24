@@ -1,4 +1,5 @@
-from math import floor
+
+from math import ceil, cos, sin, sqrt, tan, floor
 
 from svgelements import *
 
