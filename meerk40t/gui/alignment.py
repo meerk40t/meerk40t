@@ -187,7 +187,7 @@ class Alignment(wx.Frame, Module):
         _icon.CopyFromBitmap(icons8_laser_beam_hazard_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Alignment.__set_properties
-        self.SetTitle(_("Alignment."))
+        self.SetTitle(_("Mirror Alignment."))
         self.button_vertical_align_nearfar.SetToolTip(
             _("Perform vertical near-far alignment test")
         )

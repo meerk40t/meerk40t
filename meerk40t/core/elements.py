@@ -891,24 +891,21 @@ class Elemental(Modifier):
             if len(args) == 0:
                 channel(_("----------"))
                 channel(_("Operations:"))
-                i = 0
 
-                for operation in elements.ops():
+                for i, operation in enumerate(elements.ops()):
                     selected = operation.selected
-                    name = str(operation)
-                    if len(name) > 50:
-                        name = name[:50] + "..."
-                    if selected:
-                        channel("%d: * %s" % (i, name))
-                    else:
-                        channel("%d: %s" % (i, name))
+                    select = ' *' if selected else '  '
+                    color = 'None' if operation.color is None else Color(operation.color).hex
+                    name = "%d: %s %s - %s" % (i, str(operation), select, color)
+                    channel(name)
                     if isinstance(operation, list):
                         for q, oe in enumerate(operation):
                             name = str(oe)
-                            if len(name) > 50:
-                                name = name[:50] + "..."
-                            channel("%s%d: %s" % (''.ljust(10), q, name))
-                    i += 1
+                            if len(name) > 20:
+                                name = name[:20] + "..."
+                            stroke = 'None' if oe.stroke is None else oe.stroke.hex
+                            fill = 'None' if oe.fill is None else oe.fill.hex
+                            channel("%s%d: %s s:%s f:%s" % (''.ljust(5), q, name, stroke, fill))
                 channel(_("----------"))
             else:
                 for value in args:
