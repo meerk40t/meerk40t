@@ -198,7 +198,12 @@ class LaserOperation(list):
                         )
                     )
                 else:
-                    plot = abs(object_path)
+                    # Is a shape or path.
+                    if not isinstance(object_path, Path):
+                        plot = abs(Path(object_path))
+                    else:
+                        plot = abs(object_path)
+
                 for seg in plot:
                     if isinstance(seg, Move):
                         pass  # Move operations are ignored.

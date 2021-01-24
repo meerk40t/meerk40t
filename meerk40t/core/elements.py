@@ -1178,7 +1178,7 @@ class Elemental(Modifier):
         self.context.signal("rebuild_tree")
 
     def add_element(self, element):
-        if not isinstance(element, SVGText) and len(element) == 0:
+        if not isinstance(element, SVGText) and hasattr(element, '__len__') and len(element) == 0:
             return  # No empty elements.
         context_root = self.context.get_context("/")
         if hasattr(element, "stroke") and element.stroke is None:
