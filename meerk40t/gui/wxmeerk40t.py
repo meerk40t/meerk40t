@@ -20,7 +20,6 @@ import wx.aui as aui
 import wx.ribbon as RB
 
 from .about import About
-from .alignment import Alignment
 from .bufferview import BufferView
 from .camerainteface import CameraInterface
 from .controller import Controller
@@ -244,7 +243,6 @@ ID_MENU_FILE8 = idinc.new()
 ID_MENU_FILE9 = idinc.new()
 ID_MENU_FILE_CLEAR = idinc.new()
 
-ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
 ID_MENU_DEVICE_MANAGER = idinc.new()
 ID_MENU_SETTINGS = idinc.new()
@@ -977,9 +975,6 @@ class MeerK40t(wx.Frame, Module, Job):
         self.main_menubar.devices = wxglade_tmp_menu.Append(
             ID_MENU_DEVICE_MANAGER, _("Device Manager"), ""
         )
-        self.main_menubar.alignment = wxglade_tmp_menu.Append(
-            ID_MENU_ALIGNMENT, _("Alignment Ally"), ""
-        )
         if self.context.has_feature("modifier/Camera"):
             self.main_menubar.camera = wxglade_tmp_menu.Append(
                 ID_MENU_CAMERA, _("Camera"), ""
@@ -1102,11 +1097,6 @@ class MeerK40t(wx.Frame, Module, Job):
             wx.EVT_MENU,
             lambda v: self.context.open("window/About", self),
             id=wx.ID_ABOUT,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context.open("window/Alignment", self),
-            id=ID_MENU_ALIGNMENT,
         )
         self.Bind(
             wx.EVT_MENU,
@@ -4016,7 +4006,6 @@ class wxMeerK40t(wx.App, Module):
         device.register("window/Terminal", Terminal)
         device.register("window/Settings", Settings)
         device.register("window/Rotary", RotarySettings)
-        device.register("window/Alignment", Alignment)
         device.register("window/About", About)
         device.register("window/DeviceManager", DeviceManager)
         device.register("window/Keymap", Keymap)
