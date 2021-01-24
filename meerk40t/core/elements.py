@@ -68,42 +68,60 @@ class Elemental(Modifier):
         elements = self
         _ = kernel.translation
 
+        @self.context.console_argument("c", type=int, help="number of columns")
+        @self.context.console_argument("r", type=int, help="number of rows")
+        @self.context.console_argument("x", type=Length, help="x distance")
+        @self.context.console_argument("y", type=Length, help="y distance")
         @self.context.console_command(
             "grid", help="grid <columns> <rows> <x_distance> <y_distance>"
         )
-        def grid(command, channel, _, args=tuple(), **kwargs):
-            try:
-                cols = int(args[0])
-                rows = int(args[1])
-                x_distance = Length(args[2]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
-                y_distance = Length(args[3]).value(
-                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
-                )
-            except (ValueError, IndexError):
-                raise SyntaxError
+        def grid(command, channel, _, c: int, r: int, x: Length, y: Length, args=tuple(), **kwargs):
             items = list(elements.elems(emphasized=True))
             if items is None or len(items) == 0 or elements._bounds is None:
                 channel(_("No item selected."))
                 return
+            if r is None:
+                raise SyntaxError
+            if x is not None and y is not None:
+                x = x.value(ppi=1000)
+                y = y.value(ppi=1000)
+            else:
+                try:
+                    bounds = elements._bounds
+                    x = bounds[2] - bounds[0]
+                    y = bounds[3] - bounds[1]
+                except:
+                    raise SyntaxError
+            if isinstance(x, Length) or isinstance(y, Length):
+                raise SyntaxError
             y_pos = 0
-            for j in range(rows):
+            for j in range(r):
                 x_pos = 0
-                for k in range(cols):
+                for k in range(c):
                     if j != 0 or k != 0:
                         add_elem = list(map(copy, items))
                         for e in add_elem:
                             e *= "translate(%f, %f)" % (x_pos, y_pos)
                         elements.add_elems(add_elem)
-                    x_pos += x_distance
-                y_pos += y_distance
+                    x_pos += x
+                y_pos += y
 
         @self.context.console_command(
             "element",
             help="element <command>*: <#>, merge, subpath, copy, delete, *, ~, !",
         )
         def element(command, channel, _, args=tuple(), **kwargs):
+            """
+            element *<command> - You may string any number of these together
+
+            *: select all
+            ~: invert selection
+            !: select none
+            merge: merge elements
+            subpath: break elements
+            copy: duplicate element
+            delete: delete element
+            """
             if len(args) == 0:
                 channel(_("----------"))
                 channel(_("Graphical Elements:"))
@@ -193,15 +211,16 @@ class Elemental(Modifier):
                         channel(_("index %d out of range") % value)
             return
 
+        @self.context.console_argument("path_d", help='svg path syntax command.')
         @self.context.console_command("path", help="path <svg path>")
-        def path(command, channel, _, args=tuple(), **kwargs):
+        def path(command, channel, _, path_d, args=tuple(), **kwargs):
             args = kwargs.get("args", tuple())
-            path_d = " ".join(args)
+            path_d += " ".join(args)
             element = Path(path_d)
             self.add_element(element)
             return
 
-        @self.context.console_argument("subcommand")
+        @self.context.console_argument("subcommand", help="copy|paste|cut|clear")
         @self.context.console_command(
             "clipboard.*",
             regex=True,
@@ -209,6 +228,13 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def clipboard(command, channel, _, subcommand, args=tuple(), **kwargs):
+            """
+            Clipboard commands. Applies to current selected elements to
+            make a copy of those elements. Paste a copy of those elements
+            or cut those elements. Clear clears the clipboard.
+
+            The list command will list them but this is only for debug.
+            """
             if subcommand is None:
                 raise SyntaxError
             if len(command) > 9:
@@ -282,14 +308,12 @@ class Elemental(Modifier):
             self.add_element(ellip)
             return
 
-        @self.context.console_argument("x_pos", type=Length)
-        @self.context.console_argument("y_pos", type=Length)
-        @self.context.console_argument("width", type=Length)
-        @self.context.console_argument("height", type=Length)
-        @self.context.console_option("ry", "y", type=Length)
-        @self.context.console_option("rx", "x", type=Length)
-        @self.context.console_option("stroke", "s", type=Color)
-        @self.context.console_option("fill", "f", type=Color)
+        @self.context.console_argument("x_pos", type=Length, help='x position for top left corner of rectangle.')
+        @self.context.console_argument("y_pos", type=Length, help='y position for top left corner of rectangle.')
+        @self.context.console_argument("width", type=Length, help='width of the rectangle.')
+        @self.context.console_argument("height", type=Length, help='height of the rectangle.')
+        @self.context.console_option("rx", "x", type=Length, help='rounded rx corner value.')
+        @self.context.console_option("ry", "y", type=Length, help='rounded ry corner value.')
         @self.context.console_command(
             "rect", help="adds rectangle to scene", output_type="path"
         )
@@ -301,11 +325,12 @@ class Elemental(Modifier):
             height,
             rx=None,
             ry=None,
-            stroke=None,
-            fill=None,
             args=tuple(),
             **kwargs
         ):
+            """
+            Draws an svg rectangle with optional rounded corners.
+            """
             if x_pos is None:
                 raise SyntaxError
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
@@ -317,17 +342,17 @@ class Elemental(Modifier):
                 height="%fmm" % self.context.bed_height,
             )
             # rect = Path(rect)
-            rect.stroke = stroke
-            rect.fill = fill
             self.add_element(rect)
             return "path", rect
 
+        # @self.context.console_argument("text", type=str, nargs="*", help='height of the rectangle.')
         @self.context.console_command("text", help="text <text>")
         def text(command, channel, _, args=tuple(), **kwargs):
             text = " ".join(args)
             element = SVGText(text)
             self.add_element(element)
 
+        # @self.context.console_argument("points", type=float, nargs="*", help='x, y of elements')
         @self.context.console_command("polygon", help="polygon (<point>, <point>)*")
         def polygon(command, channel, _, args=tuple(), **kwargs):
             element = Polygon(list(map(float, args)))
@@ -335,6 +360,7 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
+        # @self.context.console_argument("points", type=float, nargs="*", help='x, y of elements')
         @self.context.console_command("polyline", help="polyline (<point>, <point>)*")
         def polyline(command, args=tuple(), **kwargs):
             element = Polyline(list(map(float, args)))
@@ -342,14 +368,15 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
+        @self.context.console_argument("color", type=Color, help='Color to color the given stroke')
         @self.context.console_command(
-            "stroke", help="stroke <svg color>", input_type=(None, "path")
+            "stroke", help="stroke <svg color>", input_type=(None, "path",),  output_type="path"
         )
-        def stroke(command, channel, _, args=tuple(), data=None, **kwargs):
+        def stroke(command, channel, _, color, args=tuple(), data=None, **kwargs):
             if data is not None:
-                data.stroke = Color(args[0])
-                return
-            if len(args) == 0:
+                data.stroke = color
+                return 'path', data
+            if color is None:
                 channel(_("----------"))
                 channel(_("Stroke Values:"))
                 i = 0
@@ -369,20 +396,24 @@ class Elemental(Modifier):
             if not elements.has_emphasis():
                 channel(_("No selected elements."))
                 return
-            if args[0] == "none":
+            if color == "none":
                 for element in elements.elems(emphasized=True):
                     element.stroke = None
                     element.altered()
             else:
                 for element in elements.elems(emphasized=True):
-                    element.stroke = Color(args[0])
+                    element.stroke = Color(color)
                     element.altered()
             context.signal("refresh_scene")
             return
 
-        @self.context.console_command("fill", help="fill <svg color>")
-        def fill(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
+        @self.context.console_argument("color", type=Color, help='color to color the given fill')
+        @self.context.console_command("fill", help="fill <svg color>",  input_type=(None, "path",), output_type="path")
+        def fill(command, channel, _,  color, data=None, args=tuple(), **kwargs):
+            if data is not None:
+                data.fill = color
+                return 'path', data
+            if color is None:
                 channel(_("----------"))
                 channel(_("Fill Values:"))
                 i = 0
@@ -400,20 +431,23 @@ class Elemental(Modifier):
             if not elements.has_emphasis():
                 channel(_("No selected elements."))
                 return
-            if args[0] == "none":
+            if color == "none":
                 for element in elements.elems(emphasized=True):
                     element.fill = None
                     element.altered()
             else:
                 for element in elements.elems(emphasized=True):
-                    element.fill = Color(args[0])
+                    element.fill = Color(color)
                     element.altered()
             context.signal("refresh_scene")
             return
 
-        @self.context.console_command("rotate", help="rotate <angle>")
-        def rotate(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
+        @self.context.console_argument("angle", type=Angle.parse, help='angle to rotate by')
+        @self.context.console_argument("cx", type=Length, help='center x')
+        @self.context.console_argument("cy", type=Length, help='center y')
+        @self.context.console_command("rotate", help="rotate <angle>",  input_type=(None, "path",),  output_type="path")
+        def rotate(command, channel, _, angle, cx, cy, args=tuple(), **kwargs):
+            if angle is None:
                 channel(_("----------"))
                 channel(_("Rotate Values:"))
                 i = 0
@@ -432,23 +466,17 @@ class Elemental(Modifier):
                 channel(_("No selected elements."))
                 return
             bounds = elements.bounds()
-            if len(args) >= 1:
-                rot = Angle.parse(args[0]).as_degrees
+            rot = angle.as_degrees
+
+            if cx is not None:
+                cx = cx.value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
-                rot = 0
-            if len(args) >= 2:
-                center_x = Length(args[1]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
+                cx = (bounds[2] + bounds[0]) / 2.0
+            if cy is not None:
+                cy = cy.value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
             else:
-                center_x = (bounds[2] + bounds[0]) / 2.0
-            if len(args) >= 3:
-                center_y = Length(args[2]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
-            else:
-                center_y = (bounds[3] + bounds[1]) / 2.0
-            matrix = Matrix("rotate(%f,%f,%f)" % (rot, center_x, center_y))
+                cy = (bounds[3] + bounds[1]) / 2.0
+            matrix = Matrix("rotate(%f,%f,%f)" % (rot, cx, cy))
             try:
                 for element in elements.elems(emphasized=True):
                     try:

@@ -1523,15 +1523,38 @@ class Kernel:
             if len(args) >= 1:
                 extended_help = args[0]
                 if self.active_device is not None:
+                    def advanced_help(func):
+                        help_args = []
+                        for a in func.arguments:
+                            arg_name = a.get('name', '')
+                            arg_type = a.get('type', type(None)).__name__
+                            help_args.append("<%s:%s>" % (arg_name, arg_type))
+                        channel("\t%s %s" % (extended_help, " ".join(help_args)))
+                        channel("\tInput(%s) -> %s -> Output(%s)" % (func.input_type, extended_help, func.output_type))
+                        if func.long_help is not None:
+                            channel(func.long_help)
+                        for a in func.arguments:
+                            arg_name = a.get('name', '')
+                            arg_type = a.get('type', type(None)).__name__
+                            arg_help = a.get('help')
+                            arg_help = ':\n\t\t%s' % arg_help if arg_help is not None else ''
+                            channel("\tArgument: %s '%s'%s" % (arg_type, arg_name, arg_help))
+                        for b in func.options:
+                            opt_name = b.get('name', '')
+                            opt_short = b.get('short', '')
+                            opt_type = b.get('type', type(None)).__name__
+                            opt_help = b.get('help')
+                            opt_help = ':\n\t\t%s' % opt_help if opt_help is not None else ''
+                            channel("\tOption: %s ('--%s', '-%s')%s" % (opt_type, opt_name, opt_short, opt_help))
                     for command_name in self.match(
                         "%s/command/%s" % (self.active_device._path, extended_help)
                     ):
                         command_func = self.registered[command_name]
-                        channel(command_func.long_help)
+                        advanced_help(command_func)
                         return
                     for command_name in self.match("command/%s" % extended_help):
                         command_func = self.registered[command_name]
-                        channel(command_func.long_help)
+                        advanced_help(command_func)
                         return
                 channel(_("No extended help for: %s") % extended_help)
                 return
