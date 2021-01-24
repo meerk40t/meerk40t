@@ -40,8 +40,8 @@ class RotarySettings(wx.Frame, Module):
         self.__do_layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary, self.checkbox_rotary)
-        self.Bind(wx.EVT_TEXT, self.on_spin_rotary_scale_y, self.text_rotary_scaley)
-        self.Bind(wx.EVT_TEXT, self.on_spin_rotary_scale_x, self.text_rotary_scalex)
+        self.Bind(wx.EVT_TEXT, self.on_text_rotary_scale_y, self.text_rotary_scaley)
+        self.Bind(wx.EVT_TEXT, self.on_text_rotary_scale_x, self.text_rotary_scalex)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary_loop, self.checkbox_rotary_loop)
         self.Bind(wx.EVT_TEXT, self.on_spin_rotation, self.text_rotary_rotation)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary_roller, self.checkbox_rotary_roller)
@@ -150,14 +150,14 @@ class RotarySettings(wx.Frame, Module):
         self.text_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.text_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
-    def on_spin_rotary_scale_y(self, event):  # wxGlade: RotarySettings.<event_handler>
+    def on_text_rotary_scale_y(self, event):  # wxGlade: RotarySettings.<event_handler>
         if self.device is not None:
             try:
                 self.device.scale_y = float(self.text_rotary_scaley.GetValue())
             except ValueError:
                 pass
 
-    def on_spin_rotary_scale_x(self, event):  # wxGlade: RotarySettings.<event_handler>
+    def on_text_rotary_scale_x(self, event):  # wxGlade: RotarySettings.<event_handler>
         if self.device is not None:
             try:
                 self.device.scale_x = float(self.text_rotary_scalex.GetValue())
@@ -177,13 +177,13 @@ class RotarySettings(wx.Frame, Module):
         event.Skip()
 
     def on_spin_rotary_roller_circumference(self, event):  # wxGlade: RotarySettings.<event_handler>
-        if self.device is None:
+        if self.device is None: # TODO: 0.6.17
             return
         print("Event handler 'on_spin_rotary_roller_circumference' not implemented!")
         event.Skip()
 
     def on_spin_rotary_object_circumference(self, event):  # wxGlade: RotarySettings.<event_handler>
-        if self.device is None:
+        if self.device is None: # TODO: 0.6.17
             return
         print("Event handler 'on_spin_rotary_object_circumference' not implemented!")
         event.Skip()

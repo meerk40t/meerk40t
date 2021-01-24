@@ -368,7 +368,6 @@ class Navigation(wx.Frame, Module):
         self.SetFocus()
 
     def finalize(self, channel=None):
-        self.device.navigate_jog = float(self.spin_jog_mils.GetValue())
         self.device.device_root.unlisten('emphasized', self.on_emphasized_elements_changed)
         self.device.unlisten('interpreter;position', self.on_position_update)
         try:
