@@ -259,7 +259,7 @@ class Elemental(Modifier):
                 width="%fmm" % self.context.bed_width,
                 height="%fmm" % self.context.bed_height,
             )
-            circ = Path(circ)
+            # circ = Path(circ)
             self.add_element(circ)
 
         @self.context.console_argument("x_pos", type=Length)
@@ -1479,7 +1479,10 @@ class Elemental(Modifier):
         for i, op in enumerate(self._operations):
             if op is None:
                 continue
-            elems = [e for e in op if e not in elements_list]
+            try:
+                elems = [e for e in op if e not in elements_list]
+            except TypeError:
+                continue # This isn't iterable.
             op.clear()
             op.extend(elems)
         self.purge_unset()
