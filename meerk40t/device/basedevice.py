@@ -68,7 +68,6 @@ class Interpreter:
         if self._thread is None:
 
             def clear_thread(*args):
-                print("THREAD DIED!")
                 self._thread = None
 
             self._thread = self.context.threaded(
