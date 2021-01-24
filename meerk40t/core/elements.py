@@ -73,7 +73,10 @@ class Elemental(Modifier):
         @self.context.console_argument("x", type=Length, help="x distance")
         @self.context.console_argument("y", type=Length, help="y distance")
         @self.context.console_command(
-            "grid", help="grid <columns> <rows> <x_distance> <y_distance>"
+            "grid",
+            help="grid <columns> <rows> <x_distance> <y_distance>",
+            input_type=(None, "group"),
+            output_type="group",
         )
         def grid(
             command,
@@ -83,11 +86,13 @@ class Elemental(Modifier):
             r: int,
             x: Length,
             y: Length,
+            data=None,
             args=tuple(),
-            **kwargs
+            **kwargs,
         ):
-            items = list(elements.elems(emphasized=True))
-            if items is None or len(items) == 0 or elements._bounds is None:
+            if data is not None:
+                data = list(elements.elems(emphasized=True))
+            if data is None or len(data) == 0 or elements._bounds is None:
                 channel(_("No item selected."))
                 return
             if r is None:
@@ -109,7 +114,7 @@ class Elemental(Modifier):
                 x_pos = 0
                 for k in range(c):
                     if j != 0 or k != 0:
-                        add_elem = list(map(copy, items))
+                        add_elem = list(map(copy, data))
                         for e in add_elem:
                             e *= "translate(%f, %f)" % (x_pos, y_pos)
                         elements.add_elems(add_elem)
@@ -235,9 +240,12 @@ class Elemental(Modifier):
             "clipboard.*",
             regex=True,
             help="clipboard<N> (copy|paste|cut|clear)",
-            output_type="elements",
+            input_type=(None, "group"),
+            output_type="group",
         )
-        def clipboard(command, channel, _, subcommand, args=tuple(), **kwargs):
+        def clipboard(
+            command, channel, _, subcommand, data=None, args=tuple(), **kwargs
+        ):
             """
             Clipboard commands. Applies to current selected elements to
             make a copy of those elements. Paste a copy of those elements
@@ -250,25 +258,23 @@ class Elemental(Modifier):
             if len(command) > 9:
                 self._clipboard_default = command[9:]
             destination = self._clipboard_default
+            if data is None:
+                data = list(self.elems(emphasized=True))
             if subcommand == "copy":
-                self._clipboard[destination] = [
-                    copy(e) for e in self.elems(emphasized=True)
-                ]
-                return "elements", self._clipboard[destination]
+                self._clipboard[destination] = [copy(e) for e in data]
+                return "group", self._clipboard[destination]
             elif subcommand == "cut":
-                self._clipboard[destination] = [
-                    copy(e) for e in self.elems(emphasized=True)
-                ]
-                elements.remove_elements(list(elements.elems(emphasized=True)))
-                return "elements", self._clipboard[destination]
+                self._clipboard[destination] = [copy(e) for e in data]
+                elements.remove_elements(data)
+                return "group", self._clipboard[destination]
             elif subcommand == "paste":
                 elements.add_elems([copy(e) for e in self._clipboard[destination]])
             elif subcommand == "contents":
-                return "elements", self._clipboard[destination]
+                return "group", self._clipboard[destination]
             elif subcommand == "clear":
                 old = self._clipboard[destination]
                 self._clipboard[destination] = None
-                return "elements", old
+                return "group", old
             elif subcommand == "list":
                 for v in self._clipboard:
                     k = self._clipboard[v]
@@ -348,7 +354,7 @@ class Elemental(Modifier):
             rx=None,
             ry=None,
             args=tuple(),
-            **kwargs
+            **kwargs,
         ):
             """
             Draws an svg rectangle with optional rounded corners.
@@ -485,18 +491,36 @@ class Elemental(Modifier):
         @self.context.console_argument(
             "angle", type=Angle.parse, help="angle to rotate by"
         )
-        @self.context.console_argument("cx", type=Length, help="center x")
-        @self.context.console_argument("cy", type=Length, help="center y")
+        @self.context.console_option("cx", "x", type=Length, help="center x")
+        @self.context.console_option("cy", "y", type=Length, help="center y")
+        @self.context.console_option(
+            "absolute",
+            "a",
+            type=bool,
+            action="store_true",
+            help="angle_to absolute angle",
+        )
         @self.context.console_command(
             "rotate",
             help="rotate <angle>",
             input_type=(
                 None,
-                "path",
+                "group",
             ),
-            output_type="path",
+            output_type="group",
         )
-        def rotate(command, channel, _, angle, cx, cy, args=tuple(), **kwargs):
+        def rotate(
+            command,
+            channel,
+            _,
+            angle,
+            cx=None,
+            cy=None,
+            absolute=False,
+            data=None,
+            args=tuple(),
+            **kwargs,
+        ):
             if angle is None:
                 channel(_("----------"))
                 channel(_("Rotate Values:"))
@@ -512,7 +536,9 @@ class Elemental(Modifier):
                     i += 1
                 channel(_("----------"))
                 return
-            if not elements.has_emphasis():
+            if data is None:
+                data = list(elements.elems(emphasized=True))
+            if len(data) == 0:
                 channel(_("No selected elements."))
                 return
             bounds = elements.bounds()
@@ -530,439 +556,418 @@ class Elemental(Modifier):
                 )
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
-            matrix = Matrix("rotate(%f,%f,%f)" % (rot, cx, cy))
+            matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
             try:
-                for element in elements.elems(emphasized=True):
-                    try:
-                        if element.lock:
-                            continue
-                    except AttributeError:
-                        pass
+                if not absolute:
+                    for element in elements.elems(emphasized=True):
+                        try:
+                            if element.lock:
+                                continue
+                        except AttributeError:
+                            pass
 
-                    element *= matrix
-                    element.modified()
+                        element *= matrix
+                        element.modified()
+                else:
+                    for element in elements.elems(emphasized=True):
+                        start_angle = element.rotation
+                        amount = rot - start_angle
+                        matrix = Matrix(
+                            "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
+                        )
+                        element *= matrix
+                        element.modified()
             except ValueError:
-                channel(_("Invalid value"))
+                raise SyntaxError
             context.signal("refresh_scene")
             return
 
-        @self.context.console_command("scale", help="scale <scale> [<scale-y>]?")
-        def scale(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
+        @self.context.console_argument("scale_x", type=float, help="scale_x value")
+        @self.context.console_argument("scale_y", type=float, help="scale_y value")
+        @self.context.console_option(
+            "px", "x", type=Length, help="scale x origin point"
+        )
+        @self.context.console_option(
+            "py", "y", type=Length, help="scale y origin point"
+        )
+        @self.context.console_option(
+            "absolute",
+            "a",
+            type=bool,
+            action="store_true",
+            help="scale to absolute size",
+        )
+        @self.context.console_command(
+            "scale",
+            help="scale <scale> [<scale-y>]?",
+            input_type=(None, "group"),
+            output_type="group",
+        )
+        def scale(
+            command,
+            channel,
+            _,
+            scale_x=None,
+            scale_y=None,
+            px=None,
+            py=None,
+            absolute=False,
+            data=None,
+            args=tuple(),
+            **kwargs,
+        ):
+            if scale_x is None:
                 channel(_("----------"))
                 channel(_("Scale Values:"))
                 i = 0
-                for element in elements.elems():
-                    name = str(element)
+                for e in elements.elems():
+                    name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "..."
                     channel(
                         "%d: scale(%f, %f) - %s"
                         % (
                             i,
-                            element.transform.value_scale_x(),
-                            element.transform.value_scale_x(),
+                            e.transform.value_scale_x(),
+                            e.transform.value_scale_x(),
                             name,
                         )
                     )
                     i += 1
                 channel(_("----------"))
                 return
-            if not elements.has_emphasis():
+            if data is None:
+                data = list(elements.elems(emphasized=True))
+            if len(data) == 0:
                 channel(_("No selected elements."))
                 return
             bounds = elements.bounds()
-
-            if len(args) >= 1:
-                sx = Length(args[0]).value(relative_length=1.0)
-            else:
-                sx = 1
-            if len(args) >= 2:
-                sy = Length(args[1]).value(relative_length=1.0)
-            else:
-                sy = sx
-            if len(args) >= 3:
-                center_x = Length(args[2]).value(
+            if scale_y is None:
+                scale_y = scale_x
+            if px is not None:
+                center_x = px.value(
                     ppi=1000.0, relative_length=self.context.bed_width * 39.3701
                 )
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
-            if len(args) >= 4:
-                center_y = Length(args[3]).value(
+            if py is not None:
+                center_y = py.value(
                     ppi=1000.0, relative_length=self.context.bed_width * 39.3701
                 )
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
-            if sx == 0 or sy == 0:
+            if scale_x == 0 or scale_y == 0:
                 channel(_("Scaling by Zero Error"))
                 return
-            matrix = Matrix("scale(%f,%f,%f,%f)" % (sx, sy, center_x, center_y))
+            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, center_x, center_y))
             try:
-                for element in elements.elems(emphasized=True):
-                    try:
-                        if element.lock:
-                            continue
-                    except AttributeError:
-                        pass
+                if not absolute:
+                    for e in data:
+                        try:
+                            if e.lock:
+                                continue
+                        except AttributeError:
+                            pass
 
-                    element *= matrix
-                    element.modified()
-            except ValueError:
-                channel(_("Invalid value"))
-            context.signal("refresh_scene")
-            return
+                        e *= m
+                        e.modified()
+                else:
+                    for e in data:
+                        try:
+                            if e.lock:
+                                continue
+                        except AttributeError:
+                            pass
 
-        @self.context.console_command("translate", help="translate <tx> <ty>")
-        def translate(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Translate Values:"))
-                i = 0
-                for element in elements.elems():
-                    name = str(element)
-                    if len(name) > 50:
-                        name = name[:50] + "..."
-                    channel(
-                        _("%d: translate(%f, %f) - %s")
-                        % (
-                            i,
-                            element.transform.value_trans_x(),
-                            element.transform.value_trans_y(),
-                            name,
+                        osx = e.transform.value_scale_x()
+                        osy = e.transform.value_scale_y()
+                        nsx = scale_x / osx
+                        nsy = scale_y / osy
+                        m = Matrix(
+                            "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_y)
                         )
-                    )
-                    i += 1
-                channel(_("----------"))
-                return
-            if not elements.has_emphasis():
-                channel(_("No selected elements."))
-                return
-            if len(args) >= 1:
-                tx = Length(args[0]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
-            else:
-                tx = 0
-            if len(args) >= 2:
-                ty = Length(args[1]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
-            else:
-                ty = 0
-            matrix = Matrix("translate(%f,%f)" % (tx, ty))
-            try:
-                for element in elements.elems(emphasized=True):
-                    element *= matrix
-                    element.modified()
+                        e *= m
+                        e.modified()
             except ValueError:
-                channel(_("Invalid value"))
+                raise SyntaxError
             context.signal("refresh_scene")
             return
 
-        @self.context.console_command("rotate_to", help="rotate_to <angle>")
-        def rotate_to(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Rotate Values:"))
-                i = 0
-                for element in elements.elems():
-                    name = str(element)
-                    if len(name) > 50:
-                        name = name[:50] + "..."
-                    channel(
-                        _("%d: rotate(%fturn) - %s")
-                        % (i, element.rotation.as_turns, name)
-                    )
-                    i += 1
-                channel(_("----------"))
-                return
-            if not elements.has_emphasis():
-                channel(_("No selected elements."))
-                return
-            bounds = elements.bounds()
-            try:
-                end_angle = Angle.parse(args[0])
-            except ValueError:
-                channel(_("Invalid Value."))
-                return
-            if len(args) >= 2:
-                center_x = Length(args[1]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
-            else:
-                center_x = (bounds[2] + bounds[0]) / 2.0
-            if len(args) >= 3:
-                center_y = Length(args[2]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
-            else:
-                center_y = (bounds[3] + bounds[1]) / 2.0
-
-            try:
-                for element in elements.elems(emphasized=True):
-                    try:
-                        if element.lock:
-                            continue
-                    except AttributeError:
-                        pass
-
-                    start_angle = element.rotation
-                    amount = end_angle - start_angle
-                    matrix = Matrix(
-                        "rotate(%f,%f,%f)"
-                        % (Angle(amount).as_degrees, center_x, center_y)
-                    )
-                    element *= matrix
-                    element.modified()
-            except ValueError:
-                channel(_("Invalid value"))
-            context.signal("refresh_scene")
-            return
-
-        @self.context.console_command("scale_to", help="scale_to <scale> [<scale-y>]?")
-        def scale_to(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Scale Values:"))
-                i = 0
-                for element in elements.elems():
-                    name = str(element)
-                    if len(name) > 50:
-                        name = name[:50] + "..."
-                    channel(
-                        _("%d: scale(%f, %f) - %s")
-                        % (
-                            i,
-                            element.transform.value_scale_x(),
-                            element.transform.value_scale_y(),
-                            name,
-                        )
-                    )
-                    i += 1
-                channel(_("----------"))
-                return
-            if not elements.has_emphasis():
-                channel(_("No selected elements."))
-                return
-            bounds = elements.bounds()
-            if len(args) >= 1:
-                sx = Length(args[0]).value(relative_length=1.0)
-            else:
-                sx = 1
-            if len(args) >= 2:
-                sy = Length(args[1]).value(relative_length=1.0)
-            else:
-                sy = sx
-            if len(args) >= 3:
-                center_x = Length(args[2]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
-            else:
-                center_x = (bounds[2] + bounds[0]) / 2.0
-            if len(args) >= 4:
-                center_y = Length(args[3]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
-            else:
-                center_y = (bounds[3] + bounds[1]) / 2.0
-            try:
-                for element in elements.elems(emphasized=True):
-                    try:
-                        if element.lock:
-                            continue
-                    except AttributeError:
-                        pass
-
-                    osx = element.transform.value_scale_x()
-                    osy = element.transform.value_scale_y()
-                    if sx == 0 or sy == 0:
-                        channel(_("Scaling by Zero Error"))
-                        return
-                    nsx = sx / osx
-                    nsy = sy / osy
-                    matrix = Matrix(
-                        "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_y)
-                    )
-                    element *= matrix
-                    element.modified()
-            except ValueError:
-                channel(_("Invalid value"))
-            context.signal("refresh_scene")
-            return
-
-        @self.context.console_command("translate_to", help="translate_to <tx> <ty>")
-        def translate_to(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Translate Values:"))
-                i = 0
-                for element in elements.elems():
-                    name = str(element)
-                    if len(name) > 50:
-                        name = name[:50] + "..."
-                    channel(
-                        _("%d: translate(%f, %f) - %s")
-                        % (
-                            i,
-                            element.transform.value_trans_x(),
-                            element.transform.value_trans_y(),
-                            name,
-                        )
-                    )
-                    i += 1
-                channel(_("----------"))
-                return
-            if not elements.has_emphasis():
-                channel(_("No selected elements."))
-                return
-
-            if len(args) >= 1:
-                tx = Length(args[0]).value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
-                )
-            else:
-                tx = 0
-            if len(args) >= 2:
-                ty = Length(args[1]).value(
-                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
-                )
-            else:
-                ty = 0
-            try:
-                for element in elements.elems(emphasized=True):
-                    otx = element.transform.value_trans_x()
-                    oty = element.transform.value_trans_y()
-                    ntx = tx - otx
-                    nty = ty - oty
-                    matrix = Matrix("translate(%f,%f)" % (ntx, nty))
-                    element *= matrix
-                    element.modified()
-            except ValueError:
-                channel(_("Invalid value"))
-            context.signal("refresh_scene")
-            return
-
-        @self.context.console_command(
-            "resize", help="resize <x-pos> <y-pos> <width> <height>"
+        @self.context.console_argument("tx", type=Length, help="translate x value")
+        @self.context.console_argument("ty", type=Length, help="translate y value")
+        @self.context.console_option(
+            "absolute",
+            "a",
+            type=bool,
+            action="store_true",
+            help="translate to absolute position",
         )
-        def resize(command, args=tuple(), **kwargs):
-            if len(args) < 4:
+        @self.context.console_command(
+            "translate",
+            help="translate <tx> <ty>",
+            input_type=(None, "group"),
+            output_type="group",
+        )
+        def translate(
+            command,
+            channel,
+            _,
+            tx,
+            ty,
+            absolute=False,
+            data=None,
+            args=tuple(),
+            **kwargs,
+        ):
+            if tx is None:
+                channel(_("----------"))
+                channel(_("Translate Values:"))
+                i = 0
+                for e in elements.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "..."
+                    channel(
+                        _("%d: translate(%f, %f) - %s")
+                        % (
+                            i,
+                            e.transform.value_trans_x(),
+                            e.transform.value_trans_y(),
+                            name,
+                        )
+                    )
+                    i += 1
+                channel(_("----------"))
+                return
+            if data is None:
+                data = list(elements.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            if tx is not None:
+                tx = tx.value(
+                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                )
+            else:
+                tx = 0
+            if ty is not None:
+                ty = ty.value(
+                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                )
+            else:
+                ty = 0
+            m = Matrix("translate(%f,%f)" % (tx, ty))
+            try:
+                if not absolute:
+                    for e in data:
+                        e *= m
+                        e.modified()
+                else:
+                    for e in data:
+                        otx = e.transform.value_trans_x()
+                        oty = e.transform.value_trans_y()
+                        ntx = tx - otx
+                        nty = ty - oty
+                        m = Matrix("translate(%f,%f)" % (ntx, nty))
+                        e *= m
+                        e.modified()
+            except ValueError:
+                raise SyntaxError
+            context.signal("refresh_scene")
+            return "group", data
+
+        @self.context.console_argument(
+            "x_pos", type=Length, help="x position for top left corner"
+        )
+        @self.context.console_argument(
+            "y_pos", type=Length, help="y position for top left corner"
+        )
+        @self.context.console_argument(
+            "width", type=Length, help="new width of selected"
+        )
+        @self.context.console_argument(
+            "height", type=Length, help="new height of selected"
+        )
+        @self.context.console_command(
+            "resize",
+            help="resize <x-pos> <y-pos> <width> <height>",
+            input_type=(None, "group"),
+            output_type="group",
+        )
+        def resize(
+            command, x_pos, y_pos, width, height, data=None, args=tuple(), **kwargs
+        ):
+            if height is None:
                 raise SyntaxError
             try:
-                x_pos = Length(args[0]).value(
+                x_pos = x_pos.value(
                     ppi=1000.0, relative_length=self.context.bed_width * 39.3701
                 )
-                y_pos = Length(args[1]).value(
+                y_pos = y_pos.value(
                     ppi=1000.0, relative_length=self.context.bed_height * 39.3701
                 )
-                w_dim = Length(args[2]).value(
+                width = width.value(
                     ppi=1000.0, relative_length=self.context.bed_height * 39.3701
                 )
-                h_dim = Length(args[3]).value(
+                height = height.value(
                     ppi=1000.0, relative_length=self.context.bed_height * 39.3701
                 )
                 x, y, x1, y1 = elements.bounds()
                 w, h = x1 - x, y1 - y
-                sx = w_dim / w
-                sy = h_dim / h
-                matrix = Matrix(
+                sx = width / w
+                sy = height / h
+                m = Matrix(
                     "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
                     % (x_pos, y_pos, sx, sy, -x, -y)
                 )
-                for element in elements.elems(emphasized=True):
+                if data is None:
+                    data = list(elements.elems(emphasized=True))
+                for e in data:
                     try:
-                        if element.lock:
+                        if e.lock:
                             continue
                     except AttributeError:
                         pass
-                    element *= matrix
-                    element.modified()
+                    e *= m
+                    e.modified()
                 context.signal("refresh_scene")
+                return "group", data
             except (ValueError, ZeroDivisionError):
-                return
+                raise SyntaxError
 
+        @self.context.console_argument("sx", type=float, help="scale_x value")
+        @self.context.console_argument("kx", type=float, help="skew_x value")
+        @self.context.console_argument("sy", type=float, help="scale_y value")
+        @self.context.console_argument("ky", type=float, help="skew_y value")
+        @self.context.console_argument("tx", type=Length, help="translate_x value")
+        @self.context.console_argument("ty", type=Length, help="translate_y value")
         @self.context.console_command(
-            "matrix", help="matrix <sx> <kx> <sy> <ky> <tx> <ty>"
+            "matrix",
+            help="matrix <sx> <kx> <sy> <ky> <tx> <ty>",
+            input_type=(None, "group"),
+            output_type="group",
         )
-        def matrix(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
+        def matrix(
+            command,
+            channel,
+            _,
+            sx,
+            kx,
+            sy,
+            ky,
+            tx,
+            ty,
+            data=None,
+            args=tuple(),
+            **kwargs,
+        ):
+            if tx is None:
                 channel(_("----------"))
                 channel(_("Matrix Values:"))
                 i = 0
-                for element in elements.elems():
-                    name = str(element)
+                for e in elements.elems():
+                    name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "..."
-                    channel("%d: %s - %s" % (i, str(element.transform), name))
+                    channel("%d: %s - %s" % (i, str(e.transform), name))
                     i += 1
                 channel(_("----------"))
                 return
-            if not elements.has_emphasis():
+            if data is None:
+                data = list(elements.elems(emphasized=True))
+            if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            if len(args) != 6:
-                channel(_("Requires six matrix parameters"))
-                return
+            if ty:
+                raise SyntaxError
             try:
-                matrix = Matrix(
-                    float(args[0]),
-                    float(args[1]),
-                    float(args[2]),
-                    float(args[3]),
-                    Length(args[4]).value(
+                m = Matrix(
+                    sx,
+                    kx,
+                    sy,
+                    ky,
+                    tx.value(
                         ppi=1000.0, relative_length=self.context.bed_width * 39.3701
                     ),
-                    Length(args[5]).value(
+                    ty.value(
                         ppi=1000.0, relative_length=self.context.bed_width * 39.3701
                     ),
                 )
-                for element in elements.elems(emphasized=True):
+                for e in data:
                     try:
-                        if element.lock:
+                        if e.lock:
                             continue
                     except AttributeError:
                         pass
 
-                    element.transform = Matrix(matrix)
-                    element.modified()
+                    e.transform = Matrix(m)
+                    e.modified()
             except ValueError:
-                channel(_("Invalid value"))
+                raise SyntaxError
             context.signal("refresh_scene")
             return
 
-        @self.context.console_command("reset", help="reset affine transformations")
-        def reset(command, channel, _, args=tuple(), **kwargs):
-            for element in elements.elems(emphasized=True):
+        @self.context.console_command(
+            "reset",
+            help="reset affine transformations",
+            input_type=(None, "path"),
+            output_type="path",
+        )
+        def reset(command, channel, _, data=None, args=tuple(), **kwargs):
+            if data is not None:
                 try:
-                    if element.lock:
+                    if data.lock:
+                        return
+                    data.transform.reset()
+                    data.modified()
+                except AttributeError:
+                    pass
+                return
+            for e in elements.elems(emphasized=True):
+                try:
+                    if e.lock:
                         continue
                 except AttributeError:
                     pass
 
-                name = str(element)
+                name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "..."
                 channel(_("reset - %s") % name)
-                element.transform.reset()
-                element.modified()
+                e.transform.reset()
+                e.modified()
             context.signal("refresh_scene")
             return
 
-        @self.context.console_command("reify", help="reify affine transformations")
-        def reify(command, channel, _, args=tuple(), **kwargs):
-            for element in elements.elems(emphasized=True):
+        @self.context.console_command(
+            "reify",
+            help="reify affine transformations",
+            input_type=(None, "path"),
+            output_type="path",
+        )
+        def reify(command, channel, _, data=None, args=tuple(), **kwargs):
+            if data is not None:
                 try:
-                    if element.lock:
+                    if data.lock:
+                        return
+                    data.reify()
+                    data.altered()
+                except AttributeError:
+                    pass
+                return "path", data
+            for e in elements.elems(emphasized=True):
+                try:
+                    if e.lock:
                         continue
                 except AttributeError:
                     pass
 
-                name = str(element)
+                name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "..."
                 channel(_("reified - %s") % name)
-                element.reify()
-                element.altered()
+                e.reify()
+                e.altered()
             context.signal("refresh_scene")
             return
 
@@ -1062,35 +1067,53 @@ class Elemental(Modifier):
             return
 
         @self.context.console_command(
-            "classify", help="classify elements into operations"
+            "classify",
+            help="classify elements into operations",
+            input_type=(None, "group"),
+            output_type="group",
         )
-        def classify(command, channel, _, args=tuple(), **kwargs):
-            if not elements.has_emphasis():
+        def classify(
+            command,
+            channel,
+            _,
+            data=None,
+            args=tuple(),
+            **kwargs,
+        ):
+            if data is None:
+                data = list(elements.elems(emphasized=True))
+            if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            elements.classify(list(elements.elems(emphasized=True)))
-            return
+            elements.classify(data)
+            return "group", data
 
-        @self.context.console_command("declassify", help="declassify selected elements")
-        def declassify(command, channel, _, args=tuple(), **kwargs):
-            args = kwargs.get("args", tuple())
-            if not elements.has_emphasis():
+        @self.context.console_command(
+            "declassify",
+            help="declassify selected elements",
+            input_type=(None, "group"),
+            output_type="group",
+        )
+        def declassify(command, channel, _, data=None, args=tuple(), **kwargs):
+            if data is None:
+                data = list(elements.elems(emphasized=True))
+            if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            elements.remove_elements_from_operations(
-                list(elements.elems(emphasized=True))
-            )
-            return
+            elements.remove_elements_from_operations(data)
+            return "group", data
 
+        @self.context.console_argument("note", type=str, help="message to set as note")
         @self.context.console_command("note", help="note <note>")
-        def note(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
+        def note(command, channel, _, note, args=tuple(), **kwargs):
+            if note is None:
                 if elements.note is None:
                     channel(_("No Note."))
                 else:
                     channel(str(elements.note))
             else:
-                elements.note = " ".join(args)
+                # TODO: Note should take nargs.
+                elements.note = note + " " + " ".join(args)
                 channel(_("Note Set."))
 
         @self.context.console_command(

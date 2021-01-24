@@ -1919,7 +1919,7 @@ class MeerK40t(wx.Frame, Module, Job):
             y = float(self.text_y.GetValue())
             self.ribbon_position_x = x
             self.ribbon_position_y = y
-        self.context.open("module", "Console").write(
+        self.context.console(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
                 self.ribbon_position_x,
