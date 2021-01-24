@@ -2589,6 +2589,7 @@ class RootNode(list):
         self.node_files = None
         self.do_not_select = False
         self.context.signal("rebuild_tree")
+        self._rebuild_required = False
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -2618,6 +2619,9 @@ class RootNode(list):
             child, cookie = tree.GetNextChild(node, cookie)
 
     def rebuild_tree(self):
+        self.dragging_node = None
+        self._rebuild_required = False
+
         context = self.context
         elements = context.elements
         self.tree.DeleteAllItems()
@@ -2687,9 +2691,11 @@ class RootNode(list):
         pass
 
     def notify_tree_data_change(self):
+        self._rebuild_required = True
         self.context.signal("rebuild_tree", 0)
 
     def notify_tree_data_cleared(self):
+        self._rebuild_required = True
         self.context.signal("rebuild_tree", 0)
 
     def on_element_update(self, *args):
@@ -2709,7 +2715,8 @@ class RootNode(list):
         :return:
         """
         self.dragging_node = None
-
+        if self._rebuild_required:
+            return  # Must rebuild tree between moves.
         drag_item = event.GetItem()
         if drag_item is None:
             event.Skip()
