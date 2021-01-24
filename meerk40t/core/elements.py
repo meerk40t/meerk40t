@@ -902,6 +902,12 @@ class Elemental(Modifier):
                         channel("%d: * %s" % (i, name))
                     else:
                         channel("%d: %s" % (i, name))
+                    if isinstance(operation, list):
+                        for q, oe in enumerate(operation):
+                            name = str(oe)
+                            if len(name) > 50:
+                                name = name[:50] + "..."
+                            channel("%s%d: %s" % (''.ljust(10), q, name))
                     i += 1
                 channel(_("----------"))
             else:
