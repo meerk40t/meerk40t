@@ -75,7 +75,17 @@ class Elemental(Modifier):
         @self.context.console_command(
             "grid", help="grid <columns> <rows> <x_distance> <y_distance>"
         )
-        def grid(command, channel, _, c: int, r: int, x: Length, y: Length, args=tuple(), **kwargs):
+        def grid(
+            command,
+            channel,
+            _,
+            c: int,
+            r: int,
+            x: Length,
+            y: Length,
+            args=tuple(),
+            **kwargs
+        ):
             items = list(elements.elems(emphasized=True))
             if items is None or len(items) == 0 or elements._bounds is None:
                 channel(_("No item selected."))
@@ -211,7 +221,7 @@ class Elemental(Modifier):
                         channel(_("index %d out of range") % value)
             return
 
-        @self.context.console_argument("path_d", help='svg path syntax command.')
+        @self.context.console_argument("path_d", help="svg path syntax command.")
         @self.context.console_command("path", help="path <svg path>")
         def path(command, channel, _, path_d, args=tuple(), **kwargs):
             args = kwargs.get("args", tuple())
@@ -308,12 +318,24 @@ class Elemental(Modifier):
             self.add_element(ellip)
             return
 
-        @self.context.console_argument("x_pos", type=Length, help='x position for top left corner of rectangle.')
-        @self.context.console_argument("y_pos", type=Length, help='y position for top left corner of rectangle.')
-        @self.context.console_argument("width", type=Length, help='width of the rectangle.')
-        @self.context.console_argument("height", type=Length, help='height of the rectangle.')
-        @self.context.console_option("rx", "x", type=Length, help='rounded rx corner value.')
-        @self.context.console_option("ry", "y", type=Length, help='rounded ry corner value.')
+        @self.context.console_argument(
+            "x_pos", type=Length, help="x position for top left corner of rectangle."
+        )
+        @self.context.console_argument(
+            "y_pos", type=Length, help="y position for top left corner of rectangle."
+        )
+        @self.context.console_argument(
+            "width", type=Length, help="width of the rectangle."
+        )
+        @self.context.console_argument(
+            "height", type=Length, help="height of the rectangle."
+        )
+        @self.context.console_option(
+            "rx", "x", type=Length, help="rounded rx corner value."
+        )
+        @self.context.console_option(
+            "ry", "y", type=Length, help="rounded ry corner value."
+        )
         @self.context.console_command(
             "rect", help="adds rectangle to scene", output_type="path"
         )
@@ -368,14 +390,22 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        @self.context.console_argument("color", type=Color, help='Color to color the given stroke')
+        @self.context.console_argument(
+            "color", type=Color, help="Color to color the given stroke"
+        )
         @self.context.console_command(
-            "stroke", help="stroke <svg color>", input_type=(None, "path",),  output_type="path"
+            "stroke",
+            help="stroke <svg color>",
+            input_type=(
+                None,
+                "path",
+            ),
+            output_type="path",
         )
         def stroke(command, channel, _, color, args=tuple(), data=None, **kwargs):
             if data is not None:
                 data.stroke = color
-                return 'path', data
+                return "path", data
             if color is None:
                 channel(_("----------"))
                 channel(_("Stroke Values:"))
@@ -407,12 +437,22 @@ class Elemental(Modifier):
             context.signal("refresh_scene")
             return
 
-        @self.context.console_argument("color", type=Color, help='color to color the given fill')
-        @self.context.console_command("fill", help="fill <svg color>",  input_type=(None, "path",), output_type="path")
-        def fill(command, channel, _,  color, data=None, args=tuple(), **kwargs):
+        @self.context.console_argument(
+            "color", type=Color, help="color to color the given fill"
+        )
+        @self.context.console_command(
+            "fill",
+            help="fill <svg color>",
+            input_type=(
+                None,
+                "path",
+            ),
+            output_type="path",
+        )
+        def fill(command, channel, _, color, data=None, args=tuple(), **kwargs):
             if data is not None:
                 data.fill = color
-                return 'path', data
+                return "path", data
             if color is None:
                 channel(_("----------"))
                 channel(_("Fill Values:"))
@@ -442,10 +482,20 @@ class Elemental(Modifier):
             context.signal("refresh_scene")
             return
 
-        @self.context.console_argument("angle", type=Angle.parse, help='angle to rotate by')
-        @self.context.console_argument("cx", type=Length, help='center x')
-        @self.context.console_argument("cy", type=Length, help='center y')
-        @self.context.console_command("rotate", help="rotate <angle>",  input_type=(None, "path",),  output_type="path")
+        @self.context.console_argument(
+            "angle", type=Angle.parse, help="angle to rotate by"
+        )
+        @self.context.console_argument("cx", type=Length, help="center x")
+        @self.context.console_argument("cy", type=Length, help="center y")
+        @self.context.console_command(
+            "rotate",
+            help="rotate <angle>",
+            input_type=(
+                None,
+                "path",
+            ),
+            output_type="path",
+        )
         def rotate(command, channel, _, angle, cx, cy, args=tuple(), **kwargs):
             if angle is None:
                 channel(_("----------"))
@@ -469,11 +519,15 @@ class Elemental(Modifier):
             rot = angle.as_degrees
 
             if cx is not None:
-                cx = cx.value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                cx = cx.value(
+                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                )
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
-                cy = cy.value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                cy = cy.value(
+                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                )
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix("rotate(%f,%f,%f)" % (rot, cx, cy))
@@ -922,16 +976,36 @@ class Elemental(Modifier):
 
                 for i, operation in enumerate(elements.ops()):
                     selected = operation.selected
-                    select = ' *' if selected else '  '
-                    color = "None" if not hasattr(operation, 'color') or operation.color is not None else Color(operation.color).hex
+                    select = " *" if selected else "  "
+                    color = (
+                        "None"
+                        if not hasattr(operation, "color")
+                        or operation.color is not None
+                        else Color(operation.color).hex
+                    )
                     name = "%d: %s %s - %s" % (i, str(operation), select, color)
                     channel(name)
                     if isinstance(operation, list):
                         for q, oe in enumerate(operation):
-                            stroke = 'None' if not hasattr(oe,'stroke') or oe.stroke is None else oe.stroke.hex
-                            fill = 'None' if not hasattr(oe,'stroke') or oe.fill is None else oe.fill.hex
+                            stroke = (
+                                "None"
+                                if not hasattr(oe, "stroke") or oe.stroke is None
+                                else oe.stroke.hex
+                            )
+                            fill = (
+                                "None"
+                                if not hasattr(oe, "stroke") or oe.fill is None
+                                else oe.fill.hex
+                            )
                             ident = str(oe.id)
-                            name = "%s%d: %s-%s s:%s f:%s" % (''.ljust(5), q, str(type(oe).__name__), ident, stroke, fill)
+                            name = "%s%d: %s-%s s:%s f:%s" % (
+                                "".ljust(5),
+                                q,
+                                str(type(oe).__name__),
+                                ident,
+                                stroke,
+                                fill,
+                            )
                             channel(name)
                 channel(_("----------"))
             else:
@@ -1167,8 +1241,8 @@ class Elemental(Modifier):
 
         for i, op in enumerate(self.ops()):
             op_set = settings.derive(str(i))
-            if not hasattr(op_set, 'settings'):
-                continue # Might be a function.
+            if not hasattr(op_set, "settings"):
+                continue  # Might be a function.
             sets = op.settings
             for q in (op, sets):
                 for key in dir(q):
@@ -1206,7 +1280,11 @@ class Elemental(Modifier):
         self.context.signal("rebuild_tree")
 
     def add_element(self, element):
-        if not isinstance(element, SVGText) and hasattr(element, '__len__') and len(element) == 0:
+        if (
+            not isinstance(element, SVGText)
+            and hasattr(element, "__len__")
+            and len(element) == 0
+        ):
             return  # No empty elements.
         context_root = self.context.get_context("/")
         if hasattr(element, "stroke") and element.stroke is None:
@@ -1510,7 +1588,7 @@ class Elemental(Modifier):
             try:
                 elems = [e for e in op if e not in elements_list]
             except TypeError:
-                continue # This isn't iterable.
+                continue  # This isn't iterable.
             op.clear()
             op.extend(elems)
         self.purge_unset()
