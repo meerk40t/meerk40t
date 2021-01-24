@@ -76,6 +76,7 @@ parser.add_argument(
     "-O", "--origin", action="store_true", help="return back to 0,0 on finish"
 )
 parser.add_argument("-S", "--speed", type=float, help="set the speed of all operations")
+parser.add_argument("-f", "--frozen", default=False, action="store_true", help="force plugins to load in frozen mode")
 
 
 def run():
@@ -88,7 +89,7 @@ def run():
         return
 
     kernel = Kernel()
-    force_frozen = False
+    force_frozen = args.frozen
 
     if not getattr(sys, "frozen", False) and not force_frozen:
         """
