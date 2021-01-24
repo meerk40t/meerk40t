@@ -76,7 +76,6 @@ parser.add_argument(
     "-O", "--origin", action="store_true", help="return back to 0,0 on finish"
 )
 parser.add_argument("-S", "--speed", type=float, help="set the speed of all operations")
-parser.add_argument("-f", "--frozen", default=False, action="store_true", help="force plugins to load in frozen mode")
 
 
 def run():
@@ -89,9 +88,105 @@ def run():
         return
 
     kernel = Kernel()
-    force_frozen = args.frozen
 
-    if not getattr(sys, "frozen", False) and not force_frozen:
+
+    """
+    These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
+    hardcoded addons and plugins permitted by MeerK40t in a compiled bundle.
+    """
+    try:
+        from . import kernelserver
+
+        kernel.plugins.append(kernelserver.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .device import basedevice
+
+        kernel.plugins.append(basedevice.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .core import elements
+
+        kernel.plugins.append(elements.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .core import bindalias
+
+        kernel.plugins.append(bindalias.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .core import cutplanner
+
+        kernel.plugins.append(cutplanner.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .image import imagetools
+
+        kernel.plugins.append(imagetools.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .core import svg_io
+
+        kernel.plugins.append(svg_io.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .dxf import dxf_io
+
+        kernel.plugins.append(dxf_io.plugin)
+    except ImportError:
+        # This module cannot be loaded. ezdxf missing.
+        pass
+
+    try:
+        from .device.lhystudios import lhystudiosdevice
+
+        kernel.plugins.append(lhystudiosdevice.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .device.moshi import moshiboarddevice
+
+        kernel.plugins.append(moshiboarddevice.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .device.grbl import grbldevice
+
+        kernel.plugins.append(grbldevice.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .device.ruida import ruidadevice
+
+        kernel.plugins.append(ruidadevice.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from camera import camera
+
+        kernel.plugins.append(camera.plugin)
+    except ImportError:
+        pass
+
+    if not getattr(sys, "frozen", False):
         """
         These are dynamic bootstraps. They are dynamically found by entry points.
         """
@@ -100,103 +195,6 @@ def run():
         for entry_point in pkg_resources.iter_entry_points("meerk40t.plugins"):
             plugin = entry_point.load()
             kernel.plugins.append(plugin)
-
-    if len(kernel.plugins) == 0:
-        """
-        These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
-        hardcoded addons and plugins permitted by MeerK40t in a compiled bundle.
-        """
-        try:
-            from . import kernelserver
-
-            kernel.plugins.append(kernelserver.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .device import basedevice
-
-            kernel.plugins.append(basedevice.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .core import elements
-
-            kernel.plugins.append(elements.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .core import bindalias
-
-            kernel.plugins.append(bindalias.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .core import cutplanner
-
-            kernel.plugins.append(cutplanner.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .image import imagetools
-
-            kernel.plugins.append(imagetools.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .core import svg_io
-
-            kernel.plugins.append(svg_io.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .dxf import dxf_io
-
-            kernel.plugins.append(dxf_io.plugin)
-        except ImportError:
-            # This module cannot be loaded. ezdxf missing.
-            pass
-
-        try:
-            from .device.lhystudios import lhystudiosdevice
-
-            kernel.plugins.append(lhystudiosdevice.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .device.moshi import moshiboarddevice
-
-            kernel.plugins.append(moshiboarddevice.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .device.grbl import grbldevice
-
-            kernel.plugins.append(grbldevice.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from .device.ruida import ruidadevice
-
-            kernel.plugins.append(ruidadevice.plugin)
-        except ImportError:
-            pass
-
-        try:
-            from camera import camera
-
-            kernel.plugins.append(camera.plugin)
-        except ImportError:
-            pass
 
     kernel_root = kernel.get_context("/")
     kernel_root.device_version = MEERK40T_VERSION
