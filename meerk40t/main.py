@@ -204,8 +204,11 @@ def run():
         import pkg_resources
 
         for entry_point in pkg_resources.iter_entry_points("meerk40t.plugins"):
-            plugin = entry_point.load()
-            kernel.add_plugin(plugin)
+            try:
+                plugin = entry_point.load()
+                kernel.add_plugin(plugin)
+            except pkg_resources.DistributionNotFound:
+                pass
 
     kernel_root = kernel.get_context("/")
     kernel_root.device_version = MEERK40T_VERSION
