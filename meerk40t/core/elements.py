@@ -895,17 +895,16 @@ class Elemental(Modifier):
                 for i, operation in enumerate(elements.ops()):
                     selected = operation.selected
                     select = ' *' if selected else '  '
-                    color = 'None' if operation.color is None else Color(operation.color).hex
+                    color = "None" if not hasattr(operation, 'color') or operation.color is not None else Color(operation.color).hex
                     name = "%d: %s %s - %s" % (i, str(operation), select, color)
                     channel(name)
                     if isinstance(operation, list):
                         for q, oe in enumerate(operation):
-                            name = str(oe)
-                            if len(name) > 20:
-                                name = name[:20] + "..."
-                            stroke = 'None' if oe.stroke is None else oe.stroke.hex
-                            fill = 'None' if oe.fill is None else oe.fill.hex
-                            channel("%s%d: %s s:%s f:%s" % (''.ljust(5), q, name, stroke, fill))
+                            stroke = 'None' if not hasattr(oe,'stroke') or oe.stroke is None else oe.stroke.hex
+                            fill = 'None' if not hasattr(oe,'stroke') or oe.fill is None else oe.fill.hex
+                            ident = str(oe.id)
+                            name = "%s%d: %s-%s s:%s f:%s" % (''.ljust(5), q, str(type(oe).__name__), ident, stroke, fill)
+                            channel(name)
                 channel(_("----------"))
             else:
                 for value in args:
@@ -1140,6 +1139,8 @@ class Elemental(Modifier):
 
         for i, op in enumerate(self.ops()):
             op_set = settings.derive(str(i))
+            if not hasattr(op_set, 'settings'):
+                continue # Might be a function.
             sets = op.settings
             for q in (op, sets):
                 for key in dir(q):
