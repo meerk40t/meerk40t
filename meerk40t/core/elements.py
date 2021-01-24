@@ -68,6 +68,151 @@ class Elemental(Modifier):
         elements = self
         _ = kernel.translation
 
+        @self.context.console_command(
+            "select.*",
+            help="select inputted group",
+            regex=True,
+            input_type='group',
+            output_type='group'
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            """
+            select: Set these values as the selection.
+            select+: Add the input data to the selection
+            select-: Remove the input data from the selection
+            select^: Toggle the input data in the selection
+            """
+            arg = command[6:]
+            if arg == '':
+                elements.set_selected(data)
+            elif arg == "^":
+                for e in data:
+                    if e.selected:
+                        e.unselect()
+                        e.unemphasize()
+                    else:
+                        e.select()
+                        e.emphasize()
+            elif arg == '+':
+                for e in data:
+                    if not e.selected:
+                        e.select()
+                        e.emphasize()
+            elif arg == '-':
+                for e in data:
+                    if e.selected:
+                        e.unselect()
+                        e.unemphasize()
+            return 'group', list(elements.elems(emphasized=True))
+
+        @self.context.console_command(
+            "element.*",
+            help="element*, element<#,>*, element~, element!",
+            regex=True,
+            output_type='group'
+        )
+        def element(command, channel, _, args=tuple(), **kwargs):
+            """
+            elements: show all elements.
+            element: selected elements
+            element*: all elements
+            element~: all non-selected elements
+            element0,3,4,5: elements 0, 3, 4, 5
+            """
+            arg = command[7:]
+            if arg == '':
+                return 'group', list(elements.elems(emphasized=True))
+            elif arg == '*':
+                return 'group', list(elements.elems())
+            elif arg == '~':
+                return 'group', list(elements.elems(emphasized=False))
+            elif arg == 's':
+                channel(_("----------"))
+                channel(_("Graphical Elements:"))
+                i = 0
+                for e in elements.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "..."
+                    if e.emphasized:
+                        channel("%d: * %s" % (i, name))
+                    else:
+                        channel("%d: %s" % (i, name))
+                    i += 1
+                channel("----------")
+                return
+            else:
+                element_list = []
+                for value in arg.split(','):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        e = elements.get_elem(value)
+                        element_list.append(e)
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
+                return 'group', element_list
+
+        @self.context.console_command(
+            "copy",
+            help="duplicate elements",
+            input_type="group",
+            output_type="group",
+        )
+        def e_copy(command, channel, _, data=None, args=tuple(), **kwargs):
+            add_elem = list(map(copy, data))
+            elements.add_elems(add_elem)
+            return 'group', add_elem
+
+        @self.context.console_command(
+            "delete",
+            help="delete elements",
+            input_type="group"
+        )
+        def e_delete(command, channel, _, data=None, args=tuple(), **kwargs):
+            channel(_("deleting."))
+            elements.remove_elements(data)
+            self.context.signal("refresh_scene", 0)
+
+        @self.context.console_command(
+            "merge",
+            help="merge elements",
+            input_type="group",
+            output_type="path",
+        )
+        def merge(command, channel, _, data=None, args=tuple(), **kwargs):
+            superelement = Path()
+            for e in data:
+                if superelement.stroke is None:
+                    superelement.stroke = e.stroke
+                if superelement.fill is None:
+                    superelement.fill = e.fill
+                superelement += abs(e)
+            elements.remove_elements(data)
+            elements.add_elem(superelement)
+            superelement.emphasize()
+            return 'path', data
+
+        @self.context.console_command(
+            "subpath",
+            help="break elements",
+            input_type=("path", "group"),
+            output_type="group",
+        )
+        def subpath(command, channel, _, data=None, args=tuple(), **kwargs):
+            if not isinstance(list, data):
+                data = list(data)
+            add = []
+            for e in data:
+                p = abs(e)
+                for subpath in p.as_subpaths():
+                    subelement = Path(subpath)
+                    add.append(subelement)
+            elements.add_elems(add)
+            return 'group', add
+
         @self.context.console_argument("c", type=int, help="number of columns")
         @self.context.console_argument("r", type=int, help="number of rows")
         @self.context.console_argument("x", type=Length, help="x distance")
@@ -75,7 +220,7 @@ class Elemental(Modifier):
         @self.context.console_command(
             "grid",
             help="grid <columns> <rows> <x_distance> <y_distance>",
-            input_type=(None, "group"),
+            input_type=(None,"group"),
             output_type="group",
         )
         def grid(
@@ -90,9 +235,9 @@ class Elemental(Modifier):
             args=tuple(),
             **kwargs,
         ):
-            if data is not None:
-                data = list(elements.elems(emphasized=True))
-            if data is None or len(data) == 0 or elements._bounds is None:
+            if data is None:
+                data = elements.elems(emphasized=True)
+            if len(data) == 0 or elements._bounds is None:
                 channel(_("No item selected."))
                 return
             if r is None:
@@ -120,111 +265,6 @@ class Elemental(Modifier):
                         elements.add_elems(add_elem)
                     x_pos += x
                 y_pos += y
-
-        @self.context.console_command(
-            "element",
-            help="element <command>*: <#>, merge, subpath, copy, delete, *, ~, !",
-        )
-        def element(command, channel, _, args=tuple(), **kwargs):
-            """
-            element *<command> - You may string any number of these together
-
-            *: select all
-            ~: invert selection
-            !: select none
-            merge: merge elements
-            subpath: break elements
-            copy: duplicate element
-            delete: delete element
-            """
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Graphical Elements:"))
-                i = 0
-                for element in elements.elems():
-                    name = str(element)
-                    if len(name) > 50:
-                        name = name[:50] + "..."
-                    if element.emphasized:
-                        channel("%d: * %s" % (i, name))
-                    else:
-                        channel("%d: %s" % (i, name))
-                    i += 1
-                channel("----------")
-            else:
-                for value in args:
-                    try:
-                        value = int(value)
-                    except ValueError:
-                        if value == "*":
-                            channel(_("Selecting all elements."))
-                            elements.set_selected(list(elements.elems()))
-                            continue
-                        elif value == "~":
-                            channel(_("Invert selection."))
-                            elements.set_selected(
-                                list(elements.elems(emphasized=False))
-                            )
-                            continue
-                        elif value == "!":
-                            channel(_("Select none"))
-                            elements.set_selected(None)
-                            continue
-                        elif value == "delete":
-                            channel(_("deleting."))
-                            elements.remove_elements(
-                                list(elements.elems(emphasized=True))
-                            )
-                            self.context.signal("refresh_scene", 0)
-                            continue
-                        elif value == "copy":
-                            add_elem = list(map(copy, elements.elems(emphasized=True)))
-                            elements.add_elems(add_elem)
-                            for e in add_elem:
-                                e.select()
-                                e.emphasize()
-                            continue
-                        elif value == "merge":
-                            superelement = Path()
-                            for e in elements.elems(emphasized=True):
-                                if superelement.stroke is None:
-                                    superelement.stroke = e.stroke
-                                if superelement.fill is None:
-                                    superelement.fill = e.fill
-                                superelement += abs(e)
-                            elements.remove_elements(
-                                list(elements.elems(emphasized=True))
-                            )
-                            elements.add_elem(superelement)
-                            superelement.emphasize()
-                            continue
-                        elif value == "subpath":
-                            for e in elements.elems(emphasized=True):
-                                p = abs(e)
-                                add = []
-                                for subpath in p.as_subpaths():
-                                    subelement = Path(subpath)
-                                    add.append(subelement)
-                                elements.add_elems(add)
-                            continue
-                        channel(_("Value Error: %s is not an integer") % value)
-                        continue
-                    try:
-                        element = elements.get_elem(value)
-                        name = str(element)
-                        if len(name) > 50:
-                            name = name[:50] + "..."
-                        if element.selected:
-                            element.unselect()
-                            element.unemphasize()
-                            channel(_("Deselecting item %d called %s") % (value, name))
-                        else:
-                            element.select()
-                            element.emphasize()
-                            channel(_("Selecting item %d called %s") % (value, name))
-                    except IndexError:
-                        channel(_("index %d out of range") % value)
-            return
 
         @self.context.console_argument("path_d", help="svg path syntax command.")
         @self.context.console_command("path", help="path <svg path>")
@@ -286,7 +326,7 @@ class Elemental(Modifier):
         @self.context.console_argument("x_pos", type=Length)
         @self.context.console_argument("y_pos", type=Length)
         @self.context.console_argument("r_pos", type=Length)
-        @self.context.console_command("circle", help="circle <x> <y> <r> or circle <r>")
+        @self.context.console_command("circle", help="circle <x> <y> <r> or circle <r>",  output_type="path")
         def circle(command, x_pos, y_pos, r_pos, args=tuple(), **kwargs):
             if x_pos is None:
                 raise SyntaxError
@@ -301,28 +341,25 @@ class Elemental(Modifier):
                 width="%fmm" % self.context.bed_width,
                 height="%fmm" % self.context.bed_height,
             )
-            # circ = Path(circ)
             self.add_element(circ)
+            return 'path', circ
 
         @self.context.console_argument("x_pos", type=Length)
         @self.context.console_argument("y_pos", type=Length)
         @self.context.console_argument("rx_pos", type=Length)
         @self.context.console_argument("ry_pos", type=Length)
-        @self.context.console_command("ellipse", help="ellipse <cx> <cy> <rx> <ry>")
+        @self.context.console_command("ellipse", help="ellipse <cx> <cy> <rx> <ry>",  output_type="path")
         def ellipse(command, x_pos, y_pos, rx_pos, ry_pos, args=tuple(), **kwargs):
             if ry_pos is None:
                 raise SyntaxError
-                # channel(_('Too few arguments (needs center_x, center_y, radius_x, radius_y)'))
-                # return
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
             ellip.render(
                 ppi=1000.0,
                 width="%fmm" % self.context.bed_width,
                 height="%fmm" % self.context.bed_height,
             )
-            # ellip = Path(ellip)
             self.add_element(ellip)
-            return
+            return 'path', ellip
 
         @self.context.console_argument(
             "x_pos", type=Length, help="x position for top left corner of rectangle."
@@ -379,22 +416,21 @@ class Elemental(Modifier):
             text = " ".join(args)
             element = SVGText(text)
             self.add_element(element)
+            return "text", element
 
         # @self.context.console_argument("points", type=float, nargs="*", help='x, y of elements')
         @self.context.console_command("polygon", help="polygon (<point>, <point>)*")
         def polygon(command, channel, _, args=tuple(), **kwargs):
             element = Polygon(list(map(float, args)))
-            # element = Path(element)
             self.add_element(element)
-            return
+            return "path", element
 
         # @self.context.console_argument("points", type=float, nargs="*", help='x, y of elements')
         @self.context.console_command("polyline", help="polyline (<point>, <point>)*")
         def polyline(command, args=tuple(), **kwargs):
             element = Polyline(list(map(float, args)))
-            # element = Path(element)
             self.add_element(element)
-            return
+            return "path", element
 
         @self.context.console_argument(
             "color", type=Color, help="Color to color the given stroke"
@@ -404,27 +440,26 @@ class Elemental(Modifier):
             help="stroke <svg color>",
             input_type=(
                 None,
-                "path",
+                "group",
             ),
-            output_type="path",
+            output_type="group",
         )
         def stroke(command, channel, _, color, args=tuple(), data=None, **kwargs):
-            if data is not None:
-                data.stroke = color
-                return "path", data
+            if data is None:
+                data = list(elements.elems(emphasized=True))
             if color is None:
                 channel(_("----------"))
                 channel(_("Stroke Values:"))
                 i = 0
-                for element in elements.elems():
-                    name = str(element)
+                for e in elements.elems():
+                    name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "..."
-                    if element.stroke is None or element.stroke == "none":
+                    if e.stroke is None or e.stroke == "none":
                         channel(_("%d: stroke = none - %s") % (i, name))
                     else:
                         channel(
-                            _("%d: stroke = %s - %s") % (i, element.stroke.hex, name)
+                            _("%d: stroke = %s - %s") % (i, e.stroke.hex, name)
                         )
                     i += 1
                 channel(_("----------"))
@@ -432,16 +467,17 @@ class Elemental(Modifier):
             if not elements.has_emphasis():
                 channel(_("No selected elements."))
                 return
+
             if color == "none":
-                for element in elements.elems(emphasized=True):
-                    element.stroke = None
-                    element.altered()
+                for e in data:
+                    e.stroke = None
+                    e.altered()
             else:
-                for element in elements.elems(emphasized=True):
-                    element.stroke = Color(color)
-                    element.altered()
+                for e in data:
+                    e.stroke = Color(color)
+                    e.altered()
             context.signal("refresh_scene")
-            return
+            return data
 
         @self.context.console_argument(
             "color", type=Color, help="color to color the given fill"
@@ -451,40 +487,36 @@ class Elemental(Modifier):
             help="fill <svg color>",
             input_type=(
                 None,
-                "path",
+                "group",
             ),
-            output_type="path",
+            output_type="group",
         )
         def fill(command, channel, _, color, data=None, args=tuple(), **kwargs):
-            if data is not None:
-                data.fill = color
-                return "path", data
+            if data is None:
+                data = list(elements.elems(emphasized=True))
             if color is None:
                 channel(_("----------"))
                 channel(_("Fill Values:"))
                 i = 0
-                for element in elements.elems():
-                    name = str(element)
+                for e in elements.elems():
+                    name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "..."
-                    if element.fill is None or element.fill == "none":
+                    if e.fill is None or e.fill == "none":
                         channel(_("%d: fill = none - %s") % (i, name))
                     else:
-                        channel(_("%d: fill = %s - %s") % (i, element.fill.hex, name))
+                        channel(_("%d: fill = %s - %s") % (i, e.fill.hex, name))
                     i += 1
                 channel(_("----------"))
                 return
-            if not elements.has_emphasis():
-                channel(_("No selected elements."))
-                return
             if color == "none":
-                for element in elements.elems(emphasized=True):
-                    element.fill = None
-                    element.altered()
+                for e in data:
+                    e.fill = None
+                    e.altered()
             else:
-                for element in elements.elems(emphasized=True):
-                    element.fill = Color(color)
-                    element.altered()
+                for e in data:
+                    e.fill = Color(color)
+                    e.altered()
             context.signal("refresh_scene")
             return
 
@@ -910,20 +942,13 @@ class Elemental(Modifier):
         @self.context.console_command(
             "reset",
             help="reset affine transformations",
-            input_type=(None, "path"),
-            output_type="path",
+            input_type=(None, "group"),
+            output_type="group",
         )
         def reset(command, channel, _, data=None, args=tuple(), **kwargs):
-            if data is not None:
-                try:
-                    if data.lock:
-                        return
-                    data.transform.reset()
-                    data.modified()
-                except AttributeError:
-                    pass
-                return
-            for e in elements.elems(emphasized=True):
+            if data is None:
+                data = list(elements.elems(emphasized=True))
+            for e in data:
                 try:
                     if e.lock:
                         continue
@@ -942,20 +967,13 @@ class Elemental(Modifier):
         @self.context.console_command(
             "reify",
             help="reify affine transformations",
-            input_type=(None, "path"),
-            output_type="path",
+            input_type=(None, "group"),
+            output_type="group",
         )
         def reify(command, channel, _, data=None, args=tuple(), **kwargs):
-            if data is not None:
-                try:
-                    if data.lock:
-                        return
-                    data.reify()
-                    data.altered()
-                except AttributeError:
-                    pass
-                return "path", data
-            for e in elements.elems(emphasized=True):
+            if data is None:
+                data = list(elements.elems(emphasized=True))
+            for e in data:
                 try:
                     if e.lock:
                         continue
