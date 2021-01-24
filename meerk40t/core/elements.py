@@ -278,7 +278,7 @@ class Elemental(Modifier):
                 width="%fmm" % self.context.bed_width,
                 height="%fmm" % self.context.bed_height,
             )
-            ellip = Path(ellip)
+            # ellip = Path(ellip)
             self.add_element(ellip)
             return
 
@@ -316,7 +316,7 @@ class Elemental(Modifier):
                 width="%fmm" % self.context.bed_width,
                 height="%fmm" % self.context.bed_height,
             )
-            rect = Path(rect)
+            # rect = Path(rect)
             rect.stroke = stroke
             rect.fill = fill
             self.add_element(rect)
@@ -331,14 +331,14 @@ class Elemental(Modifier):
         @self.context.console_command("polygon", help="polygon (<point>, <point>)*")
         def polygon(command, channel, _, args=tuple(), **kwargs):
             element = Polygon(list(map(float, args)))
-            element = Path(element)
+            # element = Path(element)
             self.add_element(element)
             return
 
         @self.context.console_command("polyline", help="polyline (<point>, <point>)*")
         def polyline(command, args=tuple(), **kwargs):
             element = Polyline(list(map(float, args)))
-            element = Path(element)
+            # element = Path(element)
             self.add_element(element)
             return
 
