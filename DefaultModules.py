@@ -101,24 +101,26 @@ class SVGWriter:
                                'raster_direction', 'raster_step', 'd_ratio'):
                         subelement.set(key, str(val))
             stroke = element.stroke
-            stroke_opacity = stroke.opacity
-            stroke = str(abs(stroke)) if stroke is not None and stroke.value is not None else SVG_VALUE_NONE
-            subelement.set(SVG_ATTR_STROKE, stroke)
-            if stroke_opacity != 1.0 and stroke_opacity is not None:
-                subelement.set(SVG_ATTR_STROKE_OPACITY, stroke_opacity)
-            try:
-                stroke_width = str(element.stroke_width) if element.stroke_width is not None else SVG_VALUE_NONE
-                subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
-            except AttributeError:
-                pass
+            if stroke is not None:
+                stroke_opacity = stroke.opacity
+                stroke = str(abs(stroke)) if stroke is not None and stroke.value is not None else SVG_VALUE_NONE
+                subelement.set(SVG_ATTR_STROKE, stroke)
+                if stroke_opacity != 1.0 and stroke_opacity is not None:
+                    subelement.set(SVG_ATTR_STROKE_OPACITY, stroke_opacity)
+                try:
+                    stroke_width = str(element.stroke_width) if element.stroke_width is not None else SVG_VALUE_NONE
+                    subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
+                except AttributeError:
+                    pass
             fill = element.fill
-            fill_opacity = fill.opacity
-            fill = str(abs(fill)) if fill is not None and fill.value is not None else SVG_VALUE_NONE
-            subelement.set(SVG_ATTR_FILL, fill)
-            if fill_opacity != 1.0 and fill_opacity is not None:
-                subelement.set(SVG_ATTR_STROKE_OPACITY, fill_opacity)
-            if element.id is not None:
-                subelement.set(SVG_ATTR_ID, element.id)
+            if fill is not None:
+                fill_opacity = fill.opacity
+                fill = str(abs(fill)) if fill is not None and fill.value is not None else SVG_VALUE_NONE
+                subelement.set(SVG_ATTR_FILL, fill)
+                if fill_opacity != 1.0 and fill_opacity is not None:
+                    subelement.set(SVG_ATTR_STROKE_OPACITY, fill_opacity)
+                if element.id is not None:
+                    subelement.set(SVG_ATTR_ID, element.id)
         tree = ElementTree(root)
         tree.write(f)
 
@@ -430,7 +432,7 @@ class DxfLoader:
                 except (AttributeError, TypeError):
                     # Fallback for rational b-splines.
                     try:
-                        for bezier in entity.construction_tool().cubic_bezier_approximation(5):
+                        for bezier in entity.construction_tool().cubic_bezier_approximation(4):
                             b = bezier.control_points
                             element.cubic(
                                 (b[1][0], b[1][1]),
