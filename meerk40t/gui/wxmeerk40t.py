@@ -3947,7 +3947,7 @@ class wxMeerK40t(wx.App, Module):
     def on_app_close(self, event):
         try:
             if self.context is not None:
-                self.context.stop()
+                self.context.console("shutdown\n")
         except AttributeError:
             pass
 
