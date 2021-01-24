@@ -547,7 +547,7 @@ class Kernel:
     """
 
     def __init__(self, config=None):
-        self.plugins = []
+        self._plugins = []
 
         self.devices = {}
         self.active_device = None
@@ -679,6 +679,20 @@ class Kernel:
                     continue
                 setattr(obj, attr, debug(fn, obj))
 
+    # Plugin API
+    def add_plugin(self, plugin):
+        """
+        Accepts a plugin function. This should accept two arguments: kernel and lifecycle.
+
+        The kernel is a copy of this kernel as an instanced object and the lifecycle is the stage of the kernel
+        in the program lifecycle. Plugins should be added during startup.
+
+        :param plugin:
+        :return:
+        """
+        if plugin not in self._plugins:
+            self._plugins.append(plugin)
+
     # Lifecycle processes.
 
     def bootstrap(self, lifecycle):
@@ -688,7 +702,7 @@ class Kernel:
         :param lifecycle:
         :return:
         """
-        for plugin in self.plugins:
+        for plugin in self._plugins:
             plugin(self, lifecycle)
         self.signal("lifecycle;%s" % lifecycle, True)
 

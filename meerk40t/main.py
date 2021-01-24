@@ -97,120 +97,121 @@ def run():
     try:
         from . import kernelserver
 
-        kernel.plugins.append(kernelserver.plugin)
+        kernel.add_plugin(kernelserver.plugin)
     except ImportError:
         pass
 
     try:
         from .device import basedevice
 
-        kernel.plugins.append(basedevice.plugin)
+        kernel.add_plugin(basedevice.plugin)
     except ImportError:
         pass
 
     try:
         from .core import elements
 
-        kernel.plugins.append(elements.plugin)
+        kernel.add_plugin(elements.plugin)
     except ImportError:
         pass
 
     try:
         from .core import bindalias
 
-        kernel.plugins.append(bindalias.plugin)
+        kernel.add_plugin(bindalias.plugin)
     except ImportError:
         pass
 
     try:
         from .core import cutplanner
 
-        kernel.plugins.append(cutplanner.plugin)
+        kernel.add_plugin(cutplanner.plugin)
     except ImportError:
         pass
 
     try:
         from .image import imagetools
 
-        kernel.plugins.append(imagetools.plugin)
+        kernel.add_plugin(imagetools.plugin)
     except ImportError:
-        pass
-
-    try:
-        from .core import svg_io
-
-        kernel.plugins.append(svg_io.plugin)
-    except ImportError:
-        pass
-
-    try:
-        from .dxf import dxf_io
-
-        kernel.plugins.append(dxf_io.plugin)
-    except ImportError:
-        # This module cannot be loaded. ezdxf missing.
         pass
 
     try:
         from .device.lhystudios import lhystudiosdevice
 
-        kernel.plugins.append(lhystudiosdevice.plugin)
+        kernel.add_plugin(lhystudiosdevice.plugin)
     except ImportError:
         pass
 
     try:
         from .device.moshi import moshiboarddevice
 
-        kernel.plugins.append(moshiboarddevice.plugin)
+        kernel.add_plugin(moshiboarddevice.plugin)
     except ImportError:
         pass
 
     try:
         from .device.grbl import grbldevice
 
-        kernel.plugins.append(grbldevice.plugin)
+        kernel.add_plugin(grbldevice.plugin)
     except ImportError:
         pass
 
     try:
         from .device.ruida import ruidadevice
 
-        kernel.plugins.append(ruidadevice.plugin)
+        kernel.add_plugin(ruidadevice.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .core import svg_io
+
+        kernel.add_plugin(svg_io.plugin)
     except ImportError:
         pass
 
     try:
         from camera import camera
 
-        kernel.plugins.append(camera.plugin)
+        kernel.add_plugin(camera.plugin)
     except ImportError:
+        # This module cannot be loaded. opencv is missing.
         pass
+
+    try:
+        from .dxf import dxf_io
+
+        kernel.add_plugin(dxf_io.plugin)
+    except ImportError:
+        # This module cannot be loaded. ezdxf missing.
+        pass
+
+    if not args.no_gui:
+        # Must permit this plugin in the gui.
+        try:
+            from .gui import wxmeerk40t
+
+            kernel.add_plugin(wxmeerk40t.plugin)
+        except ImportError:
+            # This module cannot be loaded. wxPython missing.
+            pass
 
     if not getattr(sys, "frozen", False):
         """
-        These are dynamic bootstraps. They are dynamically found by entry points.
+        These are dynamic plugins. They are dynamically found by entry points.
         """
         import pkg_resources
 
         for entry_point in pkg_resources.iter_entry_points("meerk40t.plugins"):
             plugin = entry_point.load()
-            kernel.plugins.append(plugin)
+            kernel.add_plugin(plugin)
 
     kernel_root = kernel.get_context("/")
     kernel_root.device_version = MEERK40T_VERSION
     kernel_root.device_name = "MeerK40t"
 
-    if not args.no_gui:
-        # This isn't registered with an entry point. It's only directly included.
-        try:
-            from .gui import wxmeerk40t
-
-            kernel.plugins.append(wxmeerk40t.plugin)
-        except ImportError:
-            pass
-
     kernel.bootstrap("register")
-
     kernel.boot()
 
     devices = list()
