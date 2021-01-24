@@ -48,9 +48,12 @@ class Elemental(Modifier):
         self._plan = dict()
         self._operations = list()
         self._elements = list()
+        self._templates = list()  # Not implemented.
+        self._tree = list()  # Not implemented.
         self._filenodes = {}
         self._clipboard = {}
         self._clipboard_default = "0"
+
         self.note = None
         self._bounds = None
 
@@ -68,8 +71,8 @@ class Elemental(Modifier):
             "select.*",
             help="select inputted group",
             regex=True,
-            input_type="group",
-            output_type="group",
+            input_type="elements",
+            output_type="elements",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             """
@@ -99,13 +102,13 @@ class Elemental(Modifier):
                     if e.selected:
                         e.unselect()
                         e.unemphasize()
-            return "group", list(self.elems(emphasized=True))
+            return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
             "element.*",
             help="element*, element<#,>*, element~, element!",
             regex=True,
-            output_type="group",
+            output_type="elements",
         )
         def element(command, channel, _, args=tuple(), **kwargs):
             """
@@ -117,11 +120,11 @@ class Elemental(Modifier):
             """
             arg = command[7:]
             if arg == "":
-                return "group", list(self.elems(emphasized=True))
+                return "elements", list(self.elems(emphasized=True))
             elif arg == "*":
-                return "group", list(self.elems())
+                return "elements", list(self.elems())
             elif arg == "~":
-                return "group", list(self.elems(emphasized=False))
+                return "elements", list(self.elems(emphasized=False))
             elif arg == "s":
                 channel(_("----------"))
                 channel(_("Graphical Elements:"))
@@ -149,26 +152,32 @@ class Elemental(Modifier):
                         element_list.append(e)
                     except IndexError:
                         channel(_("index %d out of range") % value)
-                return "group", element_list
+                return "elements", element_list
 
         @context.console_command(
             "copy",
             help="duplicate elements",
-            input_type=("group", "ops"),
-            output_type=("group", "ops")
+            input_type=("elements", "ops"),
+            output_type=("elements", "ops"),
         )
-        def e_copy(command, channel, _, data=None, data_type=None, args=tuple(), **kwargs):
+        def e_copy(
+            command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
+        ):
             add_elem = list(map(copy, data))
-            if data_type == 'ops':
+            if data_type == "ops":
                 self.add_ops(add_elem)
             else:
                 self.add_elems(add_elem)
             return data_type, add_elem
 
-        @context.console_command("delete", help="delete elements", input_type=("group", "ops"))
-        def e_delete(command, channel, _, data=None, data_type=None, args=tuple(), **kwargs):
+        @context.console_command(
+            "delete", help="delete elements", input_type=("elements", "ops")
+        )
+        def e_delete(
+            command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
+        ):
             channel(_("deleting."))
-            if data_type == 'group':
+            if data_type == "elements":
                 self.remove_elements(data)
             else:
                 self.remove_operations(data)
@@ -177,7 +186,7 @@ class Elemental(Modifier):
         @context.console_command(
             "merge",
             help="merge elements",
-            input_type="group",
+            input_type="elements",
             output_type="path",
         )
         def merge(command, channel, _, data=None, args=tuple(), **kwargs):
@@ -196,8 +205,8 @@ class Elemental(Modifier):
         @context.console_command(
             "subpath",
             help="break elements",
-            input_type=("path", "group"),
-            output_type="group",
+            input_type=("path", "elements"),
+            output_type="elements",
         )
         def subpath(command, channel, _, data=None, args=tuple(), **kwargs):
             if not isinstance(list, data):
@@ -209,7 +218,7 @@ class Elemental(Modifier):
                     subelement = Path(subpath)
                     add.append(subelement)
             self.add_elems(add)
-            return "group", add
+            return "elements", add
 
         @context.console_argument("c", type=int, help="number of columns")
         @context.console_argument("r", type=int, help="number of rows")
@@ -218,8 +227,8 @@ class Elemental(Modifier):
         @context.console_command(
             "grid",
             help="grid <columns> <rows> <x_distance> <y_distance>",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def grid(
             command,
@@ -234,7 +243,7 @@ class Elemental(Modifier):
             **kwargs,
         ):
             if data is None:
-                data = self.elems(emphasized=True)
+                data = list(self.elems(emphasized=True))
             if len(data) == 0 or self._bounds is None:
                 channel(_("No item selected."))
                 return
@@ -278,8 +287,8 @@ class Elemental(Modifier):
             "clipboard.*",
             regex=True,
             help="clipboard<N> (copy|paste|cut|clear)",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def clipboard(
             command, channel, _, subcommand, data=None, args=tuple(), **kwargs
@@ -300,19 +309,19 @@ class Elemental(Modifier):
                 data = list(self.elems(emphasized=True))
             if subcommand == "copy":
                 self._clipboard[destination] = [copy(e) for e in data]
-                return "group", self._clipboard[destination]
+                return "elements", self._clipboard[destination]
             elif subcommand == "cut":
                 self._clipboard[destination] = [copy(e) for e in data]
                 self.remove_elements(data)
-                return "group", self._clipboard[destination]
+                return "elements", self._clipboard[destination]
             elif subcommand == "paste":
                 self.add_elems([copy(e) for e in self._clipboard[destination]])
             elif subcommand == "contents":
-                return "group", self._clipboard[destination]
+                return "elements", self._clipboard[destination]
             elif subcommand == "clear":
                 old = self._clipboard[destination]
                 self._clipboard[destination] = None
-                return "group", old
+                return "elements", old
             elif subcommand == "list":
                 for v in self._clipboard:
                     k = self._clipboard[v]
@@ -436,9 +445,9 @@ class Elemental(Modifier):
             help="stroke <svg color>",
             input_type=(
                 None,
-                "group",
+                "elements",
             ),
-            output_type="group",
+            output_type="elements",
         )
         def stroke(command, channel, _, color, args=tuple(), data=None, **kwargs):
             if data is None:
@@ -471,7 +480,7 @@ class Elemental(Modifier):
                     e.stroke = Color(color)
                     e.altered()
             context.signal("refresh_scene")
-            return "group", data
+            return "elements", data
 
         @context.console_argument(
             "color", type=Color, help="color to color the given fill"
@@ -481,9 +490,9 @@ class Elemental(Modifier):
             help="fill <svg color>",
             input_type=(
                 None,
-                "group",
+                "elements",
             ),
-            output_type="group",
+            output_type="elements",
         )
         def fill(command, channel, _, color, data=None, args=tuple(), **kwargs):
             if data is None:
@@ -529,9 +538,9 @@ class Elemental(Modifier):
             help="rotate <angle>",
             input_type=(
                 None,
-                "group",
+                "elements",
             ),
-            output_type="group",
+            output_type="elements",
         )
         def rotate(
             command,
@@ -620,8 +629,8 @@ class Elemental(Modifier):
         @context.console_command(
             "scale",
             help="scale <scale> [<scale-y>]?",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def scale(
             command,
@@ -725,8 +734,8 @@ class Elemental(Modifier):
         @context.console_command(
             "translate",
             help="translate <tx> <ty>",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def translate(
             command,
@@ -794,7 +803,7 @@ class Elemental(Modifier):
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
-            return "group", data
+            return "elements", data
 
         @context.console_argument(
             "x_pos", type=Length, help="x position for top left corner"
@@ -807,8 +816,8 @@ class Elemental(Modifier):
         @context.console_command(
             "resize",
             help="resize <x-pos> <y-pos> <width> <height>",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def resize(
             command, x_pos, y_pos, width, height, data=None, args=tuple(), **kwargs
@@ -847,7 +856,7 @@ class Elemental(Modifier):
                     e *= m
                     e.modified()
                 context.signal("refresh_scene")
-                return "group", data
+                return "elements", data
             except (ValueError, ZeroDivisionError):
                 raise SyntaxError
 
@@ -860,8 +869,8 @@ class Elemental(Modifier):
         @context.console_command(
             "matrix",
             help="matrix <sx> <kx> <sy> <ky> <tx> <ty>",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def matrix(
             command,
@@ -926,8 +935,8 @@ class Elemental(Modifier):
         @context.console_command(
             "reset",
             help="reset affine transformations",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def reset(command, channel, _, data=None, args=tuple(), **kwargs):
             if data is None:
@@ -951,8 +960,8 @@ class Elemental(Modifier):
         @context.console_command(
             "reify",
             help="reify affine transformations",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def reify(command, channel, _, data=None, args=tuple(), **kwargs):
             if data is None:
@@ -976,8 +985,8 @@ class Elemental(Modifier):
         @context.console_command(
             "classify",
             help="classify elements into operations",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def classify(
             command,
@@ -993,13 +1002,13 @@ class Elemental(Modifier):
                 channel(_("No selected elements."))
                 return
             self.classify(data)
-            return "group", data
+            return "elements", data
 
         @context.console_command(
             "declassify",
             help="declassify selected elements",
-            input_type=(None, "group"),
-            output_type="group",
+            input_type=(None, "elements"),
+            output_type="elements",
         )
         def declassify(command, channel, _, data=None, args=tuple(), **kwargs):
             if data is None:
@@ -1008,7 +1017,7 @@ class Elemental(Modifier):
                 channel(_("No selected elements."))
                 return
             self.remove_elements_from_operations(data)
-            return "group", data
+            return "elements", data
 
         @context.console_argument("note", type=str, help="message to set as note")
         @context.console_command("note", help="note <note>")
@@ -1047,7 +1056,11 @@ class Elemental(Modifier):
                 for i, operation in enumerate(self.ops()):
                     selected = operation.selected
                     select = " *" if selected else "  "
-                    color = "None" if not hasattr(operation, "color") or operation.color is None else Color(operation.color).hex
+                    color = (
+                        "None"
+                        if not hasattr(operation, "color") or operation.color is None
+                        else Color(operation.color).hex
+                    )
                     name = "%d: %s %s - %s" % (i, str(operation), select, color)
                     channel(name)
                     if isinstance(operation, list):
@@ -1075,7 +1088,7 @@ class Elemental(Modifier):
                 channel(_("----------"))
             else:
                 op_selected = []
-                for value in arg.split(','):
+                for value in arg.split(","):
                     try:
                         value = int(value)
                     except ValueError:
@@ -1085,7 +1098,7 @@ class Elemental(Modifier):
                         op_selected.append(operation)
                     except IndexError:
                         channel(_("index %d out of range") % value)
-                return 'ops', op_selected
+                return "ops", op_selected
             return
 
         @context.console_option("speed", "s", type=float)
@@ -1096,9 +1109,22 @@ class Elemental(Modifier):
         @context.console_command(
             ("cut", "engrave", "raster", "imageop"),
             help="group current elements into operation type",
-            input_type=(None, 'group'), output_type='ops'
+            input_type=(None, "elements"),
+            output_type="ops",
         )
-        def makeop(command, channel, _, data, color=None, speed=None, power=None, step=None, overscan=None, args=tuple(), **kwargs):
+        def makeop(
+            command,
+            channel,
+            _,
+            data,
+            color=None,
+            speed=None,
+            power=None,
+            step=None,
+            overscan=None,
+            args=tuple(),
+            **kwargs,
+        ):
             if data is None:
                 data = self.ops(emphasized=True)
             op = LaserOperation()
@@ -1111,7 +1137,11 @@ class Elemental(Modifier):
             if step is not None:
                 op.settings.raster_step = step
             if overscan is not None:
-                op.settings.overscan = overscan.value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                op.settings.overscan = int(
+                    overscan.value(
+                        ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                    )
+                )
             if command == "cut":
                 op.operation = "Cut"
             elif command == "engrave":
@@ -1122,7 +1152,7 @@ class Elemental(Modifier):
                 op.operation = "Image"
             op.extend(data)
             self.add_op(op)
-            return 'ops', [op]
+            return "ops", [op]
 
         @context.console_command("step", help="step <raster-step-size>")
         def step(command, channel, _, args=tuple(), **kwargs):

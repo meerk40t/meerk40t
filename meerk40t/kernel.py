@@ -2140,7 +2140,7 @@ class Kernel:
                             continue
                     try:
                         data, remainder, input_type = command_funct(
-                            command, remainder, channel, data=data, _=_
+                            command, remainder, channel, data=data, data_type=input_type, _=_
                         )
                     except SyntaxError:
                         channel(_("Syntax Error: %s") % command_funct.help)
