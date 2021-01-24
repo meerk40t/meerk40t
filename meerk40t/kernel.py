@@ -1316,7 +1316,7 @@ class Kernel:
         """
         self.state = STATE_ACTIVE
         while self.state != STATE_END:
-            time.sleep(0.005)  # 200 ticks a second.
+            time.sleep(1) #TODO: REVERSE THIS SHOULD BE 0.005.  # 200 ticks a second.
             if self.state == STATE_TERMINATE:
                 break
             while self.state == STATE_PAUSE:
