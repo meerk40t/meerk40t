@@ -312,18 +312,19 @@ def run():
     kernel.bootstrap("ready")
 
     if args.console:
-        kernel_root.channel("console").watch(print)
-        while True:
-            console_command = input(">")
-            if device._kernel.lifecycle == "shutdown":
-                return
-            if console_command == "quit":
-                if args.no_gui:
-                    device.console("shutdown\n")
-                break
-            device.console(console_command + "\n")
-            if console_command == "shutdown":
-                break
-        kernel_root.channel("console").unwatch(print)
-
+        def thread_text_console():
+            kernel_root.channel("console").watch(print)
+            while True:
+                console_command = input(">")
+                if device._kernel.lifecycle == "shutdown":
+                    return
+                if console_command == "quit":
+                    if args.no_gui:
+                        device.console("shutdown\n")
+                    break
+                device.console(console_command + "\n")
+                if console_command == "shutdown":
+                    break
+            kernel_root.channel("console").unwatch(print)
+        kernel.threaded(thread_text_console, thread_name="text_console")
     kernel.bootstrap("mainloop")
