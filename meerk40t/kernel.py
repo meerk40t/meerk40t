@@ -547,6 +547,7 @@ class Kernel:
     """
 
     def __init__(self, config=None):
+        self._state = STATE_UNKNOWN
         self._plugins = []
 
         self.devices = {}
