@@ -320,6 +320,8 @@ def run():
             if console_command == "quit":
                 break
             device.console(console_command + "\n")
+            if console_command == "shutdown":
+                break
         kernel_root.channel("console").unwatch(print)
 
     kernel.bootstrap("mainloop")
