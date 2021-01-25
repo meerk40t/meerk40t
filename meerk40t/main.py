@@ -313,8 +313,8 @@ def run():
         kernel_root.channel("console").watch(print)
         while True:
             console_command = input(">")
-            if device._state == STATE_TERMINATE:
-                break
+            if device._kernel._state == STATE_TERMINATE:
+                return
             if console_command == "quit":
                 break
             device.console(console_command + "\n")

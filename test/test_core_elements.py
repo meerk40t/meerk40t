@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import unittest
 
-from meerk40t.bootstrap import bootstrap
 from meerk40t.kernel import Kernel
 from meerk40t.svgelements import Circle, Path, Rect
 
