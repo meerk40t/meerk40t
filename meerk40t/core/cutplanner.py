@@ -599,14 +599,12 @@ class Planner(Modifier):
 
     @staticmethod
     def origin():
-        yield COMMAND_WAIT_FINISH
         yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_MOVE, 0, 0
 
     @staticmethod
     def home():
-        yield COMMAND_WAIT_FINISH
         yield COMMAND_HOME
 
     @staticmethod
@@ -622,6 +620,7 @@ class Planner(Modifier):
 
     @staticmethod
     def interrupt():
+        yield COMMAND_WAIT_FINISH
         def intr():
             input("waiting for user...")
 
