@@ -438,6 +438,49 @@ class Elemental(Modifier):
             return "path", element
 
         @context.console_argument(
+            "stroke_width", type=Length, help="Stroke-width for the given stroke"
+        )
+        @context.console_command(
+            "stroke-width",
+            help="stroke-width <length>",
+            input_type=(
+                None,
+                "elements",
+            ),
+            output_type="elements",
+        )
+        def stroke_width(command, channel, _, stroke_width, args=tuple(), data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if stroke_width is None:
+                channel(_("----------"))
+                channel(_("Stroke-Width Values:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "..."
+                    if e.stroke is None or e.stroke == "none":
+                        channel(_("%d: stroke = none - %s") % (i, name))
+                    else:
+                        channel(_("%d: stroke = %s - %s") % (i, e.stroke_width, name))
+                    i += 1
+                channel(_("----------"))
+                return
+
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            stroke_width = stroke_width.value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            if isinstance(stroke_width, Length):
+                raise SyntaxError
+            for e in data:
+                e.stroke_width = stroke_width
+                e.altered()
+            context.signal("refresh_scene")
+            return "elements", data
+
+        @context.console_argument(
             "color", type=Color, help="Color to color the given stroke"
         )
         @context.console_command(
@@ -467,7 +510,7 @@ class Elemental(Modifier):
                     i += 1
                 channel(_("----------"))
                 return
-            if not self.has_emphasis():
+            if len(data) == 0:
                 channel(_("No selected elements."))
                 return
 
