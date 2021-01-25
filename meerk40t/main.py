@@ -267,10 +267,7 @@ def run():
                     setattr(device, attr, str(value))
 
     if args.auto:
-        # Automatically classify and start the job.
         elements = kernel_root.elements
-        elements.classify(list(elements.elems()))
-
         if args.speed is not None:
             for o in elements.ops():
                 o.speed = args.speed
