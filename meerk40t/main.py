@@ -89,7 +89,6 @@ def run():
 
     kernel = Kernel()
 
-
     """
     These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
     hardcoded addons and plugins permitted by MeerK40t in a compiled bundle.
@@ -227,7 +226,7 @@ def run():
 
     if len(devices) != 0:
         device = kernel_root.derive(str(devices[0]))
-        device_name = device.setting(str, "device_name", "Lhystudios")
+        device.setting(str, "device_name", "Lhystudios")
     else:
         device = kernel_root.derive("1")
         device.activate("device/Lhystudios")
@@ -240,6 +239,8 @@ def run():
         import os
 
         kernel_root.load(os.path.realpath(args.input.name))
+        elements = kernel_root.elements
+        elements.classify(list(elements.elems()))
 
     if args.mock:
         # Set the device to mock.

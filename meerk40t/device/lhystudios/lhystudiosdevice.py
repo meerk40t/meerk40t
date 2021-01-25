@@ -1477,16 +1477,19 @@ class LhystudioController(Module):
         def egv_export(command, channel, _, filename, args=tuple(), **kwargs):
             if filename is None:
                 raise SyntaxError
-            with open(filename, "w") as f:
-                f.write("Document type : LHYMICRO-GL file\n")
-                f.write("File version: 1.0.01\n")
-                f.write("Copyright: Unknown\n")
-                f.write("Creator-Software: MeerK40t v0.7.0\n")
-                f.write("\n")
-                f.write("%0%0%0%0%\n")
-                buffer = self._buffer
-                buffer += self._queue
-                f.write(buffer.decode("utf-8"))
+            try:
+                with open(filename, "w") as f:
+                    f.write("Document type : LHYMICRO-GL file\n")
+                    f.write("File version: 1.0.01\n")
+                    f.write("Copyright: Unknown\n")
+                    f.write("Creator-Software: MeerK40t v0.7.0\n")
+                    f.write("\n")
+                    f.write("%0%0%0%0%\n")
+                    buffer = self._buffer
+                    buffer += self._queue
+                    f.write(buffer.decode("utf-8"))
+            except (PermissionError, IOError):
+                channel(_("Could not save: %s" % filename))
 
         @self.context.console_command(
             "egv", help="Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
