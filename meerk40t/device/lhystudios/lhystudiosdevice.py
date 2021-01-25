@@ -1759,6 +1759,8 @@ class LhystudioController(Module):
             self.usb_log(_("No Windll interfacing. Skipping."))
 
     def update_state(self, state):
+        if state == self.state:
+            return
         self.state = state
         if self.context is not None:
             self.context.signal("pipe;thread", self.state)
@@ -2012,10 +2014,10 @@ class LhystudioController(Module):
         return True  # A packet was prepped and sent correctly.
 
     def send_packet(self, packet):
+        packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
         if self.context.mock:
             time.sleep(0.04)
         else:
-            packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
             self.driver.write(packet)
         self.update_packet(packet)
         self.pre_ok = False

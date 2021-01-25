@@ -1474,11 +1474,13 @@ class Kernel:
                     except ValueError:
                         print("Value error removing: %s  %s" % (str(listeners), signal))
 
+        signal_channel = self.channel('signals')
         for code, message in queue.items():
             if code in self.listeners:
                 listeners = self.listeners[code]
                 for listener in listeners:
                     listener(*message)
+                    signal_channel("%s: %s was sent %s" % (code, str(listener), str(message)))
             self.last_message[code] = message
         self._is_queue_processing = False
 
@@ -1911,7 +1913,7 @@ class Kernel:
                     try:
                         self.channel(chan).unwatch(self._console_channel)
                         channel(_("No Longer Watching Channel: %s") % chan)
-                    except KeyError:
+                    except (KeyError, ValueError):
                         channel(_("Channel %s is not opened.") % chan)
                 elif value == "save":
                     from datetime import datetime
