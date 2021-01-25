@@ -1960,7 +1960,7 @@ class MeerK40t(wx.Frame, Module, Job):
             self.load(pathname)
 
     def on_click_pause(self, event):
-        self.context.console("control Realtime Pause_Resume\n")
+        self.context.console("pause\n")
 
     def on_click_save(self, event):
         if self.working_file is None:

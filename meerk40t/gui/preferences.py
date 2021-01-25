@@ -61,12 +61,6 @@ class Preferences(wx.Frame, Module):
         self.checkbox_autolock = wx.CheckBox(
             self, wx.ID_ANY, _("Automatically lock rail")
         )
-        self.checkbox_autohome = wx.CheckBox(
-            self, wx.ID_ANY, _("Home after job complete")
-        )
-        self.checkbox_autobeep = wx.CheckBox(
-            self, wx.ID_ANY, _("Beep after job complete")
-        )
 
         self.__set_properties()
         self.__do_layout()
@@ -114,8 +108,6 @@ class Preferences(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT, self.spin_on_bedheight, self.spin_bedheight)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_bedheight, self.spin_bedheight)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_autolock, self.checkbox_autolock)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_autohome, self.checkbox_autohome)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_autobeep, self.checkbox_autobeep)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
@@ -140,8 +132,6 @@ class Preferences(wx.Frame, Module):
         self.context.setting(int, "home_adjust_y", 0)
 
         self.context.setting(bool, "mock", False)
-        self.context.setting(bool, "autobeep", False)
-        self.context.setting(bool, "autohome", False)
         self.context.setting(bool, "autolock", True)
         self.context.setting(str, "board", "M2")
         self.context.setting(int, "bed_width", 280)
@@ -158,8 +148,6 @@ class Preferences(wx.Frame, Module):
         self.checkbox_home_right.SetValue(self.context.home_right)
         self.checkbox_home_bottom.SetValue(self.context.home_bottom)
         self.checkbox_mock_usb.SetValue(self.context.mock)
-        self.checkbox_autobeep.SetValue(self.context.autobeep)
-        self.checkbox_autohome.SetValue(self.context.autohome)
         self.checkbox_autolock.SetValue(self.context.autolock)
         self.combobox_board.SetValue(self.context.board)
         self.spin_bedwidth.SetValue(self.context.bed_width)
@@ -232,9 +220,6 @@ class Preferences(wx.Frame, Module):
         self.spin_bedheight.SetToolTip(_("Height of the laser bed."))
         self.checkbox_autolock.SetToolTip(_("Lock rail after operations are finished."))
         self.checkbox_autolock.SetValue(1)
-        self.checkbox_autohome.SetToolTip(_("Home the machine after job is finished"))
-        self.checkbox_autobeep.SetToolTip(_("Beep after the job is finished."))
-        self.checkbox_autobeep.SetValue(1)
         # end wxGlade
 
     def __do_layout(self):
@@ -316,8 +301,6 @@ class Preferences(wx.Frame, Module):
         sizer_bed.Add(label_18, 0, 0, 0)
         sizer_1.Add(sizer_bed, 1, wx.EXPAND, 0)
         sizer_general.Add(self.checkbox_autolock, 0, 0, 0)
-        sizer_general.Add(self.checkbox_autohome, 0, 0, 0)
-        sizer_general.Add(self.checkbox_autobeep, 0, 0, 0)
         sizer_1.Add(sizer_general, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()
@@ -384,12 +367,6 @@ class Preferences(wx.Frame, Module):
 
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.autolock = self.checkbox_autolock.GetValue()
-
-    def on_check_autohome(self, event):  # wxGlade: Preferences.<event_handler>
-        self.context.autohome = self.checkbox_autohome.GetValue()
-
-    def on_check_autobeep(self, event):  # wxGlade: Preferences.<event_handler>
-        self.context.autobeep = self.checkbox_autobeep.GetValue()
 
     def spin_on_device_index(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.usb_index = int(self.spin_device_index.GetValue())

@@ -468,7 +468,7 @@ class Controller(wx.Frame, Module):
 
             def f(event):
                 self.context.console("start\n")
-                self.context.console("pause\n")
+                self.context.console("hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#009900")
@@ -503,7 +503,7 @@ class Controller(wx.Frame, Module):
         elif state == STATE_ACTIVE:
 
             def f(event):
-                self.context.console("pause\n")
+                self.context.console("hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ff00")

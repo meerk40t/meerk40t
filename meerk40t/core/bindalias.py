@@ -212,7 +212,7 @@ class BindAlias(Modifier):
         self.keymap["control+alt+s"] = "image wizard Stipo"
         self.keymap["alt+f12"] = "terminal_ruida"
         self.keymap["alt+f11"] = "terminal_watch"
-        self.keymap["pause"] = "control Realtime Pause_Resume"
+        self.keymap["pause"] = "pause"
         self.keymap["home"] = "home"
         self.keymap["control+z"] = "reset"
         self.keymap["control+alt+shift+escape"] = "reset_bind_alias"

@@ -493,6 +493,15 @@ class LhymicroInterpreter(Interpreter, Modifier):
                     channel(_("Invalid Acceleration [1-4]."))
                     return
 
+        @context.console_command(
+            "pause", help="realtime pause/resume of the machine"
+        )
+        def realtime_pause(command, channel, _, args=tuple(), **kwargs):
+            if self.is_paused:
+                self.resume()
+            else:
+                self.pause()
+
         context.interpreter = self
 
         context.setting(bool, "strict", False)
@@ -525,7 +534,6 @@ class LhymicroInterpreter(Interpreter, Modifier):
         self.start_x = current_x
         self.start_y = current_y
 
-        context.register("control/Realtime Pause_Resume", self.pause_resume)
         context.register("control/Realtime Pause", self.pause)
         context.register("control/Realtime Resume", self.resume)
         context.register("control/Update Codes", self.update_codes)
@@ -703,12 +711,6 @@ class LhymicroInterpreter(Interpreter, Modifier):
     def plot_start(self):
         if self.plot is None:
             self.plot = self.plot_planner.gen()
-
-    def pause_resume(self, *values):
-        if self.is_paused:
-            self.resume(*values)
-        else:
-            self.pause(*values)
 
     def pause(self, *values):
         self.realtime_pipe(b"PN!\n")
@@ -1515,7 +1517,7 @@ class LhystudioController(Module):
             self.start()
             channel("Lhystudios Channel Started.")
 
-        @self.context.console_command("pause", help="Pause Controller")
+        @self.context.console_command("hold", help="Hold Controller")
         def pipe_pause(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_PAUSE)
             self.pause()
