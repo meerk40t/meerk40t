@@ -297,6 +297,8 @@ def run():
     if args.execute:
         kernel_root.channel("console").watch(print)
         for v in args.execute:
+            if v is None:
+                continue
             device.console(v.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
