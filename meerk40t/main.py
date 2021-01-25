@@ -318,12 +318,8 @@ def run():
                 console_command = input(">")
                 if device._kernel.lifecycle == "shutdown":
                     return
-                if console_command == "quit":
-                    if args.no_gui:
-                        device.console("shutdown\n")
-                    break
                 device.console(console_command + "\n")
-                if console_command == "shutdown":
+                if console_command in ("quit", "shutdown"):
                     break
             kernel_root.channel("console").unwatch(print)
         if args.no_gui:

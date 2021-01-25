@@ -704,7 +704,7 @@ class Kernel:
         :return:
         """
         if self.lifecycle == "shutdown":
-            return # No backsies.
+            return  # No backsies.
         self.lifecycle = lifecycle
         for plugin in self._plugins:
             plugin(self, lifecycle)
@@ -2019,7 +2019,7 @@ class Kernel:
             last_path.flush()
             channel(_("Persistent settings force saved."))
 
-        @self.console_command("shutdown", help="shutdown")
+        @self.console_command(("quit", "shutdown"), help="quits meerk40t shutting down all processes")
         def shutdown(command, channel, _, args=tuple(), **kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()

@@ -92,7 +92,7 @@ class Interpreter:
             if self.spooled_item is None:
                 # There is no data to interpret. Fetch Failed.
                 if self.context._quit:
-                    self.context.console("shutdown\n")
+                    self.context.console("quit\n")
                     self._shutdown = True
                     return
                 time.sleep(0.1)

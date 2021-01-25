@@ -1240,7 +1240,7 @@ class MeerK40t(wx.Frame, Module, Job):
         else:
             self._mgr.UnInit()
             self.state = 5
-            self.context.console("shutdown\n")
+            self.context.console("quit\n")
             # self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
@@ -3140,7 +3140,7 @@ class RootNode(list):
                     CommandOperation(
                         "Shutdown",
                         COMMAND_FUNCTION,
-                        self.context.console_function("shutdown\n"),
+                        self.context.console_function("quit\n"),
                     )
                 ),
                 special_op_menu.Append(
@@ -3949,7 +3949,7 @@ class wxMeerK40t(wx.App, Module):
     def on_app_close(self, event):
         try:
             if self.context is not None:
-                self.context.console("shutdown\n")
+                self.context.console("quit\n")
         except AttributeError:
             pass
 
