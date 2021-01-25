@@ -1250,16 +1250,16 @@ class Kernel:
         def run():
             func_result = None
             channel(_("Thread: %s, Set" % thread_name))
-            # try:
-            channel(_("Thread: %s, Start" % thread_name))
-            func_result = func()
-            channel(_("Thread: %s, End " % thread_name))
-            # except:
-            #     channel(_("Thread: %s, Exception-End" % thread_name))
-            #     import sys
-            #
-            #     channel(sys.exc_info())
-            #     sys.excepthook(*sys.exc_info())
+            try:
+                channel(_("Thread: %s, Start" % thread_name))
+                func_result = func()
+                channel(_("Thread: %s, End " % thread_name))
+            except:
+                channel(_("Thread: %s, Exception-End" % thread_name))
+                import sys
+
+                channel(sys.exc_info())
+                sys.excepthook(*sys.exc_info())
             channel(_("Thread: %s, Unset" % thread_name))
             del self.threads[thread_name]
             if result is not None:
@@ -1884,53 +1884,53 @@ class Kernel:
             channel(_("----------"))
             return
 
+        @self.console_argument("subcommand", help="open/close/save/print")
+        @self.console_argument("channel_name", help="channel name")
         @self.console_command(
             "channel", help="channel [(open|close|save) <channel_name>]"
         )
-        def channel(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
+        def channel(command, channel, _, subcommand, channel_name, args=tuple(), **kwargs):
+            if subcommand is None:
                 channel(_("----------"))
                 channel(_("Channels Active:"))
                 for i, name in enumerate(self.channels):
-                    chan = self.channels[name]
-                    if self._console_channel in chan.watchers:
+                    channel_name = self.channels[name]
+                    if self._console_channel in channel_name.watchers:
                         is_watched = "* "
                     else:
-                        is_watched = ""
+                        is_watched = "  "
                     channel("%s%d: %s" % (is_watched, i + 1, name))
-            else:
-                if len(args) < 2:
-                    raise SyntaxError
-                value = args[0]
-                chan = args[1]
-                if value == "open":
-                    if chan == "console":
-                        channel(_("Infinite Loop Error."))
-                    else:
-                        self.channel(chan).watch(self._console_channel)
-                        channel(_("Watching Channel: %s") % chan)
-                elif value == "close":
-                    try:
-                        self.channel(chan).unwatch(self._console_channel)
-                        channel(_("No Longer Watching Channel: %s") % chan)
-                    except (KeyError, ValueError):
-                        channel(_("Channel %s is not opened.") % chan)
-                elif value == "print":
-                    channel(_("Printing Channel: %s") % chan)
-                    self.channel(chan).watch(print)
-                elif value == "save":
-                    from datetime import datetime
+                return
+            if channel_name is None:
+                raise SyntaxError
+            if subcommand == "open":
+                if channel_name == "console":
+                    channel(_("Infinite Loop Error."))
+                else:
+                    self.channel(channel_name).watch(self._console_channel)
+                    channel(_("Watching Channel: %s") % channel_name)
+            elif subcommand == "close":
+                try:
+                    self.channel(channel_name).unwatch(self._console_channel)
+                    channel(_("No Longer Watching Channel: %s") % channel_name)
+                except (KeyError, ValueError):
+                    channel(_("Channel %s is not opened.") % channel_name)
+            elif subcommand == "print":
+                channel(_("Printing Channel: %s") % channel_name)
+                self.channel(channel_name).watch(print)
+            elif subcommand == "save":
+                from datetime import datetime
 
-                    if self.console_channel_file is None:
-                        filename = (
-                            "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-                                date=datetime.now()
-                            )
+                if self.console_channel_file is None:
+                    filename = (
+                        "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
+                            date=datetime.now()
                         )
-                        channel(_("Opening file: %s") % filename)
-                        self.console_channel_file = open(filename, "a")
-                    channel(_("Recording Channel: %s") % chan)
-                    self.channel(chan).watch(self._console_file_write)
+                    )
+                    channel(_("Opening file: %s") % filename)
+                    self.console_channel_file = open(filename, "a")
+                channel(_("Recording Channel: %s") % channel_name)
+                self.channel(channel_name).watch(self._console_file_write)
             return
 
         @self.console_command("device", help="device [<value>]")

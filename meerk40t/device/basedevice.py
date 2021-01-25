@@ -65,10 +65,12 @@ class Interpreter:
         self._shutdown = False
 
     def start_interpreter(self, *args):
+        print("Starting Interpreter.")
         if self._thread is None:
 
             def clear_thread(*args):
-                self._thread = None
+                print("Shutdown Interpreter Called..")
+                self._shutdown = True
 
             self._thread = self.context.threaded(
                 self._interpret_threaded,
@@ -86,10 +88,7 @@ class Interpreter:
         """
         while True:
             if self._shutdown:
-                return
-            if self._thread is None:
-                return
-            if self._thread is not threading.currentThread():
+                print("Exiting Interpreter Thread By Shutdown.")
                 return
             if self.spooled_item is None:
                 self._fetch_next_item_from_spooler()
@@ -98,6 +97,7 @@ class Interpreter:
                 if self.context._quit:
                     self.context.console("shutdown\n")
                     self._shutdown = True
+                    print("Exiting Interpreter By Quit. Shutting Down..")
                     return
                 time.sleep(0.1)
             self._process_spooled_item()
