@@ -240,7 +240,7 @@ class Elemental(Modifier):
             y: Length,
             data=None,
             args=tuple(),
-            **kwargs,
+            **kwargs
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -396,7 +396,7 @@ class Elemental(Modifier):
             rx=None,
             ry=None,
             args=tuple(),
-            **kwargs,
+            **kwargs
         ):
             """
             Draws an svg rectangle with optional rounded corners.
@@ -552,7 +552,7 @@ class Elemental(Modifier):
             absolute=False,
             data=None,
             args=tuple(),
-            **kwargs,
+            **kwargs
         ):
             if angle is None:
                 channel(_("----------"))
@@ -643,7 +643,7 @@ class Elemental(Modifier):
             absolute=False,
             data=None,
             args=tuple(),
-            **kwargs,
+            **kwargs
         ):
             if scale_x is None:
                 channel(_("----------"))
@@ -746,7 +746,7 @@ class Elemental(Modifier):
             absolute=False,
             data=None,
             args=tuple(),
-            **kwargs,
+            **kwargs
         ):
             if tx is None:
                 channel(_("----------"))
@@ -884,7 +884,7 @@ class Elemental(Modifier):
             ty,
             data=None,
             args=tuple(),
-            **kwargs,
+            **kwargs
         ):
             if tx is None:
                 channel(_("----------"))
@@ -994,7 +994,7 @@ class Elemental(Modifier):
             _,
             data=None,
             args=tuple(),
-            **kwargs,
+            **kwargs
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -1123,7 +1123,7 @@ class Elemental(Modifier):
             step=None,
             overscan=None,
             args=tuple(),
-            **kwargs,
+            **kwargs
         ):
             if data is None:
                 data = self.ops(emphasized=True)
