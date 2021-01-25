@@ -2707,7 +2707,12 @@ class RootNode(list):
         self.dragging_node = None
         if self._rebuild_required:
             return  # Must rebuild tree between moves.
-        drag_item = event.GetItem()
+
+        # drag_item = event.GetItem()
+
+        pt = event.GetPoint()
+        drag_item, _ = self.tree.HitTest(pt)
+
         if drag_item is None:
             event.Skip()
             return
@@ -2750,11 +2755,11 @@ class RootNode(list):
         if drop_item.ID is None:
             event.Skip()
             return
-
         drop_node = self.tree.GetItemData(drop_item)
         if drop_node is None or drop_node == drag_node:
             event.Skip()
             return
+
         if drag_node.type == NODE_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging element into operation adds that element to the op.
@@ -4172,9 +4177,9 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     # Ask to send file.
     message = """
     Good news MeerK40t User! MeerK40t encountered an crash!
-    
+
     You now have the ability to help meerk40t's development by sending us the log.
-    
+
     Send the following data to the MeerK40t team?
     ------
     """
