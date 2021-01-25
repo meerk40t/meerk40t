@@ -547,7 +547,7 @@ class Kernel:
     """
 
     def __init__(self, config=None):
-        self._state = STATE_UNKNOWN
+        self.lifecycle = "init"
         self._plugins = []
 
         self.devices = {}
@@ -703,6 +703,9 @@ class Kernel:
         :param lifecycle:
         :return:
         """
+        if self.lifecycle == "shutdown":
+            return # No backsies.
+        self.lifecycle = lifecycle
         for plugin in self._plugins:
             plugin(self, lifecycle)
         self.signal("lifecycle;%s" % lifecycle, True)
