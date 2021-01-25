@@ -215,6 +215,7 @@ def run():
     kernel_root.device_name = "MeerK40t"
 
     kernel.bootstrap("register")
+    kernel.bootstrap("configure")
     kernel.boot()
 
     devices = list()

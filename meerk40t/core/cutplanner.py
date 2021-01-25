@@ -164,36 +164,41 @@ class Planner(Modifier):
                     element *= Matrix.rotate(-angle)
                 element.altered()
 
-        @self.context.console_command("plan.*", help="plan<?> <command>", regex=True)
-        def plan(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Plan:"))
-                for i, plan_name in enumerate(self._plan):
-                    channel("%d: %s" % (i, plan_name))
-                channel(_("----------"))
-                return
-            if len(args) <= 0:
-                channel(_("Plan <command> (dest)"))
-                channel(_("classify/copy/validate/blob/optimize/clear/list/spool"))
-                return
+        @self.context.console_argument("subcommand", help="classify/copy/validate/blob/optimize/clear/list/spool")
+        @self.context.console_command("plan", help="plan<?> <command>", regex=True, input_type=(None, 'ops'), output_type="plan")
+        def plan(command, channel, _, subcommand, args=tuple(), **kwargs):
             if len(command) > 4:
                 self._default_plan = command[4:]
+                self.context.signal("plan", self._default_plan, None)
+
             try:
                 plan, commands = self._plan[self._default_plan]
             except (KeyError, IndexError):
                 plan = list()
                 commands = list()
                 self._plan[self._default_plan] = plan, commands
-            if len(command) > 4:
-                self.context.signal("plan", self._default_plan, None)
 
-            if args[0] == "classify":
+            if subcommand is None:
+                channel(_("----------"))
+                channel(_("Plan:"))
+                for i, plan_name in enumerate(self._plan):
+                    channel("%d: %s" % (i, plan_name))
+                channel(_("----------"))
+                channel(_("Plan %s:" % self._default_plan))
+                for i, op_name in enumerate(plan):
+                    channel("%d: %s" % (i, op_name))
+                channel(_("Commands %s:" % self._default_plan))
+                for i, cmd_name in enumerate(commands):
+                    channel("%d: %s" % (i, cmd_name))
+                channel(_("----------"))
+                return
+
+            if subcommand == "classify":
                 elements.classify(
                     list(elements.elems(emphasized=True)), plan, plan.append
                 )
                 return
-            elif args[0] == "copy":
+            elif subcommand == "copy":
                 for c in elements.ops():
                     if not c.output:
                         continue
@@ -206,7 +211,7 @@ class Planner(Modifier):
                 channel(_("Copied Operations."))
                 self.context.signal("plan", self._default_plan, 1)
                 return
-            elif args[0] == "command":
+            elif subcommand == "command":
                 try:
                     for command_name in self.context.match("plan/%s" % args[1]):
                         plan_command = self.context.registered[command_name]
@@ -216,7 +221,7 @@ class Planner(Modifier):
                 except (KeyError, IndexError):
                     channel(_("No plan command found."))
                 return
-            elif args[0] == "preprocess":
+            elif subcommand == "preprocess":
                 if self.context.prehome:
                     if not self.context.rotary:
                         plan.insert(0, self.context.registered["plan/home"])
@@ -239,11 +244,11 @@ class Planner(Modifier):
                 self.conditional_jobadd_make_raster()
                 self.context.signal("plan", self._default_plan, 2)
                 return
-            elif args[0] == "validate":
+            elif subcommand == "validate":
                 self.execute()
                 self.context.signal("plan", self._default_plan, 3)
                 return
-            elif args[0] == "blob":
+            elif subcommand == "blob":
                 blob = CutCode()
                 first_index = None
                 for i, c in enumerate(plan):
@@ -267,7 +272,7 @@ class Planner(Modifier):
                         del plan[i]
                 self.context.signal("plan", self._default_plan, 4)
                 return
-            elif args[0] == "preopt":
+            elif subcommand == "preopt":
                 if self.context.opt_reduce_travel:
                     self.conditional_jobadd_optimize_travel()
                 if self.context.opt_inner_first:
@@ -278,35 +283,25 @@ class Planner(Modifier):
                     pass
                 self.context.signal("plan", self._default_plan, 5)
                 return
-            elif args[0] == "optimize":
+            elif subcommand == "optimize":
                 self.execute()
                 self.context.signal("plan", self._default_plan, 6)
                 return
-            elif args[0] == "clear":
+            elif subcommand == "clear":
                 plan.clear()
                 commands.clear()
                 self.context.signal("plan", self._default_plan, 0)
                 return
-            elif args[0] == "scale_speed":
+            elif subcommand == "scale_speed":
                 return
-            elif args[0] == "list":
-                channel(_("----------"))
-                channel(_("Plan %s:" % self._default_plan))
-                for i, op_name in enumerate(plan):
-                    channel("%d: %s" % (i, op_name))
-                channel(_("Commands %s:" % self._default_plan))
-                for i, cmd_name in enumerate(commands):
-                    channel("%d: %s" % (i, cmd_name))
-                channel(_("----------"))
-                return
-            elif args[0] == "spool":
+            elif subcommand == "spool":
                 active = context.active
                 if active is None:
                     return
                 context.active.spooler.jobs(plan)
                 channel(_("Spooled Plan."))
                 self.context.signal("plan", self._default_plan, 6)
-                return
+                return "plan", plan
             else:
                 channel(_("Unrecognized command."))
 

@@ -151,7 +151,7 @@ MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         kernel.register("module/wxMeerK40t", wxMeerK40t)
-    if lifecycle == "boot":
+    if lifecycle == "configure":
         kernel_root = kernel.get_context("/")
         kernel_root.open("module/wxMeerK40t")
     elif lifecycle == "mainloop":

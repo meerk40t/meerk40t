@@ -1671,7 +1671,7 @@ class Kernel:
                     except KeyError:
                         channel(_("Timer %s does not exist." % name))
                 return
-            if len(args) <= 3:
+            if len(args) <= 2:
                 channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
                 return
             try:

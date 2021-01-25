@@ -67,7 +67,7 @@ class JobPreview(wx.Frame, Module):
             self.on_check_beep_after,
             id=self.preview_menu.menu_autobeep.GetId(),
         )
-        self.preview_menu.menu_interrupt = wxglade_tmp_menu_sub.Append(
+        self.preview_menu.menu_autointerrupt = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
             "Interrupt",
             "Automatically add an interrupt after all jobs",
@@ -76,7 +76,7 @@ class JobPreview(wx.Frame, Module):
         self.Bind(
             wx.EVT_MENU,
             self.on_check_interrupt_after,
-            id=self.preview_menu.menu_interrupt.GetId(),
+            id=self.preview_menu.menu_autointerrupt.GetId(),
         )
         wxglade_tmp_menu.Append(wx.ID_ANY, "After", wxglade_tmp_menu_sub, "")
         self.preview_menu.Append(wxglade_tmp_menu, "Automatic")
@@ -409,10 +409,11 @@ class JobPreview(wx.Frame, Module):
         self.context.listen("element_property_update", self.on_element_property_update)
         self.context.listen("plan", self.plan_update)
 
-        self.preview_menu.menu_prehome.Check(self.context.prehome)
-        self.preview_menu.menu_autohome.Check(self.context.autohome)
-        self.preview_menu.menu_autoorigin.Check(self.context.autoorigin)
-        self.preview_menu.menu_autobeep.Check(self.context.autobeep)
+        self.preview_menu.menu_prehome.Check(bool(self.context.prehome))
+        self.preview_menu.menu_autohome.Check(bool(self.context.autohome))
+        self.preview_menu.menu_autoorigin.Check(bool(self.context.autoorigin))
+        self.preview_menu.menu_autobeep.Check(bool(self.context.autobeep))
+        self.preview_menu.menu_autointerrupt.Check(bool(self.context.autointerrupt))
 
         self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
         self.check_cut_inner_first.SetValue(self.context.opt_inner_first)
