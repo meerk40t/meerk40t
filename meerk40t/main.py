@@ -326,5 +326,8 @@ def run():
                 if console_command == "shutdown":
                     break
             kernel_root.channel("console").unwatch(print)
-        kernel.threaded(thread_text_console, thread_name="text_console")
+        if args.no_gui:
+            thread_text_console()
+        else:
+            kernel.threaded(thread_text_console, thread_name="text_console")
     kernel.bootstrap("mainloop")
