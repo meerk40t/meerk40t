@@ -1250,16 +1250,16 @@ class Kernel:
         def run():
             func_result = None
             channel(_("Thread: %s, Set" % thread_name))
-            try:
-                channel(_("Thread: %s, Start" % thread_name))
-                func_result = func()
-                channel(_("Thread: %s, End " % thread_name))
-            except:
-                channel(_("Thread: %s, Exception-End" % thread_name))
-                import sys
-
-                channel(sys.exc_info())
-                sys.excepthook(*sys.exc_info())
+            # try:
+            channel(_("Thread: %s, Start" % thread_name))
+            func_result = func()
+            channel(_("Thread: %s, End " % thread_name))
+            # except:
+            #     channel(_("Thread: %s, Exception-End" % thread_name))
+            #     import sys
+            #
+            #     channel(sys.exc_info())
+            #     sys.excepthook(*sys.exc_info())
             channel(_("Thread: %s, Unset" % thread_name))
             del self.threads[thread_name]
             if result is not None:
@@ -1915,6 +1915,9 @@ class Kernel:
                         channel(_("No Longer Watching Channel: %s") % chan)
                     except (KeyError, ValueError):
                         channel(_("Channel %s is not opened.") % chan)
+                elif value == "print":
+                    channel(_("Printing Channel: %s") % chan)
+                    self.channel(chan).watch(print)
                 elif value == "save":
                     from datetime import datetime
 
