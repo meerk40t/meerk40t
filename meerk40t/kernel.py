@@ -1227,7 +1227,7 @@ class Kernel:
 
     # Threads processing.
 
-    def threaded(self, func, thread_name=None, result=None):
+    def threaded(self, func, thread_name=None, result=None, daemon=False):
         """
         Register a thread, and run the provided function with the name if needed. When the function finishes this thread
         will exit, and deregister itself. During shutdown any active threads created will be told to stop and the kernel
@@ -1240,6 +1240,7 @@ class Kernel:
         :param func: The function to be executed.
         :param thread_name: The name under which the thread should be registered.
         :param result: Final runs after the thread is deleted.
+        :param daemon: set this thread as daemon
         :return: The thread object created.
         """
         self.thread_lock.acquire(True)  # Prevent dup-threading.
@@ -1273,6 +1274,7 @@ class Kernel:
 
         thread.run = run
         self.threads[thread_name] = thread
+        thread.daemon = daemon
         thread.start()
         self.thread_lock.release()
         return thread
