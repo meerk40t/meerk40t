@@ -252,6 +252,8 @@ class DeviceManager(wx.Frame, Module):
 
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
+        if item == -1:
+            return
         uid = self.devices_list.GetItem(item).Text
         context = self.context.get_context("/%s" % uid)
         context.open("window/Preferences", self)

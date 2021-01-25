@@ -88,16 +88,8 @@ class LhystudiosDevice(Modifier):
 
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
-        self.device_name = "Lhystudios"
-        self.device_location = "USB"
-        context.current_x = 0
-        context.current_y = 0
-        self.current_x = 0
-        self.current_y = 0
-
-        # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
-        self.interpreter = None
-        self.spooler = None
+        context.device_name = "Lhystudios"
+        context.device_location = "USB"
         self.state = STATE_UNKNOWN
         self.dx = 0
         self.dy = 0
@@ -145,57 +137,56 @@ class LhystudiosDevice(Modifier):
 
     def attach(self, *a, **kwargs):
         context = self.context
-        kernel = self.context._kernel
+        kernel = context._kernel
 
-        @self.context.console_command(
+        @context.console_command(
             "+laser", hidden=True, help="turn laser on in place"
         )
         def plus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
-        @self.context.console_command(
+        @context.console_command(
             "-laser", hidden=True, help="turn laser off in place"
         )
         def minus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
-        @self.context.console_command(
-            ("left", "right", "up", "down"), help="<direction> <amount>"
+        @context.console_argument("amount", type=Length, help="amount to move in the set direction.")
+        @context.console_command(
+            ("left", "right", "up", "down"), help="cmd <amount>"
         )
-        def direction(command, channel, _, args=tuple(), **kwargs):
+        def direction(command, channel, _, amount=None, args=tuple(), **kwargs):
             active = kernel.active_device
             spooler = active.spooler
 
             if spooler is None:
                 channel(_("Device has no spooler."))
                 return
-            if len(args) == 0:
-                amount = "1mm"
-            else:
-                amount = args[0]
+            if amount is None:
+                amount = Length("1mm")
             max_bed_height = active.bed_height * 39.3701
             max_bed_width = active.bed_width * 39.3701
             if command.endswith("right"):
-                self.dx += Length(amount).value(
+                self.dx += amount.value(
                     ppi=1000.0, relative_length=max_bed_width
                 )
             elif command.endswith("left"):
-                self.dx -= Length(amount).value(
+                self.dx -= amount.value(
                     ppi=1000.0, relative_length=max_bed_width
                 )
             elif command.endswith("up"):
-                self.dy -= Length(amount).value(
+                self.dy -= amount.value(
                     ppi=1000.0, relative_length=max_bed_height
                 )
             elif command.endswith("down"):
-                self.dy += Length(amount).value(
+                self.dy += amount.value(
                     ppi=1000.0, relative_length=max_bed_height
                 )
             kernel._console_queue("jog")
 
-        @self.context.console_command(
+        @context.console_command(
             "jog", hidden=True, help="executes outstanding jog buffer"
         )
         def jog(command, channel, _, args=tuple(), **kwargs):
@@ -211,72 +202,73 @@ class LhystudiosDevice(Modifier):
             else:
                 channel(_("Busy Error"))
 
-        @self.context.console_command(
+        @context.console_argument("x", type=Length, help="change in x")
+        @context.console_argument("y", type=Length, help="change in y")
+        @context.console_command(
             ("move", "move_absolute"), help="move <x> <y>: move to position."
         )
-        def move(command, channel, _, args=tuple(), **kwargs):
+        def move(command, channel, _, x, y, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
-            if len(args) == 2:
-                if not spooler.job_if_idle(self.execute_absolute_position(*args)):
-                    channel(_("Busy Error"))
-            else:
-                channel(_("Syntax Error"))
+            if y is None:
+                raise SyntaxError
+            if not spooler.job_if_idle(self.execute_absolute_position(x, y)):
+                channel(_("Busy Error"))
 
-        @self.context.console_command("move_relative", help="move_relative <dx> <dy>")
-        def move_relative(command, channel, _, args=tuple(), **kwargs):
+        @context.console_argument("dx", type=Length, help="change in x")
+        @context.console_argument("dy", type=Length, help="change in y")
+        @context.console_command("move_relative", help="move_relative <dx> <dy>")
+        def move_relative(command, channel, _, dx, dy, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
-            if len(args) == 2:
-                if not spooler.job_if_idle(self.execute_relative_position(*args)):
-                    channel(_("Busy Error"))
-            else:
-                channel(_("Syntax Error"))
+            if dy is None:
+                raise SyntaxError
+            if not spooler.job_if_idle(self.execute_relative_position(dx, dy)):
+                channel(_("Busy Error"))
 
-        @self.context.console_command("home", help="home the laser")
+        @context.console_command("home", help="home the laser")
         def home(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_HOME)
 
-        @self.context.console_command("unlock", help="unlock the rail")
+        @context.console_command("unlock", help="unlock the rail")
         def unlock(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_UNLOCK)
 
-        @self.context.console_command("lock", help="lock the rail")
+        @context.console_command("lock", help="lock the rail")
         def lock(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LOCK)
 
-        self.context.setting(str, "device_name", "Lhystudios")
+        context.setting(str, "device_name", "Lhystudios")
 
-        self.context._quit = False
+        context._quit = False
 
-        self.context.setting(int, "usb_index", -1)
-        self.context.setting(int, "usb_bus", -1)
-        self.context.setting(int, "usb_address", -1)
-        self.context.setting(int, "usb_serial", -1)
-        self.context.setting(int, "usb_version", -1)
+        context.setting(int, "usb_index", -1)
+        context.setting(int, "usb_bus", -1)
+        context.setting(int, "usb_address", -1)
+        context.setting(int, "usb_serial", -1)
+        context.setting(int, "usb_version", -1)
 
-        self.context.setting(bool, "mock", False)
-        self.context.setting(int, "packet_count", 0)
-        self.context.setting(int, "rejected_count", 0)
-        self.context.setting(bool, "autolock", True)
+        context.setting(bool, "mock", False)
+        context.setting(int, "packet_count", 0)
+        context.setting(int, "rejected_count", 0)
+        context.setting(bool, "autolock", True)
 
-        self.context.setting(str, "board", "M2")
-        self.context.setting(int, "bed_width", 310)
-        self.context.setting(int, "bed_height", 210)
-        self.context.setting(bool, "fix_speeds", False)
+        context.setting(str, "board", "M2")
+        context.setting(int, "bed_width", 310)
+        context.setting(int, "bed_height", 210)
+        context.setting(bool, "fix_speeds", False)
         self.dx = 0
         self.dy = 0
 
-        self.context.open_as("module/LhystudioController", "pipe")
-        self.context.open_as("module/LhystudioEmulator", "emulator")
-        self.context.activate("modifier/LhymicroInterpreter", self.context)
-        self.context.activate("modifier/Spooler")
+        context.open_as("module/LhystudioController", "pipe")
+        context.open_as("module/LhystudioEmulator", "emulator")
+        context.activate("modifier/LhymicroInterpreter", context)
+        context.activate("modifier/Spooler")
 
         context.listen("interpreter;mode", self.on_mode_change)
-
-        self.context.signal(
-            "bed_size", (self.context.bed_width, self.context.bed_height)
+        context.signal(
+            "bed_size", (context.bed_width, context.bed_height)
         )
 
     def detach(self, *args, **kwargs):
@@ -401,10 +393,11 @@ class LhymicroInterpreter(Interpreter, Modifier):
         self.holds.append(primary_hold)
 
     def attach(self, *a, **kwargs):
-        kernel = self.context._kernel
+        context = self.context
+        kernel = context._kernel
         _ = kernel.translation
 
-        @self.context.console_command(
+        @context.console_command(
             "pulse", help="pulse <time>: Pulse the laser in place."
         )
         def pulse(command, channel, _, args=tuple(), **kwargs):
@@ -439,7 +432,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
                 channel(_("Pulse laser failed: Busy"))
             return
 
-        @self.context.console_command("speed", help="Set Speed in Interpreter.")
+        @context.console_command("speed", help="Set Speed in Interpreter.")
         def speed(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("Speed set at: %f mm/s") % self.speed)
@@ -467,7 +460,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
             self.set_speed(s)
             channel(_("Speed set at: %f mm/s") % self.speed)
 
-        @self.context.console_command("power", help="Set Interpreter Power")
+        @context.console_command("power", help="Set Interpreter Power")
         def power(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("Power set at: %d pulses per inch") % self.power)
@@ -477,7 +470,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
                 except ValueError:
                     pass
 
-        @self.context.console_command(
+        @context.console_command(
             "acceleration", help="Set Interpreter Acceleration [1-4]"
         )
         def acceleration(command, channel, _, args=tuple(), **kwargs):
@@ -500,32 +493,29 @@ class LhymicroInterpreter(Interpreter, Modifier):
                     channel(_("Invalid Acceleration [1-4]."))
                     return
 
-        self.context.interpreter = self
+        context.interpreter = self
 
-        self.context.setting(int, "current_x", 0)
-        self.context.setting(int, "current_y", 0)
-
-        self.context.setting(bool, "strict", False)
-        self.context.setting(bool, "swap_xy", False)
-        self.context.setting(bool, "flip_x", False)
-        self.context.setting(bool, "flip_y", False)
-        self.context.setting(bool, "home_right", False)
-        self.context.setting(bool, "home_bottom", False)
-        self.context.setting(int, "home_adjust_x", 0)
-        self.context.setting(int, "home_adjust_y", 0)
-        self.context.setting(int, "buffer_max", 900)
-        self.context.setting(bool, "buffer_limit", True)
-        self.context.setting(int, "current_x", 0)
-        self.context.setting(int, "current_y", 0)
-
-        self.context.setting(bool, "opt_rapid_between", True)
-        self.context.setting(int, "opt_jog_mode", 0)
-        self.context.setting(int, "opt_jog_minimum", 127)
+        context.setting(bool, "strict", False)
+        context.setting(bool, "swap_xy", False)
+        context.setting(bool, "flip_x", False)
+        context.setting(bool, "flip_y", False)
+        context.setting(bool, "home_right", False)
+        context.setting(bool, "home_bottom", False)
+        context.setting(int, "home_adjust_x", 0)
+        context.setting(int, "home_adjust_y", 0)
+        context.setting(int, "buffer_max", 900)
+        context.setting(bool, "buffer_limit", True)
+        context.setting(int, "current_x", 0)
+        context.setting(int, "current_y", 0)
+        context.setting(bool, "opt_rapid_between", True)
+        context.setting(int, "opt_jog_mode", 0)
+        context.setting(int, "opt_jog_minimum", 127)
 
         self.update_codes()
 
-        current_x = self.context.current_x
-        current_y = self.context.current_y
+        current_x = context.current_x
+        current_y = context.current_y
+
         self.next_x = current_x
         self.next_y = current_y
         self.max_x = current_x
@@ -535,12 +525,12 @@ class LhymicroInterpreter(Interpreter, Modifier):
         self.start_x = current_x
         self.start_y = current_y
 
-        self.context.register("control/Realtime Pause_Resume", self.pause_resume)
-        self.context.register("control/Realtime Pause", self.pause)
-        self.context.register("control/Realtime Resume", self.resume)
-        self.context.register("control/Update Codes", self.update_codes)
+        context.register("control/Realtime Pause_Resume", self.pause_resume)
+        context.register("control/Realtime Pause", self.pause)
+        context.register("control/Realtime Resume", self.resume)
+        context.register("control/Update Codes", self.update_codes)
 
-        self.context.get_context("/").listen(
+        context.get_context("/").listen(
             "lifecycle;ready", self.on_interpreter_ready
         )
 
