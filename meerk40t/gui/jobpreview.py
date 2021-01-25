@@ -118,9 +118,11 @@ class JobPreview(wx.Frame, Module):
         self.preview_menu.Append(wxglade_tmp_menu, "Add")
         self.SetMenuBar(self.preview_menu)
         # Menu Bar end
+        self.connected_device = self.context.active
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=[str(self.connected_device)], style=wx.CB_DROPDOWN
         )
+        self.combo_device.SetSelection(0)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.slider_progress = wx.Slider(self, wx.ID_ANY, 10000, 0, 10000)
