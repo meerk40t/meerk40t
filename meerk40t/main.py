@@ -1,9 +1,8 @@
 import argparse
 import sys
 
-from .kernel import Kernel, STATE_TERMINATE
+from .kernel import Kernel
 from .device.lasercommandconstants import (
-    COMMAND_WAIT_FINISH,
     COMMAND_MODE_RAPID,
     COMMAND_SET_ABSOLUTE,
     COMMAND_MOVE,
@@ -26,7 +25,7 @@ for full details.
 
 """
 
-MEERK40T_VERSION = "0.7.0 Buggy-Beta-1"
+MEERK40T_VERSION = "0.7.0"
 
 
 def pair(value):

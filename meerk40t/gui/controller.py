@@ -6,7 +6,6 @@
 import wx
 
 from ..device.lasercommandconstants import REALTIME_RESET
-from ..device.lhystudios.lhystudiosdevice import get_code_string_from_code
 from .icons import (
     icons8_pause_50,
     icons8_end_50,
@@ -368,12 +367,11 @@ class Controller(wx.Frame, Module):
         except AttributeError:
             pass
 
-    def update_status(self, data):
-        status_data = data
+    def update_status(self, status_data, code_string):
         if status_data is not None:
             if isinstance(status_data, int):
                 self.text_desc.SetValue(str(status_data))
-                self.text_desc.SetValue(get_code_string_from_code(status_data))
+                self.text_desc.SetValue(code_string)
             else:
                 if len(status_data) == 6:
                     self.text_byte_0.SetValue(str(status_data[0]))
@@ -382,7 +380,7 @@ class Controller(wx.Frame, Module):
                     self.text_byte_3.SetValue(str(status_data[3]))
                     self.text_byte_4.SetValue(str(status_data[4]))
                     self.text_byte_5.SetValue(str(status_data[5]))
-                    self.text_desc.SetValue(get_code_string_from_code(status_data[1]))
+                    self.text_desc.SetValue(code_string)
         self.packet_count_text.SetValue(str(self.context.packet_count))
         self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
 
