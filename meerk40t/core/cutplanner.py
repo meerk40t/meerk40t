@@ -12,7 +12,7 @@ from ..device.lasercommandconstants import (
     COMMAND_HOME,
     COMMAND_WAIT,
     COMMAND_BEEP,
-    COMMAND_FUNCTION,
+    COMMAND_FUNCTION, COMMAND_UNLOCK,
 )
 from ..svgelements import (
     Matrix,
@@ -84,6 +84,7 @@ class Planner(Modifier):
 
         kernel.register("plan/home", self.home)
         kernel.register("plan/origin", self.origin)
+        kernel.register("plan/unlock", self.unlock)
         kernel.register("plan/wait", self.wait)
         kernel.register("plan/beep", self.beep)
         kernel.register("plan/interrupt", self.interrupt)
@@ -602,6 +603,11 @@ class Planner(Modifier):
         yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_MOVE, 0, 0
+
+    @staticmethod
+    def unlock():
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_UNLOCK
 
     @staticmethod
     def home():
