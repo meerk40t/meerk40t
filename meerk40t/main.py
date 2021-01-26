@@ -325,5 +325,5 @@ def run():
         if args.no_gui:
             thread_text_console()
         else:
-            kernel.threaded(thread_text_console, thread_name="text_console", daemon=True)
+            kernel.threaded(thread_text_console, thread_name="text_console")
     kernel.bootstrap("mainloop")
