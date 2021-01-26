@@ -69,6 +69,7 @@ class Planner(Modifier):
         self.context.setting(float, "scale_x", 1.0)
         self.context.setting(float, "scale_y", 1.0)
         self.context.setting(bool, "prehome", False)
+        self.context.setting(bool, "preunlock", False)
         self.context.setting(bool, "autohome", False)
         self.context.setting(bool, "autoorigin", False)
         self.context.setting(bool, "autobeep", True)
@@ -232,6 +233,8 @@ class Planner(Modifier):
                         plan.insert(0, self.context.registered["plan/home"])
                     else:
                         plan.insert(0, _("Home Before: Disabled (Rotary On)"))
+                if self.context.preunlock:
+                    plan.insert(0, self.context.registered["plan/unlock"])
                 if self.context.autobeep:
                     plan.append(self.context.registered["plan/beep"])
                 if self.context.autohome:
