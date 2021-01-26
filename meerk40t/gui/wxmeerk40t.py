@@ -4044,9 +4044,9 @@ class wxMeerK40t(wx.App, Module):
 
     def clear_control(self):
         kernel = self.context._kernel
-        if kernel.config is not None:
-            kernel.config.DeleteAll()
-            kernel.config = None
+        if kernel._config is not None:
+            kernel._config.DeleteAll()
+            kernel._config = None
             kernel.shutdown()
 
     def update_language(self, lang):
