@@ -166,7 +166,7 @@ class Planner(Modifier):
                 element.altered()
 
         @self.context.console_argument("subcommand", help="classify/copy/validate/blob/optimize/clear/list/spool")
-        @self.context.console_command("plan", help="plan<?> <command>", regex=True, input_type=(None, 'ops'), output_type="plan")
+        @self.context.console_command("plan", help="plan<?> <command>", regex=True, input_type=(None, 'ops'))
         def plan(command, channel, _, subcommand, args=tuple(), **kwargs):
             if len(command) > 4:
                 self._default_plan = command[4:]
