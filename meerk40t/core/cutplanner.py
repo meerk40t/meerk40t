@@ -165,9 +165,11 @@ class Planner(Modifier):
                     element *= Matrix.rotate(-angle)
                 element.altered()
 
-        @self.context.console_argument("subcommand", help="classify/copy/validate/blob/optimize/clear/list/spool")
-        @self.context.console_command("plan", help="plan<?> <command>", regex=True, input_type=(None, 'ops'))
-        def plan(command, channel, _, subcommand, args=tuple(), **kwargs):
+        @self.context.console_option("op", 'o', type=str,
+                                       help="unlock, origin, home")
+        @self.context.console_argument("subcommand", type=str, help="classify/copy/validate/blob/optimize/clear/list/spool")
+        @self.context.console_command("plan", help="plan<?> <command>", regex=True, input_type=(None, 'ops'), output_type='plan')
+        def plan(command, channel, _, subcommand, op=None, args=tuple(), **kwargs):
             if len(command) > 4:
                 self._default_plan = command[4:]
                 self.context.signal("plan", self._default_plan, None)
@@ -213,8 +215,10 @@ class Planner(Modifier):
                 self.context.signal("plan", self._default_plan, 1)
                 return
             elif subcommand == "command":
+                if op is None:
+                    raise SyntaxError
                 try:
-                    for command_name in self.context.match("plan/%s" % args[1]):
+                    for command_name in self.context.match("plan/%s" % op):
                         plan_command = self.context.registered[command_name]
                         plan.append(plan_command)
                         break
