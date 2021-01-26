@@ -73,15 +73,15 @@ class CameraInterface(wx.Frame, Module, Job):
             id=item.GetId(),
         )
 
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 0"), "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
         self.Bind(wx.EVT_MENU, self.swap_camera(0), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 1"), "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
         self.Bind(wx.EVT_MENU, self.swap_camera(1), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 2"), "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 2, "")
         self.Bind(wx.EVT_MENU, self.swap_camera(2), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 3"), "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 3, "")
         self.Bind(wx.EVT_MENU, self.swap_camera(3), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 4"), "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 4, "")
         self.Bind(wx.EVT_MENU, self.swap_camera(4), id=item.GetId())
 
         self.CameraInterface_menubar.Append(wxglade_tmp_menu, _("Camera"))
