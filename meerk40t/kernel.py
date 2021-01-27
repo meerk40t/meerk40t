@@ -546,7 +546,10 @@ class Kernel:
     of numbers.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, name, version, profile, config=None):
+        self.name = name
+        self.profile = profile
+        self.version = version
         self.lifecycle = "init"
         self._plugins = []
 

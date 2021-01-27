@@ -4033,7 +4033,7 @@ class wxMeerK40t(wx.App, Module):
         wx.Locale.AddCatalogLookupPathPrefix(resource_path("locale"))
         context._kernel.run_later = self.run_later
         context._kernel.translation = wx.GetTranslation
-        context._kernel.set_config(wx.Config("MeerK40t"))
+        context._kernel.set_config(wx.Config(context._kernel.profile))
         context.app = self  # Registers self as kernel.app
 
         context.setting(int, "language", None)

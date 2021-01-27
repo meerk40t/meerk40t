@@ -75,7 +75,7 @@ parser.add_argument(
     "-O", "--origin", action="store_true", help="return back to 0,0 on finish"
 )
 parser.add_argument("-S", "--speed", type=float, help="set the speed of all operations")
-
+parser.add_argument("-P", "--profile", type=str, default="MeerK40t", help="Specify a settings profile")
 
 def run():
     argv = sys.argv[1:]
@@ -86,7 +86,7 @@ def run():
         print("MeerK40t %s" % MEERK40T_VERSION)
         return
 
-    kernel = Kernel()
+    kernel = Kernel("MeerK40t", MEERK40T_VERSION, args.profile)
 
     """
     These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
