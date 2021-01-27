@@ -676,11 +676,11 @@ class CameraURI(wx.Frame, Module):
         _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: CameraURI.__set_properties
-        self.SetTitle("Camera URI")
-        self.list_uri.SetToolTip("Displays a list of registered camera URIs")
-        self.list_uri.AppendColumn("Index", format=wx.LIST_FORMAT_LEFT, width=69)
-        self.list_uri.AppendColumn("URI", format=wx.LIST_FORMAT_LEFT, width=348)
-        self.button_add.SetToolTip("Add a new URL")
+        self.SetTitle(_("Camera URI"))
+        self.list_uri.SetToolTip(_("Displays a list of registered camera URIs"))
+        self.list_uri.AppendColumn(_("Index"), format=wx.LIST_FORMAT_LEFT, width=69)
+        self.list_uri.AppendColumn(_("URI"), format=wx.LIST_FORMAT_LEFT, width=348)
+        self.button_add.SetToolTip(_("Add a new URL"))
         # end wxGlade
 
     def __do_layout(self):
@@ -748,7 +748,7 @@ class CameraURI(wx.Frame, Module):
     def on_list_activated(self, event):  # wxGlade: CameraURI.<event_handler>
         element = event.Text
         new_uri = self.camera_dict[element]
-        self.context.console("camera --uri %s\n" % new_uri)
+        self.context.console("camera --uri %s stop start\n" % new_uri)
         self.Close()
 
     def on_list_right_clicked(self, event):  # wxGlade: CameraURI.<event_handler>
