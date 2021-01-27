@@ -1,4 +1,4 @@
-from math import ceil, floor
+from math import ceil, floor, sqrt
 
 import wx
 from PIL import Image
@@ -16,7 +16,7 @@ from ..svgelements import (
     QuadraticBezier,
     CubicBezier,
     Arc,
-    Matrix,
+    Matrix, Length,
 )
 from .zmatrix import ZMatrix
 
@@ -155,12 +155,15 @@ class LaserRender:
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-    def set_element_pen(self, gc, element, zoomscale=1.0):
+    def set_element_pen(self, gc, element, zoomscale=1.0, width_scale=None):
         try:
-            sw = element.stroke_width if element.stroke_width is not None else 1.0
+            sw = element.stroke_width
         except AttributeError:
             sw = 1.0
-        limit = zoomscale ** 0.5
+        if sw is None:
+            sw = 1.0
+        limit = zoomscale**.5
+        limit /= width_scale
         if sw < limit:
             sw = limit
         self.set_pen(gc, element.stroke, width=sw)
@@ -175,14 +178,16 @@ class LaserRender:
         """Default draw routine for the shape element."""
         try:
             matrix = element.transform
+            width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = Matrix()
+            width_scale = 1.0
         if not hasattr(element, "cache") or element.cache is None:
             cache = self.make_path(gc, Path(element))
             element.cache = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, element, zoomscale=zoomscale)
+        self.set_element_pen(gc, element, zoomscale=zoomscale, width_scale=width_scale)
         self.set_element_brush(gc, element)
         if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:
             gc.FillPath(element.cache)
@@ -194,14 +199,16 @@ class LaserRender:
         """Default draw routine for the laser path element."""
         try:
             matrix = element.transform
+            width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = Matrix()
+            width_scale = 1.0
         if not hasattr(element, "cache") or element.cache is None:
             cache = self.make_path(gc, element)
             element.cache = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, element, zoomscale=zoomscale)
+        self.set_element_pen(gc, element, zoomscale=zoomscale, width_scale=width_scale)
         self.set_element_brush(gc, element)
         if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:
             gc.FillPath(element.cache)
@@ -212,8 +219,10 @@ class LaserRender:
     def draw_text(self, element, gc, draw_mode, zoomscale=1.0):
         try:
             matrix = element.transform
+            width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = Matrix()
+            width_scale = 1.0
         if hasattr(element, "wxfont"):
             font = element.wxfont
         else:
@@ -228,7 +237,7 @@ class LaserRender:
 
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, element, zoomscale=zoomscale)
+        self.set_element_pen(gc, element, zoomscale=zoomscale, width_scale=width_scale)
         self.set_element_brush(gc, element)
 
         if element.fill is None or element.fill == "none":
