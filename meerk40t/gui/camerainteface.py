@@ -668,7 +668,7 @@ class CameraURI(wx.Frame, Module):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.camera_setting = None
-        self.camera_dict = dict()
+        self.uri_list = dict()
         self.changed = False
 
     def __set_properties(self):
@@ -707,8 +707,12 @@ class CameraURI(wx.Frame, Module):
         self.context.close(self.name)
         self.Show()
         self.camera_setting = self.context.get_context("camera")
-        self.camera_dict = self.camera_setting._kernel.load_persistent_string_dict(self.camera_setting._path, suffix=True)
-        self.on_list_refresh()
+        keylist = self.camera_setting._kernel.load_persistent_string_dict(self.camera_setting._path, suffix=True)
+        if keylist is not None:
+            keys = [q for q in keylist]
+            keys.sort()
+            self.uri_list = [keylist[k] for k in keys]
+            self.on_list_refresh()
 
     def finalize(self, *args, **kwargs):
         self.commit()
@@ -720,34 +724,29 @@ class CameraURI(wx.Frame, Module):
     def commit(self):
         if not self.changed:
             return
+        for c in dir(self.camera_setting):
+            if not c.startswith("uri"):
+                continue
+            setattr(self.camera_setting, c, None)
         for c in list(self.camera_setting._kernel.keylist(self.camera_setting._path)):
-            try:
-                print(self.camera_setting)
-                setattr(self.camera_setting, c, None)
-                self.camera_setting.delete_persistent(c)
-            except (IndexError, AttributeError):
-                break
+            self.camera_setting._kernel.delete_persistent(c)
 
-        for key in self.camera_dict:
-            value = self.camera_dict[key]
-            if isinstance(value, str):
-                setattr(self.camera_setting, key, value)
+        for i, uri in enumerate(self.uri_list):
+            key = "uri%d" % i
+            setattr(self.camera_setting, key, uri)
         self.camera_setting.flush()
         self.context.signal("camera_uri_changed", True)
 
     def on_list_refresh(self):
         self.list_uri.DeleteAllItems()
-        for i, c in enumerate(self.camera_dict):
-            camera_item = self.camera_dict[c]
-            if camera_item == "":
-                continue
-            m = self.list_uri.InsertItem(i, c)
+        for i, uri in enumerate(self.uri_list):
+            m = self.list_uri.InsertItem(i, str(i))
             if m != -1:
-                self.list_uri.SetItem(m, 1, str(camera_item))
+                self.list_uri.SetItem(m, 1, str(uri))
 
     def on_list_activated(self, event):  # wxGlade: CameraURI.<event_handler>
-        element = event.Text
-        new_uri = self.camera_dict[element]
+        index = event.GetIndex()
+        new_uri = self.uri_list[index]
         self.context.console("camera --uri %s stop start\n" % new_uri)
         self.Close()
 
@@ -758,16 +757,16 @@ class CameraURI(wx.Frame, Module):
         convert = menu.Append(
             wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
         )
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(index), convert)
         convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(index), convert)
         self.PopupMenu(menu)
         menu.Destroy()
 
-    def on_tree_popup_delete(self, element):
+    def on_tree_popup_delete(self, index):
         def delete(event):
             try:
-                del self.camera_dict[element]
+                del self.uri_list[index]
             except KeyError:
                 pass
             self.changed = True
@@ -775,9 +774,9 @@ class CameraURI(wx.Frame, Module):
 
         return delete
 
-    def on_tree_popup_clear(self, element):
+    def on_tree_popup_clear(self, index):
         def delete(event):
-            self.camera_dict = dict()
+            self.uri_list = list()
             self.changed = True
             self.on_list_refresh()
 
@@ -787,10 +786,7 @@ class CameraURI(wx.Frame, Module):
         uri = self.text_uri.GetValue()
         if uri is None or uri == "":
             return
-        next_index = 1
-        while ("uri%d" % next_index) in self.camera_dict:
-            next_index += 1
-        self.camera_dict["uri%d" % next_index] = uri
+        self.uri_list.append(uri)
         self.text_uri.SetValue("")
         self.changed = True
         self.on_list_refresh()
