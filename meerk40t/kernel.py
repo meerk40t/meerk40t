@@ -546,10 +546,11 @@ class Kernel:
     of numbers.
     """
 
-    def __init__(self, name, version, profile, config=None):
+    def __init__(self, name, version, profile, path='/', config=None):
         self.name = name
         self.profile = profile
         self.version = version
+        self._path = path
         self.lifecycle = "init"
         self._plugins = []
 
@@ -1088,6 +1089,20 @@ class Kernel:
 
     # Persistent Object processing.
 
+    def abs_path(self, subpath):
+        """
+        The absolute path function determines the absolute path of the given subpath within the current path.
+
+        :param subpath: relative path to the path at this context
+        :return:
+        """
+        subpath = str(subpath)
+        if subpath.startswith("/"):
+            return subpath[1:]
+        if self._path is None or self._path == "/":
+            return subpath
+        return "%s/%s" % (self._path, subpath)
+
     def get_context(self, path):
         """
         Create a context derived from this kernel, at the given path.
@@ -1113,18 +1128,19 @@ class Kernel:
         """
         if self._config is None:
             return
+        path = self.abs_path(path)
         self._config.SetPath(path)
         more, value, index = self._config.GetFirstGroup()
         while more:
             yield value
             more, value, index = self._config.GetNextGroup(index)
-        self._config.SetPath("/")
+        self._config.SetPath('/')
 
     def read_item_persistent(self, key):
         """Directly read from persistent storage the value of an item."""
         if self._config is None:
             return None
-        return self._config.Read(key)
+        return self._config.Read(self.abs_path(key))
 
     def read_persistent(self, t, key, default=None):
         """
@@ -1137,6 +1153,7 @@ class Kernel:
         """
         if self._config is None:
             return default
+        key = self.abs_path(key)
         if default is not None:
             if t == str:
                 return self._config.Read(key, default)
@@ -1170,6 +1187,7 @@ class Kernel:
         """
         if self._config is None:
             return
+        key = self.abs_path(key)
         if isinstance(value, str):
             self._config.Write(key, value)
         elif isinstance(value, int):
@@ -1184,11 +1202,13 @@ class Kernel:
     def clear_persistent(self, path):
         if self._config is None:
             return
+        path = self.abs_path(path)
         self._config.DeleteGroup(path)
 
     def delete_persistent(self, key):
         if self._config is None:
             return
+        key = self.abs_path(key)
         self._config.DeleteEntry(key)
 
     def load_persistent_string_dict(self, path, dictionary=None, suffix=False):
@@ -1210,12 +1230,13 @@ class Kernel:
         """
         if self._config is None:
             return
+        path = self.abs_path(path)
         self._config.SetPath(path)
         more, value, index = self._config.GetFirstEntry()
         while more:
             yield "%s/%s" % (path, value)
             more, value, index = self._config.GetNextEntry(index)
-        self._config.SetPath("/")
+        self._config.SetPath('/')
 
     def set_config(self, config):
         """

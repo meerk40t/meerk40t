@@ -75,18 +75,22 @@ parser.add_argument(
     "-O", "--origin", action="store_true", help="return back to 0,0 on finish"
 )
 parser.add_argument("-S", "--speed", type=float, help="set the speed of all operations")
-parser.add_argument("-P", "--profile", type=str, default="MeerK40t", help="Specify a settings profile")
+parser.add_argument("-P", "--profile", type=int, default=None, help="Specify a settings profile index.")
 
 def run():
     argv = sys.argv[1:]
-    # argv = "-zamv laser_bowl_inner.svg".split()
+    # argv = "-P 0".split()
     args = parser.parse_args(argv)
 
     if args.version:
         print("MeerK40t %s" % MEERK40T_VERSION)
         return
 
-    kernel = Kernel("MeerK40t", MEERK40T_VERSION, args.profile)
+    if args.profile is not None:
+        path = 'profile%d' % args.profile
+    else:
+        path = ''
+    kernel = Kernel("MeerK40t", MEERK40T_VERSION, "MeerK40t", path)
 
     """
     These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
