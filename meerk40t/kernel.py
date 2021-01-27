@@ -731,8 +731,9 @@ class Kernel:
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
             context.boot()
+
         self.set_active_device(None)
-        for device in self.derivable("/"):
+        for device in list(self.derivable("/")):
             try:
                 d = int(device)
             except ValueError:
@@ -1098,10 +1099,8 @@ class Kernel:
         """
         subpath = str(subpath)
         if subpath.startswith("/"):
-            return subpath[1:]
-        if self._path is None or self._path == "/":
-            return subpath
-        return "%s/%s" % (self._path, subpath)
+            subpath = subpath[1:]
+        return "/%s/%s" % (self._path, subpath)
 
     def get_context(self, path):
         """
