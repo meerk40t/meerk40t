@@ -213,7 +213,8 @@ class LhystudioController(Module):
                     f.write("Document type : LHYMICRO-GL file\n")
                     f.write("File version: 1.0.01\n")
                     f.write("Copyright: Unknown\n")
-                    f.write("Creator-Software: MeerK40t v0.7.0 Buggy-Beta-1\n")
+                    f.write("Creator-Software: %s v%s\n" % (self.context._kernel.name,
+                                                            self.context._kernel.version))
                     f.write("\n")
                     f.write("%0%0%0%0%\n")
                     buffer = self._buffer

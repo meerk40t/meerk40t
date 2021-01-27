@@ -115,7 +115,7 @@ class BindAlias(Modifier):
             try:
                 self.context.open_as("module/TCPServer", "console-server", port=port)
                 send = self.context.channel("console-server/send")
-                send.greet = "MeerK40t 0.7.0 Buggy-Beta-1 Telnet Console.\r\n"
+                send.greet = "%s %s Telnet Console.\r\n" % (self.context._kernel.name, self.context._kernel.version)
                 send.line_end = "\r\n"
                 recv = self.context.channel("console-server/recv")
                 recv.watch(self.context.console)

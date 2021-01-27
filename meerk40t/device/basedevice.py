@@ -1,10 +1,9 @@
 import os
-import threading
 import time
 from threading import Lock
 
 from ..core.cutcode import LaserSettings
-from ..kernel import Modifier, Job
+from ..kernel import Modifier
 from .lasercommandconstants import *
 
 INTERPRETER_STATE_RAPID = 0
@@ -23,6 +22,187 @@ PLOT_DIRECTION = 32
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/Spooler", Spooler)
+        # kernel.register("modifier/Devices", Devices)
+        # kernel.register("modifier/Device", Device)
+    # if lifecycle == "boot":
+    #     kernel_root = kernel.get_context("/")
+        # kernel_root.activate('modifier/Devices')
+
+
+class Devices(Modifier):
+
+    def __init__(self, context, name=None, channel=None, *args, **kwargs):
+        Modifier.__init__(self, context, name, channel)
+        self._interpreters = dict()
+        self._pipes = dict()
+        self._devices = dict()
+
+    def attach(self, *a, **kwargs):
+        context = self.context
+        context.devices = self._devices
+        context.interpreters = self._interpreters
+        context.pipes = self._pipes
+
+        @context.console_argument("name", type=str, help="Spooler name.")
+        @context.console_command(
+            "device.*",
+            help="device+ (name), device- (name), devices",
+            regex=True,
+            output_type="device",
+        )
+        def device(command, channel, _, name, args=tuple(), **kwargs):
+            arg = command[7:]
+            if arg == "s":
+                channel(_("----------"))
+                channel(_("Devices:"))
+                for i, s in enumerate(self._devices):
+                    name = str(s)
+                    channel("%d: %s" % (i, name))
+                channel("----------")
+                return
+            if arg == "+":
+                if name in self._devices:
+                    channel(_("Device already exists, cannot create."))
+                    return
+                self.context.get_context('/device/%s' % name)
+                self.context.activate('modifier/Device')
+            return "device", self._devices[name]
+
+        @context.console_option("itype", 't', type=str, help='Interpreter type')
+        @context.console_argument("name", type=str, help="Interpreter name.")
+        @context.console_command(
+            "interpreter.*",
+            help="interpreter+ (name)",
+            regex=True,
+            input_type="device",
+            output_type="device",
+        )
+        def interpreter(
+            command, channel, _, name, itype=None, data=None, data_type=None, args=tuple(), **kwargs
+        ):
+            arg = command[7:]
+            if arg == "s":
+                channel(_("----------"))
+                channel(_("Interpreter:"))
+                for i, s in enumerate(self._interpreters):
+                    name = str(s)
+                    channel("%d: %s" % (i, name))
+                channel("----------")
+                channel(_("Interpreter Types:"))
+                for i, s in enumerate(self.context.match('interpreter/.*')):
+                    name = str(s)
+                    channel("%d: %s" % (i, name))
+                return
+            if arg == "+":
+                if name in self._interpreters:
+                    channel(_("Interpreter already exists, cannot create."))
+                    return
+                if itype is None:
+                    channel(_("Interpreter requires a type."))
+                    return
+                interp = self.context.registered.get('interpreter/%s' % itype)
+                if interp is None:
+                    channel(_("Interpreter type is unrecognized"))
+                    return
+                self._interpreters[name] = interp()
+            if data is not None:
+                inst = self._interpreters[name]
+                inst = data
+            return "interpreter", self._interpreters[name]
+
+        @context.console_option("dest", 'd', type=str, help="Destination of the Pipe.")
+        @context.console_option("ptype", 't', type=str, help='Pipe type')
+        @context.console_argument("name", type=str, help="Pipe name.")
+        @context.console_command(
+            "pipe.*",
+            help="pipe+ (name)",
+            regex=True,
+            input_type="device",
+            output_type="device",
+        )
+        def pipe(
+                command, channel, _, name, ptype=None, data=None, data_type=None, args=tuple(), **kwargs
+        ):
+            arg = command[4:]
+            if arg == "s":
+                channel(_("----------"))
+                channel(_("Pipe:"))
+                for i, s in enumerate(self._pipes):
+                    name = str(s)
+                    channel("%d: %s" % (i, name))
+                channel("----------")
+                channel(_("Pipe Types:"))
+                for i, s in enumerate(self.context.match('pipe/.*')):
+                    name = str(s)
+                    channel("%d: %s" % (i, name))
+                return
+            if arg == "+":
+                if name in self._pipes:
+                    channel(_("Pipe already exists, cannot create."))
+                    return
+                if ptype is None:
+                    channel(_("Pipe requires a type."))
+                    return
+                pipe_type = self.context.registered.get('interpreter/%s' % ptype)
+                if pipe_type is None:
+                    channel(_("Pipe type is unrecognized"))
+                    return
+                self._pipes[name] = pipe_type()
+            if data is not None:
+                inst = self._pipes[name]
+                data.pipe = inst
+            return "device", self._interpreters[name]
+
+    def detach(self, *a, **kwargs):
+        context = self.context
+        settings = context.derive("device")
+        settings.clear_persistent()
+
+        for i, dev in enumerate(self._devices):
+            for key in dir(dev):
+                if key.startswith("_"):
+                    continue
+                value = getattr(dev, key)
+                if value is None:
+                    continue
+                self.context.write_persistent(key, value)
+
+    def boot(self, *a, **kwargs):
+        settings = self.context.derive("device")
+        subitems = list(settings.derivable())
+        devs = [None] * len(subitems)
+        for i, v in enumerate(subitems):
+            dev_context = settings.derive(v)
+            dev_context.setting(str, "interpreter_path", None)
+            if dev_context.interpreter_path is not None:
+                dev_context.interpreter = dev_context.activate(settings.interpreter_path)
+            dev = settings.activate('modifier/Device', interpreter=dev_context.interpreter)
+            try:
+                devs[i] = dev
+            except (ValueError, IndexError):
+                devs.append(dev)
+        self._devices = devs
+
+
+class Device(Modifier):
+    def __init__(self, context, interpreter=None, name=None, channel=None, *args, **kwargs):
+        Modifier.__init__(self, context, name, channel)
+        self.context.activate('modifier/Spooler')
+        self.spooler = self.context.spooler
+        if interpreter is not None:
+            self.context.activate(interpreter)
+        else:
+            self.interpreter = None
+        self.pipes = []
+
+    def __repr__(self):
+        return "Spooler()"
+
+    def attach(self, *a, **kwargs):
+        """Overloaded attach to demand .spooler attribute."""
+        self.context.spooler = self.spooler
+        self.context.pipes = self.pipes
+        self.context.interpreter = self.interpreter
 
 
 class Interpreter:
