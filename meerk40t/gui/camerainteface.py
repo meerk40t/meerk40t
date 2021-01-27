@@ -18,6 +18,7 @@ CORNER_SIZE = 25
 
 class CameraInterface(wx.Frame, Module, Job):
     def __init__(self, context, path, parent, *args, **kwds):
+
         wx.Frame.__init__(
             self,
             parent,
@@ -33,6 +34,9 @@ class CameraInterface(wx.Frame, Module, Job):
             self.index = 0
         Job.__init__(self, job_name="Camera%d" % self.index)
         self.last_frame_index = -1
+
+        self.camera_setting = self.context.get_context("camera")
+        self.setting = self.camera_setting.derive(str(self.index))
 
         self.button_update = wx.BitmapButton(
             self, wx.ID_ANY, icons8_camera_50.GetBitmap()
@@ -91,9 +95,6 @@ class CameraInterface(wx.Frame, Module, Job):
         self.__set_properties()
         self.__do_layout()
 
-        self.camera_setting = None
-        self.setting = None
-
         self.image_width = -1
         self.image_height = -1
         self._Buffer = None
@@ -132,6 +133,9 @@ class CameraInterface(wx.Frame, Module, Job):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
         self.on_size(None)
+        self.setting.setting(int, "window_width", 640)
+        self.setting.setting(int, "window_height", 480)
+        self.SetSize(self.setting.window_width, self.setting.window_height)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
 
         self.context.setting(bool, "mouse_zoom_invert", False)
@@ -139,8 +143,6 @@ class CameraInterface(wx.Frame, Module, Job):
         self.context.setting(int, "bed_width", 310)  # Default Value
         self.context.setting(int, "bed_height", 210)  # Default Value
 
-        self.camera_setting = self.context.get_context("camera")
-        self.setting = self.camera_setting.derive(str(self.index))
         try:
             self.camera = self.setting.activate("modifier/Camera")
         except ValueError:
@@ -243,6 +245,7 @@ class CameraInterface(wx.Frame, Module, Job):
         self.context.schedule(self)
 
     def finalize(self, *args, **kwargs):
+        self.setting.window_width, self.setting.window_height = self.GetSize()
         try:
             self.Close()
             self.context.console("camera%d stop\n" % self.index)
