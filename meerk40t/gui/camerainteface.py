@@ -1,15 +1,15 @@
 import wx
 
-from ..kernel import Module, Job
-from .laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
 from .icons import (
     icons8_camera_50,
     icons8_picture_in_picture_alternative_50,
     icons8_detective_50,
     icons8_connected_50,
 )
+from .laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
 from .zmatrix import ZMatrix
-from ..svgelements import Matrix, Point
+from ..kernel import Module, Job
+from ..svgelements import Matrix, Point, Viewbox
 
 _ = wx.GetTranslation
 
@@ -125,6 +125,7 @@ class CameraInterface(wx.Frame, Module, Job):
         self.display_camera.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
         self.display_camera.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
 
+        self.display_camera.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         self.display_camera.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
         self.display_camera.Bind(wx.EVT_LEFT_UP, self.on_mouse_left_up)
         self.display_camera.Bind(
@@ -132,11 +133,14 @@ class CameraInterface(wx.Frame, Module, Job):
         )  # Focus follows mouse.
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-        self.on_size(None)
+        self.setting.setting(bool, "aspect", False)
+        self.setting.setting(str, "preserve_aspect", "xMinYMin meet")
         self.setting.setting(int, "window_width", 640)
         self.setting.setting(int, "window_height", 480)
-        self.SetSize(self.setting.window_width, self.setting.window_height)
+
         self.Bind(wx.EVT_SIZE, self.on_size, self)
+        self.SetSize(self.setting.window_width, self.setting.window_height)
+        self.on_update_buffer()
 
         self.context.setting(bool, "mouse_zoom_invert", False)
         self.context.setting(int, "draw_mode", 0)
@@ -261,7 +265,13 @@ class CameraInterface(wx.Frame, Module, Job):
         if height <= 0:
             height = 1
         self._Buffer = wx.Bitmap(width, height)
-        self.update_in_gui_thread()
+        self.aspect_matrix()
+        self.on_update_buffer()
+        try:
+            self.Refresh(True)
+            self.Update()
+        except RuntimeError:
+            pass
 
     def update_view(self):
         if self.camera is None:
@@ -281,6 +291,9 @@ class CameraInterface(wx.Frame, Module, Job):
         frame = self.camera.get_frame()
         if frame is None:
             return
+        else:
+            if self.frame_bitmap is None:
+                wx.CallAfter(self.on_size, None)
         bed_width = self.context.bed_width * 2
         bed_height = self.context.bed_height * 2
 
@@ -294,7 +307,12 @@ class CameraInterface(wx.Frame, Module, Job):
                 self.image_width = bed_width
                 self.image_height = bed_height
                 self.display_camera.SetSize((self.image_width, self.image_height))
-        self.update_in_gui_thread()
+        self.on_update_buffer()
+        try:
+            self.Refresh(True)
+            self.Update()
+        except RuntimeError:
+            pass
 
     def reset_perspective(self, event):
         """
@@ -333,7 +351,7 @@ class CameraInterface(wx.Frame, Module, Job):
         """
         try:
             wx.BufferedPaintDC(self.display_camera, self._Buffer)
-        except RuntimeError:
+        except (RuntimeError, TypeError):
             pass
 
     def on_update_buffer(self, event=None):
@@ -343,14 +361,14 @@ class CameraInterface(wx.Frame, Module, Job):
         :param event:
         :return:
         """
+        dm = self.context.draw_mode
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._Buffer)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        w, h = self._Buffer.GetSize()
+        dc.SetBackground(wx.WHITE_BRUSH)
         if self.frame_bitmap is None:
-            dc = wx.MemoryDC()
-            dc.SelectObject(self._Buffer)
-            dc.Clear()
-            gc = wx.GraphicsContext.Create(dc)
-            gc.SetBrush(wx.WHITE_BRUSH)
-            w, h = self._Buffer.GetSize()
-            gc.DrawRectangle(0, 0, w, h)
             font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, wx.BLACK)
             if self.camera is None:
@@ -362,21 +380,16 @@ class CameraInterface(wx.Frame, Module, Job):
             else:
                 gc.DrawText(_("Fetching Frame..."), 0, 0)
             gc.Destroy()
+            self.matrix.reset()
             return
-        dm = self.context.draw_mode
-        dc = wx.MemoryDC()
-        dc.SelectObject(self._Buffer)
-        dc.Clear()
-        w, h = dc.GetSize()
         if dm & DRAW_MODE_FLIPXY != 0:
             dc.SetUserScale(-1, -1)
             dc.SetLogicalOrigin(w, h)
-        dc.SetBackground(wx.WHITE_BRUSH)
-        gc = wx.GraphicsContext.Create(dc)  # Can crash at bitmap okay
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
+
         gc.PushState()
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         gc.DrawBitmap(self.frame_bitmap, 0, 0, self.image_width, self.image_height)
-        if not self.setting.correction_perspective:
+        if not self.setting.correction_perspective and not self.setting.aspect:
             if self.camera.perspective is None:
                 self.camera.perspective = (
                     [0, 0],
@@ -403,6 +416,13 @@ class CameraInterface(wx.Frame, Module, Job):
             dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()
         del dc
+
+    def aspect_matrix(self):
+        if self.setting.aspect:
+            v = Viewbox("0 0 %d %d" % (self.image_width, self.image_height), self.setting.preserve_aspect)
+            w, h = self.display_camera.GetSize()
+            v2 = Viewbox("0 0 %d %d" % (w, h))
+            self.matrix = Matrix(v.transform(v2))
 
     def convert_scene_to_window(self, position):
         """
@@ -470,6 +490,35 @@ class CameraInterface(wx.Frame, Module, Job):
             self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
         elif rotation < -1:
             self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
+
+    def on_mouse_right_down(self, event):
+        def enable_aspect(*args):
+            self.setting.aspect = not self.setting.aspect
+            self.aspect_matrix()
+            self.on_update_buffer()
+
+        def set_aspect(aspect):
+            def asp(e):
+                self.setting.preserve_aspect = aspect
+                self.aspect_matrix()
+                self.on_update_buffer()
+            return asp
+
+        menu = wx.Menu()
+        sub_menu = wx.Menu()
+        center = menu.Append(wx.ID_ANY, "Aspect", "", wx.ITEM_CHECK)
+        if self.setting.aspect:
+            center.Check(True)
+        self.Bind(wx.EVT_MENU, enable_aspect, center)
+        self.Bind(wx.EVT_MENU, set_aspect("xMinYMin meet"), sub_menu.Append(wx.ID_ANY, "xMinYMin meet", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, set_aspect("xMidYMid meet"),sub_menu.Append(wx.ID_ANY, "xMidYMid meet", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, set_aspect("xMidYMid slice"), sub_menu.Append(wx.ID_ANY, "xMidYMid slice", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, set_aspect("none"), sub_menu.Append(wx.ID_ANY, "none", "", wx.ITEM_NORMAL))
+
+        menu.Append(wx.ID_ANY, _("Preserve: %s") % self.setting.preserve_aspect, sub_menu)
+        if menu.MenuItemCount != 0:
+            self.PopupMenu(menu)
+            menu.Destroy()
 
     def on_mouse_left_down(self, event):
         """
@@ -555,18 +604,6 @@ class CameraInterface(wx.Frame, Module, Job):
         """
         self.matrix.post_scale(sx, sy, ax, ay)
         self.on_update_buffer()
-
-    def update_in_gui_thread(self):
-        """
-        Redraw on the GUI thread.
-        :return:
-        """
-        self.on_update_buffer()
-        try:
-            self.Refresh(True)
-            self.Update()
-        except RuntimeError:
-            pass
 
     def on_check_perspective(self, event):
         """
