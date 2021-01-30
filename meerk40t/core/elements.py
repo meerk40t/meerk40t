@@ -277,6 +277,8 @@ class Elemental(Modifier):
         @context.console_command("path", help="path <svg path>")
         def path(command, channel, _, path_d, args=tuple(), **kwargs):
             args = kwargs.get("args", tuple())
+            if len(args) == 0:
+                raise SyntaxError
             path_d += " ".join(args)
             element = Path(path_d)
             self.add_element(element)

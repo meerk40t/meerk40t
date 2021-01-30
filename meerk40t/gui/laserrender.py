@@ -16,7 +16,7 @@ from ..svgelements import (
     QuadraticBezier,
     CubicBezier,
     Arc,
-    Matrix, Length,
+    Matrix
 )
 from .zmatrix import ZMatrix
 
@@ -162,7 +162,7 @@ class LaserRender:
             sw = 1.0
         if sw is None:
             sw = 1.0
-        limit = zoomscale**.5
+        limit = zoomscale ** .5
         limit /= width_scale
         if sw < limit:
             sw = limit
@@ -333,6 +333,7 @@ class LaserRender:
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.Clear()
+        dc.SetBackground(wx.Brush(wx.WHITE))
 
         matrix = Matrix()
         matrix.post_translate(-xmin, -ymin)
@@ -340,6 +341,7 @@ class LaserRender:
         scale_y = height / float(image_height)
         scale = min(scale_x, scale_y)
         matrix.post_scale(scale)
+
         gc = wx.GraphicsContext.Create(dc)
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
