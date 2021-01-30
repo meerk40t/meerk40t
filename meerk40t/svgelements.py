@@ -44,7 +44,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.4.6"
+SVGELEMENTS_VERSION = "1.4.7"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -161,7 +161,7 @@ SVG_VALUE_NON_SCALING_STROKE = "non-scaling-stroke"
 PATTERN_WS = r"[\s\t\n]*"
 PATTERN_COMMA = r"(?:\s*,\s*|\s+|(?=-))"
 PATTERN_COMMAWSP = r"[ ,\t\n\x09\x0A\x0C\x0D]+"
-PATTERN_FLOAT = "[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 PATTERN_LENGTH_UNITS = "cm|mm|Q|in|pt|pc|px|em|cx|ch|rem|vw|vh|vmin|vmax"
 PATTERN_ANGLE_UNITS = "deg|grad|rad|turn"
 PATTERN_TIME_UNITS = "s|ms"
@@ -195,13 +195,13 @@ PATTERN_TRANSFORM_UNITS = (
     PATTERN_LENGTH_UNITS + "|" + PATTERN_ANGLE_UNITS + "|" + PATTERN_PERCENT
 )
 
-REGEX_IRI = re.compile("url\(#?(.*)\)")
+REGEX_IRI = re.compile(r"url\(#?(.*)\)")
 REGEX_FLOAT = re.compile(PATTERN_FLOAT)
 REGEX_COORD_PAIR = re.compile(
     "(%s)%s(%s)" % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT)
 )
 REGEX_TRANSFORM_TEMPLATE = re.compile(
-    "(?u)(%s)%s\(([^)]+)\)" % (PATTERN_TRANSFORM, PATTERN_WS)
+    r"(?u)(%s)%s\(([^)]+)\)" % (PATTERN_TRANSFORM, PATTERN_WS)
 )
 REGEX_TRANSFORM_PARAMETER = re.compile(
     "(%s)%s(%s)?" % (PATTERN_FLOAT, PATTERN_WS, PATTERN_TRANSFORM_UNITS)
@@ -219,7 +219,7 @@ REGEX_COLOR_HSL = re.compile(
     r"hsla?\(\s*(%s)\s*,\s*(%s)%%\s*,\s*(%s)%%\s*(?:,\s*(%s)\s*)?\)"
     % (PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT)
 )
-REGEX_LENGTH = re.compile("(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
+REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
 REGEX_CSS_STYLE = re.compile(r"([^{]+)\s*\{\s*([^}]+)\s*\}")
 REGEX_CSS_FONT = re.compile(
     r"(?:(normal|italic|oblique)\s|(normal|small-caps)\s|(normal|bold|bolder|lighter|\d{3})\s|(normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded)\s)*\s*(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%))(?:/(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%)))?\s*(.*),?\s+(serif|sans-serif|cursive|fantasy|monospace);?"
@@ -7124,7 +7124,6 @@ class Group(SVGElement, Transformable, list):
     5.2. Grouping: the g element
     """
 
-    # TODO: This should override the Transformable math and propagate to children.
     def __init__(self, *args, **kwargs):
         Transformable.__init__(self, *args, **kwargs)
         list.__init__(self)
@@ -7135,34 +7134,90 @@ class Group(SVGElement, Transformable, list):
                 return
         SVGElement.__init__(self, *args, **kwargs)
 
+    def __imul__(self, other):
+        if isinstance(other, str):
+            other = Matrix(other)
+        if isinstance(other, Matrix):
+            self.transform *= other
+            for e in self:
+                e *= other
+        return self
+
     def render(self, **kwargs):
         Transformable.render(self, **kwargs)
 
     def __copy__(self):
         return Group(self)
 
+    def property_by_object(self, s):
+        Transformable.property_by_object(self, s)
+
+    def property_by_values(self, values):
+        Transformable.property_by_values(self, values)
+
     def select(self, conditional=None):
         """
         Finds all flattened subobjects of this group for which the conditional returns
         true.
 
-        :param conditional: function taking element and returns True or False if matching
+        :param conditional: function taking element and returns True to include or False if exclude
         """
         if conditional is None:
-
-            def conditional(item):
-                return True
-
-        for subitem in self:
-            if not conditional(subitem):
-                continue
-            yield subitem
-            if isinstance(subitem, Group):
-                for s in subitem.select(conditional):
-                    yield s
+            for subitem in self:
+                yield subitem
+                if isinstance(subitem, Group):
+                    for s in subitem.select(conditional):
+                        yield s
+        else:
+            for subitem in self:
+                if conditional(subitem):
+                    yield subitem
+                if isinstance(subitem, Group):
+                    for s in subitem.select(conditional):
+                        yield s
 
     def reify(self):
-        pass
+        Transformable.reify(self)
+
+    def bbox(self, transformed=True):
+        """
+        Returns the bounding box of the given object.
+
+        In the case of groups this is the union of all the bounding boxes of all bound children.
+
+        Setting transformed to false, may yield unexpected results if subitems are transformed in non-uniform
+        ways.
+
+        :param transformed: bounding box of the properly transformed children.
+        :return:
+        """
+        boundary_points = []
+        for e in self.select():
+            if not hasattr(e, 'bbox'):
+                continue
+            box = e.bbox(False)
+            if box is None:
+                continue
+            top_left = (box[0], box[1])
+            top_right = (box[2], box[1])
+            bottom_left = (box[0], box[3])
+            bottom_right = (box[2], box[3])
+            if transformed:
+                top_left = e.transform.point_in_matrix_space(top_left)
+                top_right = e.transform.point_in_matrix_space(top_right)
+                bottom_left = e.transform.point_in_matrix_space(bottom_left)
+                bottom_right = e.transform.point_in_matrix_space(bottom_right)
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+        if len(boundary_points) == 0:
+            return None
+        xmin = min([e[0] for e in boundary_points])
+        ymin = min([e[1] for e in boundary_points])
+        xmax = max([e[0] for e in boundary_points])
+        ymax = max([e[1] for e in boundary_points])
+        return xmin, ymin, xmax, ymax
 
 
 class ClipPath(SVGElement, list):
@@ -7710,6 +7765,46 @@ class SVG(Group):
         self.height = None
         self.viewbox = None
         Group.__init__(self, *args, **kwargs)
+
+    @property
+    def implicit_position(self):
+        if not self.apply:
+            return Point(self.x, self.y)
+        point = Point(self.x, self.y)
+        point *= self.transform
+        return point
+
+    @property
+    def implicit_x(self):
+        if not self.apply:
+            return self.x
+        return self.implicit_position[0]
+
+    @property
+    def implicit_y(self):
+        if not self.apply:
+            return self.y
+        return self.implicit_position[1]
+
+    @property
+    def implicit_width(self):
+        if not self.apply:
+            return self.width
+        p = Point(self.width, 0)
+        p *= self.transform
+        origin = Point(0, 0)
+        origin *= self.transform
+        return origin.distance_to(p)
+
+    @property
+    def implicit_height(self):
+        if not self.apply:
+            return self.height
+        p = Point(0, self.height)
+        p *= self.transform
+        origin = Point(0, 0)
+        origin *= self.transform
+        return origin.distance_to(p)
 
     def property_by_object(self, s):
         Group.property_by_object(self, s)
