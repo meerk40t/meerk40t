@@ -4,12 +4,13 @@ from wx import Bitmap
 
 DARKMODE = False
 
+
 class PyEmbeddedImageInvertible(PyEmbeddedImage):
     def __init__(self, data):
         super().__init__(data)
 
     def GetBitmap(self, invert=False):
-        if DARKMODE:
+        if DARKMODE and invert:
             image = PyEmbeddedImage.GetImage(self)
             image.Replace(0, 0, 0, 255, 255, 255)
             return Bitmap(image)

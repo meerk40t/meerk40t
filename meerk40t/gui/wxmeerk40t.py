@@ -2627,7 +2627,7 @@ class RootNode(list):
             self,
             name=_("Operations"),
         )
-        self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
+        self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap(True))
         self.build_tree(self.node_operations, list(elements.ops()))
         for n in self.node_operations:
             try:
@@ -2635,9 +2635,9 @@ class RootNode(list):
             except AttributeError:
                 op = None
             if op in ("Raster", "Image"):
-                n.set_icon(icons8_direction_20.GetBitmap())
+                n.set_icon(icons8_direction_20.GetBitmap(True))
             else:
-                n.set_icon(icons8_laser_beam_20.GetBitmap())
+                n.set_icon(icons8_laser_beam_20.GetBitmap(True))
             try:
                 c = n.object.color
                 n.set_color(c)
@@ -2647,17 +2647,17 @@ class RootNode(list):
         self.node_elements = Node(
             NODE_ELEMENTS_BRANCH, elements._elements, self, self, name=_("Elements")
         )
-        self.node_elements.set_icon(icons8_vector_20.GetBitmap())
+        self.node_elements.set_icon(icons8_vector_20.GetBitmap(True))
         self.build_tree(self.node_elements, list(elements.elems()))
 
         self.node_files = Node(
             NODE_FILES_BRANCH, elements.files(), self, self, name=_("Files")
         )
-        self.node_files.set_icon(icons8_file_20.GetBitmap())
+        self.node_files.set_icon(icons8_file_20.GetBitmap(True))
         self.build_tree(self.node_files, elements.files())
 
         for n in self.node_files:
-            n.set_icon(icons8_file_20.GetBitmap())
+            n.set_icon(icons8_file_20.GetBitmap(True))
 
         self.tree.ExpandAll()
 
