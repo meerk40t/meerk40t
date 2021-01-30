@@ -233,6 +233,7 @@ class JobPreview(wx.Frame, Module):
                 "Segoe UI",
             )
         )
+        self.button_start.SetForegroundColour(wx.BLACK)
         self.button_start.SetToolTip("Start the Laser Job")
         self.button_start.SetBitmap(icons8_laser_beam_52.GetBitmap())
         # end wxGlade

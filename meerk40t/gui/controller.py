@@ -190,6 +190,7 @@ class Controller(wx.Frame, Module):
                 "Segoe UI",
             )
         )
+        self.button_controller_control.SetForegroundColour(wx.BLACK)
         self.button_controller_control.SetToolTip(
             _("Change the currently performed operation.")
         )
@@ -208,6 +209,7 @@ class Controller(wx.Frame, Module):
                 "Segoe UI",
             )
         )
+        self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetToolTip(
             _("Force connection/disconnection from the device.")
         )
