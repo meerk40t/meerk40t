@@ -332,8 +332,8 @@ class LaserRender:
         bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
-        dc.Clear()
         dc.SetBackground(wx.Brush(wx.WHITE))
+        dc.Clear()
 
         matrix = Matrix()
         matrix.post_translate(-xmin, -ymin)
