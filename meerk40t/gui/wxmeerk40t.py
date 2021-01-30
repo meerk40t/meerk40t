@@ -3937,6 +3937,8 @@ class wxMeerK40t(wx.App, Module):
 
     def __init__(self, context, path):
         wx.App.__init__(self, 0)
+        import meerk40t.gui.icons as icons
+        icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         Module.__init__(self, context, path)
         self.locale = None
         self.Bind(wx.EVT_CLOSE, self.on_app_close)
