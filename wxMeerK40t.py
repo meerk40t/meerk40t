@@ -9,6 +9,7 @@ import traceback
 
 import wx.ribbon as RB
 
+import icons
 from About import About
 from Adjustments import Adjustments
 from Alignment import Alignment
@@ -2978,6 +2979,8 @@ class wxMeerK40t(wx.App, Module):
     def __init__(self, device=None):
         self.init_device = device
         wx.App.__init__(self, 0)
+        import icons
+        icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         Module.__init__(self)
         self.locale = None
         self.Bind(wx.EVT_CLOSE, self.on_app_close)
