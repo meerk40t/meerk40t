@@ -67,57 +67,165 @@ class Elemental(Modifier):
         context.load_types = self.load_types
         context = self.context
 
+        # Element Select
         @context.console_command(
-            "select.*",
-            help="select inputted group",
-            regex=True,
+            "select",
+            help="Set these values as the selection.",
             input_type="elements",
             output_type="elements",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
-            """
-            select: Set these values as the selection.
-            select+: Add the input data to the selection
-            select-: Remove the input data from the selection
-            select^: Toggle the input data in the selection
-            """
-            arg = command[6:]
-            if arg == "":
-                self.set_selected(data)
-            elif arg == "^":
-                for e in data:
-                    if e.selected:
-                        e.unselect()
-                        e.unemphasize()
-                    else:
-                        e.select()
-                        e.emphasize()
-            elif arg == "+":
-                for e in data:
-                    if not e.selected:
-                        e.select()
-                        e.emphasize()
-            elif arg == "-":
-                for e in data:
-                    if e.selected:
-                        e.unselect()
-                        e.unemphasize()
+            self.set_selected(data)
             return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
-            "element.*",
-            help="element*, element<#,>*, element~, element!",
+            "select+",
+            help="Add the input to the selection",
+            input_type="elements",
+            output_type="elements",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            for e in data:
+                if not e.selected:
+                    e.select()
+                    e.emphasize()
+            return "elements", list(self.elems(emphasized=True))
+
+        @context.console_command(
+            "select-",
+            help="Remove the input data from the selection",
+            input_type="elements",
+            output_type="elements",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            for e in data:
+                if e.selected:
+                    e.unselect()
+                    e.unemphasize()
+            return "elements", list(self.elems(emphasized=True))
+
+        @context.console_command(
+            "select^",
+            help="Toggle the input data in the selection",
+            input_type="elements",
+            output_type="elements",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            for e in data:
+                if e.selected:
+                    e.unselect()
+                    e.unemphasize()
+                else:
+                    e.select()
+                    e.emphasize()
+            return "elements", list(self.elems(emphasized=True))
+
+        # Operation Select
+        @context.console_command(
+            "select",
+            help="Set these values as the selection.",
+            input_type="ops",
+            output_type="ops",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            self.set_selected(data)
+            return "ops", list(self.ops(emphasized=True))
+
+        @context.console_command(
+            "select+",
+            help="Add the input to the selection",
+            input_type="ops",
+            output_type="ops",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            for e in data:
+                if not e.selected:
+                    e.select()
+                    e.emphasize()
+            return "ops", list(self.ops(emphasized=True))
+
+        @context.console_command(
+            "select-",
+            help="Remove the input data from the selection",
+            input_type="ops",
+            output_type="ops",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            for e in data:
+                if e.selected:
+                    e.unselect()
+                    e.unemphasize()
+            return "ops", list(self.ops(emphasized=True))
+
+        @context.console_command(
+            "select^",
+            help="Toggle the input data in the selection",
+            input_type="ops",
+            output_type="ops",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            for e in data:
+                if e.selected:
+                    e.unselect()
+                    e.unemphasize()
+                else:
+                    e.select()
+                    e.emphasize()
+            return "ops", list(self.ops(emphasized=True))
+
+        # Element Base
+        @context.console_command(
+            "element*",
+            help="element*, all elements",
+            output_type="elements",
+        )
+        def element(command, channel, _, args=tuple(), **kwargs):
+            return "elements", list(self.elems())
+
+        @context.console_command(
+            "element~",
+            help="element~, all non-selected elements",
+            output_type="elements",
+        )
+        def element(command, channel, _, args=tuple(), **kwargs):
+            return "elements", list(self.elems(emphasized=False))
+
+        @context.console_command(
+            "element",
+            help="element, selected elements",
+            output_type="elements",
+        )
+        def element(command, channel, _, args=tuple(), **kwargs):
+            return "elements", list(self.elems(emphasized=True))
+
+        @context.console_command(
+            "elements",
+            help="list all elements in console",
+            output_type="elements",
+        )
+        def element(command, channel, _, args=tuple(), **kwargs):
+            channel(_("----------"))
+            channel(_("Graphical Elements:"))
+            i = 0
+            for e in self.elems():
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "..."
+                if e.emphasized:
+                    channel("%d: * %s" % (i, name))
+                else:
+                    channel("%d: %s" % (i, name))
+                i += 1
+            channel("----------")
+            return
+
+        @context.console_command(
+            r"element(\d+,?)+",
+            help="element0,3,4,5: elements 0, 3, 4, 5",
             regex=True,
             output_type="elements",
         )
         def element(command, channel, _, args=tuple(), **kwargs):
-            """
-            elements: show all elements.
-            element: selected elements
-            element*: all elements
-            element~: all non-selected elements
-            element0,3,4,5: elements 0, 3, 4, 5
-            """
             arg = command[7:]
             if arg == "":
                 return "elements", list(self.elems(emphasized=True))
@@ -153,6 +261,84 @@ class Elemental(Modifier):
                     except IndexError:
                         channel(_("index %d out of range") % value)
                 return "elements", element_list
+
+
+        @context.console_command(
+            "operations", help="operations: list operations", output_type="ops"
+        )
+        def operation(command, channel, _, args=tuple(), **kwargs):
+            channel(_("----------"))
+            channel(_("Operations:"))
+            for i, operation in enumerate(self.ops()):
+                selected = operation.selected
+                select = " *" if selected else "  "
+                color = (
+                    "None"
+                    if not hasattr(operation, "color") or operation.color is None
+                    else Color(operation.color).hex
+                )
+                name = "%d: %s %s - %s" % (i, str(operation), select, color)
+                channel(name)
+                if isinstance(operation, list):
+                    for q, oe in enumerate(operation):
+                        stroke = (
+                            "None"
+                            if not hasattr(oe, "stroke") or oe.stroke is None
+                            else oe.stroke.hex
+                        )
+                        fill = (
+                            "None"
+                            if not hasattr(oe, "stroke") or oe.fill is None
+                            else oe.fill.hex
+                        )
+                        ident = str(oe.id)
+                        name = "%s%d: %s-%s s:%s f:%s" % (
+                            "".ljust(5),
+                            q,
+                            str(type(oe).__name__),
+                            ident,
+                            stroke,
+                            fill,
+                        )
+                        channel(name)
+            channel(_("----------"))
+
+        @context.console_command(
+            "operation.*", help="operation: selected operations", output_type="ops"
+        )
+        def operation(command, channel, _, args=tuple(), **kwargs):
+            return "ops", list(self.ops(emphasized=True))
+
+        @context.console_command(
+            "operation*", help="operation*: all operations", output_type="ops"
+        )
+        def operation(command, channel, _, args=tuple(), **kwargs):
+            return "ops", list(self.ops())
+
+
+        @context.console_command(
+            "operation~", help="operation~: non selected operations.", output_type="ops"
+        )
+        def operation(command, channel, _, args=tuple(), **kwargs):
+            return "ops", list(self.ops(emphasized=False))
+
+        @context.console_command(
+            r"operation(\d+,?)+", help="operation0,2: operation #0 and #2", regex=True, output_type="ops"
+        )
+        def operation(command, channel, _, args=tuple(), **kwargs):
+            arg = command[9:]
+            op_selected = []
+            for value in arg.split(","):
+                try:
+                    value = int(value)
+                except ValueError:
+                    continue
+                try:
+                    operation = self.get_op(value)
+                    op_selected.append(operation)
+                except IndexError:
+                    channel(_("index %d out of range") % value)
+            return "ops", op_selected
 
         @context.console_command(
             "copy",
@@ -209,7 +395,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def subpath(command, channel, _, data=None, args=tuple(), **kwargs):
-            if not isinstance(list, data):
+            if not isinstance(data, list):
                 data = list(data)
             add = []
             for e in data:
@@ -284,16 +470,15 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        @context.console_argument("subcommand", help="copy|paste|cut|clear")
+        @context.console_option("name", "n", type=str)
         @context.console_command(
-            "clipboard.*",
-            regex=True,
-            help="clipboard<N> (copy|paste|cut|clear)",
+            "clipboard",
+            help="clipboard",
             input_type=(None, "elements"),
-            output_type="elements",
+            output_type="clipboard",
         )
         def clipboard(
-            command, channel, _, subcommand, data=None, args=tuple(), **kwargs
+            command, channel, _,  data=None, name=None, args=tuple(), **kwargs
         ):
             """
             Clipboard commands. Applies to current selected elements to
@@ -302,35 +487,106 @@ class Elemental(Modifier):
 
             The list command will list them but this is only for debug.
             """
-            if subcommand is None:
-                raise SyntaxError
-            if len(command) > 9:
-                self._clipboard_default = command[9:]
-            destination = self._clipboard_default
+            if name is not None:
+                self._clipboard_default = name
             if data is None:
-                data = list(self.elems(emphasized=True))
-            if subcommand == "copy":
-                self._clipboard[destination] = [copy(e) for e in data]
-                return "elements", self._clipboard[destination]
-            elif subcommand == "cut":
-                self._clipboard[destination] = [copy(e) for e in data]
-                self.remove_elements(data)
-                return "elements", self._clipboard[destination]
-            elif subcommand == "paste":
-                self.add_elems([copy(e) for e in self._clipboard[destination]])
-            elif subcommand == "contents":
-                return "elements", self._clipboard[destination]
-            elif subcommand == "clear":
-                old = self._clipboard[destination]
-                self._clipboard[destination] = None
-                return "elements", old
-            elif subcommand == "list":
-                for v in self._clipboard:
-                    k = self._clipboard[v]
-                    channel("%s: %s" % (str(v).ljust(5), str(k)))
-                return None
+                return "clipboard", list(self.elems(emphasized=True))
             else:
-                raise SyntaxError
+                return "clipboard", data
+
+        @context.console_command(
+            "copy",
+            help="clipboard copy",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard(
+            command, channel, _, data=None, args=tuple(), **kwargs
+        ):
+            destination = self._clipboard_default
+            self._clipboard[destination] = [copy(e) for e in data]
+            return "elements", self._clipboard[destination]
+
+        @context.console_option("dx", "x", help="paste offset x", type=Length)
+        @context.console_option("dy", "y", help="paste offset y", type=Length)
+        @context.console_command(
+            "paste",
+            help="clipboard paste",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard(
+            command, channel, _, data=None, dx=None, dy=None, args=tuple(), **kwargs
+        ):
+            destination = self._clipboard_default
+            pasted = [copy(e) for e in self._clipboard[destination]]
+            if dx is not None or dy is not None:
+                if dx is None:
+                    dx = 0
+                else:
+                    dx = dx.value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                if dy is None:
+                    dy = 0
+                else:
+                    dy = dy.value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                m = Matrix("translate(%s, %s)" % (dx, dy))
+                for e in pasted:
+                    e *= m
+            self.add_elems(pasted)
+            return "elements", pasted
+
+        @context.console_command(
+            "cut",
+            help="clipboard cut",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard(
+            command, channel, _, data=None, args=tuple(), **kwargs
+        ):
+            destination = self._clipboard_default
+            self._clipboard[destination] = [copy(e) for e in data]
+            self.remove_elements(data)
+            return "elements", self._clipboard[destination]
+
+        @context.console_command(
+            "clear",
+            help="clipboard clear",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard(
+            command, channel, _, data=None, args=tuple(), **kwargs
+        ):
+            destination = self._clipboard_default
+            old = self._clipboard[destination]
+            self._clipboard[destination] = None
+            return "elements", old
+
+        @context.console_command(
+            "contents",
+            help="clipboard contents",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard(
+            command, channel, _, data=None, args=tuple(), **kwargs
+        ):
+            destination = self._clipboard_default
+            return "elements", self._clipboard[destination]
+
+        @context.console_command(
+            "list",
+            help="clipboard list",
+            input_type="clipboard",
+        )
+        def clipboard(
+                command, channel, _, data=None, args=tuple(), **kwargs
+        ):
+            for v in self._clipboard:
+                k = self._clipboard[v]
+                channel("%s: %s" % (str(v).ljust(5), str(k)))
+            return None
 
         @context.console_argument("x_pos", type=Length)
         @context.console_argument("y_pos", type=Length)
@@ -1076,75 +1332,6 @@ class Elemental(Modifier):
                 # TODO: Note should take nargs.
                 self.note = note + " " + " ".join(args)
                 channel(_("Note Set."))
-
-        @context.console_command(
-            "operation.*", help="operation", regex=True, output_type="ops"
-        )
-        def operation(command, channel, _, args=tuple(), **kwargs):
-            """
-            operations: list operations
-            operation: selected operations
-            operation*: all operations
-            operation~: non selected operations.
-            operation0,2: operation #0 and #2
-            """
-            arg = command[9:]
-            if arg == "":
-                return "ops", list(self.ops(emphasized=True))
-            elif arg == "*":
-                return "ops", list(self.ops())
-            elif arg == "~":
-                return "ops", list(self.ops(emphasized=False))
-            elif arg == "s":
-                channel(_("----------"))
-                channel(_("Operations:"))
-                for i, operation in enumerate(self.ops()):
-                    selected = operation.selected
-                    select = " *" if selected else "  "
-                    color = (
-                        "None"
-                        if not hasattr(operation, "color") or operation.color is None
-                        else Color(operation.color).hex
-                    )
-                    name = "%d: %s %s - %s" % (i, str(operation), select, color)
-                    channel(name)
-                    if isinstance(operation, list):
-                        for q, oe in enumerate(operation):
-                            stroke = (
-                                "None"
-                                if not hasattr(oe, "stroke") or oe.stroke is None
-                                else oe.stroke.hex
-                            )
-                            fill = (
-                                "None"
-                                if not hasattr(oe, "stroke") or oe.fill is None
-                                else oe.fill.hex
-                            )
-                            ident = str(oe.id)
-                            name = "%s%d: %s-%s s:%s f:%s" % (
-                                "".ljust(5),
-                                q,
-                                str(type(oe).__name__),
-                                ident,
-                                stroke,
-                                fill,
-                            )
-                            channel(name)
-                channel(_("----------"))
-            else:
-                op_selected = []
-                for value in arg.split(","):
-                    try:
-                        value = int(value)
-                    except ValueError:
-                        continue
-                    try:
-                        operation = self.get_op(value)
-                        op_selected.append(operation)
-                    except IndexError:
-                        channel(_("index %d out of range") % value)
-                return "ops", op_selected
-            return
 
         @context.console_option("speed", "s", type=float)
         @context.console_option("power", "p", type=float)

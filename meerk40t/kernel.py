@@ -1,3 +1,4 @@
+import inspect
 import re
 import threading
 import time
@@ -15,6 +16,16 @@ STATE_PAUSE = 4
 STATE_END = 5
 STATE_WAIT = 7  # Controller is waiting for something. This could be aborted.
 STATE_TERMINATE = 10
+
+
+_cmd_parse = [
+    ("OPT", r"-([a-zA-Z]+)"),
+    ("LONG", r"--([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
+    ("PARAM", r"([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
+    ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
+]
+_CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
+
 
 
 class Modifier:
@@ -95,15 +106,6 @@ class Module:
         """Finalize is called after close() to unhook various kernelspace hooks. This will happen if kernel is being
         shutdown or if this individual module is being closed on its own."""
         pass
-
-
-_cmd_parse = [
-    ("OPT", r"-([a-zA-Z]+)"),
-    ("LONG", r"--([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
-    ("PARAM", r"([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
-    ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
-]
-_CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
 
 
 class Context:
@@ -1053,29 +1055,27 @@ class Kernel:
                 returned = func(command, channel=channel, **ik, **kwargs)
                 if returned is None:
                     value = None
-                    output_type = None
+                    out_type = None
                 else:
-                    output_type, value = returned
-                return value, remainder, output_type
+                    out_type, value = returned
+                return value, remainder, out_type
 
             # Main Decorator
             try:
                 kernel = self._kernel
-                subpath = self._path
             except AttributeError:
                 kernel = self
-                subpath = ""
-            cmd = "command"
-            cmd_path = "%s/%s" % (subpath, cmd)
-            while cmd_path.startswith("/"):
-                cmd_path = cmd_path[1:]
+
             if isinstance(path, tuple):
-                for subitem in path:
-                    p = "%s/%s" % (cmd_path, subitem)
-                    kernel.register(p, inner)
+                cmds = path
             else:
-                p = "%s/%s" % (cmd_path, path)
-                kernel.register(p, inner)
+                cmds = (path,)
+
+            if isinstance(input_type, tuple):
+                ins = input_type
+            else:
+                ins = (input_type,)
+
             inner.long_help = func.__doc__
             inner.help = help
             inner.regex = regex
@@ -1084,6 +1084,11 @@ class Kernel:
             inner.output_type = output_type
             inner.arguments = list()
             inner.options = list()
+
+            for cmd in cmds:
+                for i in ins:
+                    p = "command/%s/%s" % (i, cmd)
+                    kernel.register(p, inner)
             return inner
 
         return decorator
@@ -1551,93 +1556,84 @@ class Kernel:
     def command_boot(self):
         _ = self.translation
 
+        @self.console_option('output', 'o', help="Output type to match", type=str)
+        @self.console_option('input', 'i', help="Input type to match", type=str)
+        @self.console_argument('extended_help', type=str)
         @self.console_command(("help", "?"), hidden=True, help="help <help>")
-        def help(command, channel, _, args=tuple(), **kwargs):
-            if len(args) >= 1:
-                extended_help = args[0]
-                if self.active_device is not None:
-                    def advanced_help(func):
-                        help_args = []
-                        for a in func.arguments:
-                            arg_name = a.get('name', '')
-                            arg_type = a.get('type', type(None)).__name__
-                            help_args.append("<%s:%s>" % (arg_name, arg_type))
-                        channel("\t%s %s" % (extended_help, " ".join(help_args)))
-                        channel("\tInput(%s) -> %s -> Output(%s)" % (func.input_type, extended_help, func.output_type))
-                        if func.long_help is not None:
-                            channel(func.long_help)
-                        for a in func.arguments:
-                            arg_name = a.get('name', '')
-                            arg_type = a.get('type', type(None)).__name__
-                            arg_help = a.get('help')
-                            arg_help = ':\n\t\t%s' % arg_help if arg_help is not None else ''
-                            channel("\tArgument: %s '%s'%s" % (arg_type, arg_name, arg_help))
-                        for b in func.options:
-                            opt_name = b.get('name', '')
-                            opt_short = b.get('short', '')
-                            opt_type = b.get('type', type(None)).__name__
-                            opt_help = b.get('help')
-                            opt_help = ':\n\t\t%s' % opt_help if opt_help is not None else ''
-                            channel("\tOption: %s ('--%s', '-%s')%s" % (opt_type, opt_name, opt_short, opt_help))
-                    for command_name in self.match(
-                        "%s/command/%s" % (self.active_device._path, extended_help)
-                    ):
-                        command_func = self.registered[command_name]
-                        advanced_help(command_func)
-                        return
-                    for command_name in self.match("command/%s" % extended_help):
-                        command_func = self.registered[command_name]
-                        advanced_help(command_func)
-                        return
+        def help(command, channel, _, extended_help, output=None, input=None, args=tuple(), **kwargs):
+            """
+            'help' will display the list of accepted commands. Help <command> will provided extended help for
+            that topic. Help can be sub-specified by output or input type.
+            """
+            if extended_help is not None:
+                found = False
+                for command_name in self.match("command/.*/%s" % extended_help):
+                    parts = command_name.split("/")
+                    input_type = parts[1]
+                    command_item = parts[2]
+                    if command_item != extended_help:
+                        continue
+                    if input is not None and input != input_type:
+                        continue
+                    func = self.registered[command_name]
+                    if output is not None and output != func.output_type:
+                        continue
+                    help_args = []
+                    for a in func.arguments:
+                        arg_name = a.get('name', '')
+                        arg_type = a.get('type', type(None)).__name__
+                        help_args.append("<%s:%s>" % (arg_name, arg_type))
+                    if found:
+                        channel("\n")
+                    if func.long_help is not None:
+                        channel("\t" + inspect.cleandoc(func.long_help).replace('\n', ' '))
+                        channel("\n")
+
+                    channel("\t%s %s" % (extended_help, " ".join(help_args)))
+                    channel("\t(%s) -> %s -> (%s)" % (input_type, extended_help, func.output_type))
+                    for a in func.arguments:
+                        arg_name = a.get('name', '')
+                        arg_type = a.get('type', type(None)).__name__
+                        arg_help = a.get('help')
+                        arg_help = ':\n\t\t%s' % arg_help if arg_help is not None else ''
+                        channel("\tArgument: %s '%s'%s" % (arg_type, arg_name, arg_help))
+                    for b in func.options:
+                        opt_name = b.get('name', '')
+                        opt_short = b.get('short', '')
+                        opt_type = b.get('type', type(None)).__name__
+                        opt_help = b.get('help')
+                        opt_help = ':\n\t\t%s' % opt_help if opt_help is not None else ''
+                        channel("\tOption: %s ('--%s', '-%s')%s" % (opt_type, opt_name, opt_short, opt_help))
+                    found = True
+                if found:
+                    return
                 channel(_("No extended help for: %s") % extended_help)
                 return
 
-            if self.active_device is not None:
-                channel("--- %s Commands ---" % str(self.active_device))
-                for command_name in self.match(
-                    "%s/command/.*" % (self.active_device._path)
-                ):
-                    command_func = self.registered[command_name]
-                    help = command_func.help
-                    if command_func.hidden:
-                        continue
-                    if help is not None:
-                        channel("%s %s" % (command_name.split("/")[-1].ljust(15), help))
-                    else:
-                        channel(command_name.split("/")[-1])
-                for command_re in self.match(
-                    "%s/command_re/.*" % self.active_device._path
-                ):
-                    command_func = self.registered[command_re]
-                    help = command_func.help
-                    if command_func.hidden:
-                        continue
-                    cmd_re = command_re.split("/")[-1]
-                    if help is not None:
-                        channel("%s %s" % (cmd_re.ljust(15), help))
-                    else:
-                        channel(cmd_re)
-            channel("--- Global Commands ---")
-            for command_name in self.match("command/.*"):
-                command_func = self.registered[command_name]
-                help = command_func.help
-                if command_func.hidden:
+            matches = list(self.match("command/.*/.*"))
+            matches.sort()
+            previous_input_type = None
+            for command_name in matches:
+                parts = command_name.split("/")
+                input_type = parts[1]
+                command_item = parts[2]
+                if input is not None and input != input_type:
+                    continue
+                func = self.registered[command_name]
+                if output is not None and output != func.output_type:
+                    continue
+                if previous_input_type != input_type:
+                    command_class = input_type if input_type != 'None' else _("Base")
+                    channel(_("--- %s Commands ---") % command_class)
+                    previous_input_type = input_type
+
+                help = func.help
+                if func.hidden:
                     continue
                 if help is not None:
-                    channel("%s %s" % (command_name.split("/")[-1].ljust(15), help))
+                    channel("%s %s" % (command_item.ljust(15), help))
                 else:
                     channel(command_name.split("/")[-1])
-            for command_re in self.match("command_re/.*"):
-                command_func = self.registered[command_re]
-                help = command_func.help
-                if command_func.hidden:
-                    continue
-                cmd_re = command_re.split("/")[-1]
-                if help is not None:
-                    channel("%s %s" % (cmd_re.ljust(15), help))
-                else:
-                    channel(cmd_re)
-            return
 
         @self.console_command("loop", help="loop <command>")
         def loop(command, channel, _, args=tuple(), **kwargs):
@@ -2147,48 +2143,29 @@ class Kernel:
                 self.last_path = self.get_context(p)
                 command = path[-1]
 
-            # Process all commands in the active_context
-            # paths = ['command/%s' % command.replace(r'+', r'\+')]
-            paths = ["command/.*"]
-            if self.active_device is not None:
-                paths.insert(0, "%s/command/.*" % self.active_device._path)
-            if self.last_path is not None and self.last_path is not self.active_device:
-                paths.insert(0, "%s/command/.*" % self.last_path._path)
+            # Process command matches.
+            for command_name in self.match("command/%s/.*" % str(input_type)):
+                command_funct = self.registered[command_name]
+                cmd_re = command_name.split("/")[-1]
 
-            found = False
-            for match_text in paths:
-                # Process command matches.
-                for command_name in self.match(match_text):
-
-                    command_funct = self.registered[command_name]
-                    cmd_re = command_name.split("/")[-1]
-                    if isinstance(command_funct.input_type, tuple):
-                        if input_type not in command_funct.input_type:
-                            continue
-                    elif input_type != command_funct.input_type:
-                        continue  # We much match the input type.
-                    if command_funct.regex:
-                        match = re.compile(cmd_re)
-                        if not match.match(command):
-                            continue
-                    else:
-                        if cmd_re != command:
-                            continue
-                    try:
-                        data, remainder, input_type = command_funct(
-                            command, remainder, channel, data=data, data_type=input_type, _=_
-                        )
-                    except SyntaxError:
-                        channel(_("Syntax Error: %s") % command_funct.help)
-                    except ValueError:
-                        if not command_funct.regex:
-                            raise ValueError
-                        continue  # command match rejected.
-                    found = True
-                    break
-                if found:
-                    break
-
+                if command_funct.regex:
+                    match = re.compile(cmd_re)
+                    if not match.match(command):
+                        continue
+                else:
+                    if cmd_re != command:
+                        continue
+                try:
+                    data, remainder, input_type = command_funct(
+                        command, remainder, channel, data=data, data_type=input_type, _=_
+                    )
+                except SyntaxError:
+                    channel(_("Syntax Error: %s") % command_funct.help)
+                except ValueError:
+                    if not command_funct.regex:
+                        raise ValueError
+                    continue  # command match rejected.
+                break
             text = remainder
         return data
 
