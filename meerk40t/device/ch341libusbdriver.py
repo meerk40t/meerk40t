@@ -447,6 +447,9 @@ class CH341Driver:
     def write(self, packet):
         self.driver.CH341EppWriteData(self.driver_index, packet, len(packet))
 
+    def write_addr(self, packet):
+        self.driver.CH341EppWriteAddr(self.driver_index, packet, len(packet))
+
     def get_status(self):
         return self.driver.CH341GetStatus(self.driver_index)
 

@@ -145,12 +145,12 @@ def run():
     except ImportError:
         pass
 
-    try:
-        from .device.moshi import moshiboarddevice
+    # try:
+    from .device.moshi import moshidevice
 
-        kernel.add_plugin(moshiboarddevice.plugin)
-    except ImportError:
-        pass
+    kernel.add_plugin(moshidevice.plugin)
+    # except ImportError:
+    #     pass
 
     try:
         from .device.grbl import grbldevice

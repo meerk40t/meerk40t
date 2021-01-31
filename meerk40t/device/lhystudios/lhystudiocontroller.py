@@ -164,6 +164,19 @@ class LhystudioController(Module):
         send.__len__ = lambda: len(self._buffer) + len(self._queue)
         context.channel("%s/send_realtime" % name).watch(self.realtime_write)
 
+    def viewbuffer(self):
+        buffer = self._realtime_buffer + self._buffer + self._queue
+        try:
+            buffer_str = buffer.decode()
+        except ValueError:
+            try:
+                buffer_str = buffer.decode("utf8")
+            except UnicodeDecodeError:
+                buffer_str = str(buffer)
+        except AttributeError:
+            buffer_str = buffer
+        return buffer_str
+
     def initialize(self, *args, **kwargs):
         context = self.context
 
@@ -295,15 +308,15 @@ class LhystudioController(Module):
         context.register("control/Resume", resume_k40)
 
         self.context.get_context("/").listen(
-            "lifecycle;ready", self.on_interpreter_ready
+            "lifecycle;ready", self.on_controller_ready
         )
 
-    def on_interpreter_ready(self, *args):
+    def on_controller_ready(self, *args):
         self.start()
 
     def finalize(self, *args, **kwargs):
         self.context.get_context("/").unlisten(
-            "lifecycle;ready", self.on_interpreter_ready
+            "lifecycle;ready", self.on_controller_ready
         )
         if self._thread is not None:
             self.write(b"\x18\n")
