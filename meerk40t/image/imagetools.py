@@ -2,7 +2,7 @@ from os import path as ospath
 from copy import copy
 from math import ceil
 
-from ..core.cutplanner import CutPlanner
+from ..core.cutplanner import Planner
 from ..svgelements import SVGImage, Color, Length, Path, Matrix
 
 
@@ -37,7 +37,7 @@ def plugin(kernel, lifecycle=None):
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + "..."
-                yield channel(
+                channel(
                     "%d: (%d, %d) %s, %s"
                     % (
                         i,
@@ -145,7 +145,7 @@ def plugin(kernel, lifecycle=None):
         elif args[0] == "resample":
             for element in elements.elems(emphasized=True):
                 if isinstance(element, SVGImage):
-                    CutPlanner.make_actual(element)
+                    Planner.make_actual(element)
                     element.altered()
             return
         elif args[0] == "dither":

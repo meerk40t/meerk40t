@@ -1057,6 +1057,8 @@ class Kernel:
                     value = None
                     out_type = None
                 else:
+                    if not isinstance(returned, tuple) or len(returned) != 2:
+                        raise ValueError('"%s" from command "%s" returned improper values. "%s"' % (str(returned), command, str(kwargs)))
                     out_type, value = returned
                 return value, remainder, out_type
 
@@ -2161,9 +2163,9 @@ class Kernel:
                     )
                 except SyntaxError:
                     channel(_("Syntax Error: %s") % command_funct.help)
-                except ValueError:
+                except ValueError as e:
                     if not command_funct.regex:
-                        raise ValueError
+                        raise ValueError(e)
                     continue  # command match rejected.
                 break
             text = remainder

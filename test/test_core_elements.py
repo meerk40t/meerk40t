@@ -13,7 +13,7 @@ class TestElements(unittest.TestCase):
 
         :return:
         """
-        kernel = Kernel()
+        kernel = Kernel("MeerK40t", "testing", "MeerK40t", '')
         bootstrap(kernel)
         kernel_root = kernel.get_context("/")
         kernel_root.activate("modifier/Elemental")
@@ -29,7 +29,7 @@ class TestElements(unittest.TestCase):
 
         :return:
         """
-        kernel = Kernel()
+        kernel = Kernel("MeerK40t", "testing", "MeerK40t", '')
         bootstrap(kernel)
         kernel_root = kernel.get_context("/")
         kernel_root.activate("modifier/Elemental")

@@ -217,7 +217,6 @@ class Elemental(Modifier):
                     channel("%d: %s" % (i, name))
                 i += 1
             channel("----------")
-            return
 
         @context.console_command(
             r"element(\d+,?)+",
@@ -466,9 +465,7 @@ class Elemental(Modifier):
             if len(args) == 0:
                 raise SyntaxError
             path_d += " ".join(args)
-            element = Path(path_d)
-            self.add_element(element)
-            return
+            self.add_element(Path(path_d))
 
         @context.console_option("name", "n", type=str)
         @context.console_command(
@@ -586,15 +583,14 @@ class Elemental(Modifier):
             for v in self._clipboard:
                 k = self._clipboard[v]
                 channel("%s: %s" % (str(v).ljust(5), str(k)))
-            return None
 
         @context.console_argument("x_pos", type=Length)
         @context.console_argument("y_pos", type=Length)
         @context.console_argument("r_pos", type=Length)
         @context.console_command(
-            "circle", help="circle <x> <y> <r> or circle <r>", output_type="path"
+            "circle", help="circle <x> <y> <r> or circle <r>", input_type=("elements", None), output_type="elements"
         )
-        def circle(command, x_pos, y_pos, r_pos, args=tuple(), **kwargs):
+        def circle(command, x_pos, y_pos, r_pos, data=None, args=tuple(), **kwargs):
             if x_pos is None:
                 raise SyntaxError
             else:
@@ -609,16 +605,20 @@ class Elemental(Modifier):
                 height="%fmm" % self.context.bed_height,
             )
             self.add_element(circ)
-            return "path", circ
+            if data is None:
+                return "elements", [circ]
+            else:
+                data.append(circ)
+                return "elements", data
 
         @context.console_argument("x_pos", type=Length)
         @context.console_argument("y_pos", type=Length)
         @context.console_argument("rx_pos", type=Length)
         @context.console_argument("ry_pos", type=Length)
         @context.console_command(
-            "ellipse", help="ellipse <cx> <cy> <rx> <ry>", output_type="path"
+            "ellipse", help="ellipse <cx> <cy> <rx> <ry>", input_type=("elements", None), output_type="elements"
         )
-        def ellipse(command, x_pos, y_pos, rx_pos, ry_pos, args=tuple(), **kwargs):
+        def ellipse(command, x_pos, y_pos, rx_pos, ry_pos, data=None, args=tuple(), **kwargs):
             if ry_pos is None:
                 raise SyntaxError
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
@@ -628,7 +628,11 @@ class Elemental(Modifier):
                 height="%fmm" % self.context.bed_height,
             )
             self.add_element(ellip)
-            return "path", ellip
+            if data is None:
+                return "elements", [element]
+            else:
+                data.append(element)
+                return "elements", data
 
         @context.console_argument(
             "x_pos", type=Length, help="x position for top left corner of rectangle."
@@ -643,7 +647,7 @@ class Elemental(Modifier):
         @context.console_option("rx", "x", type=Length, help="rounded rx corner value.")
         @context.console_option("ry", "y", type=Length, help="rounded ry corner value.")
         @context.console_command(
-            "rect", help="adds rectangle to scene", output_type="path"
+            "rect", help="adds rectangle to scene", input_type=("elements", None), output_type="elements"
         )
         def rect(
             command,
@@ -653,6 +657,7 @@ class Elemental(Modifier):
             height,
             rx=None,
             ry=None,
+            data=None,
             args=tuple(),
             **kwargs
         ):
@@ -671,29 +676,36 @@ class Elemental(Modifier):
             )
             # rect = Path(rect)
             self.add_element(rect)
-            return "path", rect
+            if data is None:
+                return "elements", [rect]
+            else:
+                data.append(rect)
+                return "elements", data
 
         # @context.console_argument("text", type=str, nargs="*", help='height of the rectangle.')
-        @context.console_command("text", help="text <text>")
-        def text(command, channel, _, args=tuple(), **kwargs):
+
+        @context.console_command("text", help="text <text>", input_type=(None,"elements"), output_type="elements")
+        def text(command, channel, _, data=None, args=tuple(), **kwargs):
             text = " ".join(args)
             element = SVGText(text)
             self.add_element(element)
-            return "text", element
+            if data is None:
+                return "elements", [element]
+            else:
+                data.append(element)
+                return "elements", data
 
         # @context.console_argument("points", type=float, nargs="*", help='x, y of elements')
-        @context.console_command("polygon", help="polygon (<point>, <point>)*")
-        def polygon(command, channel, _, args=tuple(), **kwargs):
+        @context.console_command("polygon", help="polygon (<point>, <point>)*", input_type=("elements", None))
+        def polygon(command, channel, _, data=None, args=tuple(), **kwargs):
             element = Polygon(list(map(float, args)))
             self.add_element(element)
-            return "path", element
 
         # @context.console_argument("points", type=float, nargs="*", help='x, y of elements')
-        @context.console_command("polyline", help="polyline (<point>, <point>)*")
-        def polyline(command, args=tuple(), **kwargs):
+        @context.console_command("polyline", help="polyline (<point>, <point>)*", input_type=("elements", None))
+        def polyline(command, args=tuple(), data=None, **kwargs):
             element = Polyline(list(map(float, args)))
             self.add_element(element)
-            return "path", element
 
         @context.console_argument(
             "stroke_width", type=Length, help="Stroke-width for the given stroke"
@@ -914,7 +926,7 @@ class Elemental(Modifier):
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
-            return
+            return "elements", data
 
         @context.console_argument("scale_x", type=float, help="scale_x value")
         @context.console_argument("scale_y", type=float, help="scale_y value")
@@ -1021,7 +1033,7 @@ class Elemental(Modifier):
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
-            return
+            return "elements", data
 
         @context.console_argument("tx", type=Length, help="translate x value")
         @context.console_argument("ty", type=Length, help="translate y value")
@@ -1256,7 +1268,7 @@ class Elemental(Modifier):
                 e.transform.reset()
                 e.modified()
             context.signal("refresh_scene")
-            return
+            return "elements", data
 
         @context.console_command(
             "reify",
@@ -1281,7 +1293,7 @@ class Elemental(Modifier):
                 e.reify()
                 e.altered()
             context.signal("refresh_scene")
-            return
+            return "elements", data
 
         @context.console_command(
             "classify",
@@ -1386,6 +1398,7 @@ class Elemental(Modifier):
             self.add_op(op)
             return "ops", [op]
 
+        # TODO: Modernize
         @context.console_command("step", help="step <raster-step-size>")
         def step(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
@@ -1463,7 +1476,6 @@ class Elemental(Modifier):
                     yield COMMAND_MOVE, p[0], p[1]
 
             spooler.job(trace_hull)
-            return
 
         @context.console_command(
             "trace_quick", help="quick trace the bounding box of current elements"
@@ -1486,7 +1498,6 @@ class Elemental(Modifier):
                 yield COMMAND_MOVE, bbox[0], bbox[1]
 
             spooler.job(trace_quick)
-            return
 
     def detach(self, *a, **kwargs):
         context = self.context
