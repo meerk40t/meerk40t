@@ -229,10 +229,10 @@ def run():
 
     if len(devices) != 0:
         device = kernel_root.derive(str(devices[0]))
-        device.setting(str, "device_name", "Lhystudios")
+        device.setting(str, "device_name", "Moshi")
     else:
         device = kernel_root.derive("1")
-        device.activate("device/Lhystudios")
+        device.activate("device/Moshi")  # lhystudios
         kernel.set_active_device(device)
 
     if args.verbose:
