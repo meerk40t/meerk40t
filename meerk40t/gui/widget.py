@@ -933,6 +933,8 @@ class RectSelectWidget(Widget):
                     q = obj.bbox(True)
                 except AttributeError:
                     continue  # This element has no bounds.
+                if q is None:
+                    continue
                 sx = self.start_location[0]
                 sy = self.start_location[1]
                 ex = self.end_location[0]
