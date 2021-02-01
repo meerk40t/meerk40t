@@ -11,8 +11,8 @@ from ...svgelements import Length
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        pass
         # kernel.register("device/Moshi", MoshiDevice)
+        pass
 
 
 """

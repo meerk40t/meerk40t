@@ -54,6 +54,7 @@ class MoshiController(Module):
         self.refuse_counts = 0
         self.connection_errors = 0
         self.count = 0
+        self.abort_waiting = False
 
         self.pipe_channel = context.channel("%s/events" % name)
         self.usb_log = context.channel("%s/usb" % name, buffer_size=20)
@@ -118,7 +119,10 @@ class MoshiController(Module):
 
     def realtime_epilogue(self):
         """
+        Status 205
         After a jump / program
+        Status 207
+        Status 205 Done.
         :return:
         """
         self.realtime_pipe(swizzle_table[2][0])
@@ -317,29 +321,83 @@ class MoshiController(Module):
             self.context.signal("pipe;packet_text", packet)
             self.usb_send_channel(packet)
 
+    def _new_program(self):
+        if len(self._buffer) == 0:
+            if len(self._programs) == 0:
+                return  # There is nothing to run.
+            self.wait_until_accepting_packets()
+            self.realtime_prologue()
+            self._buffer = self._programs.pop(0)
+
+    def _send_buffer(self):
+        while len(self._buffer) != 0:
+            queue_processed = self.process_buffer()
+            self.refuse_counts = 0
+
+            if queue_processed:
+                # Packet was sent.
+                if self.state not in (
+                        STATE_PAUSE,
+                        STATE_BUSY,
+                        STATE_ACTIVE,
+                        STATE_TERMINATE,
+                ):
+                    self.update_state(STATE_ACTIVE)
+                self.count = 0
+            else:
+                # No packet could be sent.
+                if self.state not in (
+                        STATE_PAUSE,
+                        STATE_BUSY,
+                        STATE_BUSY,
+                        STATE_TERMINATE,
+                ):
+                    self.update_state(STATE_IDLE)
+                if self.count > 50:
+                    self.count = 50
+                time.sleep(0.02 * self.count)
+                # will tick up to 1 second waits if there's never a queue.
+                self.count += 1
+
+    def _wait_cycle(self):
+        if len(self._buffer) == 0:
+            self.realtime_epilogue()
+            self.wait_finished()
+
     def _thread_data_send(self):
         """
         Main threaded function to send data. While the controller is working the thread
         will be doing work in this function.
         """
+
         with self._main_lock:
             self.count = 0
             self.is_shutdown = False
+            stage = 0
             while self.state != STATE_END and self.state != STATE_TERMINATE:
-                if len(self._buffer) == 0:
-                    if len(self._programs) == 0:
-                        return  # There is nothing to run.
-                    self._buffer = self._programs.pop(0)
-
-                if self.state == STATE_INITIALIZE:
-                    # If we are initialized. Change that to active since we're running.
-                    self.update_state(STATE_ACTIVE)
                 try:
+                    if self.context.mock:
+                        _ = self.usb_log._
+                        self.usb_log(_("Using Mock Driver."))
+                    else:
+                        self.open()
+                    if self.state == STATE_INITIALIZE:
+                        # If we are initialized. Change that to active since we're running.
+                        self.update_state(STATE_ACTIVE)
+                    if stage == 0:
+                        self._new_program()
+                        stage = 1
+                    if len(self._buffer) == 0:
+                        break
                     # We try to process the queue.
-                    queue_processed = self.process_buffer()
-                    self.refuse_counts = 0
+                    if stage == 1:
+                        self._send_buffer()
+                        stage = 2
                     if self.is_shutdown:
-                        break  # Sometimes it could reset this and escape.
+                        break
+                    if stage == 2:
+                        self._wait_cycle()
+                        stage = 0
                 except ConnectionRefusedError:
                     # The attempt refused the connection.
                     self.refuse_counts += 1
@@ -356,31 +414,6 @@ class MoshiController(Module):
                     time.sleep(0.5)
                     self.close()
                     continue
-                if queue_processed:
-                    # Packet was sent.
-                    if self.state not in (
-                        STATE_PAUSE,
-                        STATE_BUSY,
-                        STATE_ACTIVE,
-                        STATE_TERMINATE,
-                    ):
-                        self.update_state(STATE_ACTIVE)
-                    self.count = 0
-                    continue
-                else:
-                    # No packet could be sent.
-                    if self.state not in (
-                        STATE_PAUSE,
-                        STATE_BUSY,
-                        STATE_BUSY,
-                        STATE_TERMINATE,
-                    ):
-                        self.update_state(STATE_IDLE)
-                    if self.count > 50:
-                        self.count = 50
-                    time.sleep(0.02 * self.count)
-                    # will tick up to 1 second waits if there's never a queue.
-                    self.count += 1
             self._thread = None
             self.is_shutdown = False
             self.update_state(STATE_END)
@@ -398,11 +431,6 @@ class MoshiController(Module):
         packet = buffer[:length]
 
         # Packet is prepared and ready to send. Open Channel.
-        if self.context.mock:
-            _ = self.usb_log._
-            self.usb_log(_("Using Mock Driver."))
-        else:
-            self.open()
 
         self.send_packet(packet)
         self.context.packet_count += 1
@@ -428,3 +456,45 @@ class MoshiController(Module):
         if self.context is not None:
             self.context.signal("pipe;status", self._status, get_code_string_from_moshicode(self._status[1]))
             self.recv_channel(str(self._status))
+
+    def wait_until_accepting_packets(self):
+        i = 0
+        while self.state != STATE_TERMINATE:
+            self.update_status()
+            status = self._status[1]
+            if status == 0:
+                raise ConnectionError
+            if status == STATUS_OK:
+                return
+            time.sleep(0.05)
+            i += 1
+            if self.abort_waiting:
+                self.abort_waiting = False
+                return  # Wait abort was requested.
+
+    def wait_finished(self):
+        i = 0
+        original_state = self.state
+        if self.state != STATE_PAUSE:
+            self.pause()
+
+        while True:
+            if self.state != STATE_WAIT:
+                self.update_state(STATE_WAIT)
+            self.update_status()
+            status = self._status[1]
+            if status == 0:
+                self.close()
+                self.open()
+                continue
+            if status == STATUS_OK:
+                break
+            if self.context is not None:
+                self.context.signal("pipe;wait", status, i)
+            i += 1
+            if self.abort_waiting:
+                self.abort_waiting = False
+                return  # Wait abort was requested.
+            if status == STATUS_PROCESSING:
+                time.sleep(0.5)  # Half a second between requests.
+        self.update_state(original_state)

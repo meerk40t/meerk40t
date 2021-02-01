@@ -114,10 +114,10 @@ class MoshiInterpreter(Interpreter, Modifier):
 
     def write_termination(self):
         """
-        Terminal Commands for Jump/Program. (last 6 bytes). (4)
+        Terminal Commands for Jump/Program. (last 7 bytes). (4)
         :return:
         """
-        for i in range(6):
+        for i in range(7):
             self.pipe(swizzle_table[2][0])
 
     def write_cut_abs(self, x, y):
@@ -297,6 +297,8 @@ class MoshiInterpreter(Interpreter, Modifier):
             self.move_relative(x, y)
         else:
             self.move_absolute(x, y)
+        self.ensure_rapid_mode()
+        self.control("execute\n")
 
     def move_absolute(self, x, y):
         self.ensure_program_mode()
@@ -306,8 +308,6 @@ class MoshiInterpreter(Interpreter, Modifier):
         self.context.current_x = x
         self.context.current_y = y
         self.context.signal('interpreter;position', (oldx, oldy, x, y))
-        self.ensure_rapid_mode()
-        self.control("execute\n")
 
 
     def move_relative(self, dx, dy):
