@@ -39,7 +39,7 @@ class MoshiController(Module):
 
         self._thread = None
         self._buffer = b""  # Threadsafe buffered commands to be sent to controller.
-        self._queue = b""  # Queued additional commands programs.
+        self._queue = bytearray()  # Queued additional commands programs.
         self._programs = []  # Programs to execute.
 
         self.context._buffer_size = 0
@@ -210,7 +210,7 @@ class MoshiController(Module):
                 return
             self._queue_lock.acquire(True)
             program = self._queue
-            self._queue = b''
+            self._queue = bytearray()
             self._queue_lock.release()
             self._programs.append(program)
             self.start()
@@ -269,7 +269,7 @@ class MoshiController(Module):
 
     def abort(self):
         self._buffer = b""
-        self._queue = b""
+        self._queue = bytearray()
         self.context.signal("pipe;buffer", 0)
         self.update_state(STATE_TERMINATE)
 
@@ -465,7 +465,7 @@ class MoshiController(Module):
             return False
 
         length = min(32, len(buffer))
-        packet = buffer[:length]
+        packet = bytes(buffer[:length])
 
         # Packet is prepared and ready to send. Open Channel.
 
