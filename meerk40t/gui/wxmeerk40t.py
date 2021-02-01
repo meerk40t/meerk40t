@@ -310,6 +310,10 @@ class MeerK40t(wx.Frame, Module, Job):
         self.scene.SetDoubleBuffered(True)
 
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
+
+        if self.is_dark:
+            provider = self._ribbon.GetArtProvider()
+            _update_ribbon_artprovider_for_dark_mode(provider)
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
         self.ribbon_position_x = 0.0
@@ -417,6 +421,10 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.Show()
         self.context.schedule(self)
+
+    @property
+    def is_dark(self):
+        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
 
     def __scene_binds(self):
         self.scene.Bind(wx.EVT_PAINT, self.on_paint)
@@ -623,7 +631,7 @@ class MeerK40t(wx.Frame, Module, Job):
         toolbar_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
-            _("Main"),
+            _("" if self.is_dark else "Main"),
             style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
         )
         toolbar = RB.RibbonButtonBar(toolbar_panel)
@@ -636,7 +644,7 @@ class MeerK40t(wx.Frame, Module, Job):
         windows_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
-            _("Windows"),
+            _("" if self.is_dark else "Windows"),
             icons8_opened_folder_50.GetBitmap(),
             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
@@ -3938,6 +3946,7 @@ class wxMeerK40t(wx.App, Module):
     def __init__(self, context, path):
         wx.App.__init__(self, 0)
         import meerk40t.gui.icons as icons
+
         icons.theme = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         icons.icon_r = 230
         icons.icon_g = 230
@@ -4159,7 +4168,10 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :param exc_traceback:
     :return:
     """
-    error_log = "MeerK40t crash log. Version: %s on %s\n" % ("0.7.0 Buggyish-Beta-6", sys.platform)
+    error_log = "MeerK40t crash log. Version: %s on %s\n" % (
+        "0.7.0 Buggyish-Beta-5",
+        sys.platform,
+    )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     print(error_log)
     try:
@@ -4194,6 +4206,74 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     )
     if answer == wx.YES:
         send_file_to_developers(filename)
+
+
+def _update_ribbon_artprovider_for_dark_mode(provider: RB.RibbonArtProvider) -> None:
+    def _set_ribbon_colour(
+        provider: RB.RibbonArtProvider, art_id_list: list, colour: wx.Colour
+    ) -> None:
+        for id_ in art_id_list:
+            provider.SetColour(id_, colour)
+
+    TEXTCOLOUR = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
+
+    BTNFACE_HOVER = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+    INACTIVE_BG = copy.copy(
+        wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
+    )
+    INACTIVE_TEXT = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT))
+    BTNFACE = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE))
+    BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
+
+    texts = [
+        RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
+        RB.RIBBON_ART_PANEL_LABEL_COLOUR,
+    ]
+    try:  # wx 4.0 compat, not supported on that
+        texts.extend(
+            [
+                RB.RIBBON_ART_TAB_ACTIVE_LABEL_COLOUR,
+                RB.RIBBON_ART_TAB_HOVER_LABEL_COLOUR,
+            ]
+        )
+        _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], INACTIVE_TEXT)
+    except AttributeError:
+        _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], TEXTCOLOUR)
+        pass
+    _set_ribbon_colour(provider, texts, TEXTCOLOUR)
+
+    backgrounds = [
+        RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TAB_CTRL_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_TAB_CTRL_BACKGROUND_GRADIENT_COLOUR,
+    ]
+    _set_ribbon_colour(provider, backgrounds, BTNFACE)
+    _set_ribbon_colour(
+        provider,
+        [
+            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
+            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_GRADIENT_COLOUR,
+            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
+            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
+        ],
+        INACTIVE_BG,
+    )
 
 
 sys.excepthook = handleGUIException
