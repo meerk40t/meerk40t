@@ -407,7 +407,7 @@ class Context:
         try:
             open_object = self._kernel.registered[registered_path]
         except KeyError:
-            raise ValueError
+            raise ValueError("Modifier not found.")
 
         instance = open_object(self, registered_path, *args, **kwargs)
         self.attached[registered_path] = instance

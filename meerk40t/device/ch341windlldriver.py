@@ -113,8 +113,26 @@ class CH341Driver:
         for i in range(length):
             obuf[i] = packet[i]
         length = (c_byte * 1)()
-        length[0] = 32
+        length[0] = len(packet)
         self.driver.CH341EppWriteData(self.driver_index, obuf, length)
+
+    def write_addr(self, packet):
+        """
+        Writes an address byte packet to the device. This is typically 1 byte
+        The driver will packetize the \0xA7 writes.
+
+        :param packet: 1 byte of data to be written to the CH341.
+        :return:
+        """
+        if self.driver_value == -1:
+            raise ConnectionError
+        length = len(packet)
+        obuf = (c_byte * length)()
+        for i in range(length):
+            obuf[i] = packet[i]
+        length = (c_byte * 1)()
+        length[0] = len(packet)
+        self.driver.CH341EppWriteAddr(self.driver_index, packet, length)
 
     def get_status(self):
         """

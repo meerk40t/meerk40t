@@ -25,7 +25,7 @@ for full details.
 
 """
 
-MEERK40T_VERSION = "0.7.0 Buggy-Beta-3"
+MEERK40T_VERSION = "0.7.0 Buggyish-Beta-5"
 
 
 def pair(value):
@@ -75,9 +75,13 @@ parser.add_argument(
     "-O", "--origin", action="store_true", help="return back to 0,0 on finish"
 )
 parser.add_argument("-S", "--speed", type=float, help="set the speed of all operations")
-parser.add_argument("-P", "--profile", type=int, default=None, help="Specify a settings profile index.")
+parser.add_argument("-P", "--profile", type=int, default=None, help="Specify a settings profile index")
+choices = ["Lhystudios", "Moshi"]
+parser.add_argument("-d", "--device", type=str, choices=choices, default="Lhystudios", help="Specify a default boot device type")
+
 
 def run():
+
     argv = sys.argv[1:]
     # argv = "-P 0".split()
     args = parser.parse_args(argv)
@@ -146,9 +150,9 @@ def run():
         pass
 
     try:
-        from .device.moshi import moshiboarddevice
+        from .device.moshi import moshidevice
 
-        kernel.add_plugin(moshiboarddevice.plugin)
+        kernel.add_plugin(moshidevice.plugin)
     except ImportError:
         pass
 
@@ -229,10 +233,10 @@ def run():
 
     if len(devices) != 0:
         device = kernel_root.derive(str(devices[0]))
-        device.setting(str, "device_name", "Lhystudios")
+        device.setting(str, "device_name", args.device)
     else:
         device = kernel_root.derive("1")
-        device.activate("device/Lhystudios")
+        device.activate("device/%s" % args.device)
         kernel.set_active_device(device)
 
     if args.verbose:

@@ -56,21 +56,14 @@ class BufferView(wx.Frame, Module):
         buffer = None
         if pipe is not None:
             try:
-                buffer = pipe._realtime_buffer + pipe._buffer + pipe._queue
+                buffer = pipe.viewbuffer()
             except AttributeError:
                 buffer = None
         if buffer is None:
             buffer = _("Could not find buffer.\n")
 
-        try:
-            buffer_str = buffer.decode()
-        except ValueError:
-            buffer_str = buffer.decode("ascii")
-        except AttributeError:
-            buffer_str = buffer
-
-        self.text_buffer_length = self.text_buffer_length.SetValue(str(len(buffer_str)))
-        self.text_buffer_info = self.text_buffer_info.SetValue(buffer_str)
+        self.text_buffer_length = self.text_buffer_length.SetValue(str(len(buffer)))
+        self.text_buffer_info = self.text_buffer_info.SetValue(buffer)
 
     def finalize(self, *args, **kwargs):
         try:
