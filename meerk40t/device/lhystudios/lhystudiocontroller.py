@@ -131,12 +131,12 @@ class LhystudioController(Module):
         self.is_shutdown = False
 
         self._thread = None
-        self._buffer = b""  # Threadsafe buffered commands to be sent to controller.
+        self._buffer = bytearray()  # Threadsafe buffered commands to be sent to controller.
         self._realtime_buffer = (
-            b""  # Threadsafe realtime buffered commands to be sent to the controller.
+             bytearray()  # Threadsafe realtime buffered commands to be sent to the controller.
         )
-        self._queue = b""  # Thread-unsafe additional commands to append.
-        self._preempt = b""  # Thread-unsafe preempt commands to prepend to the buffer.
+        self._queue = bytearray()  # Thread-unsafe additional commands to append.
+        self._preempt = bytearray()  # Thread-unsafe preempt commands to prepend to the buffer.
         self.context._buffer_size = 0
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
@@ -165,7 +165,7 @@ class LhystudioController(Module):
         context.channel("%s/send_realtime" % name).watch(self.realtime_write)
 
     def viewbuffer(self):
-        buffer = self._realtime_buffer + self._buffer + self._queue
+        buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
         try:
             buffer_str = buffer.decode()
         except ValueError:
@@ -230,8 +230,8 @@ class LhystudioController(Module):
                                                             self.context._kernel.version))
                     f.write("\n")
                     f.write("%0%0%0%0%\n")
-                    buffer = self._buffer
-                    buffer += self._queue
+                    buffer = bytes(self._buffer)
+                    buffer += bytes(self._queue)
                     f.write(buffer.decode("utf-8"))
             except (PermissionError, IOError):
                 channel(_("Could not save: %s" % filename))
@@ -373,7 +373,7 @@ class LhystudioController(Module):
         """
         self.pipe_channel("realtime_write(%s)" % str(bytes_to_write))
         self._preempt_lock.acquire(True)
-        self._preempt = bytes_to_write + self._preempt
+        self._preempt = bytearray(bytes_to_write) + self._preempt
         self._preempt_lock.release()
         self.start()
         self.update_buffer()
@@ -432,8 +432,8 @@ class LhystudioController(Module):
             self.update_state(STATE_ACTIVE)
 
     def abort(self):
-        self._buffer = b""
-        self._queue = b""
+        self._buffer = bytearray()
+        self._queue = bytearray()
         self.context.signal("pipe;buffer", 0)
         self.update_state(STATE_TERMINATE)
 
@@ -618,14 +618,14 @@ class LhystudioController(Module):
         if len(self._queue):  # check for and append queue
             self._queue_lock.acquire(True)
             self._buffer += self._queue
-            self._queue = b""
+            self._queue = bytearray()
             self._queue_lock.release()
             self.update_buffer()
 
         if len(self._preempt):  # check for and prepend preempt
             self._preempt_lock.acquire(True)
             self._realtime_buffer += self._preempt
-            self._preempt = b""
+            self._preempt = bytearray()
             self._preempt_lock.release()
             self.update_buffer()
 
@@ -646,7 +646,7 @@ class LhystudioController(Module):
             length = min(30, len(buffer))
         else:  # Line end found.
             length = min(30, len(buffer), find + 1)
-        packet = buffer[:length]
+        packet = bytes(buffer[:length])
 
         # edge condition of catching only pipe command without '\n'
         if packet.endswith((b"-", b"*", b"&", b"!", b"#", b"\x18")):
