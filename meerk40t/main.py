@@ -25,7 +25,7 @@ for full details.
 
 """
 
-MEERK40T_VERSION = "0.7.0 Buggy-Beta-3"
+MEERK40T_VERSION = "0.7.0 Moshi-Beta-4"
 
 
 def pair(value):
@@ -145,12 +145,12 @@ def run():
     except ImportError:
         pass
 
-    # try:
-    from .device.moshi import moshidevice
+    try:
+        from .device.moshi import moshidevice
 
-    kernel.add_plugin(moshidevice.plugin)
-    # except ImportError:
-    #     pass
+        kernel.add_plugin(moshidevice.plugin)
+    except ImportError:
+        pass
 
     try:
         from .device.grbl import grbldevice
@@ -229,10 +229,10 @@ def run():
 
     if len(devices) != 0:
         device = kernel_root.derive(str(devices[0]))
-        device.setting(str, "device_name", "Moshi")
+        device.setting(str, "device_name", "Lhystudios")
     else:
         device = kernel_root.derive("1")
-        device.activate("device/Moshi")  # lhystudios
+        device.activate("device/Lhystudios")  # lhystudios
         kernel.set_active_device(device)
 
     if args.verbose:
