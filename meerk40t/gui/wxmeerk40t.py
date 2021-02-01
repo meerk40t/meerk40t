@@ -4168,7 +4168,10 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :param exc_traceback:
     :return:
     """
-    error_log = "MeerK40t crash log. Version: %s on %s\n" % ("0.7.0 Buggyish-Beta-5", sys.platform)
+    error_log = "MeerK40t crash log. Version: %s on %s\n" % (
+        "0.7.0 Buggyish-Beta-5",
+        sys.platform,
+    )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     print(error_log)
     try:
@@ -4225,9 +4228,18 @@ def _update_ribbon_artprovider_for_dark_mode(provider: RB.RibbonArtProvider) -> 
     texts = [
         RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
         RB.RIBBON_ART_PANEL_LABEL_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_LABEL_COLOUR,
-        RB.RIBBON_ART_TAB_HOVER_LABEL_COLOUR,
     ]
+    try:  # wx 4.0 compat, not supported on that
+        texts.extend(
+            [
+                RB.RIBBON_ART_TAB_ACTIVE_LABEL_COLOUR,
+                RB.RIBBON_ART_TAB_HOVER_LABEL_COLOUR,
+            ]
+        )
+        _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], INACTIVE_TEXT)
+    except AttributeError:
+        _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], TEXTCOLOUR)
+        pass
     _set_ribbon_colour(provider, texts, TEXTCOLOUR)
 
     backgrounds = [
@@ -4262,7 +4274,6 @@ def _update_ribbon_artprovider_for_dark_mode(provider: RB.RibbonArtProvider) -> 
         ],
         INACTIVE_BG,
     )
-    _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], INACTIVE_TEXT)
 
 
 sys.excepthook = handleGUIException
