@@ -37,6 +37,8 @@ class MoshiInterpreter(Interpreter, Modifier):
 
         context.interpreter = self
 
+        context.setting(bool, "home_right", False)
+        context.setting(bool, "home_bottom", False)
         context.setting(int, "current_x", 0)
         context.setting(int, "current_y", 0)
         context.setting(bool, "opt_rapid_between", True)
@@ -121,26 +123,55 @@ class MoshiInterpreter(Interpreter, Modifier):
             self.pipe(swizzle_table[2][0])
 
     def write_cut_abs(self, x, y):
-        self.pipe(swizzle_table[15][0])
+        self.pipe(swizzle_table[15][1])
+        if x < 0:
+            x = 0
+        if y < 0:
+            y = 0
+        self.context.current_x = x
+        self.context.current_y = y
         self.write_int_16le(int(x))
         self.write_int_16le(int(y))
 
     def write_move_abs(self, x, y):
         self.pipe(swizzle_table[7][0])
+        if x < 0:
+            x = 0
+        if y < 0:
+            y = 0
+        self.context.current_x = x
+        self.context.current_y = y
         self.write_int_16le(int(x))
         self.write_int_16le(int(y))
 
     def write_move_vertical_abs(self, y):
+        if y < 0:
+            y = 0
+        self.context.current_y = y
         self.pipe(swizzle_table[3][0])
         self.write_int_16le(int(y))
 
     def write_move_horizontal_abs(self, x):
+        if x < 0:
+            x = 0
+        self.context.current_x = x
         self.pipe(swizzle_table[6][0])
         self.write_int_16le(int(x))
 
     def write_cut_horizontal_abs(self, x):
+        if x < 0:
+            x = 0
+        self.context.current_x = x
         self.pipe(swizzle_table[14][0])
         self.write_int_16le(int(x))
+
+    def write_cut_vertical_abs(self, y):
+        raise NotImplementedError  # We do not actually know what this is.
+        if y < 0:
+            y = 0
+        self.context.current_y = y
+        self.pipe(swizzle_table[3][0])
+        self.write_int_16le(int(y))
 
     def ensure_program_mode(self):
         if self.state == INTERPRETER_STATE_PROGRAM:
@@ -212,6 +243,7 @@ class MoshiInterpreter(Interpreter, Modifier):
                     ):
                         self.set_speed(p_set.speed)
                         self.set_step(p_set.raster_step)
+                        self.ensure_rapid_mode()
                     self.settings.set_values(p_set)
                     continue
                 if on & PLOT_AXIS:  # Major Axis.
@@ -221,7 +253,7 @@ class MoshiInterpreter(Interpreter, Modifier):
                 if on & (
                         PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    self.jog_absolute(x, y)
+                    self.move_absolute(x, y)
                     continue
                 else:
                     self.ensure_program_mode()
@@ -248,10 +280,12 @@ class MoshiInterpreter(Interpreter, Modifier):
             self.cut_relative(x, y)
         else:
             self.cut_absolute(x, y)
+        self.ensure_rapid_mode()
+        self.control("execute\n")
 
     def cut_absolute(self, x, y):
         self.ensure_program_mode()
-        self.write_cut_abs(x, x)
+        self.write_cut_abs(x, y)
 
         oldx = self.context.current_x
         oldy = self.context.current_y
@@ -265,32 +299,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         self.cut_absolute(x, y)
 
     def jog(self, x, y, **kwargs):
-        if self.is_relative:
-            self.jog_relative(x, y, **kwargs)
-        else:
-            self.jog_absolute(x, y, **kwargs)
-
-    def jog_absolute(self, x, y, **kwargs):
-        self.ensure_rapid_mode()
-        self.laser_off()
-        self.write_header()
-        self.write_int_8(19)  # Speed 20mm/s
-        self.write_int_8(0x27)  # Unknown
-        self.write_set_offset(0, x, y)
-        self.write_move_abs(0, 0)
-        self.write_termination()
-        self.control("execute\n")
-
-        oldx = self.context.current_x
-        oldy = self.context.current_y
-        self.context.current_x = x
-        self.context.current_y = y
-        self.context.signal('interpreter;position', (oldx, oldy, x, y))
-
-    def jog_relative(self, dx, dy, **kwargs):
-        x = dx + self.context.current_x
-        y = dy + self.context.current_y
-        self.jog_absolute(x, y)
+        self.move(x,y)
 
     def move(self, x, y):
         if self.is_relative:
@@ -302,13 +311,12 @@ class MoshiInterpreter(Interpreter, Modifier):
 
     def move_absolute(self, x, y):
         self.ensure_program_mode()
-        self.write_move_abs(x, y)
         oldx = self.context.current_x
         oldy = self.context.current_y
-        self.context.current_x = x
-        self.context.current_y = y
+        self.write_move_abs(x, y)
+        x = self.context.current_x
+        y = self.context.current_y
         self.context.signal('interpreter;position', (oldx, oldy, x, y))
-
 
     def move_relative(self, dx, dy):
         x = dx + self.context.current_x
@@ -337,7 +345,8 @@ class MoshiInterpreter(Interpreter, Modifier):
     def home(self):
         x, y = self.calc_home_position()
         self.ensure_rapid_mode()
-        self.move_absolute(x, y)
+        self.is_relative = False
+        self.move(x, y)
 
     def lock_rail(self):
         pass

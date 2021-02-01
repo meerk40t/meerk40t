@@ -80,6 +80,43 @@ class MoshiController(Module):
         context.register("control/Status Update", self.update_status)
         self.reset()
 
+        @self.context.console_command("usb_connect", help="Connect USB")
+        def usb_connect(command, channel, _, args=tuple(), **kwargs):
+            try:
+                self.open()
+            except ConnectionRefusedError:
+                channel("Connection Refused.")
+
+        @self.context.console_command("usb_disconnect", help="Disconnect USB")
+        def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
+            if self.driver is not None:
+                self.close()
+            else:
+                channel("Usb is not connected.")
+
+        @self.context.console_command("start", help="Start Pipe to Controller")
+        def pipe_start(command, channel, _, args=tuple(), **kwargs):
+            self.update_state(STATE_ACTIVE)
+            self.start()
+            channel("Moshi Channel Started.")
+
+        @self.context.console_command("hold", help="Hold Controller")
+        def pipe_pause(command, channel, _, args=tuple(), **kwargs):
+            self.update_state(STATE_PAUSE)
+            self.pause()
+            channel("Moshi Channel Paused.")
+
+        @self.context.console_command("resume", help="Resume Controller")
+        def pipe_resume(command, channel, _, args=tuple(), **kwargs):
+            self.update_state(STATE_ACTIVE)
+            self.start()
+            channel("Moshi Channel Resumed.")
+
+        @self.context.console_command("abort", help="Abort Job")
+        def pipe_abort(command, channel, _, args=tuple(), **kwargs):
+            self.reset()
+            channel("Moshi Channel Aborted.")
+
         def abort_wait():
             self.abort_waiting = True
 

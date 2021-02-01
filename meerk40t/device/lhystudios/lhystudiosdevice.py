@@ -13,7 +13,7 @@ from ...svgelements import Length
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("device/Lhystudios", LhystudiosDevice)
-        # pass
+        pass
 
 
 """
