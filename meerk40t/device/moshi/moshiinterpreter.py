@@ -122,6 +122,30 @@ class MoshiInterpreter(Interpreter, Modifier):
         for i in range(7):
             self.pipe(swizzle_table[2][0])
 
+    def write_op(self, x, y, cut=False):
+        if x == self.context.current_x and y == self.context.current_y:
+            return
+        if cut:
+            # TODO: WHY IS THIS WRONG? Rams wall rather than works?
+            # if x == self.context.current_x:
+            #     self.write_cut_abs(x, y)
+            #     # self.write_cut_vertical_abs(y)
+            # elif y == self.context.current_y:
+            #     self.write_cut_horizontal_abs(x=x) # ran towards wall
+            #     print(self.context.current_x)
+            #     # self.write_cut_abs(x, y)
+            # else:
+            self.write_cut_abs(x, y)
+        else:
+            # if x == self.context.current_x:
+            #     self.write_move_vertical_abs(y=y) # Good.
+            #     # self.write_move_abs(x, y)
+            # elif y == self.context.current_y:
+            #     # self.write_move_abs(x, y)
+            #     self.write_move_horizontal_abs(x=x) # Fast but no raster
+            # else:
+            self.write_move_abs(x, y)
+
     def write_cut_abs(self, x, y):
         self.pipe(swizzle_table[15][1])
         if x < 0:
@@ -257,10 +281,7 @@ class MoshiInterpreter(Interpreter, Modifier):
                     continue
                 else:
                     self.ensure_program_mode()
-                if on & 1:
-                    self.cut_absolute(x, y)
-                else:
-                    self.move_absolute(x, y)
+                self.goto_absolute(x, y, on&1)
             self.plot = None
         return False
 
@@ -274,6 +295,15 @@ class MoshiInterpreter(Interpreter, Modifier):
     def plot_start(self):
         if self.plot is None:
             self.plot = self.plot_planner.gen()
+
+    def goto_absolute(self, x, y, cut):
+        self.ensure_program_mode()
+        self.write_op(x, y, cut)
+        oldx = self.context.current_x
+        oldy = self.context.current_y
+        self.context.current_x = x
+        self.context.current_y = y
+        self.context.signal('interpreter;position', (oldx, oldy, x, y))
 
     def cut(self, x, y):
         if self.is_relative:
