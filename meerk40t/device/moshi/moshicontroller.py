@@ -171,6 +171,13 @@ class MoshiController(Module):
         """
         self.realtime_pipe(swizzle_table[1][0])
 
+    def realtime_laser(self):
+        """
+        Laser Command Toggle.
+        :return:
+        """
+        self.realtime_pipe(swizzle_table[7][0])
+
     def realtime_stop(self):
         """
         Stop command (likely same as freemotor):

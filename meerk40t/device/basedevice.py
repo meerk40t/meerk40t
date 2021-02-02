@@ -9,7 +9,8 @@ from .lasercommandconstants import *
 INTERPRETER_STATE_RAPID = 0
 INTERPRETER_STATE_FINISH = 1
 INTERPRETER_STATE_PROGRAM = 2
-INTERPRETER_STATE_MODECHANGE = 3
+INTERPRETER_STATE_RASTER = 3
+INTERPRETER_STATE_MODECHANGE = 4
 
 PLOT_FINISH = 256
 PLOT_RAPID = 4
@@ -411,6 +412,8 @@ class Interpreter:
                 self.ensure_rapid_mode()
             elif command == COMMAND_MODE_PROGRAM:
                 self.ensure_program_mode()
+            elif command == COMMAND_MODE_RASTER:
+                self.ensure_raster_mode()
             elif command == COMMAND_MODE_FINISHED:
                 self.ensure_finished_mode()
             elif command == COMMAND_WAIT:
@@ -559,6 +562,13 @@ class Interpreter:
             return
         self.state = INTERPRETER_STATE_PROGRAM
         self.context.signal("interpreter;mode", self.state)
+
+    def ensure_raster_mode(self, *values):
+        if self.state == INTERPRETER_STATE_RASTER:
+            return
+        self.state = INTERPRETER_STATE_RASTER
+        self.context.signal("interpreter;mode", self.state)
+
 
     def set_speed(self, speed=None):
         self.settings.speed = speed
