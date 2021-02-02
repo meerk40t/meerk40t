@@ -27,7 +27,7 @@ from ..core.cutplanner import CutPlanner
 from ..core.laseroperation import LaserOperation, CommandOperation
 from .devicemanager import DeviceManager
 from .icons import (
-    icons8_end_50,
+    icons8_emergency_stop_button_50,
     icons8_opened_folder_50,
     icons8_save_50,
     icons8_laser_beam_52,
@@ -323,7 +323,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.ribbon_position_units = 0
         self.ribbon_position_name = None
         self.__set_ribbonbar()
-        stop = wx.BitmapButton(self, wx.ID_ANY, icons8_end_50.GetBitmap())
+        stop = wx.BitmapButton(self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap())
         self.Bind(
             wx.EVT_BUTTON,
             lambda e: self.context.active.interpreter.realtime_command(REALTIME_RESET),

@@ -8,7 +8,7 @@ import wx
 from ..device.lasercommandconstants import REALTIME_RESET
 from .icons import (
     icons8_pause_50,
-    icons8_end_50,
+    icons8_emergency_stop_button_50,
     icons8_comments_50,
     icons8_connected_50,
     icons8_play_50,
@@ -74,7 +74,7 @@ class Controller(wx.Frame, Module):
         self.button_pause = wx.BitmapButton(
             self, wx.ID_ANY, icons8_pause_50.GetBitmap()
         )
-        self.button_stop = wx.BitmapButton(self, wx.ID_ANY, icons8_end_50.GetBitmap())
+        self.button_stop = wx.BitmapButton(self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()
@@ -518,7 +518,7 @@ class Controller(wx.Frame, Module):
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ffff")
             button.SetLabel(_("Manual Reset"))
-            button.SetBitmap(icons8_end_50.GetBitmap())
+            button.SetBitmap(icons8_emergency_stop_button_50.GetBitmap())
             button.Enable(True)
 
 
