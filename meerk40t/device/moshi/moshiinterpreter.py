@@ -7,7 +7,6 @@ from ..basedevice import (
     PLOT_RAPID,
     PLOT_JOG,
     INTERPRETER_STATE_PROGRAM,
-    INTERPRETER_STATE_RAPID,
     INTERPRETER_STATE_MODECHANGE,
     INTERPRETER_STATE_RAPID,
     INTERPRETER_STATE_FINISH,
@@ -300,8 +299,6 @@ class MoshiInterpreter(Interpreter, Modifier):
                     self.ensure_rapid_mode()
                     self.move_absolute(x, y)
                     continue
-                else:
-                    self.ensure_program_mode()
                 self.goto_absolute(x, y, on & 1)
             self.plot = None
         return False
@@ -321,7 +318,7 @@ class MoshiInterpreter(Interpreter, Modifier):
                 return
             if cut:
                 if x == self.context.current_x:
-                    self.write_cut_vertical_abs(y)
+                    self.write_cut_vertical_abs(y=y)
                 if y == self.context.current_y:
                     self.write_cut_horizontal_abs(x=x)
             else:
