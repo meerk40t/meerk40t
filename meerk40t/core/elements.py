@@ -261,7 +261,6 @@ class Elemental(Modifier):
                         channel(_("index %d out of range") % value)
                 return "elements", element_list
 
-
         @context.console_command(
             "operations", help="operations: list operations", output_type="ops"
         )
@@ -314,12 +313,18 @@ class Elemental(Modifier):
         def operation(command, channel, _, args=tuple(), **kwargs):
             return "ops", list(self.ops())
 
-
         @context.console_command(
             "operation~", help="operation~: non selected operations.", output_type="ops"
         )
         def operation(command, channel, _, args=tuple(), **kwargs):
             return "ops", list(self.ops(emphasized=False))
+
+
+        @context.console_command(
+            "operation", help="operation: selected operations.", output_type="ops"
+        )
+        def operation(command, channel, _, args=tuple(), **kwargs):
+            return "ops", list(self.ops(emphasized=True))
 
         @context.console_command(
             r"operation(\d+,?)+", help="operation0,2: operation #0 and #2", regex=True, output_type="ops"
@@ -333,8 +338,8 @@ class Elemental(Modifier):
                 except ValueError:
                     continue
                 try:
-                    operation = self.get_op(value)
-                    op_selected.append(operation)
+                    op = self.get_op(value)
+                    op_selected.append(op)
                 except IndexError:
                     channel(_("index %d out of range") % value)
             return "ops", op_selected
