@@ -33,6 +33,131 @@ def plugin(kernel, lifecycle=None):
         kernel_root.activate("modifier/Elemental")
 
 
+NODE_ROOT = 0
+NODE_OPERATION_BRANCH = 10
+NODE_OPERATION = 11
+NODE_OPERATION_ELEMENT = 12
+NODE_ELEMENTS_BRANCH = 20
+NODE_ELEMENT = 21
+NODE_FILES_BRANCH = 30
+NODE_FILE_FILE = 31
+NODE_FILE_ELEMENT = 32
+
+
+class Node(list):
+    def __init__(self, data_object, node_type=-1, name=None, parent=None, root=None):
+        list.__init__(self)
+        self._root = root
+        self._parent = parent
+        self.object = data_object
+        self.type = node_type
+        self.icon = None
+        self._opened = False
+        self._openable = isinstance(data_object, list)
+        self.name = name
+        if name is None:
+            if self.name is None:
+                try:
+                    self.name = self.object.id
+                    if self.name is None:
+                        self.name = str(self.object)
+                except AttributeError:
+                    self.name = str(self.object)
+        else:
+            self.name = name
+        self._bounds = None
+        self._bounds_dirty = True
+
+    def __repr__(self):
+        return "Node(%s, %s, %s)" % (
+            self.type,
+            str(self.object),
+            str(self._parent)
+        )
+
+    def __eq__(self, other):
+        return other is self
+
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            try:
+                self._bounds = self.object.bbox()
+            except AttributeError:
+                self._bounds = None
+            self._bounds_dirty = False
+        return self._bounds
+
+    def objects_of_children(self, types):
+        if isinstance(self.object, types):
+            yield self.object
+        for q in self:
+            for o in q.objects_of_children(types):
+                yield o
+
+    def add_node(self, data_object, node_type=-1, name=None):
+        node = Node(
+            data_object, node_type=node_type, name=name, parent=self, root=self._root
+        )
+        self.append(node)
+        if id(data_object) in self._root.tree_lookup:
+            self._root.tree_lookup[id(data_object)].append(self)
+        else:
+            self._root.tree_lookup[id(data_object)] = [self]
+        return node
+
+    def remove_node(self):
+        self._parent.remove(self)
+        self._root.tree_lookup(id(self.object)).remove(self)
+
+    def open_node(self):
+        objects = self.object
+        self._opened = True
+        if isinstance(objects, list):
+            for obj in objects:
+                self.add_node(obj)
+
+    def get_node(self, node_address: str):
+        try:
+            f = node_address.find(':')
+            if f == -1:
+                index = int(node_address)
+                if not self._opened and self._openable:
+                    return self[index]
+            index = int(node_address[:f])
+            node = self[index]
+            return node.get_node(node_address[f+1:])
+        except IndexError:
+            raise ValueError("Node Address Invalid.")
+
+    def insert_node(self, node, pos=None):
+        node._parent = self
+        if pos is None:
+            self.append(node)
+        else:
+            self.insert(pos, node)
+
+    def move(self, dest, pos=None):
+        self._parent.remove(self)
+        dest.insert_node(self, pos=pos)
+
+
+class RootNode(Node):
+    def __init__(self, elements):
+        super().__init__(
+            data_object=elements,
+            node_type=NODE_ROOT,
+            name="Project",
+            parent=None,
+            root=self,
+        )
+        self.tree_lookup = {}
+        self.elements = elements
+        self.add_node(elements._operations, NODE_OPERATION_BRANCH, name="Operations")
+        self.add_node(elements._elements, NODE_ELEMENTS_BRANCH, name="Elements")
+        self.add_node(elements._filenodes, NODE_FILES_BRANCH, name="Files")
+
+
 class Elemental(Modifier):
     """
     The elemental module is governs all the interactions with the various elements,
@@ -45,17 +170,17 @@ class Elemental(Modifier):
 
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
-        self._plan = dict()
+        self._templates = list()  # Not implemented.
         self._operations = list()
         self._elements = list()
-        self._templates = list()  # Not implemented.
-        self._tree = list()  # Not implemented.
         self._filenodes = {}
+
         self._clipboard = {}
         self._clipboard_default = "0"
 
         self.note = None
         self._bounds = None
+        self._tree = RootNode(self)
 
     def attach(self, *a, **kwargs):
         context = self.context
@@ -319,7 +444,6 @@ class Elemental(Modifier):
         def operation(command, channel, _, args=tuple(), **kwargs):
             return "ops", list(self.ops(emphasized=False))
 
-
         @context.console_command(
             "operation", help="operation: selected operations.", output_type="ops"
         )
@@ -327,7 +451,10 @@ class Elemental(Modifier):
             return "ops", list(self.ops(emphasized=True))
 
         @context.console_command(
-            r"operation(\d+,?)+", help="operation0,2: operation #0 and #2", regex=True, output_type="ops"
+            r"operation(\d+,?)+",
+            help="operation0,2: operation #0 and #2",
+            regex=True,
+            output_type="ops",
         )
         def operation(command, channel, _, args=tuple(), **kwargs):
             arg = command[9:]
@@ -343,6 +470,48 @@ class Elemental(Modifier):
                 except IndexError:
                     channel(_("index %d out of range") % value)
             return "ops", op_selected
+
+        @context.console_command("tree", help="access and alter tree elements", output_type="tree")
+        def tree(command, channel, _,  data=None, data_type=None, args=tuple(), **kwargs):
+            return "tree", self._tree
+
+        @context.console_command("list", help="view tree", input_type="tree", output_type="tree")
+        def tree_list(command, channel, _, data=None, data_type=None, args=tuple(), **kwargs):
+            if data is None:
+                data = self._tree
+            channel(_("----------"))
+            channel(_("Tree:"))
+            path = ""
+            for i, node in enumerate(data):
+                channel("%s:%d %s" % (path, i, str(node.name)))
+            channel(_("----------"))
+            return "tree", data
+
+        @context.console_argument("pos", type=int, help="subtree position")
+        @context.console_command("sub", help="sub <#>. Tree Context", input_type="tree",
+                                 output_type="tree")
+        def sub(command, channel, _, data=None, data_type=None, pos=None, args=tuple(), **kwargs):
+            if pos is None:
+                raise SyntaxError
+            try:
+                node = data[pos]
+                if node._openable and not node._opened:
+                    node.open_node()
+                return "tree", data[pos]
+            except IndexError:
+                raise SyntaxError
+
+        @context.console_argument("dest", type=self._tree.get_node, help="destination node")
+        @context.console_option("pos", "p", type=int, help="position within destination node")
+        @context.console_command("move", help="<node> move <destination>, eg ... move 1:0", input_type="tree", output_type="tree")
+        def move(command, channel, _,  data=None, data_type=None, dest=None, pos=None, args=tuple(), **kwargs):
+            if data is None:
+                channel(_("No source node selected."))
+                return
+            if dest is None:
+                channel(_("No source node selected."))
+                return
+            data.move(dest, pos)
 
         @context.console_command(
             "copy",
@@ -480,7 +649,7 @@ class Elemental(Modifier):
             output_type="clipboard",
         )
         def clipboard(
-            command, channel, _,  data=None, name=None, args=tuple(), **kwargs
+            command, channel, _, data=None, name=None, args=tuple(), **kwargs
         ):
             """
             Clipboard commands. Applies to current selected elements to
@@ -502,9 +671,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard(
-            command, channel, _, data=None, args=tuple(), **kwargs
-        ):
+        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
             destination = self._clipboard_default
             self._clipboard[destination] = [copy(e) for e in data]
             return "elements", self._clipboard[destination]
@@ -526,11 +693,15 @@ class Elemental(Modifier):
                 if dx is None:
                     dx = 0
                 else:
-                    dx = dx.value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                    dx = dx.value(
+                        ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                    )
                 if dy is None:
                     dy = 0
                 else:
-                    dy = dy.value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                    dy = dy.value(
+                        ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                    )
                 m = Matrix("translate(%s, %s)" % (dx, dy))
                 for e in pasted:
                     e *= m
@@ -543,9 +714,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard(
-            command, channel, _, data=None, args=tuple(), **kwargs
-        ):
+        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
             destination = self._clipboard_default
             self._clipboard[destination] = [copy(e) for e in data]
             self.remove_elements(data)
@@ -557,9 +726,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard(
-            command, channel, _, data=None, args=tuple(), **kwargs
-        ):
+        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
             destination = self._clipboard_default
             old = self._clipboard[destination]
             self._clipboard[destination] = None
@@ -571,9 +738,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard(
-            command, channel, _, data=None, args=tuple(), **kwargs
-        ):
+        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
             destination = self._clipboard_default
             return "elements", self._clipboard[destination]
 
@@ -582,9 +747,7 @@ class Elemental(Modifier):
             help="clipboard list",
             input_type="clipboard",
         )
-        def clipboard(
-                command, channel, _, data=None, args=tuple(), **kwargs
-        ):
+        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
             for v in self._clipboard:
                 k = self._clipboard[v]
                 channel("%s: %s" % (str(v).ljust(5), str(k)))
@@ -593,7 +756,10 @@ class Elemental(Modifier):
         @context.console_argument("y_pos", type=Length)
         @context.console_argument("r_pos", type=Length)
         @context.console_command(
-            "circle", help="circle <x> <y> <r> or circle <r>", input_type=("elements", None), output_type="elements"
+            "circle",
+            help="circle <x> <y> <r> or circle <r>",
+            input_type=("elements", None),
+            output_type="elements",
         )
         def circle(command, x_pos, y_pos, r_pos, data=None, args=tuple(), **kwargs):
             if x_pos is None:
@@ -621,9 +787,14 @@ class Elemental(Modifier):
         @context.console_argument("rx_pos", type=Length)
         @context.console_argument("ry_pos", type=Length)
         @context.console_command(
-            "ellipse", help="ellipse <cx> <cy> <rx> <ry>", input_type=("elements", None), output_type="elements"
+            "ellipse",
+            help="ellipse <cx> <cy> <rx> <ry>",
+            input_type=("elements", None),
+            output_type="elements",
         )
-        def ellipse(command, x_pos, y_pos, rx_pos, ry_pos, data=None, args=tuple(), **kwargs):
+        def ellipse(
+            command, x_pos, y_pos, rx_pos, ry_pos, data=None, args=tuple(), **kwargs
+        ):
             if ry_pos is None:
                 raise SyntaxError
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
@@ -652,7 +823,10 @@ class Elemental(Modifier):
         @context.console_option("rx", "x", type=Length, help="rounded rx corner value.")
         @context.console_option("ry", "y", type=Length, help="rounded ry corner value.")
         @context.console_command(
-            "rect", help="adds rectangle to scene", input_type=("elements", None), output_type="elements"
+            "rect",
+            help="adds rectangle to scene",
+            input_type=("elements", None),
+            output_type="elements",
         )
         def rect(
             command,
@@ -689,7 +863,12 @@ class Elemental(Modifier):
 
         # @context.console_argument("text", type=str, nargs="*", help='height of the rectangle.')
 
-        @context.console_command("text", help="text <text>", input_type=(None,"elements"), output_type="elements")
+        @context.console_command(
+            "text",
+            help="text <text>",
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
         def text(command, channel, _, data=None, args=tuple(), **kwargs):
             text = " ".join(args)
             element = SVGText(text)
@@ -701,13 +880,19 @@ class Elemental(Modifier):
                 return "elements", data
 
         # @context.console_argument("points", type=float, nargs="*", help='x, y of elements')
-        @context.console_command("polygon", help="polygon (<point>, <point>)*", input_type=("elements", None))
+        @context.console_command(
+            "polygon", help="polygon (<point>, <point>)*", input_type=("elements", None)
+        )
         def polygon(command, channel, _, data=None, args=tuple(), **kwargs):
             element = Polygon(list(map(float, args)))
             self.add_element(element)
 
         # @context.console_argument("points", type=float, nargs="*", help='x, y of elements')
-        @context.console_command("polyline", help="polyline (<point>, <point>)*", input_type=("elements", None))
+        @context.console_command(
+            "polyline",
+            help="polyline (<point>, <point>)*",
+            input_type=("elements", None),
+        )
         def polyline(command, args=tuple(), data=None, **kwargs):
             element = Polyline(list(map(float, args)))
             self.add_element(element)
@@ -724,7 +909,9 @@ class Elemental(Modifier):
             ),
             output_type="elements",
         )
-        def stroke_width(command, channel, _, stroke_width, args=tuple(), data=None, **kwargs):
+        def stroke_width(
+            command, channel, _, stroke_width, args=tuple(), data=None, **kwargs
+        ):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if stroke_width is None:
@@ -746,7 +933,9 @@ class Elemental(Modifier):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            stroke_width = stroke_width.value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            stroke_width = stroke_width.value(
+                ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+            )
             if isinstance(stroke_width, Length):
                 raise SyntaxError
             for e in data:
@@ -1306,14 +1495,7 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def classify(
-            command,
-            channel,
-            _,
-            data=None,
-            args=tuple(),
-            **kwargs
-        ):
+        def classify(command, channel, _, data=None, args=tuple(), **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
@@ -1403,10 +1585,10 @@ class Elemental(Modifier):
             self.add_op(op)
             return "ops", [op]
 
-        # TODO: Modernize
-        @context.console_command("step", help="step <raster-step-size>")
-        def step(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
+        @context.console_argument("step_size", type=int, help="raster step size")
+        @context.console_command("step", help="step <raster-step-size>", input_type=("ops", "elements"))
+        def step(command, channel, _, step_size=None, args=tuple(), **kwargs):
+            if step_size is None:
                 found = False
                 for op in self.ops(emphasized=True):
                     if op.operation in ("Raster", "Image"):
@@ -1427,21 +1609,16 @@ class Elemental(Modifier):
                 if not found:
                     channel(_("No raster operations selected."))
                 return
-            try:
-                step = int(args[0])
-            except ValueError:
-                channel(_("Not integer value for raster step."))
-                return
             for op in self.ops(emphasized=True):
                 if op.operation in ("Raster", "Image"):
-                    op.settings.raster_step = step
+                    op.settings.raster_step = step_size
                     self.context.signal("element_property_update", op)
             for element in self.elems(emphasized=True):
-                element.values["raster_step"] = str(step)
+                element.values["raster_step"] = str(step_size)
                 m = element.transform
                 tx = m.e
                 ty = m.f
-                element.transform = Matrix.scale(float(step), float(step))
+                element.transform = Matrix.scale(float(step_size), float(step_size))
                 element.transform.post_translate(tx, ty)
                 element.modified()
                 self.context.signal("element_property_update", element)
