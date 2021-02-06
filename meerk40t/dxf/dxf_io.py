@@ -1,4 +1,3 @@
-import os
 
 import ezdxf
 
@@ -31,7 +30,7 @@ class DxfLoader:
         yield "Drawing Exchange Format", ("dxf",), "image/vnd.dxf"
 
     @staticmethod
-    def load(context, pathname, **kwargs):
+    def load(context, elements_modifier, pathname, **kwargs):
         """ "
         Load dxf content. Requires ezdxf which tends to also require Python 3.6 or greater.
 
@@ -40,7 +39,6 @@ class DxfLoader:
         context.setting(int, "bed_width", 310)
         context.setting(int, "bed_height", 210)
 
-        basename = os.path.basename(pathname)
         dxf = ezdxf.readfile(pathname)
         elements = []
         for entity in dxf.entities:
@@ -264,4 +262,7 @@ class DxfLoader:
                         path = Move(path.first_point) + path
                 elements.append(path)
 
-        return elements, None, None, pathname, basename
+        elements_modifier._filenodes[pathname] = elements
+        elements_modifier.add_elems(elements)
+        elements_modifier.classify(elements)
+        return True

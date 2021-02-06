@@ -323,7 +323,9 @@ class MeerK40t(wx.Frame, Module, Job):
         self.ribbon_position_units = 0
         self.ribbon_position_name = None
         self.__set_ribbonbar()
-        stop = wx.BitmapButton(self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap())
+        stop = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
+        )
         self.Bind(
             wx.EVT_BUTTON,
             lambda e: self.context.active.interpreter.realtime_command(REALTIME_RESET),
@@ -403,7 +405,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.widget_scene = None
         self.pipe_state = None
 
-        self.root = RootNode(context, self, context.elements)
+        self.root = ShadowTree(self.context, self, self.context.elements._tree)
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
         self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
@@ -1527,16 +1529,14 @@ class MeerK40t(wx.Frame, Module, Job):
                 channel=self.context.channel("load"),
                 svg_ppi=self.context.svg_ppi,
             )
-            if results is not None:
-                elements, pathname, basename = results
+            if results:
                 self.save_recent(pathname)
-                self.context.classify(elements)
                 if n != self.context.elements.note and self.context.auto_note:
                     self.context.open("window/Notes", self)
                 try:
-                    if (
-                        self.context.uniform_svg and pathname.lower().endswith("svg")
-                    ) or (len(elements) > 0 and "meerK40t" in elements[0].values):
+                    if self.context.uniform_svg and pathname.lower().endswith("svg"):
+                        # or (len(elements) > 0 and "meerK40t" in elements[0].values):
+                        # TODO: Disabled uniform_svg, no longer detecting namespace.
                         self.working_file = pathname
                 except AttributeError:
                     pass
@@ -2346,262 +2346,62 @@ NODE_FILE_FILE = 31
 NODE_FILE_ELEMENT = 32
 
 
-class Node(list):
+class ShadowTree:
     """
-    Generic Node Type for use with RootNode
-    Creating the object registers the position in the tree according to the parent and root.
-    Deleting the object deregisters the node in the tree.
+    The shadowTree creates a wx.Tree structure from the elements.tree structure. It listens to updates to the elements
+    tree and updates the GUI version accordingly. This tree does not permit alterations to it, rather it sends any
+    requested alterations to the elements.tree or the elements.elements or elements.operations and when those are
+    reflected in the tree, the shadow tree is updated accordingly.
     """
-
-    def __init__(self, node_type, data_object, parent, root, pos=None, name=None):
-        list.__init__(self)
-        self.parent = parent
-        self.root = root
-        self.object = data_object
-        self.type = node_type
-        self.name = name
-        if name is None:
-            if self.name is None:
-                try:
-                    self.name = self.object.id
-                    if self.name is None:
-                        self.name = str(self.object)
-                except AttributeError:
-                    self.name = str(self.object)
-        else:
-            self.name = name
-        self.type = node_type
-        parent.append(self)
-        self.filepath = None
-        try:
-            self.bounds = data_object.bbox()
-        except AttributeError:
-            self.bounds = None
-        parent_item = parent.item
-        tree = root.tree
-        if pos is None:
-            item = tree.AppendItem(parent_item, self.name)
-        else:
-            item = tree.InsertItem(parent_item, pos, self.name)
-        self.item = item
-        if id(data_object) in self.root.tree_lookup:
-            self.root.tree_lookup[id(data_object)].append(self)
-        else:
-            self.root.tree_lookup[id(data_object)] = [self]
-        tree.SetItemData(self.item, self)
-        try:
-            stroke = data_object.values[SVG_ATTR_STROKE]
-            color = wx.Colour(swizzlecolor(Color(stroke).value))
-            tree.SetItemTextColour(item, color)
-        except AttributeError:
-            pass
-        except KeyError:
-            pass
-        except TypeError:
-            pass
-        self.set_icon()
-        root.notify_added(self)
-
-    def __str__(self):
-        return "Node(%s, %d)" % (str(self.item), self.type)
-
-    def __repr__(self):
-        return "Node(%d, %s, %s, %s)" % (
-            self.type,
-            str(self.object),
-            str(self.parent),
-            str(self.root),
-        )
-
-    def update_name(self):
-        self.name = None
-        try:
-            self.name = self.object.id
-        except AttributeError:
-            pass
-        if self.name is None:
-            self.name = str(self.object)
-        self.root.tree.SetItemText(self.item, self.name)
-        try:
-            stroke = self.object.values[SVG_ATTR_STROKE]
-            color = wx.Colour(swizzlecolor(Color(stroke).value))
-            self.root.tree.SetItemTextColour(self.item, color)
-        except AttributeError:
-            pass
-        try:
-            color = self.object.color
-            c = wx.Colour(swizzlecolor(Color(color)))
-            self.root.tree.SetItemTextColour(self.item, c)
-        except AttributeError:
-            pass
-
-    def remove_node(self):
-        for q in self:
-            q.remove_node()
-        root = self.root
-        links = root.tree_lookup[id(self.object)]
-        links.remove(self)
-        self.parent.remove(self)
-        try:
-            root.tree.Delete(self.item)
-        except RuntimeError:
-            return
-        root.notify_removed(self)
-        self.item = None
-        self.parent = None
-        self.root = None
-        self.type = -1
-
-    def move_node(self, new_parent, pos=None):
-        tree = self.root.tree
-        item = self.item
-        image = tree.GetItemImage(item)
-        data = tree.GetItemData(item)
-        color = tree.GetItemTextColour(item)
-        tree.Delete(item)
-        if pos is None:
-            self.item = tree.AppendItem(new_parent.item, self.name)
-        else:
-            self.item = tree.InsertItem(new_parent.item, pos, self.name)
-        item = self.item
-        tree.SetItemImage(item, image)
-        tree.SetItemData(item, data)
-        tree.SetItemTextColour(item, color)
-
-    def __eq__(self, other):
-        return other is self
-
-    def set_color(self, color=None):
-        root = self.root
-        item = self.item
-        tree = root.tree
-        if color is None:
-            tree.SetItemTextColour(item, None)
-        else:
-            tree.SetItemTextColour(item, wx.Colour(swizzlecolor(color)))
-
-    def set_icon(self, icon=None):
-        root = self.root
-        drawmode = self.root.gui.context.draw_mode
-        if drawmode & DRAW_MODE_ICONS != 0:
-            return
-        item = self.item
-        data_object = self.object
-        tree = root.tree
-        if icon is None:
-            if isinstance(data_object, SVGImage):
-                image = self.root.renderer.make_thumbnail(
-                    data_object.image, width=20, height=20
-                )
-                image_id = self.root.tree_images.Add(bitmap=image)
-                tree.SetItemImage(item, image=image_id)
-            if isinstance(data_object, (Path, SVGText)):
-                image = self.root.renderer.make_raster(
-                    data_object, data_object.bbox(), width=20, height=20, bitmap=True
-                )
-                if image is not None:
-                    image_id = self.root.tree_images.Add(bitmap=image)
-                    tree.SetItemImage(item, image=image_id)
-                    tree.Update()
-        else:
-            image_id = self.root.tree_images.Add(bitmap=icon)
-            tree.SetItemImage(item, image=image_id)
-
-    def bbox(self):
-        return CutPlanner.bounding_box(self.object)
-
-    def objects_of_children(self, types):
-        if isinstance(self.object, types):
-            yield self.object
-        for q in self:
-            for o in q.objects_of_children(types):
-                yield o
-
-    def contains_path(self):
-        if isinstance(self.object, Path):
-            return True
-        for q in self:
-            if q.contains_path():
-                return True
-        return False
-
-    def contains_image(self):
-        if isinstance(self.object, SVGImage):
-            return True
-        for q in self:
-            if q.contains_image():
-                return True
-        return False
-
-    def contains_text(self):
-        if isinstance(self.object, SVGText):
-            return True
-        for q in self:
-            if q.contains_text():
-                return True
-        return False
-
-
-class RootNode(list):
-    """ "Nodes are the presentation layer used to wrap the LaserOperations and the SVGElement classes. Stored in the
-    elements. This serves to help with menu creation, naming, drag and drop.
-
-    The tree is structured with three main sub-elements of the RootNode, these are the Operations, the Elements, and
-    the files. The primary distinction between the items within elements is that an item appears twice in the tree with
-    different highlighting, selection, and interactions.
-
-    The Operations each contain a list of elements they run in order and are stored within each operation.
-
-    Elements store the scene's graphics elements. The Elements are stored in their order. Changes in this structure
-    should reflect those changes back to structure of elements.
-
-    Deleting an element from the tree should remove that element from any operation using it.
-
-    Deleting an operation should make no change to the graphical elements structure.
-
-    All the nodes store a reference to their given tree item. So that a determination can be made when those items have
-    changed and provide piecemeal updates to the tree.
-    """
-
-    def __init__(self, context, gui, elements):
-        list.__init__(self)
-        self.root = self
-        self.parent = self
-        self.object = "Project"
-        self.name = "Project"
-        self.type = NODE_ROOT
-
+    def __init__(self, context, gui, root):
         self.context = context
+        self.element_root = root
         self.gui = gui
-        self.tree = gui.tree
+        self.wxtree = gui.tree
         self.renderer = gui.renderer
-        self.elements = elements
-
-        self.item = None
         self.dragging_node = None
         self.dragging_parent = None
         self.tree_images = None
+        self.object = "Project"
+        self.name = "Project"
+        self.type = NODE_ROOT
+        self.context = context
+        self.elements = context.elements
         self.tree_lookup = None
-        self.node_elements = None
-        self.node_operations = None
-        self.node_files = None
         self.do_not_select = False
         self.context.signal("rebuild_tree")
         self._rebuild_required = False
+
+    def notify_tree_data_change(self):
+        self._rebuild_required = True
+        self.context.signal("rebuild_tree", 0)
+
+    def notify_tree_data_cleared(self):
+        self._rebuild_required = True
+        self.context.signal("rebuild_tree", 0)
+
+    def on_element_update(self, *args):
+        element = args[0]
+        try:
+            nodes = self.tree_lookup[id(element)]
+            for node in nodes:
+                self.update_name(node)
+        except KeyError:
+            pass
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
         the proper values and contexts and icons. This will not happen for any elements currently within
         a closed branch."""
         if node is None:
-            node = self.root.item
+            node = self.element_root.item
         if node is None:
             return
-        tree = self.tree
+        tree = self.wxtree
 
         child, cookie = tree.GetFirstChild(node)
         while child.IsOk():
-            child_node = self.tree.GetItemData(child)
+            child_node = self.wxtree.GetItemData(child)
             element = child_node.object
             tree.SetItemBackgroundColour(child, None)
             try:
@@ -2620,90 +2420,181 @@ class RootNode(list):
         self.dragging_node = None
         self._rebuild_required = False
 
-        context = self.context
-        elements = context.elements
-        self.tree.DeleteAllItems()
+        self.wxtree.DeleteAllItems()
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
         self.tree_lookup = {}
-        self.tree.SetImageList(self.tree_images)
-        self.item = self.tree.AddRoot(self.name)
-        self.node_operations = Node(
-            NODE_OPERATION_BRANCH,
-            elements._operations,
-            self,
-            self,
-            name=_("Operations"),
-        )
-        self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap(True))
-        self.build_tree(self.node_operations, list(elements.ops()))
-        for n in self.node_operations:
+        self.wxtree.SetImageList(self.tree_images)
+        self.element_root.item = self.wxtree.AddRoot(self.name)
+        self.build_tree(self.element_root)
+        node_operations = self.element_root.get_branch(NODE_OPERATION_BRANCH)
+        self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
+        for node in node_operations:
             try:
-                op = n.object.operation
+                op = node.object.operation
             except AttributeError:
                 op = None
             if op in ("Raster", "Image"):
-                n.set_icon(icons8_direction_20.GetBitmap(True))
+                self.set_icon(node, icons8_direction_20.GetBitmap(True))
             else:
-                n.set_icon(icons8_laser_beam_20.GetBitmap(True))
+                self.set_icon(node, icons8_laser_beam_20.GetBitmap(True))
             try:
-                c = n.object.color
-                n.set_color(c)
+                c = node.object.color
+                self.set_color(node, c)
             except AttributeError:
                 pass
+        node_elements = self.element_root.get_branch(NODE_ELEMENTS_BRANCH)
+        self.set_icon(node_elements, icons8_vector_20.GetBitmap(True))
 
-        self.node_elements = Node(
-            NODE_ELEMENTS_BRANCH, elements._elements, self, self, name=_("Elements")
-        )
-        self.node_elements.set_icon(icons8_vector_20.GetBitmap(True))
-        self.build_tree(self.node_elements, list(elements.elems()))
+        node_files = self.element_root.get_branch(NODE_FILES_BRANCH)
+        self.set_icon(node_files, icons8_file_20.GetBitmap(True))
 
-        self.node_files = Node(
-            NODE_FILES_BRANCH, elements.files(), self, self, name=_("Files")
-        )
-        self.node_files.set_icon(icons8_file_20.GetBitmap(True))
-        self.build_tree(self.node_files, elements.files())
+        for n in node_files:
+            self.set_icon(n, icons8_file_20.GetBitmap(True))
+        self.wxtree.ExpandAll()
 
-        for n in self.node_files:
-            n.set_icon(icons8_file_20.GetBitmap(True))
+    def build_tree(self, parent_node):
+        for node in parent_node:
+            self.node_register(node)
+            self.build_tree(node)
 
-        self.tree.ExpandAll()
-
-    def build_tree(self, parent_node, objects):
-        if isinstance(objects, list):
-            for obj in objects:
-                node = Node(parent_node.type + 1, obj, parent_node, self)
-                self.build_tree(node, obj)
-        elif isinstance(objects, dict):
-            for obj_key, obj_value in objects.items():
-                node = Node(parent_node.type + 1, obj_key, parent_node, self)
-                node.filepath = obj_key
-                if not isinstance(obj_value, (list, dict)):
-                    obj_value = [obj_value]
-                self.build_tree(node, obj_value)
-
-    def notify_added(self, node):
-        pass
-
-    def notify_removed(self, node):
-        pass
-
-    def notify_tree_data_change(self):
-        self._rebuild_required = True
-        self.context.signal("rebuild_tree", 0)
-
-    def notify_tree_data_cleared(self):
-        self._rebuild_required = True
-        self.context.signal("rebuild_tree", 0)
-
-    def on_element_update(self, *args):
-        element = args[0]
+    def node_register(self, node):
+        parent = node.parent
+        parent_item = parent.item
+        tree = self.wxtree
+        node.item = tree.AppendItem(parent_item, self.name)
+        tree.SetItemData(node.item, node)
+        self.update_name(node)
         try:
-            nodes = self.tree_lookup[id(element)]
-            for node in nodes:
-                node.update_name()
+            stroke = node.object.values[SVG_ATTR_STROKE]
+            color = wx.Colour(swizzlecolor(Color(stroke).value))
+            tree.SetItemTextColour(node.item, color)
+        except AttributeError:
+            pass
         except KeyError:
             pass
+        except TypeError:
+            pass
+        self.set_icon(node)
+
+    def set_color(self, node, color=None):
+        item = node.item
+        tree = self.wxtree
+        if color is None:
+            tree.SetItemTextColour(item, None)
+        else:
+            tree.SetItemTextColour(item, wx.Colour(swizzlecolor(color)))
+
+    def set_icon(self, node, icon=None):
+        root = self
+        drawmode = self.context.draw_mode
+        if drawmode & DRAW_MODE_ICONS != 0:
+            return
+        item = node.item
+        data_object = node.object
+        tree = root.wxtree
+        if icon is None:
+            if isinstance(data_object, SVGImage):
+                image = self.renderer.make_thumbnail(
+                    data_object.image, width=20, height=20
+                )
+                image_id = self.tree_images.Add(bitmap=image)
+                tree.SetItemImage(item, image=image_id)
+            if isinstance(data_object, (Path, SVGText)):
+                image = self.renderer.make_raster(
+                    data_object, data_object.bbox(), width=20, height=20, bitmap=True
+                )
+                if image is not None:
+                    image_id = self.tree_images.Add(bitmap=image)
+                    tree.SetItemImage(item, image=image_id)
+                    tree.Update()
+        else:
+            image_id = self.tree_images.Add(bitmap=icon)
+            tree.SetItemImage(item, image=image_id)
+
+    def update_name(self, node):
+        try:
+            node.name = node.object.id
+        except AttributeError:
+            pass
+        if node.name is None:
+            node.name = str(node.object)
+        self.wxtree.SetItemText(node.item, node.name)
+        try:
+            stroke = node.object.stroke
+            color = wx.Colour(swizzlecolor(Color(stroke)))
+            self.wxtree.SetItemTextColour(node.item, color)
+        except AttributeError:
+            pass
+        try:
+            color = node.object.color
+            c = wx.Colour(swizzlecolor(Color(color)))
+            self.wxtree.SetItemTextColour(node.item, c)
+        except AttributeError:
+            pass
+
+    def remove_node(self, node):
+        for q in node:
+            q.remove_node()
+        root = self.element_root
+        links = root.tree_lookup[id(node.object)]
+        links.remove(node)
+        node.parent.remove(node)
+        try:
+            self.wxtree.Delete(node.item)
+        except RuntimeError:
+            return
+        root.notify_removed(node)
+
+    def move_node(self, node, new_parent, pos=None):
+        tree = self.root.wxtree
+        item = self.item
+        image = tree.GetItemImage(item)
+        data = tree.GetItemData(item)
+        color = tree.GetItemTextColour(item)
+        tree.Delete(item)
+        if pos is None:
+            self.item = tree.AppendItem(new_parent.item, self.name)
+        else:
+            self.item = tree.InsertItem(new_parent.item, pos, self.name)
+        item = self.item
+        tree.SetItemImage(item, image)
+        tree.SetItemData(item, data)
+        tree.SetItemTextColour(item, color)
+
+    def bbox(self, node):
+        return CutPlanner.bounding_box(self.object)
+
+    def objects_of_children(self, node, types):
+        if isinstance(self.object, types):
+            yield self.object
+        for q in self:
+            for o in q.objects_of_children(types):
+                yield o
+
+    def contains_path(self, node):
+        if isinstance(self.object, Path):
+            return True
+        for q in self:
+            if q.contains_path():
+                return True
+        return False
+
+    def contains_image(self, node):
+        if isinstance(self.object, SVGImage):
+            return True
+        for q in self:
+            if q.contains_image():
+                return True
+        return False
+
+    def contains_text(self, node):
+        if isinstance(self.object, SVGText):
+            return True
+        for q in self:
+            if q.contains_text():
+                return True
+        return False
 
     def on_drag_begin_handler(self, event):
         """
@@ -2719,7 +2610,7 @@ class RootNode(list):
         # drag_item = event.GetItem()
 
         pt = event.GetPoint()
-        drag_item, _ = self.tree.HitTest(pt)
+        drag_item, _ = self.wxtree.HitTest(pt)
 
         if drag_item is None:
             event.Skip()
@@ -2730,7 +2621,7 @@ class RootNode(list):
         if not drag_item.IsOk():
             event.Skip()
             return
-        node_data = self.tree.GetItemData(drag_item)
+        node_data = self.wxtree.GetItemData(drag_item)
         if (
             node_data.type == NODE_ELEMENTS_BRANCH
             or node_data.type == NODE_OPERATION_BRANCH
@@ -2763,7 +2654,7 @@ class RootNode(list):
         if drop_item.ID is None:
             event.Skip()
             return
-        drop_node = self.tree.GetItemData(drop_item)
+        drop_node = self.wxtree.GetItemData(drop_item)
         if drop_node is None or drop_node == drag_node:
             event.Skip()
             return
@@ -2882,7 +2773,7 @@ class RootNode(list):
         item = event.GetItem()
         if item is None:
             return
-        node = self.tree.GetItemData(item)
+        node = self.wxtree.GetItemData(item)
 
         self.root.create_menu(self.gui, node)
 
@@ -2894,7 +2785,7 @@ class RootNode(list):
         :return:
         """
         item = event.GetItem()
-        node = self.tree.GetItemData(item)
+        node = self.wxtree.GetItemData(item)
         self.activated_node(node)
 
     def activated_node(self, node):
@@ -2928,7 +2819,7 @@ class RootNode(list):
         if self.do_not_select:
             return
         selected = [
-            self.tree.GetItemData(item).object for item in self.tree.GetSelections()
+            self.wxtree.GetItemData(item).object for item in self.wxtree.GetSelections()
         ]
         self.elements.set_selected(selected)
         self.refresh_tree()
@@ -2945,7 +2836,7 @@ class RootNode(list):
                 nodes = self.tree_lookup[id(e)]
                 for n in nodes:
                     if n.type == NODE_ELEMENT:
-                        self.tree.SelectItem(n.item, e.selected)
+                        self.wxtree.SelectItem(n.item, e.selected)
             except (KeyError, TypeError):
                 self.context.signal("rebuild_tree", 0)
                 break
@@ -3008,7 +2899,7 @@ class RootNode(list):
         if t == NODE_OPERATION_BRANCH:
             gui.Bind(
                 wx.EVT_MENU,
-                self.menu_console("operation * delete"),
+                self.menu_console("operation* delete"),
                 menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
             )
         if t == NODE_FILES_BRANCH:
@@ -3020,7 +2911,7 @@ class RootNode(list):
         if t == NODE_ELEMENTS_BRANCH:
             gui.Bind(
                 wx.EVT_MENU,
-                self.menu_console("element * delete"),
+                self.menu_console("element* delete"),
                 menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
             )
         if t == NODE_OPERATION:
@@ -3497,7 +3388,7 @@ class RootNode(list):
             element.transform.post_translate(tx, ty)
             element.modified()
             self.context.signal("element_property_update", node.object)
-            self.root.gui.request_refresh()
+            self.element_root.gui.request_refresh()
 
         return specific
 
@@ -3751,7 +3642,7 @@ class RootNode(list):
 
     def menu_reclassify_operations(self, node):
         def specific(event):
-            context = node.root.context
+            context = self.context
             elements = context.elements
             elements.remove_elements_from_operations(list(elements.elems()))
             elements.classify(list(elements.elems()))
@@ -3793,6 +3684,48 @@ class RootNode(list):
 
         return specific
 
+
+class ShadowNode(list):
+    """
+    Creating the object registers the position in the tree according to the parent and root.
+    Deleting the object deregisters the node in the tree.
+    """
+
+    def __init__(self, node_type, data_object, parent, root, pos=None, name=None):
+        list.__init__(self)
+        self.parent = parent
+        self.root = root
+        self.object = data_object
+        self.type = node_type
+        self.name = name
+        if name is None:
+            if self.name is None:
+                try:
+                    self.name = self.object.id
+                    if self.name is None:
+                        self.name = str(self.object)
+                except AttributeError:
+                    self.name = str(self.object)
+        else:
+            self.name = name
+        self.type = node_type
+        parent.append(self)
+        self.filepath = None
+        try:
+            self.bounds = data_object.bbox()
+        except AttributeError:
+            self.bounds = None
+
+    def __str__(self):
+        return "Node(%s, %d)" % (str(self.item), self.type)
+
+    def __repr__(self):
+        return "Node(%d, %s, %s, %s)" % (
+            self.type,
+            str(self.object),
+            str(self.parent),
+            str(self.root),
+        )
 
 def get_key_name(event):
     keyvalue = ""

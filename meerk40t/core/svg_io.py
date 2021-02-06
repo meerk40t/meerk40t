@@ -265,7 +265,7 @@ class SVGLoader:
         yield "Scalable Vector Graphics", ("svg",), "image/svg+xml"
 
     @staticmethod
-    def load(context, pathname, **kwargs):
+    def load(context, elements_modifier, pathname, **kwargs):
         context.setting(int, "bed_width", 310)
         context.setting(int, "bed_height", 210)
         elements = []
@@ -275,7 +275,6 @@ class SVGLoader:
             ppi = 96.0
         if ppi == 0:
             ppi = 96.0
-        basename = os.path.basename(pathname)
         scale_factor = 1000.0 / ppi
         svg = SVG.parse(
             source=pathname,
@@ -288,7 +287,7 @@ class SVGLoader:
         )
         ops = None
         note = None
-        for element in svg.elements():
+        for element in svg:
             try:
                 if element.values["visibility"] == "hidden":
                     continue
@@ -376,4 +375,14 @@ class SVGLoader:
                         ops.append(op)
                 except KeyError:
                     pass
-        return elements, ops, note, pathname, basename
+
+        elements_modifier._filenodes[pathname] = elements
+        elements_modifier.add_elems(elements)
+        if ops is not None:
+            # elements_modifier.clear_operations()
+            elements_modifier.add_ops(ops)
+        if note is not None:
+            # elements_modifier.clear_note()
+            elements_modifier.note = note
+        elements_modifier.classify(elements)
+        return True

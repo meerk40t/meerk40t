@@ -3,7 +3,7 @@ from copy import copy
 from math import ceil
 
 from ..core.cutplanner import Planner
-from ..svgelements import SVGImage, Color, Length, Path, Matrix
+from ..svgelements import SVGImage, Color, Length, Path, Matrix, Group
 
 
 def plugin(kernel, lifecycle=None):
@@ -1281,7 +1281,7 @@ class ImageLoader:
         yield "Webp Format", ("webp",), "image/webp"
 
     @staticmethod
-    def load(context, pathname, **kwargs):
+    def load(context, elements_modifier, pathname, **kwargs):
         basename = ospath.basename(pathname)
 
         image = SVGImage(
@@ -1296,4 +1296,9 @@ class ImageLoader:
                     image *= "scale(%f,%f)" % (1000.0 / dpi[0], 1000.0 / dpi[1])
         except (KeyError, IndexError):
             pass
-        return [image], None, None, pathname, basename
+        elements = Group()
+        elements.append(image)
+        elements_modifier._filenodes[pathname] = elements
+        elements_modifier.add_elem(elements)
+        # elements_modifier.classify(elements)
+        return True

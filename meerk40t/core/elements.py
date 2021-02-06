@@ -52,6 +52,11 @@ class Node(list):
         self.object = data_object
         self.type = node_type
         self.icon = None
+        self.cache = None
+        self.last_transform = None
+        self.selected = False
+        self.emphasized = False
+        self.highlighted = False
         self._opened = False
         self._openable = isinstance(data_object, list)
         self.name = name
@@ -78,6 +83,90 @@ class Node(list):
     def __eq__(self, other):
         return other is self
 
+    def select(self):
+        self.selected = True
+        self.context.signal("selected", self)
+
+    def unselect(self):
+        self.selected = False
+        self.context.signal("selected", self)
+
+    def highlight(self):
+        self.highlighted = True
+        self.context.signal("highlighted", self)
+
+    def unhighlight(self):
+        self.highlighted = False
+        self.context.signal("highlighted", self)
+
+    def emphasize(self):
+        self.emphasized = True
+        self.context.signal("emphasized", self)
+        self.validate_bounds()
+
+    def unemphasize(self):
+        self.emphasized = False
+        self.context.signal("emphasized", self)
+        self.validate_bounds()
+
+    def modified(self):
+        """
+        The matrix transformation was changed.
+        """
+        self._root.bounds = None
+        self._bounds = None
+        self.validate_bounds()
+        self.context.signal("modified", self)
+
+    def altered(self):
+        """
+        The data structure was changed.
+        """
+        try:
+            self.cache.UnGetNativePath(self.object.cache.NativePath)
+        except AttributeError:
+            pass
+        try:
+            del self.cache
+            del self.icon
+        except AttributeError:
+            pass
+        self.cache = None
+        self.icon = None
+        self._root.bounds = None
+        self._bounds = None
+        self.validate_bounds()
+        self.context.signal("altered", self)
+
+    def unregister(self):
+        try:
+            self.cache.UngetNativePath(self.cache.NativePath)
+        except AttributeError:
+            pass
+        try:
+            del self.cache
+        except AttributeError:
+            pass
+        try:
+            del self.icon
+        except AttributeError:
+            pass
+        try:
+            self.unselect()
+            self.unemphasize()
+            self.unhighlight()
+            self.modified()
+        except AttributeError:
+            pass
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @property
+    def root(self):
+        return self._root
+
     @property
     def bounds(self):
         if self._bounds_dirty:
@@ -95,11 +184,23 @@ class Node(list):
             for o in q.objects_of_children(types):
                 yield o
 
-    def add_node(self, data_object, node_type=-1, name=None):
+    def find_node_by_object(self, data_object):
+        try:
+            nodes = self._root.tree_lookup[id(data_object)]
+        except KeyError:
+            return None
+        if len(nodes) == 0:
+            return None
+        return nodes[0]
+
+    def add_node(self, data_object, node_type=-1, name=None, pos=None):
         node = Node(
             data_object, node_type=node_type, name=name, parent=self, root=self._root
         )
-        self.append(node)
+        if pos is None:
+            self.append(node)
+        else:
+            self.insert(pos, node)
         if id(data_object) in self._root.tree_lookup:
             self._root.tree_lookup[id(data_object)].append(self)
         else:
@@ -108,7 +209,9 @@ class Node(list):
 
     def remove_node(self):
         self._parent.remove(self)
-        self._root.tree_lookup(id(self.object)).remove(self)
+        nodes = self._root.tree_lookup[id(self.object)]
+        print(nodes)
+        nodes.remove(self)
 
     def open_node(self):
         objects = self.object
@@ -130,16 +233,19 @@ class Node(list):
         except IndexError:
             raise ValueError("Node Address Invalid.")
 
-    def insert_node(self, node, pos=None):
-        node._parent = self
-        if pos is None:
-            self.append(node)
-        else:
-            self.insert(pos, node)
-
     def move(self, dest, pos=None):
         self._parent.remove(self)
         dest.insert_node(self, pos=pos)
+
+    def notify_added(self, node):
+        pass
+
+    def notify_removed(self, node):
+        self.item = None
+        self._parent = None
+        self._root = None
+        self.type = -1
+        self.remove_node()
 
 
 class RootNode(Node):
@@ -156,6 +262,11 @@ class RootNode(Node):
         self.add_node(elements._operations, NODE_OPERATION_BRANCH, name="Operations")
         self.add_node(elements._elements, NODE_ELEMENTS_BRANCH, name="Elements")
         self.add_node(elements._filenodes, NODE_FILES_BRANCH, name="Files")
+
+    def get_branch(self, node_type):
+        for n in self:
+            if n.type == node_type:
+                return n
 
 
 class Elemental(Modifier):
@@ -393,7 +504,7 @@ class Elemental(Modifier):
             channel(_("----------"))
             channel(_("Operations:"))
             for i, operation in enumerate(self.ops()):
-                selected = operation.selected
+                selected = False #operation.selected #TODO: Restore in some fashion.
                 select = " *" if selected else "  "
                 color = (
                     "None"
@@ -1739,100 +1850,6 @@ class Elemental(Modifier):
         context_root.elements.add_elem(element)
         context_root.elements.set_selected([element])
 
-    def register(self, obj):
-        obj.cache = None
-        obj.icon = None
-        obj.bounds = None
-        obj.last_transform = None
-        obj.selected = False
-        obj.emphasized = False
-        obj.highlighted = False
-
-        def select():
-            obj.selected = True
-            self.context.signal("selected", obj)
-
-        def unselect():
-            obj.selected = False
-            self.context.signal("selected", obj)
-
-        def highlight():
-            obj.highlighted = True
-            self.context.signal("highlighted", obj)
-
-        def unhighlight():
-            obj.highlighted = False
-            self.context.signal("highlighted", obj)
-
-        def emphasize():
-            obj.emphasized = True
-            self.context.signal("emphasized", obj)
-            self.validate_bounds()
-
-        def unemphasize():
-            obj.emphasized = False
-            self.context.signal("emphasized", obj)
-            self.validate_bounds()
-
-        def modified():
-            """
-            The matrix transformation was changed.
-            """
-            obj.bounds = None
-            self._bounds = None
-            self.validate_bounds()
-            self.context.signal("modified", obj)
-
-        def altered():
-            """
-            The data structure was changed.
-            """
-            try:
-                obj.cache.UnGetNativePath(obj.cache.NativePath)
-            except AttributeError:
-                pass
-            try:
-                del obj.cache
-                del obj.icon
-            except AttributeError:
-                pass
-            obj.cache = None
-            obj.icon = None
-            obj.bounds = None
-            self._bounds = None
-            self.validate_bounds()
-            self.context.signal("altered", obj)
-
-        obj.select = select
-        obj.unselect = unselect
-        obj.highlight = highlight
-        obj.unhighlight = unhighlight
-        obj.emphasize = emphasize
-        obj.unemphasize = unemphasize
-        obj.modified = modified
-        obj.altered = altered
-
-    def unregister(self, e):
-        try:
-            e.cache.UngetNativePath(e.cache.NativePath)
-        except AttributeError:
-            pass
-        try:
-            del e.cache
-        except AttributeError:
-            pass
-        try:
-            del e.icon
-        except AttributeError:
-            pass
-        try:
-            e.unselect()
-            e.unemphasize()
-            e.unhighlight()
-            e.modified()
-        except AttributeError:
-            pass
-
     def load_default(self):
         self.clear_operations()
         self.add_op(
@@ -1918,11 +1935,13 @@ class Elemental(Modifier):
             yield obj
 
     def ops(self, **kwargs):
-        for item in self._filtered_list(self._operations, **kwargs):
+        operations = self._tree.get_branch(NODE_OPERATION_BRANCH)
+        for item in self._filtered_list(operations, **kwargs):
             yield item
 
     def elems(self, **kwargs):
-        for item in self._filtered_list(self._elements, **kwargs):
+        elements = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
+        for item in self._filtered_list(elements, **kwargs):
             yield item
 
     def first_element(self, **kwargs):
@@ -1953,24 +1972,28 @@ class Elemental(Modifier):
 
     def add_op(self, op):
         self._operations.append(op)
-        self.register(op)
+        operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
+        operation_branch.add_node(op, node_type=NODE_OPERATION_BRANCH+1)
         self.context.signal("operation_added", op)
 
     def add_ops(self, adding_ops):
         self._operations.extend(adding_ops)
+        operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
         for op in adding_ops:
-            self.register(op)
+            operation_branch.add_node(op, node_type=NODE_OPERATION_BRANCH+1)
         self.context.signal("operation_added", adding_ops)
 
     def add_elem(self, element):
         self._elements.append(element)
-        self.register(element)
+        element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
+        element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH+1)
         self.context.signal("element_added", element)
 
     def add_elems(self, adding_elements):
         self._elements.extend(adding_elements)
+        element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
         for element in adding_elements:
-            self.register(element)
+            element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH+1)
         self.context.signal("element_added", adding_elements)
 
     def files(self):
@@ -1978,13 +2001,22 @@ class Elemental(Modifier):
 
     def clear_operations(self):
         for op in self._operations:
-            self.unregister(op)
+            operation_node = self._tree.get_branch(NODE_OPERATION_BRANCH)
+            node = operation_node.find_node_by_object(op)
+            if node is not None:
+                node.remove_node()
+            else:
+                continue
             self.context.signal("operation_removed", op)
         self._operations.clear()
 
     def clear_elements(self):
         for e in self._elements:
-            self.unregister(e)
+            node = self._tree.get_branch(NODE_ELEMENTS_BRANCH).find_node_by_object(e)
+            if node is not None:
+                node.remove_node()
+            else:
+                continue
             self.context.signal("element_removed", e)
         self._elements.clear()
 
@@ -2013,7 +2045,7 @@ class Elemental(Modifier):
         for elem in elements_list:
             for i, e in enumerate(self._elements):
                 if elem is e:
-                    self.unregister(elem)
+                    self._tree.find_node_by_object(elem).remove_node()
                     self.context.signal("element_removed", elem)
                     self._elements[i] = None
         self.remove_elements_from_operations(elements_list)
@@ -2023,7 +2055,7 @@ class Elemental(Modifier):
         for op in operations_list:
             for i, o in enumerate(self._operations):
                 if o is op:
-                    self.unregister(op)
+                    self._tree.find_node_by_object(op).remove_node()
                     self.context.signal("operation_removed", op)
                     self._operations[i] = None
         self.purge_unset()
@@ -2282,22 +2314,12 @@ class Elemental(Modifier):
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
                     try:
-                        results = loader.load(self.context, pathname, **kwargs)
+                        results = loader.load(self.context, self, pathname, **kwargs)
                     except FileNotFoundError:
-                        return None
-                    if results is None:
+                        return False
+                    if not results:
                         continue
-                    elements, ops, note, pathname, basename = results
-                    self._filenodes[pathname] = elements
-                    self.add_elems(elements)
-                    if ops is not None:
-                        self.clear_operations()
-                        self.add_ops(ops)
-                    if note is not None:
-                        self.clear_note()
-                        self.note = note
-                    return elements, pathname, basename
-        return None
+                    return True
 
     def load_types(self, all=True):
         kernel = self.context._kernel
