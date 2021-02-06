@@ -106,7 +106,7 @@ class SVGWriter:
                 stroke = str(abs(stroke)) if stroke is not None and stroke.value is not None else SVG_VALUE_NONE
                 subelement.set(SVG_ATTR_STROKE, stroke)
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
-                    subelement.set(SVG_ATTR_STROKE_OPACITY, stroke_opacity)
+                    subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
                     stroke_width = str(element.stroke_width) if element.stroke_width is not None else SVG_VALUE_NONE
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
@@ -118,9 +118,9 @@ class SVGWriter:
                 fill = str(abs(fill)) if fill is not None and fill.value is not None else SVG_VALUE_NONE
                 subelement.set(SVG_ATTR_FILL, fill)
                 if fill_opacity != 1.0 and fill_opacity is not None:
-                    subelement.set(SVG_ATTR_STROKE_OPACITY, fill_opacity)
+                    subelement.set(SVG_ATTR_STROKE_OPACITY, str(fill_opacity))
                 if element.id is not None:
-                    subelement.set(SVG_ATTR_ID, element.id)
+                    subelement.set(SVG_ATTR_ID, str(element.id))
         tree = ElementTree(root)
         tree.write(f)
 
