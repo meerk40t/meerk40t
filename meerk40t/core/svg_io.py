@@ -376,7 +376,7 @@ class SVGLoader:
                 except KeyError:
                     pass
 
-        elements_modifier._filenodes[pathname] = elements
+        # elements_modifier._filenodes[pathname] = elements
         elements_modifier.add_elems(elements)
         if ops is not None:
             # elements_modifier.clear_operations()

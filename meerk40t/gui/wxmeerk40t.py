@@ -2775,7 +2775,7 @@ class ShadowTree:
             return
         node = self.wxtree.GetItemData(item)
 
-        self.root.create_menu(self.gui, node)
+        self.create_menu(self.gui, node)
 
     def on_item_activated(self, event):
         """
@@ -2819,7 +2819,7 @@ class ShadowTree:
         if self.do_not_select:
             return
         selected = [
-            self.wxtree.GetItemData(item).object for item in self.wxtree.GetSelections()
+            self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
         self.elements.set_selected(selected)
         self.refresh_tree()
@@ -2871,7 +2871,7 @@ class ShadowTree:
         if node is None:
             return
         menu = wx.Menu()
-        if isinstance(node, RootNode):
+        if node.parent is None:
             return
         elements = self.elements
 
@@ -3526,7 +3526,9 @@ class ShadowTree:
                 self.context.console("operation delete\n")
             elif node.type == NODE_FILE_FILE:
                 # Removing file can only have 1 copy.
-                elements.remove_files([node.filepath])
+                # elements.remove_files([node.filepath])
+                pass
+                # TODO: File remove no longer works.
             elif node.type == NODE_OPERATION_ELEMENT:
                 # Operation_element can occur many times in the same operation node.
                 index = node.parent.index(node)
@@ -3625,17 +3627,9 @@ class ShadowTree:
         :return:
         """
         context = self.context
-        elements = context.elements
 
         def specific(event):
-            t = node.type
-            if t == NODE_ELEMENTS_BRANCH:
-                context.elements._elements.reverse()
-            elif t == NODE_OPERATION_BRANCH:
-                context.elements._operations.reverse()
-            elif t == NODE_OPERATION:
-                for op in elements.ops(emphasized=True):
-                    op.reverse()
+            node.reverse()
             self.context.signal("rebuild_tree", 0)
 
         return specific

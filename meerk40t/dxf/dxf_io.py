@@ -262,7 +262,7 @@ class DxfLoader:
                         path = Move(path.first_point) + path
                 elements.append(path)
 
-        elements_modifier._filenodes[pathname] = elements
+        # elements_modifier._filenodes[pathname] = elements
         elements_modifier.add_elems(elements)
         elements_modifier.classify(elements)
         return True

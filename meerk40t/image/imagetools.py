@@ -1298,7 +1298,7 @@ class ImageLoader:
             pass
         elements = Group()
         elements.append(image)
-        elements_modifier._filenodes[pathname] = elements
+        # elements_modifier._filenodes[pathname] = elements
         elements_modifier.add_elem(elements)
         # elements_modifier.classify(elements)
         return True

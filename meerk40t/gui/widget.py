@@ -73,8 +73,10 @@ class Scene(Module):
 
     def finalize(self, *args, **kwargs):
         elements = self.context.elements
-        for e in elements.elems():
-            elements.unregister(e)
+        for e in elements.elems_nodes():
+            e.unregister()
+        for op in elements.ops_nodes():
+            op.unregister()
 
     def signal(self, *args, **kwargs):
         self._signal_widget(self.widget_root, *args, **kwargs)

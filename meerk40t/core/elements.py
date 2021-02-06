@@ -42,6 +42,8 @@ NODE_ELEMENT = 21
 NODE_FILES_BRANCH = 30
 NODE_FILE_FILE = 31
 NODE_FILE_ELEMENT = 32
+NODE_TEMPLATE_BRANCH = 40
+NODE_TEMPLATE_OPERATION = 41
 
 
 class Node(list):
@@ -85,38 +87,34 @@ class Node(list):
 
     def select(self):
         self.selected = True
-        self.context.signal("selected", self)
+        self._root.notify_selected(self)
 
     def unselect(self):
         self.selected = False
-        self.context.signal("selected", self)
+        self._root.notify_selected(self)
 
     def highlight(self):
         self.highlighted = True
-        self.context.signal("highlighted", self)
+        self._root.notify_highlighted(self)
 
     def unhighlight(self):
         self.highlighted = False
-        self.context.signal("highlighted", self)
+        self._root.notify_highlighted(self)
 
     def emphasize(self):
         self.emphasized = True
-        self.context.signal("emphasized", self)
-        self.validate_bounds()
+        self._root.notify_emphasized(self)
 
     def unemphasize(self):
         self.emphasized = False
-        self.context.signal("emphasized", self)
-        self.validate_bounds()
+        self._root.notify_emphasized(self)
 
     def modified(self):
         """
         The matrix transformation was changed.
         """
-        self._root.bounds = None
-        self._bounds = None
-        self.validate_bounds()
-        self.context.signal("modified", self)
+        self._root.notify_modified(self)
+        self._bounds_dirty = True
 
     def altered(self):
         """
@@ -133,10 +131,8 @@ class Node(list):
             pass
         self.cache = None
         self.icon = None
-        self._root.bounds = None
         self._bounds = None
-        self.validate_bounds()
-        self.context.signal("altered", self)
+        self._root.notify_altered(self)
 
     def unregister(self):
         try:
@@ -212,6 +208,7 @@ class Node(list):
         nodes = self._root.tree_lookup[id(self.object)]
         print(nodes)
         nodes.remove(self)
+        self.notify_removed(self)
 
     def open_node(self):
         objects = self.object
@@ -238,18 +235,29 @@ class Node(list):
         dest.insert_node(self, pos=pos)
 
     def notify_added(self, node):
-        pass
+        self._root.notify_added(node)
 
     def notify_removed(self, node):
+        self._root.notify_removed(node)
         self.item = None
         self._parent = None
         self._root = None
         self.type = -1
-        self.remove_node()
+        # self.remove_node()
+
+    def notify_changed(self, node):
+        self._root.notify_changed(node)
+        # self.validate_bounds()
+
+    def notify_altered(self, node):
+        self._root.bounds = None
+        self.validate_bounds()
+        self.context.signal("altered", self)
 
 
 class RootNode(Node):
-    def __init__(self, elements):
+    def __init__(self, context):
+        elements = context.elements
         super().__init__(
             data_object=elements,
             node_type=NODE_ROOT,
@@ -257,16 +265,48 @@ class RootNode(Node):
             parent=None,
             root=self,
         )
+        self.context = context
         self.tree_lookup = {}
+
         self.elements = elements
-        self.add_node(elements._operations, NODE_OPERATION_BRANCH, name="Operations")
-        self.add_node(elements._elements, NODE_ELEMENTS_BRANCH, name="Elements")
-        self.add_node(elements._filenodes, NODE_FILES_BRANCH, name="Files")
+        self.add_node(None, NODE_OPERATION_BRANCH, name="Operations")
+        self.add_node(None, NODE_ELEMENTS_BRANCH, name="Elements")
+        self.add_node(None, NODE_FILES_BRANCH, name="Files")
 
     def get_branch(self, node_type):
         for n in self:
             if n.type == node_type:
                 return n
+
+    def notify_added(self, node):
+        if node.type >= NODE_ELEMENTS_BRANCH:
+            self.context.signal("element_added", node)
+        elif node.type >= NODE_OPERATION_BRANCH:
+            self.context.signal("operation_added", node)
+
+    def notify_removed(self, node):
+        if node.type >= NODE_ELEMENTS_BRANCH:
+            self.context.signal("element_removed", node)
+        elif node.type >= NODE_OPERATION_BRANCH:
+            self.context.signal("operation_removed", node)
+
+    def notify_changed(self, node):
+        self._root.notify_changed(node)
+
+    def notify_emphasized(self, node):
+        self.context.signal("emphasized", node)
+
+    def notify_selected(self, node):
+        self.context.signal("selected", node)
+
+    def notify_highlighted(self, node):
+        self.context.signal("highlighted", node)
+
+    def notify_modified(self, node):
+        self._root.bounds = None
+        self._bounds = None
+        # self.validate_bounds()
+        self.context.signal("modified", self)
 
 
 class Elemental(Modifier):
@@ -281,17 +321,13 @@ class Elemental(Modifier):
 
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
-        self._templates = list()  # Not implemented.
-        self._operations = list()
-        self._elements = list()
-        self._filenodes = {}
 
         self._clipboard = {}
         self._clipboard_default = "0"
 
         self.note = None
         self._bounds = None
-        self._tree = RootNode(self)
+        self._tree = None
 
     def attach(self, *a, **kwargs):
         context = self.context
@@ -302,6 +338,7 @@ class Elemental(Modifier):
         context.load = self.load
         context.load_types = self.load_types
         context = self.context
+        self._tree = RootNode(context)
 
         # Element Select
         @context.console_command(
@@ -1937,11 +1974,21 @@ class Elemental(Modifier):
     def ops(self, **kwargs):
         operations = self._tree.get_branch(NODE_OPERATION_BRANCH)
         for item in self._filtered_list(operations, **kwargs):
-            yield item
+            yield item.object
 
     def elems(self, **kwargs):
         elements = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
         for item in self._filtered_list(elements, **kwargs):
+            yield item.object
+
+    def elems_nodes(self, **kwargs):
+        elements = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
+        for item in self._filtered_list(elements, **kwargs):
+            yield item
+
+    def ops_nodes(self, **kwargs):
+        operations = self._tree.get_branch(NODE_OPERATION_BRANCH)
+        for item in self._filtered_list(operations, **kwargs):
             yield item
 
     def first_element(self, **kwargs):
@@ -1971,57 +2018,39 @@ class Elemental(Modifier):
         raise IndexError
 
     def add_op(self, op):
-        self._operations.append(op)
         operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
         operation_branch.add_node(op, node_type=NODE_OPERATION_BRANCH+1)
         self.context.signal("operation_added", op)
 
     def add_ops(self, adding_ops):
-        self._operations.extend(adding_ops)
         operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
         for op in adding_ops:
             operation_branch.add_node(op, node_type=NODE_OPERATION_BRANCH+1)
         self.context.signal("operation_added", adding_ops)
 
     def add_elem(self, element):
-        self._elements.append(element)
         element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
         element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH+1)
         self.context.signal("element_added", element)
 
     def add_elems(self, adding_elements):
-        self._elements.extend(adding_elements)
         element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
         for element in adding_elements:
             element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH+1)
         self.context.signal("element_added", adding_elements)
 
-    def files(self):
-        return self._filenodes
-
     def clear_operations(self):
-        for op in self._operations:
-            operation_node = self._tree.get_branch(NODE_OPERATION_BRANCH)
-            node = operation_node.find_node_by_object(op)
-            if node is not None:
-                node.remove_node()
-            else:
-                continue
-            self.context.signal("operation_removed", op)
-        self._operations.clear()
+        for op in self.ops_nodes():
+            if op is not None:
+                op.remove_node()
 
     def clear_elements(self):
-        for e in self._elements:
-            node = self._tree.get_branch(NODE_ELEMENTS_BRANCH).find_node_by_object(e)
-            if node is not None:
-                node.remove_node()
-            else:
-                continue
-            self.context.signal("element_removed", e)
-        self._elements.clear()
+        for e in list(self.elems_nodes()):
+            if e is not None:
+                e.remove_node()
 
     def clear_files(self):
-        self._filenodes.clear()
+        pass
 
     def clear_elements_and_operations(self):
         self.clear_elements()
@@ -2037,57 +2066,33 @@ class Elemental(Modifier):
     def clear_note(self):
         self.note = None
 
-    def remove_files(self, file_list):
-        for f in file_list:
-            del self._filenodes[f]
-
     def remove_elements(self, elements_list):
         for elem in elements_list:
-            for i, e in enumerate(self._elements):
-                if elem is e:
-                    self._tree.find_node_by_object(elem).remove_node()
-                    self.context.signal("element_removed", elem)
-                    self._elements[i] = None
+            for i, e in enumerate(self.elems_nodes()):
+                if elem is e.object:
+                    e.remove_node()
         self.remove_elements_from_operations(elements_list)
         self.validate_bounds()
 
     def remove_operations(self, operations_list):
         for op in operations_list:
-            for i, o in enumerate(self._operations):
+            for i, o in enumerate(self.ops()):
                 if o is op:
                     self._tree.find_node_by_object(op).remove_node()
                     self.context.signal("operation_removed", op)
-                    self._operations[i] = None
-        self.purge_unset()
 
     def remove_elements_from_operations(self, elements_list):
-        for i, op in enumerate(self._operations):
-            if op is None:
-                continue
-            try:
-                elems = [e for e in op if e not in elements_list]
-            except TypeError:
-                continue  # This isn't iterable.
-            op.clear()
-            op.extend(elems)
-        self.purge_unset()
-
-    def purge_unset(self):
-        if None in self._operations:
-            ops = [op for op in self._operations if op is not None]
-            self._operations.clear()
-            self._operations.extend(ops)
-        if None in self._elements:
-            elems = [elem for elem in self._elements if elem is not None]
-            self._elements.clear()
-            self._elements.extend(elems)
+        for i, op in enumerate(self.ops()):
+            for e in op:
+                if e.object not in elements_list:
+                    e.remove_node()
 
     def bounds(self):
         return self._bounds
 
     def validate_bounds(self):
         boundary_points = []
-        for e in self._elements:
+        for e in self.elems():
             if (
                 e.last_transform is None
                 or e.last_transform != e.transform
@@ -2146,7 +2151,7 @@ class Elemental(Modifier):
         """
         if selected is None:
             selected = []
-        for s in self._elements:
+        for s in self.elems_nodes():
             should_select = self.is_in_set(s, selected, False)
             should_emphasize = self.is_in_set(s, selected)
             if s.emphasized:
@@ -2161,7 +2166,7 @@ class Elemental(Modifier):
             else:
                 if should_select:
                     s.select()
-        for s in self._operations:
+        for s in self.ops_nodes():
             should_select = self.is_in_set(s, selected, False)
             should_emphasize = self.is_in_set(s, selected)
             if s.emphasized:
@@ -2273,7 +2278,6 @@ class Elemental(Modifier):
             if hasattr(element, "operation"):
                 add_funct(element)
                 continue
-
             for op in items:
                 if op.operation == "Raster":
                     if image_added:
