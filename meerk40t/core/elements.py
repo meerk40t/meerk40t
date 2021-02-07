@@ -351,7 +351,7 @@ class LaserOperation(Node):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.operation = None
         try:
             self.operation = kwargs["operation"]

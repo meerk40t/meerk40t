@@ -144,9 +144,6 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
-MEERK40T_HELP = "https://github.com/meerk40t/meerk40t/wiki"
-MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
 
 def plugin(kernel, lifecycle):
@@ -530,41 +527,6 @@ class MeerK40t(wx.Frame, Module, Job):
         context.register("control/egv export", self.egv_export)
         context.register("control/egv import", self.egv_import)
 
-        @context.console_argument("page", help="Webhelp page", type=str)
-        @context.console_command("webhelp", help="Launch a registered webhelp page")
-        def webhelp(channel, _, page=None, **kwargs):
-            if page is None:
-                channel(_("----------"))
-                channel(_("Webhelp Registered:"))
-                for i, name in enumerate(context.match("webhelp")):
-                    value = context.registered[name]
-                    name = name.split('/')[-1]
-                    channel("%d: %s %s" % (i + 1, str(name).ljust(15), value))
-                channel(_("----------"))
-                return
-            try:
-                page_num = int(page)
-                for i, name in enumerate(context.match("webhelp")):
-                    if i == page_num:
-                        value = context.registered[name]
-                        page = value
-            except ValueError:
-                pass
-            key = "webhelp/%s" % page
-            if key in context.registered:
-                value = str(context.registered[key])
-                if not value.startswith("http"):
-                    channel("bad webhelp")
-                    return
-                import webbrowser
-                webbrowser.open(value, new=0, autoraise=True)
-            else:
-                channel(_("Webhelp not found."))
-
-        context.register("webhelp/help", MEERK40T_HELP)
-        context.register("webhelp/main", MEERK40T_WEBSITE)
-        context.register("webhelp/issues", MEERK40T_ISSUES)
-
         @context.console_command("theme", help="Theming information and assignments")
         def theme(command, channel, _, args=tuple(), **kwargs):
             channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
@@ -673,7 +635,7 @@ class MeerK40t(wx.Frame, Module, Job):
             _("" if self.is_dark else "Main"),
             style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
         )
-        self.Bind(RB.EVT_RIBBONBAR_HELP_CLICK, self.launch_help)
+        self.Bind(RB.EVT_RIBBONBAR_HELP_CLICK, lambda e: self.context.console("webhelp help\n"))
         toolbar = RB.RibbonButtonBar(toolbar_panel)
         self.toolbar_button_bar = toolbar
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
@@ -1214,8 +1176,8 @@ class MeerK40t(wx.Frame, Module, Job):
             id=ID_MENU_SPOOLER,
         )
 
-        self.Bind(wx.EVT_MENU, self.launch_help, id=wx.ID_HELP)
-        self.Bind(wx.EVT_MENU, self.launch_website, id=ID_HOMEPAGE)
+        self.Bind(wx.EVT_MENU, lambda e: self.context.console("webhelp help\n"), id=wx.ID_HELP)
+        self.Bind(wx.EVT_MENU, lambda e: self.context.console("webhelp main\n"), id=ID_HOMEPAGE)
 
         self.add_language_menu()
 
@@ -2362,28 +2324,6 @@ class MeerK40t(wx.Frame, Module, Job):
             yield COMMAND_WAIT_FINISH
 
         self.context.spooler.job(home_dot_test)
-
-
-    def launch_help(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Launch help wiki
-
-        :param event:
-        :return:
-        """
-        import webbrowser
-        webbrowser.open(MEERK40T_HELP, new=0, autoraise=True)
-
-    def launch_website(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Launch meerk40t mainpage
-
-        :param event:
-        :return:
-        """
-        import webbrowser
-        webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
-
 
 
 NODE_ROOT = 0
@@ -4079,7 +4019,7 @@ def send_file_to_developers(filename):
         dlg.ShowModal()
         dlg.Destroy()
     else:
-
+        MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
             _(

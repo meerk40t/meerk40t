@@ -128,6 +128,15 @@ def run():
     except ImportError:
         pass
 
+
+    try:
+        from .core import webhelp
+
+        kernel.add_plugin(webhelp.plugin)
+    except ImportError:
+        pass
+
+
     try:
         from .core import cutplanner
 
