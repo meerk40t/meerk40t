@@ -1052,7 +1052,7 @@ class Kernel:
                     kwargs["args"] = remainder.split()
                 if output_type is None:
                     remainder = ""  # not chaining
-                returned = func(command, channel=channel, **ik, **kwargs)
+                returned = func(command=command, channel=channel, **ik, **kwargs)
                 if returned is None:
                     value = None
                     out_type = None

@@ -530,6 +530,41 @@ class MeerK40t(wx.Frame, Module, Job):
         context.register("control/egv export", self.egv_export)
         context.register("control/egv import", self.egv_import)
 
+        @context.console_argument("page", help="Webhelp page", type=str)
+        @context.console_command("webhelp", help="Launch a registered webhelp page")
+        def webhelp(channel, _, page=None, **kwargs):
+            if page is None:
+                channel(_("----------"))
+                channel(_("Webhelp Registered:"))
+                for i, name in enumerate(context.match("webhelp")):
+                    value = context.registered[name]
+                    name = name.split('/')[-1]
+                    channel("%d: %s %s" % (i + 1, str(name).ljust(15), value))
+                channel(_("----------"))
+                return
+            try:
+                page_num = int(page)
+                for i, name in enumerate(context.match("webhelp")):
+                    if i == page_num:
+                        value = context.registered[name]
+                        page = value
+            except ValueError:
+                pass
+            key = "webhelp/%s" % page
+            if key in context.registered:
+                value = str(context.registered[key])
+                if not value.startswith("http"):
+                    channel("bad webhelp")
+                    return
+                import webbrowser
+                webbrowser.open(value, new=0, autoraise=True)
+            else:
+                channel(_("Webhelp not found."))
+
+        context.register("webhelp/help", MEERK40T_HELP)
+        context.register("webhelp/main", MEERK40T_WEBSITE)
+        context.register("webhelp/issues", MEERK40T_ISSUES)
+
         @context.console_command("theme", help="Theming information and assignments")
         def theme(command, channel, _, args=tuple(), **kwargs):
             channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
@@ -1013,7 +1048,8 @@ class MeerK40t(wx.Frame, Module, Job):
         self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
 
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_HELP, _("Webpage"), "")
+        wxglade_tmp_menu.Append(wx.ID_HELP, _("Help"), "")
+        wxglade_tmp_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
         wxglade_tmp_menu.Append(wx.ID_ABOUT, _("About"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
 
@@ -2328,7 +2364,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.context.spooler.job(home_dot_test)
 
 
-    def launch_help(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def launch_help(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Launch help wiki
 
@@ -2338,7 +2374,7 @@ class MeerK40t(wx.Frame, Module, Job):
         import webbrowser
         webbrowser.open(MEERK40T_HELP, new=0, autoraise=True)
 
-    def launch_website(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def launch_website(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Launch meerk40t mainpage
 
