@@ -24,7 +24,7 @@ from .bufferview import BufferView
 from .camerainteface import CameraInterface
 from .controller import Controller
 from ..core.cutplanner import CutPlanner
-from ..core.laseroperation import LaserOperation, CommandOperation
+from ..core.elements import LaserOperation, CommandOperation
 from .devicemanager import DeviceManager
 from .icons import (
     icons8_emergency_stop_button_50,
@@ -2402,7 +2402,7 @@ class ShadowTree:
         child, cookie = tree.GetFirstChild(node)
         while child.IsOk():
             child_node = self.wxtree.GetItemData(child)
-            element = child_node.object
+            element = child_node
             tree.SetItemBackgroundColour(child, None)
             try:
                 if element.highlighted:
@@ -2429,7 +2429,7 @@ class ShadowTree:
         self.build_tree(self.element_root)
         node_operations = self.element_root.get_branch(NODE_OPERATION_BRANCH)
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
-        for node in node_operations:
+        for node in node_operations._children:
             try:
                 op = node.object.operation
             except AttributeError:
@@ -2449,12 +2449,12 @@ class ShadowTree:
         node_files = self.element_root.get_branch(NODE_FILES_BRANCH)
         self.set_icon(node_files, icons8_file_20.GetBitmap(True))
 
-        for n in node_files:
+        for n in node_files.children:
             self.set_icon(n, icons8_file_20.GetBitmap(True))
         self.wxtree.ExpandAll()
 
     def build_tree(self, parent_node):
-        for node in parent_node:
+        for node in parent_node._children:
             self.node_register(node)
             self.build_tree(node)
 
@@ -2962,7 +2962,7 @@ class ShadowTree:
             menu.AppendSubMenu(duplicate_menu_eop, _("Duplicate"))
         if (
             t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH)
-            and len(node) > 1
+            and node.count_children() > 1
         ):
             gui.Bind(
                 wx.EVT_MENU,
@@ -3678,48 +3678,6 @@ class ShadowTree:
 
         return specific
 
-
-class ShadowNode(list):
-    """
-    Creating the object registers the position in the tree according to the parent and root.
-    Deleting the object deregisters the node in the tree.
-    """
-
-    def __init__(self, node_type, data_object, parent, root, pos=None, name=None):
-        list.__init__(self)
-        self.parent = parent
-        self.root = root
-        self.object = data_object
-        self.type = node_type
-        self.name = name
-        if name is None:
-            if self.name is None:
-                try:
-                    self.name = self.object.id
-                    if self.name is None:
-                        self.name = str(self.object)
-                except AttributeError:
-                    self.name = str(self.object)
-        else:
-            self.name = name
-        self.type = node_type
-        parent.append(self)
-        self.filepath = None
-        try:
-            self.bounds = data_object.bbox()
-        except AttributeError:
-            self.bounds = None
-
-    def __str__(self):
-        return "Node(%s, %d)" % (str(self.item), self.type)
-
-    def __repr__(self):
-        return "Node(%d, %s, %s, %s)" % (
-            self.type,
-            str(self.object),
-            str(self.parent),
-            str(self.root),
-        )
 
 def get_key_name(event):
     keyvalue = ""

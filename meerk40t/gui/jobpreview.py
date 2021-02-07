@@ -2,7 +2,7 @@ import wx
 
 from ..kernel import Module
 from .icons import icons8_laser_beam_52
-from ..core.laseroperation import LaserOperation
+from ..core.elements import LaserOperation
 
 _ = wx.GetTranslation
 

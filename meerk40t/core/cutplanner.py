@@ -3,7 +3,7 @@ from math import isnan, isinf, ceil
 
 from ..kernel import Modifier
 from ..core.cutcode import CutCode
-from .laseroperation import LaserOperation
+from .elements import LaserOperation
 from ..device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
     COMMAND_MODE_RAPID,

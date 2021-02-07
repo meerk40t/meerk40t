@@ -3,7 +3,7 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
-from .laseroperation import LaserOperation
+from .elements import LaserOperation
 from ..svgelements import (
     SVG_NAME_TAG,
     SVG_ATTR_VERSION,

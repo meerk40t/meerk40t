@@ -1,7 +1,4 @@
-from copy import copy
-
 from ..kernel import Modifier
-from .laseroperation import LaserOperation
 from ..device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
     COMMAND_MODE_RAPID,
@@ -22,6 +19,25 @@ from ..svgelements import (
     SVGImage,
     SVGElement,
     Point,
+    Shape,
+    Move,
+    Close,
+    Line,
+    QuadraticBezier,
+    CubicBezier,
+    Arc,
+)
+
+from copy import copy
+
+from .cutcode import (
+    LaserSettings,
+    CutCode,
+    LineCut,
+    QuadCut,
+    CubicCut,
+    ArcCut,
+    RasterCut,
 )
 
 
@@ -46,21 +62,53 @@ NODE_TEMPLATE_BRANCH = 40
 NODE_TEMPLATE_OPERATION = 41
 
 
-class Node(list):
-    def __init__(self, data_object, node_type=-1, name=None, parent=None, root=None):
-        list.__init__(self)
-        self._root = root
-        self._parent = parent
-        self.object = data_object
-        self.type = node_type
+class Node:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._children = list()
+        self._root = None
+        self._parent = None
+        self.object = None
+        self.type = None
+
+        self._selected = False
+        self._emphasized = False
+        self._highlighted = False
+        self.opened = False
+
+        self._bounds = None
+        self._bounds_dirty = True
+        self.name = None
+
         self.icon = None
         self.cache = None
         self.last_transform = None
-        self.selected = False
-        self.emphasized = False
-        self.highlighted = False
-        self._opened = False
-        self._openable = isinstance(data_object, list)
+
+    def attach(self, node, pos=None):
+        node._parent = self
+        node._root = self.root
+        if pos is None:
+            self._children.append(node)
+        else:
+            self._children.insert(pos, node)
+
+    def add_node(self, data_object, node_type=-1, name=None, pos=None):
+        node = Node()
+        node.object = data_object
+        node.set_name(name)
+        node.type = node_type
+        self.attach(node)
+        if pos is None:
+            self._children.append(node)
+        else:
+            self._children.insert(pos, node)
+        # if id(data_object) in self._root.tree_lookup:
+        #     self._root.tree_lookup[id(data_object)].append(self)
+        # else:
+        #     self._root.tree_lookup[id(data_object)] = [self]
+        return node
+
+    def set_name(self, name):
         self.name = name
         if name is None:
             if self.name is None:
@@ -72,8 +120,6 @@ class Node(list):
                     self.name = str(self.object)
         else:
             self.name = name
-        self._bounds = None
-        self._bounds_dirty = True
 
     def __repr__(self):
         return "Node(%s, %s, %s)" % (
@@ -85,28 +131,38 @@ class Node(list):
     def __eq__(self, other):
         return other is self
 
-    def select(self):
-        self.selected = True
+    def count_children(self):
+        return len(self._children)
+
+    @property
+    def children(self):
+        return self._children
+
+    @property
+    def selected(self):
+        return self._selected
+
+    @selected.setter
+    def selected(self, value):
+        self._selected = value
         self._root.notify_selected(self)
 
-    def unselect(self):
-        self.selected = False
-        self._root.notify_selected(self)
+    @property
+    def highlighted(self):
+        return self._highlighted
 
-    def highlight(self):
-        self.highlighted = True
+    @highlighted.setter
+    def highlighted(self, value):
+        self._highlighted = value
         self._root.notify_highlighted(self)
 
-    def unhighlight(self):
-        self.highlighted = False
-        self._root.notify_highlighted(self)
+    @property
+    def emphasized(self):
+        return self._emphasized
 
-    def emphasize(self):
-        self.emphasized = True
-        self._root.notify_emphasized(self)
-
-    def unemphasize(self):
-        self.emphasized = False
+    @emphasized.setter
+    def emphasized(self, value):
+        self._emphasized = value
         self._root.notify_emphasized(self)
 
     def modified(self):
@@ -148,9 +204,9 @@ class Node(list):
         except AttributeError:
             pass
         try:
-            self.unselect()
-            self.unemphasize()
-            self.unhighlight()
+            self.selected = False
+            self.emphasized = False
+            self.highlighted = False
             self.modified()
         except AttributeError:
             pass
@@ -176,7 +232,7 @@ class Node(list):
     def objects_of_children(self, types):
         if isinstance(self.object, types):
             yield self.object
-        for q in self:
+        for q in self._children:
             for o in q.objects_of_children(types):
                 yield o
 
@@ -189,24 +245,9 @@ class Node(list):
             return None
         return nodes[0]
 
-    def add_node(self, data_object, node_type=-1, name=None, pos=None):
-        node = Node(
-            data_object, node_type=node_type, name=name, parent=self, root=self._root
-        )
-        if pos is None:
-            self.append(node)
-        else:
-            self.insert(pos, node)
-        if id(data_object) in self._root.tree_lookup:
-            self._root.tree_lookup[id(data_object)].append(self)
-        else:
-            self._root.tree_lookup[id(data_object)] = [self]
-        return node
-
     def remove_node(self):
-        self._parent.remove(self)
+        self._parent._children.remove(self)
         nodes = self._root.tree_lookup[id(self.object)]
-        print(nodes)
         nodes.remove(self)
         self.notify_removed(self)
 
@@ -222,8 +263,7 @@ class Node(list):
             f = node_address.find(':')
             if f == -1:
                 index = int(node_address)
-                if not self._opened and self._openable:
-                    return self[index]
+                return self[index]
             index = int(node_address[:f])
             node = self[index]
             return node.get_node(node_address[f+1:])
@@ -257,24 +297,20 @@ class Node(list):
 
 class RootNode(Node):
     def __init__(self, context):
-        elements = context.elements
-        super().__init__(
-            data_object=elements,
-            node_type=NODE_ROOT,
-            name="Project",
-            parent=None,
-            root=self,
-        )
+        super().__init__()
+        self._root = self
+        self.set_name("Project")
+        self.type = NODE_ROOT
         self.context = context
         self.tree_lookup = {}
 
-        self.elements = elements
+        self.elements = context.elements
         self.add_node(None, NODE_OPERATION_BRANCH, name="Operations")
         self.add_node(None, NODE_ELEMENTS_BRANCH, name="Elements")
         self.add_node(None, NODE_FILES_BRANCH, name="Files")
 
     def get_branch(self, node_type):
-        for n in self:
+        for n in self._children:
             if n.type == node_type:
                 return n
 
@@ -307,6 +343,271 @@ class RootNode(Node):
         self._bounds = None
         # self.validate_bounds()
         self.context.signal("modified", self)
+
+
+class LaserOperation(Node):
+    """
+    Default object defining any operation done on the laser.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.operation = None
+        try:
+            self.operation = kwargs["operation"]
+        except KeyError:
+            self.operation = "Unknown"
+        self.output = True
+        self.show = True
+
+        self._status_value = "Queued"
+        self.color = Color("black")
+        self.settings = LaserSettings(*args, **kwargs)
+
+        try:
+            self.color = Color(kwargs["color"])
+        except (ValueError, TypeError, KeyError):
+            pass
+        try:
+            self.output = bool(kwargs["output"])
+        except (ValueError, TypeError, KeyError):
+            pass
+        try:
+            self.show = bool(kwargs["show"])
+        except (ValueError, TypeError, KeyError):
+            pass
+        if len(args) == 1:
+            obj = args[0]
+            if isinstance(obj, SVGElement):
+                self.append(obj)
+            elif isinstance(obj, LaserOperation):
+                self.operation = obj.operation
+
+                self.color = Color(obj.color)
+                self.output = obj.output
+                self.show = obj.show
+
+                self.settings = LaserSettings(obj.settings)
+
+                for element in obj:
+                    element_copy = copy(element)
+                    self.append(element_copy)
+        if self.operation == "Cut":
+            if self.settings.speed is None:
+                self.settings.speed = 10.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+        if self.operation == "Engrave":
+            if self.settings.speed is None:
+                self.settings.speed = 35.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+        if self.operation == "Raster":
+            if self.settings.raster_step == 0:
+                self.settings.raster_step = 1
+            if self.settings.speed is None:
+                self.settings.speed = 150.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+        self.node = None
+
+    def __str__(self):
+        op = self.operation
+        if op is None:
+            op = "Unknown"
+        if self.operation == "Raster":
+            op += str(self.settings.raster_step)
+        parts = list()
+        parts.append("%gmm/s" % self.settings.speed)
+        if self.operation in ("Raster", "Image"):
+            if self.settings.raster_swing:
+                raster_dir = "-"
+            else:
+                raster_dir = "="
+            if self.settings.raster_direction == 0:
+                raster_dir += "T2B"
+            elif self.settings.raster_direction == 1:
+                raster_dir += "B2T"
+            elif self.settings.raster_direction == 2:
+                raster_dir += "R2L"
+            elif self.settings.raster_direction == 3:
+                raster_dir += "L2R"
+            elif self.settings.raster_direction == 4:
+                raster_dir += "X"
+            else:
+                raster_dir += "%d" % self.settings.raster_direction
+            parts.append(raster_dir)
+        parts.append("%gppi" % self.settings.power)
+        if self.operation in ("Raster", "Image"):
+            if isinstance(self.settings.overscan, str):
+                parts.append("±%s" % self.settings.overscan)
+            else:
+                parts.append("±%d" % self.settings.overscan)
+        if self.settings.dratio_custom:
+            parts.append("d:%g" % self.settings.dratio)
+        if self.settings.acceleration_custom:
+            parts.append("a:%d" % self.settings.acceleration)
+        if self.settings.passes_custom:
+            parts.append("passes: %d" % self.settings.passes)
+        if self.settings.dot_length_custom:
+            parts.append("dot: %d" % self.settings.dot_length)
+        if not self.output:
+            op = "(Disabled) " + op
+        return "%s %s" % (op, " ".join(parts))
+
+    def __copy__(self):
+        return LaserOperation(self)
+
+    def time_estimate(self):
+        if self.operation in ("Cut", "Engrave"):
+            estimate = 0
+            for e in self.node:
+                e = e.object
+                if isinstance(e, Shape):
+                    try:
+                        length = e.length(error=1e-2, min_depth=2)
+                    except AttributeError:
+                        length = 0
+                    try:
+                        estimate += length / (39.3701 * self.settings.speed)
+                    except ZeroDivisionError:
+                        estimate = float("inf")
+            hours, remainder = divmod(estimate, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return "%s:%s:%s" % (
+                int(hours),
+                str(int(minutes)).zfill(2),
+                str(int(seconds)).zfill(2),
+            )
+        elif self.operation in ("Raster", "Image"):
+            estimate = 0
+            for e in self.node:
+                e = e.object
+                if isinstance(e, SVGImage):
+                    try:
+                        step = e.raster_step
+                    except AttributeError:
+                        try:
+                            step = int(e.values["raster_step"])
+                        except (KeyError, ValueError):
+                            step = 1
+                    estimate += (e.image_width * e.image_height * step) / (
+                        39.3701 * self.settings.speed
+                    )
+            hours, remainder = divmod(estimate, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return "%s:%s:%s" % (
+                int(hours),
+                str(int(minutes)).zfill(2),
+                str(int(seconds)).zfill(2),
+            )
+        return "Unknown"
+
+    def as_blob(self):
+        c = CutCode()
+        settings = self.settings
+        if self.operation in ("Cut", "Engrave"):
+            for object_path in self.node:
+                object_path = object_path.object
+                if isinstance(object_path, SVGImage):
+                    box = object_path.bbox()
+                    plot = Path(
+                        Polygon(
+                            (box[0], box[1]),
+                            (box[0], box[3]),
+                            (box[2], box[3]),
+                            (box[2], box[1]),
+                        )
+                    )
+                else:
+                    # Is a shape or path.
+                    if not isinstance(object_path, Path):
+                        plot = abs(Path(object_path))
+                    else:
+                        plot = abs(object_path)
+
+                for seg in plot:
+                    if isinstance(seg, Move):
+                        pass  # Move operations are ignored.
+                    elif isinstance(seg, Close):
+                        c.append(LineCut(seg.start, seg.end, settings=settings))
+                    elif isinstance(seg, Line):
+                        c.append(LineCut(seg.start, seg.end, settings=settings))
+                    elif isinstance(seg, QuadraticBezier):
+                        c.append(
+                            QuadCut(seg.start, seg.control, seg.end, settings=settings)
+                        )
+                    elif isinstance(seg, CubicBezier):
+                        c.append(
+                            CubicCut(
+                                seg.start,
+                                seg.control1,
+                                seg.control2,
+                                seg.end,
+                                settings=settings,
+                            )
+                        )
+                    elif isinstance(seg, Arc):
+                        arc = ArcCut(seg, settings=settings)
+                        c.append(arc)
+        elif self.operation == "Raster":
+            direction = settings.raster_direction
+            settings.crosshatch = False
+            if direction == 4:
+                cross_settings = LaserSettings(self.operation.settings)
+                cross_settings.crosshatch = True
+                for object_image in self.node:
+                    object_image = object_image.object
+                    c.append(RasterCut(object_image, settings))
+                    c.append(RasterCut(object_image, cross_settings))
+            else:
+                for object_image in self.node:
+                    object_image = object_image.object
+                    c.append(RasterCut(object_image, settings))
+        elif self.operation == "Image":
+            for object_image in self.node:
+                object_image = object_image.object
+                settings = LaserSettings(self.settings)
+                try:
+                    settings.raster_step = int(object_image.values["raster_step"])
+                except KeyError:
+                    settings.raster_step = 1
+                direction = settings.raster_direction
+                settings.crosshatch = False
+                if direction == 4:
+                    cross_settings = LaserSettings(settings)
+                    cross_settings.crosshatch = True
+                    c.append(RasterCut(object_image, settings))
+                    c.append(RasterCut(object_image, cross_settings))
+                else:
+                    c.append(RasterCut(object_image, settings))
+        if len(c) == 0:
+            return None
+        return c
+
+
+class CommandOperation(Node):
+    """CommandOperation is a basic command operation. It contains nothing except a single command to be executed."""
+
+    def __init__(self, name, command, *args, **kwargs):
+        super().__init__(*args, name=name, **kwargs)
+        self.name = name
+        self.command = command
+        self.args = args
+        self.output = True
+        self.operation = "Command"
+
+    def __str__(self):
+        return "%s: %s" % (self.name, str(self.args))
+
+    def __copy__(self):
+        return CommandOperation(self.name, self.command, *self.args)
+
+    def __len__(self):
+        return 1
+
+    def generate(self):
+        yield (self.command,) + self.args
 
 
 class Elemental(Modifier):
@@ -1960,7 +2261,7 @@ class Elemental(Modifier):
             h = kwargs["highlighted"]
         else:
             h = None
-        for obj in item_list:
+        for obj in item_list.children:
             if obj is None:
                 continue
             if s is not None and s != obj.selected:
@@ -2019,13 +2320,15 @@ class Elemental(Modifier):
 
     def add_op(self, op):
         operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
-        operation_branch.add_node(op, node_type=NODE_OPERATION_BRANCH+1)
+        operation_branch.attach(op)
+        op.type = node_type=NODE_OPERATION_BRANCH+1
         self.context.signal("operation_added", op)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
         for op in adding_ops:
-            operation_branch.add_node(op, node_type=NODE_OPERATION_BRANCH+1)
+            operation_branch.attach(op)
+            op.type = NODE_OPERATION_BRANCH+1
         self.context.signal("operation_added", adding_ops)
 
     def add_elem(self, element):
@@ -2156,31 +2459,31 @@ class Elemental(Modifier):
             should_emphasize = self.is_in_set(s, selected)
             if s.emphasized:
                 if not should_emphasize:
-                    s.unemphasize()
+                    s.emphasized = False
             else:
                 if should_emphasize:
-                    s.emphasize()
+                    s.emphasized = True
             if s.selected:
                 if not should_select:
-                    s.unselect()
+                    s.selected = False
             else:
                 if should_select:
-                    s.select()
+                    s.selected = True
         for s in self.ops_nodes():
             should_select = self.is_in_set(s, selected, False)
             should_emphasize = self.is_in_set(s, selected)
             if s.emphasized:
                 if not should_emphasize:
-                    s.unemphasize()
+                    s.emphasized = False
             else:
                 if should_emphasize:
-                    s.emphasize()
+                    s.emphasized = True
             if s.selected:
                 if not should_select:
-                    s.unselect()
+                    s.selected = False
             else:
                 if should_select:
-                    s.select()
+                    s.selected = True
 
     def center(self):
         bounds = self._bounds
