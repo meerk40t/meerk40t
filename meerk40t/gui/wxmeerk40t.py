@@ -145,6 +145,7 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 MILS_IN_MM = 39.3701
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
+MEERK40T_HELP = "https://github.com/meerk40t/meerk40t/wiki"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
 
@@ -202,7 +203,8 @@ ID_TERMINAL = idinc.new()
 ID_ROTARY = idinc.new()
 ID_RASTER = idinc.new()
 
-ID_CUT_CONFIGURATION = idinc.new()
+ID_HOMEPAGE = idinc.new()
+
 ID_SELECT = idinc.new()
 
 ID_MENU_IMPORT = idinc.new()
@@ -636,6 +638,7 @@ class MeerK40t(wx.Frame, Module, Job):
             _("" if self.is_dark else "Main"),
             style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
         )
+        self.Bind(RB.EVT_RIBBONBAR_HELP_CLICK, self.launch_help)
         toolbar = RB.RibbonButtonBar(toolbar_panel)
         self.toolbar_button_bar = toolbar
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
@@ -1175,7 +1178,8 @@ class MeerK40t(wx.Frame, Module, Job):
             id=ID_MENU_SPOOLER,
         )
 
-        self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
+        self.Bind(wx.EVT_MENU, self.launch_help, id=wx.ID_HELP)
+        self.Bind(wx.EVT_MENU, self.launch_website, id=ID_HOMEPAGE)
 
         self.add_language_menu()
 
@@ -2323,16 +2327,27 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.context.spooler.job(home_dot_test)
 
-    def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
+
+    def launch_help(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
-        Launch webpage
+        Launch help wiki
 
         :param event:
         :return:
         """
         import webbrowser
+        webbrowser.open(MEERK40T_HELP, new=0, autoraise=True)
 
+    def launch_website(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Launch meerk40t mainpage
+
+        :param event:
+        :return:
+        """
+        import webbrowser
         webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
+
 
 
 NODE_ROOT = 0
