@@ -330,7 +330,7 @@ class Planner(Modifier):
         for op in plan:
             try:
                 if op.operation in ("Cut", "Engrave"):
-                    for e in op:
+                    for e in op.children:
                         if not isinstance(e, SVGText):
                             continue  # make raster not needed since its a single real raster.
                         self.jobadd_strip_text()
@@ -348,7 +348,7 @@ class Planner(Modifier):
                 try:
                     if op.operation in ("Cut", "Engrave"):
                         changed = False
-                        for i, e in enumerate(op):
+                        for i, e in enumerate(op.children):
                             if isinstance(e, SVGText):
                                 op[i] = None
                                 changed = True
@@ -418,7 +418,7 @@ class Planner(Modifier):
                         image_element = SVGImage(image=image)
                         image_element.transform.post_translate(xmin, ymin)
                         op.clear()
-                        op.append(image_element)
+                        op.add_node(image_element)
                 except AttributeError:
                     continue
 
@@ -467,12 +467,14 @@ class Planner(Modifier):
         for op in plan:
             try:
                 if op.operation == "Raster":
-                    for elem in op:
+                    for elem in op.children:
+                        elem = elem.object
                         if self.needs_actualization(elem, op.settings.raster_step):
                             self.jobadd_actualize_image()
                             return
                 if op.operation == "Image":
-                    for elem in op:
+                    for elem in op.children:
+                        elem = elem.object
                         if self.needs_actualization(elem, None):
                             self.jobadd_actualize_image()
                             return
@@ -485,11 +487,13 @@ class Planner(Modifier):
             for op in plan:
                 try:
                     if op.operation == "Raster":
-                        for elem in op:
+                        for elem in op.children:
+                            elem = elem.object
                             if self.needs_actualization(elem, op.settings.raster_step):
                                 self.make_actual(elem, op.settings.raster_step)
                     if op.operation == "Image":
-                        for elem in op:
+                        for elem in op.children:
+                            elem = elem.object
                             if self.needs_actualization(elem, None):
                                 self.make_actual(elem, None)
                 except AttributeError:
@@ -514,7 +518,8 @@ class Planner(Modifier):
             plan, commands = self.default_plan()
             for o in plan:
                 if isinstance(o, LaserOperation):
-                    for e in o:
+                    for e in o.children:
+                        e = e.object
                         try:
                             e *= scale_str
                         except AttributeError:

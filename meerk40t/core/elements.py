@@ -133,7 +133,8 @@ class Node:
     @selected.setter
     def selected(self, value):
         self._selected = value
-        self._root.notify_selected(self)
+        if self._root is not None:
+            self._root.notify_selected(self)
 
     @property
     def highlighted(self):
@@ -142,7 +143,8 @@ class Node:
     @highlighted.setter
     def highlighted(self, value):
         self._highlighted = value
-        self._root.notify_highlighted(self)
+        if self._root is not None:
+            self._root.notify_highlighted(self)
 
     @property
     def emphasized(self):
@@ -151,13 +153,15 @@ class Node:
     @emphasized.setter
     def emphasized(self, value):
         self._emphasized = value
-        self._root.notify_emphasized(self)
+        if self._root is not None:
+            self._root.notify_emphasized(self)
 
     def modified(self):
         """
         The matrix transformation was changed.
         """
-        self._root.notify_modified(self)
+        if self._root is not None:
+            self._root.notify_modified(self)
         self._bounds_dirty = True
 
     def altered(self):
@@ -176,7 +180,8 @@ class Node:
         self.cache = None
         self.icon = None
         self._bounds = None
-        self._root.notify_altered(self)
+        if self._root is not None:
+            self._root.notify_altered(self)
 
     def unregister(self):
         try:
@@ -225,18 +230,11 @@ class Node:
                 yield o
 
     def find_node_by_object(self, data_object):
-        try:
-            nodes = self._root.tree_lookup[id(data_object)]
-        except KeyError:
-            return None
-        if len(nodes) == 0:
-            return None
-        return nodes[0]
+        # TODO: RESTORE FUNCTIONALITY
+        return None
 
     def remove_node(self):
         self._parent._children.remove(self)
-        nodes = self._root.tree_lookup[id(self.object)]
-        nodes.remove(self)
         self.notify_removed(self)
 
     def open_node(self):
@@ -290,7 +288,6 @@ class RootNode(Node):
         self.set_name("Project")
         self.type = NODE_ROOT
         self.context = context
-        self.tree_lookup = {}
 
         self.elements = context.elements
         self.add_node(None, NODE_OPERATION_BRANCH, name="Operations")
@@ -377,9 +374,9 @@ class LaserOperation(Node):
 
                 self.settings = LaserSettings(obj.settings)
 
-                for element in obj:
-                    element_copy = copy(element)
-                    self.append(element_copy)
+                for element in obj.children:
+                    element_copy = copy(element.object)
+                    self.add_node(element_copy)
         if self.operation == "Cut":
             if self.settings.speed is None:
                 self.settings.speed = 10.0
@@ -397,7 +394,6 @@ class LaserOperation(Node):
                 self.settings.speed = 150.0
             if self.settings.power is None:
                 self.settings.power = 1000.0
-        self.node = None
 
     def __str__(self):
         op = self.operation
@@ -449,7 +445,7 @@ class LaserOperation(Node):
     def time_estimate(self):
         if self.operation in ("Cut", "Engrave"):
             estimate = 0
-            for e in self.node:
+            for e in self.children:
                 e = e.object
                 if isinstance(e, Shape):
                     try:
@@ -469,7 +465,7 @@ class LaserOperation(Node):
             )
         elif self.operation in ("Raster", "Image"):
             estimate = 0
-            for e in self.node:
+            for e in self.children:
                 e = e.object
                 if isinstance(e, SVGImage):
                     try:
@@ -495,7 +491,7 @@ class LaserOperation(Node):
         c = CutCode()
         settings = self.settings
         if self.operation in ("Cut", "Engrave"):
-            for object_path in self.node:
+            for object_path in self.children:
                 object_path = object_path.object
                 if isinstance(object_path, SVGImage):
                     box = object_path.bbox()
@@ -544,16 +540,16 @@ class LaserOperation(Node):
             if direction == 4:
                 cross_settings = LaserSettings(self.operation.settings)
                 cross_settings.crosshatch = True
-                for object_image in self.node:
+                for object_image in self.children:
                     object_image = object_image.object
                     c.append(RasterCut(object_image, settings))
                     c.append(RasterCut(object_image, cross_settings))
             else:
-                for object_image in self.node:
+                for object_image in self.children:
                     object_image = object_image.object
                     c.append(RasterCut(object_image, settings))
         elif self.operation == "Image":
-            for object_image in self.node:
+            for object_image in self.children:
                 object_image = object_image.object
                 settings = LaserSettings(self.settings)
                 try:
@@ -2299,7 +2295,7 @@ class Elemental(Modifier):
     def ops(self, **kwargs):
         operations = self._tree.get_branch(NODE_OPERATION_BRANCH)
         for item in self._filtered_list(operations, **kwargs):
-            yield item.object
+            yield item
 
     def elems(self, **kwargs):
         elements = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
@@ -2309,11 +2305,6 @@ class Elemental(Modifier):
     def elems_nodes(self, **kwargs):
         elements = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
         for item in self._filtered_list(elements, **kwargs):
-            yield item
-
-    def ops_nodes(self, **kwargs):
-        operations = self._tree.get_branch(NODE_OPERATION_BRANCH)
-        for item in self._filtered_list(operations, **kwargs):
             yield item
 
     def first_element(self, **kwargs):
@@ -2369,7 +2360,7 @@ class Elemental(Modifier):
         self.context.signal("element_added", adding_elements)
 
     def clear_operations(self):
-        for op in self.ops_nodes():
+        for op in self.ops():
             if op is not None:
                 op.remove_node()
 
@@ -2405,10 +2396,10 @@ class Elemental(Modifier):
 
     def remove_operations(self, operations_list):
         for op in operations_list:
-            for i, o in enumerate(self.ops()):
+            for i, o in enumerate(list(self.ops())):
                 if o is op:
-                    self._tree.find_node_by_object(op).remove_node()
-                    self.context.signal("operation_removed", op)
+                    o.remove_node()
+            self.context.signal("operation_removed", op)
 
     def remove_elements_from_operations(self, elements_list):
         for i, op in enumerate(self.ops()):
@@ -2495,7 +2486,7 @@ class Elemental(Modifier):
             else:
                 if should_select:
                     s.selected = True
-        for s in self.ops_nodes():
+        for s in self.ops():
             should_select = self.is_in_set(s, selected, False)
             should_emphasize = self.is_in_set(s, selected)
             if s.emphasized:
@@ -2612,23 +2603,23 @@ class Elemental(Modifier):
                     if image_added:
                         continue  # already added to an image operation, is not added her.
                     if element.stroke is not None and op.color == abs(element.stroke):
-                        op.append(element)
+                        op.add_node(element)
                         was_classified = True
                     elif isinstance(element, SVGImage):
-                        op.append(element)
+                        op.add_node(element)
                         was_classified = True
                     elif element.fill is not None and element.fill.value is not None:
-                        op.append(element)
+                        op.add_node(element)
                         was_classified = True
                 elif (
                     op.operation in ("Engrave", "Cut")
                     and element.stroke is not None
                     and op.color == abs(element.stroke)
                 ):
-                    op.append(element)
+                    op.add_node(element)
                     was_classified = True
                 elif op.operation == "Image" and isinstance(element, SVGImage):
-                    op.append(element)
+                    op.add_node(element)
                     was_classified = True
                     image_added = True
             if not was_classified:
@@ -2636,9 +2627,9 @@ class Elemental(Modifier):
                     op = LaserOperation(
                         operation="Engrave", color=element.stroke, speed=35.0
                     )
-                    op.append(element)
-                    items.append(op)
                     add_funct(op)
+                    op.add_node(element)
+                    items.append(op)
 
     def load(self, pathname, **kwargs):
         kernel = self.context._kernel

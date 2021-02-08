@@ -75,7 +75,7 @@ class Scene(Module):
         elements = self.context.elements
         for e in elements.elems_nodes():
             e.unregister()
-        for op in elements.ops_nodes():
+        for op in elements.ops():
             op.unregister()
 
     def signal(self, *args, **kwargs):
