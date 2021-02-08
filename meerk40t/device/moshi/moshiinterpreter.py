@@ -27,6 +27,8 @@ class MoshiInterpreter(Interpreter, Modifier):
         self.plot = None
         self.plot_gen = None
 
+        self.offset_x = 0
+        self.offset_y = 0
         self.next_x = None
         self.next_y = None
         self.max_x = None
@@ -48,6 +50,8 @@ class MoshiInterpreter(Interpreter, Modifier):
 
         context.interpreter = self
 
+        context.setting(int, "adjust_x", 0)
+        context.setting(int, "adjust_y", 0)
         context.setting(bool, "home_right", False)
         context.setting(bool, "home_bottom", False)
         context.setting(int, "current_x", 0)
@@ -161,6 +165,8 @@ class MoshiInterpreter(Interpreter, Modifier):
             y = 0
         self.context.current_x = x
         self.context.current_y = y
+        x -= self.offset_x
+        y -= self.offset_y
         self.pipe_int16le(int(x))
         self.pipe_int16le(int(y))
 
@@ -172,34 +178,32 @@ class MoshiInterpreter(Interpreter, Modifier):
             y = 0
         self.context.current_x = x
         self.context.current_y = y
+        x -= self.offset_x
+        y -= self.offset_y
         self.pipe_int16le(int(x))
         self.pipe_int16le(int(y))
 
     def write_move_vertical_abs(self, y):
-        if y < 0:
-            y = 0
         self.context.current_y = y
+        y -= self.offset_y
         self.pipe(swizzle_table[3][0])
         self.pipe_int16le(int(y))
 
     def write_move_horizontal_abs(self, x):
-        if x < 0:
-            x = 0
         self.context.current_x = x
+        x -= self.offset_x
         self.pipe(swizzle_table[6][0])
         self.pipe_int16le(int(x))
 
     def write_cut_horizontal_abs(self, x):
-        if x < 0:
-            x = 0
         self.context.current_x = x
+        x -= self.offset_x
         self.pipe(swizzle_table[14][0])
         self.pipe_int16le(int(x))
 
     def write_cut_vertical_abs(self, y):
-        if y < 0:
-            y = 0
         self.context.current_y = y
+        y -= self.offset_y
         self.pipe(swizzle_table[11][0])
         self.pipe_int16le(int(y))
 
@@ -210,20 +214,29 @@ class MoshiInterpreter(Interpreter, Modifier):
             self.ensure_rapid_mode()
         speed = int(self.settings.speed)
         # TODO: Test if normal speed is rapid speed between. Does this work for PPI?
-        self.write_vector_speed(speed, max(40, speed))
+        self.write_vector_speed(speed, speed)
         # self.write_set_offset(0, self.context.current_x, self.context.current_y)
-        self.write_set_offset(0, 0, 0)
+        x, y = self.calc_home_position()
+        self.offset_x = x
+        self.offset_y = y
+        self.write_set_offset(0, x, y)
         self.state = INTERPRETER_STATE_PROGRAM
         self.context.signal("interpreter;mode", self.state)
+        print("Finish Mode")
 
     def ensure_raster_mode(self):
         if self.state == INTERPRETER_STATE_RASTER:
             return
         if self.state == INTERPRETER_STATE_PROGRAM:
             self.ensure_rapid_mode()
+        print("Raster Mode")
         speed = int(self.settings.speed)
         self.write_raster_speed(speed)
-        self.write_set_offset(0, self.context.current_x, self.context.current_y)
+        x, y = self.calc_home_position()
+        # self.write_set_offset(0, x, y)
+        self.offset_x = self.context.current_x
+        self.offset_y = self.context.current_y
+        self.write_set_offset(0, self.offset_x, self.offset_y)
         # TODO: Does offsetting to the current position double the offset?
         self.state = INTERPRETER_STATE_RASTER
         self.context.signal("interpreter;mode", self.state)
@@ -240,6 +253,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         ):
             self.write_termination()
             self.control("execute\n")
+        print("Rapid Mode")
         self.state = INTERPRETER_STATE_RAPID
         self.context.signal("interpreter;mode", self.state)
 
@@ -253,6 +267,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         ):
             self.ensure_rapid_mode()
             self.state = INTERPRETER_STATE_FINISH
+        print("Finished Mode")
 
     def plotplanner_process(self):
         """
@@ -304,11 +319,12 @@ class MoshiInterpreter(Interpreter, Modifier):
         return False
 
     def goto_absolute(self, x, y, cut):
+        print(x,y,cut)
         if self.settings.raster_step == 0:
             self.ensure_program_mode()
         else:
-            self.ensure_raster_mode()
-        if self.settings.raster_step == 0:
+            self.ensure_program_mode()
+        if self.state == INTERPRETER_STATE_PROGRAM:
             if cut:
                 self.write_cut_abs(x, y)
             else:
@@ -410,12 +426,14 @@ class MoshiInterpreter(Interpreter, Modifier):
                 self.state = INTERPRETER_STATE_MODECHANGE
 
     def calc_home_position(self):
-        x = 0
-        y = 0
+        x = self.context.home_adjust_x
+        y = self.context.home_adjust_y
         if self.context.home_right:
-            x = int(self.context.bed_width * 39.3701)
+            x += int(self.context.bed_width * 39.3701)
         if self.context.home_bottom:
-            y = int(self.context.bed_height * 39.3701)
+            y += int(self.context.bed_height * 39.3701)
+        print(x)
+        print(y)
         return x, y
 
     def home(self):
