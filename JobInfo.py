@@ -203,6 +203,7 @@ class JobInfo(wx.Frame, Module):
         self.operations_listbox.SetToolTip(_("operation List"))
         self.commands_listbox.SetToolTip(_("Command List"))
         self.button_writer_control.SetToolTip(_("Start the Job"))
+        self.button_writer_control.SetForegroundColour(wx.BLACK)
 
         self.button_job_spooler.SetMinSize((50, 50))
         self.button_job_spooler.SetToolTip(_("View Spooler"))
@@ -217,7 +218,7 @@ class JobInfo(wx.Frame, Module):
         sizer_1.Add(self.commands_listbox, 3, wx.EXPAND, 0)
         sizer_2.Add(sizer_1, 10, wx.EXPAND, 0)
         sizer_3.Add(self.button_writer_control, 1, wx.EXPAND, 0)
-        sizer_3.Add(self.button_job_spooler, 0, 0, 0)
+        sizer_3.Add(self.button_job_spooler, 0, wx.EXPAND, 0)
         sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_2)
         self.Layout()

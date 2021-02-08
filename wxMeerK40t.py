@@ -54,6 +54,7 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 MILS_IN_MM = 39.3701
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
+MEERK40T_HELP = "https://github.com/meerk40t/meerk40t/wiki"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
 
@@ -92,6 +93,8 @@ ID_OPERATIONS = idinc.new()
 ID_TERMINAL = idinc.new()
 ID_ROTARY = idinc.new()
 ID_RASTER = idinc.new()
+
+ID_HOMEPAGE = idinc.new()
 
 ID_CUT_CONFIGURATION = idinc.new()
 ID_SELECT = idinc.new()
@@ -359,7 +362,8 @@ class MeerK40t(wx.Frame, Module):
         self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
 
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_HELP, _("Webpage"), "")
+        wxglade_tmp_menu.Append(wx.ID_HELP, _("Help"), "")
+        wxglade_tmp_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
         wxglade_tmp_menu.Append(wx.ID_ABOUT, _("About"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
 
@@ -420,7 +424,9 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU,
                   lambda v: self.device.open('window', "JobInfo", self, list(self.device.device_root.elements.ops())),
                   id=ID_MENU_JOB)
-        self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
+        self.Bind(wx.EVT_MENU, self.launch_help, id=wx.ID_HELP)
+        self.Bind(wx.EVT_MENU, self.launch_website, id=ID_HOMEPAGE)
+        self.Bind(RB.EVT_RIBBONBAR_HELP_CLICK, self.launch_help)
 
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
@@ -1682,9 +1688,19 @@ class MeerK40t(wx.Frame, Module):
 
         self.device.spooler.job(home_dot_test)
 
-    def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def launch_help(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
-        Launch webpage
+        Launch help wiki
+
+        :param event:
+        :return:
+        """
+        import webbrowser
+        webbrowser.open(MEERK40T_HELP, new=0, autoraise=True)
+
+    def launch_website(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Launch meerk40t mainpage
 
         :param event:
         :return:
@@ -2978,6 +2994,8 @@ class wxMeerK40t(wx.App, Module):
     def __init__(self, device=None):
         self.init_device = device
         wx.App.__init__(self, 0)
+        import icons
+        icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         Module.__init__(self)
         self.locale = None
         self.Bind(wx.EVT_CLOSE, self.on_app_close)
@@ -3134,7 +3152,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.17')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.18')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

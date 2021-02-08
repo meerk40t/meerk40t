@@ -1,14 +1,14 @@
 # Translations template for PROJECT.
-# Copyright (C) 2020 ORGANIZATION
+# Copyright (C) 2021 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-10-24 22:56-0700\n"
+"POT-Creation-Date: 2021-01-24 03:44-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -195,15 +195,15 @@ msgstr ""
 msgid "Testing height in mm"
 msgstr ""
 
-#: BufferView.py:45
+#: BufferView.py:56
 msgid "Could not find buffer.\n"
 msgstr ""
 
-#: BufferView.py:74
+#: BufferView.py:85
 msgid "BufferView"
 msgstr ""
 
-#: BufferView.py:82
+#: BufferView.py:93
 msgid "Buffer"
 msgstr ""
 
@@ -398,159 +398,132 @@ msgstr ""
 msgid "Driver Detected: CH341"
 msgstr ""
 
-#: CH341DriverBase.py:154 Kernel.py:2226
+#: CH341DriverBase.py:154 Kernel.py:2237
 msgid "Unknown"
 msgstr ""
 
-#: CameraInteface-New.py:28 CameraInteface.py:25
+#: CameraInteface.py:26
 msgid "Reset Perspective"
 msgstr ""
 
-#: CameraInteface-New.py:30 CameraInteface.py:27
+#: CameraInteface.py:28
 msgid "Reset Fisheye"
 msgstr ""
 
-#: CameraInteface-New.py:34
-msgid "Set URI"
+#: CameraInteface.py:32
+msgid "Set IP Camera 1"
 msgstr ""
 
-#: CameraInteface-New.py:37
-msgid "Set IP Camera"
+#: CameraInteface.py:35
+msgid "Set IP Camera 2"
 msgstr ""
 
-#: CameraInteface-New.py:40 CameraInteface.py:40
+#: CameraInteface.py:38
+msgid "Set IP Camera 3"
+msgstr ""
+
+#: CameraInteface.py:41
 msgid "Set Camera 0"
 msgstr ""
 
-#: CameraInteface-New.py:43 CameraInteface.py:43
+#: CameraInteface.py:44
 msgid "Set Camera 1"
 msgstr ""
 
-#: CameraInteface-New.py:46 CameraInteface.py:46
+#: CameraInteface.py:47
 msgid "Set Camera 2"
 msgstr ""
 
-#: CameraInteface-New.py:49 CameraInteface.py:49
+#: CameraInteface.py:50
 msgid "Set Camera 3"
 msgstr ""
 
-#: CameraInteface-New.py:52 CameraInteface.py:52
+#: CameraInteface.py:53
 msgid "Set Camera 4"
 msgstr ""
 
-#: CameraInteface-New.py:56 CameraInteface.py:55 wxMeerK40t.py:205
-#: wxMeerK40t.py:350
+#: CameraInteface.py:56 wxMeerK40t.py:205 wxMeerK40t.py:350
 msgid "Camera"
 msgstr ""
 
-#: CameraInteface-New.py:63 CameraInteface.py:61
+#: CameraInteface.py:62
 msgid "Correct Fisheye"
 msgstr ""
 
-#: CameraInteface-New.py:64 CameraInteface.py:62
+#: CameraInteface.py:63
 msgid "Correct Perspective"
 msgstr ""
 
-#: CameraInteface-New.py:162 CameraInteface.py:144
+#: CameraInteface.py:145
 msgid "Update Image"
 msgstr ""
 
-#: CameraInteface-New.py:164 CameraInteface.py:146
+#: CameraInteface.py:147
 msgid "Export Snapsnot"
 msgstr ""
 
-#: CameraInteface-New.py:166
-msgid "Reconnect Camera"
-msgstr ""
-
-#: CameraInteface-New.py:168 CameraInteface.py:148
+#: CameraInteface.py:149
 msgid "Detect Distortions/Calibration"
 msgstr ""
 
-#: CameraInteface-New.py:333 CameraInteface.py:263
+#: CameraInteface.py:264
 msgid "Could not import Camera requirements"
 msgstr ""
 
-#: CameraInteface-New.py:334 CameraInteface.py:264
+#: CameraInteface.py:265
 msgid "Imports Failed"
 msgstr ""
 
-#: CameraInteface-New.py:355 CameraInteface.py:285
+#: CameraInteface.py:286
 msgid "Checkerboard 6x9 pattern not found."
 msgstr ""
 
-#: CameraInteface-New.py:356 CameraInteface.py:286
+#: CameraInteface.py:287
 msgid "Pattern not found."
 msgstr ""
 
-#: CameraInteface-New.py:382 CameraInteface.py:312
+#: CameraInteface.py:313
 msgid "Ill-conditioned Matrix. Keep trying."
 msgstr ""
 
-#: CameraInteface-New.py:383 CameraInteface.py:313
+#: CameraInteface.py:314
 msgid "Matrix."
 msgstr ""
 
-#: CameraInteface-New.py:387 CameraInteface.py:317
+#: CameraInteface.py:318
 #, python-format
 msgid "Success. %d images so far."
 msgstr ""
 
-#: CameraInteface-New.py:388 CameraInteface.py:318
+#: CameraInteface.py:319
 msgid "Image Captured"
 msgstr ""
 
-#: CameraInteface-New.py:483 CameraInteface.py:352
+#: CameraInteface.py:353
 msgid ""
 "If using a precompiled binary, this was requirement was not included.\n"
 "If using pure Python, add it with: pip install opencv-python-headless"
 msgstr ""
 
-#: CameraInteface-New.py:485 CameraInteface.py:354
+#: CameraInteface.py:355
 msgid "Interface Requires OpenCV."
 msgstr ""
 
-#: CameraInteface-New.py:501 CameraInteface.py:366
+#: CameraInteface.py:367
 msgid "No Webcam found."
 msgstr ""
 
-#: CameraInteface-New.py:502 CameraInteface.py:367
+#: CameraInteface.py:368
 msgid "Error"
 msgstr ""
 
-#: CameraInteface-New.py:514
-msgid "Enter the HTTP or RTSP uri"
-msgstr ""
-
-#: CameraInteface-New.py:516 CameraInteface.py:379
-msgid "Webcam URI Update"
-msgstr ""
-
-#: CameraInteface-New.py:1122 JobSpooler.py:99 Keymap.py:90
-#, python-format
-msgid "Remove %s"
-msgstr ""
-
-#: CameraInteface-New.py:1124 JobSpooler.py:101 wxMeerK40t.py:2274
-#: wxMeerK40t.py:2277 wxMeerK40t.py:2280 wxMeerK40t.py:2283
-msgid "Clear All"
-msgstr ""
-
-#: CameraInteface.py:31
-msgid "Set IP Camera 1"
-msgstr ""
-
-#: CameraInteface.py:34
-msgid "Set IP Camera 2"
-msgstr ""
-
-#: CameraInteface.py:37
-msgid "Set IP Camera 3"
-msgstr ""
-
-#: CameraInteface.py:377
+#: CameraInteface.py:378
 #, python-format
 msgid "Enter the HTTP or RTSP uri for the webcam #%d"
+msgstr ""
+
+#: CameraInteface.py:380
+msgid "Webcam URI Update"
 msgstr ""
 
 #: Controller.py:23
@@ -691,51 +664,51 @@ msgstr ""
 msgid "Byte 5"
 msgstr ""
 
-#: Controller.py:322
+#: Controller.py:324
 msgid "Connect"
 msgstr ""
 
-#: Controller.py:327
+#: Controller.py:329
 msgid "Disconnecting..."
 msgstr ""
 
-#: Controller.py:332
+#: Controller.py:334
 msgid "Disconnect"
 msgstr ""
 
-#: Controller.py:337
+#: Controller.py:339
 msgid "Connecting..."
 msgstr ""
 
-#: Controller.py:349
+#: Controller.py:351
 msgid "Connection Refused. See USB Log for detailed information."
 msgstr ""
 
-#: Controller.py:350
+#: Controller.py:352
 msgid "Manual Connection"
 msgstr ""
 
-#: Controller.py:380
+#: Controller.py:382
 msgid "Hold Controller"
 msgstr ""
 
-#: Controller.py:385
+#: Controller.py:387
 msgid "LOCKED"
 msgstr ""
 
-#: Controller.py:394
+#: Controller.py:396
 msgid "Force Continue"
 msgstr ""
 
-#: Controller.py:403
+#: Controller.py:405
 msgid "Resume Controller"
 msgstr ""
 
-#: Controller.py:412
+#: Controller.py:414
 msgid "Pause Controller"
 msgstr ""
 
-#: Controller.py:421
+#: Controller.py:423
 msgid "Manual Reset"
 msgstr ""
 
@@ -963,6 +936,16 @@ msgstr ""
 msgid "Time Estimate"
 msgstr ""
 
+#: JobSpooler.py:99 Keymap.py:90
+#, python-format
+msgid "Remove %s"
+msgstr ""
+
+#: JobSpooler.py:101 wxMeerK40t.py:2316 wxMeerK40t.py:2319 wxMeerK40t.py:2322
+#: wxMeerK40t.py:2325
+msgid "Clear All"
+msgstr ""
+
 #: JobSpooler.py:136
 #, python-format
 msgid "%.1fmm/s"
@@ -983,130 +966,130 @@ msgstr ""
 msgid "overscan=%d"
 msgstr ""
 
-#: Kernel.py:672
+#: Kernel.py:674
 #, python-format
 msgid "WARNING: Listener '%s' still registered to %s."
 msgstr ""
 
-#: Kernel.py:1696
+#: Kernel.py:1707
 #, python-format
 msgid "Suspended Signal: %s for %s"
 msgstr ""
 
-#: Kernel.py:1748
+#: Kernel.py:1759
 msgid "Shutting down."
 msgstr ""
 
-#: Kernel.py:1750
+#: Kernel.py:1761
 #, python-format
 msgid "Saving Device State: '%s'"
 msgstr ""
 
-#: Kernel.py:1760
+#: Kernel.py:1771
 #, python-format
 msgid "Device Shutdown Started: '%s'"
 msgstr ""
 
-#: Kernel.py:1765
+#: Kernel.py:1776
 #, python-format
 msgid "Device Shutdown Finished: '%s'"
 msgstr ""
 
-#: Kernel.py:1775
+#: Kernel.py:1786
 #, python-format
 msgid "Stopping %s %s: %s"
 msgstr ""
 
-#: Kernel.py:1778
+#: Kernel.py:1789
 #, python-format
 msgid "Closing %s %s: %s"
 msgstr ""
 
-#: Kernel.py:1788
+#: Kernel.py:1799
 #, python-format
 msgid "Thread %s exited safely %s"
 msgstr ""
 
-#: Kernel.py:1791
+#: Kernel.py:1802
 #, python-format
 msgid "WARNING: Dead thread %s still registered to %s."
 msgstr ""
 
-#: Kernel.py:1793
+#: Kernel.py:1804
 #, python-format
 msgid "Finishing Thread %s for %s"
 msgstr ""
 
-#: Kernel.py:1795
+#: Kernel.py:1806
 #, python-format
 msgid "%s is the current shutdown thread"
 msgstr ""
 
-#: Kernel.py:1799
+#: Kernel.py:1810
 msgid "Asking thread to stop."
 msgstr ""
 
-#: Kernel.py:1803
+#: Kernel.py:1814
 #, python-format
 msgid "Waiting for thread %s: %s"
 msgstr ""
 
-#: Kernel.py:1805
+#: Kernel.py:1816
 #, python-format
 msgid "Thread %s finished. %s"
 msgstr ""
 
-#: Kernel.py:1807
+#: Kernel.py:1818
 msgid "No threads required halting."
 msgstr ""
 
-#: Kernel.py:1817
+#: Kernel.py:1828
 #, python-format
 msgid "Shutting down %s %s: %s"
 msgstr ""
 
-#: Kernel.py:1829
+#: Kernel.py:1840
 #, python-format
 msgid "WARNING: %s %s was not closed."
 msgstr ""
 
-#: Kernel.py:1831
+#: Kernel.py:1842
 msgid "Shutdown."
 msgstr ""
 
-#: Kernel.py:1847
+#: Kernel.py:1858
 msgid "All Devices are shutdown. Stopping Kernel."
 msgstr ""
 
-#: Kernel.py:2210
+#: Kernel.py:2221
 msgid "Unstarted"
 msgstr ""
 
-#: Kernel.py:2212
+#: Kernel.py:2223
 msgid "Abort"
 msgstr ""
 
-#: Kernel.py:2214
+#: Kernel.py:2225
 msgid "Finished"
 msgstr ""
 
-#: Kernel.py:2216 wxMeerK40t.py:194
+#: Kernel.py:2227 wxMeerK40t.py:194
 msgid "Pause"
 msgstr ""
 
-#: Kernel.py:2218
+#: Kernel.py:2229
 msgid "Busy"
 msgstr ""
 
-#: Kernel.py:2220
+#: Kernel.py:2231
 msgid "Waiting"
 msgstr ""
 
-#: Kernel.py:2222
+#: Kernel.py:2233
 msgid "Active"
 msgstr ""
 
-#: Kernel.py:2224
+#: Kernel.py:2235
 msgid "Idle"
 msgstr ""
 
@@ -1146,11 +1129,11 @@ msgstr ""
 msgid "No Keystroke for binding."
 msgstr ""
 
-#: Keymap.py:134
+#: Keymap.py:135
 msgid "Missing Command"
 msgstr ""
 
-#: Keymap.py:135
+#: Keymap.py:136
 msgid "No Command for binding."
 msgstr ""
 
@@ -1378,7 +1361,7 @@ msgstr ""
 msgid "Raster"
 msgstr ""
 
-#: OperationProperty.py:27 wxMeerK40t.py:2438
+#: OperationProperty.py:27 wxMeerK40t.py:2480
 msgid "Image"
 msgstr ""
 
@@ -1438,7 +1421,7 @@ msgstr ""
 msgid "Dot Length (mils)"
 msgstr ""
 
-#: OperationProperty.py:56 OperationProperty.py:263 wxMeerK40t.py:2335
+#: OperationProperty.py:56 OperationProperty.py:263 wxMeerK40t.py:2377
 msgid "Passes"
 msgstr ""
 
@@ -1787,7 +1770,7 @@ msgid "Width"
 msgstr ""
 
 #: Preferences.py:243 Preferences.py:249 RasterWizard.py:621
-#: RotarySettings.py:145 RotarySettings.py:149
+#: RotarySettings.py:137 RotarySettings.py:141
 msgid "mm"
 msgstr ""
 
@@ -1911,7 +1894,7 @@ msgstr ""
 msgid "Resample"
 msgstr ""
 
-#: RasterWizard.py:688 wxMeerK40t.py:2344 wxMeerK40t.py:2405
+#: RasterWizard.py:688 wxMeerK40t.py:2386 wxMeerK40t.py:2447
 msgid "Step"
 msgstr ""
 
@@ -2172,59 +2155,59 @@ msgstr ""
 msgid "Rotary"
 msgstr ""
 
-#: RotarySettings.py:32
+#: RotarySettings.py:33
 msgid "Field Loop"
 msgstr ""
 
-#: RotarySettings.py:34
+#: RotarySettings.py:35
 msgid "Uses Roller"
 msgstr ""
 
-#: RotarySettings.py:99 RotarySettings.py:110
+#: RotarySettings.py:95 RotarySettings.py:104
 msgid "Use Rotary Settings"
 msgstr ""
 
-#: RotarySettings.py:101
+#: RotarySettings.py:97
 msgid "Rotary Scale Factor X"
 msgstr ""
 
-#: RotarySettings.py:105
+#: RotarySettings.py:100
 msgid "Rotary Scale Factor Y"
 msgstr ""
 
-#: RotarySettings.py:112
+#: RotarySettings.py:106
 msgid "Steps required for a full rotation"
 msgstr ""
 
-#: RotarySettings.py:115
+#: RotarySettings.py:109
 msgid "Circumference of roller"
 msgstr ""
 
-#: RotarySettings.py:119
+#: RotarySettings.py:112
 msgid "Circumference of object in rotary"
 msgstr ""
 
-#: RotarySettings.py:127
+#: RotarySettings.py:119
 msgid "Object Circumference"
 msgstr ""
 
-#: RotarySettings.py:128
+#: RotarySettings.py:120
 msgid "Roller Circumference"
 msgstr ""
 
-#: RotarySettings.py:129
+#: RotarySettings.py:121
 msgid "Rotation Steps"
 msgstr ""
 
-#: RotarySettings.py:130
+#: RotarySettings.py:122
 msgid "Scale X"
 msgstr ""
 
-#: RotarySettings.py:131
+#: RotarySettings.py:123
 msgid "Scale Y"
 msgstr ""
 
-#: RotarySettings.py:140
+#: RotarySettings.py:132
 msgid "steps"
 msgstr ""
 
@@ -2308,7 +2291,7 @@ msgstr ""
 msgid "Main"
 msgstr ""
 
-#: wxMeerK40t.py:191 wxMeerK40t.py:1340
+#: wxMeerK40t.py:191 wxMeerK40t.py:1348
 msgid "Open"
 msgstr ""
 
@@ -2340,7 +2323,7 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#: wxMeerK40t.py:210 wxMeerK40t.py:2446
+#: wxMeerK40t.py:210 wxMeerK40t.py:2488
 msgid "RasterWizard"
 msgstr ""
 
@@ -2480,7 +2463,7 @@ msgstr ""
 msgid "Job Spooler"
 msgstr ""
 
-#: wxMeerK40t.py:357 wxMeerK40t.py:2271
+#: wxMeerK40t.py:357 wxMeerK40t.py:2313
 msgid "Execute Job"
 msgstr ""
 
@@ -2496,300 +2479,316 @@ msgstr ""
 msgid "Languages"
 msgstr ""
 
-#: wxMeerK40t.py:800
+#: wxMeerK40t.py:804
 msgid "All attempts to connect to USB have failed."
 msgstr ""
 
-#: wxMeerK40t.py:801
+#: wxMeerK40t.py:805
 msgid "Usb Connection Problem."
 msgstr ""
 
-#: wxMeerK40t.py:806
+#: wxMeerK40t.py:810
 #, python-format
 msgid "Usb: %s"
 msgstr ""
 
-#: wxMeerK40t.py:813
+#: wxMeerK40t.py:817
 #, python-format
 msgid "Controller: %s"
 msgstr ""
 
-#: wxMeerK40t.py:817
+#: wxMeerK40t.py:821
 #, python-format
 msgid "Spooler: %s"
 msgstr ""
 
-#: wxMeerK40t.py:838
+#: wxMeerK40t.py:842
 #, python-format
 msgid "%s v%s %s"
 msgstr ""
 
-#: wxMeerK40t.py:898
+#: wxMeerK40t.py:902
 msgid "Clear Recent"
 msgstr ""
 
-#: wxMeerK40t.py:926
+#: wxMeerK40t.py:930 wxMeerK40t.py:1562
 msgid "Loading File..."
 msgstr ""
 
-#: wxMeerK40t.py:964
+#: wxMeerK40t.py:968
 #, python-format
 msgid ""
 "Some files were unrecognized:\n"
 "%s"
 msgstr ""
 
-#: wxMeerK40t.py:965 wxMeerK40t.py:3099
+#: wxMeerK40t.py:969
 msgid "Error encountered"
 msgstr ""
 
-#: wxMeerK40t.py:1417
+#: wxMeerK40t.py:1425
 msgid "Enter Forced Gear"
 msgstr ""
 
-#: wxMeerK40t.py:1417
+#: wxMeerK40t.py:1425
 msgid "Gear Entry"
 msgstr ""
 
-#: wxMeerK40t.py:1429
+#: wxMeerK40t.py:1437
 msgid "Enter FPS Limit"
 msgstr ""
 
-#: wxMeerK40t.py:1429
+#: wxMeerK40t.py:1437
 msgid "FPS Limit Entry"
 msgstr ""
 
-#: wxMeerK40t.py:1441
+#: wxMeerK40t.py:1449
 msgid ""
 "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
 "translate, etc..."
 msgstr ""
 
-#: wxMeerK40t.py:1443
+#: wxMeerK40t.py:1451
 msgid "Transform Entry"
 msgstr ""
 
-#: wxMeerK40t.py:1458
+#: wxMeerK40t.py:1466
 msgid "The entered command does nothing."
 msgstr ""
 
-#: wxMeerK40t.py:1459
+#: wxMeerK40t.py:1467
 msgid "Non-Useful Matrix."
 msgstr ""
 
-#: wxMeerK40t.py:1511
+#: wxMeerK40t.py:1519
 msgid ""
 "Material must be jigged at 0,0 either home or home offset.\n"
 "How wide is your material (give units: in, mm, cm, px, etc)?"
 msgstr ""
 
-#: wxMeerK40t.py:1513
+#: wxMeerK40t.py:1521
 msgid "Double Side Flip"
 msgstr ""
 
-#: wxMeerK40t.py:1532
+#: wxMeerK40t.py:1540
 msgid "Enter SVG Path Data"
 msgstr ""
 
-#: wxMeerK40t.py:1532
+#: wxMeerK40t.py:1540
 msgid "Path Entry"
 msgstr ""
 
-#: wxMeerK40t.py:1931
+#: wxMeerK40t.py:1555
+msgid "Import EGV"
+msgstr ""
+
+#: wxMeerK40t.py:1570
+msgid "Export EGV"
+msgstr ""
+
+#: wxMeerK40t.py:1576
+msgid "Saving File..."
+msgstr ""
+
+#: wxMeerK40t.py:1973
 msgid "Operations"
 msgstr ""
 
-#: wxMeerK40t.py:1945
+#: wxMeerK40t.py:1987
 msgid "Elements"
 msgstr ""
 
-#: wxMeerK40t.py:1949
+#: wxMeerK40t.py:1991
 msgid "Files"
 msgstr ""
 
-#: wxMeerK40t.py:2286
+#: wxMeerK40t.py:2328
 #, python-format
 msgid "Remove: %s"
 msgstr ""
 
-#: wxMeerK40t.py:2289
+#: wxMeerK40t.py:2331
 #, python-format
 msgid "Remove: %d objects"
 msgstr ""
 
-#: wxMeerK40t.py:2294 wxMeerK40t.py:2299 wxMeerK40t.py:2356
+#: wxMeerK40t.py:2336 wxMeerK40t.py:2341 wxMeerK40t.py:2398
 #, python-format
 msgid "Make %d copies."
 msgstr ""
 
-#: wxMeerK40t.py:2295
+#: wxMeerK40t.py:2337
 msgid "Clone Reference"
 msgstr ""
 
-#: wxMeerK40t.py:2300 wxMeerK40t.py:2357
+#: wxMeerK40t.py:2342 wxMeerK40t.py:2399
 msgid "Duplicate"
 msgstr ""
 
-#: wxMeerK40t.py:2303
+#: wxMeerK40t.py:2345
 msgid "Reverse Layer Order"
 msgstr ""
 
-#: wxMeerK40t.py:2308
+#: wxMeerK40t.py:2350
 msgid "Refresh Classification"
 msgstr ""
 
-#: wxMeerK40t.py:2310
+#: wxMeerK40t.py:2352
 msgid "Set Other/Blue/Red Classify"
 msgstr ""
 
-#: wxMeerK40t.py:2312
+#: wxMeerK40t.py:2354
 msgid "Set Basic Classification"
 msgstr ""
 
-#: wxMeerK40t.py:2314
+#: wxMeerK40t.py:2356
 msgid "Add Operation"
 msgstr ""
 
-#: wxMeerK40t.py:2318
+#: wxMeerK40t.py:2360
 msgid "Reclassify Operations"
-msgstr ""
-
-#: wxMeerK40t.py:2324
-#, python-format
-msgid "Convert %s"
-msgstr ""
-
-#: wxMeerK40t.py:2326
-msgid "Convert Operation"
-msgstr ""
-
-#: wxMeerK40t.py:2328
-msgid "Duplicate Operation"
-msgstr ""
-
-#: wxMeerK40t.py:2331
-msgid "Add 1 pass."
-msgstr ""
-
-#: wxMeerK40t.py:2334
-#, python-format
-msgid "Add %d passes."
-msgstr ""
-
-#: wxMeerK40t.py:2339 wxMeerK40t.py:2395
-#, python-format
-msgid "Step %d"
-msgstr ""
-
-#: wxMeerK40t.py:2346
-msgid "Make Raster Image"
-msgstr ""
-
-#: wxMeerK40t.py:2351
-#, python-format
-msgid "Reload %s"
-msgstr ""
-
-#: wxMeerK40t.py:2361
-msgid "Reset User Changes"
 msgstr ""
 
 #: wxMeerK40t.py:2366
 #, python-format
+msgid "Convert %s"
+msgstr ""
+
+#: wxMeerK40t.py:2368
+msgid "Convert Operation"
+msgstr ""
+
+#: wxMeerK40t.py:2370
+msgid "Duplicate Operation"
+msgstr ""
+
+#: wxMeerK40t.py:2373
+msgid "Add 1 pass."
+msgstr ""
+
+#: wxMeerK40t.py:2376
+#, python-format
+msgid "Add %d passes."
+msgstr ""
+
+#: wxMeerK40t.py:2381 wxMeerK40t.py:2437
+#, python-format
+msgid "Step %d"
+msgstr ""
+
+#: wxMeerK40t.py:2388
+msgid "Make Raster Image"
+msgstr ""
+
+#: wxMeerK40t.py:2393
+#, python-format
+msgid "Reload %s"
+msgstr ""
+
+#: wxMeerK40t.py:2403
+msgid "Reset User Changes"
+msgstr ""
+
+#: wxMeerK40t.py:2408
+#, python-format
 msgid "Scale %.0f%%"
 msgstr ""
 
-#: wxMeerK40t.py:2369
+#: wxMeerK40t.py:2411
 msgid "Scale"
 msgstr ""
 
-#: wxMeerK40t.py:2375
+#: wxMeerK40t.py:2417
 #, python-format
 msgid "Rotate turn/%d, %.0f°"
 msgstr ""
 
-#: wxMeerK40t.py:2382
+#: wxMeerK40t.py:2424
 #, python-format
 msgid "Rotate turn/%d, -%.0f°"
 msgstr ""
 
-#: wxMeerK40t.py:2385
+#: wxMeerK40t.py:2427
 msgid "Rotate"
 msgstr ""
 
-#: wxMeerK40t.py:2388
+#: wxMeerK40t.py:2430
 msgid "Reify User Changes"
 msgstr ""
 
-#: wxMeerK40t.py:2391
+#: wxMeerK40t.py:2433
 msgid "Break Subpaths"
 msgstr ""
 
-#: wxMeerK40t.py:2407
+#: wxMeerK40t.py:2449
 msgid "Actualize Pixels"
 msgstr ""
 
-#: wxMeerK40t.py:2411
+#: wxMeerK40t.py:2453
 #, python-format
 msgid "Divide Into %d Images"
 msgstr ""
 
-#: wxMeerK40t.py:2414
+#: wxMeerK40t.py:2456
 msgid "ZDepth Divide"
 msgstr ""
 
-#: wxMeerK40t.py:2420
+#: wxMeerK40t.py:2462
 msgid "Unlock Manipulations"
 msgstr ""
 
-#: wxMeerK40t.py:2424
+#: wxMeerK40t.py:2466
 msgid "Dither to 1 bit"
 msgstr ""
 
-#: wxMeerK40t.py:2426
+#: wxMeerK40t.py:2468
 msgid "Invert Image"
 msgstr ""
 
-#: wxMeerK40t.py:2428
+#: wxMeerK40t.py:2470
 msgid "Mirror Horizontal"
 msgstr ""
 
-#: wxMeerK40t.py:2430
+#: wxMeerK40t.py:2472
 msgid "Flip Vertical"
 msgstr ""
 
-#: wxMeerK40t.py:2432
+#: wxMeerK40t.py:2474
 msgid "Rotate CW"
 msgstr ""
 
-#: wxMeerK40t.py:2434
+#: wxMeerK40t.py:2476
 msgid "Rotate CCW"
 msgstr ""
 
-#: wxMeerK40t.py:2436
+#: wxMeerK40t.py:2478
 msgid "Save output.png"
 msgstr ""
 
-#: wxMeerK40t.py:2443
+#: wxMeerK40t.py:2485
 #, python-format
 msgid "RasterWizard: %s"
 msgstr ""
 
-#: wxMeerK40t.py:2452
+#: wxMeerK40t.py:2494
 #, python-format
 msgid "Apply: %s"
 msgstr ""
 
-#: wxMeerK40t.py:2455
+#: wxMeerK40t.py:2497
 msgid "Apply Raster Script"
 msgstr ""
 
-#: wxMeerK40t.py:2460
+#: wxMeerK40t.py:2502
 msgid "Convert to Raster"
 msgstr ""
 
-#: wxMeerK40t.py:3092
+#: wxMeerK40t.py:3134
 #, python-format
 msgid "Saving Log: %s"
+msgstr ""
+
+#: wxMeerK40t.py:3141
+msgid "Please Report to Development Team"
 msgstr ""
 

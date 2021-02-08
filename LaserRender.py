@@ -283,6 +283,7 @@ class LaserRender:
         bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
+        dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
 
         matrix = Matrix()

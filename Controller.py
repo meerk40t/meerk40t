@@ -131,12 +131,14 @@ class Controller(wx.Frame, Module):
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_controller_control.SetFont(
             wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        self.button_controller_control.SetForegroundColour(wx.BLACK)
         self.button_controller_control.SetToolTip(_("Change the currently performed operation."))
         self.button_controller_control.SetBitmap(icons8_play_50.GetBitmap())
         self.text_controller_status.SetToolTip(_("Displays the controller's current process."))
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetFont(
             wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetToolTip(_("Force connection/disconnection from the device."))
         self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
         self.text_connection_status.SetToolTip(_("Connection status"))
