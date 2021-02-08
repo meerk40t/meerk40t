@@ -303,7 +303,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.laserpath_index = 0
         self.working_file = None
         self.wxtree = wx.TreeCtrl(
-            self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS
+            self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS
         )
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
@@ -2422,6 +2422,7 @@ class ShadowTree:
         self.tree_images.Create(width=20, height=20)
         self.wxtree.SetImageList(self.tree_images)
         self.element_root.item = self.wxtree.AddRoot(self.name)
+        self.set_icon(self.element_root, icon_meerk40t.GetBitmap(False, resize=(20,20)))
         self.build_tree(self.element_root)
         node_operations = self.element_root.get_branch(NODE_OPERATION_BRANCH)
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
@@ -2610,18 +2611,18 @@ class ShadowTree:
         if drag_node.type == NODE_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging element into operation adds that element to the op.
-                drop_node.object.add_node(drag_node.object, pos=0)
+                drop_node.add_node(drag_node.object, pos=0)
                 event.Allow()
                 return
             elif drop_node.type == NODE_ELEMENT:
                 # Dragging element into element.
                 if drag_node.parent is drop_node.parent:
                     # Dragging and dropping within the same parent puts insert on other side.
-                    drag_index = drag_node.parent.index(drag_node)
-                    drag_node.parent.object[drag_index] = None
-                    drop_index = drop_node.parent.index(drop_node)
+                    drag_index = drag_node.parent.children.index(drag_node)
+                    drop_index = drop_node.parent.children.index(drop_node)
                     if drag_index > drop_index:
-                        drop_node.parent.object.insert(drop_index, drag_node.object)
+                        #TODO: CORRECT.
+                        drop_node.parent.move_node.insert(drop_index, drag_node.object)
                     else:
                         drop_node.parent.object.insert(drop_index + 1, drag_node.object)
                 else:

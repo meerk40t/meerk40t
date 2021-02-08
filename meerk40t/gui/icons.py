@@ -12,12 +12,13 @@ class PyEmbeddedImageTheme(PyEmbeddedImage):
     def __init__(self, data):
         super().__init__(data)
 
-    def GetBitmap(self, use_theme=True):
+    def GetBitmap(self, use_theme=True, resize=None):
+        image = PyEmbeddedImage.GetImage(self)
         if theme and use_theme:
-            image = PyEmbeddedImage.GetImage(self)
             image.Replace(0, 0, 0, icon_r, icon_g, icon_b)
-            return Bitmap(image)
-        return PyEmbeddedImage.GetBitmap(self)
+        if resize is not None:
+            image = image.Scale(*resize)
+        return Bitmap(image)
 
 
 icons8_add_file_50 = PyEmbeddedImageTheme(

@@ -262,29 +262,36 @@ class Node:
         dest.insert_node(self, pos=pos)
 
     def notify_added(self, node):
-        self._root.notify_added(node)
+        if self._root is not None:
+            self._root.notify_added(node)
 
     def notify_removed(self, node):
-        self._root.notify_removed(node)
+        if self._root is not None:
+            self._root.notify_removed(node)
 
     def notify_changed(self, node):
-        self._root.notify_changed(node)
-        # self.validate_bounds()
+        if self._root is not None:
+            self._root.notify_changed(node)
 
     def notify_emphasized(self, node):
-        self._root.notify_emphasized(node)
+        if self._root is not None:
+            self._root.notify_emphasized(node)
 
     def notify_selected(self, node):
-        self._root.notify_selected(node)
+        if self._root is not None:
+            self._root.notify_selected(node)
 
     def notify_highlighted(self, node):
-        self._root.notify_highlighted(node)
+        if self._root is not None:
+            self._root.notify_highlighted(node)
 
     def notify_modified(self, node):
-        self._root.notify_modified(node)
+        if self._root is not None:
+            self._root.notify_modified(node)
 
     def notify_altered(self, node):
-        self._root.notify_changed(node)
+        if self._root is not None:
+            self._root.notify_changed(node)
 
 
 class RootNode(Node):
