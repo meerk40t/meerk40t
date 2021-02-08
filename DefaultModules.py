@@ -118,7 +118,7 @@ class SVGWriter:
                 fill = str(abs(fill)) if fill is not None and fill.value is not None else SVG_VALUE_NONE
                 subelement.set(SVG_ATTR_FILL, fill)
                 if fill_opacity != 1.0 and fill_opacity is not None:
-                    subelement.set(SVG_ATTR_STROKE_OPACITY, str(fill_opacity))
+                    subelement.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
                 if element.id is not None:
                     subelement.set(SVG_ATTR_ID, str(element.id))
         tree = ElementTree(root)
