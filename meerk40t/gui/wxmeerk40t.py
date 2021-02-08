@@ -302,7 +302,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
         self.working_file = None
-        self.tree = wx.TreeCtrl(
+        self.wxtree = wx.TreeCtrl(
             self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS
         )
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
@@ -361,7 +361,7 @@ class MeerK40t(wx.Frame, Module, Job):
             .CaptionVisible(False),
         )
         self._mgr.AddPane(
-            self.tree,
+            self.wxtree,
             aui.AuiPaneInfo()
             .CloseButton(False)
             .Left()
@@ -395,8 +395,8 @@ class MeerK40t(wx.Frame, Module, Job):
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
-        self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
@@ -404,15 +404,15 @@ class MeerK40t(wx.Frame, Module, Job):
         self.widget_scene = None
         self.pipe_state = None
 
-        self.root = ShadowTree(self.context, self, self.context.elements._tree)
-        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
+        self.shadow_tree = ShadowTree(self.context, self, self.context.elements._tree)
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree)
+        self.Bind(wx.EVT_TREE_END_DRAG, self.shadow_tree.on_drag_end_handler, self.wxtree)
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.shadow_tree.on_item_activated, self.wxtree)
         self.Bind(
-            wx.EVT_TREE_SEL_CHANGED, self.root.on_item_selection_changed, self.tree
+            wx.EVT_TREE_SEL_CHANGED, self.shadow_tree.on_item_selection_changed, self.wxtree
         )
         self.Bind(
-            wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree
+            wx.EVT_TREE_ITEM_RIGHT_CLICK, self.shadow_tree.on_item_right_click, self.wxtree
         )
 
         self.__set_titlebar()
@@ -467,14 +467,7 @@ class MeerK40t(wx.Frame, Module, Job):
         if context.window_height < 300:
             context.window_height = 300
 
-        context.listen("element_added", self.on_rebuild_tree_request)
-        context.listen("operation_added", self.on_rebuild_tree_request)
-        context.listen("element_removed", self.on_rebuild_tree_request)
-        context.listen("operation_removed", self.on_rebuild_tree_request)
         context.listen("units", self.space_changed)
-        context.listen("emphasized", self.on_emphasized_elements_changed)
-        context.listen("modified", self.on_element_modified)
-        context.listen("altered", self.on_element_alteration)
 
         context.listen("export-image", self.on_export_signal)
         context.listen("background", self.on_background_signal)
@@ -488,11 +481,11 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.widget_scene = context.open("module/Scene")
 
-        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
+        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.shadow_tree))
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(
-            ElementsWidget(self.widget_scene, self.root, self.renderer)
+            ElementsWidget(self.widget_scene, self.shadow_tree, self.renderer)
         )
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
@@ -1304,14 +1297,7 @@ class MeerK40t(wx.Frame, Module, Job):
         context.unschedule(self)
         self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
 
-        context.unlisten("element_added", self.on_rebuild_tree_request)
-        context.unlisten("operation_added", self.on_rebuild_tree_request)
-        context.unlisten("element_removed", self.on_rebuild_tree_request)
-        context.unlisten("operation_removed", self.on_rebuild_tree_request)
         context.unlisten("units", self.space_changed)
-        context.unlisten("emphasized", self.on_emphasized_elements_changed)
-        context.unlisten("modified", self.on_element_modified)
-        context.unlisten("altered", self.on_element_alteration)
 
         context.unlisten("export-image", self.on_export_signal)
         context.unlisten("background", self.on_background_signal)
@@ -1338,8 +1324,8 @@ class MeerK40t(wx.Frame, Module, Job):
         :param args:
         :return:
         """
-        if self.root is not None:
-            self.root.on_element_update(*args)
+        if self.shadow_tree is not None:
+            self.shadow_tree.on_element_update(*args)
 
     def on_rebuild_tree_request(self, *args):
         """
@@ -1359,11 +1345,11 @@ class MeerK40t(wx.Frame, Module, Job):
         :return:
         """
         if self.context.draw_mode & DRAW_MODE_TREE != 0:
-            self.root.gui.tree.Hide()
+            self.wxtree.Hide()
             return
         else:
-            self.root.gui.tree.Show()
-        self.root.rebuild_tree()
+            self.wxtree.Show()
+        self.shadow_tree.rebuild_tree()
         self.request_refresh()
 
     def on_refresh_scene(self, *args):
@@ -1448,7 +1434,7 @@ class MeerK40t(wx.Frame, Module, Job):
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
-        self.tree.SetMaxSize((275, -1))
+        self.wxtree.SetMaxSize((275, -1))
 
     def __do_layout(self):
         # main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1620,11 +1606,8 @@ class MeerK40t(wx.Frame, Module, Job):
     def on_emphasized_elements_changed(self, *args):
         self.update_ribbon_position()
         self.clear_laserpath()
-        self.root.select_in_tree_by_selected()
+        self.shadow_tree.select_in_tree_by_selected()
         self.request_refresh()
-
-    def on_element_alteration(self, *args):
-        self.context.signal("rebuild_tree")
 
     def on_element_modified(self, *args):
         self.update_ribbon_position()
@@ -1956,7 +1939,6 @@ class MeerK40t(wx.Frame, Module, Job):
         context.elements.clear_all()
         self.clear_laserpath()
         self.request_refresh()
-        self.context.signal("rebuild_tree", 0)
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
@@ -2348,7 +2330,7 @@ class ShadowTree:
         self.context = context
         self.element_root = root
         self.gui = gui
-        self.wxtree = gui.tree
+        self.wxtree = gui.wxtree
         self.renderer = gui.renderer
         self.dragging_node = None
         self.dragging_parent = None
@@ -2358,27 +2340,53 @@ class ShadowTree:
         self.type = NODE_ROOT
         self.context = context
         self.elements = context.elements
-        self.tree_lookup = None
+        self.elements.listen(self)
         self.do_not_select = False
-        self.context.signal("rebuild_tree")
-        self._rebuild_required = False
 
-    def notify_tree_data_change(self):
-        self._rebuild_required = True
-        self.context.signal("rebuild_tree", 0)
+    def node_removed(self, node):
+        try:
+            self.wxtree.Delete(node.item)
+        except RuntimeError:
+            return
 
-    def notify_tree_data_cleared(self):
-        self._rebuild_required = True
-        self.context.signal("rebuild_tree", 0)
+    def node_added(self, node):
+        self.node_register(node)
+
+    def node_changed(self, node):
+        self.update_name(node)
+
+    def emphasized(self, node):
+        self.update_name(node)
+
+    def selected(self, node):
+        self.update_name(node)
+
+    def highlighted(self, node):
+        self.update_name(node)
+
+    def modified(self, node):
+        self.update_name(node)
+        try:
+            c = node.color
+            self.set_color(node, c)
+        except AttributeError:
+            pass
+        self.set_icon(node)
+
+    def altered(self, node):
+        self.update_name(node)
+        try:
+            c = node.color
+            self.set_color(node, c)
+        except AttributeError:
+            pass
+        self.set_icon(node)
 
     def on_element_update(self, *args):
         element = args[0]
-        try:
-            nodes = self.tree_lookup[id(element)]
-            for node in nodes:
+        for node in self.elements.elems_nodes():
+            if element is node.object or element is node:
                 self.update_name(node)
-        except KeyError:
-            pass
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -2409,20 +2417,17 @@ class ShadowTree:
 
     def rebuild_tree(self):
         self.dragging_node = None
-        self._rebuild_required = False
-
         self.wxtree.DeleteAllItems()
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
-        self.tree_lookup = {}
         self.wxtree.SetImageList(self.tree_images)
         self.element_root.item = self.wxtree.AddRoot(self.name)
         self.build_tree(self.element_root)
         node_operations = self.element_root.get_branch(NODE_OPERATION_BRANCH)
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
-        for node in node_operations._children:
+        for node in node_operations.children:
             try:
-                op = node.object.operation
+                op = node.operation
             except AttributeError:
                 op = None
             if op in ("Raster", "Image"):
@@ -2430,7 +2435,7 @@ class ShadowTree:
             else:
                 self.set_icon(node, icons8_laser_beam_20.GetBitmap(True))
             try:
-                c = node.object.color
+                c = node.color
                 self.set_color(node, c)
             except AttributeError:
                 pass
@@ -2524,21 +2529,8 @@ class ShadowTree:
         except AttributeError:
             pass
 
-    def remove_node(self, node):
-        for q in node:
-            q.remove_node()
-        root = self.element_root
-        links = root.tree_lookup[id(node.object)]
-        links.remove(node)
-        node.parent.remove(node)
-        try:
-            self.wxtree.Delete(node.item)
-        except RuntimeError:
-            return
-        root.notify_removed(node)
-
     def move_node(self, node, new_parent, pos=None):
-        tree = self.root.wxtree
+        tree = self.root.shadow_tree
         item = self.item
         image = tree.GetItemImage(item)
         data = tree.GetItemData(item)
@@ -2556,37 +2548,6 @@ class ShadowTree:
     def bbox(self, node):
         return CutPlanner.bounding_box(self.object)
 
-    def objects_of_children(self, node, types):
-        if isinstance(self.object, types):
-            yield self.object
-        for q in self:
-            for o in q.objects_of_children(types):
-                yield o
-
-    def contains_path(self, node):
-        if isinstance(self.object, Path):
-            return True
-        for q in self:
-            if q.contains_path():
-                return True
-        return False
-
-    def contains_image(self, node):
-        if isinstance(self.object, SVGImage):
-            return True
-        for q in self:
-            if q.contains_image():
-                return True
-        return False
-
-    def contains_text(self, node):
-        if isinstance(self.object, SVGText):
-            return True
-        for q in self:
-            if q.contains_text():
-                return True
-        return False
-
     def on_drag_begin_handler(self, event):
         """
         Drag handler begin for the tree.
@@ -2595,10 +2556,6 @@ class ShadowTree:
         :return:
         """
         self.dragging_node = None
-        if self._rebuild_required:
-            return  # Must rebuild tree between moves.
-
-        # drag_item = event.GetItem()
 
         pt = event.GetPoint()
         drag_item, _ = self.wxtree.HitTest(pt)
@@ -2653,8 +2610,7 @@ class ShadowTree:
         if drag_node.type == NODE_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging element into operation adds that element to the op.
-                drop_node.object.insert(0, drag_node.object)
-                self.notify_tree_data_change()
+                drop_node.object.add_node(drag_node.object, pos=0)
                 event.Allow()
                 return
             elif drop_node.type == NODE_ELEMENT:
@@ -2676,22 +2632,20 @@ class ShadowTree:
                     drop_node.parent.object.insert(drop_index, drag_node.object)
 
                 nodes = [n for n in drag_node.parent.object if n is not None]
-                drag_node.parent.object.clear()
+                drag_node.parent.object.clear()  # TODO: Correct
                 drag_node.parent.object.extend(nodes)
-                self.notify_tree_data_change()
                 event.Allow()
                 return
             elif drop_node.type == NODE_OPERATION_ELEMENT:
+                #TODO: Correct
                 drop_index = drop_node.parent.object.index(drop_node.object)
                 drop_node.parent.object.insert(drop_index, drag_node.object)
                 event.Allow()
-                self.notify_tree_data_change()
                 return
             elif drop_node.type == NODE_OPERATION_BRANCH:
                 obj = drag_node.object
                 self.context.classify([obj])
                 event.Allow()
-                self.notify_tree_data_change()
         elif drag_node.type == NODE_OPERATION_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging from op element to operation.
@@ -2703,10 +2657,10 @@ class ShadowTree:
                     for op_elem in drag_node.parent.object
                     if op_elem is not None
                 ]
+                # TODO: Correct
                 drag_node.parent.object.clear()
                 drag_node.parent.object.extend(nodes)
                 event.Allow()
-                self.notify_tree_data_change()
                 return
             if drop_node.type == NODE_OPERATION_ELEMENT:
                 if drag_node.parent is drop_node.parent:
@@ -2726,11 +2680,11 @@ class ShadowTree:
                     drop_node.parent.object.insert(drop_index, drag_node.object)
 
                 nodes = [n for n in drag_node.parent.object if n is not None]
+                # TODO: Correct
                 drag_node.parent.object.clear()
                 drag_node.parent.object.extend(nodes)
 
                 event.Allow()
-                self.notify_tree_data_change()
                 return
         elif drag_node.type == NODE_OPERATION:
             if drop_node.type == NODE_OPERATION:
@@ -2745,10 +2699,10 @@ class ShadowTree:
                     ops.object.insert(drop_pos + 1, drag_node.object)
 
                 nodes = [n for n in ops.object if n is not None]
+                # TODO: Correct
                 ops.object.clear()
                 ops.object.extend(nodes)
                 event.Allow()
-                self.notify_tree_data_change()
                 return
             elif drop_node.type == NODE_OPERATION_BRANCH:
                 # Dragging operation to op branch.
@@ -2822,17 +2776,8 @@ class ShadowTree:
         :return:
         """
         self.do_not_select = True
-        for e in self.elements.elems():
-            try:
-                nodes = self.tree_lookup[id(e)]
-                for n in nodes:
-                    if n.type == NODE_ELEMENT:
-                        self.wxtree.SelectItem(n.item, e.selected)
-            except (KeyError, TypeError):
-                self.context.signal("rebuild_tree", 0)
-                break
-        self.refresh_tree()
-        self.gui.request_refresh()
+        for e in self.elements.elems_nodes():
+            self.wxtree.SelectItem(e.item, e.selected)
         self.do_not_select = False
 
     def contains(self, box, x, y=None):
@@ -2851,23 +2796,11 @@ class ShadowTree:
         """
         if node is None:
             return
-        if isinstance(node, SVGElement):
-            # If this is called with an SVGElement rather than a Node. Convert them.
-            match_object = node
-            node = None
-            for element in self.node_elements:
-                if element.object is match_object:
-                    node = element
-                    break
-        if node is None:
-            return
         menu = wx.Menu()
         if node.parent is None:
             return
-        elements = self.elements
 
         t = node.type
-        selections = [self.tree_lookup[id(e)] for e in elements.elems(emphasized=True)]
         locked = False
         try:
             if node.object.lock:
@@ -2875,12 +2808,6 @@ class ShadowTree:
         except (AttributeError, ValueError):
             pass
 
-        def combined(*args):
-            for listv in args:
-                for itemv in listv:
-                    yield itemv
-
-        selections = [s for s in combined(*selections) if s.type == t]
         if t == NODE_OPERATION:
             gui.Bind(
                 wx.EVT_MENU,
@@ -2919,13 +2846,13 @@ class ShadowTree:
                     wx.ID_ANY, _("Remove: %s") % str(node.name)[:10], "", wx.ITEM_NORMAL
                 ),
             )
-        if t in (NODE_ELEMENT, NODE_OPERATION_ELEMENT) and len(selections) > 1:
+        if t in (NODE_ELEMENT, NODE_OPERATION_ELEMENT) and len(list(self.elements.elems(emphasized=True))) > 1:
             gui.Bind(
                 wx.EVT_MENU,
                 self.menu_console("element delete"),
                 menu.Append(
                     wx.ID_ANY,
-                    _("Remove: %d objects") % len(selections),
+                    _("Remove: %d objects") % len(list(self.elements.elems(emphasized=True))),
                     "",
                     wx.ITEM_NORMAL,
                 ),
@@ -3074,7 +3001,7 @@ class ShadowTree:
                     ),
                 )
             menu.AppendSubMenu(duplicate_menu, _("Passes"))
-            if node.object.operation in ("Raster", "Image"):
+            if node.operation in ("Raster", "Image"):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
                     menu_item = raster_step_menu.Append(
@@ -3083,7 +3010,7 @@ class ShadowTree:
                     gui.Bind(
                         wx.EVT_MENU, self.menu_raster_step_operation(node, i), menu_item
                     )
-                    step = float(node.object.settings.raster_step)
+                    step = float(node.settings.raster_step)
                     if i == step:
                         menu_item.Check(True)
                 menu.AppendSubMenu(raster_step_menu, _("Step"))
@@ -3423,7 +3350,7 @@ class ShadowTree:
             bounds = CutPlanner.bounding_box(child_objects)
             if bounds is None:
                 return None
-            step = float(node.object.settings.raster_step)
+            step = float(node.settings.raster_step)
             if step == 0:
                 step = 1.0
             xmin, ymin, xmax, ymax = bounds
@@ -3529,7 +3456,6 @@ class ShadowTree:
                 else:
                     del op[index]
             self.elements.set_selected(None)
-            self.context.signal("rebuild_tree", 0)
 
         return specific
 
@@ -3538,7 +3464,7 @@ class ShadowTree:
             context = self.context
             elements = context.elements
             for op in elements.ops(emphasized=True):
-                op.clear()
+                op.remove_all_children()
                 self.context.signal("rebuild_tree", 0)
 
         return specific
@@ -3637,7 +3563,7 @@ class ShadowTree:
 
     def menu_convert_operation(self, node, name):
         def specific(event):
-            node.object.operation = name
+            node.operation = name
             self.context.signal("element_property_update", node.object)
 
         return specific

@@ -91,6 +91,7 @@ class Node:
             self._children.append(node)
         else:
             self._children.insert(pos, node)
+        self.notify_added(node)
 
     def add_node(self, data_object, node_type=-1, name=None, pos=None):
         node = Node()
@@ -133,8 +134,7 @@ class Node:
     @selected.setter
     def selected(self, value):
         self._selected = value
-        if self._root is not None:
-            self._root.notify_selected(self)
+        self.notify_selected(self)
 
     @property
     def highlighted(self):
@@ -143,8 +143,7 @@ class Node:
     @highlighted.setter
     def highlighted(self, value):
         self._highlighted = value
-        if self._root is not None:
-            self._root.notify_highlighted(self)
+        self.notify_highlighted(self)
 
     @property
     def emphasized(self):
@@ -153,15 +152,13 @@ class Node:
     @emphasized.setter
     def emphasized(self, value):
         self._emphasized = value
-        if self._root is not None:
-            self._root.notify_emphasized(self)
+        self.notify_emphasized(self)
 
     def modified(self):
         """
         The matrix transformation was changed.
         """
-        if self._root is not None:
-            self._root.notify_modified(self)
+        self.notify_modified(self)
         self._bounds_dirty = True
 
     def altered(self):
@@ -180,8 +177,8 @@ class Node:
         self.cache = None
         self.icon = None
         self._bounds = None
-        if self._root is not None:
-            self._root.notify_altered(self)
+        self.notify_altered()
+        self._root.bounds = None
 
     def unregister(self):
         try:
@@ -229,13 +226,17 @@ class Node:
             for o in q.objects_of_children(types):
                 yield o
 
-    def find_node_by_object(self, data_object):
-        # TODO: RESTORE FUNCTIONALITY
-        return None
-
     def remove_node(self):
         self._parent._children.remove(self)
         self.notify_removed(self)
+        self.item = None
+        self._parent = None
+        self._root = None
+        self.type = -1
+
+    def remove_all_children(self):
+        for child in list(self.children):
+            child.remove_node()
 
     def open_node(self):
         objects = self.object
@@ -265,20 +266,25 @@ class Node:
 
     def notify_removed(self, node):
         self._root.notify_removed(node)
-        self.item = None
-        self._parent = None
-        self._root = None
-        self.type = -1
-        # self.remove_node()
 
     def notify_changed(self, node):
         self._root.notify_changed(node)
         # self.validate_bounds()
 
+    def notify_emphasized(self, node):
+        self._root.notify_emphasized(node)
+
+    def notify_selected(self, node):
+        self._root.notify_selected(node)
+
+    def notify_highlighted(self, node):
+        self._root.notify_highlighted(node)
+
+    def notify_modified(self, node):
+        self._root.notify_modified(node)
+
     def notify_altered(self, node):
-        self._root.bounds = None
-        self.validate_bounds()
-        self.context.signal("altered", self)
+        self._root.notify_changed(node)
 
 
 class RootNode(Node):
@@ -288,6 +294,7 @@ class RootNode(Node):
         self.set_name("Project")
         self.type = NODE_ROOT
         self.context = context
+        self.listeners = []
 
         self.elements = context.elements
         self.add_node(None, NODE_OPERATION_BRANCH, name="Operations")
@@ -299,35 +306,69 @@ class RootNode(Node):
             if n.type == node_type:
                 return n
 
+    def listen(self, listener):
+        self.listeners.append(listener)
+
+    def unlisten(self, listener):
+        self.listeners.remove(listener)
+
     def notify_added(self, node):
-        if node.type >= NODE_ELEMENTS_BRANCH:
-            self.context.signal("element_added", node)
-        elif node.type >= NODE_OPERATION_BRANCH:
-            self.context.signal("operation_added", node)
+        for listen in self.listeners:
+            try:
+                listen.node_added(node)
+            except AttributeError:
+                pass
 
     def notify_removed(self, node):
-        if node.type >= NODE_ELEMENTS_BRANCH:
-            self.context.signal("element_removed", node)
-        elif node.type >= NODE_OPERATION_BRANCH:
-            self.context.signal("operation_removed", node)
+        for listen in self.listeners:
+            try:
+                listen.node_removed(node)
+            except AttributeError:
+                pass
 
     def notify_changed(self, node):
-        self._root.notify_changed(node)
+        for listen in self.listeners:
+            try:
+                listen.node_changed(node)
+            except AttributeError:
+                pass
 
     def notify_emphasized(self, node):
-        self.context.signal("emphasized", node)
+        for listen in self.listeners:
+            try:
+                listen.emphasized(node)
+            except AttributeError:
+                pass
 
     def notify_selected(self, node):
-        self.context.signal("selected", node)
+        for listen in self.listeners:
+            try:
+                listen.selected(node)
+            except AttributeError:
+                pass
 
     def notify_highlighted(self, node):
-        self.context.signal("highlighted", node)
+        for listen in self.listeners:
+            try:
+                listen.highlighted(node)
+            except AttributeError:
+                pass
 
     def notify_modified(self, node):
-        self._root.bounds = None
         self._bounds = None
         # self.validate_bounds()
-        self.context.signal("modified", self)
+        for listen in self.listeners:
+            try:
+                listen.modified(node)
+            except AttributeError:
+                pass
+
+    def notify_altered(self, node):
+        for listen in self.listeners:
+            try:
+                listen.altered(node)
+            except AttributeError:
+                pass
 
 
 class LaserOperation(Node):
@@ -364,7 +405,7 @@ class LaserOperation(Node):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.append(obj)
+                self.add_node(obj)
             elif isinstance(obj, LaserOperation):
                 self.operation = obj.operation
 
@@ -2195,6 +2236,12 @@ class Elemental(Modifier):
         self.add_ops([o for o in ops if o is not None])
         self.context.signal("rebuild_tree")
 
+    def listen(self, listener):
+        self._tree.listen(listener)
+
+    def unlisten(self, listener):
+        self._tree.unlisten(listener)
+
     def add_element(self, element):
         if (
             not isinstance(element, SVGText)
@@ -2222,7 +2269,7 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
         self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
-        self.classify(self.elems())
+        self.classify(list(self.elems()))
 
     def load_default2(self):
         self.clear_operations()
@@ -2336,17 +2383,15 @@ class Elemental(Modifier):
     def add_op(self, op):
         operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
         op.set_name(str(op))
-        operation_branch.attach(op)
         op.type = NODE_OPERATION_BRANCH + 1
-        self.context.signal("operation_added", op)
+        operation_branch.attach(op)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
         for op in adding_ops:
             op.set_name(str(op))
-            operation_branch.attach(op)
             op.type = NODE_OPERATION_BRANCH + 1
-        self.context.signal("operation_added", adding_ops)
+            operation_branch.attach(op)
 
     def add_elem(self, element):
         element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
@@ -2403,7 +2448,7 @@ class Elemental(Modifier):
 
     def remove_elements_from_operations(self, elements_list):
         for i, op in enumerate(self.ops()):
-            for e in op:
+            for e in op.children:
                 if e.object not in elements_list:
                     e.remove_node()
 
@@ -2412,7 +2457,7 @@ class Elemental(Modifier):
 
     def validate_bounds(self):
         boundary_points = []
-        for e in self.elems():
+        for e in self.elems_nodes():
             if (
                 e.last_transform is None
                 or e.last_transform != e.transform
@@ -2592,6 +2637,8 @@ class Elemental(Modifier):
             add_funct = self.add_op
         if elements is None:
             return
+        if not isinstance(elements, list):
+            elements = [elements]
         for element in elements:
             was_classified = False
             image_added = False

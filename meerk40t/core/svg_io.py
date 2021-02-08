@@ -247,7 +247,6 @@ class SVGLoader:
     def load(context, elements_modifier, pathname, **kwargs):
         context.setting(int, "bed_width", 310)
         context.setting(int, "bed_height", 210)
-        elements = []
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
         else:
@@ -264,8 +263,6 @@ class SVGLoader:
             color="none",
             transform="scale(%f)" % scale_factor,
         )
-        ops = None
-        note = None
         for element in svg:
             try:
                 if element.values["visibility"] == "hidden":
@@ -275,22 +272,26 @@ class SVGLoader:
             except AttributeError:
                 pass
             if isinstance(element, SVGText):
-                elements.append(element)
+                elements_modifier.add_elem(element)
+                elements_modifier.classify(element)
             elif isinstance(element, Path):
                 if len(element) != 0:
                     element.approximate_arcs_with_cubics()
-                    elements.append(element)
+                    elements_modifier.add_elem(element)
+                    elements_modifier.classify(element)
             elif isinstance(element, Shape):
                 e = Path(element)
                 e.reify()  # In some cases the shape could not have reified, the path must.
                 if len(e) != 0:
                     e.approximate_arcs_with_cubics()
-                    elements.append(e)
+                    elements_modifier.add_elem(e)
+                    elements_modifier.classify(element)
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
                     if element.image is not None:
-                        elements.append(element)
+                        elements_modifier.add_elem(element)
+                        elements_modifier.classify(element)
                 except OSError:
                     pass
             elif isinstance(element, SVG):
@@ -301,7 +302,7 @@ class SVGLoader:
                 try:
                     if str(element.values[SVG_ATTR_TAG]).lower() == "note":
                         try:
-                            note = element.values[SVG_TAG_TEXT]
+                            elements_modifier.note = element.values[SVG_TAG_TEXT]
                         except KeyError:
                             pass
                 except KeyError:
@@ -309,6 +310,7 @@ class SVGLoader:
                 try:
                     if str(element.values[SVG_ATTR_TAG]).lower() == "operation":
                         op = LaserOperation()
+                        elements_modifier.add_op(op)
                         for key in dir(op):
                             if key.startswith("_"):
                                 continue
@@ -349,19 +351,6 @@ class SVGLoader:
                                         str(element.values[key]).lower()
                                         in ("true", "1"),
                                     )
-                        if ops is None:
-                            ops = list()
-                        ops.append(op)
                 except KeyError:
                     pass
-
-        # elements_modifier._filenodes[pathname] = elements
-        elements_modifier.add_elems(elements)
-        if ops is not None:
-            # elements_modifier.clear_operations()
-            elements_modifier.add_ops(ops)
-        if note is not None:
-            # elements_modifier.clear_note()
-            elements_modifier.note = note
-        elements_modifier.classify(elements)
         return True
