@@ -74,7 +74,7 @@ class Node:
         self._selected = False
         self._emphasized = False
         self._highlighted = False
-        self.opened = False
+        self._opened = False
 
         self._bounds = None
         self._bounds_dirty = True
@@ -98,14 +98,6 @@ class Node:
         node.set_name(name)
         node.type = node_type
         self.attach(node)
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        # if id(data_object) in self._root.tree_lookup:
-        #     self._root.tree_lookup[id(data_object)].append(self)
-        # else:
-        #     self._root.tree_lookup[id(data_object)] = [self]
         return node
 
     def set_name(self, name):
@@ -122,11 +114,7 @@ class Node:
             self.name = name
 
     def __repr__(self):
-        return "Node(%s, %s, %s)" % (
-            self.type,
-            str(self.object),
-            str(self._parent)
-        )
+        return "Node(%s, %s, %s)" % (self.type, str(self.object), str(self._parent))
 
     def __eq__(self, other):
         return other is self
@@ -260,13 +248,13 @@ class Node:
 
     def get_node(self, node_address: str):
         try:
-            f = node_address.find(':')
+            f = node_address.find(":")
             if f == -1:
                 index = int(node_address)
                 return self[index]
             index = int(node_address[:f])
             node = self[index]
-            return node.get_node(node_address[f+1:])
+            return node.get_node(node_address[f + 1 :])
         except IndexError:
             raise ValueError("Node Address Invalid.")
 
@@ -842,7 +830,7 @@ class Elemental(Modifier):
             channel(_("----------"))
             channel(_("Operations:"))
             for i, operation in enumerate(self.ops()):
-                selected = False #operation.selected #TODO: Restore in some fashion.
+                selected = False  # operation.selected #TODO: Restore in some fashion.
                 select = " *" if selected else "  "
                 color = (
                     "None"
@@ -920,40 +908,74 @@ class Elemental(Modifier):
                     channel(_("index %d out of range") % value)
             return "ops", op_selected
 
-        @context.console_command("tree", help="access and alter tree elements", output_type="tree")
-        def tree(command, channel, _,  data=None, data_type=None, args=tuple(), **kwargs):
+        @context.console_command(
+            "tree", help="access and alter tree elements", output_type="tree"
+        )
+        def tree(
+            command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
+        ):
             return "tree", self._tree
 
-        @context.console_command("list", help="view tree", input_type="tree", output_type="tree")
-        def tree_list(command, channel, _, data=None, data_type=None, args=tuple(), **kwargs):
+        @context.console_command(
+            "list", help="view tree", input_type="tree", output_type="tree"
+        )
+        def tree_list(
+            command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
+        ):
             if data is None:
                 data = self._tree
             channel(_("----------"))
             channel(_("Tree:"))
             path = ""
-            for i, node in enumerate(data):
+            for i, node in enumerate(data.children):
                 channel("%s:%d %s" % (path, i, str(node.name)))
             channel(_("----------"))
             return "tree", data
 
         @context.console_argument("pos", type=int, help="subtree position")
-        @context.console_command("sub", help="sub <#>. Tree Context", input_type="tree",
-                                 output_type="tree")
-        def sub(command, channel, _, data=None, data_type=None, pos=None, args=tuple(), **kwargs):
+        @context.console_command(
+            "sub", help="sub <#>. Tree Context", input_type="tree", output_type="tree"
+        )
+        def sub(
+            command,
+            channel,
+            _,
+            data=None,
+            data_type=None,
+            pos=None,
+            args=tuple(),
+            **kwargs
+        ):
             if pos is None:
                 raise SyntaxError
             try:
-                node = data[pos]
-                if node._openable and not node._opened:
-                    node.open_node()
-                return "tree", data[pos]
+                return "tree", data.children[pos]
             except IndexError:
                 raise SyntaxError
 
-        @context.console_argument("dest", type=self._tree.get_node, help="destination node")
-        @context.console_option("pos", "p", type=int, help="position within destination node")
-        @context.console_command("move", help="<node> move <destination>, eg ... move 1:0", input_type="tree", output_type="tree")
-        def move(command, channel, _,  data=None, data_type=None, dest=None, pos=None, args=tuple(), **kwargs):
+        @context.console_argument(
+            "dest", type=self._tree.get_node, help="destination node"
+        )
+        @context.console_option(
+            "pos", "p", type=int, help="position within destination node"
+        )
+        @context.console_command(
+            "move",
+            help="<node> move <destination>, eg ... move 1:0",
+            input_type="tree",
+            output_type="tree",
+        )
+        def move(
+            command,
+            channel,
+            _,
+            data=None,
+            data_type=None,
+            dest=None,
+            pos=None,
+            args=tuple(),
+            **kwargs
+        ):
             if data is None:
                 channel(_("No source node selected."))
                 return
@@ -1013,7 +1035,7 @@ class Elemental(Modifier):
         @context.console_command(
             "subpath",
             help="break elements",
-            input_type=("path", "elements"),
+            input_type="elements",
             output_type="elements",
         )
         def subpath(command, channel, _, data=None, args=tuple(), **kwargs):
@@ -2035,7 +2057,9 @@ class Elemental(Modifier):
             return "ops", [op]
 
         @context.console_argument("step_size", type=int, help="raster step size")
-        @context.console_command("step", help="step <raster-step-size>", input_type=("ops", "elements"))
+        @context.console_command(
+            "step", help="step <raster-step-size>", input_type=("ops", "elements")
+        )
         def step(command, channel, _, step_size=None, args=tuple(), **kwargs):
             if step_size is None:
                 found = False
@@ -2320,26 +2344,28 @@ class Elemental(Modifier):
 
     def add_op(self, op):
         operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
+        op.set_name(str(op))
         operation_branch.attach(op)
-        op.type = node_type=NODE_OPERATION_BRANCH+1
+        op.type = NODE_OPERATION_BRANCH + 1
         self.context.signal("operation_added", op)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
         for op in adding_ops:
+            op.set_name(str(op))
             operation_branch.attach(op)
-            op.type = NODE_OPERATION_BRANCH+1
+            op.type = NODE_OPERATION_BRANCH + 1
         self.context.signal("operation_added", adding_ops)
 
     def add_elem(self, element):
         element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
-        element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH+1)
+        element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1)
         self.context.signal("element_added", element)
 
     def add_elems(self, adding_elements):
         element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
         for element in adding_elements:
-            element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH+1)
+            element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1)
         self.context.signal("element_added", adding_elements)
 
     def clear_operations(self):
