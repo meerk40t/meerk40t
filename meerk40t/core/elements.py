@@ -22,6 +22,7 @@ from ..svgelements import (
     SVGImage,
     SVGElement,
     Point,
+    SimpleLine,
 )
 
 
