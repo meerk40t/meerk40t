@@ -50,8 +50,8 @@ class MoshiInterpreter(Interpreter, Modifier):
 
         context.interpreter = self
 
-        context.setting(int, "adjust_x", 0)
-        context.setting(int, "adjust_y", 0)
+        context.setting(int, "home_adjust_x", 0)
+        context.setting(int, "home_adjust_y", 0)
         context.setting(bool, "home_right", False)
         context.setting(bool, "home_bottom", False)
         context.setting(int, "current_x", 0)
@@ -137,7 +137,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         speed_cms = int(round(speed_mms / 10))
         if speed_cms == 0:
             speed_cms = 1
-        self.pipe_int8(speed_cms - 1)  # Unknown
+        self.pipe_int8(speed_cms - 1)
 
     def write_set_offset(self, z, x, y):
         """
@@ -213,31 +213,26 @@ class MoshiInterpreter(Interpreter, Modifier):
         if self.state == INTERPRETER_STATE_RASTER:
             self.ensure_rapid_mode()
         speed = int(self.settings.speed)
-        # TODO: Test if normal speed is rapid speed between. Does this work for PPI?
+        # Normal speed is rapid. Passing same speed so PPI isn't crazy.
         self.write_vector_speed(speed, speed)
-        # self.write_set_offset(0, self.context.current_x, self.context.current_y)
         x, y = self.calc_home_position()
         self.offset_x = x
         self.offset_y = y
         self.write_set_offset(0, x, y)
         self.state = INTERPRETER_STATE_PROGRAM
         self.context.signal("interpreter;mode", self.state)
-        print("Finish Mode")
 
     def ensure_raster_mode(self):
         if self.state == INTERPRETER_STATE_RASTER:
             return
         if self.state == INTERPRETER_STATE_PROGRAM:
             self.ensure_rapid_mode()
-        print("Raster Mode")
         speed = int(self.settings.speed)
         self.write_raster_speed(speed)
         x, y = self.calc_home_position()
-        # self.write_set_offset(0, x, y)
         self.offset_x = self.context.current_x
         self.offset_y = self.context.current_y
         self.write_set_offset(0, self.offset_x, self.offset_y)
-        # TODO: Does offsetting to the current position double the offset?
         self.state = INTERPRETER_STATE_RASTER
         self.context.signal("interpreter;mode", self.state)
 
@@ -253,7 +248,6 @@ class MoshiInterpreter(Interpreter, Modifier):
         ):
             self.write_termination()
             self.control("execute\n")
-        print("Rapid Mode")
         self.state = INTERPRETER_STATE_RAPID
         self.context.signal("interpreter;mode", self.state)
 
@@ -267,7 +261,6 @@ class MoshiInterpreter(Interpreter, Modifier):
         ):
             self.ensure_rapid_mode()
             self.state = INTERPRETER_STATE_FINISH
-        print("Finished Mode")
 
     def plotplanner_process(self):
         """
@@ -319,7 +312,6 @@ class MoshiInterpreter(Interpreter, Modifier):
         return False
 
     def goto_absolute(self, x, y, cut):
-        print(x,y,cut)
         if self.settings.raster_step == 0:
             self.ensure_program_mode()
         else:
@@ -432,8 +424,6 @@ class MoshiInterpreter(Interpreter, Modifier):
             x += int(self.context.bed_width * 39.3701)
         if self.context.home_bottom:
             y += int(self.context.bed_height * 39.3701)
-        print(x)
-        print(y)
         return x, y
 
     def home(self):
