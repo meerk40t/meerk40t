@@ -25,7 +25,7 @@ from ..svgelements import (
     Line,
     QuadraticBezier,
     CubicBezier,
-    Arc,
+    Arc, SimpleLine,
 )
 
 from copy import copy
@@ -1376,7 +1376,52 @@ class Elemental(Modifier):
                 data.append(rect)
                 return "elements", data
 
-        # @context.console_argument("text", type=str, nargs="*", help='height of the rectangle.')
+
+        @context.console_argument(
+            "x0", type=Length, help="start x position"
+        )
+        @context.console_argument(
+            "y0", type=Length, help="start y position"
+        )
+        @context.console_argument("x1", type=Length, help="end x position")
+        @context.console_argument(
+            "y1", type=Length, help="end y position"
+        )
+        @context.console_command(
+            "line",
+            help="adds line to scene",
+            input_type=("elements", None),
+            output_type="elements",
+        )
+        def rect(
+            command,
+            x0,
+            y0,
+            x1,
+            y1,
+            data=None,
+            args=tuple(),
+            **kwargs
+        ):
+            """
+            Draws an svg line in the scene.
+            """
+            if y1 is None:
+                raise SyntaxError
+            line = SimpleLine(x0, y0, x1, y1)
+            self.context.setting(int, "bed_width", 310)  # Default Value
+            self.context.setting(int, "bed_height", 210)  # Default Value
+            line.render(
+                ppi=1000.0,
+                width="%fmm" % self.context.bed_width,
+                height="%fmm" % self.context.bed_height,
+            )
+            self.add_element(line)
+            if data is None:
+                return "elements", [line]
+            else:
+                data.append(line)
+                return "elements", data
 
         @context.console_command(
             "text",
