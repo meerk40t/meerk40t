@@ -230,11 +230,12 @@ class MoshiInterpreter(Interpreter, Modifier):
         speed = int(self.settings.speed)
         self.write_raster_speed(speed)
         x, y = self.calc_home_position()
-        self.offset_x = self.context.current_x
-        self.offset_y = self.context.current_y
-        self.write_set_offset(0, self.offset_x, self.offset_y)
+        self.offset_x = x
+        self.offset_y = y
+        self.write_set_offset(0, x, y)
         self.state = INTERPRETER_STATE_RASTER
         self.context.signal("interpreter;mode", self.state)
+        self.write_move_abs(0,0)
 
     def ensure_rapid_mode(self):
         if self.state == INTERPRETER_STATE_RAPID:
@@ -315,7 +316,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         if self.settings.raster_step == 0:
             self.ensure_program_mode()
         else:
-            self.ensure_program_mode()
+            self.ensure_raster_mode()
         if self.state == INTERPRETER_STATE_PROGRAM:
             if cut:
                 self.write_cut_abs(x, y)
@@ -427,6 +428,8 @@ class MoshiInterpreter(Interpreter, Modifier):
         return x, y
 
     def home(self):
+        self.offset_x = 0
+        self.offset_y = 0
         x, y = self.calc_home_position()
         self.ensure_rapid_mode()
         self.is_relative = False
