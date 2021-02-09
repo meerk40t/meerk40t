@@ -60,28 +60,28 @@ class SVGWriter:
             subelement = SubElement(root, "note")
             subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
-
             if isinstance(element, Path):
                 element = abs(element)
                 subelement = SubElement(root, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
                 subelement.set(SVG_ATTR_TRANSFORM, scale)
-
-                for key, val in element.values.items():
-                    if key in ('speed', 'overscan', 'power', 'passes',
-                               'raster_direction', 'raster_step', 'd_ratio'):
-                        subelement.set(key, str(val))
+                if element.values is not None:
+                    for key, val in element.values.items():
+                        if key in ('speed', 'overscan', 'power', 'passes',
+                                   'raster_direction', 'raster_step', 'd_ratio'):
+                            subelement.set(key, str(val))
             elif isinstance(element, SVGText):
                 subelement = SubElement(root, SVG_TAG_TEXT)
                 subelement.text = element.text
                 t = Matrix(element.transform)
                 t *= scale
                 subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
-                for key, val in element.values.items():
-                    if key in ('speed', 'overscan', 'power', 'passes',
-                               'raster_direction', 'raster_step', 'd_ratio',
-                               'font-family', 'font-size', 'font-weight'):
-                        subelement.set(key, str(val))
+                if element.values is not None:
+                    for key, val in element.values.items():
+                        if key in ('speed', 'overscan', 'power', 'passes',
+                                   'raster_direction', 'raster_step', 'd_ratio',
+                                   'font-family', 'font-size', 'font-weight'):
+                            subelement.set(key, str(val))
             else:  # Image.
                 subelement = SubElement(root, SVG_TAG_IMAGE)
                 stream = BytesIO()
@@ -96,10 +96,11 @@ class SVGWriter:
                 t = Matrix(element.transform)
                 t *= scale
                 subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
-                for key, val in element.values.items():
-                    if key in ('speed', 'overscan', 'power', 'passes',
-                               'raster_direction', 'raster_step', 'd_ratio'):
-                        subelement.set(key, str(val))
+                if element.values is not None:
+                    for key, val in element.values.items():
+                        if key in ('speed', 'overscan', 'power', 'passes',
+                                   'raster_direction', 'raster_step', 'd_ratio'):
+                            subelement.set(key, str(val))
             stroke = element.stroke
             if stroke is not None:
                 stroke_opacity = stroke.opacity
