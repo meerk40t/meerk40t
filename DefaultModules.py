@@ -459,14 +459,11 @@ class DxfLoader:
             else:
                 continue
                 # Might be something unsupported.
-
-            # if entity.dxf.lineweight > 0 and element is not None:
-            #     element.stroke_width = Length('%fmm' % (entity.dxf.lineweight / 100.0)).value(ppi=1000.0)
-            true_color = entity.dxf.get('true_color')
-            if true_color is not None:
-                element.stroke = Color(true_color)
-            elif entity.rgb is not None:
-                element.stroke = Color(entity.rgb)
+            if entity.rgb is not None:
+                if isinstance(entity.rgb, tuple):
+                    element.stroke = Color(*entity.rgb)
+                else:
+                    element.stroke = Color(entity.rgb)
             else:
                 c = entity.dxf.color
                 if c == 1:
