@@ -163,7 +163,8 @@ class SVGLoader:
             except AttributeError:
                 pass
             if isinstance(element, SVGText):
-                elements.append(element)
+                if element.text is not None:
+                    elements.append(element)
             elif isinstance(element, Path):
                 if len(element) != 0:
                     elements.append(element)
