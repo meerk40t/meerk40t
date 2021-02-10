@@ -2373,6 +2373,9 @@ class Kernel(Device):
         self.keymap['control+r'] = 'rect 0 0 1000 1000'
         self.keymap['control+e'] = 'circle 500 500 500'
         self.keymap['control+d'] = 'element copy'
+        self.keymap['control+o'] = 'outline'
+        self.keymap['control+shift+o'] = 'outline 1mm'
+        self.keymap['control+alt+o'] = 'outline -1mm'
         self.keymap['control+shift+h'] = 'scale -1 1'
         self.keymap['control+shift+v'] = 'scale 1 -1'
         self.keymap['control+1'] = "bind 1 move $x $y"
