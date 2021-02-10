@@ -80,7 +80,8 @@ class SVGWriter:
                     for key, val in element.values.items():
                         if key in ('speed', 'overscan', 'power', 'passes',
                                    'raster_direction', 'raster_step', 'd_ratio',
-                                   'font-family', 'font-size', 'font-weight'):
+                                   'font-family', 'font_face', 'font-size', 'font-weight',
+                                   'anchor', 'x', 'y'):
                             subelement.set(key, str(val))
             else:  # Image.
                 subelement = SubElement(root, SVG_TAG_IMAGE)
