@@ -268,6 +268,7 @@ class DxfLoader:
         dxf = ezdxf.readfile(pathname)
         elements = []
         for entity in dxf.entities:
+            element = None
             try:
                 entity.transform_to_wcs(entity.ocs())
             except AttributeError:
@@ -451,10 +452,32 @@ class DxfLoader:
             else:
                 continue
                 # Might be something unsupported.
-            if entity.rgb is not None:
+
+            print(entity.dxf.color)
+            if entity.dxf.lineweight > 0 and element is not None:
+                element.stroke_width = Length('%fmm' % (entity.dxf.lineweight / 100.0)).value(ppi=1000.0)
+            true_color = entity.dxf.get('true_color')
+            if true_color is not None:
+                element.stroke = Color(true_color)
+            elif entity.rgb is not None:
                 element.stroke = Color(entity.rgb)
             else:
-                element.stroke = Color('black')
+                c = entity.dxf.color
+                if c == 1:
+                    color = Color('red')
+                elif c == 2:
+                    color = Color('yellow')
+                elif c == 3:
+                    color = Color('green')
+                elif c == 4:
+                    color = Color('cyan')
+                elif c == 5:
+                    color = Color('blue')
+                elif c == 6:
+                    color = Color('magenta')
+                else:
+                    color = Color('black')
+                element.stroke = color
             element.transform.post_scale(MILS_PER_MM, -MILS_PER_MM)
             element.transform.post_translate_y(kernel.bed_height * MILS_PER_MM)
             if isinstance(element, SVGText):
