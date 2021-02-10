@@ -269,7 +269,16 @@ class Console(Module, Pipe):
             if spooler is None:
                 yield 'Device has no spooler.'
                 return
-            spooler.job(COMMAND_HOME)
+            if len(args) == 0:
+                spooler.job(COMMAND_HOME)
+                return
+            x_pos = 0
+            y_pos = 0
+            if len(args) >= 1:
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            if len(args) >= 2:
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            spooler.job(COMMAND_HOME, int(x_pos), int(y_pos))
             return
         elif command == 'unlock':
             if spooler is None:

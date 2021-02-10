@@ -347,7 +347,7 @@ class Interpreter(Module):
                 x, y = values
                 self.jog(x, y, mode=2, min_jog=self.device.opt_jog_minimum)
             elif command == COMMAND_HOME:
-                self.home()
+                self.home(*values)
             elif command == COMMAND_LOCK:
                 self.lock_rail()
             elif command == COMMAND_UNLOCK:
