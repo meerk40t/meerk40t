@@ -723,6 +723,18 @@ class Console(Module, Pipe):
             element = Path(element)
             self.add_element(element)
             return
+        elif command == 'line':
+            if len(args) < 4:
+                yield "Too few arguments (needs x0, y0, x1, y1)"
+                return
+            x0 = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            y0 = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            x1 = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            y1 = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            element = SimpleLine(x0=x0, y0=y0, x1=x1, y1=y1)
+            element = Path(element)
+            self.add_element(element)
+            return
         elif command == 'text':
             text = ' '.join(args)
             element = SVGText(text)
