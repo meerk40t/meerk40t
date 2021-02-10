@@ -263,10 +263,17 @@ class DxfLoader:
         kernel.setting(int, "bed_height", 210)
 
         import ezdxf
+        from ezdxf import units
 
         basename = os.path.basename(pathname)
         dxf = ezdxf.readfile(pathname)
         elements = []
+        unit = dxf.header.get('$INSUNITS')
+        if unit is not None and unit != 0:
+            du = units.DrawingUnits(1000.0, unit='in')
+            scale = du.factor(units.decode(unit))
+        else:
+            scale = MILS_PER_MM
         for entity in dxf.entities:
             element = None
             try:
@@ -274,7 +281,7 @@ class DxfLoader:
             except AttributeError:
                 pass
             if entity.dxftype() == 'CIRCLE':
-                element = Circle(center=entity.dxf.center, r=entity.dxf.radius)
+                element = Circle(center=entity.dxf.center, r=entity.dxf.radius )
             elif entity.dxftype() == 'ARC':
                 circ = Circle(center=entity.dxf.center,
                               r=entity.dxf.radius)
@@ -453,8 +460,8 @@ class DxfLoader:
                 continue
                 # Might be something unsupported.
 
-            if entity.dxf.lineweight > 0 and element is not None:
-                element.stroke_width = Length('%fmm' % (entity.dxf.lineweight / 100.0)).value(ppi=1000.0)
+            # if entity.dxf.lineweight > 0 and element is not None:
+            #     element.stroke_width = Length('%fmm' % (entity.dxf.lineweight / 100.0)).value(ppi=1000.0)
             true_color = entity.dxf.get('true_color')
             if true_color is not None:
                 element.stroke = Color(true_color)
@@ -477,12 +484,14 @@ class DxfLoader:
                 else:
                     color = Color('black')
                 element.stroke = color
-            element.transform.post_scale(MILS_PER_MM, -MILS_PER_MM)
+            element.transform.post_scale(scale, -scale)
             element.transform.post_translate_y(kernel.bed_height * MILS_PER_MM)
+
             if isinstance(element, SVGText):
                 elements.append(element)
             else:
                 path = abs(Path(element))
+                path.stroke_width = 1.0
                 if len(path) != 0:
                     if not isinstance(path[0], Move):
                         path = Move(path.first_point) + path
