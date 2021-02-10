@@ -213,6 +213,11 @@ class OperationPreprocessor:
         yield COMMAND_MOVE, 0, 0
 
     @staticmethod
+    def physicalhome():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_HOME, 0, 0
+
+    @staticmethod
     def home():
         yield COMMAND_WAIT_FINISH
         yield COMMAND_HOME
