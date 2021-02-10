@@ -816,6 +816,26 @@ class Console(Module, Pipe):
                     element.altered()
             active_device.signal('refresh_scene')
             return
+        elif command == 'outline':
+            bounds = elements.bounds()
+            if bounds is None:
+                yield "Nothing Selected"
+                return
+            x_pos = bounds[0]
+            y_pos = bounds[1]
+            width = bounds[2] - bounds[0]
+            height = bounds[3] - bounds[1]
+            offset_x = Length(args[0]).value(ppi=1000.0, relative_length=width) if len(args) >= 1 else 0
+            offset_y = Length(args[1]).value(ppi=1000.0, relative_length=height) if len(args) >= 2 else offset_x
+
+            x_pos -= offset_x
+            y_pos -= offset_y
+            width += offset_x * 2
+            height += offset_y * 2
+            element = Rect(x=x_pos, y=y_pos, width=width, height=height)
+            element = Path(element)
+            self.add_element(element)
+            return
         elif command == 'rotate':
             if len(args) == 0:
                 yield '----------'
