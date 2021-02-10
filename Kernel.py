@@ -1302,11 +1302,14 @@ class Elemental(Module):
             for op in self.ops():
                 if op.operation == "Raster":
                     if image_added:
-                        continue  # already added to an image operation, is not added her.
+                        continue  # already added to an image operation, is not added here.
                     if element.stroke is not None and op.color == abs(element.stroke):
                         op.append(element)
                         was_classified = True
                     elif isinstance(element, SVGImage):
+                        op.append(element)
+                        was_classified = True
+                    elif isinstance(element, SVGText):
                         op.append(element)
                         was_classified = True
                     elif element.fill is not None and element.fill.value is not None:
