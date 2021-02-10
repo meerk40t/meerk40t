@@ -453,7 +453,6 @@ class DxfLoader:
                 continue
                 # Might be something unsupported.
 
-            print(entity.dxf.color)
             if entity.dxf.lineweight > 0 and element is not None:
                 element.stroke_width = Length('%fmm' % (entity.dxf.lineweight / 100.0)).value(ppi=1000.0)
             true_color = entity.dxf.get('true_color')
