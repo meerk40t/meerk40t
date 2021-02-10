@@ -89,6 +89,7 @@ class JobInfo(wx.Frame, Module):
         if not isinstance(ops, list):
             ops = [ops]
         self.operations = ops
+        self._original_ops = list(ops)
 
     def jobadd_physicalhome(self, event=None):
         self.operations.append(OperationPreprocessor.physicalhome)
@@ -170,6 +171,9 @@ class JobInfo(wx.Frame, Module):
             self.menu_jog3.Check(True)
         self.menu_rapid.Check(self.device.opt_rapid_between)
         self.preprocessor.device = self.device
+        self.refresh_lists()
+
+    def refresh_lists(self):
         operations = list(self.operations)
         self.operations.clear()
         if self.device.prephysicalhome:
@@ -268,21 +272,39 @@ class JobInfo(wx.Frame, Module):
 
     def on_check_home_before(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.prehome = self.menu_prehome.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autohome = self.menu_autohome.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_check_physicalhome_before(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.prephysicalhome = self.menu_prephysicalhome.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_check_physicalhome_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autophysicalhome = self.menu_autophysicalhome.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_check_origin_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autoorigin = self.menu_autoorigin.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autobeep = self.menu_autobeep.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
         if self.device.device_root.auto_spooler:
