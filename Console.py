@@ -834,7 +834,8 @@ class Console(Module, Pipe):
             height += offset_y * 2
             element = Rect(x=x_pos, y=y_pos, width=width, height=height)
             element = Path(element)
-            self.add_element(element)
+            self.add_element(element, 'red')
+            elements.classify([element])
             return
         elif command == 'rotate':
             if len(args) == 0:
@@ -2175,8 +2176,9 @@ class Console(Module, Pipe):
             else:
                 yield "Error. Command Unrecognized: %s" % command
 
-    def add_element(self, element):
+    def add_element(self, element, color='black'):
         kernel = self.device.device_root
-        element.stroke = Color('black')
+        element.stroke = Color(color)
         kernel.elements.add_elem(element)
         kernel.elements.set_selected([element])
+
