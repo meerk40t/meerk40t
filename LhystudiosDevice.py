@@ -725,7 +725,7 @@ class LhymicroInterpreter(Interpreter):
             y = int(self.device.bed_height * 39.3701)
         return x, y
 
-    def home(self):
+    def home(self, *values):
         x, y = self.calc_home_position()
         controller = self.pipe
         self.ensure_rapid_mode()
@@ -738,6 +738,14 @@ class LhymicroInterpreter(Interpreter):
         self.state = INTERPRETER_STATE_RAPID
         adjust_x = self.device.home_adjust_x
         adjust_y = self.device.home_adjust_y
+        try:
+            adjust_x = int(values[0])
+        except (ValueError, IndexError):
+            pass
+        try:
+            adjust_y = int(values[1])
+        except (ValueError, IndexError):
+            pass
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)

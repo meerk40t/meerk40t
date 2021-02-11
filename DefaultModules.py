@@ -60,28 +60,29 @@ class SVGWriter:
             subelement = SubElement(root, "note")
             subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
-
             if isinstance(element, Path):
                 element = abs(element)
                 subelement = SubElement(root, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
                 subelement.set(SVG_ATTR_TRANSFORM, scale)
-
-                for key, val in element.values.items():
-                    if key in ('speed', 'overscan', 'power', 'passes',
-                               'raster_direction', 'raster_step', 'd_ratio'):
-                        subelement.set(key, str(val))
+                if element.values is not None:
+                    for key, val in element.values.items():
+                        if key in ('speed', 'overscan', 'power', 'passes',
+                                   'raster_direction', 'raster_step', 'd_ratio'):
+                            subelement.set(key, str(val))
             elif isinstance(element, SVGText):
                 subelement = SubElement(root, SVG_TAG_TEXT)
                 subelement.text = element.text
                 t = Matrix(element.transform)
                 t *= scale
                 subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
-                for key, val in element.values.items():
-                    if key in ('speed', 'overscan', 'power', 'passes',
-                               'raster_direction', 'raster_step', 'd_ratio',
-                               'font-family', 'font-size', 'font-weight'):
-                        subelement.set(key, str(val))
+                if element.values is not None:
+                    for key, val in element.values.items():
+                        if key in ('speed', 'overscan', 'power', 'passes',
+                                   'raster_direction', 'raster_step', 'd_ratio',
+                                   'font-family', 'font_face', 'font-size', 'font-weight',
+                                   'anchor', 'x', 'y'):
+                            subelement.set(key, str(val))
             else:  # Image.
                 subelement = SubElement(root, SVG_TAG_IMAGE)
                 stream = BytesIO()
@@ -96,10 +97,11 @@ class SVGWriter:
                 t = Matrix(element.transform)
                 t *= scale
                 subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
-                for key, val in element.values.items():
-                    if key in ('speed', 'overscan', 'power', 'passes',
-                               'raster_direction', 'raster_step', 'd_ratio'):
-                        subelement.set(key, str(val))
+                if element.values is not None:
+                    for key, val in element.values.items():
+                        if key in ('speed', 'overscan', 'power', 'passes',
+                                   'raster_direction', 'raster_step', 'd_ratio'):
+                            subelement.set(key, str(val))
             stroke = element.stroke
             if stroke is not None:
                 stroke_opacity = stroke.opacity
@@ -161,7 +163,8 @@ class SVGLoader:
             except AttributeError:
                 pass
             if isinstance(element, SVGText):
-                elements.append(element)
+                if element.text is not None:
+                    elements.append(element)
             elif isinstance(element, Path):
                 if len(element) != 0:
                     elements.append(element)
@@ -260,17 +263,25 @@ class DxfLoader:
         kernel.setting(int, "bed_height", 210)
 
         import ezdxf
+        from ezdxf import units
 
         basename = os.path.basename(pathname)
         dxf = ezdxf.readfile(pathname)
         elements = []
+        unit = dxf.header.get('$INSUNITS')
+        if unit is not None and unit != 0:
+            du = units.DrawingUnits(1000.0, unit='in')
+            scale = du.factor(units.decode(unit))
+        else:
+            scale = MILS_PER_MM
         for entity in dxf.entities:
+            element = None
             try:
                 entity.transform_to_wcs(entity.ocs())
             except AttributeError:
                 pass
             if entity.dxftype() == 'CIRCLE':
-                element = Circle(center=entity.dxf.center, r=entity.dxf.radius)
+                element = Circle(center=entity.dxf.center, r=entity.dxf.radius )
             elif entity.dxftype() == 'ARC':
                 circ = Circle(center=entity.dxf.center,
                               r=entity.dxf.radius)
@@ -449,15 +460,35 @@ class DxfLoader:
                 continue
                 # Might be something unsupported.
             if entity.rgb is not None:
-                element.stroke = Color(entity.rgb)
+                if isinstance(entity.rgb, tuple):
+                    element.stroke = Color(*entity.rgb)
+                else:
+                    element.stroke = Color(entity.rgb)
             else:
-                element.stroke = Color('black')
-            element.transform.post_scale(MILS_PER_MM, -MILS_PER_MM)
+                c = entity.dxf.color
+                if c == 1:
+                    color = Color('red')
+                elif c == 2:
+                    color = Color('yellow')
+                elif c == 3:
+                    color = Color('green')
+                elif c == 4:
+                    color = Color('cyan')
+                elif c == 5:
+                    color = Color('blue')
+                elif c == 6:
+                    color = Color('magenta')
+                else:
+                    color = Color('black')
+                element.stroke = color
+            element.transform.post_scale(scale, -scale)
             element.transform.post_translate_y(kernel.bed_height * MILS_PER_MM)
+
             if isinstance(element, SVGText):
                 elements.append(element)
             else:
                 path = abs(Path(element))
+                path.stroke_width = 1.0
                 if len(path) != 0:
                     if not isinstance(path[0], Move):
                         path = Move(path.first_point) + path

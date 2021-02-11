@@ -2513,9 +2513,9 @@ class RootNode(list):
                     menu.AppendSubMenu(raster_wizard_apply_menu, _("Apply Raster Script"))
                 except KeyError:
                     pass
-            if isinstance(node.object, SVGText):
-                gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
-                         menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
+            # if isinstance(node.object, SVGText):
+            #     gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
+            #              menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
 
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
@@ -3152,7 +3152,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.18')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.19')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

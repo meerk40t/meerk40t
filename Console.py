@@ -269,7 +269,16 @@ class Console(Module, Pipe):
             if spooler is None:
                 yield 'Device has no spooler.'
                 return
-            spooler.job(COMMAND_HOME)
+            if len(args) == 0:
+                spooler.job(COMMAND_HOME)
+                return
+            x_pos = 0
+            y_pos = 0
+            if len(args) >= 1:
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            if len(args) >= 2:
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            spooler.job(COMMAND_HOME, int(x_pos), int(y_pos))
             return
         elif command == 'unlock':
             if spooler is None:
@@ -723,6 +732,18 @@ class Console(Module, Pipe):
             element = Path(element)
             self.add_element(element)
             return
+        elif command == 'line':
+            if len(args) < 4:
+                yield "Too few arguments (needs x0, y0, x1, y1)"
+                return
+            x0 = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            y0 = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            x1 = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            y1 = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            element = SimpleLine(x0=x0, y0=y0, x1=x1, y1=y1)
+            element = Path(element)
+            self.add_element(element)
+            return
         elif command == 'text':
             text = ' '.join(args)
             element = SVGText(text)
@@ -803,6 +824,27 @@ class Console(Module, Pipe):
                     element.fill = Color(args[0])
                     element.altered()
             active_device.signal('refresh_scene')
+            return
+        elif command == 'outline':
+            bounds = elements.bounds()
+            if bounds is None:
+                yield "Nothing Selected"
+                return
+            x_pos = bounds[0]
+            y_pos = bounds[1]
+            width = bounds[2] - bounds[0]
+            height = bounds[3] - bounds[1]
+            offset_x = Length(args[0]).value(ppi=1000.0, relative_length=width) if len(args) >= 1 else 0
+            offset_y = Length(args[1]).value(ppi=1000.0, relative_length=height) if len(args) >= 2 else offset_x
+
+            x_pos -= offset_x
+            y_pos -= offset_y
+            width += offset_x * 2
+            height += offset_y * 2
+            element = Rect(x=x_pos, y=y_pos, width=width, height=height)
+            element = Path(element)
+            self.add_element(element, 'red')
+            elements.classify([element])
             return
         elif command == 'rotate':
             if len(args) == 0:
@@ -2008,7 +2050,7 @@ class Console(Module, Pipe):
                     f.write("Document type : LHYMICRO-GL file\n")
                     f.write("File version: 1.0.01\n")
                     f.write("Copyright: Unknown\n")
-                    f.write("Creator-Software: MeerK40t v0.6.18\n")
+                    f.write("Creator-Software: MeerK40t v0.6.19\n")
                     f.write("\n")
                     f.write("%0%0%0%0%\n")
                     buffer = active_device.interpreter.pipe._buffer
@@ -2143,8 +2185,9 @@ class Console(Module, Pipe):
             else:
                 yield "Error. Command Unrecognized: %s" % command
 
-    def add_element(self, element):
+    def add_element(self, element, color='black'):
         kernel = self.device.device_root
-        element.stroke = Color('black')
+        element.stroke = Color(color)
         kernel.elements.add_elem(element)
         kernel.elements.set_selected([element])
+

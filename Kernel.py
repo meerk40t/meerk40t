@@ -98,7 +98,7 @@ class Module:
         :return:
         """
         self.finalize(channel=channel)
-        self.device = None  # TODO: 0.6.18
+        self.device = None  # TODO: 0.6.19
         self.state = STATE_END
 
     def initialize(self, channel=None):
@@ -347,7 +347,7 @@ class Interpreter(Module):
                 x, y = values
                 self.jog(x, y, mode=2, min_jog=self.device.opt_jog_minimum)
             elif command == COMMAND_HOME:
-                self.home()
+                self.home(*values)
             elif command == COMMAND_LOCK:
                 self.lock_rail()
             elif command == COMMAND_UNLOCK:
@@ -1302,11 +1302,14 @@ class Elemental(Module):
             for op in self.ops():
                 if op.operation == "Raster":
                     if image_added:
-                        continue  # already added to an image operation, is not added her.
+                        continue  # already added to an image operation, is not added here.
                     if element.stroke is not None and op.color == abs(element.stroke):
                         op.append(element)
                         was_classified = True
                     elif isinstance(element, SVGImage):
+                        op.append(element)
+                        was_classified = True
+                    elif isinstance(element, SVGText):
                         op.append(element)
                         was_classified = True
                     elif element.fill is not None and element.fill.value is not None:
@@ -2280,7 +2283,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = '0.6.18'
+        self.device_version = '0.6.19'
         self.device_root = self
 
         # Persistent storage if it exists.
@@ -2370,6 +2373,9 @@ class Kernel(Device):
         self.keymap['control+r'] = 'rect 0 0 1000 1000'
         self.keymap['control+e'] = 'circle 500 500 500'
         self.keymap['control+d'] = 'element copy'
+        self.keymap['control+o'] = 'outline'
+        self.keymap['control+shift+o'] = 'outline 1mm'
+        self.keymap['control+alt+o'] = 'outline -1mm'
         self.keymap['control+shift+h'] = 'scale -1 1'
         self.keymap['control+shift+v'] = 'scale 1 -1'
         self.keymap['control+1'] = "bind 1 move $x $y"

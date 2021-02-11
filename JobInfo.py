@@ -31,6 +31,11 @@ class JobInfo(wx.Frame, Module):
         self.menu_autohome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_home_after, id=self.menu_autohome.GetId())
 
+        self.menu_prephysicalhome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Physical Home Before"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_physicalhome_before, id=self.menu_prephysicalhome.GetId())
+        self.menu_autophysicalhome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Physical Home After"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_physicalhome_after, id=self.menu_autophysicalhome.GetId())
+
         self.menu_autoorigin = wxglade_tmp_menu.Append(wx.ID_ANY, _("Return to Origin After"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_origin_after, id=self.menu_autoorigin.GetId())
 
@@ -41,6 +46,8 @@ class JobInfo(wx.Frame, Module):
         wxglade_tmp_menu = wx.Menu()
         t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home"), "")
         self.Bind(wx.EVT_MENU, self.jobadd_home, id=t.GetId())
+        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Physical Home"), "")
+        self.Bind(wx.EVT_MENU, self.jobadd_physicalhome, id=t.GetId())
         t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Wait"), "")
         self.Bind(wx.EVT_MENU, self.jobadd_wait, id=t.GetId())
         t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep"), "")
@@ -77,11 +84,16 @@ class JobInfo(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-        # TODO: Move this to Elements
+        # Moved to elements in 0.7.0
         self.preprocessor = OperationPreprocessor()
         if not isinstance(ops, list):
             ops = [ops]
         self.operations = ops
+        self._original_ops = list(ops)
+
+    def jobadd_physicalhome(self, event=None):
+        self.operations.append(OperationPreprocessor.physicalhome)
+        self.update_gui()
 
     def jobadd_home(self, event=None):
         self.operations.append(OperationPreprocessor.home)
@@ -130,6 +142,8 @@ class JobInfo(wx.Frame, Module):
         self.device.setting(float, "scale_y", 1.0)
         self.device.setting(bool, "prehome", False)
         self.device.setting(bool, "autohome", False)
+        self.device.setting(bool, "prephysicalhome", False)
+        self.device.setting(bool, "autophysicalhome", False)
         self.device.setting(bool, "autoorigin", False)
         self.device.setting(bool, "autobeep", True)
         self.device.setting(bool, "autostart", True)
@@ -139,6 +153,9 @@ class JobInfo(wx.Frame, Module):
 
         self.menu_prehome.Check(self.device.prehome)
         self.menu_autohome.Check(self.device.autohome)
+        self.menu_prephysicalhome.Check(self.device.prephysicalhome)
+        self.menu_autophysicalhome.Check(self.device.autophysicalhome)
+
         self.menu_autoorigin.Check(self.device.autoorigin)
         self.menu_autobeep.Check(self.device.autobeep)
         jog_mode = self.device.opt_jog_mode
@@ -154,8 +171,16 @@ class JobInfo(wx.Frame, Module):
             self.menu_jog3.Check(True)
         self.menu_rapid.Check(self.device.opt_rapid_between)
         self.preprocessor.device = self.device
+        self.refresh_lists()
+
+    def refresh_lists(self):
         operations = list(self.operations)
         self.operations.clear()
+        if self.device.prephysicalhome:
+            if not self.device.rotary:
+                self.jobadd_physicalhome()
+            else:
+                self.operations.append(_("Physical Home Before: Disabled (Rotary On)"))
         if self.device.prehome:
             if not self.device.rotary:
                 self.jobadd_home()
@@ -170,6 +195,11 @@ class JobInfo(wx.Frame, Module):
         if self.device.autobeep:
             self.jobadd_beep()
 
+        if self.device.autophysicalhome:
+            if not self.device.rotary:
+                self.jobadd_physicalhome()
+            else:
+                self.operations.append(_("Physical Home After: Disabled (Rotary On)"))
         if self.device.autohome:
             if not self.device.rotary:
                 self.jobadd_home()
@@ -242,15 +272,39 @@ class JobInfo(wx.Frame, Module):
 
     def on_check_home_before(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.prehome = self.menu_prehome.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autohome = self.menu_autohome.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
+
+    def on_check_physicalhome_before(self, event):  # wxGlade: JobInfo.<event_handler>
+        self.device.prephysicalhome = self.menu_prephysicalhome.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
+
+    def on_check_physicalhome_after(self, event):  # wxGlade: JobInfo.<event_handler>
+        self.device.autophysicalhome = self.menu_autophysicalhome.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_check_origin_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autoorigin = self.menu_autoorigin.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autobeep = self.menu_autobeep.IsChecked()
+        self.operations = list(self._original_ops)
+        self.preprocessor.commands = list()
+        self.refresh_lists()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
         if self.device.device_root.auto_spooler:
