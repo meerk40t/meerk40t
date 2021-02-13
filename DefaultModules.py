@@ -459,6 +459,7 @@ class DxfLoader:
             else:
                 continue
                 # Might be something unsupported.
+
             if entity.rgb is not None:
                 if isinstance(entity.rgb, tuple):
                     element.stroke = Color(*entity.rgb)
@@ -466,6 +467,10 @@ class DxfLoader:
                     element.stroke = Color(entity.rgb)
             else:
                 c = entity.dxf.color
+                if c == 256:  # Bylayer.
+                    if entity.dxf.layer in dxf.layers:
+                        layer = dxf.layers.get(entity.dxf.layer)
+                        c = layer.color
                 if c == 1:
                     color = Color('red')
                 elif c == 2:
