@@ -513,6 +513,13 @@ class MeerK40t(wx.Frame, Module):
 
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        try:
+            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE)
+            self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.on_zoom_gesture)
+            self.tree.Bind(wx.EVT_GESTURE_ZOOM, self.on_zoom_gesture)
+        except AttributeError:
+            # Not WX 4.1
+            pass
 
         self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
@@ -1182,6 +1189,17 @@ class MeerK40t(wx.Frame, Module):
 
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), 'rightup')
+
+    def on_zoom_gesture(self, event):
+        """
+        This code requires WXPython 4.1 and the bind will fail otherwise.
+        """
+        if event.IsGestureStart():
+            self.widget_scene.event(event.GetPosition(), 'zoom-start')
+        elif event.ISGEstureEnd():
+            self.widget_scene.event(event.GetPosition(), 'zoom-end')
+        zoom = event.GetZoomFactor()
+        self.widget_scene.event(event.GetPosition(), 'zoom %f' % zoom)
 
     def on_focus_lost(self, event):
         self.device.using('module', 'Console').write("-laser\nend\n")
