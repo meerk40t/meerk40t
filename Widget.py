@@ -1150,11 +1150,11 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_translate(0, -25)
         elif event_type == 'wheeldown' and self.scene.device.device_root.mouse_wheel_pan:
             self.scene_widget.matrix.post_translate(0, 25)
-        elif event_type == 'wheelup' or event_type == 'wheelup_ctrl':
+        elif event_type == 'wheelup' or event_type == 'wheelup_ctrl' or event_type == 'zoom-in':
             self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
-        elif event_type == 'wheeldown' or event_type == 'wheeldown_ctrl':
+        elif event_type == 'wheeldown' or event_type == 'wheeldown_ctrl' or event_type == 'zoom-out':
             self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME

@@ -513,6 +513,8 @@ class MeerK40t(wx.Frame, Module):
 
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+
+        self.scene.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
         try:
             self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE)
             self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.on_zoom_gesture)
@@ -1189,6 +1191,13 @@ class MeerK40t(wx.Frame, Module):
 
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), 'rightup')
+
+    def on_magnify_mouse(self, event):
+        magnify = event.GetMagnification()
+        if magnify > 0:
+            self.widget_scene.event(event.GetPosition(), 'zoom-in')
+        if magnify < 0:
+            self.widget_scene.event(event.GetPosition(), 'zoom-out')
 
     def on_zoom_gesture(self, event):
         """
