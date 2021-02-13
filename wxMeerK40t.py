@@ -1198,8 +1198,9 @@ class MeerK40t(wx.Frame, Module):
             self.widget_scene.event(event.GetPosition(), 'zoom-start')
         elif event.ISGEstureEnd():
             self.widget_scene.event(event.GetPosition(), 'zoom-end')
-        zoom = event.GetZoomFactor()
-        self.widget_scene.event(event.GetPosition(), 'zoom %f' % zoom)
+        else:
+            zoom = event.GetZoomFactor()
+            self.widget_scene.event(event.GetPosition(), 'zoom %f' % zoom)
 
     def on_focus_lost(self, event):
         self.device.using('module', 'Console').write("-laser\nend\n")
