@@ -1,6 +1,7 @@
 
 import ezdxf
 from ezdxf import units
+from ezdxf.tools.rgb import DXF_DEFAULT_COLORS, int2rgb
 
 from ..svgelements import (
     Path,
@@ -266,19 +267,9 @@ class DxfLoader:
                     if entity.dxf.layer in dxf.layers:
                         layer = dxf.layers.get(entity.dxf.layer)
                         c = layer.color
-                if c == 1:
-                    color = Color('red')
-                elif c == 2:
-                    color = Color('yellow')
-                elif c == 3:
-                    color = Color('green')
-                elif c == 4:
-                    color = Color('cyan')
-                elif c == 5:
-                    color = Color('blue')
-                elif c == 6:
-                    color = Color('magenta')
-                else:
+                try:
+                    color = Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
+                except:
                     color = Color('black')
                 element.stroke = color
 
