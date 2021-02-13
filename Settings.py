@@ -35,7 +35,8 @@ class Settings(wx.Frame, Module):
                                                                            _("SVG Uniform Save"),
                                                                            _("Image DPI Scaling"),
                                                                            _("Show Negative Guide"),
-                                                                           _("Launch Spooler JobStart")
+                                                                           _("Launch Spooler JobStart"),
+                                                                           _("MouseWheel Pan")
                                                                            ])
         from wxMeerK40t import supported_languages
         choices = [language_name for language_code, language_name, language_index in supported_languages]
@@ -70,11 +71,13 @@ class Settings(wx.Frame, Module):
         self.text_svg_ppi.SetValue(str(self.device.device_root.svg_ppi))
 
         self.device.setting(bool, "mouse_zoom_invert", False)
+        self.device.setting(bool, "mouse_wheel_pan", False)
         self.device.setting(bool, "print_shutdown", False)
         self.device.setting(bool, "uniform_svg", False)
         self.device.setting(bool, 'image_dpi', True)
         self.device.setting(bool, "show_negative_guide", True)
         self.device.setting(bool, "auto_spooler", True)
+
         self.device.setting(int, "language", 0)
         self.device.setting(str, "units_name", 'mm')
         self.device.setting(int, "units_marks", 10)
@@ -92,6 +95,8 @@ class Settings(wx.Frame, Module):
             self.checklist_options.Check(4, True)
         if self.device.auto_spooler:
             self.checklist_options.Check(5, True)
+        if self.device.mouse_wheel_pan:
+            self.checklist_options.Check(6, True)
         self.radio_units.SetSelection(self.device.units_index)
         self.combo_language.SetSelection(self.device.language)
 
@@ -183,6 +188,7 @@ class Settings(wx.Frame, Module):
         self.device.image_dpi = self.checklist_options.IsChecked(3)
         self.device.show_negative_guide = self.checklist_options.IsChecked(4)
         self.device.auto_spooler = self.checklist_options.IsChecked(5)
+        self.device.mouse_wheel_pan = self.checklist_options.IsChecked(6)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()

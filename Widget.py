@@ -1145,24 +1145,24 @@ class SceneSpaceWidget(Widget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == 'hover':
             return RESPONSE_CHAIN
-        if event_type == 'wheelup':
-            # self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
-            self.scene_widget.matrix.post_translate(0,-100)
+        if event_type == 'wheelup' and self.scene.device.device_root.mouse_wheel_pan:
+            self.scene_widget.matrix.post_translate(0, -25)
+        elif event_type == 'wheeldown' and self.scene.device.device_root.mouse_wheel_pan:
+            self.scene_widget.matrix.post_translate(0, 25)
+        elif event_type == 'wheelup' or event_type == 'wheelup_ctrl':
+            self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
-        elif event_type == 'wheeldown':
-            # self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
-            self.scene_widget.matrix.post_translate(0, 100)
+        elif event_type == 'wheeldown' or event_type == 'wheeldown_ctrl':
+            self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'wheelleft':
-            # self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
-            self.scene_widget.matrix.post_translate(-100,0)
+            self.scene_widget.matrix.post_translate(-25, 0)
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'wheelright':
-            # self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
-            self.scene_widget.matrix.post_translate(100,0)
+            self.scene_widget.matrix.post_translate(25, 0)
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'middledown':

@@ -526,6 +526,7 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene = None
         self.pipe_state = None
         self._rotary_view = False
+        self._control_down = False
 
     def add_language_menu(self):
         if os.path.exists(resource_path('./locale')):
@@ -569,6 +570,7 @@ class MeerK40t(wx.Frame, Module):
         kernel.setting(int, "units_marks", 10)
         kernel.setting(int, "units_index", 0)
         kernel.setting(bool, "mouse_zoom_invert", False)
+        kernel.setting(bool, "mouse_wheel_pan", False)
         kernel.setting(bool, "print_shutdown", False)
         device.setting(int, 'fps', 40)
 
@@ -1113,16 +1115,21 @@ class MeerK40t(wx.Frame, Module):
         if self.device.device_root.mouse_zoom_invert:
             rotation = -rotation
         if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL:
-            if rotation > 1:
-                self.widget_scene.event(event.GetPosition(), 'wheelup')
-            elif rotation < -1:
-                self.widget_scene.event(event.GetPosition(), 'wheeldown')
+            if self._control_down:
+                if rotation > 1:
+                    self.widget_scene.event(event.GetPosition(), 'wheelup_ctrl')
+                elif rotation < -1:
+                    self.widget_scene.event(event.GetPosition(), 'wheeldown_ctrl')
+            else:
+                if rotation > 1:
+                    self.widget_scene.event(event.GetPosition(), 'wheelup')
+                elif rotation < -1:
+                    self.widget_scene.event(event.GetPosition(), 'wheeldown')
         else:
             if rotation > 1:
                 self.widget_scene.event(event.GetPosition(), 'wheelleft')
             elif rotation < -1:
                 self.widget_scene.event(event.GetPosition(), 'wheelright')
-
 
     def on_mousewheel_zoom(self, event):
         if self.scene.HasCapture():
@@ -1180,6 +1187,7 @@ class MeerK40t(wx.Frame, Module):
         # event.Skip()
 
     def on_key_down(self, event):
+        self._control_down = event.ControlDown()
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
@@ -1189,6 +1197,7 @@ class MeerK40t(wx.Frame, Module):
             event.Skip()
 
     def on_key_up(self, event):
+        self._control_down = event.ControlDown()
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
