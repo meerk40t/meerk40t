@@ -1138,7 +1138,7 @@ class SceneSpaceWidget(Widget):
         self.add_widget(-1, self.interface_widget)
         self.add_widget(-1, self.scene_widget)
         self.last_position = None
-        self._start_matrix = None
+        self._previous_zoom = None
 
     def hit(self):
         return HITCHAIN_DELEGATE_AND_HIT
@@ -1170,22 +1170,26 @@ class SceneSpaceWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == 'middleup':
             return RESPONSE_CONSUME
-        elif event_type == 'zoom-start':
-            self._start_matrix = Matrix(self.scene_widget.matrix)
+        elif event_type == 'gesture-start':
+            self._previous_zoom = 1.0
             return RESPONSE_CONSUME
-        elif event_type == 'zoom-end':
-            self._start_matrix = None
+        elif event_type == 'gesture-end':
+            self._previous_zoom = None
             return RESPONSE_CONSUME
         elif str(event_type).startswith('zoom'):
-            if self._start_matrix is None:
+            if self._previous_zoom is None:
                 return RESPONSE_CONSUME
             try:
                 zoom = float(event_type.split(' ')[1])
             except:
                 return RESPONSE_CONSUME
-            self.scene_widget.matrix = Matrix(self._start_matrix)
-            self.scene_widget.matrix.post_scale(zoom, zoom, space_pos[0], space_pos[1])
+
+            zoom_change = zoom / self._previous_zoom
+            self.scene_widget.matrix.post_scale(zoom_change, zoom_change, space_pos[0], space_pos[1])
+            self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
+            self._previous_zoom = zoom
             self.scene.device.signal('refresh_scene', 0)
+
             return RESPONSE_CONSUME
         self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
         self.scene.device.signal('refresh_scene', 0)

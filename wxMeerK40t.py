@@ -516,9 +516,11 @@ class MeerK40t(wx.Frame, Module):
 
         self.scene.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
         try:
-            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE)
-            self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.on_zoom_gesture)
-            self.tree.Bind(wx.EVT_GESTURE_ZOOM, self.on_zoom_gesture)
+            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
+            self.scene.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
+            self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
+            self.tree.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
+            self.tree.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
         except AttributeError:
             # Not WX 4.1
             pass
@@ -1199,16 +1201,19 @@ class MeerK40t(wx.Frame, Module):
         if magnify < 0:
             self.widget_scene.event(event.GetPosition(), 'zoom-out')
 
-    def on_zoom_gesture(self, event):
+    def on_gesture(self, event):
         """
         This code requires WXPython 4.1 and the bind will fail otherwise.
         """
         if event.IsGestureStart():
-            self.widget_scene.event(event.GetPosition(), 'zoom-start')
+            self.widget_scene.event(event.GetPosition(), 'gesture-start')
         elif event.IsGestureEnd():
-            self.widget_scene.event(event.GetPosition(), 'zoom-end')
+            self.widget_scene.event(event.GetPosition(), 'gesture-end')
         else:
-            zoom = event.GetZoomFactor()
+            try:
+                zoom = event.GetZoomFactor()
+            except AttributeError:
+                zoom = 1.0
             self.widget_scene.event(event.GetPosition(), 'zoom %f' % zoom)
 
     def on_focus_lost(self, event):
