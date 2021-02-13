@@ -160,7 +160,7 @@ class Scene(Module):
             previous_top_element = self.hit_chain[0][0]
         except (IndexError, TypeError):
             previous_top_element = None
-        if event_type in ('leftdown', 'middledown', 'rightdown', 'wheeldown', 'wheelup', 'hover'):
+        if event_type in ('leftdown', 'middledown', 'rightdown', 'wheeldown', 'wheelup', 'wheelright', 'wheelleft', 'hover'):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
@@ -1146,11 +1146,23 @@ class SceneSpaceWidget(Widget):
         if event_type == 'hover':
             return RESPONSE_CHAIN
         if event_type == 'wheelup':
-            self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
+            # self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
+            self.scene_widget.matrix.post_translate(0,-100)
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'wheeldown':
-            self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
+            # self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
+            self.scene_widget.matrix.post_translate(0, 100)
+            self.scene.device.signal('refresh_scene', 0)
+            return RESPONSE_CONSUME
+        elif event_type == 'wheelleft':
+            # self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
+            self.scene_widget.matrix.post_translate(-100,0)
+            self.scene.device.signal('refresh_scene', 0)
+            return RESPONSE_CONSUME
+        elif event_type == 'wheelright':
+            # self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
+            self.scene_widget.matrix.post_translate(100,0)
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'middledown':
