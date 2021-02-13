@@ -1196,7 +1196,7 @@ class MeerK40t(wx.Frame, Module):
         """
         if event.IsGestureStart():
             self.widget_scene.event(event.GetPosition(), 'zoom-start')
-        elif event.ISGEstureEnd():
+        elif event.IsGestureEnd():
             self.widget_scene.event(event.GetPosition(), 'zoom-end')
         else:
             zoom = event.GetZoomFactor()
