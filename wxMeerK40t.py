@@ -526,7 +526,8 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene = None
         self.pipe_state = None
         self._rotary_view = False
-        self._control_down = False
+        self._has_modifiers = False
+        self._shift_down = False
 
     def add_language_menu(self):
         if os.path.exists(resource_path('./locale')):
@@ -1114,8 +1115,8 @@ class MeerK40t(wx.Frame, Module):
         rotation = event.GetWheelRotation()
         if self.device.device_root.mouse_zoom_invert:
             rotation = -rotation
-        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL:
-            if self._control_down:
+        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not self._shift_down:
+            if self._has_modifiers:
                 if rotation > 1:
                     self.widget_scene.event(event.GetPosition(), 'wheelup_ctrl')
                 elif rotation < -1:
@@ -1187,7 +1188,8 @@ class MeerK40t(wx.Frame, Module):
         # event.Skip()
 
     def on_key_down(self, event):
-        self._control_down = event.ControlDown()
+        self._shift_down = event.ShiftDown()
+        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
@@ -1197,7 +1199,8 @@ class MeerK40t(wx.Frame, Module):
             event.Skip()
 
     def on_key_up(self, event):
-        self._control_down = event.ControlDown()
+        self._shift_down = event.ShiftDown()
+        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
