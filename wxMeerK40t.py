@@ -299,7 +299,6 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
 
-        self.CenterOnScreen()
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -570,6 +569,7 @@ class MeerK40t(wx.Frame, Module):
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+
         device = self.device
         kernel = self.device.device_root
         self.__set_titlebar()
@@ -724,6 +724,7 @@ class MeerK40t(wx.Frame, Module):
             self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
             self.ribbon_position_units = kernel.units_index
             self.update_ribbon_position()
+        self.CenterOnScreen()
 
     def finalize(self, channel=None):
         device = self.device
