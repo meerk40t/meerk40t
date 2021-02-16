@@ -693,8 +693,8 @@ class Elemental(Modifier):
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
                 if not e.selected:
-                    e.select()
-                    e.emphasize()
+                    e.selected = True
+                    e.emphasized = True
             return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
@@ -706,8 +706,8 @@ class Elemental(Modifier):
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
                 if e.selected:
-                    e.unselect()
-                    e.unemphasize()
+                    e.selected = False
+                    e.emphasized = False
             return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
@@ -719,11 +719,11 @@ class Elemental(Modifier):
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
                 if e.selected:
-                    e.unselect()
-                    e.unemphasize()
+                    e.selected = False
+                    e.emphasize = False
                 else:
-                    e.select()
-                    e.emphasize()
+                    e.selected = True
+                    e.emphasized = True
             return "elements", list(self.elems(emphasized=True))
 
         # Operation Select
@@ -746,8 +746,8 @@ class Elemental(Modifier):
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
                 if not e.selected:
-                    e.select()
-                    e.emphasize()
+                    e.selected = True
+                    e.emphasized = True
             return "ops", list(self.ops(emphasized=True))
 
         @context.console_command(
@@ -759,8 +759,8 @@ class Elemental(Modifier):
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
                 if e.selected:
-                    e.unselect()
-                    e.unemphasize()
+                    e.selected = False
+                    e.emphasize = False
             return "ops", list(self.ops(emphasized=True))
 
         @context.console_command(
@@ -772,11 +772,11 @@ class Elemental(Modifier):
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
                 if e.selected:
-                    e.unselect()
-                    e.unemphasize()
+                    e.selected = False
+                    e.emphasize = False
                 else:
-                    e.select()
-                    e.emphasize()
+                    e.selected = True
+                    e.emphasized = True
             return "ops", list(self.ops(emphasized=True))
 
         # Element Base
@@ -813,11 +813,12 @@ class Elemental(Modifier):
             channel(_("----------"))
             channel(_("Graphical Elements:"))
             i = 0
-            for e in self.elems():
+            for n in self.elems_nodes():
+                e = n.object
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "..."
-                if e.emphasized:
+                if n.emphasized:
                     channel("%d: * %s" % (i, name))
                 else:
                     channel("%d: %s" % (i, name))
@@ -833,16 +834,16 @@ class Elemental(Modifier):
         def element(command, channel, _, args=tuple(), **kwargs):
             arg = command[7:]
             if arg == "":
-                return "elements", list(self.elems(emphasized=True))
+                return "elements", list(self.elems_nodes(emphasized=True))
             elif arg == "*":
-                return "elements", list(self.elems())
+                return "elements", list(self.elems_nodes())
             elif arg == "~":
-                return "elements", list(self.elems(emphasized=False))
+                return "elements", list(self.elems_nodes(emphasized=False))
             elif arg == "s":
                 channel(_("----------"))
                 channel(_("Graphical Elements:"))
                 i = 0
-                for e in self.elems():
+                for e in self.elems_nodes():
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "..."
@@ -1072,8 +1073,7 @@ class Elemental(Modifier):
                     superelement.fill = e.fill
                 superelement += abs(e)
             self.remove_elements(data)
-            self.add_elem(superelement)
-            superelement.emphasize()
+            self.add_elem(superelement).emphasized = True
             return "path", data
 
         @context.console_command(
@@ -1117,7 +1117,7 @@ class Elemental(Modifier):
             **kwargs
         ):
             if data is None:
-                data = list(self.elems(emphasized=True))
+                data = list(self.elems_nodes(emphasized=True))
             if len(data) == 0 or self._bounds is None:
                 channel(_("No item selected."))
                 return
@@ -2304,8 +2304,9 @@ class Elemental(Modifier):
         context_root = self.context.get_context("/")
         if hasattr(element, "stroke") and element.stroke is None:
             element.stroke = Color("black")
-        context_root.elements.add_elem(element)
+        node = context_root.elements.add_elem(element)
         context_root.elements.set_selected([element])
+        return node
 
     def load_default(self):
         self.clear_operations()
@@ -2440,21 +2441,27 @@ class Elemental(Modifier):
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
+        items = []
         for op in adding_ops:
             op.set_name(str(op))
             op.type = NODE_OPERATION_BRANCH + 1
             operation_branch.attach(op)
+            items.append(op)
+        return items
 
     def add_elem(self, element):
         element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
-        element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1)
+        node = element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1)
         self.context.signal("element_added", element)
+        return node
 
     def add_elems(self, adding_elements):
         element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
+        items = []
         for element in adding_elements:
-            element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1)
+            items.append(element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1))
         self.context.signal("element_added", adding_elements)
+        return items
 
     def clear_operations(self):
         for op in self.ops():

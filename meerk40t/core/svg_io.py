@@ -310,7 +310,6 @@ class SVGLoader:
                 try:
                     if str(element.values[SVG_ATTR_TAG]).lower() == "operation":
                         op = LaserOperation()
-                        elements_modifier.add_op(op)
                         for key in dir(op):
                             if key.startswith("_"):
                                 continue
@@ -351,6 +350,7 @@ class SVGLoader:
                                         str(element.values[key]).lower()
                                         in ("true", "1"),
                                     )
+                        elements_modifier.add_op(op)
                 except KeyError:
                     pass
         return True
