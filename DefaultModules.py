@@ -284,13 +284,32 @@ class DxfLoader:
             g.extend(elements)
             bbox = g.bbox()
             if bbox is not None:
-                cx = (bbox[2] + bbox[0]) / 2.0
-                cy = (bbox[3] + bbox[1]) / 2.0
-                scx = kernel.bed_width * MILS_PER_MM / 2.0
-                scy = kernel.bed_height * MILS_PER_MM / 2.0
-                m = Matrix.translate(scx - cx, scy - cy)
-                for e in elements:
-                    e *= m
+                bw = kernel.bed_width * MILS_PER_MM
+                bh = kernel.bed_height * MILS_PER_MM
+                bx = 0
+                by = 0
+                x = bbox[0]
+                y = bbox[1]
+                w = bbox[2] - bbox[0]
+                h = bbox[3] - bbox[1]
+                if w > bw or h > bh:
+                    # Cannot fit to bed. Scale.
+                    vb = Viewbox("%f %f %f %f" % (bx, by, bw, bh))
+                    bb = Viewbox("%f %f %f %f" % (x, y, w, h),
+                                preserve_aspect_ratio="xMidyMid")
+                    matrix = bb.transform(vb)
+                    for e in elements:
+                        e *= matrix
+                elif x < bx or y < by or x + w > bw or y + h > bh:
+                    # Is outside the bed but sized correctly, center
+                    bcx = bw / 2.0
+                    bcy = bh / 2.0
+                    cx = (bbox[0] + bbox[2]) / 2.0
+                    cy = (bbox[1] + bbox[3]) / 2.0
+                    matrix = Matrix.translate(bcx - cx, bcy - cy)
+                    for e in elements:
+                        e *= matrix
+                # else, is within the bed dimensions correctly, change nothing.
 
         return elements, None, None, pathname, basename
 
