@@ -68,8 +68,10 @@ class Node:
         self._children = list()
         self._root = None
         self._parent = None
+
         self.object = None
         self.type = None
+        self.single = False
 
         self._selected = False
         self._emphasized = False
@@ -84,44 +86,11 @@ class Node:
         self.cache = None
         self.last_transform = None
 
-    def attach(self, node, pos=None):
-        node._parent = self
-        node._root = self.root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        self.notify_added(node)
-
-    def add_node(self, data_object, node_type=-1, name=None, pos=None):
-        node = Node()
-        node.object = data_object
-        node.set_name(name)
-        node.type = node_type
-        self.attach(node)
-        return node
-
-    def set_name(self, name):
-        self.name = name
-        if name is None:
-            if self.name is None:
-                try:
-                    self.name = self.object.id
-                    if self.name is None:
-                        self.name = str(self.object)
-                except AttributeError:
-                    self.name = str(self.object)
-        else:
-            self.name = name
-
     def __repr__(self):
         return "Node(%s, %s, %s)" % (self.type, str(self.object), str(self._parent))
 
     def __eq__(self, other):
         return other is self
-
-    def count_children(self):
-        return len(self._children)
 
     @property
     def children(self):
@@ -153,6 +122,56 @@ class Node:
     def emphasized(self, value):
         self._emphasized = value
         self.notify_emphasized(self)
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @property
+    def root(self):
+        return self._root
+
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            try:
+                self._bounds = self.object.bbox()
+            except AttributeError:
+                self._bounds = None
+            self._bounds_dirty = False
+        return self._bounds
+
+    def notify_added(self, node):
+        if self._root is not None:
+            self._root.notify_added(node)
+
+    def notify_removed(self, node):
+        if self._root is not None:
+            self._root.notify_removed(node)
+
+    def notify_changed(self, node):
+        if self._root is not None:
+            self._root.notify_changed(node)
+
+    def notify_emphasized(self, node):
+        if self._root is not None:
+            self._root.notify_emphasized(node)
+
+    def notify_selected(self, node):
+        if self._root is not None:
+            self._root.notify_selected(node)
+
+    def notify_highlighted(self, node):
+        if self._root is not None:
+            self._root.notify_highlighted(node)
+
+    def notify_modified(self, node):
+        if self._root is not None:
+            self._root.notify_modified(node)
+
+    def notify_altered(self, node):
+        if self._root is not None:
+            self._root.notify_changed(node)
 
     def modified(self):
         """
@@ -201,23 +220,64 @@ class Node:
         except AttributeError:
             pass
 
-    @property
-    def parent(self):
-        return self._parent
+    def attach(self, node, pos=None):
+        """
+        Attach the given node as a child to the current node.
 
-    @property
-    def root(self):
-        return self._root
+        :param node: Node to attach.
+        :param pos:  Position to occupy
+        :return:
+        """
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            try:
-                self._bounds = self.object.bbox()
-            except AttributeError:
-                self._bounds = None
-            self._bounds_dirty = False
-        return self._bounds
+        node._parent = self
+        node._root = self.root
+        if pos is None:
+            self._children.append(node)
+        else:
+            self._children.insert(pos, node)
+        self.notify_added(node)
+
+    def add_node(self, data_object, node_type=-1, name=None, single=False, pos=None):
+        """
+        Add a new node bound to the data_object of the given type to the current node.
+
+        :param data_object:
+        :param node_type:
+        :param name:
+        :param single:
+        :param pos:
+        :return:
+        """
+        node = Node()
+        node.object = data_object
+        node.single = single
+        if single:
+            data_object.node = node
+        node.set_name(name)
+        node.type = node_type
+        self.attach(node, pos=pos)
+        return node
+
+    def set_name(self, name):
+        """
+        Set the name of this node to the name given.
+        :param name: Name to be set for this node.
+        :return:
+        """
+        self.name = name
+        if name is None:
+            if self.name is None:
+                try:
+                    self.name = self.object.id
+                    if self.name is None:
+                        self.name = str(self.object)
+                except AttributeError:
+                    self.name = str(self.object)
+        else:
+            self.name = name
+
+    def count_children(self):
+        return len(self._children)
 
     def objects_of_children(self, types):
         if isinstance(self.object, types):
@@ -260,38 +320,6 @@ class Node:
     def move(self, dest, pos=None):
         self._parent.remove(self)
         dest.insert_node(self, pos=pos)
-
-    def notify_added(self, node):
-        if self._root is not None:
-            self._root.notify_added(node)
-
-    def notify_removed(self, node):
-        if self._root is not None:
-            self._root.notify_removed(node)
-
-    def notify_changed(self, node):
-        if self._root is not None:
-            self._root.notify_changed(node)
-
-    def notify_emphasized(self, node):
-        if self._root is not None:
-            self._root.notify_emphasized(node)
-
-    def notify_selected(self, node):
-        if self._root is not None:
-            self._root.notify_selected(node)
-
-    def notify_highlighted(self, node):
-        if self._root is not None:
-            self._root.notify_highlighted(node)
-
-    def notify_modified(self, node):
-        if self._root is not None:
-            self._root.notify_modified(node)
-
-    def notify_altered(self, node):
-        if self._root is not None:
-            self._root.notify_changed(node)
 
 
 class RootNode(Node):
@@ -682,7 +710,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             self.set_selected(data)
-            return "elements", list(self.elems(emphasized=True))
+            return "elements", list(self.elems_nodes(emphasized=True))
 
         @context.console_command(
             "select+",
@@ -695,7 +723,7 @@ class Elemental(Modifier):
                 if not e.selected:
                     e.selected = True
                     e.emphasized = True
-            return "elements", list(self.elems(emphasized=True))
+            return "elements", list(self.elems_nodes(emphasized=True))
 
         @context.console_command(
             "select-",
@@ -708,7 +736,7 @@ class Elemental(Modifier):
                 if e.selected:
                     e.selected = False
                     e.emphasized = False
-            return "elements", list(self.elems(emphasized=True))
+            return "elements", list(self.elems_nodes(emphasized=True))
 
         @context.console_command(
             "select^",
@@ -724,7 +752,7 @@ class Elemental(Modifier):
                 else:
                     e.selected = True
                     e.emphasized = True
-            return "elements", list(self.elems(emphasized=True))
+            return "elements", list(self.elems_nodes(emphasized=True))
 
         # Operation Select
         @context.console_command(
@@ -786,7 +814,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element(command, channel, _, args=tuple(), **kwargs):
-            return "elements", list(self.elems())
+            return "elements", list(self.elems_nodes())
 
         @context.console_command(
             "element~",
@@ -794,7 +822,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element(command, channel, _, args=tuple(), **kwargs):
-            return "elements", list(self.elems(emphasized=False))
+            return "elements", list(self.elems_nodes(emphasized=False))
 
         @context.console_command(
             "element",
@@ -802,7 +830,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element(command, channel, _, args=tuple(), **kwargs):
-            return "elements", list(self.elems(emphasized=True))
+            return "elements", list(self.elems_nodes(emphasized=True))
 
         @context.console_command(
             "elements",
@@ -862,7 +890,7 @@ class Elemental(Modifier):
                     except ValueError:
                         continue
                     try:
-                        e = self.get_elem(value)
+                        e = self.get_elem_node(value)
                         element_list.append(e)
                     except IndexError:
                         channel(_("index %d out of range") % value)
@@ -1042,7 +1070,7 @@ class Elemental(Modifier):
             if data_type == "ops":
                 self.add_ops(add_elem)
             else:
-                self.add_elems(add_elem)
+                self.add_elems(add_elem.object)
             return data_type, add_elem
 
         @context.console_command(
@@ -1176,7 +1204,7 @@ class Elemental(Modifier):
             if name is not None:
                 self._clipboard_default = name
             if data is None:
-                return "clipboard", list(self.elems(emphasized=True))
+                return "clipboard", list(self.elems_nodes(emphasized=True))
             else:
                 return "clipboard", data
 
@@ -2428,6 +2456,12 @@ class Elemental(Modifier):
         raise IndexError
 
     def get_elem(self, index, **kwargs):
+        for i, elem in enumerate(self.elems(**kwargs)):
+            if i == index:
+                return elem
+        raise IndexError
+
+    def get_elem_node(self, index, **kwargs):
         for i, elem in enumerate(self.elems(**kwargs)):
             if i == index:
                 return elem
