@@ -278,6 +278,20 @@ class DxfLoader:
         for entity in dxf.entities:
             DxfLoader.entity_to_svg(elements, dxf, entity, scale, kernel.bed_height * MILS_PER_MM)
 
+        kernel.setting(bool, "dxf_center", True)
+        if kernel.dxf_center:
+            g = Group()
+            g.extend(elements)
+            bbox = g.bbox()
+            if bbox is not None:
+                cx = (bbox[2] + bbox[0]) / 2.0
+                cy = (bbox[3] + bbox[1]) / 2.0
+                scx = kernel.bed_width * MILS_PER_MM / 2.0
+                scy = kernel.bed_height * MILS_PER_MM / 2.0
+                m = Matrix.translate(scx - cx, scy - cy)
+                for e in elements:
+                    e *= m
+
         return elements, None, None, pathname, basename
 
     @staticmethod
@@ -485,7 +499,10 @@ class DxfLoader:
                     layer = dxf.layers.get(entity.dxf.layer)
                     c = layer.color
             try:
-                color = Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
+                if c == 7:
+                    color = Color("black")  # Color 7 is black on light backgrounds, light on black.
+                else:
+                    color = Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
             except:
                 color = Color('black')
             element.stroke = color

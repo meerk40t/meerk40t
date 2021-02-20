@@ -513,8 +513,8 @@ class MeerK40t(wx.Frame, Module):
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
-        self.scene.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
         try:
+            self.scene.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
             self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
             self.scene.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
             self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
@@ -581,8 +581,6 @@ class MeerK40t(wx.Frame, Module):
         kernel.setting(str, "units_name", 'mm')
         kernel.setting(int, "units_marks", 10)
         kernel.setting(int, "units_index", 0)
-        kernel.setting(bool, "mouse_zoom_invert", False)
-        kernel.setting(bool, "mouse_wheel_pan", False)
         kernel.setting(bool, "print_shutdown", False)
         device.setting(int, 'fps', 40)
 
@@ -1125,8 +1123,6 @@ class MeerK40t(wx.Frame, Module):
         if self.scene.HasCapture():
             return
         rotation = event.GetWheelRotation()
-        if self.device.device_root.mouse_zoom_invert:
-            rotation = -rotation
         if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not self._shift_down:
             if self._has_modifiers:
                 if rotation > 1:
