@@ -310,6 +310,11 @@ class DxfLoader:
                     for e in elements:
                         e *= matrix
                 # else, is within the bed dimensions correctly, change nothing.
+        for e in elements:
+            try:
+                e.reify()
+            except AttributeError:
+                pass
         return elements, None, None, pathname, basename
 
     @staticmethod
