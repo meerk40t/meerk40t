@@ -20,7 +20,7 @@ class Settings(wx.Frame, Module):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
-        self.SetSize((455, 183))
+        self.SetSize((475, 193))
         self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"), choices=["mm", "cm", "inch", "mils"],
                                        majorDimension=1,
                                        style=wx.RA_SPECIFY_ROWS)
