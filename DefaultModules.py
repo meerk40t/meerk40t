@@ -310,7 +310,6 @@ class DxfLoader:
                     for e in elements:
                         e *= matrix
                 # else, is within the bed dimensions correctly, change nothing.
-
         return elements, None, None, pathname, basename
 
     @staticmethod
@@ -531,8 +530,8 @@ class DxfLoader:
         if isinstance(element, SVGText):
             elements.append(element)
         else:
+            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             path = abs(Path(element))
-            path.stroke_width = 1.0
             if len(path) != 0:
                 if not isinstance(path[0], Move):
                     path = Move(path.first_point) + path

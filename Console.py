@@ -794,6 +794,21 @@ class Console(Module, Pipe):
                     element.altered()
             active_device.signal('refresh_scene')
             return
+        elif command == 'stroke-width':
+            yield "----------"
+            yield "Stroke-Width Values:"
+            i = 0
+            for e in elements.elems():
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "..."
+                if e.stroke is None or e.stroke == "none":
+                    yield "%d: stroke = none - %s" % (i, name)
+                else:
+                    yield "%d: stroke = %s - %s" % (i, e.stroke_width, name)
+                i += 1
+            yield "----------"
+            return
         elif command == 'fill':
             if len(args) == 0:
                 yield '----------'
