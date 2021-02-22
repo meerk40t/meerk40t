@@ -247,9 +247,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
                     channel(_("Invalid Acceleration [1-4]."))
                     return
 
-        @context.console_command(
-            "pause", help="realtime pause/resume of the machine"
-        )
+        @context.console_command("pause", help="realtime pause/resume of the machine")
         def realtime_pause(command, channel, _, args=tuple(), **kwargs):
             if self.is_paused:
                 self.resume()
@@ -292,9 +290,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
         context.register("control/Realtime Resume", self.resume)
         context.register("control/Update Codes", self.update_codes)
 
-        context.get_context("/").listen(
-            "lifecycle;ready", self.on_interpreter_ready
-        )
+        context.get_context("/").listen("lifecycle;ready", self.on_interpreter_ready)
 
     def detach(self, *args, **kwargs):
         self.context.get_context("/").unlisten(

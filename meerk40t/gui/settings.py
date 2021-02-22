@@ -48,18 +48,21 @@ class Settings(wx.Frame, Module):
         )
         # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.choices = [(_("Print Shutdown"), "print_shutdown", False),
-                        (_("SVG Uniform Save"), "uniform_svg", False),
-                        (_("Image DPI Scaling"), 'image_dpi', True),
-                        (_("DXF Centering"), 'dxf_center', True),
-                        (_("Show Negative Guide"), "show_negative_guide", True),
-                        (_("Launch Spooler JobStart"), "auto_spooler", True),
-                        (_("MouseWheel Pan"), "mouse_wheel_pan", False),
-                        (_("Invert MouseWheel Pan"), 'mouse_pan_invert', False),
-                        (_("Invert MouseWheel Zoom"), 'mouse_zoom_invert', False),
-                        (_("Default Operation Empty"), 'operation_default_empty', True)
-                        ]
-        self.checklist_options = wx.CheckListBox(self, wx.ID_ANY, choices=[c[0] for c in self.choices])
+        self.choices = [
+            (_("Print Shutdown"), "print_shutdown", False),
+            (_("SVG Uniform Save"), "uniform_svg", False),
+            (_("Image DPI Scaling"), "image_dpi", True),
+            (_("DXF Centering"), "dxf_center", True),
+            (_("Show Negative Guide"), "show_negative_guide", True),
+            (_("Launch Spooler JobStart"), "auto_spooler", True),
+            (_("MouseWheel Pan"), "mouse_wheel_pan", False),
+            (_("Invert MouseWheel Pan"), "mouse_pan_invert", False),
+            (_("Invert MouseWheel Zoom"), "mouse_zoom_invert", False),
+            (_("Default Operation Empty"), "operation_default_empty", True),
+        ]
+        self.checklist_options = wx.CheckListBox(
+            self, wx.ID_ANY, choices=[c[0] for c in self.choices]
+        )
 
         from .wxmeerk40t import supported_languages
 

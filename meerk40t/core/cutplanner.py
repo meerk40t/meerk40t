@@ -12,7 +12,9 @@ from ..device.lasercommandconstants import (
     COMMAND_HOME,
     COMMAND_WAIT,
     COMMAND_BEEP,
-    COMMAND_FUNCTION, COMMAND_UNLOCK, COMMAND_SET_POSITION,
+    COMMAND_FUNCTION,
+    COMMAND_UNLOCK,
+    COMMAND_SET_POSITION,
 )
 from ..svgelements import (
     Matrix,
@@ -168,10 +170,19 @@ class Planner(Modifier):
                     element *= Matrix.rotate(-angle)
                 element.altered()
 
-        @self.context.console_option("op", 'o', type=str,
-                                       help="unlock, origin, home")
-        @self.context.console_argument("subcommand", type=str, help="classify/copy/validate/blob/optimize/clear/list/spool")
-        @self.context.console_command("plan", help="plan<?> <command>", regex=True, input_type=(None, 'ops'), output_type='plan')
+        @self.context.console_option("op", "o", type=str, help="unlock, origin, home")
+        @self.context.console_argument(
+            "subcommand",
+            type=str,
+            help="classify/copy/validate/blob/optimize/clear/list/spool",
+        )
+        @self.context.console_command(
+            "plan",
+            help="plan<?> <command>",
+            regex=True,
+            input_type=(None, "ops"),
+            output_type="plan",
+        )
         def plan(command, channel, _, subcommand, op=None, args=tuple(), **kwargs):
             if len(command) > 4:
                 self._default_plan = command[4:]
@@ -344,7 +355,9 @@ class Planner(Modifier):
                         y_offset = y_pos - y_last
                         self.operations.append(OperationPreprocessor.origin)
                         if x_offset != 0 or y_offset != 0:
-                            self.operations.append(OperationPreprocessor.offset(x_offset, y_offset))
+                            self.operations.append(
+                                OperationPreprocessor.offset(x_offset, y_offset)
+                            )
                         self.operations.extend(list(self._original_ops))
                         x_last = x_pos
                         y_last = y_pos
@@ -679,6 +692,7 @@ class Planner(Modifier):
         def offset_value():
             yield COMMAND_WAIT_FINISH
             yield COMMAND_SET_POSITION, -int(x), -int(y)
+
         return offset_value
 
     @staticmethod
@@ -695,6 +709,7 @@ class Planner(Modifier):
     @staticmethod
     def interrupt():
         yield COMMAND_WAIT_FINISH
+
         def intr():
             input("waiting for user...")
 

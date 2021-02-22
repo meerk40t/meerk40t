@@ -417,14 +417,24 @@ class MeerK40t(wx.Frame, Module, Job):
         self.pipe_state = None
 
         self.shadow_tree = ShadowTree(self.context, self, self.context.elements._tree)
-        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.shadow_tree.on_drag_end_handler, self.wxtree)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.shadow_tree.on_item_activated, self.wxtree)
         self.Bind(
-            wx.EVT_TREE_SEL_CHANGED, self.shadow_tree.on_item_selection_changed, self.wxtree
+            wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
         )
         self.Bind(
-            wx.EVT_TREE_ITEM_RIGHT_CLICK, self.shadow_tree.on_item_right_click, self.wxtree
+            wx.EVT_TREE_END_DRAG, self.shadow_tree.on_drag_end_handler, self.wxtree
+        )
+        self.Bind(
+            wx.EVT_TREE_ITEM_ACTIVATED, self.shadow_tree.on_item_activated, self.wxtree
+        )
+        self.Bind(
+            wx.EVT_TREE_SEL_CHANGED,
+            self.shadow_tree.on_item_selection_changed,
+            self.wxtree,
+        )
+        self.Bind(
+            wx.EVT_TREE_ITEM_RIGHT_CLICK,
+            self.shadow_tree.on_item_right_click,
+            self.wxtree,
         )
 
         self.__set_titlebar()
@@ -497,7 +507,9 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.widget_scene = context.open("module/Scene")
 
-        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.shadow_tree))
+        self.widget_scene.add_scenewidget(
+            SelectionWidget(self.widget_scene, self.shadow_tree)
+        )
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(
@@ -644,7 +656,10 @@ class MeerK40t(wx.Frame, Module, Job):
             _("" if self.is_dark else "Main"),
             style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
         )
-        self.Bind(RB.EVT_RIBBONBAR_HELP_CLICK, lambda e: self.context.console("webhelp help\n"))
+        self.Bind(
+            RB.EVT_RIBBONBAR_HELP_CLICK,
+            lambda e: self.context.console("webhelp help\n"),
+        )
         toolbar = RB.RibbonButtonBar(toolbar_panel)
         self.toolbar_button_bar = toolbar
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
@@ -1185,8 +1200,14 @@ class MeerK40t(wx.Frame, Module, Job):
             id=ID_MENU_SPOOLER,
         )
 
-        self.Bind(wx.EVT_MENU, lambda e: self.context.console("webhelp help\n"), id=wx.ID_HELP)
-        self.Bind(wx.EVT_MENU, lambda e: self.context.console("webhelp main\n"), id=ID_HOMEPAGE)
+        self.Bind(
+            wx.EVT_MENU, lambda e: self.context.console("webhelp help\n"), id=wx.ID_HELP
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context.console("webhelp main\n"),
+            id=ID_HOMEPAGE,
+        )
 
         self.add_language_menu()
 
@@ -1710,19 +1731,19 @@ class MeerK40t(wx.Frame, Module, Job):
         if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not self._shift_down:
             if self._has_modifiers:
                 if rotation > 1:
-                    self.widget_scene.event(event.GetPosition(), 'wheelup_ctrl')
+                    self.widget_scene.event(event.GetPosition(), "wheelup_ctrl")
                 elif rotation < -1:
-                    self.widget_scene.event(event.GetPosition(), 'wheeldown_ctrl')
+                    self.widget_scene.event(event.GetPosition(), "wheeldown_ctrl")
             else:
                 if rotation > 1:
-                    self.widget_scene.event(event.GetPosition(), 'wheelup')
+                    self.widget_scene.event(event.GetPosition(), "wheelup")
                 elif rotation < -1:
-                    self.widget_scene.event(event.GetPosition(), 'wheeldown')
+                    self.widget_scene.event(event.GetPosition(), "wheeldown")
         else:
             if rotation > 1:
-                self.widget_scene.event(event.GetPosition(), 'wheelleft')
+                self.widget_scene.event(event.GetPosition(), "wheelleft")
             elif rotation < -1:
-                self.widget_scene.event(event.GetPosition(), 'wheelright')
+                self.widget_scene.event(event.GetPosition(), "wheelright")
 
     def on_mousewheel_zoom(self, event):
         if self.scene.HasCapture():
@@ -1731,9 +1752,9 @@ class MeerK40t(wx.Frame, Module, Job):
         if self.context.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
-            self.widget_scene.event(event.GetPosition(), 'wheelup')
+            self.widget_scene.event(event.GetPosition(), "wheelup")
         elif rotation < -1:
-            self.widget_scene.event(event.GetPosition(), 'wheeldown')
+            self.widget_scene.event(event.GetPosition(), "wheeldown")
 
     def on_mouse_middle_down(self, event):
         self.scene.SetFocus()
@@ -1778,24 +1799,24 @@ class MeerK40t(wx.Frame, Module, Job):
     def on_magnify_mouse(self, event):
         magnify = event.GetMagnification()
         if magnify > 0:
-            self.widget_scene.event(event.GetPosition(), 'zoom-in')
+            self.widget_scene.event(event.GetPosition(), "zoom-in")
         if magnify < 0:
-            self.widget_scene.event(event.GetPosition(), 'zoom-out')
+            self.widget_scene.event(event.GetPosition(), "zoom-out")
 
     def on_gesture(self, event):
         """
         This code requires WXPython 4.1 and the bind will fail otherwise.
         """
         if event.IsGestureStart():
-            self.widget_scene.event(event.GetPosition(), 'gesture-start')
+            self.widget_scene.event(event.GetPosition(), "gesture-start")
         elif event.IsGestureEnd():
-            self.widget_scene.event(event.GetPosition(), 'gesture-end')
+            self.widget_scene.event(event.GetPosition(), "gesture-end")
         else:
             try:
                 zoom = event.GetZoomFactor()
             except AttributeError:
                 zoom = 1.0
-            self.widget_scene.event(event.GetPosition(), 'zoom %f' % zoom)
+            self.widget_scene.event(event.GetPosition(), "zoom %f" % zoom)
 
     def on_focus_lost(self, event):
         self.context.console("-laser\nend\n")
@@ -2389,6 +2410,7 @@ class ShadowTree:
     requested alterations to the elements.tree or the elements.elements or elements.operations and when those are
     reflected in the tree, the shadow tree is updated accordingly.
     """
+
     def __init__(self, context, gui, root):
         self.context = context
         self.element_root = root
@@ -2485,7 +2507,9 @@ class ShadowTree:
         self.tree_images.Create(width=20, height=20)
         self.wxtree.SetImageList(self.tree_images)
         self.element_root.item = self.wxtree.AddRoot(self.name)
-        self.set_icon(self.element_root, icon_meerk40t.GetBitmap(False, resize=(20,20)))
+        self.set_icon(
+            self.element_root, icon_meerk40t.GetBitmap(False, resize=(20, 20))
+        )
         self.build_tree(self.element_root)
         node_operations = self.element_root.get_branch(NODE_OPERATION_BRANCH)
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
@@ -2686,7 +2710,7 @@ class ShadowTree:
                     drag_index = drag_node.parent.children.index(drag_node)
                     drop_index = drop_node.parent.children.index(drop_node)
                     if drag_index > drop_index:
-                        #TODO: CORRECT.
+                        # TODO: CORRECT.
                         drop_node.parent.move_node.insert(drop_index, drag_node.object)
                     else:
                         drop_node.parent.object.insert(drop_index + 1, drag_node.object)
@@ -2703,7 +2727,7 @@ class ShadowTree:
                 event.Allow()
                 return
             elif drop_node.type == NODE_OPERATION_ELEMENT:
-                #TODO: Correct
+                # TODO: Correct
                 drop_index = drop_node.parent.object.index(drop_node.object)
                 drop_node.parent.object.insert(drop_index, drag_node.object)
                 event.Allow()
@@ -2912,13 +2936,17 @@ class ShadowTree:
                     wx.ID_ANY, _("Remove: %s") % str(node.name)[:10], "", wx.ITEM_NORMAL
                 ),
             )
-        if t in (NODE_ELEMENT, NODE_OPERATION_ELEMENT) and len(list(self.elements.elems(emphasized=True))) > 1:
+        if (
+            t in (NODE_ELEMENT, NODE_OPERATION_ELEMENT)
+            and len(list(self.elements.elems(emphasized=True))) > 1
+        ):
             gui.Bind(
                 wx.EVT_MENU,
                 self.menu_console("element delete"),
                 menu.Append(
                     wx.ID_ANY,
-                    _("Remove: %d objects") % len(list(self.elements.elems(emphasized=True))),
+                    _("Remove: %d objects")
+                    % len(list(self.elements.elems(emphasized=True))),
                     "",
                     wx.ITEM_NORMAL,
                 ),

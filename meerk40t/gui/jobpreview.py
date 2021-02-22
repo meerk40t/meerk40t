@@ -115,7 +115,9 @@ class JobPreview(wx.Frame, Module):
             wx.ID_ANY, "Physical Home", "Add a physicalhome"
         )
         self.Bind(
-            wx.EVT_MENU, self.jobadd_physicalhome, id=self.preview_menu.menu_jobadd_physicalhome.GetId()
+            wx.EVT_MENU,
+            self.jobadd_physicalhome,
+            id=self.preview_menu.menu_jobadd_physicalhome.GetId(),
         )
         self.preview_menu.menu_jobadd_wait = wxglade_tmp_menu.Append(
             wx.ID_ANY, "Wait", "Add a wait"
@@ -335,10 +337,14 @@ class JobPreview(wx.Frame, Module):
         self.context.autohome = self.preview_menu.menu_autohome.IsChecked()
 
     def on_check_physicalhome_before(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.context.prephysicalhome = self.preview_menu.menu_prephysicalhome.IsChecked()
+        self.context.prephysicalhome = (
+            self.preview_menu.menu_prephysicalhome.IsChecked()
+        )
 
     def on_check_physicalhome_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.context.autophysicalhome = self.preview_menu.menu_autophysicalhome.IsChecked()
+        self.context.autophysicalhome = (
+            self.preview_menu.menu_autophysicalhome.IsChecked()
+        )
 
     def on_check_origin_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.context.autoorigin = self.preview_menu.menu_autoorigin.IsChecked()
@@ -365,8 +371,10 @@ class JobPreview(wx.Frame, Module):
         self.context.opt_rapid_between = self.check_rapid_moves_between.IsChecked()
 
     def jobchange_step_repeat(self, event=None):
-        dlg = wx.TextEntryDialog(self, _("How many copies wide?"), _("Enter Columns"), '')
-        dlg.SetValue('5')
+        dlg = wx.TextEntryDialog(
+            self, _("How many copies wide?"), _("Enter Columns"), ""
+        )
+        dlg.SetValue("5")
 
         if dlg.ShowModal() == wx.ID_OK:
             try:
@@ -379,8 +387,8 @@ class JobPreview(wx.Frame, Module):
             return
         dlg.Destroy()
 
-        dlg = wx.TextEntryDialog(self, _("How many copies high?"), _("Enter Rows"), '')
-        dlg.SetValue('5')
+        dlg = wx.TextEntryDialog(self, _("How many copies high?"), _("Enter Rows"), "")
+        dlg.SetValue("5")
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 rows = int(dlg.GetValue())
@@ -392,11 +400,18 @@ class JobPreview(wx.Frame, Module):
             return
         dlg.Destroy()
 
-        dlg = wx.TextEntryDialog(self, _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"), _("Enter X Gap"), '')
-        dlg.SetValue('')
+        dlg = wx.TextEntryDialog(
+            self,
+            _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"),
+            _("Enter X Gap"),
+            "",
+        )
+        dlg.SetValue("")
         if dlg.ShowModal() == wx.ID_OK:
             try:
-                x_distance = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                x_distance = Length(dlg.GetValue()).value(
+                    ppi=1000.0, relative_length=self.device.bed_width * 39.3701
+                )
             except ValueError:
                 dlg.Destroy()
                 return
@@ -408,11 +423,18 @@ class JobPreview(wx.Frame, Module):
             return
         dlg.Destroy()
 
-        dlg = wx.TextEntryDialog(self, _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"), _("Enter Y Gap"), '')
-        dlg.SetValue('')
+        dlg = wx.TextEntryDialog(
+            self,
+            _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"),
+            _("Enter Y Gap"),
+            "",
+        )
+        dlg.SetValue("")
         if dlg.ShowModal() == wx.ID_OK:
             try:
-                y_distance = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                y_distance = Length(dlg.GetValue()).value(
+                    ppi=1000.0, relative_length=self.device.bed_width * 39.3701
+                )
             except ValueError:
                 dlg.Destroy()
                 return
@@ -423,7 +445,13 @@ class JobPreview(wx.Frame, Module):
             dlg.Destroy()
             return
         dlg.Destroy()
-        self.context.console("plan%s step_repeat %s %s %s %s" % self.plan_name, cols, rows, x_distance, y_distance)
+        self.context.console(
+            "plan%s step_repeat %s %s %s %s" % self.plan_name,
+            cols,
+            rows,
+            x_distance,
+            y_distance,
+        )
 
     def jobadd_physicalhome(self, event=None):
         self.context.console("plan%s command physicalhome\n" % self.plan_name)
@@ -529,7 +557,9 @@ class JobPreview(wx.Frame, Module):
         self.preview_menu.menu_prehome.Check(bool(self.context.prehome))
         self.preview_menu.menu_autohome.Check(bool(self.context.autohome))
         self.preview_menu.menu_prephysicalhome.Check(bool(self.context.prephysicalhome))
-        self.preview_menu.menu_autophysicalhome.Check(bool(self.context.autophysicalhome))
+        self.preview_menu.menu_autophysicalhome.Check(
+            bool(self.context.autophysicalhome)
+        )
 
         self.preview_menu.menu_autoorigin.Check(bool(self.context.autoorigin))
         self.preview_menu.menu_autobeep.Check(bool(self.context.autobeep))

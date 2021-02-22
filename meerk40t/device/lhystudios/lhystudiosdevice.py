@@ -1,4 +1,3 @@
-
 from .lhymicrointerpreter import LhymicroInterpreter
 from .lhystudiocontroller import LhystudioController
 from .lhystudioemulator import LhystudioEmulator, EgvLoader
@@ -87,24 +86,20 @@ class LhystudiosDevice(Modifier):
         context = self.context
         kernel = context._kernel
 
-        @context.console_command(
-            "+laser", hidden=True, help="turn laser on in place"
-        )
+        @context.console_command("+laser", hidden=True, help="turn laser on in place")
         def plus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
-        @context.console_command(
-            "-laser", hidden=True, help="turn laser off in place"
-        )
+        @context.console_command("-laser", hidden=True, help="turn laser off in place")
         def minus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
-        @context.console_argument("amount", type=Length, help="amount to move in the set direction.")
-        @context.console_command(
-            ("left", "right", "up", "down"), help="cmd <amount>"
+        @context.console_argument(
+            "amount", type=Length, help="amount to move in the set direction."
         )
+        @context.console_command(("left", "right", "up", "down"), help="cmd <amount>")
         def direction(command, channel, _, amount=None, args=tuple(), **kwargs):
             active = kernel.active_device
             spooler = active.spooler
@@ -117,21 +112,13 @@ class LhystudiosDevice(Modifier):
             max_bed_height = active.bed_height * 39.3701
             max_bed_width = active.bed_width * 39.3701
             if command.endswith("right"):
-                self.dx += amount.value(
-                    ppi=1000.0, relative_length=max_bed_width
-                )
+                self.dx += amount.value(ppi=1000.0, relative_length=max_bed_width)
             elif command.endswith("left"):
-                self.dx -= amount.value(
-                    ppi=1000.0, relative_length=max_bed_width
-                )
+                self.dx -= amount.value(ppi=1000.0, relative_length=max_bed_width)
             elif command.endswith("up"):
-                self.dy -= amount.value(
-                    ppi=1000.0, relative_length=max_bed_height
-                )
+                self.dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
             elif command.endswith("down"):
-                self.dy += amount.value(
-                    ppi=1000.0, relative_length=max_bed_height
-                )
+                self.dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
             kernel._console_queue("jog")
 
         @context.console_command(
@@ -172,15 +159,18 @@ class LhystudiosDevice(Modifier):
             if not spooler.job_if_idle(self.execute_relative_position(dx, dy)):
                 channel(_("Busy Error"))
 
-
         @context.console_argument("x", type=Length, help="x offset")
         @context.console_argument("y", type=Length, help="y offset")
         @context.console_command("home", help="home the laser")
         def home(command, channel, _, x=None, y=None, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             if x is not None and y is not None:
-                x = x.value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-                y = y.value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                x = x.value(
+                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                )
+                y = y.value(
+                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                )
                 spooler.job(COMMAND_HOME, int(x), int(y))
                 return
             spooler.job(COMMAND_HOME)
@@ -223,9 +213,7 @@ class LhystudiosDevice(Modifier):
         context.activate("modifier/Spooler")
 
         context.listen("interpreter;mode", self.on_mode_change)
-        context.signal(
-            "bed_size", (context.bed_width, context.bed_height)
-        )
+        context.signal("bed_size", (context.bed_width, context.bed_height))
 
     def detach(self, *args, **kwargs):
         self.context.unlisten("interpreter;mode", self.on_mode_change)

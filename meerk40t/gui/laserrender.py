@@ -16,7 +16,7 @@ from ..svgelements import (
     QuadraticBezier,
     CubicBezier,
     Arc,
-    Matrix
+    Matrix,
 )
 from .zmatrix import ZMatrix
 
@@ -162,7 +162,7 @@ class LaserRender:
             sw = 1.0
         if sw is None:
             sw = 1.0
-        limit = zoomscale ** .5
+        limit = zoomscale ** 0.5
         limit /= width_scale
         if sw < limit:
             sw = limit
@@ -242,7 +242,7 @@ class LaserRender:
                 if element.font_weight is not None:
                     f.append(str(element.font_weight))
                 f.append("%d" % element.font_size)
-                font.SetNativeFontInfoUserDesc(' '.join(f))
+                font.SetNativeFontInfoUserDesc(" ".join(f))
             except:
                 pass
             element.wxfont = font

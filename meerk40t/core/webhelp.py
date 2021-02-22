@@ -5,6 +5,7 @@ MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
+
         @kernel.console_argument("page", help="Webhelp page", type=str)
         @kernel.console_command("webhelp", help="Launch a registered webhelp page")
         def webhelp(channel, _, page=None, **kwargs):
@@ -13,7 +14,7 @@ def plugin(kernel, lifecycle):
                 channel(_("Webhelp Registered:"))
                 for i, name in enumerate(kernel.match("webhelp")):
                     value = kernel.registered[name]
-                    name = name.split('/')[-1]
+                    name = name.split("/")[-1]
                     channel("%d: %s %s" % (i + 1, str(name).ljust(15), value))
                 channel(_("----------"))
                 return
@@ -32,6 +33,7 @@ def plugin(kernel, lifecycle):
                     channel("bad webhelp")
                     return
                 import webbrowser
+
                 webbrowser.open(value, new=0, autoraise=True)
             else:
                 channel(_("Webhelp not found."))

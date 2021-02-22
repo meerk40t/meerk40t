@@ -75,9 +75,18 @@ parser.add_argument(
     "-O", "--origin", action="store_true", help="return back to 0,0 on finish"
 )
 parser.add_argument("-S", "--speed", type=float, help="set the speed of all operations")
-parser.add_argument("-P", "--profile", type=int, default=None, help="Specify a settings profile index")
+parser.add_argument(
+    "-P", "--profile", type=int, default=None, help="Specify a settings profile index"
+)
 choices = ["Lhystudios", "Moshi"]
-parser.add_argument("-d", "--device", type=str, choices=choices, default="Lhystudios", help="Specify a default boot device type")
+parser.add_argument(
+    "-d",
+    "--device",
+    type=str,
+    choices=choices,
+    default="Lhystudios",
+    help="Specify a default boot device type",
+)
 
 
 def run():
@@ -91,9 +100,9 @@ def run():
         return
 
     if args.profile is not None:
-        path = 'profile%d' % args.profile
+        path = "profile%d" % args.profile
     else:
-        path = ''
+        path = ""
     kernel = Kernel("MeerK40t", MEERK40T_VERSION, "MeerK40t", path)
 
     """
@@ -128,14 +137,12 @@ def run():
     except ImportError:
         pass
 
-
     try:
         from .core import webhelp
 
         kernel.add_plugin(webhelp.plugin)
     except ImportError:
         pass
-
 
     try:
         from .core import cutplanner
@@ -328,6 +335,7 @@ def run():
     kernel.bootstrap("ready")
 
     if args.console:
+
         def thread_text_console():
             kernel_root.channel("console").watch(print)
             while True:
@@ -338,6 +346,7 @@ def run():
                 if console_command in ("quit", "shutdown"):
                     break
             kernel_root.channel("console").unwatch(print)
+
         if args.no_gui:
             thread_text_console()
         else:

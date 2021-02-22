@@ -79,7 +79,7 @@ class About(wx.Frame, Module):
         meerk40t_about_text_header = wx.StaticText(
             self,
             wx.ID_ANY,
-            "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\nParticipation in the project is highly encouraged. Past participation, and continuing \nparticipation is graciously thanked. This program is mostly the brainchild of \nTatarize, who sincerely hopes his contributions will be but the barest trickle \nthat becomes a raging river."
+            "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\nParticipation in the project is highly encouraged. Past participation, and continuing \nparticipation is graciously thanked. This program is mostly the brainchild of \nTatarize, who sincerely hopes his contributions will be but the barest trickle \nthat becomes a raging river.",
         )
         meerk40t_about_text_header.SetFont(
             wx.Font(
