@@ -399,6 +399,18 @@ class MeerK40t(wx.Frame, Module, Job):
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+
+        try:
+            self.scene.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
+            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
+            self.scene.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
+            self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
+            self.tree.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
+            self.tree.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
+        except AttributeError:
+            # Not WX 4.1
+            pass
+
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.scene.SetFocus()
         self.widget_scene = None
@@ -422,6 +434,10 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.Show()
         self.context.schedule(self)
+
+        self._rotary_view = False
+        self._has_modifiers = False
+        self._shift_down = False
 
     @property
     def is_dark(self):
@@ -1691,12 +1707,33 @@ class MeerK40t(wx.Frame, Module, Job):
         if self.scene.HasCapture():
             return
         rotation = event.GetWheelRotation()
+        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not self._shift_down:
+            if self._has_modifiers:
+                if rotation > 1:
+                    self.widget_scene.event(event.GetPosition(), 'wheelup_ctrl')
+                elif rotation < -1:
+                    self.widget_scene.event(event.GetPosition(), 'wheeldown_ctrl')
+            else:
+                if rotation > 1:
+                    self.widget_scene.event(event.GetPosition(), 'wheelup')
+                elif rotation < -1:
+                    self.widget_scene.event(event.GetPosition(), 'wheeldown')
+        else:
+            if rotation > 1:
+                self.widget_scene.event(event.GetPosition(), 'wheelleft')
+            elif rotation < -1:
+                self.widget_scene.event(event.GetPosition(), 'wheelright')
+
+    def on_mousewheel_zoom(self, event):
+        if self.scene.HasCapture():
+            return
+        rotation = event.GetWheelRotation()
         if self.context.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
-            self.widget_scene.event(event.GetPosition(), "wheelup")
+            self.widget_scene.event(event.GetPosition(), 'wheelup')
         elif rotation < -1:
-            self.widget_scene.event(event.GetPosition(), "wheeldown")
+            self.widget_scene.event(event.GetPosition(), 'wheeldown')
 
     def on_mouse_middle_down(self, event):
         self.scene.SetFocus()
@@ -1738,11 +1775,35 @@ class MeerK40t(wx.Frame, Module, Job):
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), "rightup")
 
+    def on_magnify_mouse(self, event):
+        magnify = event.GetMagnification()
+        if magnify > 0:
+            self.widget_scene.event(event.GetPosition(), 'zoom-in')
+        if magnify < 0:
+            self.widget_scene.event(event.GetPosition(), 'zoom-out')
+
+    def on_gesture(self, event):
+        """
+        This code requires WXPython 4.1 and the bind will fail otherwise.
+        """
+        if event.IsGestureStart():
+            self.widget_scene.event(event.GetPosition(), 'gesture-start')
+        elif event.IsGestureEnd():
+            self.widget_scene.event(event.GetPosition(), 'gesture-end')
+        else:
+            try:
+                zoom = event.GetZoomFactor()
+            except AttributeError:
+                zoom = 1.0
+            self.widget_scene.event(event.GetPosition(), 'zoom %f' % zoom)
+
     def on_focus_lost(self, event):
         self.context.console("-laser\nend\n")
         # event.Skip()
 
     def on_key_down(self, event):
+        self._shift_down = event.ShiftDown()
+        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.context.keymap
         if keyvalue in keymap:
@@ -1752,6 +1813,8 @@ class MeerK40t(wx.Frame, Module, Job):
             event.Skip()
 
     def on_key_up(self, event):
+        self._shift_down = event.ShiftDown()
+        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.context.keymap
         if keyvalue in keymap:
