@@ -2788,7 +2788,7 @@ class Elemental(Modifier):
             for op in items:
                 if op.operation == "Raster":
                     if image_added:
-                        continue  # already added to an image operation, is not added her.
+                        continue  # already added to an image operation, is not added here.
                     if element.stroke is not None and op.color == abs(element.stroke):
                         op.add_node(element)
                         was_classified = True
@@ -2809,6 +2809,9 @@ class Elemental(Modifier):
                     op.add_node(element)
                     was_classified = True
                     image_added = True
+                elif isinstance(element, SVGText):
+                    op.append(element)
+                    was_classified = True
             if not was_classified:
                 if element.stroke is not None and element.stroke.value is not None:
                     op = LaserOperation(
