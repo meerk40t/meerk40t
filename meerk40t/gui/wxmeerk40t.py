@@ -3298,12 +3298,12 @@ class ShadowTree:
                     )
                 except KeyError:
                     pass
-            if isinstance(node.object, SVGText):
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_convert_text(node),
-                    menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL),
-                )
+            # if isinstance(node.object, SVGText):
+            #     gui.Bind(
+            #         wx.EVT_MENU,
+            #         self.menu_convert_text(node),
+            #         menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL),
+            #     )
             if hasattr(node.object, "as_elements"):
                 gui.Bind(
                     wx.EVT_MENU,
