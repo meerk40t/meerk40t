@@ -218,6 +218,13 @@ class OperationPreprocessor:
         yield COMMAND_HOME, 0, 0
 
     @staticmethod
+    def offset(x, y):
+        def offset_value():
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_SET_POSITION, -int(x), -int(y)
+        return offset_value
+
+    @staticmethod
     def home():
         yield COMMAND_WAIT_FINISH
         yield COMMAND_HOME

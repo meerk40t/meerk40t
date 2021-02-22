@@ -4,6 +4,7 @@ from Kernel import Module
 from LaserOperation import *
 from icons import icons8_laser_beam_52, icons8_route_50
 from OperationPreprocessor import OperationPreprocessor
+from svgelements import Length
 
 _ = wx.GetTranslation
 
@@ -68,6 +69,11 @@ class JobInfo(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.on_check_jog3, id=self.menu_jog3.GetId())
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Settings"))
 
+        wxglade_tmp_menu = wx.Menu()
+        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Step and Repeat"))
+        self.Bind(wx.EVT_MENU, self.jobchange_step_repeat, id=t.GetId())
+        self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Tools"))
+
         self.SetMenuBar(self.JobInfo_menubar)
         # Menu Bar end
 
@@ -90,6 +96,90 @@ class JobInfo(wx.Frame, Module):
             ops = [ops]
         self.operations = ops
         self._original_ops = list(ops)
+
+    def jobchange_step_repeat(self, event=None):
+        dlg = wx.TextEntryDialog(self, _("Enter Columns"), _("How many copies wide?"), '')
+        dlg.SetValue('5')
+
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                cols = int(dlg.GetValue())
+            except ValueError:
+                dlg.Destroy()
+                return
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+
+        dlg = wx.TextEntryDialog(self, _("Enter Rows"), _("How many copies high?"), '')
+        dlg.SetValue('5')
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                rows = int(dlg.GetValue())
+            except ValueError:
+                dlg.Destroy()
+                return
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+
+        dlg = wx.TextEntryDialog(self, _("Enter X Gap"), _("How far apart are these copies width-wise?"), '')
+        dlg.SetValue('')
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                x_distance = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            except ValueError:
+                dlg.Destroy()
+                return
+            if isinstance(x_distance, Length):
+                dlg.Destroy()
+                return
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+
+        dlg = wx.TextEntryDialog(self, _("Enter Y Gap"), _("How far apart are these copies height-wise?"), '')
+        dlg.SetValue('')
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                y_distance = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            except ValueError:
+                dlg.Destroy()
+                return
+            if isinstance(y_distance, Length):
+                dlg.Destroy()
+                return
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        self.operations.clear()
+        self.preprocessor.commands = list()
+        x_distance = int(x_distance)
+        y_distance = int(y_distance)
+        x_last = 0
+        y_last = 0
+        y_pos = 0
+        x_pos = 0
+        for j in range(rows):
+            x_pos = 0
+            for k in range(cols):
+                x_offset = x_pos - x_last
+                y_offset = y_pos - y_last
+                if x_offset != 0 or y_offset != 0:
+                    self.operations.append(OperationPreprocessor.offset(x_offset, y_offset))
+                self.operations.extend(list(self._original_ops))
+                x_last = x_pos
+                y_last = y_pos
+                x_pos += x_distance
+            y_pos += y_distance
+        if x_pos != 0 and y_pos != 0:
+            self.operations.append(OperationPreprocessor.offset(-x_pos, -y_pos))
+        self.refresh_lists()
+        self.update_gui()
 
     def jobadd_physicalhome(self, event=None):
         self.operations.append(OperationPreprocessor.physicalhome)
@@ -187,11 +277,14 @@ class JobInfo(wx.Frame, Module):
             else:
                 self.operations.append(_("Home Before: Disabled (Rotary On)"))
         for op in operations:
-            if len(op) == 0:
-                continue
-            if not op.output:
-                continue
-            self.operations.append(copy(op))
+            try:
+                if len(op) == 0:
+                    continue
+                if not op.output:
+                    continue
+                self.operations.append(copy(op))
+            except TypeError:  # direct copy function
+                self.operations.append(op)
         if self.device.autobeep:
             self.jobadd_beep()
 
