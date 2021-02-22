@@ -263,8 +263,9 @@ class SVGLoader:
             except AttributeError:
                 pass
             if isinstance(element, SVGText):
-                elements_modifier.add_elem(element)
-                elements_modifier.classify(element)
+                if element.text is not None:
+                    elements_modifier.add_elem(element)
+                    elements_modifier.classify(element)
             elif isinstance(element, Path):
                 if len(element) != 0:
                     element.approximate_arcs_with_cubics()
