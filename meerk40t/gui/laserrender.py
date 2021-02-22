@@ -233,6 +233,18 @@ class LaserRender:
                     )
                 element.font_size = 1  # No zero sized fonts.
             font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            try:
+                f = []
+                if element.font_family is not None:
+                    f.append(str(element.font_family))
+                if element.font_face is not None:
+                    f.append(str(element.font_face))
+                if element.font_weight is not None:
+                    f.append(str(element.font_weight))
+                f.append("%d" % element.font_size)
+                font.SetNativeFontInfoUserDesc(' '.join(f))
+            except:
+                pass
             element.wxfont = font
 
         gc.PushState()
