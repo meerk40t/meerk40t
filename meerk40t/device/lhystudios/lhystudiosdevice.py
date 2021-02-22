@@ -172,9 +172,17 @@ class LhystudiosDevice(Modifier):
             if not spooler.job_if_idle(self.execute_relative_position(dx, dy)):
                 channel(_("Busy Error"))
 
+
+        @context.console_argument("x", type=Length, help="x offset")
+        @context.console_argument("y", type=Length, help="y offset")
         @context.console_command("home", help="home the laser")
-        def home(command, channel, _, args=tuple(), **kwargs):
+        def home(command, channel, _, x=None, y=None, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
+            if x is not None and y is not None:
+                x = x.value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                y = y.value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                spooler.job(COMMAND_HOME, int(x), int(y))
+                return
             spooler.job(COMMAND_HOME)
 
         @context.console_command("unlock", help="unlock the rail")

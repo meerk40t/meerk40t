@@ -12,7 +12,7 @@ from ..device.lasercommandconstants import (
     COMMAND_HOME,
     COMMAND_WAIT,
     COMMAND_BEEP,
-    COMMAND_FUNCTION, COMMAND_UNLOCK,
+    COMMAND_FUNCTION, COMMAND_UNLOCK, COMMAND_SET_POSITION,
 )
 from ..svgelements import (
     Matrix,
@@ -69,8 +69,10 @@ class Planner(Modifier):
         self.context.setting(float, "scale_x", 1.0)
         self.context.setting(float, "scale_y", 1.0)
         self.context.setting(bool, "prehome", False)
+        self.context.setting(bool, "prephysicalhome", False)
         self.context.setting(bool, "postunlock", False)
         self.context.setting(bool, "autohome", False)
+        self.context.setting(bool, "autophysicalhome", False)
         self.context.setting(bool, "autoorigin", False)
         self.context.setting(bool, "autobeep", True)
         self.context.setting(bool, "opt_reduce_travel", True)
@@ -228,6 +230,11 @@ class Planner(Modifier):
                     channel(_("No plan command found."))
                 return
             elif subcommand == "preprocess":
+                if self.context.prephysicalhome:
+                    if not self.context.rotary:
+                        plan.insert(0, self.context.registered["plan/physicalhome"])
+                    else:
+                        plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
                 if self.context.prehome:
                     if not self.context.rotary:
                         plan.insert(0, self.context.registered["plan/home"])
@@ -240,6 +247,11 @@ class Planner(Modifier):
                         plan.append(self.context.registered["plan/home"])
                     else:
                         plan.append(_("Home After: Disabled (Rotary On)"))
+                if self.context.autophysicalhome:
+                    if not self.context.rotary:
+                        plan.append(self.context.registered["plan/physicalhome"])
+                    else:
+                        plan.append(_("Physical Home After: Disabled (Rotary On)"))
                 if self.context.autoorigin:
                     plan.append(self.context.registered["plan/origin"])
                 if self.context.postunlock:
@@ -310,6 +322,38 @@ class Planner(Modifier):
                 channel(_("Spooled Plan."))
                 self.context.signal("plan", self._default_plan, 6)
                 return "plan", plan
+            elif subcommand == "step_repeat":
+                cols = args[1]
+                rows = args[2]
+                x_distance = args[3]
+                y_distance = args[4]
+                # TODO: IMPLEMENT!
+                # TODO: Implement the 0.6.19 switch changes.
+                self.operations.clear()
+                self.preprocessor.commands = list()
+                x_distance = int(x_distance)
+                y_distance = int(y_distance)
+                x_last = 0
+                y_last = 0
+                y_pos = 0
+                x_pos = 0
+                for j in range(rows):
+                    x_pos = 0
+                    for k in range(cols):
+                        x_offset = x_pos - x_last
+                        y_offset = y_pos - y_last
+                        self.operations.append(OperationPreprocessor.origin)
+                        if x_offset != 0 or y_offset != 0:
+                            self.operations.append(OperationPreprocessor.offset(x_offset, y_offset))
+                        self.operations.extend(list(self._original_ops))
+                        x_last = x_pos
+                        y_last = y_pos
+                        x_pos += x_distance
+                    y_pos += y_distance
+                if x_pos != 0 or y_pos != 0:
+                    self.operations.append(OperationPreprocessor.offset(-x_pos, -y_pos))
+                self.refresh_lists()
+                self.update_gui()
             else:
                 channel(_("Unrecognized command."))
 
@@ -624,6 +668,18 @@ class Planner(Modifier):
     @staticmethod
     def home():
         yield COMMAND_HOME
+
+    @staticmethod
+    def physicalhome():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_HOME, 0, 0
+
+    @staticmethod
+    def offset(x, y):
+        def offset_value():
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_SET_POSITION, -int(x), -int(y)
+        return offset_value
 
     @staticmethod
     def wait():

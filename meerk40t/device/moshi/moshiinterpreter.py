@@ -418,8 +418,16 @@ class MoshiInterpreter(Interpreter, Modifier):
             y = int(self.context.bed_height * 39.3701)
         return x, y
 
-    def home(self):
+    def home(self, *values):
         x, y = self.calc_home_position()
+        try:
+            x = int(values[0])
+        except (ValueError, IndexError):
+            pass
+        try:
+            y = int(values[1])
+        except (ValueError, IndexError):
+            pass
         self.ensure_rapid_mode()
         self.is_relative = False
         self.move(x, y)

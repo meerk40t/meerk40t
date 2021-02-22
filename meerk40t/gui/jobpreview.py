@@ -3,6 +3,7 @@ import wx
 from ..kernel import Module
 from .icons import icons8_laser_beam_52
 from ..core.elements import LaserOperation
+from ..svgelements import Length
 
 _ = wx.GetTranslation
 
@@ -35,6 +36,18 @@ class JobPreview(wx.Frame, Module):
             self.on_check_home_before,
             id=self.preview_menu.menu_prehome.GetId(),
         )
+        self.preview_menu.menu_prephysicalhome = wxglade_tmp_menu_sub.Append(
+            wx.ID_ANY,
+            "Physical Home",
+            "Automatically add a physical home command before all jobs",
+            wx.ITEM_CHECK,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.on_check_physicalhome_before,
+            id=self.preview_menu.menu_prehome.GetId(),
+        )
+
         wxglade_tmp_menu.Append(wx.ID_ANY, "Before", wxglade_tmp_menu_sub, "")
         wxglade_tmp_menu_sub = wx.Menu()
         self.preview_menu.menu_autohome = wxglade_tmp_menu_sub.Append(
@@ -47,6 +60,17 @@ class JobPreview(wx.Frame, Module):
             wx.EVT_MENU,
             self.on_check_home_after,
             id=self.preview_menu.menu_autohome.GetId(),
+        )
+        self.preview_menu.menu_prephysicalhome = wxglade_tmp_menu_sub.Append(
+            wx.ID_ANY,
+            "Physical Home",
+            "Automatically add a physical home command after all jobs",
+            wx.ITEM_CHECK,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.on_check_physicalhome_after,
+            id=self.preview_menu.menu_prehome.GetId(),
         )
         self.preview_menu.menu_autoorigin = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
@@ -87,6 +111,12 @@ class JobPreview(wx.Frame, Module):
         self.Bind(
             wx.EVT_MENU, self.jobadd_home, id=self.preview_menu.menu_jobadd_home.GetId()
         )
+        self.preview_menu.menu_jobadd_physicalhome = wxglade_tmp_menu.Append(
+            wx.ID_ANY, "Physical Home", "Add a physicalhome"
+        )
+        self.Bind(
+            wx.EVT_MENU, self.jobadd_physicalhome, id=self.preview_menu.menu_jobadd_physicalhome.GetId()
+        )
         self.preview_menu.menu_jobadd_wait = wxglade_tmp_menu.Append(
             wx.ID_ANY, "Wait", "Add a wait"
         )
@@ -116,6 +146,18 @@ class JobPreview(wx.Frame, Module):
             id=self.preview_menu.menu_jobadd_command.GetId(),
         )
         self.preview_menu.Append(wxglade_tmp_menu, "Add")
+
+        wxglade_tmp_menu = wx.Menu()
+        self.preview_menu.menu_jobchange_step_repeat = wxglade_tmp_menu.Append(
+            wx.ID_ANY, "Step and Repeat", "Perform Step and Repeat"
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.jobchange_step_repeat,
+            id=self.preview_menu.menu_jobchange_step_repeat.GetId(),
+        )
+        self.preview_menu.Append(wxglade_tmp_menu, _("Tools"))
+
         self.SetMenuBar(self.preview_menu)
         # Menu Bar end
         self.connected_device = self.context.active
@@ -182,6 +224,7 @@ class JobPreview(wx.Frame, Module):
             self.on_check_remove_overlap,
             self.check_remove_overlap_cuts,
         )
+
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
@@ -291,6 +334,12 @@ class JobPreview(wx.Frame, Module):
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.context.autohome = self.preview_menu.menu_autohome.IsChecked()
 
+    def on_check_physicalhome_before(self, event):  # wxGlade: JobInfo.<event_handler>
+        self.context.prephysicalhome = self.preview_menu.menu_prephysicalhome.IsChecked()
+
+    def on_check_physicalhome_after(self, event):  # wxGlade: JobInfo.<event_handler>
+        self.context.autophysicalhome = self.preview_menu.menu_autophysicalhome.IsChecked()
+
     def on_check_origin_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.context.autoorigin = self.preview_menu.menu_autoorigin.IsChecked()
 
@@ -314,6 +363,71 @@ class JobPreview(wx.Frame, Module):
 
     def on_check_rapid_between(self, event):  # wxGlade: Preview.<event_handler>
         self.context.opt_rapid_between = self.check_rapid_moves_between.IsChecked()
+
+    def jobchange_step_repeat(self, event=None):
+        dlg = wx.TextEntryDialog(self, _("How many copies wide?"), _("Enter Columns"), '')
+        dlg.SetValue('5')
+
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                cols = int(dlg.GetValue())
+            except ValueError:
+                dlg.Destroy()
+                return
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+
+        dlg = wx.TextEntryDialog(self, _("How many copies high?"), _("Enter Rows"), '')
+        dlg.SetValue('5')
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                rows = int(dlg.GetValue())
+            except ValueError:
+                dlg.Destroy()
+                return
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+
+        dlg = wx.TextEntryDialog(self, _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"), _("Enter X Gap"), '')
+        dlg.SetValue('')
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                x_distance = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            except ValueError:
+                dlg.Destroy()
+                return
+            if isinstance(x_distance, Length):
+                dlg.Destroy()
+                return
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+
+        dlg = wx.TextEntryDialog(self, _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"), _("Enter Y Gap"), '')
+        dlg.SetValue('')
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                y_distance = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            except ValueError:
+                dlg.Destroy()
+                return
+            if isinstance(y_distance, Length):
+                dlg.Destroy()
+                return
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        self.context.console("plan%s step_repeat %s %s %s %s" % self.plan_name, cols, rows, x_distance, y_distance)
+
+    def jobadd_physicalhome(self, event=None):
+        self.context.console("plan%s command physicalhome\n" % self.plan_name)
+        self.update_gui()
 
     def jobadd_home(self, event=None):
         self.context.console("plan%s command home\n" % self.plan_name)
@@ -396,6 +510,8 @@ class JobPreview(wx.Frame, Module):
         self.context.setting(float, "scale_y", 1.0)
         self.context.setting(bool, "prehome", False)
         self.context.setting(bool, "autohome", False)
+        self.context.setting(bool, "prephysicalhome", False)
+        self.context.setting(bool, "autophysicalhome", False)
         self.context.setting(bool, "autoorigin", False)
         self.context.setting(bool, "autobeep", True)
         self.context.setting(bool, "autointerrupt", False)
@@ -412,6 +528,9 @@ class JobPreview(wx.Frame, Module):
 
         self.preview_menu.menu_prehome.Check(bool(self.context.prehome))
         self.preview_menu.menu_autohome.Check(bool(self.context.autohome))
+        self.preview_menu.menu_prephysicalhome.Check(bool(self.context.prephysicalhome))
+        self.preview_menu.menu_autophysicalhome.Check(bool(self.context.autophysicalhome))
+
         self.preview_menu.menu_autoorigin.Check(bool(self.context.autoorigin))
         self.preview_menu.menu_autobeep.Check(bool(self.context.autobeep))
         self.preview_menu.menu_autointerrupt.Check(bool(self.context.autointerrupt))

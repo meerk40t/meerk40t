@@ -834,7 +834,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
             y = int(self.context.bed_height * 39.3701)
         return x, y
 
-    def home(self):
+    def home(self, *values):
         x, y = self.calc_home_position()
         self.ensure_rapid_mode()
         self.pipe(b"IPP\n")
@@ -842,11 +842,18 @@ class LhymicroInterpreter(Interpreter, Modifier):
         old_y = self.context.current_y
         self.context.current_x = x
         self.context.current_y = y
-        self.laser = False
-        self.properties = 0
+        self.reset_modes()
         self.state = INTERPRETER_STATE_RAPID
         adjust_x = self.context.home_adjust_x
         adjust_y = self.context.home_adjust_y
+        try:
+            adjust_x = int(values[0])
+        except (ValueError, IndexError):
+            pass
+        try:
+            adjust_y = int(values[1])
+        except (ValueError, IndexError):
+            pass
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)
@@ -873,6 +880,10 @@ class LhymicroInterpreter(Interpreter, Modifier):
         self.min_y = min(self.min_y, self.context.current_y)
         self.max_x = max(self.max_x, self.context.current_x)
         self.max_y = max(self.max_y, self.context.current_y)
+
+    def reset_modes(self):
+        self.laser = False
+        self.properties = 0
 
     def goto_x(self, dx):
         if dx > 0:
