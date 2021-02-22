@@ -24,21 +24,7 @@ from ..svgelements import (
     SVG_ATTR_TRANSFORM,
     SVG_ATTR_STROKE_WIDTH,
     Shape,
-    Rect,
-    SVG_TAG_RECT,
-    Circle,
-    SVG_TAG_CIRCLE,
-    Ellipse,
-    SVG_TAG_ELLIPSE,
-    Polygon,
-    SVG_TAG_POLYGON,
-    Polyline,
-    SVG_TAG_POLYLINE,
     Matrix,
-    SVG_ATTR_RADIUS_X,
-    SVG_ATTR_RADIUS_Y,
-    SVG_ATTR_POINTS,
-    SVG_ATTR_RADIUS,
     SVG_ATTR_X,
     SVG_ATTR_Y,
     SVGText,
@@ -156,8 +142,12 @@ class SVGWriter:
                         "raster_step",
                         "d_ratio",
                         "font-family",
+                        "font_face",
                         "font-size",
                         "font-weight",
+                        "anchor",
+                        "x",
+                        "y",
                     ):
                         subelement.set(key, str(val))
             else:  # Image.
@@ -177,17 +167,18 @@ class SVGWriter:
                     "transform",
                     "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
                 )
-                for key, val in element.values.items():
-                    if key in (
-                        "speed",
-                        "overscan",
-                        "power",
-                        "passes",
-                        "raster_direction",
-                        "raster_step",
-                        "d_ratio",
-                    ):
-                        subelement.set(key, str(val))
+                if element.values is not None:
+                    for key, val in element.values.items():
+                        if key in (
+                            "speed",
+                            "overscan",
+                            "power",
+                            "passes",
+                            "raster_direction",
+                            "raster_step",
+                            "d_ratio",
+                        ):
+                            subelement.set(key, str(val))
             stroke = element.stroke
             if stroke is not None:
                 stroke_opacity = stroke.opacity
