@@ -125,7 +125,7 @@ class JobInfo(wx.Frame, Module):
             return
         dlg.Destroy()
 
-        dlg = wx.TextEntryDialog(self, _("Enter X Gap"), _("How far apart are these copies width-wise?"), '')
+        dlg = wx.TextEntryDialog(self, _("Enter X Gap"), _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"), '')
         dlg.SetValue('')
         if dlg.ShowModal() == wx.ID_OK:
             try:
@@ -141,7 +141,7 @@ class JobInfo(wx.Frame, Module):
             return
         dlg.Destroy()
 
-        dlg = wx.TextEntryDialog(self, _("Enter Y Gap"), _("How far apart are these copies height-wise?"), '')
+        dlg = wx.TextEntryDialog(self, _("Enter Y Gap"), _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"), '')
         dlg.SetValue('')
         if dlg.ShowModal() == wx.ID_OK:
             try:
@@ -176,7 +176,7 @@ class JobInfo(wx.Frame, Module):
                 y_last = y_pos
                 x_pos += x_distance
             y_pos += y_distance
-        if x_pos != 0 and y_pos != 0:
+        if x_pos != 0 or y_pos != 0:
             self.operations.append(OperationPreprocessor.offset(-x_pos, -y_pos))
         self.refresh_lists()
         self.update_gui()
