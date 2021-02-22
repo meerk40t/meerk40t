@@ -27,7 +27,6 @@ _cmd_parse = [
 _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
 
 
-
 class Modifier:
     """
     A modifier alters a context with additional functionality set during attachment and detachment.
