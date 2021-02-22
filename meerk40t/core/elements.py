@@ -25,7 +25,8 @@ from ..svgelements import (
     Line,
     QuadraticBezier,
     CubicBezier,
-    Arc, SimpleLine,
+    Arc,
+    SimpleLine,
 )
 
 from copy import copy
@@ -1404,51 +1405,35 @@ class Elemental(Modifier):
                 data.append(rect)
                 return "elements", data
 
-
-        @context.console_argument(
-            "x0", type=Length, help="start x position"
-        )
-        @context.console_argument(
-            "y0", type=Length, help="start y position"
-        )
+        @context.console_argument("x0", type=Length, help="start x position")
+        @context.console_argument("y0", type=Length, help="start y position")
         @context.console_argument("x1", type=Length, help="end x position")
-        @context.console_argument(
-            "y1", type=Length, help="end y position"
-        )
+        @context.console_argument("y1", type=Length, help="end y position")
         @context.console_command(
             "line",
             help="adds line to scene",
             input_type=("elements", None),
             output_type="elements",
         )
-        def rect(
-            command,
-            x0,
-            y0,
-            x1,
-            y1,
-            data=None,
-            args=tuple(),
-            **kwargs
-        ):
+        def line(command, x0, y0, x1, y1, data=None, args=tuple(), **kwargs):
             """
             Draws an svg line in the scene.
             """
             if y1 is None:
                 raise SyntaxError
-            line = SimpleLine(x0, y0, x1, y1)
+            simple_line = SimpleLine(x0, y0, x1, y1)
             self.context.setting(int, "bed_width", 310)  # Default Value
             self.context.setting(int, "bed_height", 210)  # Default Value
-            line.render(
+            simple_line.render(
                 ppi=1000.0,
                 width="%fmm" % self.context.bed_width,
                 height="%fmm" % self.context.bed_height,
             )
-            self.add_element(line)
+            self.add_element(simple_line)
             if data is None:
-                return "elements", [line]
+                return "elements", [simple_line]
             else:
-                data.append(line)
+                data.append(simple_line)
                 return "elements", data
 
         @context.console_command(
@@ -1459,12 +1444,12 @@ class Elemental(Modifier):
         )
         def text(command, channel, _, data=None, args=tuple(), **kwargs):
             text = " ".join(args)
-            element = SVGText(text)
-            self.add_element(element)
+            svg_text = SVGText(text)
+            self.add_element(svg_text)
             if data is None:
-                return "elements", [element]
+                return "elements", [svg_text]
             else:
-                data.append(element)
+                data.append(svg_text)
                 return "elements", data
 
         # @context.console_argument("points", type=float, nargs="*", help='x, y of elements')
@@ -1617,6 +1602,66 @@ class Elemental(Modifier):
                     e.altered()
             context.signal("refresh_scene")
             return
+
+        @context.console_argument("x_offset", type=Length, help="x offset.")
+        @context.console_argument("y_offset", type=Length, help="y offset")
+        @context.console_command(
+            "outline",
+            help="outline the current selected elements",
+            input_type=(
+                None,
+                "elements",
+            ),
+            output_type="elements",
+        )
+        def outline(
+            command,
+            channel,
+            _,
+            x_offset=None,
+            y_offset=None,
+            data=None,
+            args=tuple(),
+            **kwargs
+        ):
+            """
+            Draws an svg rectangle with optional rounded corners.
+            """
+            if x_offset is None:
+                raise SyntaxError
+            self.context.setting(int, "bed_width", 310)  # Default Value
+            self.context.setting(int, "bed_height", 210)  # Default Value
+            bounds = self.bounds()
+            if bounds is None:
+                yield "Nothing Selected"
+                return
+            x_pos = bounds[0]
+            y_pos = bounds[1]
+            width = bounds[2] - bounds[0]
+            height = bounds[3] - bounds[1]
+            offset_x = (
+                y_offset.value(ppi=1000.0, relative_length=width)
+                if len(args) >= 1
+                else 0
+            )
+            offset_y = (
+                x_offset.value(ppi=1000.0, relative_length=height)
+                if len(args) >= 2
+                else offset_x
+            )
+
+            x_pos -= offset_x
+            y_pos -= offset_y
+            width += offset_x * 2
+            height += offset_y * 2
+            element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
+            self.add_element(element, "red")
+            self.classify([element])
+            if data is None:
+                return "elements", [element]
+            else:
+                data.append(element)
+                return "elements", data
 
         @context.console_argument("angle", type=Angle.parse, help="angle to rotate by")
         @context.console_option("cx", "x", type=Length, help="center x")
@@ -2322,7 +2367,7 @@ class Elemental(Modifier):
     def unlisten(self, listener):
         self._tree.unlisten(listener)
 
-    def add_element(self, element):
+    def add_element(self, element, stroke="black"):
         if (
             not isinstance(element, SVGText)
             and hasattr(element, "__len__")
@@ -2331,7 +2376,7 @@ class Elemental(Modifier):
             return  # No empty elements.
         context_root = self.context.get_context("/")
         if hasattr(element, "stroke") and element.stroke is None:
-            element.stroke = Color("black")
+            element.stroke = Color(stroke)
         node = context_root.elements.add_elem(element)
         context_root.elements.set_selected([element])
         return node
@@ -2493,7 +2538,9 @@ class Elemental(Modifier):
         element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
         items = []
         for element in adding_elements:
-            items.append(element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1))
+            items.append(
+                element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1)
+            )
         self.context.signal("element_added", adding_elements)
         return items
 
