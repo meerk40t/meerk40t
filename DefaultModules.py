@@ -264,14 +264,16 @@ class DxfLoader:
 
         import ezdxf
         from ezdxf import units
+        from ezdxf.units import decode
 
         basename = os.path.basename(pathname)
         dxf = ezdxf.readfile(pathname)
         elements = []
         unit = dxf.header.get('$INSUNITS')
+
         if unit is not None and unit != 0:
             du = units.DrawingUnits(1000.0, unit='in')
-            scale = du.factor(units.decode(unit))
+            scale = du.factor(decode(unit))
         else:
             scale = MILS_PER_MM
 
