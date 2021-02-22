@@ -98,7 +98,7 @@ class JobInfo(wx.Frame, Module):
         self._original_ops = list(ops)
 
     def jobchange_step_repeat(self, event=None):
-        dlg = wx.TextEntryDialog(self, _("Enter Columns"), _("How many copies wide?"), '')
+        dlg = wx.TextEntryDialog(self, _("How many copies wide?"), _("Enter Columns"), '')
         dlg.SetValue('5')
 
         if dlg.ShowModal() == wx.ID_OK:
@@ -112,7 +112,7 @@ class JobInfo(wx.Frame, Module):
             return
         dlg.Destroy()
 
-        dlg = wx.TextEntryDialog(self, _("Enter Rows"), _("How many copies high?"), '')
+        dlg = wx.TextEntryDialog(self, _("How many copies high?"), _("Enter Rows"), '')
         dlg.SetValue('5')
         if dlg.ShowModal() == wx.ID_OK:
             try:
@@ -125,7 +125,7 @@ class JobInfo(wx.Frame, Module):
             return
         dlg.Destroy()
 
-        dlg = wx.TextEntryDialog(self, _("Enter X Gap"), _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"), '')
+        dlg = wx.TextEntryDialog(self, _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"), _("Enter X Gap"), '')
         dlg.SetValue('')
         if dlg.ShowModal() == wx.ID_OK:
             try:
@@ -141,7 +141,7 @@ class JobInfo(wx.Frame, Module):
             return
         dlg.Destroy()
 
-        dlg = wx.TextEntryDialog(self, _("Enter Y Gap"), _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"), '')
+        dlg = wx.TextEntryDialog(self, _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"), _("Enter Y Gap"), '')
         dlg.SetValue('')
         if dlg.ShowModal() == wx.ID_OK:
             try:
@@ -169,6 +169,7 @@ class JobInfo(wx.Frame, Module):
             for k in range(cols):
                 x_offset = x_pos - x_last
                 y_offset = y_pos - y_last
+                self.operations.append(OperationPreprocessor.origin)
                 if x_offset != 0 or y_offset != 0:
                     self.operations.append(OperationPreprocessor.offset(x_offset, y_offset))
                 self.operations.extend(list(self._original_ops))
