@@ -2065,7 +2065,7 @@ class Console(Module, Pipe):
                     f.write("Document type : LHYMICRO-GL file\n")
                     f.write("File version: 1.0.01\n")
                     f.write("Copyright: Unknown\n")
-                    f.write("Creator-Software: MeerK40t v0.6.20\n")
+                    f.write("Creator-Software: MeerK40t v0.6.21\n")
                     f.write("\n")
                     f.write("%0%0%0%0%\n")
                     buffer = active_device.interpreter.pipe._buffer

@@ -458,7 +458,7 @@ class CameraInterface(wx.Frame, Module):
         if self.frame_bitmap is None:
             return  # Need the bitmap to refresh.
         if self.device is None:
-            return # No window to draw in.
+            return  # No window to draw in.
         dm = self.device.draw_mode
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
