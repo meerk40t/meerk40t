@@ -2511,18 +2511,18 @@ class ShadowTree:
             self.element_root, icon_meerk40t.GetBitmap(False, resize=(20, 20))
         )
         self.build_tree(self.element_root)
-        node_operations = self.element_root.get_branch(NODE_OPERATION_BRANCH)
+        node_operations = self.element_root.get("ops", type="branch")
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
         for n in node_operations.children:
             self.set_icon(n)
-        node_elements = self.element_root.get_branch(NODE_ELEMENTS_BRANCH)
+        node_elements = self.element_root.get("elems", type="branch")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap(True))
 
-        node_files = self.element_root.get_branch(NODE_FILES_BRANCH)
-        self.set_icon(node_files, icons8_file_20.GetBitmap(True))
+        # node_files = self.element_root.get_branch(NODE_FILES_BRANCH)
+        # self.set_icon(node_files, icons8_file_20.GetBitmap(True))
 
-        for n in node_files.children:
-            self.set_icon(n, icons8_file_20.GetBitmap(True))
+        # for n in node_files.children:
+        #     self.set_icon(n, icons8_file_20.GetBitmap(True))
         self.wxtree.ExpandAll()
 
     def build_tree(self, parent_node):

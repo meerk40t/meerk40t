@@ -1296,9 +1296,10 @@ class ImageLoader:
                     image *= "scale(%f,%f)" % (1000.0 / dpi[0], 1000.0 / dpi[1])
         except (KeyError, IndexError):
             pass
-        elements = Group()
-        elements.append(image)
-        # elements_modifier._filenodes[pathname] = elements
-        elements_modifier.add_elem(elements)
-        # elements_modifier.classify(elements)
+
+        image.stroke = Color("black")
+        element_branch = elements_modifier.get("elems", type="branch")
+        file_node = element_branch.add(pathname, type="file")
+        file_node.add(image, type="elem")
+        elements_modifier.classify(image)
         return True

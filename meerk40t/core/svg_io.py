@@ -254,6 +254,9 @@ class SVGLoader:
             color="none",
             transform="scale(%f)" % scale_factor,
         )
+        element_branch = elements_modifier.get("elems", type="branch")
+        file_node = element_branch.add(pathname, type="file")
+
         for element in svg:
             try:
                 if element.values["visibility"] == "hidden":
@@ -264,25 +267,25 @@ class SVGLoader:
                 pass
             if isinstance(element, SVGText):
                 if element.text is not None:
-                    elements_modifier.add_elem(element)
+                    file_node.add(element, type="elem")
                     elements_modifier.classify(element)
             elif isinstance(element, Path):
                 if len(element) != 0:
                     element.approximate_arcs_with_cubics()
-                    elements_modifier.add_elem(element)
+                    file_node.add(element, type="elem")
                     elements_modifier.classify(element)
             elif isinstance(element, Shape):
                 e = Path(element)
                 e.reify()  # In some cases the shape could not have reified, the path must.
                 if len(e) != 0:
                     e.approximate_arcs_with_cubics()
-                    elements_modifier.add_elem(e)
+                    file_node.add(element, type="elem")
                     elements_modifier.classify(element)
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
                     if element.image is not None:
-                        elements_modifier.add_elem(element)
+                        file_node.add(element, type="elem")
                         elements_modifier.classify(element)
                 except OSError:
                     pass

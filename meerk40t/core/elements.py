@@ -64,13 +64,13 @@ NODE_TEMPLATE_OPERATION = 41
 
 
 class Node:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, data_object, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._children = list()
         self._root = None
         self._parent = None
 
-        self.object = None
+        self.object = data_object
         self.type = None
         self.single = False
 
@@ -142,36 +142,52 @@ class Node:
             self._bounds_dirty = False
         return self._bounds
 
-    def notify_added(self, node):
+    def notify_added(self, node=None):
         if self._root is not None:
+            if node is None:
+                node = self
             self._root.notify_added(node)
 
-    def notify_removed(self, node):
+    def notify_removed(self, node=None):
         if self._root is not None:
-            self._root.notify_removed(node)
+            if node is None:
+                node = self
+            self._root.notify_removed(node=None)
 
     def notify_changed(self, node):
         if self._root is not None:
-            self._root.notify_changed(node)
+            if node is None:
+                node = self
+            self._root.notify_changed(node=None)
 
-    def notify_emphasized(self, node):
+    def notify_emphasized(self, node=None):
         if self._root is not None:
+            if node is None:
+                node = self
             self._root.notify_emphasized(node)
 
-    def notify_selected(self, node):
+    def notify_selected(self, node=None):
         if self._root is not None:
+            if node is None:
+                node = self
             self._root.notify_selected(node)
 
-    def notify_highlighted(self, node):
+    def notify_highlighted(self, node=None):
         if self._root is not None:
+            if node is None:
+                node = self
             self._root.notify_highlighted(node)
 
-    def notify_modified(self, node):
+    def notify_modified(self, node=None):
         if self._root is not None:
+            if node is None:
+                node = self
             self._root.notify_modified(node)
 
-    def notify_altered(self, node):
+    def notify_altered(self, node=None):
         if self._root is not None:
+            if node is None:
+                node = self
             self._root.notify_changed(node)
 
     def modified(self):
@@ -197,7 +213,7 @@ class Node:
         self.cache = None
         self.icon = None
         self._bounds = None
-        self.notify_altered()
+        self.notify_altered(self)
         self._root.bounds = None
 
     def unregister(self):
@@ -221,14 +237,32 @@ class Node:
         except AttributeError:
             pass
 
-    def attach(self, node, pos=None):
+    def add(self, data_object, type=None, name=None, single=False, pos=None):
         """
-        Attach the given node as a child to the current node.
+        Add a new node bound to the data_object of the type to the current node.
+        If the data_object itself is a node already it is merely attached.
 
-        :param node: Node to attach.
-        :param pos:  Position to occupy
+        :param data_object:
+        :param type:
+        :param name:
+        :param single:
+        :param pos:
         :return:
         """
+        if isinstance(data_object, Node):
+            node = data_object
+        else:
+            node_class = Node
+            try:
+                node_class = self._root.bootstrap[type]
+            except:
+                pass
+            node = node_class(data_object)
+            node.single = single
+            if single:
+                data_object.node = node
+            node.set_name(name)
+            node.type = type
 
         node._parent = self
         node._root = self.root
@@ -236,27 +270,7 @@ class Node:
             self._children.append(node)
         else:
             self._children.insert(pos, node)
-        self.notify_added(node)
-
-    def add_node(self, data_object, node_type=-1, name=None, single=False, pos=None):
-        """
-        Add a new node bound to the data_object of the given type to the current node.
-
-        :param data_object:
-        :param node_type:
-        :param name:
-        :param single:
-        :param pos:
-        :return:
-        """
-        node = Node()
-        node.object = data_object
-        node.single = single
-        if single:
-            data_object.node = node
-        node.set_name(name)
-        node.type = node_type
-        self.attach(node, pos=pos)
+        node.notify_added()
         return node
 
     def set_name(self, name):
@@ -306,26 +320,29 @@ class Node:
             for obj in objects:
                 self.add_node(obj)
 
-    def get_node(self, node_address: str):
-        try:
-            f = node_address.find(":")
-            if f == -1:
-                index = int(node_address)
-                return self[index]
-            index = int(node_address[:f])
-            node = self[index]
-            return node.get_node(node_address[f + 1 :])
-        except IndexError:
-            raise ValueError("Node Address Invalid.")
+    def get(self, object, type=None):
+        if self.object == object and (type is None or type == self.type):
+            return self
+        for n in self._children:
+            node = n.get(object, type)
+            if node is not None:
+                return node
 
     def move(self, dest, pos=None):
         self._parent.remove(self)
         dest.insert_node(self, pos=pos)
 
 
+class ElemNode(Node):
+    def __init__(self, data_object):
+        super(ElemNode, self).__init__(data_object)
+        if data_object is not None:
+            data_object.node = self
+
+
 class RootNode(Node):
     def __init__(self, context):
-        super().__init__()
+        super().__init__(None)
         self._root = self
         self.set_name("Project")
         self.type = NODE_ROOT
@@ -333,14 +350,13 @@ class RootNode(Node):
         self.listeners = []
 
         self.elements = context.elements
-        self.add_node(None, NODE_OPERATION_BRANCH, name="Operations")
-        self.add_node(None, NODE_ELEMENTS_BRANCH, name="Elements")
-        self.add_node(None, NODE_FILES_BRANCH, name="Files")
-
-    def get_branch(self, node_type):
-        for n in self._children:
-            if n.type == node_type:
-                return n
+        self.bootstrap = {
+            "op": LaserOperation,
+            "cmdop": CommandOperation,
+            "elem": ElemNode
+        }
+        self.add("ops", type="branch", name="Operations")
+        self.add("elems", type="branch", name="Elements")
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -348,49 +364,49 @@ class RootNode(Node):
     def unlisten(self, listener):
         self.listeners.remove(listener)
 
-    def notify_added(self, node):
+    def notify_added(self, node=None):
         for listen in self.listeners:
             try:
                 listen.node_added(node)
             except AttributeError:
                 pass
 
-    def notify_removed(self, node):
+    def notify_removed(self, node=None):
         for listen in self.listeners:
             try:
                 listen.node_removed(node)
             except AttributeError:
                 pass
 
-    def notify_changed(self, node):
+    def notify_changed(self, node=None):
         for listen in self.listeners:
             try:
                 listen.node_changed(node)
             except AttributeError:
                 pass
 
-    def notify_emphasized(self, node):
+    def notify_emphasized(self, node=None):
         for listen in self.listeners:
             try:
                 listen.emphasized(node)
             except AttributeError:
                 pass
 
-    def notify_selected(self, node):
+    def notify_selected(self, node=None):
         for listen in self.listeners:
             try:
                 listen.selected(node)
             except AttributeError:
                 pass
 
-    def notify_highlighted(self, node):
+    def notify_highlighted(self, node=None):
         for listen in self.listeners:
             try:
                 listen.highlighted(node)
             except AttributeError:
                 pass
 
-    def notify_modified(self, node):
+    def notify_modified(self, node=None):
         self._bounds = None
         # self.validate_bounds()
         for listen in self.listeners:
@@ -399,7 +415,7 @@ class RootNode(Node):
             except AttributeError:
                 pass
 
-    def notify_altered(self, node):
+    def notify_altered(self, node=None):
         for listen in self.listeners:
             try:
                 listen.altered(node)
@@ -413,7 +429,7 @@ class LaserOperation(Node):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        super().__init__(None)
         self.operation = None
         try:
             self.operation = kwargs["operation"]
@@ -651,7 +667,7 @@ class CommandOperation(Node):
     """CommandOperation is a basic command operation. It contains nothing except a single command to be executed."""
 
     def __init__(self, name, command, *args, **kwargs):
-        super().__init__(*args, name=name, **kwargs)
+        super().__init__(command)
         self.name = name
         self.command = command
         self.args = args
@@ -711,7 +727,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             self.set_selected(data)
-            return "elements", list(self.elems_nodes(emphasized=True))
+            return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
             "select+",
@@ -722,9 +738,9 @@ class Elemental(Modifier):
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
                 if not e.selected:
-                    e.selected = True
-                    e.emphasized = True
-            return "elements", list(self.elems_nodes(emphasized=True))
+                    e.node.selected = True
+                    e.node.emphasized = True
+            return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
             "select-",
@@ -734,10 +750,10 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
-                if e.selected:
-                    e.selected = False
-                    e.emphasized = False
-            return "elements", list(self.elems_nodes(emphasized=True))
+                if e.node.selected:
+                    e.node.selected = False
+                    e.node.emphasized = False
+            return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
             "select^",
@@ -747,13 +763,13 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
-                if e.selected:
-                    e.selected = False
-                    e.emphasize = False
+                if e.node.selected:
+                    e.node.selected = False
+                    e.node.emphasize = False
                 else:
-                    e.selected = True
-                    e.emphasized = True
-            return "elements", list(self.elems_nodes(emphasized=True))
+                    e.node.selected = True
+                    e.node.emphasized = True
+            return "elements", list(self.elems(emphasized=True))
 
         # Operation Select
         @context.console_command(
@@ -815,7 +831,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element(command, channel, _, args=tuple(), **kwargs):
-            return "elements", list(self.elems_nodes())
+            return "elements", list(self.elems())
 
         @context.console_command(
             "element~",
@@ -823,7 +839,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element(command, channel, _, args=tuple(), **kwargs):
-            return "elements", list(self.elems_nodes(emphasized=False))
+            return "elements", list(self.elems(emphasized=False))
 
         @context.console_command(
             "element",
@@ -831,7 +847,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element(command, channel, _, args=tuple(), **kwargs):
-            return "elements", list(self.elems_nodes(emphasized=True))
+            return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
             "elements",
@@ -842,12 +858,12 @@ class Elemental(Modifier):
             channel(_("----------"))
             channel(_("Graphical Elements:"))
             i = 0
-            for n in self.elems_nodes():
+            for n in self.elems():
                 e = n.object
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "..."
-                if n.emphasized:
+                if n.node.emphasized:
                     channel("%d: * %s" % (i, name))
                 else:
                     channel("%d: %s" % (i, name))
@@ -863,20 +879,20 @@ class Elemental(Modifier):
         def element(command, channel, _, args=tuple(), **kwargs):
             arg = command[7:]
             if arg == "":
-                return "elements", list(self.elems_nodes(emphasized=True))
+                return "elements", list(self.elems(emphasized=True))
             elif arg == "*":
-                return "elements", list(self.elems_nodes())
+                return "elements", list(self.elems())
             elif arg == "~":
-                return "elements", list(self.elems_nodes(emphasized=False))
+                return "elements", list(self.elems(emphasized=False))
             elif arg == "s":
                 channel(_("----------"))
                 channel(_("Graphical Elements:"))
                 i = 0
-                for e in self.elems_nodes():
+                for e in self.elems():
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "..."
-                    if e.emphasized:
+                    if e.node.emphasized:
                         channel("%d: * %s" % (i, name))
                     else:
                         channel("%d: %s" % (i, name))
@@ -891,7 +907,7 @@ class Elemental(Modifier):
                     except ValueError:
                         continue
                     try:
-                        e = self.get_elem_node(value)
+                        e = self.get_elem(value)
                         element_list.append(e)
                     except IndexError:
                         channel(_("index %d out of range") % value)
@@ -1028,7 +1044,7 @@ class Elemental(Modifier):
                 raise SyntaxError
 
         @context.console_argument(
-            "dest", type=self._tree.get_node, help="destination node"
+            "dest", type=self._tree.get, help="destination node"
         )
         @context.console_option(
             "pos", "p", type=int, help="position within destination node"
@@ -1040,6 +1056,7 @@ class Elemental(Modifier):
             output_type="tree",
         )
         def move(
+                #TODO: CORRECT
             command,
             channel,
             _,
@@ -1091,7 +1108,7 @@ class Elemental(Modifier):
             "merge",
             help="merge elements",
             input_type="elements",
-            output_type="path",
+            output_type="elements",
         )
         def merge(command, channel, _, data=None, args=tuple(), **kwargs):
             superelement = Path()
@@ -1103,7 +1120,7 @@ class Elemental(Modifier):
                 superelement += abs(e)
             self.remove_elements(data)
             self.add_elem(superelement).emphasized = True
-            return "path", data
+            return "elements", [superelement]
 
         @context.console_command(
             "subpath",
@@ -1146,7 +1163,7 @@ class Elemental(Modifier):
             **kwargs
         ):
             if data is None:
-                data = list(self.elems_nodes(emphasized=True))
+                data = list(self.elems(emphasized=True))
             if len(data) == 0 or self._bounds is None:
                 channel(_("No item selected."))
                 return
@@ -1205,7 +1222,7 @@ class Elemental(Modifier):
             if name is not None:
                 self._clipboard_default = name
             if data is None:
-                return "clipboard", list(self.elems_nodes(emphasized=True))
+                return "clipboard", list(self.elems(emphasized=True))
             else:
                 return "clipboard", data
 
@@ -2466,17 +2483,17 @@ class Elemental(Modifier):
             yield obj
 
     def ops(self, **kwargs):
-        operations = self._tree.get_branch(NODE_OPERATION_BRANCH)
+        operations = self._tree.get("ops", type="branch")
         for item in self._filtered_list(operations, **kwargs):
             yield item
 
     def elems(self, **kwargs):
-        elements = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
+        elements = self._tree.get("elems", type="branch")
         for item in self._filtered_list(elements, **kwargs):
             yield item.object
 
     def elems_nodes(self, **kwargs):
-        elements = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
+        elements = self._tree.get("elems", type="branch")
         for item in self._filtered_list(elements, **kwargs):
             yield item
 
@@ -2493,6 +2510,15 @@ class Elemental(Modifier):
 
     def count_op(self, **kwargs):
         return len(list(self.ops(**kwargs)))
+
+    def get(self, obj, type=None):
+        return self._tree.get(obj, type=type)
+
+    def get_elem(self, index, **kwargs):
+        for i, elem in enumerate(self.elems(**kwargs)):
+            if i == index:
+                return elem
+        raise IndexError
 
     def get_op(self, index, **kwargs):
         for i, op in enumerate(self.ops(**kwargs)):
@@ -2513,33 +2539,39 @@ class Elemental(Modifier):
         raise IndexError
 
     def add_op(self, op):
-        operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
+        operation_branch = self._tree.get("ops", type="branch")
         op.set_name(str(op))
         op.type = NODE_OPERATION_BRANCH + 1
-        operation_branch.attach(op)
+        operation_branch.add(op)
 
     def add_ops(self, adding_ops):
-        operation_branch = self._tree.get_branch(NODE_OPERATION_BRANCH)
+        operation_branch = self._tree.get("ops", type="branch")
         items = []
         for op in adding_ops:
             op.set_name(str(op))
             op.type = NODE_OPERATION_BRANCH + 1
-            operation_branch.attach(op)
+            operation_branch.add(op)
             items.append(op)
         return items
 
     def add_elem(self, element):
-        element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
-        node = element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1)
+        """
+        Add an element. Wraps it within a node, and appends it to the tree.
+
+        :param element:
+        :return:
+        """
+        element_branch = self._tree.get("elems", type="branch")
+        node = element_branch.add(element, type="elem")
         self.context.signal("element_added", element)
         return node
 
     def add_elems(self, adding_elements):
-        element_branch = self._tree.get_branch(NODE_ELEMENTS_BRANCH)
+        element_branch = self._tree.get("elems", type="branch")
         items = []
         for element in adding_elements:
             items.append(
-                element_branch.add_node(element, node_type=NODE_ELEMENTS_BRANCH + 1)
+                element_branch.add(element, type="elem")
             )
         self.context.signal("element_added", adding_elements)
         return items
@@ -2611,7 +2643,7 @@ class Elemental(Modifier):
                 e.last_transform = copy(e.transform)
             if e.bounds is None:
                 continue
-            if not e.emphasized:
+            if not e.node.emphasized:
                 continue
             box = e.bounds
             top_left = e.transform.point_in_matrix_space([box[0], box[1]])
@@ -2790,23 +2822,23 @@ class Elemental(Modifier):
                     if image_added:
                         continue  # already added to an image operation, is not added here.
                     if element.stroke is not None and op.color == abs(element.stroke):
-                        op.add_node(element)
+                        op.add(element, type="opnode")
                         was_classified = True
                     elif isinstance(element, SVGImage):
-                        op.add_node(element)
+                        op.add(element, type="opnode")
                         was_classified = True
                     elif element.fill is not None and element.fill.value is not None:
-                        op.add_node(element)
+                        op.add(element, type="opnode")
                         was_classified = True
                 elif (
                     op.operation in ("Engrave", "Cut")
                     and element.stroke is not None
                     and op.color == abs(element.stroke)
                 ):
-                    op.add_node(element)
+                    op.add(element, type="opnode")
                     was_classified = True
                 elif op.operation == "Image" and isinstance(element, SVGImage):
-                    op.add_node(element)
+                    op.add(element, type="opnode")
                     was_classified = True
                     image_added = True
                 elif isinstance(element, SVGText):
@@ -2818,7 +2850,7 @@ class Elemental(Modifier):
                         operation="Engrave", color=element.stroke, speed=35.0
                     )
                     add_funct(op)
-                    op.add_node(element)
+                    op.add(element, type="opnode")
                     items.append(op)
 
     def load(self, pathname, **kwargs):

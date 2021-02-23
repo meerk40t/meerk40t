@@ -933,7 +933,7 @@ class RectSelectWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "leftup":
             elements.validate_bounds()
-            for obj in elements.elems_nodes():
+            for obj in elements.elems():
                 try:
                     q = obj.bbox(True)
                 except AttributeError:
@@ -960,16 +960,16 @@ class RectSelectWidget(Widget):
                         and sx <= xmax <= ex
                         and sy <= ymax <= ey
                     ):
-                        obj.emphasized = True
+                        obj.node.emphasized = True
                     else:
-                        obj.emphasized = False
+                        obj.node.emphasized = False
                 else:
                     if (sx <= xmin <= ex or sx <= xmax <= ex) and (
                         sy <= ymin <= ey or sy <= ymax <= ey
                     ):
-                        obj.emphasized = True
+                        obj.node.emphasized = True
                     else:
-                        obj.emphasized = False
+                        obj.node.emphasized = False
             self.scene.context.signal("refresh_scene", 0)
             self.start_location = None
             self.end_location = None

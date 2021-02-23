@@ -111,13 +111,13 @@ class JobPreview(wx.Frame, Module):
         self.Bind(
             wx.EVT_MENU, self.jobadd_home, id=self.preview_menu.menu_jobadd_home.GetId()
         )
-        self.preview_menu.menu_jobadd_physicalhome = wxglade_tmp_menu.Append(
+        self.preview_menu.menu_jobadd_autophysicalhome = wxglade_tmp_menu.Append(
             wx.ID_ANY, "Physical Home", "Add a physicalhome"
         )
         self.Bind(
             wx.EVT_MENU,
             self.jobadd_physicalhome,
-            id=self.preview_menu.menu_jobadd_physicalhome.GetId(),
+            id=self.preview_menu.menu_jobadd_autophysicalhome.GetId(),
         )
         self.preview_menu.menu_jobadd_wait = wxglade_tmp_menu.Append(
             wx.ID_ANY, "Wait", "Add a wait"
