@@ -1,3 +1,5 @@
+import os
+
 import ezdxf
 from ezdxf import units
 from ezdxf.units import decode
@@ -99,7 +101,11 @@ class DxfLoader:
                 e.reify()
             except AttributeError:
                 pass
-        elements_modifier.add_elems(elements)
+        element_branch = elements_modifier.get(type="branch elems")
+        basename = os.path.basename(pathname)
+        file_node = element_branch.add(basename, type="file")
+        file_node.filepath = pathname
+        file_node.add_all(elements)
         elements_modifier.classify(elements)
         return True
 

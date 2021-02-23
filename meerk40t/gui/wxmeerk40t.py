@@ -2427,7 +2427,6 @@ class ShadowTree:
         self.tree_images = None
         self.object = "Project"
         self.name = "Project"
-        self.type = NODE_ROOT
         self.context = context
         self.elements = context.elements
         self.elements.listen(self)
@@ -2514,11 +2513,11 @@ class ShadowTree:
             self.element_root, icon_meerk40t.GetBitmap(False, resize=(20, 20))
         )
         self.build_tree(self.element_root)
-        node_operations = self.element_root.get("ops", type="branch")
+        node_operations = self.element_root.get(type="branch ops")
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
         for n in node_operations.children:
             self.set_icon(n)
-        node_elements = self.element_root.get("elems", type="branch")
+        node_elements = self.element_root.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap(True))
 
         # node_files = self.element_root.get_branch(NODE_FILES_BRANCH)
@@ -2664,13 +2663,7 @@ class ShadowTree:
             event.Skip()
             return
         node_data = self.wxtree.GetItemData(drag_item)
-        if (
-            node_data.type == NODE_ELEMENTS_BRANCH
-            or node_data.type == NODE_OPERATION_BRANCH
-            or node_data.type == NODE_FILES_BRANCH
-            or node_data.type == NODE_FILE_ELEMENT
-            or node_data.type == NODE_FILE_FILE
-        ):
+        if node_data.type in ("branch elems", "branch ops", "root"):
             event.Skip()
             return
         self.dragging_node = node_data
@@ -2701,13 +2694,13 @@ class ShadowTree:
             event.Skip()
             return
 
-        if drag_node.type == NODE_ELEMENT:
-            if drop_node.type == NODE_OPERATION:
+        if drag_node.type == "elem":
+            if drop_node.type == "op":
                 # Dragging element into operation adds that element to the op.
                 drop_node.add_node(drag_node.object, pos=0)
                 event.Allow()
                 return
-            elif drop_node.type == NODE_ELEMENT:
+            elif drop_node.type == "elem":
                 # Dragging element into element.
                 if drag_node.parent is drop_node.parent:
                     # Dragging and dropping within the same parent puts insert on other side.
@@ -2730,18 +2723,18 @@ class ShadowTree:
                 drag_node.parent.object.extend(nodes)
                 event.Allow()
                 return
-            elif drop_node.type == NODE_OPERATION_ELEMENT:
+            elif drop_node.type == "opnode":
                 # TODO: Correct
                 drop_index = drop_node.parent.object.index(drop_node.object)
                 drop_node.parent.object.insert(drop_index, drag_node.object)
                 event.Allow()
                 return
-            elif drop_node.type == NODE_OPERATION_BRANCH:
+            elif drop_node.type == "branch ops":
                 obj = drag_node.object
                 self.context.classify([obj])
                 event.Allow()
-        elif drag_node.type == NODE_OPERATION_ELEMENT:
-            if drop_node.type == NODE_OPERATION:
+        elif drag_node.type == "opnode":
+            if drop_node.type == "op":
                 # Dragging from op element to operation.
                 drag_index = drag_node.parent.index(drag_node)
                 drag_node.parent.object[drag_index] = None
@@ -2756,7 +2749,7 @@ class ShadowTree:
                 drag_node.parent.object.extend(nodes)
                 event.Allow()
                 return
-            if drop_node.type == NODE_OPERATION_ELEMENT:
+            if drop_node.type == "opnode":
                 if drag_node.parent is drop_node.parent:
                     # Dragging and dropping within the same parent puts insert on other side.
                     drag_index = drag_node.parent.index(drag_node)
@@ -2780,8 +2773,8 @@ class ShadowTree:
 
                 event.Allow()
                 return
-        elif drag_node.type == NODE_OPERATION:
-            if drop_node.type == NODE_OPERATION:
+        elif drag_node.type == "op":
+            if drop_node.type == "op":
                 # Dragging operation to different operation.
                 ops = drop_node.parent
                 drop_pos = ops.index(drop_node)
@@ -2798,7 +2791,7 @@ class ShadowTree:
                 ops.object.extend(nodes)
                 event.Allow()
                 return
-            elif drop_node.type == NODE_OPERATION_BRANCH:
+            elif drop_node.type == "branch ops":
                 # Dragging operation to op branch.
                 pass
 
@@ -2895,6 +2888,7 @@ class ShadowTree:
             return
 
         t = node.type
+        obj = node.object
         locked = False
         try:
             if node.object.lock:
@@ -2902,37 +2896,37 @@ class ShadowTree:
         except (AttributeError, ValueError):
             pass
 
-        if t == NODE_OPERATION:
+        if t == "op":
             gui.Bind(
                 wx.EVT_MENU,
                 self.menu_execute(node),
                 menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL),
             )
-        if t == NODE_OPERATION_BRANCH:
+        if t == "branch ops":
             gui.Bind(
                 wx.EVT_MENU,
                 self.menu_console("operation* delete"),
                 menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
             )
-        if t == NODE_FILES_BRANCH:
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_clear_all_files_branch(node),
-                menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
-            )
-        if t == NODE_ELEMENTS_BRANCH:
+        # if t == NODE_FILES_BRANCH:
+        #     gui.Bind(
+        #         wx.EVT_MENU,
+        #         self.menu_clear_all_files_branch(node),
+        #         menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
+        #     )
+        if t == "branch elems":
             gui.Bind(
                 wx.EVT_MENU,
                 self.menu_console("element* delete"),
                 menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
             )
-        if t == NODE_OPERATION:
+        if t == "op":
             gui.Bind(
                 wx.EVT_MENU,
                 self.menu_clear_all_operation(node),
                 menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
             )
-        if t in (NODE_OPERATION, NODE_ELEMENT, NODE_FILE_FILE, NODE_OPERATION_ELEMENT):
+        if t in ("op", "elem", "file", "opnode"):
             gui.Bind(
                 wx.EVT_MENU,
                 self.menu_remove(node),
@@ -2941,7 +2935,7 @@ class ShadowTree:
                 ),
             )
         if (
-            t in (NODE_ELEMENT, NODE_OPERATION_ELEMENT)
+            t in ("elem", "opnode")
             and len(list(self.elements.elems(emphasized=True))) > 1
         ):
             gui.Bind(
@@ -2955,7 +2949,7 @@ class ShadowTree:
                     wx.ITEM_NORMAL,
                 ),
             )
-        if t == NODE_OPERATION_ELEMENT:
+        if t == "opnode":
             duplicate_menu_eop = wx.Menu()
             for i in range(1, 10):
                 gui.Bind(
@@ -2977,7 +2971,7 @@ class ShadowTree:
                 )
             menu.AppendSubMenu(duplicate_menu_eop, _("Duplicate"))
         if (
-            t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH)
+            t in ("op", "branch elems", "branch ops")
             and node.count_children() > 1
         ):
             gui.Bind(
@@ -2985,9 +2979,7 @@ class ShadowTree:
                 self.menu_reverse_order(node),
                 menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL),
             )
-        if t == NODE_ROOT:
-            pass
-        elif t == NODE_OPERATION_BRANCH:
+        if t == "branch ops":
             gui.Bind(
                 wx.EVT_MENU,
                 self.menu_reclassify_operations(node),
@@ -3063,15 +3055,13 @@ class ShadowTree:
                 ),
             )
             menu.AppendSubMenu(special_op_menu, _("Special Operations"))
-        elif t == NODE_ELEMENTS_BRANCH:
+        elif t == "branch ops":
             gui.Bind(
                 wx.EVT_MENU,
                 self.menu_reclassify_operations(node),
                 menu.Append(wx.ID_ANY, _("Reclassify Operations"), "", wx.ITEM_NORMAL),
             )
-        elif t == NODE_FILES_BRANCH:
-            pass
-        elif t == NODE_OPERATION:
+        elif t == "ops":
             operation_convert_submenu = wx.Menu()
             for name in ("Raster", "Engrave", "Cut"):
                 menu_op = operation_convert_submenu.Append(
@@ -3117,7 +3107,7 @@ class ShadowTree:
                     self.menu_raster(node),
                     menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL),
                 )
-        elif t == NODE_FILE_FILE:
+        elif t == "file":
             if node.filepath is not None:
                 name = os.path.basename(node.filepath)
                 gui.Bind(
@@ -3125,7 +3115,7 @@ class ShadowTree:
                     self.menu_reload(node),
                     menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL),
                 )
-        elif t == NODE_ELEMENT:
+        elif t == "elem":
             duplicate_menu = wx.Menu()
             for i in range(1, 10):
                 gui.Bind(
@@ -3136,7 +3126,7 @@ class ShadowTree:
                     ),
                 )
             menu.AppendSubMenu(duplicate_menu, _("Duplicate"))
-        if t in (NODE_ELEMENTS_BRANCH, NODE_ELEMENT):
+        if t in ("branch elem", "elem"):
             if isinstance(node.object, SVGElement):
                 if not locked:
                     gui.Bind(
@@ -3146,7 +3136,7 @@ class ShadowTree:
                             wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL
                         ),
                     )
-        if t == NODE_ELEMENT:
+        if t == "elem":
             if isinstance(node.object, SVGElement):
                 path_scale_sub_menu = wx.Menu()
                 for i in range(1, 25):

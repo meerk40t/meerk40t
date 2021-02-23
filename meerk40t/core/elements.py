@@ -50,19 +50,6 @@ def plugin(kernel, lifecycle=None):
         kernel_root.activate("modifier/Elemental")
 
 
-NODE_ROOT = 0
-NODE_OPERATION_BRANCH = 10
-NODE_OPERATION = 11
-NODE_OPERATION_ELEMENT = 12
-NODE_ELEMENTS_BRANCH = 20
-NODE_ELEMENT = 21
-NODE_FILES_BRANCH = 30
-NODE_FILE_FILE = 31
-NODE_FILE_ELEMENT = 32
-NODE_TEMPLATE_BRANCH = 40
-NODE_TEMPLATE_OPERATION = 41
-
-
 class Node:
     def __init__(self, data_object, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -72,7 +59,6 @@ class Node:
 
         self.object = data_object
         self.type = None
-        self.single = False
 
         self._selected = False
         self._emphasized = False
@@ -237,7 +223,13 @@ class Node:
         except AttributeError:
             pass
 
-    def add(self, data_object, type=None, name=None, single=False, pos=None):
+    def add_all(self, objects, type=None, name=None, pos=None):
+        for object in objects:
+            self.add(object, type=type, name=name, pos=pos)
+            if pos is not None:
+                pos += 1
+
+    def add(self, data_object=None, type=None, name=None, pos=None):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
@@ -258,9 +250,6 @@ class Node:
             except:
                 pass
             node = node_class(data_object)
-            node.single = single
-            if single:
-                data_object.node = node
             node.set_name(name)
             node.type = type
 
@@ -313,18 +302,12 @@ class Node:
         for child in list(self.children):
             child.remove_node()
 
-    def open_node(self):
-        objects = self.object
-        self._opened = True
-        if isinstance(objects, list):
-            for obj in objects:
-                self.add_node(obj)
-
-    def get(self, object, type=None):
-        if self.object == object and (type is None or type == self.type):
+    def get(self, obj=None, type=None):
+        if (obj is None or obj == self.object) and \
+                (type is None or type == self.type):
             return self
         for n in self._children:
-            node = n.get(object, type)
+            node = n.get(obj, type)
             if node is not None:
                 return node
 
@@ -336,8 +319,7 @@ class Node:
 class ElemNode(Node):
     def __init__(self, data_object):
         super(ElemNode, self).__init__(data_object)
-        if data_object is not None:
-            data_object.node = self
+        data_object.node = self
 
 
 class RootNode(Node):
@@ -345,7 +327,7 @@ class RootNode(Node):
         super().__init__(None)
         self._root = self
         self.set_name("Project")
-        self.type = NODE_ROOT
+        self.type = "root"
         self.context = context
         self.listeners = []
 
@@ -355,8 +337,8 @@ class RootNode(Node):
             "cmdop": CommandOperation,
             "elem": ElemNode
         }
-        self.add("ops", type="branch", name="Operations")
-        self.add("elems", type="branch", name="Elements")
+        self.add(type="branch ops", name="Operations")
+        self.add(type="branch elems", name="Elements")
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -2463,40 +2445,40 @@ class Elemental(Modifier):
         else:
             h = None
 
-        for obj in self.flatten(item_list, depth=depth):
-            if obj is None:
+        for node in self.flatten(item_list, depth=depth):
+            if node is None:
                 continue
-            if s is not None and s != obj.selected:
+            if s is not None and s != node.selected:
                 continue
-            if e is not None and e != obj.emphasized:
+            if e is not None and e != node.emphasized:
                 continue
-            if h is not None and s != obj.highlighted:
+            if h is not None and s != node.highlighted:
                 continue
-            yield obj
+            yield node
 
     def flatten(self, item_list, depth=None):
         if depth is not None:
             depth -= 1
-        for obj in item_list.children:
-            yield obj
-            if hasattr(obj, "children"):
+        for child in item_list.children:
+            yield child
+            if hasattr(child, "children"):
                 if depth is not None and depth <= 0:
                     continue
-                for s in self.flatten(obj, depth=depth):
+                for s in self.flatten(child, depth=depth):
                     yield s
 
     def ops(self, **kwargs):
-        operations = self._tree.get("ops", type="branch")
+        operations = self._tree.get(type="branch ops")
         for item in self._filtered_list(operations, depth=1, **kwargs):
             yield item
 
     def elems(self, depth=None, **kwargs):
-        elements = self._tree.get("elems", type="branch")
+        elements = self._tree.get(type="branch elems")
         for item in self._filtered_list(elements,  depth=depth, **kwargs):
             yield item.object
 
     def elems_nodes(self, depth=None, **kwargs):
-        elements = self._tree.get("elems", type="branch")
+        elements = self._tree.get(type="branch elems")
         for item in self._filtered_list(elements,  depth=depth, **kwargs):
             yield item
 
@@ -2514,8 +2496,8 @@ class Elemental(Modifier):
     def count_op(self, **kwargs):
         return len(list(self.ops(**kwargs)))
 
-    def get(self, obj, type=None):
-        return self._tree.get(obj, type=type)
+    def get(self, obj=None, type=None):
+        return self._tree.get(obj=obj, type=type)
 
     def get_elem(self, index, **kwargs):
         for i, elem in enumerate(self.elems(**kwargs)):
@@ -2542,18 +2524,16 @@ class Elemental(Modifier):
         raise IndexError
 
     def add_op(self, op):
-        operation_branch = self._tree.get("ops", type="branch")
+        operation_branch = self._tree.get(type="branch ops")
         op.set_name(str(op))
-        op.type = NODE_OPERATION_BRANCH + 1
-        operation_branch.add(op)
+        operation_branch.add(op, type="op")
 
     def add_ops(self, adding_ops):
-        operation_branch = self._tree.get("ops", type="branch")
+        operation_branch = self._tree.get(type="branch ops")
         items = []
         for op in adding_ops:
             op.set_name(str(op))
-            op.type = NODE_OPERATION_BRANCH + 1
-            operation_branch.add(op)
+            operation_branch.add(op, type="op")
             items.append(op)
         return items
 
@@ -2564,13 +2544,13 @@ class Elemental(Modifier):
         :param element:
         :return:
         """
-        element_branch = self._tree.get("elems", type="branch")
+        element_branch = self._tree.get(type="branch elems")
         node = element_branch.add(element, type="elem")
         self.context.signal("element_added", element)
         return node
 
     def add_elems(self, adding_elements):
-        element_branch = self._tree.get("elems", type="branch")
+        element_branch = self._tree.get(type="branch elems")
         items = []
         for element in adding_elements:
             items.append(
