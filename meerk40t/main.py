@@ -211,13 +211,13 @@ def run():
 
     if not args.no_gui:
         # Must permit this plugin in the gui.
-        try:
-            from .gui import wxmeerk40t
+        # try:
+        from .gui import wxmeerk40t
 
-            kernel.add_plugin(wxmeerk40t.plugin)
-        except ImportError:
-            # This module cannot be loaded. wxPython missing.
-            pass
+        kernel.add_plugin(wxmeerk40t.plugin)
+        # except ImportError:
+        #     # This module cannot be loaded. wxPython missing.
+        #     pass
 
     if not getattr(sys, "frozen", False):
         """
