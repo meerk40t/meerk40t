@@ -946,6 +946,9 @@ class MeerK40t(wx.Frame, Module):
         self.device.setting(bool, 'auto_note', True)
         self.device.device_root.setting(bool, 'uniform_svg', False)
         self.device.device_root.setting(float, 'svg_ppi', 96.0)
+        self.device.device_root.setting(bool, 'default_operations', False)
+        if self.device.device_root.default_operations:
+            self.device.device_root.elements.load_default()
         with wx.BusyInfo(_("Loading File...")):
             n = self.device.device_root.elements.note
             is_svg = pathname.lower().endswith('svg')
