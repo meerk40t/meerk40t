@@ -498,6 +498,7 @@ class MeerK40t(wx.Frame, Module, Job):
         context.listen("export-image", self.on_export_signal)
         context.listen("background", self.on_background_signal)
         context.listen("rebuild_tree", self.on_rebuild_tree_signal)
+        context.listen("refresh_tree", self.request_refresh)
         context.listen("refresh_scene", self.on_refresh_scene)
         context.listen("element_property_update", self.on_element_update)
         context.setting(int, "bed_width", 310)  # Default Value
@@ -1340,6 +1341,7 @@ class MeerK40t(wx.Frame, Module, Job):
         context.unlisten("background", self.on_background_signal)
         context.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
         context.unlisten("refresh_scene", self.on_refresh_scene)
+        context.unlisten("refresh_tree", self.request_refresh)
         context.unlisten("element_property_update", self.on_element_update)
 
         context.unlisten("active", self.on_active_change)
@@ -1373,6 +1375,9 @@ class MeerK40t(wx.Frame, Module, Job):
         :return:
         """
         self.context.signal("rebuild_tree")
+
+    def on_refresh_tree_signal(self, *args):
+        self.request_refresh()
 
     def on_rebuild_tree_signal(self, *args):
         """
@@ -2429,10 +2434,9 @@ class ShadowTree:
         self.do_not_select = False
 
     def node_removed(self, node):
-        try:
-            self.wxtree.Delete(node.item)
-        except RuntimeError:
-            return
+        self.wxtree.Delete(node.item)
+        for i in self.wxtree.GetSelections():
+            self.wxtree.SelectItem(i,False)
 
     def node_added(self, node):
         self.node_register(node)
@@ -2475,8 +2479,7 @@ class ShadowTree:
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
-        the proper values and contexts and icons. This will not happen for any elements currently within
-        a closed branch."""
+        the proper values and contexts and icons."""
         if node is None:
             node = self.element_root.item
         if node is None:
@@ -2548,6 +2551,7 @@ class ShadowTree:
         except TypeError:
             pass
         self.set_icon(node)
+        self.context.signal("refresh_tree")
 
     def set_color(self, node, color=None):
         item = node.item
@@ -2579,7 +2583,7 @@ class ShadowTree:
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-                    tree.Update()
+                    self.context.signal("refresh_tree")
             elif isinstance(node, LaserOperation):
                 try:
                     op = node.operation
@@ -3664,10 +3668,10 @@ class ShadowTree:
 
     def menu_duplicate_operation(self, node):
         def specific(event):
-            op = LaserOperation(node.object)
-            op.clear()
-            op.extend(node.object)
+            op = LaserOperation(node)
             self.context.elements.add_op(op)
+            for e in node.children:
+                op.add(e.object, type="opnode")
 
         return specific
 

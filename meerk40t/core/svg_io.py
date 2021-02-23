@@ -255,7 +255,8 @@ class SVGLoader:
             transform="scale(%f)" % scale_factor,
         )
         element_branch = elements_modifier.get("elems", type="branch")
-        file_node = element_branch.add(pathname, type="file")
+        basename = os.path.basename(pathname)
+        file_node = element_branch.add(basename, type="file")
 
         for element in svg:
             try:

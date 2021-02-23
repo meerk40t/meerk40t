@@ -1,3 +1,4 @@
+import os
 from os import path as ospath
 from copy import copy
 from math import ceil
@@ -1299,7 +1300,8 @@ class ImageLoader:
 
         image.stroke = Color("black")
         element_branch = elements_modifier.get("elems", type="branch")
-        file_node = element_branch.add(pathname, type="file")
+        basename = os.path.basename(pathname)
+        file_node = element_branch.add(basename, type="file")
         file_node.add(image, type="elem")
         elements_modifier.classify(image)
         return True

@@ -146,49 +146,49 @@ class Node:
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_added(node)
+            self._root.notify_added(node=node)
 
     def notify_removed(self, node=None):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_removed(node=None)
+            self._root.notify_removed(node=node)
 
     def notify_changed(self, node):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_changed(node=None)
+            self._root.notify_changed(node=node)
 
     def notify_emphasized(self, node=None):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_emphasized(node)
+            self._root.notify_emphasized(node=node)
 
     def notify_selected(self, node=None):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_selected(node)
+            self._root.notify_selected(node=node)
 
     def notify_highlighted(self, node=None):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_highlighted(node)
+            self._root.notify_highlighted(node=node)
 
     def notify_modified(self, node=None):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_modified(node)
+            self._root.notify_modified(node=node)
 
     def notify_altered(self, node=None):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_changed(node)
+            self._root.notify_changed(node=node)
 
     def modified(self):
         """
@@ -457,7 +457,7 @@ class LaserOperation(Node):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.add_node(obj)
+                self.add(obj, type="opnode")
             elif isinstance(obj, LaserOperation):
                 self.operation = obj.operation
 
@@ -469,7 +469,7 @@ class LaserOperation(Node):
 
                 for element in obj.children:
                     element_copy = copy(element.object)
-                    self.add_node(element_copy)
+                    self.add(element_copy, type="opnode")
         if self.operation == "Cut":
             if self.settings.speed is None:
                 self.settings.speed = 10.0
@@ -2206,8 +2206,6 @@ class Elemental(Modifier):
             args=tuple(),
             **kwargs
         ):
-            if data is None:
-                data = self.ops(emphasized=True)
             op = LaserOperation()
             if color is not None:
                 op.color = color
@@ -2231,7 +2229,8 @@ class Elemental(Modifier):
                 op.operation = "Raster"
             elif command == "imageop":
                 op.operation = "Image"
-            op.extend(data)
+            if data is not None:
+                op.children.extend(data)
             self.add_op(op)
             return "ops", [op]
 
@@ -2434,16 +2433,7 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
         self.classify(self.elems())
 
-    def items(self, **kwargs):
-        def combined(*args):
-            for listv in args:
-                for itemv in listv:
-                    yield itemv
-
-        for j in combined(self.ops(**kwargs), self.elems(**kwargs)):
-            yield j
-
-    def _filtered_list(self, item_list, **kwargs):
+    def _filtered_list(self, item_list, depth=None, **kwargs):
         """
         Filters a list of items with selected, emphasized, and highlighted.
         False values means find where that parameter is false.
@@ -2453,6 +2443,7 @@ class Elemental(Modifier):
         Items which are set to None are skipped.
 
         :param item_list:
+        :param depth max depth to filter list children.
         :param kwargs:
         :return:
         """
@@ -2471,7 +2462,8 @@ class Elemental(Modifier):
             h = kwargs["highlighted"]
         else:
             h = None
-        for obj in item_list.children:
+
+        for obj in self.flatten(item_list, depth=depth):
             if obj is None:
                 continue
             if s is not None and s != obj.selected:
@@ -2482,19 +2474,30 @@ class Elemental(Modifier):
                 continue
             yield obj
 
+    def flatten(self, item_list, depth=None):
+        if depth is not None:
+            depth -= 1
+        for obj in item_list.children:
+            yield obj
+            if hasattr(obj, "children"):
+                if depth is not None and depth <= 0:
+                    continue
+                for s in self.flatten(obj, depth=depth):
+                    yield s
+
     def ops(self, **kwargs):
         operations = self._tree.get("ops", type="branch")
-        for item in self._filtered_list(operations, **kwargs):
+        for item in self._filtered_list(operations, depth=1, **kwargs):
             yield item
 
-    def elems(self, **kwargs):
+    def elems(self, depth=None, **kwargs):
         elements = self._tree.get("elems", type="branch")
-        for item in self._filtered_list(elements, **kwargs):
+        for item in self._filtered_list(elements,  depth=depth, **kwargs):
             yield item.object
 
-    def elems_nodes(self, **kwargs):
+    def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get("elems", type="branch")
-        for item in self._filtered_list(elements, **kwargs):
+        for item in self._filtered_list(elements,  depth=depth, **kwargs):
             yield item
 
     def first_element(self, **kwargs):
