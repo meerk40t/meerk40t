@@ -299,7 +299,6 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
 
-        self.CenterOnScreen()
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -514,6 +513,17 @@ class MeerK40t(wx.Frame, Module):
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
+        try:
+            self.scene.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
+            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
+            self.scene.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
+            self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
+            self.tree.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
+            self.tree.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
+        except AttributeError:
+            # Not WX 4.1
+            pass
+
         self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -526,6 +536,8 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene = None
         self.pipe_state = None
         self._rotary_view = False
+        self._has_modifiers = False
+        self._shift_down = False
 
     def add_language_menu(self):
         if os.path.exists(resource_path('./locale')):
@@ -557,6 +569,7 @@ class MeerK40t(wx.Frame, Module):
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+
         device = self.device
         kernel = self.device.device_root
         self.__set_titlebar()
@@ -568,7 +581,6 @@ class MeerK40t(wx.Frame, Module):
         kernel.setting(str, "units_name", 'mm')
         kernel.setting(int, "units_marks", 10)
         kernel.setting(int, "units_index", 0)
-        kernel.setting(bool, "mouse_zoom_invert", False)
         kernel.setting(bool, "print_shutdown", False)
         device.setting(int, 'fps', 40)
 
@@ -710,6 +722,7 @@ class MeerK40t(wx.Frame, Module):
             self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
             self.ribbon_position_units = kernel.units_index
             self.update_ribbon_position()
+        self.CenterOnScreen()
 
     def finalize(self, channel=None):
         device = self.device
@@ -1110,6 +1123,27 @@ class MeerK40t(wx.Frame, Module):
         if self.scene.HasCapture():
             return
         rotation = event.GetWheelRotation()
+        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not self._shift_down:
+            if self._has_modifiers:
+                if rotation > 1:
+                    self.widget_scene.event(event.GetPosition(), 'wheelup_ctrl')
+                elif rotation < -1:
+                    self.widget_scene.event(event.GetPosition(), 'wheeldown_ctrl')
+            else:
+                if rotation > 1:
+                    self.widget_scene.event(event.GetPosition(), 'wheelup')
+                elif rotation < -1:
+                    self.widget_scene.event(event.GetPosition(), 'wheeldown')
+        else:
+            if rotation > 1:
+                self.widget_scene.event(event.GetPosition(), 'wheelleft')
+            elif rotation < -1:
+                self.widget_scene.event(event.GetPosition(), 'wheelright')
+
+    def on_mousewheel_zoom(self, event):
+        if self.scene.HasCapture():
+            return
+        rotation = event.GetWheelRotation()
         if self.device.device_root.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
@@ -1157,11 +1191,35 @@ class MeerK40t(wx.Frame, Module):
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), 'rightup')
 
+    def on_magnify_mouse(self, event):
+        magnify = event.GetMagnification()
+        if magnify > 0:
+            self.widget_scene.event(event.GetPosition(), 'zoom-in')
+        if magnify < 0:
+            self.widget_scene.event(event.GetPosition(), 'zoom-out')
+
+    def on_gesture(self, event):
+        """
+        This code requires WXPython 4.1 and the bind will fail otherwise.
+        """
+        if event.IsGestureStart():
+            self.widget_scene.event(event.GetPosition(), 'gesture-start')
+        elif event.IsGestureEnd():
+            self.widget_scene.event(event.GetPosition(), 'gesture-end')
+        else:
+            try:
+                zoom = event.GetZoomFactor()
+            except AttributeError:
+                zoom = 1.0
+            self.widget_scene.event(event.GetPosition(), 'zoom %f' % zoom)
+
     def on_focus_lost(self, event):
         self.device.using('module', 'Console').write("-laser\nend\n")
         # event.Skip()
 
     def on_key_down(self, event):
+        self._shift_down = event.ShiftDown()
+        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
@@ -1171,6 +1229,8 @@ class MeerK40t(wx.Frame, Module):
             event.Skip()
 
     def on_key_up(self, event):
+        self._shift_down = event.ShiftDown()
+        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
@@ -3152,7 +3212,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.19')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.20')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

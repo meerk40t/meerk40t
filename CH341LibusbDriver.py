@@ -102,7 +102,7 @@ class CH341LibusbDriver:
             self.set_status(STATE_USB_SET_CONFIG_SUCCESS)
         except usb.core.USBError:
             self.set_status(STATE_USB_SET_CONFIG_FAIL)
-            raise ConnectionRefusedError
+            # raise ConnectionRefusedError # this is non-fatal
         self.set_status(STATE_USB_SET_ACTIVE_CONFIG)
         try:
             interface = device.get_active_configuration()[(0, 0)]

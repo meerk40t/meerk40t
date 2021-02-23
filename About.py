@@ -66,7 +66,7 @@ class About(wx.Frame, Module):
         self.meerk40t_about_version_text.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_3.Add(self.meerk40t_about_version_text, 0, 0, 0)
         sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
-        meerk40t_about_text_header = wx.StaticText(self, wx.ID_ANY, "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\nParticipation in the project is highly encouraged. Past participation, and continuing participation is graciously thanked. This program is mostly the brainchild of Tatarize, who sincerely hopes his contributions will be but the barest trickle that becomes a raging river.")
+        meerk40t_about_text_header = wx.StaticText(self, wx.ID_ANY, "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\nParticipation in the project is highly encouraged. Past participation, and continuing \nparticipation is graciously thanked. This program is mostly the brainchild of \nTatarize, who sincerely hopes his contributions will be but the barest trickle \nthat becomes a raging river.")
         meerk40t_about_text_header.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_2.Add(meerk40t_about_text_header, 2, wx.EXPAND, 0)
         sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)

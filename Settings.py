@@ -20,8 +20,9 @@ class Settings(wx.Frame, Module):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
-        self.SetSize((455, 183))
-        self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"), choices=["mm", "cm", "inch", "mils"], majorDimension=1,
+        self.SetSize((490, 280))
+        self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"), choices=["mm", "cm", "inch", "mils"],
+                                       majorDimension=1,
                                        style=wx.RA_SPECIFY_ROWS)
         self.combo_svg_ppi = wx.ComboBox(self, wx.ID_ANY,
                                          choices=[_("96 px/in Inkscape"),
@@ -30,13 +31,18 @@ class Settings(wx.Frame, Module):
                                                   _("Custom")], style=wx.CB_DROPDOWN)
         # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.checklist_options = wx.CheckListBox(self, wx.ID_ANY, choices=[_("Invert Mouse Wheel Zoom"),
-                                                                           _("Print Shutdown"),
-                                                                           _("SVG Uniform Save"),
-                                                                           _("Image DPI Scaling"),
-                                                                           _("Show Negative Guide"),
-                                                                           _("Launch Spooler JobStart")
-                                                                           ])
+        self.choices = [(_("Print Shutdown"), "print_shutdown", False),
+                        (_("SVG Uniform Save"), "uniform_svg", False),
+                        (_("Image DPI Scaling"), 'image_dpi', True),
+                        (_("DXF Centering"), 'dxf_center', True),
+                        (_("Show Negative Guide"), "show_negative_guide", True),
+                        (_("Launch Spooler JobStart"), "auto_spooler", True),
+                        (_("MouseWheel Pan"), "mouse_wheel_pan", False),
+                        (_("Invert MouseWheel Pan"), 'mouse_pan_invert', False),
+                        (_("Invert MouseWheel Zoom"), 'mouse_zoom_invert', False),
+                        ]
+        self.checklist_options = wx.CheckListBox(self, wx.ID_ANY, choices=[c[0] for c in self.choices])
+
         from wxMeerK40t import supported_languages
         choices = [language_name for language_code, language_name, language_index in supported_languages]
         self.combo_language = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN)
@@ -69,29 +75,18 @@ class Settings(wx.Frame, Module):
         self.device.device_root.setting(float, 'svg_ppi', 96.0)
         self.text_svg_ppi.SetValue(str(self.device.device_root.svg_ppi))
 
-        self.device.setting(bool, "mouse_zoom_invert", False)
-        self.device.setting(bool, "print_shutdown", False)
-        self.device.setting(bool, "uniform_svg", False)
-        self.device.setting(bool, 'image_dpi', True)
-        self.device.setting(bool, "show_negative_guide", True)
-        self.device.setting(bool, "auto_spooler", True)
+        for name, choice, default in self.choices:
+            self.device.setting(bool, choice, default)
+
         self.device.setting(int, "language", 0)
         self.device.setting(str, "units_name", 'mm')
         self.device.setting(int, "units_marks", 10)
         self.device.setting(int, "units_index", 0)
 
-        if self.device.mouse_zoom_invert:
-            self.checklist_options.Check(0, True)
-        if self.device.print_shutdown:
-            self.checklist_options.Check(1, True)
-        if self.device.uniform_svg:
-            self.checklist_options.Check(2, True)
-        if self.device.image_dpi:
-            self.checklist_options.Check(3, True)
-        if self.device.show_negative_guide:
-            self.checklist_options.Check(4, True)
-        if self.device.auto_spooler:
-            self.checklist_options.Check(5, True)
+        for i, c in enumerate(self.choices):
+            name, choice, default = c
+            if getattr(self.device, choice):
+                self.checklist_options.Check(i, True)
         self.radio_units.SetSelection(self.device.units_index)
         self.combo_language.SetSelection(self.device.language)
 
@@ -177,12 +172,9 @@ class Settings(wx.Frame, Module):
         self.device.device_root.svg_ppi = svg_ppi
 
     def on_checklist_settings(self, event):  # wxGlade: Settings.<event_handler>
-        self.device.mouse_zoom_invert = self.checklist_options.IsChecked(0)
-        self.device.print_shutdown = self.checklist_options.IsChecked(1)
-        self.device.uniform_svg = self.checklist_options.IsChecked(2)
-        self.device.image_dpi = self.checklist_options.IsChecked(3)
-        self.device.show_negative_guide = self.checklist_options.IsChecked(4)
-        self.device.auto_spooler = self.checklist_options.IsChecked(5)
+        for i, c in enumerate(self.choices):
+            name, choice, default = c
+            setattr(self.device, choice, self.checklist_options.IsChecked(i))
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()

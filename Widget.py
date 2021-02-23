@@ -61,6 +61,10 @@ class Scene(Module):
         self.device.setting(int, "draw_mode", 0)
         self.device.setting(float, "scale_x", 1.0)
         self.device.setting(float, "scale_y", 1.0)
+        kernel = self.device.device_root
+        kernel.setting(bool, "mouse_zoom_invert", False)
+        kernel.setting(bool, "mouse_pan_invert", False)
+        kernel.setting(bool, "mouse_wheel_pan", False)
 
     def finalize(self, channel=None):
         elements = self.device.device_root.elements
@@ -160,7 +164,7 @@ class Scene(Module):
             previous_top_element = self.hit_chain[0][0]
         except (IndexError, TypeError):
             previous_top_element = None
-        if event_type in ('leftdown', 'middledown', 'rightdown', 'wheeldown', 'wheelup', 'hover'):
+        if event_type in ('leftdown', 'middledown', 'rightdown', 'wheeldown', 'wheelup', 'wheelright', 'wheelleft', 'hover'):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
@@ -1138,6 +1142,7 @@ class SceneSpaceWidget(Widget):
         self.add_widget(-1, self.interface_widget)
         self.add_widget(-1, self.scene_widget)
         self.last_position = None
+        self._previous_zoom = None
 
     def hit(self):
         return HITCHAIN_DELEGATE_AND_HIT
@@ -1145,17 +1150,76 @@ class SceneSpaceWidget(Widget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == 'hover':
             return RESPONSE_CHAIN
-        if event_type == 'wheelup':
+        if event_type == 'wheelup' and self.scene.device.device_root.mouse_wheel_pan:
+            if self.scene.device.device_root.mouse_pan_invert:
+                self.scene_widget.matrix.post_translate(0, 25)
+            else:
+                self.scene_widget.matrix.post_translate(0, -25)
+        elif event_type == 'wheeldown' and self.scene.device.device_root.mouse_wheel_pan:
+            if self.scene.device.device_root.mouse_pan_invert:
+                self.scene_widget.matrix.post_translate(0, -25)
+            else:
+                self.scene_widget.matrix.post_translate(0, 25)
+        elif event_type == 'wheelup' or event_type == 'wheelup_ctrl':
+            if self.scene.device.device_root.mouse_zoom_invert:
+                self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
+            else:
+                self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
+            self.scene.device.signal('refresh_scene', 0)
+            return RESPONSE_CONSUME
+        elif event_type == 'zoom-in':
             self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
-        elif event_type == 'wheeldown':
+        elif event_type == 'wheeldown' or event_type == 'wheeldown_ctrl':
+            if self.scene.device.device_root.mouse_zoom_invert:
+                self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
+            else:
+                self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
+            self.scene.device.signal('refresh_scene', 0)
+            return RESPONSE_CONSUME
+        elif event_type == 'zoom-out':
             self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
+            self.scene.device.signal('refresh_scene', 0)
+            return RESPONSE_CONSUME
+        elif event_type == 'wheelleft':
+            if self.scene.device.device_root.mouse_pan_invert:
+                self.scene_widget.matrix.post_translate(25, 0)
+            else:
+                self.scene_widget.matrix.post_translate(-25, 0)
+            self.scene.device.signal('refresh_scene', 0)
+            return RESPONSE_CONSUME
+        elif event_type == 'wheelright':
+            if self.scene.device.device_root.mouse_pan_invert:
+                self.scene_widget.matrix.post_translate(-25, 0)
+            else:
+                self.scene_widget.matrix.post_translate(25, 0)
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'middledown':
             return RESPONSE_CONSUME
         elif event_type == 'middleup':
+            return RESPONSE_CONSUME
+        elif event_type == 'gesture-start':
+            self._previous_zoom = 1.0
+            return RESPONSE_CONSUME
+        elif event_type == 'gesture-end':
+            self._previous_zoom = None
+            return RESPONSE_CONSUME
+        elif str(event_type).startswith('zoom'):
+            if self._previous_zoom is None:
+                return RESPONSE_CONSUME
+            try:
+                zoom = float(event_type.split(' ')[1])
+            except:
+                return RESPONSE_CONSUME
+
+            zoom_change = zoom / self._previous_zoom
+            self.scene_widget.matrix.post_scale(zoom_change, zoom_change, space_pos[0], space_pos[1])
+            self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
+            self._previous_zoom = zoom
+            self.scene.device.signal('refresh_scene', 0)
+
             return RESPONSE_CONSUME
         self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
         self.scene.device.signal('refresh_scene', 0)

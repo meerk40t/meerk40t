@@ -1306,8 +1306,11 @@ class LhystudioController(Module, Pipe):
             self.device.signal('pipe;chipv', chip_version)
             self.update_usb_state(INFO_USB_DRIVER | STATE_DRIVER_CH341)
             self.update_usb_state(STATE_CONNECTED)
+            return
         except ConnectionRefusedError:
             self.driver = None
+        except ImportError:
+            self.update_usb_state(STATE_DRIVER_NO_WINDLL)
 
     def update_state(self, state):
         self.state = state
