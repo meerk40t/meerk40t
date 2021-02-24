@@ -28,7 +28,7 @@ from ..svgelements import (
     QuadraticBezier,
     CubicBezier,
     Arc,
-    SimpleLine,
+    SimpleLine, Group,
 )
 
 from copy import copy
@@ -77,14 +77,14 @@ class Node:
     """
     Nodes are elements within the tree which stores most of the objects in Elements.
     """
-    def __init__(self, data_object=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data_object=None, type=None, *args, **kwargs):
+        super().__init__()
         self._children = list()
         self._root = None
         self._parent = None
 
         self.object = data_object
-        self.type = None
+        self.type = type
 
         self._selected = False
         self._emphasized = False
@@ -2492,9 +2492,9 @@ class Elemental(Modifier):
         def clear_all_ops(node, name, context, **kwargs):
             context.console("element* delete\n")
 
-        @self.tree_operation(_("Clear All"), node_type="ops", help="")
-        def clear_all_op(node, name, context, **kwargs):
-            context.console("operation clear\n") # TODO: Operation clear
+        @self.tree_operation(_("Clear All"), node_type="opnode", help="")
+        def clear_all_opnode(node, name, context, **kwargs):
+            context.console("operation clear\n")  # TODO: Operation clear
             # context = self.context
             # elements = context.elements
             # for op in elements.ops(emphasized=True):
@@ -2502,7 +2502,7 @@ class Elemental(Modifier):
             #     self.context.signal("rebuild_tree", 0)
 
         @self.tree_operation(_("Remove: {name:%s}"), node_type=("op", "elem", "file", "opnode"), help="")
-        def clear_all_ops(node, name, context, **kwargs):
+        def remove_types(node, name, context, **kwargs):
             if node.type == "elem":
                 context.console("element delete\n")
             elif node.type == "op":
@@ -2553,7 +2553,7 @@ class Elemental(Modifier):
             context.signal("rebuild_tree", 0)
 
         @self.tree_operation(_("Refresh Classification"), node_type="branch ops", help="")
-        def NAME(node, name, context, **kwargs):
+        def refresh_clasifications(node, name, context, **kwargs):
             context = self.context
             elements = context.elements
             elements.remove_elements_from_operations(list(elements.elems()))
@@ -2561,35 +2561,35 @@ class Elemental(Modifier):
             self.context.signal("rebuild_tree", 0)
 
         @self.tree_operation(_("Set Other/Blue/Red Classify"), node_type="branch ops", help="")
-        def NAME(node, name, context, **kwargs):
+        def default_classifications(node, name, context, **kwargs):
             self.context.elements.load_default()
 
         @self.tree_operation(_("Set Basic Classification"), node_type="branch ops", help="")
-        def NAME(node, name, context, **kwargs):
+        def basic_classifications(node, name, context, **kwargs):
             self.context.elements.load_default2()
 
         @self.tree_operation(_("Add Operation"), node_type="branch ops", help="")
-        def NAME(node, name, context, **kwargs):
+        def add_operation_operation(node, name, context, **kwargs):
             self.context.elements.add_op(LaserOperation())
 
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Home"), node_type="branch ops", help="")
-        def NAME(node, name, context, **kwargs):
+        def add_operation_home(node, name, context, **kwargs):
             self.context.elements.add_op(CommandOperation("Home", COMMAND_HOME))
 
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Beep"), node_type="branch ops", help="")
-        def NAME(node, name, context, **kwargs):
+        def add_operation_beep(node, name, context, **kwargs):
             self.context.elements.add_op(CommandOperation("Beep", COMMAND_BEEP))
 
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Move Origin"), node_type="branch ops", help="")
-        def NAME(node, name, context, **kwargs):
+        def add_operation_origin(node, name, context, **kwargs):
             self.context.elements.add_op(CommandOperation("Origin", COMMAND_MOVE, 0, 0))
 
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Interrupt"), node_type="branch ops", help="")
-        def NAME(node, name, context, **kwargs):
+        def add_operation_interrupt(node, name, context, **kwargs):
             self.context.elements.add_op(CommandOperation(
                         "Interrupt",
                         COMMAND_FUNCTION,
@@ -2598,7 +2598,7 @@ class Elemental(Modifier):
 
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Shutdown"), node_type="branch ops", help="")
-        def NAME(node, name, context, **kwargs):
+        def add_operation_shutdown(node, name, context, **kwargs):
             self.context.elements.add_op(CommandOperation(
                         "Shutdown",
                         COMMAND_FUNCTION,
@@ -2606,7 +2606,7 @@ class Elemental(Modifier):
                     ))
 
         @self.tree_operation(_("Reclassify Operations"), node_type="branch elems", help="")
-        def NAME(node, name, context, **kwargs):
+        def reclassify_operations(node, name, context, **kwargs):
             context = self.context
             elements = context.elements
             elements.remove_elements_from_operations(list(elements.elems()))
@@ -2615,26 +2615,26 @@ class Elemental(Modifier):
 
         @self.tree_submenu(_("Convert Operation"))
         @self.tree_operation(_("Convert Raster"), node_type="op", help="")
-        def NAME(node, name, context, **kwargs):
+        def convert_operation_raster(node, name, context, **kwargs):
             node.operation = "Raster"
 
         @self.tree_submenu(_("Convert Operation"))
         @self.tree_operation(_("Convert Engrave"), node_type="op", help="")
-        def NAME(node, name, context, **kwargs):
+        def convert_operation_engrave(node, name, context, **kwargs):
             node.operation = "Engrave"
 
         @self.tree_submenu(_("Convert Operation"))
         @self.tree_operation(_("Convert Cut"), node_type="op", help="")
-        def NAME(node, name, context, **kwargs):
+        def convert_operation_cut(node, name, context, **kwargs):
             node.operation = "Cut"
 
         @self.tree_submenu(_("Convert Operation"))
         @self.tree_operation(_("Convert Image"), node_type="op", help="")
-        def NAME(node, name, context, **kwargs):
+        def convert_operation_image(node, name, context, **kwargs):
             node.operation = "Image"
 
         @self.tree_operation(_("Duplicate Operation"), node_type="op", help="duplicate operation element nodes")
-        def NAME(node, name, context, **kwargs):
+        def duplicate_operation(node, name, context, **kwargs):
             op = LaserOperation(node)
             self.context.elements.add_op(op)
             for e in node.children:
@@ -2643,7 +2643,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 1, 10)
         @self.tree_operation(_("Add {iterator:%d} pass(es)."), node_type="op", help="")
-        def NAME(node, name, context, copies=1, **kwargs):
+        def add_n_passes(node, name, context, copies=1, **kwargs):
             op = node.object
             adding_elements = list(op) * copies
             op.extend(adding_elements)
@@ -2653,19 +2653,19 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Step"))
         @self.tree_iterate("i", 1, 10)
         @self.tree_operation(_("Step {iterator:%d}") , node_type="op", help="Change raster step values of operation")
-        def NAME(node, name, context, i=1, **kwargs):
+        def set_step_n(node, name, context, i=1, **kwargs):
             element = node.object
             element.raster_step = i
             self.context.signal("element_property_update", node.object)
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_operation(_("Make Raster Image"), node_type="op", help="Convert a vector element into a raster element.")
-        def NAME(node, name, context, **kwargs):
+        def make_raster_image(node, name, context, **kwargs):
             context = self.context
             elements = context.elements
-            renderer = self.renderer
-            child_objects = list(node.objects_of_children(SVGElement))
-            bounds = CutPlanner.bounding_box(child_objects)
+            renderer = self.renderer # TODO: get the rendered processed.
+            child_objects = Group(node.objects_of_children(SVGElement))
+            bounds = child_objects.bbox()
             if bounds is None:
                 return None
             step = float(node.settings.raster_step)
@@ -2692,7 +2692,7 @@ class Elemental(Modifier):
             self.context.signal("rebuild_tree", 0)
 
         @self.tree_operation(_("Reload {name:%s}"), node_type="file", help="")
-        def NAME(node, name, context, **kwargs):
+        def reload_file(node, name, context, **kwargs):
             filepath = node.filepath
             self.clear_elements_and_operations()
             self.load(filepath)
@@ -2700,7 +2700,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Duplicate"))
         @self.tree_iterate("copies", 1,10)
         @self.tree_operation(_("Make {iterator:%d} copies."), node_type="elem", help="")
-        def duplicate_element(node, name, context, copies=1, **kwargs):
+        def duplicate_n_element(node, name, context, copies=1, **kwargs):
             context = self.context
             elements = context.elements
             adding_elements = [
@@ -2722,7 +2722,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Scale"))
         @self.tree_iterate("scale", 1, 25)
         @self.tree_operation(_("Scale {iterator:%.0f}%%"), node_type="elem", help="") #TODO: should be 6/scale
-        def NAME(node, name, context, scale=1, **kwargs):
+        def scale_elem_amount(node, name, context, scale=1, **kwargs):
             center_x, center_y = self.center()
             self.context.console(
                 "scale %f %f %f %f\n" % (scale, scale, center_x, center_y)
@@ -2734,9 +2734,10 @@ class Elemental(Modifier):
         @self.tree_values("i", values=(2,3,4,5,6,7,8,9,10,11,12,13,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13))
         @self.tree_calc("angle", lambda i: Angle.turns(1.0/float(i)).as_degrees)
         @self.tree_operation(_(u"Rotate turn/{iterator:%d}, {angle:%.0f}°"), node_type="elem", help="")
-        def NAME(node, name, context, i=1, **kwargs):
+        def rotate_elem_amount(node, name, context, i=1, **kwargs):
             value = 1.0 / float(scale)
-            bounds = CutPlanner.bounding_box(node.parent)
+            child_objects = Group(node.objects_of_children(node.parent))
+            bounds = child_objects.bbox()
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context.console("rotate %fturn %f %f\n" % (value, center_x, center_y))
@@ -2744,20 +2745,20 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Reify User Changes"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def reify_elem_changes(node, name, context, **kwargs):
             self.context.console("reify\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, Path))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def break_subpath_elem(node, name, context, **kwargs):
             self.context.console("element subpath\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Step"))
         @self.tree_iterate("i", 1, 10)
         @self.tree_operation(_("Step {iterator:%d}"), node_type="elem", help="")
-        def NAME(node, name, context, i=1, **kwargs):
+        def set_step_n_elem(node, name, context, i=1, **kwargs):
             # TODO: WAS A RADIOBUTTON
             # if "raster_step" in node.object.values:
             #     step = float(node.object.values["raster_step"])
@@ -2779,11 +2780,10 @@ class Elemental(Modifier):
             self.context.signal("element_property_update", node.object)
             self.element_root.gui.request_refresh()
 
-
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Actualize Pixels"), node_type="elem", help="")
-        def reset_user_changes(node, name, context, **kwargs):
+        def image_actualize_pixels(node, name, context, **kwargs):
             context.console("image resample\n")
 
 
@@ -2791,7 +2791,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("ZDepth Divide"))
         @self.tree_iterate("divide", 2, 10)
         @self.tree_operation(_("Divide Into {iterator:%d} Images"), node_type="elem", help="")
-        def NAME(node, name, context, divide=1, **kwargs):
+        def image_zdepth(node, name, context, divide=1, **kwargs):
             element = node.object
             if not isinstance(element, SVGImage):
                 return
@@ -2809,63 +2809,63 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Unlock Manipulations"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def image_unlock_manipulations(node, name, context, **kwargs):
             context.console("image unlock\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Dither to 1 bit"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def image_dither(node, name, context, **kwargs):
             context.console("image dither\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Invert Image"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def image_invert(node, name, context, **kwargs):
             context.console("image invert\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Mirror Horizontal"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def image_mirror(node, name, context, **kwargs):
             context.console("image mirror\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Flip Vertical"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def image_flip(node, name, context, **kwargs):
             context.console("image flip\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate CW"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def image_cw(node, name, context, **kwargs):
             context.console("image cw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate CCW"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def image_ccw(node, name, context, **kwargs):
             context.console("image ccw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Save output.png"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def image_save(node, name, context, **kwargs):
             context.console("image save output.png\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("RasterWizard"))
         @self.tree_values("script", values=self.context.match("raster_script"))
         @self.tree_operation(_("RasterWizard: {script:%s}"), node_type="elem", help="")
-        def NAME(node, name, context, script=None, **kwargs):
+        def image_rasterwizard_open(node, name, context, script=None, **kwargs):
             self.context.console(
                 "window open RasterWizard %s" % script
             )
@@ -2874,19 +2874,19 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Apply Raster Script"))
         @self.tree_values("script", values=self.context.match("raster_script"))
         @self.tree_operation(_("Apply: {script:%s}"), node_type="elem", help="")
-        def NAME(node, name, context, script=None, **kwargs):
+        def image_rasterwizard_apply(node, name, context, script=None, **kwargs):
             self.context.console(
                 "image wizard %s\n" % script
             )
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "as_elements"))
         @self.tree_operation(_("Convert to SVG"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def cutcode_convert_svg(node, name, context, **kwargs):
             self.context.elements.add_elems(node.object.as_elements())
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "generate"))
         @self.tree_operation(_("Process as Operation"), node_type="elem", help="")
-        def NAME(node, name, context, **kwargs):
+        def cutcode_operation(node, name, context, **kwargs):
             self.context.elements.add_op(node.object)
 
     def detach(self, *a, **kwargs):
