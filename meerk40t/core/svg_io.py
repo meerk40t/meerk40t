@@ -256,7 +256,8 @@ class SVGLoader:
         )
         element_branch = elements_modifier.get(type="branch elems")
         basename = os.path.basename(pathname)
-        file_node = element_branch.add(basename, type="file")
+        file_node = element_branch.add(type="file", name=basename)
+        file_node.name = basename
         file_node.filepath = pathname
 
         for element in svg:

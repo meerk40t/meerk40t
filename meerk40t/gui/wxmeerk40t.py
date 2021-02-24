@@ -2888,6 +2888,11 @@ class ShadowTree:
             return
 
         submenus = {}
+        def menu_functions(func, node):
+            def specific(event):
+                func(node)
+            return specific
+
         for func in self.elements.tree_operations_for_node(node):
             submenu_name = func.submenu
             submenu = None
@@ -2901,7 +2906,7 @@ class ShadowTree:
             menu_context = submenu if submenu is not None else menu
             gui.Bind(
                 wx.EVT_MENU,
-                lambda e: func(node),
+                menu_functions(func, node),
                 menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL),
             )
         if menu.MenuItemCount != 0:

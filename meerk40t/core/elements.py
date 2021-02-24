@@ -225,6 +225,7 @@ class Node:
         self.cache = None
         self.icon = None
         self._bounds = None
+        self._bounds_dirty = True
         self.notify_altered(self)
         self._root.bounds = None
 
@@ -348,6 +349,7 @@ class ElemNode(Node):
     """
     def __init__(self, data_object):
         super(ElemNode, self).__init__(data_object)
+        self.last_transform = None
         data_object.node = self
 
 
@@ -727,8 +729,6 @@ class Elemental(Modifier):
         self._bounds = None
         self._tree = None
 
-    # @self.tree_calc("angle", lambda i: Angle.turns(1.0 / float(i)).as_degrees)
-
     def tree_operations_for_node(self, node):
         for m in self.context.match("tree/%s/.*" % node.type):
             func = self.context.registered[m]
@@ -751,20 +751,24 @@ class Elemental(Modifier):
 
             format_dict = {
                 "name": str(node)[:10],
-                "iterator": None
             }
 
             iterator = func.values
             if iterator is None:
                 iterator = [0]
             for i, value in enumerate(iterator):
+                try:
+                    format_dict[func.value_name] = value
+                except AttributeError:
+                    pass
                 for calc in func.calcs:
                     key, c = calc
-                    value = calc(i)
+                    value = c(value)
                     format_dict[key] = value
                 format_dict['iterator'] = i
                 format_dict['value'] = value
-                name = func.name.format(format_dict)
+                name = func.name.format_map(format_dict)
+
                 func.real_name = name
                 yield func
 
@@ -2501,7 +2505,7 @@ class Elemental(Modifier):
             #     op.remove_all_children()
             #     self.context.signal("rebuild_tree", 0)
 
-        @self.tree_operation(_("Remove: {name:%s}"), node_type=("op", "elem", "file", "opnode"), help="")
+        @self.tree_operation(_("Remove: {name}"), node_type=("op", "elem", "file", "opnode"), help="")
         def remove_types(node, name, context, **kwargs):
             if node.type == "elem":
                 context.console("element delete\n")
@@ -2519,14 +2523,14 @@ class Elemental(Modifier):
             self.set_selected(None)
 
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
-        @self.tree_calc("ecount", lambda node: len(list(self.elems(emphasized=True))))
-        @self.tree_operation(_("Remove: {ecount:%d} objects"), node_type=("elem", "opnode"), help="")
+        @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
+        @self.tree_operation(_("Remove: {ecount} objects"), node_type=("elem", "opnode"), help="")
         def remove_n_objects(node, name, context, **kwargs):
             context.console("element delete\n")
 
         @self.tree_submenu(_("Clone Reference"))
         @self.tree_iterate("copies", 1,10)
-        @self.tree_operation(_("Make {iterator:%d} copies."), node_type="opnode", help="")
+        @self.tree_operation(_("Make {iterator} copies."), node_type="opnode", help="")
         def clone_element_op(node, name, context, copies=1, **kwargs):
             node.parent.object.extend([node.object] * copies)
             node.parent.object.modified()
@@ -2534,7 +2538,7 @@ class Elemental(Modifier):
 
         @self.tree_submenu(_("Duplicate"))
         @self.tree_iterate("copies", 1,10)
-        @self.tree_operation(_("Make {iterator:%d} copies."), node_type="opnode", help="")
+        @self.tree_operation(_("Make {iterator} copies."), node_type="opnode", help="")
         def duplicate_element_op(node, name, context, copies=1, **kwargs):
             context = self.context
             elements = context.elements
@@ -2642,17 +2646,18 @@ class Elemental(Modifier):
 
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 1, 10)
-        @self.tree_operation(_("Add {iterator:%d} pass(es)."), node_type="op", help="")
+        @self.tree_operation(_("Add {iterator} pass(es)."), node_type="op", help="")
         def add_n_passes(node, name, context, copies=1, **kwargs):
             op = node.object
-            adding_elements = list(op) * copies
-            op.extend(adding_elements)
+            adding_elements = list(op.children) * copies
+            op.add_all(adding_elements)
+            # op.children.extend(adding_elements)
             self.context.signal("rebuild_tree", 0)
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_submenu(_("Step"))
         @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(_("Step {iterator:%d}") , node_type="op", help="Change raster step values of operation")
+        @self.tree_operation(_("Step {iterator}") , node_type="op", help="Change raster step values of operation")
         def set_step_n(node, name, context, i=1, **kwargs):
             element = node.object
             element.raster_step = i
@@ -2664,10 +2669,11 @@ class Elemental(Modifier):
             context = self.context
             elements = context.elements
             renderer = self.renderer # TODO: get the rendered processed.
-            child_objects = Group(node.objects_of_children(SVGElement))
+            child_objects = Group()
+            child_objects.extend(node.objects_of_children(SVGElement))
             bounds = child_objects.bbox()
             if bounds is None:
-                return None
+                return
             step = float(node.settings.raster_step)
             if step == 0:
                 step = 1.0
@@ -2691,7 +2697,7 @@ class Elemental(Modifier):
             node.object.append(image_element)
             self.context.signal("rebuild_tree", 0)
 
-        @self.tree_operation(_("Reload {name:%s}"), node_type="file", help="")
+        @self.tree_operation(_("Reload {name}"), node_type="file", help="")
         def reload_file(node, name, context, **kwargs):
             filepath = node.filepath
             self.clear_elements_and_operations()
@@ -2699,7 +2705,7 @@ class Elemental(Modifier):
 
         @self.tree_submenu(_("Duplicate"))
         @self.tree_iterate("copies", 1,10)
-        @self.tree_operation(_("Make {iterator:%d} copies."), node_type="elem", help="")
+        @self.tree_operation(_("Make {iterator} copies."), node_type="elem", help="")
         def duplicate_n_element(node, name, context, copies=1, **kwargs):
             context = self.context
             elements = context.elements
@@ -2721,9 +2727,15 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Scale"))
         @self.tree_iterate("scale", 1, 25)
-        @self.tree_operation(_("Scale {iterator:%.0f}%%"), node_type="elem", help="") #TODO: should be 6/scale
+        @self.tree_operation(_("Scale {iterator}%%"), node_type="elem", help="") #TODO: should be 6/scale
         def scale_elem_amount(node, name, context, scale=1, **kwargs):
-            center_x, center_y = self.center()
+            child_objects = Group()
+            child_objects.extend(node.objects_of_children(SVGElement))
+            bounds = child_objects.bbox()
+            if bounds is None:
+                return
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
             self.context.console(
                 "scale %f %f %f %f\n" % (scale, scale, center_x, center_y)
             )
@@ -2732,12 +2744,15 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Rotate"))
         @self.tree_values("i", values=(2,3,4,5,6,7,8,9,10,11,12,13,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13))
-        @self.tree_calc("angle", lambda i: Angle.turns(1.0/float(i)).as_degrees)
-        @self.tree_operation(_(u"Rotate turn/{iterator:%d}, {angle:%.0f}°"), node_type="elem", help="")
+        @self.tree_calc("angle", lambda i: "%0.f" % Angle.turns(1.0/float(i)).as_degrees)
+        @self.tree_operation(_(u"Rotate turn/{i}, {angle}°"), node_type="elem", help="")
         def rotate_elem_amount(node, name, context, i=1, **kwargs):
-            value = 1.0 / float(scale)
-            child_objects = Group(node.objects_of_children(node.parent))
+            value = 1.0 / float(i)
+            child_objects = Group()
+            child_objects.extend(node.objects_of_children(SVGElement))
             bounds = child_objects.bbox()
+            if bounds is None:
+                return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context.console("rotate %fturn %f %f\n" % (value, center_x, center_y))
@@ -2757,7 +2772,7 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Step"))
         @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(_("Step {iterator:%d}"), node_type="elem", help="")
+        @self.tree_operation(_("Step {iterator}"), node_type="elem", help="")
         def set_step_n_elem(node, name, context, i=1, **kwargs):
             # TODO: WAS A RADIOBUTTON
             # if "raster_step" in node.object.values:
@@ -2790,7 +2805,7 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("ZDepth Divide"))
         @self.tree_iterate("divide", 2, 10)
-        @self.tree_operation(_("Divide Into {iterator:%d} Images"), node_type="elem", help="")
+        @self.tree_operation(_("Divide Into {iterator} Images"), node_type="elem", help="")
         def image_zdepth(node, name, context, divide=1, **kwargs):
             element = node.object
             if not isinstance(element, SVGImage):
@@ -2864,7 +2879,7 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("RasterWizard"))
         @self.tree_values("script", values=self.context.match("raster_script"))
-        @self.tree_operation(_("RasterWizard: {script:%s}"), node_type="elem", help="")
+        @self.tree_operation(_("RasterWizard: {script}"), node_type="elem", help="")
         def image_rasterwizard_open(node, name, context, script=None, **kwargs):
             self.context.console(
                 "window open RasterWizard %s" % script
@@ -2873,7 +2888,7 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply Raster Script"))
         @self.tree_values("script", values=self.context.match("raster_script"))
-        @self.tree_operation(_("Apply: {script:%s}"), node_type="elem", help="")
+        @self.tree_operation(_("Apply: {script}"), node_type="elem", help="")
         def image_rasterwizard_apply(node, name, context, script=None, **kwargs):
             self.context.console(
                 "image wizard %s\n" % script
@@ -3181,23 +3196,10 @@ class Elemental(Modifier):
 
     def validate_bounds(self):
         boundary_points = []
-        for e in self.elems_nodes():
-            if (
-                e.last_transform is None
-                or e.last_transform != e.transform
-                or e.bounds is None
-            ):
-                try:
-                    e.bounds = e.bbox(False)
-                except AttributeError:
-                    # Type does not have bbox.
-                    continue
-                e.last_transform = copy(e.transform)
-            if e.bounds is None:
+        for e in self.elems(emphasized=True):
+            if e.node.bounds is None:
                 continue
-            if not e.node.emphasized:
-                continue
-            box = e.bounds
+            box = e.node.bounds
             top_left = e.transform.point_in_matrix_space([box[0], box[1]])
             top_right = e.transform.point_in_matrix_space([box[2], box[1]])
             bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
@@ -3215,6 +3217,7 @@ class Elemental(Modifier):
             xmax = max([e[0] for e in boundary_points])
             ymax = max([e[1] for e in boundary_points])
             new_bounds = [xmin, ymin, xmax, ymax]
+
         if self._bounds != new_bounds:
             self._bounds = new_bounds
             self.context.signal("selected_bounds", self._bounds)
