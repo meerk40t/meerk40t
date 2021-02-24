@@ -227,7 +227,6 @@ class Node:
         self._bounds = None
         self._bounds_dirty = True
         self.notify_altered(self)
-        self._root.bounds = None
 
     def unregister(self):
         try:
@@ -748,15 +747,16 @@ class Elemental(Modifier):
                     continue
             if reject:
                 continue
-
             func_dict = {
-                "name": str(node)[:10],
+                "name": str(node.name)[:15],
             }
 
             iterator = func.values
             if iterator is None:
                 iterator = [0]
             for i, value in enumerate(iterator):
+                func_dict['iterator'] = i
+                func_dict['value'] = value
                 try:
                     func_dict[func.value_name] = value
                 except AttributeError:
@@ -766,10 +766,7 @@ class Elemental(Modifier):
                     key, c = calc
                     value = c(value)
                     func_dict[key] = value
-                func_dict['iterator'] = i
-                func_dict['value'] = value
                 name = func.name.format_map(func_dict)
-
                 func.func_dict = func_dict
                 func.real_name = name
                 yield func
@@ -826,7 +823,7 @@ class Elemental(Modifier):
         def decorator(func):
             @functools.wraps(func)
             def inner(node, **ik):
-                returned = func(node, **ik, **kwargs, **inner.func_dict)
+                returned = func(node, **ik, **kwargs)
                 return returned
 
             kernel = self.context._kernel
@@ -2711,8 +2708,8 @@ class Elemental(Modifier):
 
         @self.tree_submenu(_("Duplicate"))
         @self.tree_iterate("copies", 1,10)
-        @self.tree_operation(_("Make {iterator} copies."), node_type="elem", help="")
-        def duplicate_n_element(node, copies=1, **kwargs):
+        @self.tree_operation(_("Make {copies} copies."), node_type="elem", help="")
+        def duplicate_n_element(node, copies, **kwargs):
             context = self.context
             elements = context.elements
             adding_elements = [
@@ -2733,8 +2730,10 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Scale"))
         @self.tree_iterate("scale", 1, 25)
-        @self.tree_operation(_("Scale {iterator}%%"), node_type="elem", help="") #TODO: should be 6/scale
-        def scale_elem_amount(node, scale=1, **kwargs):
+        @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
+        @self.tree_operation(_("Scale {scale_percent}%"), node_type="elem", help="Scale Element")
+        def scale_elem_amount(node, scale, **kwargs):
+            scale = 6.0 / float(scale)
             child_objects = Group()
             child_objects.extend(node.objects_of_children(SVGElement))
             bounds = child_objects.bbox()

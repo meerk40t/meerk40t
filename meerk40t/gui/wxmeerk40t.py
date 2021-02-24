@@ -2889,9 +2889,11 @@ class ShadowTree:
 
         submenus = {}
 
-        def menu_functions(func, node):
+        def menu_functions(f, node):
+            func_dict = dict(f.func_dict)
+
             def specific(event):
-                func(node)
+                f(node, **func_dict)
             return specific
 
         for func in self.elements.tree_operations_for_node(node):
@@ -2908,7 +2910,7 @@ class ShadowTree:
             gui.Bind(
                 wx.EVT_MENU,
                 menu_functions(func, node),
-                menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL),
+                menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL)
             )
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
