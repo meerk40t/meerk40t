@@ -177,7 +177,7 @@ class ImageProperty(wx.Frame, Module):
         ty = m.f
         element.transform = Matrix.scale(float(step_value), float(step_value))
         element.transform.post_translate(tx, ty)
-        element.modified()
+        element.node.modified()
         if self.context is not None:
             self.context.signal("element_property_update", element)
             self.context.signal("refresh_scene")

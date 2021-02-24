@@ -92,7 +92,7 @@ def plugin(kernel, lifecycle=None):
                         element.values["raster_step"] = step
                     element.image_width, element.image_height = element.image.size
                     element.lock = True
-                    element.altered()
+                    element.node.altered()
             return
         elif args[0] == "unlock":
             channel(_("Unlocking Elements..."))
@@ -147,7 +147,7 @@ def plugin(kernel, lifecycle=None):
             for element in elements.elems(emphasized=True):
                 if isinstance(element, SVGImage):
                     Planner.make_actual(element)
-                    element.altered()
+                    element.node.altered()
             return
         elif args[0] == "dither":
             for element in elements.elems(emphasized=True):
@@ -161,7 +161,7 @@ def plugin(kernel, lifecycle=None):
                                 if pixel_data[x, y][3] == 0:
                                     pixel_data[x, y] = (255, 255, 255, 255)
                     element.image = img.convert("1")
-                    element.altered()
+                    element.node.altered()
         elif args[0] == "remove":
             if len(args) == 1:
                 channel(_("Must specify a color, and optionally a distance."))
@@ -204,7 +204,7 @@ def plugin(kernel, lifecycle=None):
                             new_data[x, y] = (255, 255, 255, 0)
                             continue
                 element.image = img
-                element.altered()
+                element.node.altered()
         elif args[0] == "add":
             if len(args) == 1:
                 channel(_("Must specify a color, to add."))
@@ -233,7 +233,7 @@ def plugin(kernel, lifecycle=None):
                             new_data[x, y] = pix
                             continue
                 element.image = img
-                element.altered()
+                element.node.altered()
         elif args[0] == "crop":
             for element in elements.elems(emphasized=True):
                 if isinstance(element, SVGImage):
@@ -266,7 +266,7 @@ def plugin(kernel, lifecycle=None):
                         element.image = img.crop((left, upper, right, lower))
                         element.image_width = right - left
                         element.image_height = lower - upper
-                        element.altered()
+                        element.node.altered()
                     except (KeyError, ValueError):
                         channel(_("image crop <left> <upper> <right> <lower>"))
             return
@@ -281,7 +281,7 @@ def plugin(kernel, lifecycle=None):
                         img = element.image
                         enhancer = ImageEnhance.Contrast(img)
                         element.image = enhancer.enhance(factor)
-                        element.altered()
+                        element.node.altered()
                         channel(_("Image Contrast Factor: %f") % factor)
                     except (IndexError, ValueError):
                         channel(_("image contrast <factor>"))
@@ -296,7 +296,7 @@ def plugin(kernel, lifecycle=None):
                         img = element.image
                         enhancer = ImageEnhance.Brightness(img)
                         element.image = enhancer.enhance(factor)
-                        element.altered()
+                        element.node.altered()
                         channel(_("Image Brightness Factor: %f") % factor)
                     except (IndexError, ValueError):
                         channel(_("image brightness <factor>"))
@@ -311,7 +311,7 @@ def plugin(kernel, lifecycle=None):
                         img = element.image
                         enhancer = ImageEnhance.Color(img)
                         element.image = enhancer.enhance(factor)
-                        element.altered()
+                        element.node.altered()
                         channel(_("Image Color Factor: %f") % factor)
                     except (IndexError, ValueError):
                         channel(_("image color <factor>"))
@@ -326,7 +326,7 @@ def plugin(kernel, lifecycle=None):
                         img = element.image
                         enhancer = ImageEnhance.Sharpness(img)
                         element.image = enhancer.enhance(factor)
-                        element.altered()
+                        element.node.altered()
                         channel(_("Image Sharpness Factor: %f") % factor)
                     except (IndexError, ValueError):
                         channel(_("image sharpness <factor>"))
@@ -338,7 +338,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = img.filter(filter=ImageFilter.BLUR)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Blurred."))
             return
         elif args[0] == "sharpen":
@@ -348,7 +348,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = img.filter(filter=ImageFilter.SHARPEN)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Sharpened."))
             return
         elif args[0] == "edge_enhance":
@@ -358,7 +358,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Edges Enhanced."))
             return
         elif args[0] == "find_edges":
@@ -368,7 +368,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = img.filter(filter=ImageFilter.FIND_EDGES)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Edges Found."))
             return
         elif args[0] == "emboss":
@@ -378,7 +378,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = img.filter(filter=ImageFilter.EMBOSS)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Embossed."))
             return
         elif args[0] == "smooth":
@@ -388,7 +388,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = img.filter(filter=ImageFilter.SMOOTH)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Smoothed."))
             return
         elif args[0] == "contour":
@@ -398,7 +398,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = img.filter(filter=ImageFilter.CONTOUR)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Contoured."))
             return
         elif args[0] == "detail":
@@ -408,7 +408,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = img.filter(filter=ImageFilter.DETAIL)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Detailed."))
             return
         elif args[0] == "quantize":
@@ -418,7 +418,7 @@ def plugin(kernel, lifecycle=None):
                         colors = int(args[1])
                         img = element.image
                         element.image = img.quantize(colors=colors)
-                        element.altered()
+                        element.node.altered()
                         channel(_("Image Quantized to %d colors.") % colors)
                     except (IndexError, ValueError):
                         channel(_("image quantize <colors>"))
@@ -432,7 +432,7 @@ def plugin(kernel, lifecycle=None):
                         threshold = int(args[1])
                         img = element.image
                         element.image = ImageOps.solarize(img, threshold=threshold)
-                        element.altered()
+                        element.node.altered()
                         channel(_("Image Solarized at %d gray.") % threshold)
                     except (IndexError, ValueError):
                         channel(_("image solarize <threshold>"))
@@ -450,7 +450,7 @@ def plugin(kernel, lifecycle=None):
                         element.image = ImageOps.invert(img)
                         if original_mode == "1":
                             element.image = element.image.convert("1")
-                        element.altered()
+                        element.node.altered()
                         channel(_("Image Inverted."))
                     except OSError:
                         channel(_("Image type cannot be converted. %s") % img.mode)
@@ -462,7 +462,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = ImageOps.flip(img)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Flipped."))
             return
         elif args[0] == "mirror":
@@ -472,7 +472,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = ImageOps.mirror(img)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Mirrored."))
             return
         elif args[0] == "ccw":
@@ -486,7 +486,7 @@ def plugin(kernel, lifecycle=None):
                         element.image_width,
                         element.image_height,
                     )
-                    element.altered()
+                    element.node.altered()
                     channel(_("Rotated image counterclockwise."))
             return
         elif args[0] == "cw":
@@ -500,7 +500,7 @@ def plugin(kernel, lifecycle=None):
                         element.image_width,
                         element.image_height,
                     )
-                    element.altered()
+                    element.node.altered()
                     channel(_("Rotated image clockwise."))
             return
         elif args[0] == "autocontrast":
@@ -514,7 +514,7 @@ def plugin(kernel, lifecycle=None):
                         if img.mode == "RGBA":
                             img = img.convert("RGB")
                         element.image = ImageOps.autocontrast(img, cutoff=cutoff)
-                        element.altered()
+                        element.node.altered()
                         channel(_("Image Auto-Contrasted."))
                     except (IndexError, ValueError):
                         channel(_("image autocontrast <cutoff-percent>"))
@@ -526,7 +526,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = ImageOps.grayscale(img)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Grayscale."))
             return
         elif args[0] == "equalize":
@@ -536,7 +536,7 @@ def plugin(kernel, lifecycle=None):
                 if isinstance(element, SVGImage):
                     img = element.image
                     element.image = ImageOps.equalize(img)
-                    element.altered()
+                    element.node.altered()
                     channel(_("Image Equalized."))
             return
         elif args[0] == "save":
@@ -577,7 +577,7 @@ def plugin(kernel, lifecycle=None):
                     element.image = im.transform(
                         im.size, Image.MESH, mesh, Image.BILINEAR
                     )
-                    element.altered()
+                    element.node.altered()
         elif args[0] == "halftone":
             #  https://stackoverflow.com/questions/10572274/halftone-images-in-python/10575940#10575940
             pass
@@ -638,7 +638,7 @@ def plugin(kernel, lifecycle=None):
                 (xx, yy, xx + im.size[0] * scale, yy + im.size[1] * scale)
             )
             element.image = half_tone
-            element.altered()
+            element.node.altered()
 
 
 class RasterScripts:

@@ -211,23 +211,23 @@ class PathProperty(wx.Frame, Module):
             if color is not None:
                 self.path_element.stroke = color
                 self.path_element.values[SVG_ATTR_STROKE] = color.hex
-                self.path_element.altered()
+                self.path_element.node.altered()
                 color = wx.Colour(swizzlecolor(self.path_element.stroke))
                 self.text_name.SetBackgroundColour(color)
             else:
                 self.path_element.stroke = Color("none")
                 self.path_element.values[SVG_ATTR_STROKE] = "none"
-                self.path_element.altered()
+                self.path_element.node.altered()
                 self.text_name.SetBackgroundColour(wx.WHITE)
         elif "fill" in button.name:
             if color is not None:
                 self.path_element.fill = color
                 self.path_element.values[SVG_ATTR_FILL] = color.hex
-                self.path_element.altered()
+                self.path_element.node.altered()
             else:
                 self.path_element.fill = Color("none")
                 self.path_element.values[SVG_ATTR_FILL] = "none"
-                self.path_element.altered()
+                self.path_element.node.altered()
         self.path_element.emphasize()
         self.Refresh()
         self.context.console("declassify\nclassify\n")

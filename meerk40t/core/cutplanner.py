@@ -109,7 +109,7 @@ class Planner(Modifier):
                     e = CutPlanner.optimize_cut_inside(element)
                     element.clear()
                     element += e
-                    element.altered()
+                    element.node.altered()
             elif args[0] == "travel":
                 channel(
                     _("Travel Optimizing: %f")
@@ -119,7 +119,7 @@ class Planner(Modifier):
                     e = CutPlanner.optimize_travel(element)
                     element.clear()
                     element += e
-                    element.altered()
+                    element.node.altered()
                 channel(
                     _("Optimized: %f")
                     % CutPlanner.length_travel(elements.elems(emphasized=True))
@@ -133,7 +133,7 @@ class Planner(Modifier):
                     e = CutPlanner.optimize_general(element)
                     element.clear()
                     element += e
-                    element.altered()
+                    element.node.altered()
                 channel(
                     _("Cut Travel Optimized: %f")
                     % CutPlanner.length_travel(elements.elems(emphasized=True))
@@ -168,7 +168,7 @@ class Planner(Modifier):
                 element += e
                 if angle is not None:
                     element *= Matrix.rotate(-angle)
-                element.altered()
+                element.node.altered()
 
         @self.context.console_option("op", "o", type=str, help="unlock, origin, home")
         @self.context.console_argument(

@@ -2176,7 +2176,7 @@ class MeerK40t(wx.Frame, Module, Job):
                 for element in context_root.elements.elems():
                     try:
                         element *= mx
-                        element.modified()
+                        element.node.modified()
                     except AttributeError:
                         pass
 
@@ -2198,7 +2198,7 @@ class MeerK40t(wx.Frame, Module, Job):
             color = Color(color, 1.0)
             for elem in elements.elems(emphasized=True):
                 elem.fill = color
-                elem.altered()
+                elem.node.altered()
 
     def open_stroke_dialog(self):
         context = self.context
@@ -2218,7 +2218,7 @@ class MeerK40t(wx.Frame, Module, Job):
             color = Color(color, 1.0)
             for elem in elements.elems(emphasized=True):
                 elem.stroke = color
-                elem.altered()
+                elem.node.altered()
 
     def open_flip_dialog(self):
         dlg = wx.TextEntryDialog(
@@ -2241,7 +2241,7 @@ class MeerK40t(wx.Frame, Module, Job):
             for element in context.elements.elems(emphasized=True):
                 try:
                     element *= mx
-                    element.modified()
+                    element.node.modified()
                 except AttributeError:
                     pass
         dlg.Destroy()
@@ -2302,7 +2302,7 @@ class MeerK40t(wx.Frame, Module, Job):
         for element in kernel.elements.elems():
             try:
                 element *= mx
-                element.modified()
+                element.node.modified()
             except AttributeError:
                 pass
 
@@ -2888,6 +2888,7 @@ class ShadowTree:
             return
 
         submenus = {}
+
         def menu_functions(func, node):
             def specific(event):
                 func(node)
