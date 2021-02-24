@@ -1301,8 +1301,10 @@ class ImageLoader:
         image.stroke = Color("black")
         element_branch = elements_modifier.get(type="branch elems")
         basename = os.path.basename(pathname)
-        file_node = element_branch.add(basename, type="file")
+
+        file_node = element_branch.add(type="file", name=basename)
         file_node.filepath = pathname
         file_node.add(image, type="elem")
+
         elements_modifier.classify(image)
         return True
