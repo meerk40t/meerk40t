@@ -228,7 +228,7 @@ class PathProperty(wx.Frame, Module):
                 self.path_element.fill = Color("none")
                 self.path_element.values[SVG_ATTR_FILL] = "none"
                 self.path_element.node.altered()
-        self.path_element.emphasize()
+        self.path_element.node.emphasized = True
         self.Refresh()
         self.context.console("declassify\nclassify\n")
         self.context.signal("element_property_update", self.path_element)

@@ -45,11 +45,13 @@ class JobPreview(wx.Frame, Module):
         self.Bind(
             wx.EVT_MENU,
             self.on_check_physicalhome_before,
-            id=self.preview_menu.menu_prehome.GetId(),
+            id=self.preview_menu.menu_prephysicalhome.GetId(),
         )
 
         wxglade_tmp_menu.Append(wx.ID_ANY, "Before", wxglade_tmp_menu_sub, "")
         wxglade_tmp_menu_sub = wx.Menu()
+
+
         self.preview_menu.menu_autohome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
             "Home",
@@ -61,7 +63,7 @@ class JobPreview(wx.Frame, Module):
             self.on_check_home_after,
             id=self.preview_menu.menu_autohome.GetId(),
         )
-        self.preview_menu.menu_prephysicalhome = wxglade_tmp_menu_sub.Append(
+        self.preview_menu.menu_autophysicalhome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
             "Physical Home",
             "Automatically add a physical home command after all jobs",
@@ -70,7 +72,7 @@ class JobPreview(wx.Frame, Module):
         self.Bind(
             wx.EVT_MENU,
             self.on_check_physicalhome_after,
-            id=self.preview_menu.menu_prehome.GetId(),
+            id=self.preview_menu.menu_autophysicalhome.GetId(),
         )
         self.preview_menu.menu_autoorigin = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,

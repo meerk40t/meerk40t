@@ -3008,7 +3008,7 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Engrave", color="cyan", speed=35.0))
         self.add_op(LaserOperation(operation="Engrave", color="yellow", speed=35.0))
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
-        self.classify(self.elems())
+        self.classify(list(self.elems()))
 
     def _filtered_list(self, item_list, depth=None, **kwargs):
         """
@@ -3054,7 +3054,11 @@ class Elemental(Modifier):
     def flatten(self, item_list, depth=None):
         if depth is not None:
             depth -= 1
-        for child in item_list.children:
+        try:
+            item_list = item_list.children
+        except AttributeError:
+            pass
+        for child in item_list:
             yield child
             if hasattr(child, "children"):
                 if depth is not None and depth <= 0:
@@ -3149,7 +3153,7 @@ class Elemental(Modifier):
         return items
 
     def clear_operations(self):
-        for op in self.ops():
+        for op in list(self.ops()):
             if op is not None:
                 op.remove_node()
 
@@ -3371,7 +3375,7 @@ class Elemental(Modifier):
             return
         if not isinstance(elements, list):
             elements = [elements]
-        for element in elements:
+        for element in self.flatten(elements):
             was_classified = False
             image_added = False
             if hasattr(element, "operation"):
