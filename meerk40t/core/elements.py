@@ -154,53 +154,53 @@ class Node:
             self._bounds_dirty = False
         return self._bounds
 
-    def notify_added(self, node=None):
+    def notify_added(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_added(node=node)
+            self._root.notify_added(node=node, **kwargs)
 
-    def notify_removed(self, node=None):
+    def notify_removed(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_removed(node=node)
+            self._root.notify_removed(node=node, **kwargs)
 
-    def notify_changed(self, node):
+    def notify_changed(self, node, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_changed(node=node)
+            self._root.notify_changed(node=node, **kwargs)
 
-    def notify_emphasized(self, node=None):
+    def notify_emphasized(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_emphasized(node=node)
+            self._root.notify_emphasized(node=node, **kwargs)
 
-    def notify_selected(self, node=None):
+    def notify_selected(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_selected(node=node)
+            self._root.notify_selected(node=node, **kwargs)
 
-    def notify_highlighted(self, node=None):
+    def notify_highlighted(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_highlighted(node=node)
+            self._root.notify_highlighted(node=node, **kwargs)
 
-    def notify_modified(self, node=None):
+    def notify_modified(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_modified(node=node)
+            self._root.notify_modified(node=node, **kwargs)
 
-    def notify_altered(self, node=None):
+    def notify_altered(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_changed(node=node)
+            self._root.notify_changed(node=node, **kwargs)
 
     def modified(self):
         """
@@ -285,7 +285,7 @@ class Node:
             self._children.append(node)
         else:
             self._children.insert(pos, node)
-        node.notify_added()
+        node.notify_added(node, pos=pos)
         return node
 
     def set_name(self, name):
@@ -316,13 +316,24 @@ class Node:
             for o in q.objects_of_children(types):
                 yield o
 
+    def replace_node(self, *args, **kwargs):
+        parent = self._parent
+        index = parent._children.index(self)
+        parent._children.remove(self)
+        self.notify_removed(self)
+        node = parent.add(*args, **kwargs, pos=index)
+        self._parent = None
+        self._root = None
+        self.type = None
+        return node
+
     def remove_node(self):
         self._parent._children.remove(self)
         self.notify_removed(self)
         self.item = None
         self._parent = None
         self._root = None
-        self.type = -1
+        self.type = None
 
     def remove_all_children(self):
         for child in list(self.children):
@@ -379,63 +390,47 @@ class RootNode(Node):
     def unlisten(self, listener):
         self.listeners.remove(listener)
 
-    def notify_added(self, node=None):
+    def notify_added(self, node=None, **kwargs):
         for listen in self.listeners:
-            try:
-                listen.node_added(node)
-            except AttributeError:
-                pass
+            if hasattr(listen, 'node_added'):
+                listen.node_added(node, **kwargs)
 
-    def notify_removed(self, node=None):
+    def notify_removed(self, node=None, **kwargs):
         for listen in self.listeners:
-            try:
-                listen.node_removed(node)
-            except AttributeError:
-                pass
+            if hasattr(listen, 'node_removed'):
+                listen.node_removed(node, **kwargs)
 
-    def notify_changed(self, node=None):
+    def notify_changed(self, node=None, **kwargs):
         for listen in self.listeners:
-            try:
-                listen.node_changed(node)
-            except AttributeError:
-                pass
+            if hasattr(listen, 'node_changed'):
+                listen.node_changed(node, **kwargs)
 
-    def notify_emphasized(self, node=None):
+    def notify_emphasized(self, node=None, **kwargs):
         for listen in self.listeners:
-            try:
-                listen.emphasized(node)
-            except AttributeError:
-                pass
+            if hasattr(listen, 'emphasized'):
+                listen.emphasized(node, **kwargs)
 
-    def notify_selected(self, node=None):
+    def notify_selected(self, node=None, **kwargs):
         for listen in self.listeners:
-            try:
-                listen.selected(node)
-            except AttributeError:
-                pass
+            if hasattr(listen, 'selected'):
+                listen.selected(node, **kwargs)
 
-    def notify_highlighted(self, node=None):
+    def notify_highlighted(self, node=None, **kwargs):
         for listen in self.listeners:
-            try:
-                listen.highlighted(node)
-            except AttributeError:
-                pass
+            if hasattr(listen, 'highlighted'):
+                listen.highlighted(node, **kwargs)
 
-    def notify_modified(self, node=None):
+    def notify_modified(self, node=None, **kwargs):
         self._bounds = None
         # self.validate_bounds()
         for listen in self.listeners:
-            try:
-                listen.modified(node)
-            except AttributeError:
-                pass
+            if hasattr(listen, 'modified'):
+                listen.modified(node, **kwargs)
 
-    def notify_altered(self, node=None):
+    def notify_altered(self, node=None, **kwargs):
         for listen in self.listeners:
-            try:
-                listen.altered(node)
-            except AttributeError:
-                pass
+            if hasattr(listen, 'altered'):
+                listen.altered(node, **kwargs)
 
 
 class LaserOperation(Node):
@@ -1274,14 +1269,16 @@ class Elemental(Modifier):
         def subpath(command, channel, _, data=None, args=tuple(), **kwargs):
             if not isinstance(data, list):
                 data = list(data)
-            add = []
+            elems = []
             for e in data:
+                node = e.node
+                qnode = node.replace_node(type="group", name=node.name)
                 p = abs(e)
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
-                    add.append(subelement)
-            self.add_elems(add)
-            return "elements", add
+                    qnode.add(subelement, type="elem")
+                elems.append(qnode)
+            return "elements", elems
 
         @context.console_argument("c", type=int, help="number of columns")
         @context.console_argument("r", type=int, help="number of rows")
@@ -2498,15 +2495,6 @@ class Elemental(Modifier):
         def clear_all_ops(node, **kwargs):
             self.context.console("element* delete\n")
 
-        @self.tree_operation(_("Clear All"), node_type="opnode", help="")
-        def clear_all_opnode(node, **kwargs):
-            self.context.console("operation clear\n")  # TODO: Operation clear
-            # context = self.context
-            # elements = context.elements
-            # for op in elements.ops(emphasized=True):
-            #     op.remove_all_children()
-            #     self.context.signal("rebuild_tree", 0)
-
         @self.tree_operation(_("Remove: {name}"), node_type=("op", "elem", "file", "opnode"), help="")
         def remove_types(node, **kwargs):
             if node.type == "elem":
@@ -3380,6 +3368,8 @@ class Elemental(Modifier):
             image_added = False
             if hasattr(element, "operation"):
                 add_funct(element)
+                continue
+            if element is None:
                 continue
             for op in items:
                 if op.operation == "Raster":

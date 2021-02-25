@@ -587,7 +587,7 @@ class MeerK40t(wx.Frame, Module, Job):
             else:
                 if args[0] == "open":
                     try:
-                        self.context.open("window/%s" % args[1], self)
+                        self.context.open("window/%s" % args[1], self, *args[2:])
                         channel(_("Window Opened."))
                     except KeyError:
                         channel(_("No such window as %s" % args[1]))
@@ -2437,8 +2437,8 @@ class ShadowTree:
         for i in self.wxtree.GetSelections():
             self.wxtree.SelectItem(i,False)
 
-    def node_added(self, node):
-        self.node_register(node)
+    def node_added(self, node, **kwargs):
+        self.node_register(node, **kwargs)
 
     def node_changed(self, node):
         self.update_name(node)
@@ -2532,11 +2532,14 @@ class ShadowTree:
             self.node_register(node)
             self.build_tree(node)
 
-    def node_register(self, node):
+    def node_register(self, node, pos=None, **kwargs):
         parent = node.parent
         parent_item = parent.item
         tree = self.wxtree
-        node.item = tree.AppendItem(parent_item, self.name)
+        if pos is None:
+            node.item = tree.AppendItem(parent_item, self.name)
+        else:
+            node.item = tree.InsertItem(parent_item, pos, self.name)
         tree.SetItemData(node.item, node)
         self.update_name(node)
         try:
