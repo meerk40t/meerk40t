@@ -49,6 +49,8 @@ def swizzlecolor(c):
         return None
     if isinstance(c, int):
         c = Color(c)
+    if c.value is None:
+        return None
     return c.blue << 16 | c.green << 8 | c.red
 
 

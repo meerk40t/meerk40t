@@ -254,11 +254,14 @@ class SVGLoader:
             color="none",
             transform="scale(%f)" % scale_factor,
         )
-        element_branch = elements_modifier.get(type="branch elems")
+        context_node = elements_modifier.get(type="branch elems")
         basename = os.path.basename(pathname)
-        file_node = element_branch.add(type="file", name=basename)
+        file_node = context_node.add(type="file", name=basename)
         file_node.filepath = pathname
+        return SVGLoader.parse(svg, elements_modifier, file_node, pathname, scale_factor)
 
+    @staticmethod
+    def parse(svg, elements_modifier, context_node, pathname, scale_factor):
         for element in svg:
             try:
                 if element.values["visibility"] == "hidden":
@@ -269,31 +272,33 @@ class SVGLoader:
                 pass
             if isinstance(element, SVGText):
                 if element.text is not None:
-                    file_node.add(element, type="elem")
+                    context_node.add(element, type="elem")
                     elements_modifier.classify(element)
             elif isinstance(element, Path):
                 if len(element) != 0:
                     element.approximate_arcs_with_cubics()
-                    file_node.add(element, type="elem")
+                    context_node.add(element, type="elem")
                     elements_modifier.classify(element)
             elif isinstance(element, Shape):
                 e = Path(element)
                 e.reify()  # In some cases the shape could not have reified, the path must.
                 if len(e) != 0:
                     e.approximate_arcs_with_cubics()
-                    file_node.add(element, type="elem")
+                    context_node.add(element, type="elem")
                     elements_modifier.classify(element)
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
                     if element.image is not None:
-                        file_node.add(element, type="elem")
+                        context_node.add(element, type="elem")
                         elements_modifier.classify(element)
                 except OSError:
                     pass
             elif isinstance(element, SVG):
                 continue
             elif isinstance(element, Group):
+                new_context = context_node.add(type="group", name=element.id)
+                SVGLoader.parse(element, elements_modifier, new_context, pathname, scale_factor)
                 continue
             elif isinstance(element, SVGElement):
                 try:

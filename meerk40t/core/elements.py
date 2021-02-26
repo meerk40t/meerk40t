@@ -3396,7 +3396,7 @@ class Elemental(Modifier):
                     was_classified = True
                     image_added = True
                 elif isinstance(element, SVGText):
-                    op.append(element)
+                    op.add(element)
                     was_classified = True
             if not was_classified:
                 if element.stroke is not None and element.stroke.value is not None:
