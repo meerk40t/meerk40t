@@ -2216,17 +2216,14 @@ class Console(Module, Pipe):
             kernel.load(new_file)
             yield "loading..."
         elif command == "language":
-            try:
-                if args[0]:
-                    yield "Changing language to: args[0]:"
-                    m = self.device.device_root.translate_active(args[0])
-                    yield "language is now: %s" % str(m)
-                else:
-                    yield "Acceptable Languages:"
-                    for x in self.device.device_root.translate_list():
-                        yield x
-            except:
-                yield "Unregistered Error."
+            if len(args) > 0:
+                yield "Changing language to: %s" % args[0]
+                m = self.device.device_root.translate_active(args[0])
+                yield "language is now: %s" % str(m)
+            else:
+                yield "Acceptable Languages:"
+                for x in self.device.device_root.translate_list():
+                    yield x
         elif command == 'shutdown':
             active_device.stop()
             return
