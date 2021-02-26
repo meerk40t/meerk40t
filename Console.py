@@ -2194,6 +2194,39 @@ class Console(Module, Pipe):
             import os
             for f in os.listdir(self._current_directory):
                 yield str(f)
+        elif command == 'cd':
+            import os
+            if args[0] == "~":
+                self._current_directory = "."
+                yield "Working directory"
+                return
+            new_dir = os.path.join(self._current_directory, args[0])
+            if not os.path.exists(new_dir):
+                yield "No such directory."
+                return
+            self._current_directory = new_dir
+            yield os.path.abspath(new_dir)
+        elif command == "load":
+            import os
+            new_file = os.path.join(self._current_directory, args[0])
+            if not os.path.exists(new_file):
+                yield "No such file."
+                return
+
+            kernel.load(new_file)
+            yield "loading..."
+        elif command == "language":
+            try:
+                if args[0]:
+                    yield "Changing language to: args[0]:"
+                    m = self.device.device_root.translate_active(args[0])
+                    yield "language is now: %s" % str(m)
+                else:
+                    yield "Acceptable Languages:"
+                    for x in self.device.device_root.translate_list():
+                        yield x
+            except:
+                yield "Unregistered Error."
         elif command == 'shutdown':
             active_device.stop()
             return

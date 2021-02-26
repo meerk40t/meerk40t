@@ -542,6 +542,33 @@ class MeerK40t(wx.Frame, Module):
     def add_language_menu(self):
         tl = wx.FileTranslationsLoader()
         trans = tl.GetAvailableTranslations("meerk40t")
+
+        def translate_list():
+            tl = wx.FileTranslationsLoader()
+            trans = tl.GetAvailableTranslations("meerk40t")
+            for i in trans:
+                yield i
+
+        def translate_active(v):
+            try:
+                v = int(v)
+            except ValueError:
+                for i, lang in enumerate(supported_languages):
+                    language_code, language_name, language_index = lang
+                    if v == language_code:
+                        v = i
+                        break
+            try:
+                language_code, language_name, language_index = supported_languages[v]
+                self.device.device_root.app.update_language(v)
+                return language_name
+            except (IndexError, ValueError):
+                return "Failed."
+
+
+        self.device.device_root.translate_list = translate_list
+        self.device.device_root.translate_active = translate_active
+
         if trans:
             wxglade_tmp_menu = wx.Menu()
             i = 0
