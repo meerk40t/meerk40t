@@ -1,5 +1,5 @@
 Pillow
 pyusb
 wxPython
-ezdxf
+ezdxf>=0.14
 opencv-python-headless

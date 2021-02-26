@@ -74,7 +74,9 @@ class Controller(wx.Frame, Module):
         self.button_pause = wx.BitmapButton(
             self, wx.ID_ANY, icons8_pause_50.GetBitmap()
         )
-        self.button_stop = wx.BitmapButton(self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap())
+        self.button_stop = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
+        )
 
         self.__set_properties()
         self.__do_layout()

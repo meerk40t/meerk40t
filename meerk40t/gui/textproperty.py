@@ -265,20 +265,20 @@ class TextProperty(wx.Frame, Module):
             if color is not None:
                 self.element.stroke = color
                 self.element.values[SVG_ATTR_STROKE] = color.hex
-                self.element.altered()
+                self.element.node.altered()
             else:
                 self.element.stroke = Color("none")
                 self.element.values[SVG_ATTR_STROKE] = "none"
-                self.element.altered()
+                self.element.node.altered()
         elif "fill" in button.name:
             if color is not None:
                 self.element.fill = color
                 self.element.values[SVG_ATTR_FILL] = color.hex
-                self.element.altered()
+                self.element.node.altered()
             else:
                 self.element.fill = Color("none")
                 self.element.values[SVG_ATTR_FILL] = "none"
-                self.element.altered()
+                self.element.node.altered()
         self.update_label()
         self.refresh()
         event.Skip()

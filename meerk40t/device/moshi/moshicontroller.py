@@ -31,7 +31,6 @@ def get_code_string_from_moshicode(code):
 
 
 class MoshiController(Module):
-
     def __init__(self, context, name, channel=None, *args, **kwargs):
         Module.__init__(self, context, name, channel)
         self.state = STATE_UNKNOWN
@@ -250,7 +249,8 @@ class MoshiController(Module):
         """
         if self._thread is None or not self._thread.is_alive():
             self._thread = self.context.threaded(
-                self._thread_data_send, thread_name="MoshiPipe(%s)" % (self.context._path)
+                self._thread_data_send,
+                thread_name="MoshiPipe(%s)" % (self.context._path),
             )
             self.update_state(STATE_INITIALIZE)
 
@@ -381,20 +381,20 @@ class MoshiController(Module):
             if queue_processed:
                 # Packet was sent.
                 if self.state not in (
-                        STATE_PAUSE,
-                        STATE_BUSY,
-                        STATE_ACTIVE,
-                        STATE_TERMINATE,
+                    STATE_PAUSE,
+                    STATE_BUSY,
+                    STATE_ACTIVE,
+                    STATE_TERMINATE,
                 ):
                     self.update_state(STATE_ACTIVE)
                 self.count = 0
             else:
                 # No packet could be sent.
                 if self.state not in (
-                        STATE_PAUSE,
-                        STATE_BUSY,
-                        STATE_BUSY,
-                        STATE_TERMINATE,
+                    STATE_PAUSE,
+                    STATE_BUSY,
+                    STATE_BUSY,
+                    STATE_TERMINATE,
                 ):
                     self.update_state(STATE_IDLE)
                 if self.count > 50:
@@ -498,7 +498,11 @@ class MoshiController(Module):
         else:
             self._status = self.driver.get_status()
         if self.context is not None:
-            self.context.signal("pipe;status", self._status, get_code_string_from_moshicode(self._status[1]))
+            self.context.signal(
+                "pipe;status",
+                self._status,
+                get_code_string_from_moshicode(self._status[1]),
+            )
             self.recv_channel(str(self._status))
 
     def wait_until_accepting_packets(self):

@@ -9,8 +9,6 @@ import wx
 from ..kernel import Module, STATE_UNKNOWN
 from .icons import (
     icons8_administrative_tools_50,
-    icons8_down,
-    icons8up,
     icons8_plus_50,
     icons8_trash_50,
     icons8_manager_50,
@@ -48,12 +46,6 @@ class DeviceManager(wx.Frame, Module):
         self.device_properties_button = wx.BitmapButton(
             self, wx.ID_ANY, icons8_administrative_tools_50.GetBitmap()
         )
-        # self.move_item_up_button = wx.BitmapButton(
-        #     self, wx.ID_ANY, icons8up.GetBitmap()
-        # )
-        # self.move_item_down_button = wx.BitmapButton(
-        #     self, wx.ID_ANY, icons8_down.GetBitmap()
-        # )
 
         self.__set_properties()
         self.__do_layout()
@@ -70,8 +62,6 @@ class DeviceManager(wx.Frame, Module):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_properties, self.device_properties_button
         )
-        # self.Bind(wx.EVT_BUTTON, self.on_button_up, self.move_item_up_button)
-        # self.Bind(wx.EVT_BUTTON, self.on_button_down, self.move_item_down_button)
         # end wxGlade
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
@@ -135,10 +125,6 @@ class DeviceManager(wx.Frame, Module):
         self.device_properties_button.SetSize(
             self.device_properties_button.GetBestSize()
         )
-        # self.move_item_up_button.SetToolTip(_("Move device up"))
-        # self.move_item_up_button.SetSize(self.move_item_up_button.GetBestSize())
-        # self.move_item_down_button.SetToolTip(_("Move device down"))
-        # self.move_item_down_button.SetSize(self.move_item_down_button.GetBestSize())
         # end wxGlade
 
     def __do_layout(self):
@@ -149,8 +135,6 @@ class DeviceManager(wx.Frame, Module):
         button_sizer.Add(self.new_device_button, 0, 0, 0)
         button_sizer.Add(self.remove_device_button, 0, 0, 0)
         button_sizer.Add(self.device_properties_button, 0, 0, 0)
-        # button_sizer.Add(self.move_item_up_button, 0, 0, 0)
-        # button_sizer.Add(self.move_item_down_button, 0, 0, 0)
         main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
@@ -257,11 +241,3 @@ class DeviceManager(wx.Frame, Module):
         uid = self.devices_list.GetItem(item).Text
         context = self.context.get_context("/%s" % uid)
         context.open("window/Preferences", self)
-
-    def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>
-        print("Event handler 'on_button_up' not implemented!")
-        event.Skip()
-
-    def on_button_down(self, event):  # wxGlade: DeviceManager.<event_handler>
-        print("Event handler 'on_button_down' not implemented!")
-        event.Skip()

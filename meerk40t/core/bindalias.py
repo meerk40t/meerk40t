@@ -115,7 +115,10 @@ class BindAlias(Modifier):
             try:
                 self.context.open_as("module/TCPServer", "console-server", port=port)
                 send = self.context.channel("console-server/send")
-                send.greet = "%s %s Telnet Console.\r\n" % (self.context._kernel.name, self.context._kernel.version)
+                send.greet = "%s %s Telnet Console.\r\n" % (
+                    self.context._kernel.name,
+                    self.context._kernel.version,
+                )
                 send.line_end = "\r\n"
                 recv = self.context.channel("console-server/recv")
                 recv.watch(self.context.console)
@@ -186,6 +189,9 @@ class BindAlias(Modifier):
         self.keymap["control+r"] = "rect 0 0 1000 1000"
         self.keymap["control+e"] = "circle 500 500 500"
         self.keymap["control+d"] = "element copy"
+        self.keymap["control+o"] = "outline"
+        self.keymap["control+shift+o"] = "outline 1mm"
+        self.keymap["control+alt+o"] = "outline -1mm"
         self.keymap["control+shift+h"] = "scale -1 1"
         self.keymap["control+shift+v"] = "scale 1 -1"
         self.keymap["control+1"] = "bind 1 move $x $y"

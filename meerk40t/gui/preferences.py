@@ -109,6 +109,13 @@ class Preferences(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_bedheight, self.spin_bedheight)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_autolock, self.checkbox_autolock)
         # end wxGlade
+        self.Bind(
+            wx.EVT_KEY_DOWN,
+            lambda e: context.console("webhelp help\n")
+            if e.GetKeyCode() == wx.WXK_F1
+            else None,
+            self,
+        )
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):

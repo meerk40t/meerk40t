@@ -16,7 +16,7 @@ from ..svgelements import (
     QuadraticBezier,
     CubicBezier,
     Arc,
-    Matrix
+    Matrix,
 )
 from .zmatrix import ZMatrix
 
@@ -49,6 +49,8 @@ def swizzlecolor(c):
         return None
     if isinstance(c, int):
         c = Color(c)
+    if c.value is None:
+        return None
     return c.blue << 16 | c.green << 8 | c.red
 
 
@@ -162,7 +164,7 @@ class LaserRender:
             sw = 1.0
         if sw is None:
             sw = 1.0
-        limit = zoomscale ** .5
+        limit = zoomscale ** 0.5
         limit /= width_scale
         if sw < limit:
             sw = limit
@@ -233,6 +235,18 @@ class LaserRender:
                     )
                 element.font_size = 1  # No zero sized fonts.
             font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            try:
+                f = []
+                if element.font_family is not None:
+                    f.append(str(element.font_family))
+                if element.font_face is not None:
+                    f.append(str(element.font_face))
+                if element.font_weight is not None:
+                    f.append(str(element.font_weight))
+                f.append("%d" % element.font_size)
+                font.SetNativeFontInfoUserDesc(" ".join(f))
+            except:
+                pass
             element.wxfont = font
 
         gc.PushState()
@@ -332,8 +346,6 @@ class LaserRender:
         bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
-        dc.SetBackground(wx.WHITE_BRUSH)
-        dc.Clear()
 
         matrix = Matrix()
         matrix.post_translate(-xmin, -ymin)
@@ -347,6 +359,8 @@ class LaserRender:
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if not isinstance(elements, (list, tuple)):
             elements = [elements]
+        gc.SetBrush(wx.WHITE_BRUSH)
+        gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
         self.render(elements, gc, draw_mode=DRAW_MODE_CACHE)
         img = bmp.ConvertToImage()
         buf = img.GetData()

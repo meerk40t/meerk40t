@@ -131,12 +131,16 @@ class LhystudioController(Module):
         self.is_shutdown = False
 
         self._thread = None
-        self._buffer = bytearray()  # Threadsafe buffered commands to be sent to controller.
+        self._buffer = (
+            bytearray()
+        )  # Threadsafe buffered commands to be sent to controller.
         self._realtime_buffer = (
-             bytearray()  # Threadsafe realtime buffered commands to be sent to the controller.
+            bytearray()  # Threadsafe realtime buffered commands to be sent to the controller.
         )
         self._queue = bytearray()  # Thread-unsafe additional commands to append.
-        self._preempt = bytearray()  # Thread-unsafe preempt commands to prepend to the buffer.
+        self._preempt = (
+            bytearray()
+        )  # Thread-unsafe preempt commands to prepend to the buffer.
         self.context._buffer_size = 0
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
@@ -226,8 +230,10 @@ class LhystudioController(Module):
                     f.write("Document type : LHYMICRO-GL file\n")
                     f.write("File version: 1.0.01\n")
                     f.write("Copyright: Unknown\n")
-                    f.write("Creator-Software: %s v%s\n" % (self.context._kernel.name,
-                                                            self.context._kernel.version))
+                    f.write(
+                        "Creator-Software: %s v%s\n"
+                        % (self.context._kernel.name, self.context._kernel.version)
+                    )
                     f.write("\n")
                     f.write("%0%0%0%0%\n")
                     buffer = bytes(self._buffer)
@@ -781,7 +787,9 @@ class LhystudioController(Module):
         else:
             self._status = self.driver.get_status()
         if self.context is not None:
-            self.context.signal("pipe;status", self._status, get_code_string_from_code(self._status[1]))
+            self.context.signal(
+                "pipe;status", self._status, get_code_string_from_code(self._status[1])
+            )
             self.recv_channel(str(self._status))
 
     def wait_until_accepting_packets(self):
