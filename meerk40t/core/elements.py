@@ -10,7 +10,7 @@ from ..svgelements import (Angle, Arc, Circle, Close, Color, CubicBezier,
                            Point, Polygon, Polyline, QuadraticBezier, Rect,
                            Shape, SimpleLine, SVGElement, SVGImage, SVGText)
 from .cutcode import (ArcCut, CubicCut, CutCode, LaserSettings, LineCut,
-                      QuadCut, RasterCut, SimpleLine)
+                      QuadCut, RasterCut)
 
 
 def plugin(kernel, lifecycle=None):
@@ -970,12 +970,11 @@ class Elemental(Modifier):
             channel(_("----------"))
             channel(_("Graphical Elements:"))
             i = 0
-            for n in self.elems():
-                e = n.object
+            for e in self.elems():
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "..."
-                if n.node.emphasized:
+                if e.node.emphasized:
                     channel("%d: * %s" % (i, name))
                 else:
                     channel("%d: %s" % (i, name))

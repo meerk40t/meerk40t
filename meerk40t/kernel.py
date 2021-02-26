@@ -587,6 +587,7 @@ class Kernel:
             process=self._console_job_tick,
             interval=0.05,
         )
+        self._current_directory = "."
         self._console_buffer = ""
         self.queue = []
         self._console_channel = self.channel("console")
@@ -2076,6 +2077,55 @@ class Kernel:
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()
             return
+
+        @self.console_command(
+            ("ls", "dir"), help="list directory"
+        )
+        def ls(command, channel, _, args=tuple(), **kwargs):
+            import os
+            for f in os.listdir(self._current_directory):
+                channel(str(f))
+
+        @self.console_argument("directory")
+        @self.console_command(
+            "cd", help="change directory"
+        )
+        def cd(command, channel, _, directory=None, args=tuple(), **kwargs):
+            import os
+            if directory == "~":
+                self._current_directory = "."
+                channel(_("Working directory"))
+                return
+            if directory == "@":
+                import sys
+                if hasattr(sys, "_MEIPASS"):
+                    self._current_directory = sys._MEIPASS
+                    channel(_("Internal Directory"))
+                    return
+                else:
+                    channel(_("No internal directory."))
+                    return
+            new_dir = os.path.join(self._current_directory, directory)
+            if not os.path.exists(new_dir):
+                channel(_("No such directory."))
+                return
+            self._current_directory = new_dir
+            channel(os.path.abspath(new_dir))
+
+        @self.console_argument("filename")
+        @self.console_command(
+            "load", help="load file", input_type=None, output_type="file"
+        )
+        def load(command, channel, _, filename=None, args=tuple(), **kwargs):
+            import os
+            new_file = os.path.join(self._current_directory, filename)
+            if not os.path.exists(new_file):
+                channel(_("No such file."))
+                return
+
+            self.get_context("/").load(new_file)
+            channel(_("loading..."))
+            return "file", new_file
 
     def console(self, data):
         """
