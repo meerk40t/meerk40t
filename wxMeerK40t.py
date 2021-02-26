@@ -358,13 +358,18 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.Append(ID_MENU_SPOOLER, _("Job Spooler"), "")
         wxglade_tmp_menu.Append(ID_MENU_JOB, _("Execute Job"), "")
 
-        self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
+        self.main_menubar.Append(wxglade_tmp_menu, _("Tools"))
 
         wxglade_tmp_menu = wx.Menu()
         wxglade_tmp_menu.Append(wx.ID_HELP, _("Help"), "")
         wxglade_tmp_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
         wxglade_tmp_menu.Append(wx.ID_ABOUT, _("About"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
+
+        from sys import platform
+        if platform == "darwin":
+            wxglade_tmp_menu = wx.Menu()
+            self.main_menubar.Append(wxglade_tmp_menu, "Window")
 
         self.SetMenuBar(self.main_menubar)
         # Menu Bar end
