@@ -540,7 +540,9 @@ class MeerK40t(wx.Frame, Module):
         self._shift_down = False
 
     def add_language_menu(self):
-        if os.path.exists(resource_path('./locale')):
+        tl = wx.FileTranslationsLoader()
+        trans = tl.GetAvailableTranslations("meerk40t")
+        if trans:
             wxglade_tmp_menu = wx.Menu()
             i = 0
             for lang in supported_languages:
@@ -553,7 +555,7 @@ class MeerK40t(wx.Frame, Module):
                     return lambda e: self.device.device_root.app.update_language(q)
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
-                if not os.path.exists(resource_path('./locale/%s' % language_code)) and i != 0:
+                if language_code not in trans and i != 0:
                     m.Enable(False)
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
@@ -3160,6 +3162,7 @@ class wxMeerK40t(wx.App, Module):
 
         device.run_later = self.run_later
         device.translation = wx.GetTranslation
+
         device.set_config(wx.Config("MeerK40t"))
         device.app = self  # Registers self as kernel.app
         device.setting(int, 'language', None)
