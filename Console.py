@@ -18,6 +18,7 @@ class Console(Module, Pipe):
         self.laser_on = False
         self.dx = 0
         self.dy = 0
+        self._current_directory = "."
 
     def initialize(self, channel=None):
         self.device.listen('interpreter;mode', self.on_mode_change)
@@ -25,6 +26,7 @@ class Console(Module, Pipe):
         self.device.setting(int, "bed_height", 200)
         self.channel = self.device.channel_open('console')
         self.active_device = self.device
+
 
     def finalize(self, channel=None):
         self.device.unlisten('interpreter;mode', self.on_mode_change)
@@ -2188,6 +2190,10 @@ class Console(Module, Pipe):
             active_device.signal('rebuild_tree')
             yield "Refreshed."
             return
+        elif command == 'ls':
+            import os
+            for f in os.listdir(self._current_directory):
+                yield str(f)
         elif command == 'shutdown':
             active_device.stop()
             return
