@@ -27,7 +27,6 @@ _cmd_parse = [
 _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
 
 
-
 class Modifier:
     """
     A modifier alters a context with additional functionality set during attachment and detachment.
@@ -548,7 +547,7 @@ class Kernel:
     of numbers.
     """
 
-    def __init__(self, name, version, profile, path='/', config=None):
+    def __init__(self, name, version, profile, path="/", config=None):
         self.name = name
         self.profile = profile
         self.version = version
@@ -1052,13 +1051,16 @@ class Kernel:
                     kwargs["args"] = remainder.split()
                 if output_type is None:
                     remainder = ""  # not chaining
-                returned = func(command, channel=channel, **ik, **kwargs)
+                returned = func(command=command, channel=channel, **ik, **kwargs)
                 if returned is None:
                     value = None
                     out_type = None
                 else:
                     if not isinstance(returned, tuple) or len(returned) != 2:
-                        raise ValueError('"%s" from command "%s" returned improper values. "%s"' % (str(returned), command, str(kwargs)))
+                        raise ValueError(
+                            '"%s" from command "%s" returned improper values. "%s"'
+                            % (str(returned), command, str(kwargs))
+                        )
                     out_type, value = returned
                 return value, remainder, out_type
 
@@ -1140,7 +1142,7 @@ class Kernel:
         while more:
             yield value
             more, value, index = self._config.GetNextGroup(index)
-        self._config.SetPath('/')
+        self._config.SetPath("/")
 
     def read_item_persistent(self, key):
         """Directly read from persistent storage the value of an item."""
@@ -1242,7 +1244,7 @@ class Kernel:
         while more:
             yield "%s/%s" % (path, value)
             more, value, index = self._config.GetNextEntry(index)
-        self._config.SetPath('/')
+        self._config.SetPath("/")
 
     def set_config(self, config):
         """
@@ -1512,13 +1514,15 @@ class Kernel:
                     except ValueError:
                         print("Value error removing: %s  %s" % (str(listeners), signal))
 
-        signal_channel = self.channel('signals')
+        signal_channel = self.channel("signals")
         for code, message in queue.items():
             if code in self.listeners:
                 listeners = self.listeners[code]
                 for listener in listeners:
                     listener(*message)
-                    signal_channel("%s: %s was sent %s" % (code, str(listener), str(message)))
+                    signal_channel(
+                        "%s: %s was sent %s" % (code, str(listener), str(message))
+                    )
             self.last_message[code] = message
         self._is_queue_processing = False
 
@@ -1558,11 +1562,20 @@ class Kernel:
     def command_boot(self):
         _ = self.translation
 
-        @self.console_option('output', 'o', help="Output type to match", type=str)
-        @self.console_option('input', 'i', help="Input type to match", type=str)
-        @self.console_argument('extended_help', type=str)
+        @self.console_option("output", "o", help="Output type to match", type=str)
+        @self.console_option("input", "i", help="Input type to match", type=str)
+        @self.console_argument("extended_help", type=str)
         @self.console_command(("help", "?"), hidden=True, help="help <help>")
-        def help(command, channel, _, extended_help, output=None, input=None, args=tuple(), **kwargs):
+        def help(
+            command,
+            channel,
+            _,
+            extended_help,
+            output=None,
+            input=None,
+            args=tuple(),
+            **kwargs
+        ):
             """
             'help' will display the list of accepted commands. Help <command> will provided extended help for
             that topic. Help can be sub-specified by output or input type.
@@ -1582,30 +1595,44 @@ class Kernel:
                         continue
                     help_args = []
                     for a in func.arguments:
-                        arg_name = a.get('name', '')
-                        arg_type = a.get('type', type(None)).__name__
+                        arg_name = a.get("name", "")
+                        arg_type = a.get("type", type(None)).__name__
                         help_args.append("<%s:%s>" % (arg_name, arg_type))
                     if found:
                         channel("\n")
                     if func.long_help is not None:
-                        channel("\t" + inspect.cleandoc(func.long_help).replace('\n', ' '))
+                        channel(
+                            "\t" + inspect.cleandoc(func.long_help).replace("\n", " ")
+                        )
                         channel("\n")
 
                     channel("\t%s %s" % (extended_help, " ".join(help_args)))
-                    channel("\t(%s) -> %s -> (%s)" % (input_type, extended_help, func.output_type))
+                    channel(
+                        "\t(%s) -> %s -> (%s)"
+                        % (input_type, extended_help, func.output_type)
+                    )
                     for a in func.arguments:
-                        arg_name = a.get('name', '')
-                        arg_type = a.get('type', type(None)).__name__
-                        arg_help = a.get('help')
-                        arg_help = ':\n\t\t%s' % arg_help if arg_help is not None else ''
-                        channel("\tArgument: %s '%s'%s" % (arg_type, arg_name, arg_help))
+                        arg_name = a.get("name", "")
+                        arg_type = a.get("type", type(None)).__name__
+                        arg_help = a.get("help")
+                        arg_help = (
+                            ":\n\t\t%s" % arg_help if arg_help is not None else ""
+                        )
+                        channel(
+                            "\tArgument: %s '%s'%s" % (arg_type, arg_name, arg_help)
+                        )
                     for b in func.options:
-                        opt_name = b.get('name', '')
-                        opt_short = b.get('short', '')
-                        opt_type = b.get('type', type(None)).__name__
-                        opt_help = b.get('help')
-                        opt_help = ':\n\t\t%s' % opt_help if opt_help is not None else ''
-                        channel("\tOption: %s ('--%s', '-%s')%s" % (opt_type, opt_name, opt_short, opt_help))
+                        opt_name = b.get("name", "")
+                        opt_short = b.get("short", "")
+                        opt_type = b.get("type", type(None)).__name__
+                        opt_help = b.get("help")
+                        opt_help = (
+                            ":\n\t\t%s" % opt_help if opt_help is not None else ""
+                        )
+                        channel(
+                            "\tOption: %s ('--%s', '-%s')%s"
+                            % (opt_type, opt_name, opt_short, opt_help)
+                        )
                     found = True
                 if found:
                     return
@@ -1625,7 +1652,7 @@ class Kernel:
                 if output is not None and output != func.output_type:
                     continue
                 if previous_input_type != input_type:
-                    command_class = input_type if input_type != 'None' else _("Base")
+                    command_class = input_type if input_type != "None" else _("Base")
                     channel(_("--- %s Commands ---") % command_class)
                     previous_input_type = input_type
 
@@ -1918,7 +1945,9 @@ class Kernel:
         @self.console_command(
             "channel", help="channel [(open|close|save) <channel_name>]"
         )
-        def channel(command, channel, _, subcommand, channel_name, args=tuple(), **kwargs):
+        def channel(
+            command, channel, _, subcommand, channel_name, args=tuple(), **kwargs
+        ):
             if subcommand is None:
                 channel(_("----------"))
                 channel(_("Channels Active:"))
@@ -1951,10 +1980,8 @@ class Kernel:
                 from datetime import datetime
 
                 if self.console_channel_file is None:
-                    filename = (
-                        "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-                            date=datetime.now()
-                        )
+                    filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
+                        date=datetime.now()
                     )
                     channel(_("Opening file: %s") % filename)
                     self.console_channel_file = open(filename, "a")
@@ -2042,7 +2069,9 @@ class Kernel:
             last_path.flush()
             channel(_("Persistent settings force saved."))
 
-        @self.console_command(("quit", "shutdown"), help="quits meerk40t shutting down all processes")
+        @self.console_command(
+            ("quit", "shutdown"), help="quits meerk40t shutting down all processes"
+        )
         def shutdown(command, channel, _, args=tuple(), **kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()
@@ -2159,7 +2188,12 @@ class Kernel:
                         continue
                 try:
                     data, remainder, input_type = command_funct(
-                        command, remainder, channel, data=data, data_type=input_type, _=_
+                        command,
+                        remainder,
+                        channel,
+                        data=data,
+                        data_type=input_type,
+                        _=_,
                     )
                 except SyntaxError:
                     channel(_("Syntax Error: %s") % command_funct.help)

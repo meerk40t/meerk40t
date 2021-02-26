@@ -70,11 +70,16 @@ class Scene(Module):
 
     def initialize(self, *args, **kwargs):
         self.context.setting(int, "draw_mode", 0)
+        self.context.setting(bool, "mouse_zoom_invert", False)
+        self.context.setting(bool, "mouse_pan_invert", False)
+        self.context.setting(bool, "mouse_wheel_pan", False)
 
     def finalize(self, *args, **kwargs):
         elements = self.context.elements
-        for e in elements.elems():
-            elements.unregister(e)
+        for e in elements.elems_nodes():
+            e.unregister()
+        for op in elements.ops():
+            op.unregister()
 
     def signal(self, *args, **kwargs):
         self._signal_widget(self.widget_root, *args, **kwargs)
@@ -703,7 +708,7 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
-            obj.modified()
+            obj.node.modified()
         # elements.update_bounds([b[0], b[1], position[0], position[1]])
         self.scene.context.signal("refresh_scene", 0)
 
@@ -725,7 +730,7 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
-            obj.modified()
+            obj.node.modified()
         # elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
         self.scene.context.signal("refresh_scene", 0)
 
@@ -747,7 +752,7 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
             obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
-            obj.modified()
+            obj.node.modified()
         # elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
         self.scene.context.signal("refresh_scene", 0)
 
@@ -769,7 +774,7 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
             obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
-            obj.modified()
+            obj.node.modified()
         # elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
         self.scene.context.signal("refresh_scene", 0)
 
@@ -791,7 +796,7 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
             obj.transform.post_scale(scalex, scaley, self.right, self.top)
-            obj.modified()
+            obj.node.modified()
         # elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
         self.scene.context.signal("refresh_scene", 0)
 
@@ -807,7 +812,7 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
             obj.transform.post_scale(scalex, 1, self.left, self.top)
-            obj.modified()
+            obj.node.modified()
         # elements.update_bounds([b[0], b[1], position[0], b[3]])
         self.scene.context.signal("refresh_scene", 0)
 
@@ -823,7 +828,7 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
             obj.transform.post_scale(scalex, 1, self.right, self.top)
-            obj.modified()
+            obj.node.modified()
         # elements.update_bounds([position[0], b[1], b[2], b[3]])
         self.scene.context.signal("refresh_scene", 0)
 
@@ -839,7 +844,7 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
             obj.transform.post_scale(1, scaley, self.left, self.top)
-            obj.modified()
+            obj.node.modified()
 
         # elements.update_bounds([b[0], b[1], b[2], position[1]])
         self.scene.context.signal("refresh_scene", 0)
@@ -856,7 +861,7 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
             obj.transform.post_scale(1, scaley, self.left, self.bottom)
-            obj.modified()
+            obj.node.modified()
         # elements.update_bounds([b[0], position[1], b[2], b[3]])
         self.scene.context.signal("refresh_scene", 0)
 
@@ -865,7 +870,7 @@ class SelectionWidget(Widget):
         b = elements.bounds()
         for obj in elements.elems(emphasized=True):
             obj.transform.post_translate(dx, dy)
-            obj.modified()
+            obj.node.modified()
         self.translate(dx, dy)
         # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.context.signal("refresh_scene", 0)
@@ -955,16 +960,16 @@ class RectSelectWidget(Widget):
                         and sx <= xmax <= ex
                         and sy <= ymax <= ey
                     ):
-                        obj.emphasize()
+                        obj.node.emphasized = True
                     else:
-                        obj.unemphasize()
+                        obj.node.emphasized = False
                 else:
                     if (sx <= xmin <= ex or sx <= xmax <= ex) and (
                         sy <= ymin <= ey or sy <= ymax <= ey
                     ):
-                        obj.emphasize()
+                        obj.node.emphasized = True
                     else:
-                        obj.unemphasize()
+                        obj.node.emphasized = False
             self.scene.context.signal("refresh_scene", 0)
             self.start_location = None
             self.end_location = None
@@ -1201,19 +1206,88 @@ class SceneSpaceWidget(Widget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "hover":
             return RESPONSE_CHAIN
-        if event_type == "wheelup":
+        if event_type == "wheelup" and self.scene.context.mouse_wheel_pan:
+            if self.scene.context.mouse_pan_invert:
+                self.scene_widget.matrix.post_translate(0, 25)
+            else:
+                self.scene_widget.matrix.post_translate(0, -25)
+        elif event_type == "wheeldown" and self.scene.context.mouse_wheel_pan:
+            if self.scene.context.mouse_pan_invert:
+                self.scene_widget.matrix.post_translate(0, -25)
+            else:
+                self.scene_widget.matrix.post_translate(0, 25)
+        elif event_type == "wheelup" or event_type == "wheelup_ctrl":
+            if self.scene.context.mouse_zoom_invert:
+                self.scene_widget.matrix.post_scale(
+                    1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1]
+                )
+            else:
+                self.scene_widget.matrix.post_scale(
+                    1.1, 1.1, space_pos[0], space_pos[1]
+                )
+            self.scene.context.signal("refresh_scene", 0)
+            return RESPONSE_CONSUME
+        elif event_type == "zoom-in":
             self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
-        elif event_type == "wheeldown":
+        elif event_type == "wheeldown" or event_type == "wheeldown_ctrl":
+            if self.scene.context.mouse_zoom_invert:
+                self.scene_widget.matrix.post_scale(
+                    1.1, 1.1, space_pos[0], space_pos[1]
+                )
+            else:
+                self.scene_widget.matrix.post_scale(
+                    1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1]
+                )
+            self.scene.context.signal("refresh_scene", 0)
+            return RESPONSE_CONSUME
+        elif event_type == "zoom-out":
             self.scene_widget.matrix.post_scale(
                 1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1]
             )
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
+        elif event_type == "wheelleft":
+            if self.scene.context.mouse_pan_invert:
+                self.scene_widget.matrix.post_translate(25, 0)
+            else:
+                self.scene_widget.matrix.post_translate(-25, 0)
+            self.scene.context.signal("refresh_scene", 0)
+            return RESPONSE_CONSUME
+        elif event_type == "wheelright":
+            if self.scene.context.mouse_pan_invert:
+                self.scene_widget.matrix.post_translate(-25, 0)
+            else:
+                self.scene_widget.matrix.post_translate(25, 0)
+            self.scene.context.signal("refresh_scene", 0)
+            return RESPONSE_CONSUME
         elif event_type == "middledown":
             return RESPONSE_CONSUME
         elif event_type == "middleup":
+            return RESPONSE_CONSUME
+        elif event_type == "gesture-start":
+            self._previous_zoom = 1.0
+            return RESPONSE_CONSUME
+        elif event_type == "gesture-end":
+            self._previous_zoom = None
+            return RESPONSE_CONSUME
+        elif str(event_type).startswith("zoom"):
+            if self._previous_zoom is None:
+                return RESPONSE_CONSUME
+            try:
+                zoom = float(event_type.split(" ")[1])
+            except:
+                return RESPONSE_CONSUME
+
+            zoom_change = zoom / self._previous_zoom
+            self.scene_widget.matrix.post_scale(
+                zoom_change, zoom_change, space_pos[0], space_pos[1]
+            )
+            self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
+            self._previous_zoom = zoom
+            self.scene.context.signal("refresh_scene", 0)
+
             return RESPONSE_CONSUME
         self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
         self.scene.context.signal("refresh_scene", 0)

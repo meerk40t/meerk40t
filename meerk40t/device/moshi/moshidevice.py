@@ -1,4 +1,3 @@
-
 from .moshiinterpreter import MoshiInterpreter
 from .moshicontroller import MoshiController
 from ..lasercommandconstants import *
@@ -27,7 +26,6 @@ The device is primary composed of three main modules.
 
 
 class MoshiDevice(Modifier):
-
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         context.device_name = "Moshi"
@@ -79,10 +77,10 @@ class MoshiDevice(Modifier):
         context = self.context
         kernel = context._kernel
 
-        @context.console_argument("amount", type=Length, help="amount to move in the set direction.")
-        @context.console_command(
-            ("left", "right", "up", "down"), help="cmd <amount>"
+        @context.console_argument(
+            "amount", type=Length, help="amount to move in the set direction."
         )
+        @context.console_command(("left", "right", "up", "down"), help="cmd <amount>")
         def direction(command, channel, _, amount=None, args=tuple(), **kwargs):
             active = kernel.active_device
             spooler = active.spooler
@@ -95,21 +93,13 @@ class MoshiDevice(Modifier):
             max_bed_height = active.bed_height * 39.3701
             max_bed_width = active.bed_width * 39.3701
             if command.endswith("right"):
-                self.dx += amount.value(
-                    ppi=1000.0, relative_length=max_bed_width
-                )
+                self.dx += amount.value(ppi=1000.0, relative_length=max_bed_width)
             elif command.endswith("left"):
-                self.dx -= amount.value(
-                    ppi=1000.0, relative_length=max_bed_width
-                )
+                self.dx -= amount.value(ppi=1000.0, relative_length=max_bed_width)
             elif command.endswith("up"):
-                self.dy -= amount.value(
-                    ppi=1000.0, relative_length=max_bed_height
-                )
+                self.dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
             elif command.endswith("down"):
-                self.dy += amount.value(
-                    ppi=1000.0, relative_length=max_bed_height
-                )
+                self.dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
             kernel._console_queue("jog")
 
         @context.console_command(
@@ -192,9 +182,7 @@ class MoshiDevice(Modifier):
         context.activate("modifier/Spooler")
 
         context.listen("interpreter;mode", self.on_mode_change)
-        context.signal(
-            "bed_size", (context.bed_width, context.bed_height)
-        )
+        context.signal("bed_size", (context.bed_width, context.bed_height))
 
     def detach(self, *args, **kwargs):
         self.context.unlisten("interpreter;mode", self.on_mode_change)

@@ -7193,7 +7193,7 @@ class Group(SVGElement, Transformable, list):
         """
         boundary_points = []
         for e in self.select():
-            if not hasattr(e, 'bbox'):
+            if not hasattr(e, "bbox"):
                 continue
             box = e.bbox(False)
             if box is None:

@@ -3,7 +3,7 @@ from __future__ import print_function
 import unittest
 
 from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode, QuadCut
-from meerk40t.core.laseroperation import LaserOperation
+from meerk40t.core.elements import LaserOperation
 from meerk40t.svgelements import Point, Path
 
 

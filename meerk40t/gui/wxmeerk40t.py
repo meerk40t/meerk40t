@@ -24,7 +24,7 @@ from .bufferview import BufferView
 from .camerainteface import CameraInterface
 from .controller import Controller
 from ..core.cutplanner import CutPlanner
-from ..core.laseroperation import LaserOperation, CommandOperation
+from ..core.elements import LaserOperation, CommandOperation
 from .devicemanager import DeviceManager
 from .icons import (
     icons8_emergency_stop_button_50,
@@ -144,8 +144,6 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
-MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
 
 def plugin(kernel, lifecycle):
@@ -202,7 +200,8 @@ ID_TERMINAL = idinc.new()
 ID_ROTARY = idinc.new()
 ID_RASTER = idinc.new()
 
-ID_CUT_CONFIGURATION = idinc.new()
+ID_HOMEPAGE = idinc.new()
+
 ID_SELECT = idinc.new()
 
 ID_MENU_IMPORT = idinc.new()
@@ -303,8 +302,8 @@ class MeerK40t(wx.Frame, Module, Job):
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
         self.working_file = None
-        self.tree = wx.TreeCtrl(
-            self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS
+        self.wxtree = wx.TreeCtrl(
+            self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS
         )
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
@@ -362,7 +361,7 @@ class MeerK40t(wx.Frame, Module, Job):
             .CaptionVisible(False),
         )
         self._mgr.AddPane(
-            self.tree,
+            self.wxtree,
             aui.AuiPaneInfo()
             .CloseButton(False)
             .Left()
@@ -396,24 +395,46 @@ class MeerK40t(wx.Frame, Module, Job):
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
-        self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+
+        try:
+            self.scene.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
+            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
+            self.scene.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
+            self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
+            self.tree.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
+            self.tree.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
+        except AttributeError:
+            # Not WX 4.1
+            pass
+
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.scene.SetFocus()
         self.widget_scene = None
         self.pipe_state = None
 
-        self.root = ShadowTree(self.context, self, self.context.elements._tree)
-        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
+        self.shadow_tree = ShadowTree(self.context, self, self.context.elements._tree)
         self.Bind(
-            wx.EVT_TREE_SEL_CHANGED, self.root.on_item_selection_changed, self.tree
+            wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
         )
         self.Bind(
-            wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree
+            wx.EVT_TREE_END_DRAG, self.shadow_tree.on_drag_end_handler, self.wxtree
+        )
+        self.Bind(
+            wx.EVT_TREE_ITEM_ACTIVATED, self.shadow_tree.on_item_activated, self.wxtree
+        )
+        self.Bind(
+            wx.EVT_TREE_SEL_CHANGED,
+            self.shadow_tree.on_item_selection_changed,
+            self.wxtree,
+        )
+        self.Bind(
+            wx.EVT_TREE_ITEM_RIGHT_CLICK,
+            self.shadow_tree.on_item_right_click,
+            self.wxtree,
         )
 
         self.__set_titlebar()
@@ -423,6 +444,10 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.Show()
         self.context.schedule(self)
+
+        self._rotary_view = False
+        self._has_modifiers = False
+        self._shift_down = False
 
     @property
     def is_dark(self):
@@ -468,18 +493,12 @@ class MeerK40t(wx.Frame, Module, Job):
         if context.window_height < 300:
             context.window_height = 300
 
-        context.listen("element_added", self.on_rebuild_tree_request)
-        context.listen("operation_added", self.on_rebuild_tree_request)
-        context.listen("element_removed", self.on_rebuild_tree_request)
-        context.listen("operation_removed", self.on_rebuild_tree_request)
         context.listen("units", self.space_changed)
-        context.listen("emphasized", self.on_emphasized_elements_changed)
-        context.listen("modified", self.on_element_modified)
-        context.listen("altered", self.on_element_alteration)
 
         context.listen("export-image", self.on_export_signal)
         context.listen("background", self.on_background_signal)
         context.listen("rebuild_tree", self.on_rebuild_tree_signal)
+        context.listen("refresh_tree", self.request_refresh)
         context.listen("refresh_scene", self.on_refresh_scene)
         context.listen("element_property_update", self.on_element_update)
         context.setting(int, "bed_width", 310)  # Default Value
@@ -489,11 +508,13 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.widget_scene = context.open("module/Scene")
 
-        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
+        self.widget_scene.add_scenewidget(
+            SelectionWidget(self.widget_scene, self.shadow_tree)
+        )
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(
-            ElementsWidget(self.widget_scene, self.root, self.renderer)
+            ElementsWidget(self.widget_scene, self.shadow_tree, self.renderer)
         )
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
@@ -566,7 +587,7 @@ class MeerK40t(wx.Frame, Module, Job):
             else:
                 if args[0] == "open":
                     try:
-                        self.context.open("window/%s" % args[1], self)
+                        self.context.open("window/%s" % args[1], self, *args[2:])
                         channel(_("Window Opened."))
                     except KeyError:
                         channel(_("No such window as %s" % args[1]))
@@ -635,6 +656,10 @@ class MeerK40t(wx.Frame, Module, Job):
             wx.ID_ANY,
             _("" if self.is_dark else "Main"),
             style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
+        )
+        self.Bind(
+            RB.EVT_RIBBONBAR_HELP_CLICK,
+            lambda e: self.context.console("webhelp help\n"),
         )
         toolbar = RB.RibbonButtonBar(toolbar_panel)
         self.toolbar_button_bar = toolbar
@@ -1010,7 +1035,8 @@ class MeerK40t(wx.Frame, Module, Job):
         self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
 
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_HELP, _("Webpage"), "")
+        wxglade_tmp_menu.Append(wx.ID_HELP, _("Help"), "")
+        wxglade_tmp_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
         wxglade_tmp_menu.Append(wx.ID_ABOUT, _("About"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
 
@@ -1175,7 +1201,14 @@ class MeerK40t(wx.Frame, Module, Job):
             id=ID_MENU_SPOOLER,
         )
 
-        self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
+        self.Bind(
+            wx.EVT_MENU, lambda e: self.context.console("webhelp help\n"), id=wx.ID_HELP
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context.console("webhelp main\n"),
+            id=ID_HOMEPAGE,
+        )
 
         self.add_language_menu()
 
@@ -1302,19 +1335,13 @@ class MeerK40t(wx.Frame, Module, Job):
         context.unschedule(self)
         self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
 
-        context.unlisten("element_added", self.on_rebuild_tree_request)
-        context.unlisten("operation_added", self.on_rebuild_tree_request)
-        context.unlisten("element_removed", self.on_rebuild_tree_request)
-        context.unlisten("operation_removed", self.on_rebuild_tree_request)
         context.unlisten("units", self.space_changed)
-        context.unlisten("emphasized", self.on_emphasized_elements_changed)
-        context.unlisten("modified", self.on_element_modified)
-        context.unlisten("altered", self.on_element_alteration)
 
         context.unlisten("export-image", self.on_export_signal)
         context.unlisten("background", self.on_background_signal)
         context.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
         context.unlisten("refresh_scene", self.on_refresh_scene)
+        context.unlisten("refresh_tree", self.request_refresh)
         context.unlisten("element_property_update", self.on_element_update)
 
         context.unlisten("active", self.on_active_change)
@@ -1336,8 +1363,8 @@ class MeerK40t(wx.Frame, Module, Job):
         :param args:
         :return:
         """
-        if self.root is not None:
-            self.root.on_element_update(*args)
+        if self.shadow_tree is not None:
+            self.shadow_tree.on_element_update(*args)
 
     def on_rebuild_tree_request(self, *args):
         """
@@ -1349,6 +1376,9 @@ class MeerK40t(wx.Frame, Module, Job):
         """
         self.context.signal("rebuild_tree")
 
+    def on_refresh_tree_signal(self, *args):
+        self.request_refresh()
+
     def on_rebuild_tree_signal(self, *args):
         """
         Called by 'rebuild_tree' signal. To refresh tree directly
@@ -1357,11 +1387,11 @@ class MeerK40t(wx.Frame, Module, Job):
         :return:
         """
         if self.context.draw_mode & DRAW_MODE_TREE != 0:
-            self.root.gui.tree.Hide()
+            self.wxtree.Hide()
             return
         else:
-            self.root.gui.tree.Show()
-        self.root.rebuild_tree()
+            self.wxtree.Show()
+        self.shadow_tree.rebuild_tree()
         self.request_refresh()
 
     def on_refresh_scene(self, *args):
@@ -1446,7 +1476,7 @@ class MeerK40t(wx.Frame, Module, Job):
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
-        self.tree.SetMaxSize((275, -1))
+        self.wxtree.SetMaxSize((275, -1))
 
     def __do_layout(self):
         # main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1618,11 +1648,8 @@ class MeerK40t(wx.Frame, Module, Job):
     def on_emphasized_elements_changed(self, *args):
         self.update_ribbon_position()
         self.clear_laserpath()
-        self.root.select_in_tree_by_selected()
+        self.shadow_tree.select_in_tree_by_selected()
         self.request_refresh()
-
-    def on_element_alteration(self, *args):
-        self.context.signal("rebuild_tree")
 
     def on_element_modified(self, *args):
         self.update_ribbon_position()
@@ -1706,6 +1733,27 @@ class MeerK40t(wx.Frame, Module, Job):
         if self.scene.HasCapture():
             return
         rotation = event.GetWheelRotation()
+        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not self._shift_down:
+            if self._has_modifiers:
+                if rotation > 1:
+                    self.widget_scene.event(event.GetPosition(), "wheelup_ctrl")
+                elif rotation < -1:
+                    self.widget_scene.event(event.GetPosition(), "wheeldown_ctrl")
+            else:
+                if rotation > 1:
+                    self.widget_scene.event(event.GetPosition(), "wheelup")
+                elif rotation < -1:
+                    self.widget_scene.event(event.GetPosition(), "wheeldown")
+        else:
+            if rotation > 1:
+                self.widget_scene.event(event.GetPosition(), "wheelleft")
+            elif rotation < -1:
+                self.widget_scene.event(event.GetPosition(), "wheelright")
+
+    def on_mousewheel_zoom(self, event):
+        if self.scene.HasCapture():
+            return
+        rotation = event.GetWheelRotation()
         if self.context.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
@@ -1753,11 +1801,35 @@ class MeerK40t(wx.Frame, Module, Job):
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), "rightup")
 
+    def on_magnify_mouse(self, event):
+        magnify = event.GetMagnification()
+        if magnify > 0:
+            self.widget_scene.event(event.GetPosition(), "zoom-in")
+        if magnify < 0:
+            self.widget_scene.event(event.GetPosition(), "zoom-out")
+
+    def on_gesture(self, event):
+        """
+        This code requires WXPython 4.1 and the bind will fail otherwise.
+        """
+        if event.IsGestureStart():
+            self.widget_scene.event(event.GetPosition(), "gesture-start")
+        elif event.IsGestureEnd():
+            self.widget_scene.event(event.GetPosition(), "gesture-end")
+        else:
+            try:
+                zoom = event.GetZoomFactor()
+            except AttributeError:
+                zoom = 1.0
+            self.widget_scene.event(event.GetPosition(), "zoom %f" % zoom)
+
     def on_focus_lost(self, event):
         self.context.console("-laser\nend\n")
         # event.Skip()
 
     def on_key_down(self, event):
+        self._shift_down = event.ShiftDown()
+        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.context.keymap
         if keyvalue in keymap:
@@ -1767,6 +1839,8 @@ class MeerK40t(wx.Frame, Module, Job):
             event.Skip()
 
     def on_key_up(self, event):
+        self._shift_down = event.ShiftDown()
+        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.context.keymap
         if keyvalue in keymap:
@@ -1954,7 +2028,6 @@ class MeerK40t(wx.Frame, Module, Job):
         context.elements.clear_all()
         self.clear_laserpath()
         self.request_refresh()
-        self.context.signal("rebuild_tree", 0)
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
@@ -2103,7 +2176,7 @@ class MeerK40t(wx.Frame, Module, Job):
                 for element in context_root.elements.elems():
                     try:
                         element *= mx
-                        element.modified()
+                        element.node.modified()
                     except AttributeError:
                         pass
 
@@ -2125,7 +2198,7 @@ class MeerK40t(wx.Frame, Module, Job):
             color = Color(color, 1.0)
             for elem in elements.elems(emphasized=True):
                 elem.fill = color
-                elem.altered()
+                elem.node.altered()
 
     def open_stroke_dialog(self):
         context = self.context
@@ -2145,7 +2218,7 @@ class MeerK40t(wx.Frame, Module, Job):
             color = Color(color, 1.0)
             for elem in elements.elems(emphasized=True):
                 elem.stroke = color
-                elem.altered()
+                elem.node.altered()
 
     def open_flip_dialog(self):
         dlg = wx.TextEntryDialog(
@@ -2168,7 +2241,7 @@ class MeerK40t(wx.Frame, Module, Job):
             for element in context.elements.elems(emphasized=True):
                 try:
                     element *= mx
-                    element.modified()
+                    element.node.modified()
                 except AttributeError:
                     pass
         dlg.Destroy()
@@ -2229,7 +2302,7 @@ class MeerK40t(wx.Frame, Module, Job):
         for element in kernel.elements.elems():
             try:
                 element *= mx
-                element.modified()
+                element.node.modified()
             except AttributeError:
                 pass
 
@@ -2323,17 +2396,6 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.context.spooler.job(home_dot_test)
 
-    def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Launch webpage
-
-        :param event:
-        :return:
-        """
-        import webbrowser
-
-        webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
-
 
 NODE_ROOT = 0
 NODE_OPERATION_BRANCH = 10
@@ -2353,46 +2415,70 @@ class ShadowTree:
     requested alterations to the elements.tree or the elements.elements or elements.operations and when those are
     reflected in the tree, the shadow tree is updated accordingly.
     """
+
     def __init__(self, context, gui, root):
         self.context = context
         self.element_root = root
         self.gui = gui
-        self.wxtree = gui.tree
+        self.wxtree = gui.wxtree
         self.renderer = gui.renderer
         self.dragging_node = None
         self.dragging_parent = None
         self.tree_images = None
         self.object = "Project"
         self.name = "Project"
-        self.type = NODE_ROOT
         self.context = context
         self.elements = context.elements
-        self.tree_lookup = None
+        self.elements.listen(self)
         self.do_not_select = False
-        self.context.signal("rebuild_tree")
-        self._rebuild_required = False
 
-    def notify_tree_data_change(self):
-        self._rebuild_required = True
-        self.context.signal("rebuild_tree", 0)
+    def node_removed(self, node):
+        self.wxtree.Delete(node.item)
+        for i in self.wxtree.GetSelections():
+            self.wxtree.SelectItem(i,False)
 
-    def notify_tree_data_cleared(self):
-        self._rebuild_required = True
-        self.context.signal("rebuild_tree", 0)
+    def node_added(self, node, **kwargs):
+        self.node_register(node, **kwargs)
+
+    def node_changed(self, node):
+        self.update_name(node)
+
+    def emphasized(self, node):
+        self.update_name(node)
+
+    def selected(self, node):
+        self.update_name(node)
+
+    def highlighted(self, node):
+        self.update_name(node)
+
+    def modified(self, node):
+        self.update_name(node)
+        try:
+            c = node.color
+            self.set_color(node, c)
+        except AttributeError:
+            pass
+        self.set_icon(node)
+
+    def altered(self, node):
+        self.update_name(node)
+        try:
+            c = node.color
+            self.set_color(node, c)
+        except AttributeError:
+            pass
+        self.set_icon(node)
 
     def on_element_update(self, *args):
         element = args[0]
-        try:
-            nodes = self.tree_lookup[id(element)]
-            for node in nodes:
+        for node in self.elements.elems_nodes():
+            if element is node.object or element is node:
                 self.update_name(node)
-        except KeyError:
-            pass
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
-        the proper values and contexts and icons. This will not happen for any elements currently within
-        a closed branch."""
+        the proper values and contexts and icons."""
         if node is None:
             node = self.element_root.item
         if node is None:
@@ -2402,7 +2488,7 @@ class ShadowTree:
         child, cookie = tree.GetFirstChild(node)
         while child.IsOk():
             child_node = self.wxtree.GetItemData(child)
-            element = child_node.object
+            element = child_node
             tree.SetItemBackgroundColour(child, None)
             try:
                 if element.highlighted:
@@ -2418,51 +2504,42 @@ class ShadowTree:
 
     def rebuild_tree(self):
         self.dragging_node = None
-        self._rebuild_required = False
-
         self.wxtree.DeleteAllItems()
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
-        self.tree_lookup = {}
         self.wxtree.SetImageList(self.tree_images)
         self.element_root.item = self.wxtree.AddRoot(self.name)
+        self.set_icon(
+            self.element_root, icon_meerk40t.GetBitmap(False, resize=(20, 20))
+        )
         self.build_tree(self.element_root)
-        node_operations = self.element_root.get_branch(NODE_OPERATION_BRANCH)
+        node_operations = self.element_root.get(type="branch ops")
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
-        for node in node_operations:
-            try:
-                op = node.object.operation
-            except AttributeError:
-                op = None
-            if op in ("Raster", "Image"):
-                self.set_icon(node, icons8_direction_20.GetBitmap(True))
-            else:
-                self.set_icon(node, icons8_laser_beam_20.GetBitmap(True))
-            try:
-                c = node.object.color
-                self.set_color(node, c)
-            except AttributeError:
-                pass
-        node_elements = self.element_root.get_branch(NODE_ELEMENTS_BRANCH)
+        for n in node_operations.children:
+            self.set_icon(n)
+        node_elements = self.element_root.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap(True))
 
-        node_files = self.element_root.get_branch(NODE_FILES_BRANCH)
-        self.set_icon(node_files, icons8_file_20.GetBitmap(True))
+        # node_files = self.element_root.get_branch(NODE_FILES_BRANCH)
+        # self.set_icon(node_files, icons8_file_20.GetBitmap(True))
 
-        for n in node_files:
-            self.set_icon(n, icons8_file_20.GetBitmap(True))
+        # for n in node_files.children:
+        #     self.set_icon(n, icons8_file_20.GetBitmap(True))
         self.wxtree.ExpandAll()
 
     def build_tree(self, parent_node):
-        for node in parent_node:
+        for node in parent_node._children:
             self.node_register(node)
             self.build_tree(node)
 
-    def node_register(self, node):
+    def node_register(self, node, pos=None, **kwargs):
         parent = node.parent
         parent_item = parent.item
         tree = self.wxtree
-        node.item = tree.AppendItem(parent_item, self.name)
+        if pos is None:
+            node.item = tree.AppendItem(parent_item, self.name)
+        else:
+            node.item = tree.InsertItem(parent_item, pos, self.name)
         tree.SetItemData(node.item, node)
         self.update_name(node)
         try:
@@ -2476,6 +2553,7 @@ class ShadowTree:
         except TypeError:
             pass
         self.set_icon(node)
+        self.context.signal("refresh_tree")
 
     def set_color(self, node, color=None):
         item = node.item
@@ -2500,14 +2578,28 @@ class ShadowTree:
                 )
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
-            if isinstance(data_object, (Path, SVGText)):
+            elif isinstance(data_object, (Path, SVGText)):
                 image = self.renderer.make_raster(
                     data_object, data_object.bbox(), width=20, height=20, bitmap=True
                 )
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-                    tree.Update()
+                    self.context.signal("refresh_tree")
+            elif isinstance(node, LaserOperation):
+                try:
+                    op = node.operation
+                except AttributeError:
+                    op = None
+                if op in ("Raster", "Image"):
+                    self.set_icon(node, icons8_direction_20.GetBitmap(True))
+                else:
+                    self.set_icon(node, icons8_laser_beam_20.GetBitmap(True))
+                try:
+                    c = node.color
+                    self.set_color(node, c)
+                except AttributeError:
+                    pass
         else:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
@@ -2533,21 +2625,8 @@ class ShadowTree:
         except AttributeError:
             pass
 
-    def remove_node(self, node):
-        for q in node:
-            q.remove_node()
-        root = self.element_root
-        links = root.tree_lookup[id(node.object)]
-        links.remove(node)
-        node.parent.remove(node)
-        try:
-            self.wxtree.Delete(node.item)
-        except RuntimeError:
-            return
-        root.notify_removed(node)
-
     def move_node(self, node, new_parent, pos=None):
-        tree = self.root.wxtree
+        tree = self.root.shadow_tree
         item = self.item
         image = tree.GetItemImage(item)
         data = tree.GetItemData(item)
@@ -2565,37 +2644,6 @@ class ShadowTree:
     def bbox(self, node):
         return CutPlanner.bounding_box(self.object)
 
-    def objects_of_children(self, node, types):
-        if isinstance(self.object, types):
-            yield self.object
-        for q in self:
-            for o in q.objects_of_children(types):
-                yield o
-
-    def contains_path(self, node):
-        if isinstance(self.object, Path):
-            return True
-        for q in self:
-            if q.contains_path():
-                return True
-        return False
-
-    def contains_image(self, node):
-        if isinstance(self.object, SVGImage):
-            return True
-        for q in self:
-            if q.contains_image():
-                return True
-        return False
-
-    def contains_text(self, node):
-        if isinstance(self.object, SVGText):
-            return True
-        for q in self:
-            if q.contains_text():
-                return True
-        return False
-
     def on_drag_begin_handler(self, event):
         """
         Drag handler begin for the tree.
@@ -2604,10 +2652,6 @@ class ShadowTree:
         :return:
         """
         self.dragging_node = None
-        if self._rebuild_required:
-            return  # Must rebuild tree between moves.
-
-        # drag_item = event.GetItem()
 
         pt = event.GetPoint()
         drag_item, _ = self.wxtree.HitTest(pt)
@@ -2622,13 +2666,7 @@ class ShadowTree:
             event.Skip()
             return
         node_data = self.wxtree.GetItemData(drag_item)
-        if (
-            node_data.type == NODE_ELEMENTS_BRANCH
-            or node_data.type == NODE_OPERATION_BRANCH
-            or node_data.type == NODE_FILES_BRANCH
-            or node_data.type == NODE_FILE_ELEMENT
-            or node_data.type == NODE_FILE_FILE
-        ):
+        if node_data.type in ("branch elems", "branch ops", "root"):
             event.Skip()
             return
         self.dragging_node = node_data
@@ -2659,22 +2697,21 @@ class ShadowTree:
             event.Skip()
             return
 
-        if drag_node.type == NODE_ELEMENT:
-            if drop_node.type == NODE_OPERATION:
+        if drag_node.type == "elem":
+            if drop_node.type == "op":
                 # Dragging element into operation adds that element to the op.
-                drop_node.object.insert(0, drag_node.object)
-                self.notify_tree_data_change()
+                drop_node.add_node(drag_node.object, pos=0)
                 event.Allow()
                 return
-            elif drop_node.type == NODE_ELEMENT:
+            elif drop_node.type == "elem":
                 # Dragging element into element.
                 if drag_node.parent is drop_node.parent:
                     # Dragging and dropping within the same parent puts insert on other side.
-                    drag_index = drag_node.parent.index(drag_node)
-                    drag_node.parent.object[drag_index] = None
-                    drop_index = drop_node.parent.index(drop_node)
+                    drag_index = drag_node.parent.children.index(drag_node)
+                    drop_index = drop_node.parent.children.index(drop_node)
                     if drag_index > drop_index:
-                        drop_node.parent.object.insert(drop_index, drag_node.object)
+                        # TODO: CORRECT.
+                        drop_node.parent.move_node.insert(drop_index, drag_node.object)
                     else:
                         drop_node.parent.object.insert(drop_index + 1, drag_node.object)
                 else:
@@ -2685,24 +2722,22 @@ class ShadowTree:
                     drop_node.parent.object.insert(drop_index, drag_node.object)
 
                 nodes = [n for n in drag_node.parent.object if n is not None]
-                drag_node.parent.object.clear()
+                drag_node.parent.object.clear()  # TODO: Correct
                 drag_node.parent.object.extend(nodes)
-                self.notify_tree_data_change()
                 event.Allow()
                 return
-            elif drop_node.type == NODE_OPERATION_ELEMENT:
+            elif drop_node.type == "opnode":
+                # TODO: Correct
                 drop_index = drop_node.parent.object.index(drop_node.object)
                 drop_node.parent.object.insert(drop_index, drag_node.object)
                 event.Allow()
-                self.notify_tree_data_change()
                 return
-            elif drop_node.type == NODE_OPERATION_BRANCH:
+            elif drop_node.type == "branch ops":
                 obj = drag_node.object
                 self.context.classify([obj])
                 event.Allow()
-                self.notify_tree_data_change()
-        elif drag_node.type == NODE_OPERATION_ELEMENT:
-            if drop_node.type == NODE_OPERATION:
+        elif drag_node.type == "opnode":
+            if drop_node.type == "op":
                 # Dragging from op element to operation.
                 drag_index = drag_node.parent.index(drag_node)
                 drag_node.parent.object[drag_index] = None
@@ -2712,12 +2747,12 @@ class ShadowTree:
                     for op_elem in drag_node.parent.object
                     if op_elem is not None
                 ]
+                # TODO: Correct
                 drag_node.parent.object.clear()
                 drag_node.parent.object.extend(nodes)
                 event.Allow()
-                self.notify_tree_data_change()
                 return
-            if drop_node.type == NODE_OPERATION_ELEMENT:
+            if drop_node.type == "opnode":
                 if drag_node.parent is drop_node.parent:
                     # Dragging and dropping within the same parent puts insert on other side.
                     drag_index = drag_node.parent.index(drag_node)
@@ -2735,14 +2770,14 @@ class ShadowTree:
                     drop_node.parent.object.insert(drop_index, drag_node.object)
 
                 nodes = [n for n in drag_node.parent.object if n is not None]
+                # TODO: Correct
                 drag_node.parent.object.clear()
                 drag_node.parent.object.extend(nodes)
 
                 event.Allow()
-                self.notify_tree_data_change()
                 return
-        elif drag_node.type == NODE_OPERATION:
-            if drop_node.type == NODE_OPERATION:
+        elif drag_node.type == "op":
+            if drop_node.type == "op":
                 # Dragging operation to different operation.
                 ops = drop_node.parent
                 drop_pos = ops.index(drop_node)
@@ -2754,12 +2789,12 @@ class ShadowTree:
                     ops.object.insert(drop_pos + 1, drag_node.object)
 
                 nodes = [n for n in ops.object if n is not None]
+                # TODO: Correct
                 ops.object.clear()
                 ops.object.extend(nodes)
                 event.Allow()
-                self.notify_tree_data_change()
                 return
-            elif drop_node.type == NODE_OPERATION_BRANCH:
+            elif drop_node.type == "branch ops":
                 # Dragging operation to op branch.
                 pass
 
@@ -2775,7 +2810,7 @@ class ShadowTree:
             return
         node = self.wxtree.GetItemData(item)
 
-        self.root.create_menu(self.gui, node)
+        self.create_menu(self.gui, node)
 
     def on_item_activated(self, event):
         """
@@ -2819,7 +2854,7 @@ class ShadowTree:
         if self.do_not_select:
             return
         selected = [
-            self.wxtree.GetItemData(item).object for item in self.wxtree.GetSelections()
+            self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
         self.elements.set_selected(selected)
         self.refresh_tree()
@@ -2831,17 +2866,8 @@ class ShadowTree:
         :return:
         """
         self.do_not_select = True
-        for e in self.elements.elems():
-            try:
-                nodes = self.tree_lookup[id(e)]
-                for n in nodes:
-                    if n.type == NODE_ELEMENT:
-                        self.wxtree.SelectItem(n.item, e.selected)
-            except (KeyError, TypeError):
-                self.context.signal("rebuild_tree", 0)
-                break
-        self.refresh_tree()
-        self.gui.request_refresh()
+        for e in self.elements.elems_nodes():
+            self.wxtree.SelectItem(e.item, e.selected)
         self.do_not_select = False
 
     def contains(self, box, x, y=None):
@@ -2860,872 +2886,39 @@ class ShadowTree:
         """
         if node is None:
             return
-        if isinstance(node, SVGElement):
-            # If this is called with an SVGElement rather than a Node. Convert them.
-            match_object = node
-            node = None
-            for element in self.node_elements:
-                if element.object is match_object:
-                    node = element
-                    break
-        if node is None:
-            return
         menu = wx.Menu()
-        if isinstance(node, RootNode):
+        if node.parent is None:
             return
-        elements = self.elements
 
-        t = node.type
-        selections = [self.tree_lookup[id(e)] for e in elements.elems(emphasized=True)]
-        locked = False
-        try:
-            if node.object.lock:
-                locked = True
-        except (AttributeError, ValueError):
-            pass
+        submenus = {}
 
-        def combined(*args):
-            for listv in args:
-                for itemv in listv:
-                    yield itemv
+        def menu_functions(f, node):
+            func_dict = dict(f.func_dict)
 
-        selections = [s for s in combined(*selections) if s.type == t]
-        if t == NODE_OPERATION:
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_execute(node),
-                menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL),
-            )
-        if t == NODE_OPERATION_BRANCH:
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_console("operation* delete"),
-                menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
-            )
-        if t == NODE_FILES_BRANCH:
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_clear_all_files_branch(node),
-                menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
-            )
-        if t == NODE_ELEMENTS_BRANCH:
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_console("element* delete"),
-                menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
-            )
-        if t == NODE_OPERATION:
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_clear_all_operation(node),
-                menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL),
-            )
-        if t in (NODE_OPERATION, NODE_ELEMENT, NODE_FILE_FILE, NODE_OPERATION_ELEMENT):
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_remove(node),
-                menu.Append(
-                    wx.ID_ANY, _("Remove: %s") % str(node.name)[:10], "", wx.ITEM_NORMAL
-                ),
-            )
-        if t in (NODE_ELEMENT, NODE_OPERATION_ELEMENT) and len(selections) > 1:
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_console("element delete"),
-                menu.Append(
-                    wx.ID_ANY,
-                    _("Remove: %d objects") % len(selections),
-                    "",
-                    wx.ITEM_NORMAL,
-                ),
-            )
-        if t == NODE_OPERATION_ELEMENT:
-            duplicate_menu_eop = wx.Menu()
-            for i in range(1, 10):
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_duplicate_element_op(node, i),
-                    duplicate_menu_eop.Append(
-                        wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL
-                    ),
-                )
-            menu.AppendSubMenu(duplicate_menu_eop, _("Clone Reference"))
-            duplicate_menu_eop = wx.Menu()
-            for i in range(1, 10):
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_duplicate(node, i),
-                    duplicate_menu_eop.Append(
-                        wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL
-                    ),
-                )
-            menu.AppendSubMenu(duplicate_menu_eop, _("Duplicate"))
-        if (
-            t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH)
-            and len(node) > 1
-        ):
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_reverse_order(node),
-                menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL),
-            )
-        if t == NODE_ROOT:
-            pass
-        elif t == NODE_OPERATION_BRANCH:
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_reclassify_operations(node),
-                menu.Append(wx.ID_ANY, _("Refresh Classification"), "", wx.ITEM_NORMAL),
-            )
-            gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context.elements.load_default(),
-                menu.Append(
-                    wx.ID_ANY, _("Set Other/Blue/Red Classify"), "", wx.ITEM_NORMAL
-                ),
-            )
-            gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context.elements.load_default2(),
-                menu.Append(
-                    wx.ID_ANY, _("Set Basic Classification"), "", wx.ITEM_NORMAL
-                ),
-            )
-            gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context.elements.add_op(LaserOperation()),
-                menu.Append(wx.ID_ANY, _("Add Operation"), "", wx.ITEM_NORMAL),
-            )
-            special_op_menu = wx.Menu()
-            gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context.elements.add_op(
-                    CommandOperation("Home", COMMAND_HOME)
-                ),
-                special_op_menu.Append(wx.ID_ANY, _("Add Home"), "", wx.ITEM_NORMAL),
-            )
-            gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context.elements.add_op(
-                    CommandOperation("Beep", COMMAND_BEEP)
-                ),
-                special_op_menu.Append(wx.ID_ANY, _("Add Beep"), "", wx.ITEM_NORMAL),
-            )
-            gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context.elements.add_op(
-                    CommandOperation("Origin", COMMAND_MOVE, 0, 0)
-                ),
-                special_op_menu.Append(
-                    wx.ID_ANY, _("Add Move Origin"), "", wx.ITEM_NORMAL
-                ),
-            )
-            gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context.elements.add_op(
-                    CommandOperation(
-                        "Interrupt",
-                        COMMAND_FUNCTION,
-                        self.context.console_function("interrupt\n"),
-                    )
-                ),
-                special_op_menu.Append(
-                    wx.ID_ANY, _("Add Interrupt"), "", wx.ITEM_NORMAL
-                ),
-            )
-            gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context.elements.add_op(
-                    CommandOperation(
-                        "Shutdown",
-                        COMMAND_FUNCTION,
-                        self.context.console_function("quit\n"),
-                    )
-                ),
-                special_op_menu.Append(
-                    wx.ID_ANY, _("Add Shutdown"), "", wx.ITEM_NORMAL
-                ),
-            )
-            menu.AppendSubMenu(special_op_menu, _("Special Operations"))
-        elif t == NODE_ELEMENTS_BRANCH:
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_reclassify_operations(node),
-                menu.Append(wx.ID_ANY, _("Reclassify Operations"), "", wx.ITEM_NORMAL),
-            )
-        elif t == NODE_FILES_BRANCH:
-            pass
-        elif t == NODE_OPERATION:
-            operation_convert_submenu = wx.Menu()
-            for name in ("Raster", "Engrave", "Cut"):
-                menu_op = operation_convert_submenu.Append(
-                    wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL
-                )
-                gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
-            menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_duplicate_operation(node),
-                menu.Append(wx.ID_ANY, _("Duplicate Operation"), "", wx.ITEM_NORMAL),
-            )
-            duplicate_menu = wx.Menu()
-            gui.Bind(
-                wx.EVT_MENU,
-                self.menu_passes(node, 1),
-                duplicate_menu.Append(wx.ID_ANY, _("Add 1 pass."), "", wx.ITEM_NORMAL),
-            )
-            for i in range(2, 10):
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_passes(node, i),
-                    duplicate_menu.Append(
-                        wx.ID_ANY, _("Add %d passes.") % i, "", wx.ITEM_NORMAL
-                    ),
-                )
-            menu.AppendSubMenu(duplicate_menu, _("Passes"))
-            if node.object.operation in ("Raster", "Image"):
-                raster_step_menu = wx.Menu()
-                for i in range(1, 10):
-                    menu_item = raster_step_menu.Append(
-                        wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO
-                    )
-                    gui.Bind(
-                        wx.EVT_MENU, self.menu_raster_step_operation(node, i), menu_item
-                    )
-                    step = float(node.object.settings.raster_step)
-                    if i == step:
-                        menu_item.Check(True)
-                menu.AppendSubMenu(raster_step_menu, _("Step"))
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_raster(node),
-                    menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL),
-                )
-        elif t == NODE_FILE_FILE:
-            if node.filepath is not None:
-                name = os.path.basename(node.filepath)
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_reload(node),
-                    menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL),
-                )
-        elif t == NODE_ELEMENT:
-            duplicate_menu = wx.Menu()
-            for i in range(1, 10):
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_duplicate(node, i),
-                    duplicate_menu.Append(
-                        wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL
-                    ),
-                )
-            menu.AppendSubMenu(duplicate_menu, _("Duplicate"))
-        if t in (NODE_ELEMENTS_BRANCH, NODE_ELEMENT):
-            if isinstance(node.object, SVGElement):
-                if not locked:
-                    gui.Bind(
-                        wx.EVT_MENU,
-                        self.menu_console("reset"),
-                        menu.Append(
-                            wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL
-                        ),
-                    )
-        if t == NODE_ELEMENT:
-            if isinstance(node.object, SVGElement):
-                path_scale_sub_menu = wx.Menu()
-                for i in range(1, 25):
-                    gui.Bind(
-                        wx.EVT_MENU,
-                        self.menu_scale(node, 6.0 / float(i)),
-                        path_scale_sub_menu.Append(
-                            wx.ID_ANY,
-                            _("Scale %.0f%%") % (600.0 / float(i)),
-                            "",
-                            wx.ITEM_NORMAL,
-                        ),
-                    )
-                if not locked:
-                    menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
+            def specific(event):
+                f(node, **func_dict)
+            return specific
 
-                path_rotate_sub_menu = wx.Menu()
-                for i in range(2, 13):
-                    angle = Angle.turns(1.0 / float(i))
-                    gui.Bind(
-                        wx.EVT_MENU,
-                        self.menu_rotate(node, 1.0 / float(i)),
-                        path_rotate_sub_menu.Append(
-                            wx.ID_ANY,
-                            _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
-                            "",
-                            wx.ITEM_NORMAL,
-                        ),
-                    )
-                for i in range(2, 13):
-                    angle = Angle.turns(1.0 / float(i))
-                    gui.Bind(
-                        wx.EVT_MENU,
-                        self.menu_rotate(node, -1.0 / float(i)),
-                        path_rotate_sub_menu.Append(
-                            wx.ID_ANY,
-                            _(u"Rotate turn/%d, -%.0f°") % (i, angle.as_degrees),
-                            "",
-                            wx.ITEM_NORMAL,
-                        ),
-                    )
-                if not locked:
-                    menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
-                if not locked:
-                    gui.Bind(
-                        wx.EVT_MENU,
-                        self.menu_console("reify"),
-                        menu.Append(
-                            wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL
-                        ),
-                    )
-            if isinstance(node.object, Path):
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_console("element subpath"),
-                    menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL),
-                )
-            if isinstance(node.object, SVGImage):
-                raster_step_menu = wx.Menu()
-                for i in range(1, 10):
-                    menu_item = raster_step_menu.Append(
-                        wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO
-                    )
-                    gui.Bind(
-                        wx.EVT_MENU, self.menu_raster_step_image(node, i), menu_item
-                    )
-                    if "raster_step" in node.object.values:
-                        step = float(node.object.values["raster_step"])
-                    else:
-                        step = 1.0
-                    if i == step:
-                        m = node.object.transform
-                        if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
-                            menu_item.Check(True)
-                menu.AppendSubMenu(raster_step_menu, _("Step"))
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_console("image resample"),
-                    menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL),
-                )
-                raster_zdepth_menu = wx.Menu()
+        for func in self.elements.tree_operations_for_node(node):
+            submenu_name = func.submenu
+            submenu = None
+            if submenu_name in submenus:
+                submenu = submenus[submenu_name]
+            elif submenu_name is not None:
+                submenu = wx.Menu()
+                menu.AppendSubMenu(submenu, submenu_name)
+                submenus[submenu_name] = submenu
 
-                for i in range(2, 10):
-                    menu_item = raster_zdepth_menu.Append(
-                        wx.ID_ANY, _("Divide Into %d Images") % i, "", wx.ITEM_NORMAL
-                    )
-                    gui.Bind(wx.EVT_MENU, self.menu_raster_zdepth(node, i), menu_item)
-                if not locked:
-                    menu.AppendSubMenu(raster_zdepth_menu, _("ZDepth Divide"))
-
-                image_menu = wx.Menu()
-                try:
-                    if locked:
-                        gui.Bind(
-                            wx.EVT_MENU,
-                            self.menu_console("image unlock"),
-                            image_menu.Append(
-                                wx.ID_ANY, _("Unlock Manipulations"), "", wx.ITEM_NORMAL
-                            ),
-                        )
-                except (ValueError, AttributeError):
-                    pass
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_console("image dither"),
-                    image_menu.Append(
-                        wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL
-                    ),
-                )
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_console("image invert"),
-                    image_menu.Append(wx.ID_ANY, _("Invert Image"), "", wx.ITEM_NORMAL),
-                )
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_console("image mirror"),
-                    image_menu.Append(
-                        wx.ID_ANY, _("Mirror Horizontal"), "", wx.ITEM_NORMAL
-                    ),
-                )
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_console("image flip"),
-                    image_menu.Append(
-                        wx.ID_ANY, _("Flip Vertical"), "", wx.ITEM_NORMAL
-                    ),
-                )
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_console("image cw"),
-                    image_menu.Append(wx.ID_ANY, _("Rotate CW"), "", wx.ITEM_NORMAL),
-                )
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_console("image ccw"),
-                    image_menu.Append(wx.ID_ANY, _("Rotate CCW"), "", wx.ITEM_NORMAL),
-                )
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_console("image save output.png"),
-                    image_menu.Append(
-                        wx.ID_ANY, _("Save output.png"), "", wx.ITEM_NORMAL
-                    ),
-                )
-                if image_menu.MenuItemCount != 0:
-                    menu.AppendSubMenu(image_menu, _("Image"))
-
-                try:
-                    raster_wizard_menu = wx.Menu()
-                    for script in self.context._kernel.match("raster_script"):
-                        script = script[14:]
-                        menu_item = raster_wizard_menu.Append(
-                            wx.ID_ANY,
-                            _("RasterWizard: %s") % script,
-                            "",
-                            wx.ITEM_NORMAL,
-                        )
-                        gui.Bind(
-                            wx.EVT_MENU,
-                            self.menu_console("window open RasterWizard %s" % script),
-                            menu_item,
-                        )
-                    menu.AppendSubMenu(raster_wizard_menu, _("RasterWizard"))
-                except KeyError:
-                    pass
-                try:
-                    raster_wizard_apply_menu = wx.Menu()
-                    for script in self.context._kernel.match("raster_script"):
-                        script = script[14:]
-                        menu_item = raster_wizard_apply_menu.Append(
-                            wx.ID_ANY, _("Apply: %s") % script, "", wx.ITEM_NORMAL
-                        )
-                        gui.Bind(
-                            wx.EVT_MENU,
-                            self.menu_console("image wizard %s\n" % script),
-                            menu_item,
-                        )
-                    menu.AppendSubMenu(
-                        raster_wizard_apply_menu, _("Apply Raster Script")
-                    )
-                except KeyError:
-                    pass
-            if isinstance(node.object, SVGText):
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_convert_text(node),
-                    menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL),
-                )
-            if hasattr(node.object, "as_elements"):
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_convert_elements(node),
-                    menu.Append(wx.ID_ANY, _("Convert to SVG"), "", wx.ITEM_NORMAL),
-                )
-            if hasattr(node.object, "generate"):
-                gui.Bind(
-                    wx.EVT_MENU,
-                    self.menu_move_to_operations(node),
-                    menu.Append(
-                        wx.ID_ANY, _("Process as Operation"), "", wx.ITEM_NORMAL
-                    ),
-                )
+            menu_context = submenu if submenu is not None else menu
+            gui.Bind(
+                wx.EVT_MENU,
+                menu_functions(func, node),
+                menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL)
+            )
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
 
-    def menu_console(self, console_command):
-        """
-        Default menu item to send a console command.
-
-        Automatically adds '\n'.
-
-        :param console_command: command to send to console.
-        :return: function that executes the provided command.
-        """
-
-        def specific(event):
-            self.context.console("%s\n" % console_command)
-
-        return specific
-
-    def menu_raster_step_operation(self, node, step_value):
-        """
-        Change raster step values of operation
-
-        :param node:
-        :param step_value:
-        :return:
-        """
-
-        def specific(event):
-            element = node.object
-            element.raster_step = step_value
-            self.context.signal("element_property_update", node.object)
-
-        return specific
-
-    def menu_raster_step_image(self, node, step_value):
-        """
-        Change raster step values of subelements.
-
-        :param node:
-        :param step_value:
-        :return:
-        """
-
-        def specific(event):
-            element = node.object
-            element.values["raster_step"] = str(step_value)
-            m = element.transform
-            tx = m.e
-            ty = m.f
-            element.transform = Matrix.scale(float(step_value), float(step_value))
-            element.transform.post_translate(tx, ty)
-            element.modified()
-            self.context.signal("element_property_update", node.object)
-            self.element_root.gui.request_refresh()
-
-        return specific
-
-    def menu_raster_zdepth(self, node, divide=7):
-        """
-        Subdivides an image into a zdepth image set.
-
-        :param node: SVGImage node.
-        :return: zdepth function
-        """
-
-        def specific(event):
-            element = node.object
-            if not isinstance(element, SVGImage):
-                return
-            if element.image.mode != "RGBA":
-                element.image = element.image.convert("RGBA")
-            band = 255 / divide
-            for i in range(0, divide):
-                threshold_min = i * band
-                threshold_max = threshold_min + band
-                self.context.console(
-                    "image threshold %f %f\n" % (threshold_min, threshold_max)
-                )
-
-        return specific
-
-    def menu_raster(self, node):
-        """
-        Convert a vector element into a raster element.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            context = self.context
-            elements = context.elements
-            renderer = self.renderer
-            child_objects = list(node.objects_of_children(SVGElement))
-            bounds = CutPlanner.bounding_box(child_objects)
-            if bounds is None:
-                return None
-            step = float(node.object.settings.raster_step)
-            if step == 0:
-                step = 1.0
-            xmin, ymin, xmax, ymax = bounds
-
-            image = renderer.make_raster(
-                child_objects,
-                bounds,
-                width=(xmax - xmin),
-                height=(ymax - ymin),
-                step=step,
-            )
-            image_element = SVGImage(image=image)
-            image_element.transform.post_scale(step, step)
-            image_element.transform.post_translate(xmin, ymin)
-            image_element.values["raster_step"] = step
-
-            elements.add_elem(image_element)
-            node.object.clear()
-            self.build_tree(self.node_elements, image_element)
-            node.object.append(image_element)
-            self.context.signal("rebuild_tree", 0)
-
-        return specific
-
-    def menu_rotate(self, node, value):
-        """
-        Menu to rotate an element.
-
-        :param node:
-        :param value:
-        :return:
-        """
-
-        value *= tau
-
-        def specific(event):
-            bounds = CutPlanner.bounding_box(node.parent)
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context.console("rotate %frad %f %f\n" % (value, center_x, center_y))
-
-        return specific
-
-    def menu_scale(self, node, value):
-        """
-        Menu scale.
-
-        :param node:
-        :param value:
-        :return:
-        """
-
-        def specific(event):
-            center_x, center_y = self.elements.center()
-            self.context.console(
-                "scale %f %f %f %f\n" % (value, value, center_x, center_y)
-            )
-
-        return specific
-
-    def menu_reload(self, node):
-        """
-        Menu to reload the element from the file on disk.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            filepath = node.filepath
-            self.elements.clear_elements_and_operations()
-            self.gui.load(filepath)
-
-        return specific
-
-    def menu_remove(self, remove_node):
-        """
-        Menu to remove an element from the scene.
-
-        :param remove_node:
-        :return:
-        """
-
-        def specific(event):
-            context = self.context
-            elements = context.elements
-            node = remove_node
-            if node.type == NODE_ELEMENT:
-                self.context.console("element delete\n")
-            elif node.type == NODE_OPERATION:
-                self.context.console("operation delete\n")
-            elif node.type == NODE_FILE_FILE:
-                # Removing file can only have 1 copy.
-                elements.remove_files([node.filepath])
-            elif node.type == NODE_OPERATION_ELEMENT:
-                # Operation_element can occur many times in the same operation node.
-                index = node.parent.index(node)
-                op = node.parent.object
-                if index == -1:
-                    op.remove(node.object)
-                else:
-                    del op[index]
-            self.elements.set_selected(None)
-            self.context.signal("rebuild_tree", 0)
-
-        return specific
-
-    def menu_clear_all_operation(self, node):
-        def specific(event):
-            context = self.context
-            elements = context.elements
-            for op in elements.ops(emphasized=True):
-                op.clear()
-                self.context.signal("rebuild_tree", 0)
-
-        return specific
-
-    def menu_clear_all_files_branch(self, node):
-        def specific(event):
-            context = self.context
-            elements = context.elements
-            elements.clear_files()
-            self.context.signal("rebuild_tree", 0)
-
-        return specific
-
-    def menu_duplicate_element_op(self, node, copies):
-        def specific(event):
-            node.parent.object.extend([node.object] * copies)
-            node.parent.object.modified()
-            self.context.signal("rebuild_tree", 0)
-
-        return specific
-
-    def menu_duplicate(self, node, copies):
-        """
-        Menu to duplicate elements.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            context = self.context
-            elements = context.elements
-            adding_elements = [
-                copy.copy(e)
-                for e in list(self.elements.elems(emphasized=True)) * copies
-            ]
-            elements.add_elems(adding_elements)
-            elements.classify(adding_elements)
-            elements.set_selected(None)
-
-        return specific
-
-    def menu_passes(self, node, copies):
-        """
-        Menu to duplicate operation element nodes
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            op = node.object
-            adding_elements = list(op) * copies
-            op.extend(adding_elements)
-            self.context.signal("rebuild_tree", 0)
-
-        return specific
-
-    def menu_execute(self, node):
-        """
-        Menu to launch Execute Job for the particular element.
-
-        :param node:
-        :return:
-        """
-
-        def open_jobinfo_window(event):
-            self.context.open("window/JobPreview", self.gui, "0", selected=True)
-
-        return open_jobinfo_window
-
-    def menu_reverse_order(self, node):
-        """
-        Menu to return and reverse order of the element to the scene.
-
-        :param node:
-        :return:
-        """
-        context = self.context
-        elements = context.elements
-
-        def specific(event):
-            t = node.type
-            if t == NODE_ELEMENTS_BRANCH:
-                context.elements._elements.reverse()
-            elif t == NODE_OPERATION_BRANCH:
-                context.elements._operations.reverse()
-            elif t == NODE_OPERATION:
-                for op in elements.ops(emphasized=True):
-                    op.reverse()
-            self.context.signal("rebuild_tree", 0)
-
-        return specific
-
-    def menu_reclassify_operations(self, node):
-        def specific(event):
-            context = self.context
-            elements = context.elements
-            elements.remove_elements_from_operations(list(elements.elems()))
-            elements.classify(list(elements.elems()))
-            self.context.signal("rebuild_tree", 0)
-
-        return specific
-
-    def menu_convert_operation(self, node, name):
-        def specific(event):
-            node.object.operation = name
-            self.context.signal("element_property_update", node.object)
-
-        return specific
-
-    def menu_duplicate_operation(self, node):
-        def specific(event):
-            op = LaserOperation(node.object)
-            op.clear()
-            op.extend(node.object)
-            self.context.elements.add_op(op)
-
-        return specific
-
-    def menu_convert_elements(self, node):
-        def specific(event):
-            self.context.elements.add_elems(node.object.as_elements())
-
-        return specific
-
-    def menu_move_to_operations(self, node):
-        def specific(event):
-            self.context.elements.add_op(node.object)
-
-        return specific
-
-    def menu_convert_text(self, node):
-        def specific(event):
-            raise NotImplementedError
-
-        return specific
-
-
-class ShadowNode(list):
-    """
-    Creating the object registers the position in the tree according to the parent and root.
-    Deleting the object deregisters the node in the tree.
-    """
-
-    def __init__(self, node_type, data_object, parent, root, pos=None, name=None):
-        list.__init__(self)
-        self.parent = parent
-        self.root = root
-        self.object = data_object
-        self.type = node_type
-        self.name = name
-        if name is None:
-            if self.name is None:
-                try:
-                    self.name = self.object.id
-                    if self.name is None:
-                        self.name = str(self.object)
-                except AttributeError:
-                    self.name = str(self.object)
-        else:
-            self.name = name
-        self.type = node_type
-        parent.append(self)
-        self.filepath = None
-        try:
-            self.bounds = data_object.bbox()
-        except AttributeError:
-            self.bounds = None
-
-    def __str__(self):
-        return "Node(%s, %d)" % (str(self.item), self.type)
-
-    def __repr__(self):
-        return "Node(%d, %s, %s, %s)" % (
-            self.type,
-            str(self.object),
-            str(self.parent),
-            str(self.root),
-        )
 
 def get_key_name(event):
     keyvalue = ""
@@ -4076,7 +3269,7 @@ def send_file_to_developers(filename):
         dlg.ShowModal()
         dlg.Destroy()
     else:
-
+        MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
             _(

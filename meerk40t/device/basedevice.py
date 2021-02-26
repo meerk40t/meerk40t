@@ -27,11 +27,10 @@ def plugin(kernel, lifecycle=None):
         # kernel.register("modifier/Device", Device)
     # if lifecycle == "boot":
     #     kernel_root = kernel.get_context("/")
-        # kernel_root.activate('modifier/Devices')
+    # kernel_root.activate('modifier/Devices')
 
 
 class Devices(Modifier):
-
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         self._interpreters = dict()
@@ -65,11 +64,11 @@ class Devices(Modifier):
                 if name in self._devices:
                     channel(_("Device already exists, cannot create."))
                     return
-                self.context.get_context('/device/%s' % name)
-                self.context.activate('modifier/Device')
+                self.context.get_context("/device/%s" % name)
+                self.context.activate("modifier/Device")
             return "device", self._devices[name]
 
-        @context.console_option("itype", 't', type=str, help='Interpreter type')
+        @context.console_option("itype", "t", type=str, help="Interpreter type")
         @context.console_argument("name", type=str, help="Interpreter name.")
         @context.console_command(
             "interpreter.*",
@@ -79,7 +78,15 @@ class Devices(Modifier):
             output_type="device",
         )
         def interpreter(
-            command, channel, _, name, itype=None, data=None, data_type=None, args=tuple(), **kwargs
+            command,
+            channel,
+            _,
+            name,
+            itype=None,
+            data=None,
+            data_type=None,
+            args=tuple(),
+            **kwargs
         ):
             arg = command[7:]
             if arg == "s":
@@ -90,7 +97,7 @@ class Devices(Modifier):
                     channel("%d: %s" % (i, name))
                 channel("----------")
                 channel(_("Interpreter Types:"))
-                for i, s in enumerate(self.context.match('interpreter/.*')):
+                for i, s in enumerate(self.context.match("interpreter/.*")):
                     name = str(s)
                     channel("%d: %s" % (i, name))
                 return
@@ -101,7 +108,7 @@ class Devices(Modifier):
                 if itype is None:
                     channel(_("Interpreter requires a type."))
                     return
-                interp = self.context.registered.get('interpreter/%s' % itype)
+                interp = self.context.registered.get("interpreter/%s" % itype)
                 if interp is None:
                     channel(_("Interpreter type is unrecognized"))
                     return
@@ -111,8 +118,8 @@ class Devices(Modifier):
                 inst = data
             return "interpreter", self._interpreters[name]
 
-        @context.console_option("dest", 'd', type=str, help="Destination of the Pipe.")
-        @context.console_option("ptype", 't', type=str, help='Pipe type')
+        @context.console_option("dest", "d", type=str, help="Destination of the Pipe.")
+        @context.console_option("ptype", "t", type=str, help="Pipe type")
         @context.console_argument("name", type=str, help="Pipe name.")
         @context.console_command(
             "pipe.*",
@@ -122,7 +129,15 @@ class Devices(Modifier):
             output_type="device",
         )
         def pipe(
-                command, channel, _, name, ptype=None, data=None, data_type=None, args=tuple(), **kwargs
+            command,
+            channel,
+            _,
+            name,
+            ptype=None,
+            data=None,
+            data_type=None,
+            args=tuple(),
+            **kwargs
         ):
             arg = command[4:]
             if arg == "s":
@@ -133,7 +148,7 @@ class Devices(Modifier):
                     channel("%d: %s" % (i, name))
                 channel("----------")
                 channel(_("Pipe Types:"))
-                for i, s in enumerate(self.context.match('pipe/.*')):
+                for i, s in enumerate(self.context.match("pipe/.*")):
                     name = str(s)
                     channel("%d: %s" % (i, name))
                 return
@@ -144,7 +159,7 @@ class Devices(Modifier):
                 if ptype is None:
                     channel(_("Pipe requires a type."))
                     return
-                pipe_type = self.context.registered.get('interpreter/%s' % ptype)
+                pipe_type = self.context.registered.get("interpreter/%s" % ptype)
                 if pipe_type is None:
                     channel(_("Pipe type is unrecognized"))
                     return
@@ -176,8 +191,12 @@ class Devices(Modifier):
             dev_context = settings.derive(v)
             dev_context.setting(str, "interpreter_path", None)
             if dev_context.interpreter_path is not None:
-                dev_context.interpreter = dev_context.activate(settings.interpreter_path)
-            dev = settings.activate('modifier/Device', interpreter=dev_context.interpreter)
+                dev_context.interpreter = dev_context.activate(
+                    settings.interpreter_path
+                )
+            dev = settings.activate(
+                "modifier/Device", interpreter=dev_context.interpreter
+            )
             try:
                 devs[i] = dev
             except (ValueError, IndexError):
@@ -186,9 +205,11 @@ class Devices(Modifier):
 
 
 class Device(Modifier):
-    def __init__(self, context, interpreter=None, name=None, channel=None, *args, **kwargs):
+    def __init__(
+        self, context, interpreter=None, name=None, channel=None, *args, **kwargs
+    ):
         Modifier.__init__(self, context, name, channel)
-        self.context.activate('modifier/Spooler')
+        self.context.activate("modifier/Spooler")
         self.spooler = self.context.spooler
         if interpreter is not None:
             self.context.activate(interpreter)
@@ -375,7 +396,7 @@ class Interpreter:
                 x, y = values
                 self.jog(x, y, mode=2, min_jog=self.context.opt_jog_minimum)
             elif command == COMMAND_HOME:
-                self.home()
+                self.home(*values)
             elif command == COMMAND_LOCK:
                 self.lock_rail()
             elif command == COMMAND_UNLOCK:
@@ -568,7 +589,6 @@ class Interpreter:
             return
         self.state = INTERPRETER_STATE_RASTER
         self.context.signal("interpreter;mode", self.state)
-
 
     def set_speed(self, speed=None):
         self.settings.speed = speed

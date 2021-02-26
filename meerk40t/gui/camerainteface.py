@@ -419,7 +419,10 @@ class CameraInterface(wx.Frame, Module, Job):
 
     def aspect_matrix(self):
         if self.setting.aspect:
-            v = Viewbox("0 0 %d %d" % (self.image_width, self.image_height), self.setting.preserve_aspect)
+            v = Viewbox(
+                "0 0 %d %d" % (self.image_width, self.image_height),
+                self.setting.preserve_aspect,
+            )
             w, h = self.display_camera.GetSize()
             v2 = Viewbox("0 0 %d %d" % (w, h))
             self.matrix = Matrix(v.transform(v2))
@@ -502,6 +505,7 @@ class CameraInterface(wx.Frame, Module, Job):
                 self.setting.preserve_aspect = aspect
                 self.aspect_matrix()
                 self.on_update_buffer()
+
             return asp
 
         menu = wx.Menu()
@@ -510,12 +514,30 @@ class CameraInterface(wx.Frame, Module, Job):
         if self.setting.aspect:
             center.Check(True)
         self.Bind(wx.EVT_MENU, enable_aspect, center)
-        self.Bind(wx.EVT_MENU, set_aspect("xMinYMin meet"), sub_menu.Append(wx.ID_ANY, "xMinYMin meet", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, set_aspect("xMidYMid meet"),sub_menu.Append(wx.ID_ANY, "xMidYMid meet", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, set_aspect("xMidYMid slice"), sub_menu.Append(wx.ID_ANY, "xMidYMid slice", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, set_aspect("none"), sub_menu.Append(wx.ID_ANY, "none", "", wx.ITEM_NORMAL))
+        self.Bind(
+            wx.EVT_MENU,
+            set_aspect("xMinYMin meet"),
+            sub_menu.Append(wx.ID_ANY, "xMinYMin meet", "", wx.ITEM_NORMAL),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            set_aspect("xMidYMid meet"),
+            sub_menu.Append(wx.ID_ANY, "xMidYMid meet", "", wx.ITEM_NORMAL),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            set_aspect("xMidYMid slice"),
+            sub_menu.Append(wx.ID_ANY, "xMidYMid slice", "", wx.ITEM_NORMAL),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            set_aspect("none"),
+            sub_menu.Append(wx.ID_ANY, "none", "", wx.ITEM_NORMAL),
+        )
 
-        menu.Append(wx.ID_ANY, _("Preserve: %s") % self.setting.preserve_aspect, sub_menu)
+        menu.Append(
+            wx.ID_ANY, _("Preserve: %s") % self.setting.preserve_aspect, sub_menu
+        )
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
             menu.Destroy()
@@ -747,7 +769,9 @@ class CameraURI(wx.Frame, Module):
         self.context.close(self.name)
         self.Show()
         self.camera_setting = self.context.get_context("camera")
-        keylist = self.camera_setting._kernel.load_persistent_string_dict(self.camera_setting._path, suffix=True)
+        keylist = self.camera_setting._kernel.load_persistent_string_dict(
+            self.camera_setting._path, suffix=True
+        )
         if keylist is not None:
             keys = [q for q in keylist]
             keys.sort()
