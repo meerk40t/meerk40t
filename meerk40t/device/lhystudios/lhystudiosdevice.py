@@ -1,12 +1,9 @@
+from ...kernel import STATE_UNKNOWN, Modifier
+from ...svgelements import Length
+from ..lasercommandconstants import *
 from .lhymicrointerpreter import LhymicroInterpreter
 from .lhystudiocontroller import LhystudioController
-from .lhystudioemulator import LhystudioEmulator, EgvLoader
-from ..lasercommandconstants import *
-from ...kernel import (
-    Modifier,
-    STATE_UNKNOWN,
-)
-from ...svgelements import Length
+from .lhystudioemulator import EgvLoader, LhystudioEmulator
 
 
 def plugin(kernel, lifecycle=None):

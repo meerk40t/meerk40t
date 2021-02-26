@@ -1,9 +1,9 @@
+import functools
 import inspect
 import re
 import threading
 import time
-import functools
-from threading import Thread, Lock
+from threading import Lock, Thread
 
 from .svgelements import Color
 
@@ -636,8 +636,8 @@ class Kernel:
 
         :return:
         """
-        import functools
         import datetime
+        import functools
         import types
 
         filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(

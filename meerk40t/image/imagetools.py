@@ -1,10 +1,10 @@
 import os
-from os import path as ospath
 from copy import copy
 from math import ceil
+from os import path as ospath
 
 from ..core.cutplanner import Planner
-from ..svgelements import SVGImage, Color, Length, Path, Matrix, Group
+from ..svgelements import Color, Group, Length, Matrix, Path, SVGImage
 
 
 def plugin(kernel, lifecycle=None):
@@ -1006,7 +1006,7 @@ class RasterScripts:
         matrix = Matrix(svg_image.transform)
         step = None
         mask = None
-        from PIL import Image, ImageOps, ImageFilter, ImageEnhance
+        from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
         for op in operations:
             name = op["name"]

@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------
-from wx.lib.embeddedimage import PyEmbeddedImage
 from wx import Bitmap
+from wx.lib.embeddedimage import PyEmbeddedImage
 
 theme = False
 icon_r = 230

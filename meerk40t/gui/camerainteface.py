@@ -1,15 +1,12 @@
 import wx
 
+from ..kernel import Job, Module
+from ..svgelements import Matrix, Point, Viewbox
 from .icons import (
-    icons8_camera_50,
-    icons8_picture_in_picture_alternative_50,
-    icons8_detective_50,
-    icons8_connected_50,
-)
+    icons8_camera_50, icons8_connected_50, icons8_detective_50,
+    icons8_picture_in_picture_alternative_50)
 from .laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
 from .zmatrix import ZMatrix
-from ..kernel import Module, Job
-from ..svgelements import Matrix, Point, Viewbox
 
 _ = wx.GetTranslation
 

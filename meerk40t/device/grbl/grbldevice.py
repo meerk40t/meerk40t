@@ -1,9 +1,9 @@
 import os
 import re
 
-from ..lasercommandconstants import *
-from ..basedevice import Interpreter, INTERPRETER_STATE_PROGRAM
 from ...kernel import Module
+from ..basedevice import INTERPRETER_STATE_PROGRAM, Interpreter
+from ..lasercommandconstants import *
 
 MILS_PER_MM = 39.3701
 

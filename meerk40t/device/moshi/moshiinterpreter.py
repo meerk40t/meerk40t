@@ -1,19 +1,11 @@
-from ..basedevice import (
-    Interpreter,
-    PLOT_FINISH,
-    PLOT_SETTING,
-    PLOT_AXIS,
-    PLOT_DIRECTION,
-    PLOT_RAPID,
-    PLOT_JOG,
-    INTERPRETER_STATE_PROGRAM,
-    INTERPRETER_STATE_MODECHANGE,
-    INTERPRETER_STATE_RAPID,
-    INTERPRETER_STATE_FINISH,
-    INTERPRETER_STATE_RASTER,
-)
 from ...core.plotplanner import PlotPlanner
 from ...kernel import Modifier
+from ..basedevice import (INTERPRETER_STATE_FINISH,
+                          INTERPRETER_STATE_MODECHANGE,
+                          INTERPRETER_STATE_PROGRAM, INTERPRETER_STATE_RAPID,
+                          INTERPRETER_STATE_RASTER, PLOT_AXIS, PLOT_DIRECTION,
+                          PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING,
+                          Interpreter)
 from .moshiconstants import swizzle_table
 
 
@@ -235,7 +227,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         self.write_set_offset(0, x, y)
         self.state = INTERPRETER_STATE_RASTER
         self.context.signal("interpreter;mode", self.state)
-        self.write_move_abs(0,0)
+        self.write_move_abs(0, 0)
 
     def ensure_rapid_mode(self):
         if self.state == INTERPRETER_STATE_RAPID:

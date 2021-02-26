@@ -1,12 +1,9 @@
 import argparse
 import sys
 
+from .device.lasercommandconstants import (COMMAND_MODE_RAPID, COMMAND_MOVE,
+                                           COMMAND_SET_ABSOLUTE)
 from .kernel import Kernel
-from .device.lasercommandconstants import (
-    COMMAND_MODE_RAPID,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_MOVE,
-)
 
 try:
     from math import tau

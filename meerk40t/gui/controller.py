@@ -6,26 +6,13 @@
 import wx
 
 from ..device.lasercommandconstants import REALTIME_RESET
-from .icons import (
-    icons8_pause_50,
-    icons8_emergency_stop_button_50,
-    icons8_comments_50,
-    icons8_connected_50,
-    icons8_play_50,
-    icons8_disconnected_50,
-    icons8_laser_beam_hazard_50,
-)
-from ..kernel import (
-    Module,
-    STATE_INITIALIZE,
-    STATE_END,
-    STATE_IDLE,
-    STATE_BUSY,
-    STATE_WAIT,
-    STATE_PAUSE,
-    STATE_ACTIVE,
-    STATE_TERMINATE,
-)
+from ..kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
+                      STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
+                      STATE_WAIT, Module)
+from .icons import (icons8_comments_50, icons8_connected_50,
+                    icons8_disconnected_50, icons8_emergency_stop_button_50,
+                    icons8_laser_beam_hazard_50, icons8_pause_50,
+                    icons8_play_50)
 
 _ = wx.GetTranslation
 

@@ -19,85 +19,52 @@ import wx
 import wx.aui as aui
 import wx.ribbon as RB
 
+from ..core.cutplanner import CutPlanner
+from ..core.elements import CommandOperation, LaserOperation
+from ..device.lasercommandconstants import (COMMAND_BEEP, COMMAND_FUNCTION,
+                                            COMMAND_HOME, COMMAND_JOG,
+                                            COMMAND_JOG_FINISH,
+                                            COMMAND_JOG_SWITCH,
+                                            COMMAND_LASER_OFF,
+                                            COMMAND_LASER_ON,
+                                            COMMAND_MODE_PROGRAM,
+                                            COMMAND_MODE_RAPID, COMMAND_MOVE,
+                                            COMMAND_SET_ABSOLUTE,
+                                            COMMAND_SET_DIRECTION,
+                                            COMMAND_SET_SPEED, COMMAND_WAIT,
+                                            COMMAND_WAIT_FINISH,
+                                            REALTIME_RESET)
+from ..kernel import STATE_BUSY, Job, Module
+from ..svgelements import (
+    SVG_ATTR_STROKE, Angle, Color, Length, Matrix, Path, SVGElement, SVGImage,
+    SVGText)
 from .about import About
 from .bufferview import BufferView
 from .camerainteface import CameraInterface
 from .controller import Controller
-from ..core.cutplanner import CutPlanner
-from ..core.elements import LaserOperation, CommandOperation
 from .devicemanager import DeviceManager
 from .icons import (
-    icons8_emergency_stop_button_50,
-    icons8_opened_folder_50,
-    icons8_save_50,
-    icons8_laser_beam_52,
-    icons8_pause_50,
-    icons8_move_50,
-    icons8_usb_connector_50,
-    icons8_route_50,
-    icons8_connected_50,
-    icons8_administrative_tools_50,
-    icons8_manager_50,
-    icons8_camera_50,
-    icons8_keyboard_50,
-    icons8_comments_50,
-    icons8_console_50,
-    icons8_roll_50,
-    icons8_fantasy_50,
-    icons8_lock_50,
-    icon_meerk40t,
-    icons8_laser_beam_20,
-    icons8_direction_20,
-    icons8_vector_20,
-    icons8_file_20,
-    icons8_padlock_50,
-)
+    icon_meerk40t, icons8_administrative_tools_50, icons8_camera_50,
+    icons8_comments_50, icons8_connected_50, icons8_console_50,
+    icons8_direction_20, icons8_emergency_stop_button_50, icons8_fantasy_50,
+    icons8_file_20, icons8_keyboard_50, icons8_laser_beam_20,
+    icons8_laser_beam_52, icons8_lock_50, icons8_manager_50, icons8_move_50,
+    icons8_opened_folder_50, icons8_padlock_50, icons8_pause_50,
+    icons8_roll_50, icons8_route_50, icons8_save_50, icons8_usb_connector_50,
+    icons8_vector_20)
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
 from .jobspooler import JobSpooler
-from ..kernel import Module, Job, STATE_BUSY
 from .keymap import Keymap
-from ..device.lasercommandconstants import (
-    COMMAND_BEEP,
-    COMMAND_JOG_FINISH,
-    COMMAND_JOG_SWITCH,
-    COMMAND_JOG,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_MODE_RAPID,
-    COMMAND_HOME,
-    COMMAND_LASER_OFF,
-    COMMAND_WAIT_FINISH,
-    COMMAND_MOVE,
-    COMMAND_LASER_ON,
-    COMMAND_WAIT,
-    COMMAND_SET_SPEED,
-    COMMAND_SET_DIRECTION,
-    COMMAND_MODE_PROGRAM,
-    COMMAND_FUNCTION,
-    REALTIME_RESET,
-)
-from .laserrender import (
-    LaserRender,
-    DRAW_MODE_FILLS,
-    DRAW_MODE_GUIDES,
-    DRAW_MODE_BACKGROUND,
-    DRAW_MODE_GRID,
-    DRAW_MODE_LASERPATH,
-    DRAW_MODE_RETICLE,
-    DRAW_MODE_SELECTION,
-    DRAW_MODE_STROKES,
-    DRAW_MODE_ICONS,
-    DRAW_MODE_TREE,
-    DRAW_MODE_CACHE,
-    DRAW_MODE_REFRESH,
-    DRAW_MODE_ANIMATE,
-    DRAW_MODE_PATH,
-    DRAW_MODE_IMAGE,
-    DRAW_MODE_TEXT,
-    DRAW_MODE_FLIPXY,
-    DRAW_MODE_INVERT,
-    swizzlecolor,
-)
+from .laserrender import (DRAW_MODE_ANIMATE, DRAW_MODE_BACKGROUND,
+                          DRAW_MODE_CACHE, DRAW_MODE_FILLS, DRAW_MODE_FLIPXY,
+                          DRAW_MODE_GRID, DRAW_MODE_GUIDES, DRAW_MODE_ICONS,
+                          DRAW_MODE_IMAGE, DRAW_MODE_INVERT,
+                          DRAW_MODE_LASERPATH, DRAW_MODE_PATH,
+                          DRAW_MODE_REFRESH, DRAW_MODE_RETICLE,
+                          DRAW_MODE_SELECTION, DRAW_MODE_STROKES,
+                          DRAW_MODE_TEXT, DRAW_MODE_TREE, LaserRender,
+                          swizzlecolor)
 from .navigation import Navigation
 from .notes import Notes
 from .operationproperty import OperationProperty
@@ -106,30 +73,11 @@ from .preferences import Preferences
 from .rasterwizard import RasterWizard
 from .rotarysettings import RotarySettings
 from .settings import Settings
-from ..svgelements import (
-    SVGImage,
-    Path,
-    SVGText,
-    SVG_ATTR_STROKE,
-    Color,
-    Matrix,
-    Length,
-    SVGElement,
-    Angle,
-)
 from .terminal import Terminal
 from .textproperty import TextProperty
 from .usbconnect import UsbConnect
-from .widget import (
-    Scene,
-    GridWidget,
-    GuideWidget,
-    ReticleWidget,
-    ElementsWidget,
-    SelectionWidget,
-    LaserPathWidget,
-    RectSelectWidget,
-)
+from .widget import (ElementsWidget, GridWidget, GuideWidget, LaserPathWidget,
+                     RectSelectWidget, ReticleWidget, Scene, SelectionWidget)
 
 """
 Laser software for the Stock-LIHUIYU laserboard.
@@ -2435,7 +2383,7 @@ class ShadowTree:
     def node_removed(self, node):
         self.wxtree.Delete(node.item)
         for i in self.wxtree.GetSelections():
-            self.wxtree.SelectItem(i,False)
+            self.wxtree.SelectItem(i, False)
 
     def node_added(self, node, **kwargs):
         self.node_register(node, **kwargs)
@@ -2897,6 +2845,7 @@ class ShadowTree:
 
             def specific(event):
                 f(node, **func_dict)
+
             return specific
 
         for func in self.elements.tree_operations_for_node(node):
@@ -2913,7 +2862,7 @@ class ShadowTree:
             gui.Bind(
                 wx.EVT_MENU,
                 menu_functions(func, node),
-                menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL)
+                menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL),
             )
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)

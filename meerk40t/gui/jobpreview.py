@@ -1,9 +1,9 @@
 import wx
 
-from ..kernel import Module
-from .icons import icons8_laser_beam_52
 from ..core.elements import LaserOperation
+from ..kernel import Module
 from ..svgelements import Length
+from .icons import icons8_laser_beam_52
 
 _ = wx.GetTranslation
 
@@ -50,7 +50,6 @@ class JobPreview(wx.Frame, Module):
 
         wxglade_tmp_menu.Append(wx.ID_ANY, "Before", wxglade_tmp_menu_sub, "")
         wxglade_tmp_menu_sub = wx.Menu()
-
 
         self.preview_menu.menu_autohome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,

@@ -1,34 +1,15 @@
 from copy import copy
-from math import isnan, isinf, ceil
+from math import ceil, isinf, isnan
 
-from ..kernel import Modifier
 from ..core.cutcode import CutCode
-from .elements import LaserOperation
 from ..device.lasercommandconstants import (
-    COMMAND_WAIT_FINISH,
-    COMMAND_MODE_RAPID,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_MOVE,
-    COMMAND_HOME,
-    COMMAND_WAIT,
-    COMMAND_BEEP,
-    COMMAND_FUNCTION,
-    COMMAND_UNLOCK,
-    COMMAND_SET_POSITION,
-)
-from ..svgelements import (
-    Matrix,
-    Length,
-    Angle,
-    Path,
-    SVGText,
-    SVGImage,
-    SVGElement,
-    Polyline,
-    Move,
-    Point,
-    Polygon,
-)
+    COMMAND_BEEP, COMMAND_FUNCTION, COMMAND_HOME, COMMAND_MODE_RAPID,
+    COMMAND_MOVE, COMMAND_SET_ABSOLUTE, COMMAND_SET_POSITION, COMMAND_UNLOCK,
+    COMMAND_WAIT, COMMAND_WAIT_FINISH)
+from ..kernel import Modifier
+from ..svgelements import (Angle, Length, Matrix, Move, Path, Point, Polygon,
+                           Polyline, SVGElement, SVGImage, SVGText)
+from .elements import LaserOperation
 
 
 def plugin(kernel, lifecycle=None):

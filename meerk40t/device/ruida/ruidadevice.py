@@ -1,10 +1,10 @@
 import os
 from io import BytesIO
 
-from ...kernel import Module
 from ...core.cutcode import CutCode, LaserSettings, LineCut
-from ..lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
+from ...kernel import Module
 from ...svgelements import Color, Point
+from ..lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0

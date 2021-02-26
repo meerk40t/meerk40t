@@ -6,13 +6,9 @@
 
 import wx
 
-from ..kernel import Module, STATE_UNKNOWN
-from .icons import (
-    icons8_administrative_tools_50,
-    icons8_plus_50,
-    icons8_trash_50,
-    icons8_manager_50,
-)
+from ..kernel import STATE_UNKNOWN, Module
+from .icons import (icons8_administrative_tools_50, icons8_manager_50,
+                    icons8_plus_50, icons8_trash_50)
 
 _ = wx.GetTranslation
 

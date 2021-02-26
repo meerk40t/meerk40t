@@ -1,7 +1,7 @@
 from ...core.cutcode import CutCode, LaserSettings
+from ...kernel import Module
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
-from ...kernel import Module
 
 
 class LhystudioEmulator(Module):

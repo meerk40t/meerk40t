@@ -1,22 +1,13 @@
-from ..lasercommandconstants import *
-from .laserspeed import LaserSpeed
-from ...kernel import Modifier
-from ..basedevice import (
-    Interpreter,
-    PLOT_FINISH,
-    PLOT_SETTING,
-    PLOT_AXIS,
-    PLOT_DIRECTION,
-    PLOT_RAPID,
-    PLOT_JOG,
-    INTERPRETER_STATE_PROGRAM,
-    INTERPRETER_STATE_RAPID,
-    INTERPRETER_STATE_FINISH,
-    INTERPRETER_STATE_MODECHANGE,
-)
 from ...core.plotplanner import PlotPlanner
 from ...core.zinglplotter import ZinglPlotter
-
+from ...kernel import Modifier
+from ..basedevice import (INTERPRETER_STATE_FINISH,
+                          INTERPRETER_STATE_MODECHANGE,
+                          INTERPRETER_STATE_PROGRAM, INTERPRETER_STATE_RAPID,
+                          PLOT_AXIS, PLOT_DIRECTION, PLOT_FINISH, PLOT_JOG,
+                          PLOT_RAPID, PLOT_SETTING, Interpreter)
+from ..lasercommandconstants import *
+from .laserspeed import LaserSpeed
 
 distance_lookup = [
     b"",

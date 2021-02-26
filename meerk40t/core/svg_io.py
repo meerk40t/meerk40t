@@ -3,45 +3,16 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
-from .elements import LaserOperation
 from ..svgelements import (
-    SVG_NAME_TAG,
-    SVG_ATTR_VERSION,
-    SVG_VALUE_VERSION,
-    SVG_ATTR_XMLNS,
-    SVG_VALUE_XMLNS,
-    SVG_ATTR_XMLNS_LINK,
-    SVG_VALUE_XLINK,
-    SVG_ATTR_XMLNS_EV,
-    SVG_VALUE_XMLNS_EV,
-    SVG_ATTR_WIDTH,
-    SVG_ATTR_HEIGHT,
-    SVG_ATTR_VIEWBOX,
-    SVG_TAG_TEXT,
-    Path,
-    SVG_TAG_PATH,
-    SVG_ATTR_DATA,
-    SVG_ATTR_TRANSFORM,
-    SVG_ATTR_STROKE_WIDTH,
-    Shape,
-    Matrix,
-    SVG_ATTR_X,
-    SVG_ATTR_Y,
-    SVGText,
-    SVGImage,
-    SVG_TAG_IMAGE,
-    SVG_VALUE_NONE,
-    SVG_ATTR_STROKE,
-    SVG_ATTR_FILL,
-    SVG,
-    Group,
-    SVGElement,
-    SVG_ATTR_TAG,
-    Color,
-    SVG_ATTR_ID,
-    SVG_ATTR_FILL_OPACITY,
-    SVG_ATTR_STROKE_OPACITY,
-)
+    SVG, SVG_ATTR_DATA, SVG_ATTR_FILL, SVG_ATTR_FILL_OPACITY, SVG_ATTR_HEIGHT,
+    SVG_ATTR_ID, SVG_ATTR_STROKE, SVG_ATTR_STROKE_OPACITY,
+    SVG_ATTR_STROKE_WIDTH, SVG_ATTR_TAG, SVG_ATTR_TRANSFORM, SVG_ATTR_VERSION,
+    SVG_ATTR_VIEWBOX, SVG_ATTR_WIDTH, SVG_ATTR_X, SVG_ATTR_XMLNS,
+    SVG_ATTR_XMLNS_EV, SVG_ATTR_XMLNS_LINK, SVG_ATTR_Y, SVG_NAME_TAG,
+    SVG_TAG_IMAGE, SVG_TAG_PATH, SVG_TAG_TEXT, SVG_VALUE_NONE,
+    SVG_VALUE_VERSION, SVG_VALUE_XLINK, SVG_VALUE_XMLNS, SVG_VALUE_XMLNS_EV,
+    Color, Group, Matrix, Path, Shape, SVGElement, SVGImage, SVGText)
+from .elements import LaserOperation
 
 MILS_PER_MM = 39.3701
 
@@ -258,7 +229,9 @@ class SVGLoader:
         basename = os.path.basename(pathname)
         file_node = context_node.add(type="file", name=basename)
         file_node.filepath = pathname
-        return SVGLoader.parse(svg, elements_modifier, file_node, pathname, scale_factor)
+        return SVGLoader.parse(
+            svg, elements_modifier, file_node, pathname, scale_factor
+        )
 
     @staticmethod
     def parse(svg, elements_modifier, context_node, pathname, scale_factor):
@@ -298,7 +271,9 @@ class SVGLoader:
                 continue
             elif isinstance(element, Group):
                 new_context = context_node.add(type="group", name=element.id)
-                SVGLoader.parse(element, elements_modifier, new_context, pathname, scale_factor)
+                SVGLoader.parse(
+                    element, elements_modifier, new_context, pathname, scale_factor
+                )
                 continue
             elif isinstance(element, SVGElement):
                 try:

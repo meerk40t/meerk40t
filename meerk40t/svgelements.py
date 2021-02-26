@@ -6,23 +6,10 @@ try:
     from collections.abc import MutableSequence  # noqa
 except ImportError:
     from collections import MutableSequence  # noqa
+
 from copy import copy
-
-from math import (
-    ceil,
-    cos,
-    radians,
-    sin,
-    sqrt,
-    hypot,
-    atan,
-    atan2,
-    tan,
-    degrees,
-    acos,
-    log,
-)
-
+from math import (acos, atan, atan2, ceil, cos, degrees, hypot, log, radians,
+                  sin, sqrt, tan)
 from xml.etree.ElementTree import iterparse
 
 try:

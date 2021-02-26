@@ -9,12 +9,12 @@ from math import ceil
 
 import wx
 
-from ..kernel import Module
-from .laserrender import LaserRender
 from ..image.imagetools import RasterScripts
-from .zmatrix import ZMatrix
+from ..kernel import Module
+from ..svgelements import Matrix, SVGImage
 from .icons import icons8_fantasy_50
-from ..svgelements import SVGImage, Matrix
+from .laserrender import LaserRender
+from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
 

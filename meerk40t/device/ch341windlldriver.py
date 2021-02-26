@@ -1,6 +1,4 @@
-from ctypes import windll, c_byte
-
-
+from ctypes import c_byte, windll
 
 # MIT License.
 

@@ -1,18 +1,9 @@
 import threading
 import time
 
-from ...kernel import (
-    STATE_UNKNOWN,
-    Module,
-    STATE_ACTIVE,
-    STATE_PAUSE,
-    STATE_INITIALIZE,
-    STATE_BUSY,
-    STATE_IDLE,
-    STATE_TERMINATE,
-    STATE_END,
-    STATE_WAIT,
-)
+from ...kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
+                       STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
+                       STATE_UNKNOWN, STATE_WAIT, Module)
 
 
 def convert_to_list_bytes(data):

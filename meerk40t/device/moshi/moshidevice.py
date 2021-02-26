@@ -1,11 +1,8 @@
-from .moshiinterpreter import MoshiInterpreter
-from .moshicontroller import MoshiController
-from ..lasercommandconstants import *
-from ...kernel import (
-    Modifier,
-    STATE_UNKNOWN,
-)
+from ...kernel import STATE_UNKNOWN, Modifier
 from ...svgelements import Length
+from ..lasercommandconstants import *
+from .moshicontroller import MoshiController
+from .moshiinterpreter import MoshiInterpreter
 
 
 def plugin(kernel, lifecycle=None):

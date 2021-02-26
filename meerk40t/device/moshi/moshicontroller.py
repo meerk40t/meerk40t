@@ -1,18 +1,9 @@
 import threading
 import time
 
-from ...kernel import (
-    STATE_UNKNOWN,
-    Module,
-    STATE_ACTIVE,
-    STATE_PAUSE,
-    STATE_INITIALIZE,
-    STATE_BUSY,
-    STATE_IDLE,
-    STATE_TERMINATE,
-    STATE_END,
-    STATE_WAIT,
-)
+from ...kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
+                       STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
+                       STATE_UNKNOWN, STATE_WAIT, Module)
 from .moshiconstants import swizzle_table
 
 STATUS_OK = 205  # Seen before file send. And after file send.

@@ -1,4 +1,4 @@
-from math import ceil, cos, sin, sqrt, tan, floor
+from math import ceil, cos, floor, sin, sqrt, tan
 
 from ..svgelements import Point
 
