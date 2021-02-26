@@ -2200,6 +2200,15 @@ class Console(Module, Pipe):
                 self._current_directory = "."
                 yield "Working directory"
                 return
+            if args[0] == "@":
+                import sys
+                if hasattr(sys, "_MEIPASS"):
+                    self._current_directory = sys._MEIPASS
+                    yield "Internal Directory"
+                    return
+                else:
+                    yield "No internal directory."
+                    return
             new_dir = os.path.join(self._current_directory, args[0])
             if not os.path.exists(new_dir):
                 yield "No such directory."
