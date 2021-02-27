@@ -162,12 +162,6 @@ supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('zh', u'Chinese', wx.LANGUAGE_CHINESE))
 
 
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_path, relative_path)
-
-
 class MeerK40t(wx.Frame, Module):
     """
     MeerK40t main window
@@ -3191,12 +3185,19 @@ class wxMeerK40t(wx.App, Module):
     def initialize(self, channel=None):
         device = self.device
         _ = wx.GetTranslation
-        wx.Locale.AddCatalogLookupPathPrefix(resource_path('locale'))
-        # wx.Locale.AddCatalogLookupPathPrefix('locale')
-        try:
-            wx.Locale.AddCatalogLookupPathPrefix(os.path.join(os.environ['RESOURCEPATH'],'locale'))
+        try:  # pyinstaller internal location
+            _resource_path = os.path.join(sys._MEIPASS, 'locale')
+            wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
         except:
             pass
+
+        try:  # Mac py2app resource
+            _resource_path = os.path.join(os.environ['RESOURCEPATH'], 'locale')
+            wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
+        except:
+            pass
+
+        wx.Locale.AddCatalogLookupPathPrefix('locale')  # Default Locale, prepended. Check this first.
 
         device.run_later = self.run_later
         device.translation = wx.GetTranslation
