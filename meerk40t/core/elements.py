@@ -81,69 +81,33 @@ class Node:
 
     def drop(self, drag_node):
         drop_node = self
-
         if drag_node.type == "elem":
             if drop_node.type == "op":
                 # Dragging element into operation adds that element to the op.
-                drop_node.add_node(drag_node.object, pos=0)
+                drop_node.add(drag_node.object, type="opnode", pos=0)
                 return True
             elif drop_node.type == "opnode":
-                # TODO: Correct
                 drop_index = drop_node.parent.object.index(drop_node.object)
-                drop_node.parent.object.insert(drop_index, drag_node.object)
+                drop_node.add(drag_node.object, type="opnode", pos=drop_index)
                 return True
-            elif drop_node.type == "branch ops":
-                obj = drag_node.object
-                self.context.classify([obj])
-                return True
-
-        if drag_node.type == "opnode":
+        elif drag_node.type == "opnode":
             if drop_node.type == "op":
-                # Dragging from op element to operation.
-                drag_index = drag_node.parent.index(drag_node)
-                drag_node.parent.object[drag_index] = None
-                drop_node.object.append(drag_node.object)
-                nodes = [
-                    op_elem
-                    for op_elem in drag_node.parent.object
-                    if op_elem is not None
-                ]
-                # TODO: Correct
-                drag_node.parent.object.clear()
-                drag_node.parent.object.extend(nodes)
+                drop_node.append_child(drag_node)
                 return True
             if drop_node.type == "opnode":
-                if drag_node.parent is drop_node.parent:
-                    # Dragging and dropping within the same parent puts insert on other side.
-                    drag_index = drag_node.parent.index(drag_node)
-                    drag_node.parent.object[drag_index] = None
-                    drop_index = drop_node.parent.index(drop_node)
-                    if drag_index > drop_index:
-                        drop_node.parent.object.insert(drop_index, drag_node.object)
-                    else:
-                        drop_node.parent.object.insert(drop_index + 1, drag_node.object)
-                else:
-                    drag_index = drag_node.parent.index(drag_node)
-                    drag_node.parent.object[drag_index] = None
-
-                    drop_index = drop_node.parent.index(drop_node)
-                    drop_node.parent.object.insert(drop_index, drag_node.object)
-
-                nodes = [n for n in drag_node.parent.object if n is not None]
-                # TODO: Correct
-                drag_node.parent.object.clear()
-                drag_node.parent.object.extend(nodes)
-
+                drop_node.insert_sibling(drag_node)
                 return True
+        elif drag_node.type == "cmdop":
+            if drop_node.type == "op" or drop_node.type == "cmdop":
+                drop_node.insert_sibling(drag_node)
         elif drag_node.type == "op":
             if drop_node.type == "op":
                 # Dragging operation to different operation.
-                parent = drop_node.parent
-                drag_node.move_node(drop_node)
+                drop_node.insert_sibling(drag_node)
                 return True
             elif drop_node.type == "branch ops":
                 # Dragging operation to op branch.
-                pass
+                drop_node.append_child(drag_node)
 
     @property
     def children(self):
@@ -356,23 +320,35 @@ class Node:
             for o in q.objects_of_children(types):
                 yield o
 
-    def move_node(self, drop_node):
-        drag_node = self
-        drag_siblings = drag_node.parent.children
-        drop_siblings = drop_node.parent.children
+    def append_child(self, new_child):
+        new_parent = self
+        drag_siblings = new_child.parent.children
+        drop_siblings = new_parent.children
 
-        drag_pos = drag_siblings.index(drag_node)
-        drop_pos = drop_siblings.index(drop_node)
+        drag_siblings.remove(new_child)
+        new_child.notify_removed(new_child)
 
-        drag_siblings.remove(drag_node)
-        drag_node.notify_removed(drag_node)
+        drop_siblings.append(new_child)
+        new_child._parent = new_parent
+        new_child.notify_added(new_child)
+
+    def insert_sibling(self, new_sibling):
+        destination_sibling = self
+        drag_siblings = new_sibling.parent.children
+        drop_siblings = destination_sibling.parent.children
+
+        # drag_pos = drag_siblings.index(drag_node)
+        drop_pos = drop_siblings.index(destination_sibling)
+
+        drag_siblings.remove(new_sibling)
+        new_sibling.notify_removed(new_sibling)
 
         # if drag_siblings is drop_siblings:
         #     if drag_pos <= drop_pos:
         #         drop_pos += 1
-        drop_siblings.insert(drop_pos, drag_node)
-        drag_node._parent = drop_node._parent
-        drag_node.notify_added(drag_node, pos=drop_pos)
+        drop_siblings.insert(drop_pos, new_sibling)
+        new_sibling._parent = destination_sibling._parent
+        new_sibling.notify_added(new_sibling, pos=drop_pos)
 
     def replace_node(self, *args, **kwargs):
         parent = self._parent
@@ -424,7 +400,7 @@ class ElemNode(Node):
         drop_node = self
         # Dragging element into element.
         if drag_node.type == "elem":
-            drag_node.move_node(drop_node)
+            drop_node.insert_sibling(drag_node)
             return True
         return False
 
@@ -2608,12 +2584,7 @@ class Elemental(Modifier):
             elif node.type == "file":
                 self.context.console("element delete\n")
             elif node.type == "opnode":
-                index = node.parent.index(node)
-                op = node.parent.object
-                if index == -1:
-                    op.remove(node.object)
-                else:
-                    del op[index]
+                node.remove_node()
             self.set_selected(None)
 
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
