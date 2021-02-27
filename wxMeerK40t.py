@@ -360,18 +360,19 @@ class MeerK40t(wx.Frame, Module):
 
         self.main_menubar.Append(wxglade_tmp_menu, _("Tools"))
 
+        from sys import platform
+        if platform == "darwin":
+            wxglade_tmp_menu = wx.Menu()
+            self.main_menubar.Append(wxglade_tmp_menu, "Window")
+        
+        self.SetMenuBar(self.main_menubar)
+        
         wxglade_tmp_menu = wx.Menu()
         wxglade_tmp_menu.Append(wx.ID_HELP, _("Help"), "")
         wxglade_tmp_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
         wxglade_tmp_menu.Append(wx.ID_ABOUT, _("About"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
 
-        from sys import platform
-        if platform == "darwin":
-            wxglade_tmp_menu = wx.Menu()
-            self.main_menubar.Append(wxglade_tmp_menu, "Window")
-
-        self.SetMenuBar(self.main_menubar)
         # Menu Bar end
 
         self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
