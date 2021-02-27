@@ -598,7 +598,10 @@ class MeerK40t(wx.Frame, Module):
 
     def accelerator_table(self, window):
         def close_window(e=None):
-            window.Close(False)
+            try:
+                window.Close(False)
+            except RuntimeError:
+                pass
 
         self.Bind(wx.EVT_MENU, close_window, id=self._close_window_id)
         window.SetAcceleratorTable(self._accel_tbl)
