@@ -3192,7 +3192,7 @@ class wxMeerK40t(wx.App, Module):
         device = self.device
         _ = wx.GetTranslation
         wx.Locale.AddCatalogLookupPathPrefix(resource_path('locale'))
-        wx.Locale.AddCatalogLookupPathPrefix('locale')
+        # wx.Locale.AddCatalogLookupPathPrefix('locale')
         try:
             wx.Locale.AddCatalogLookupPathPrefix(os.path.join(os.environ['RESOURCEPATH'],'locale'))
         except:
