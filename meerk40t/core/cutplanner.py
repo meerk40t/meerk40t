@@ -411,9 +411,9 @@ class Planner(Modifier):
         for op in plan:
             try:
                 if op.operation == "Raster":
-                    if len(op) == 0:
+                    if len(op.children) == 0:
                         continue
-                    if len(op) == 1 and isinstance(op[0], SVGImage):
+                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
                         continue  # make raster not needed since its a single real raster.
                     self.jobadd_make_raster()
                     return True
