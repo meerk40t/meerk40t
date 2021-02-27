@@ -1289,6 +1289,8 @@ class ImageLoader:
             {"href": pathname, "width": "100%", "height": "100%", "id": basename}
         )
         image.load()
+        if image.image is None:
+            return False
         try:
             context.setting(bool, "image_dpi", True)
             if context.image_dpi:

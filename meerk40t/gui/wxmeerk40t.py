@@ -2604,17 +2604,12 @@ class ShadowTree:
         pt = event.GetPoint()
         drag_item, _ = self.wxtree.HitTest(pt)
 
-        if drag_item is None:
+        if drag_item is None or drag_item.ID is None or not drag_item.IsOk():
             event.Skip()
             return
-        if drag_item.ID is None:
-            event.Skip()
-            return
-        if not drag_item.IsOk():
-            event.Skip()
-            return
+
         node_data = self.wxtree.GetItemData(drag_item)
-        if node_data.type in ("branch elems", "branch ops", "root"):
+        if not node_data.is_movable():
             event.Skip()
             return
         self.dragging_node = node_data
@@ -2630,121 +2625,23 @@ class ShadowTree:
         if self.dragging_node is None:
             event.Skip()
             return
+
         drag_node = self.dragging_node
         self.dragging_node = None
 
         drop_item = event.GetItem()
-        if drop_item is None:
+        if drop_item is None or drop_item.ID is None:
             event.Skip()
             return
-        if drop_item.ID is None:
-            event.Skip()
-            return
+
         drop_node = self.wxtree.GetItemData(drop_item)
         if drop_node is None or drop_node == drag_node:
             event.Skip()
             return
-
-        if drag_node.type == "elem":
-            if drop_node.type == "op":
-                # Dragging element into operation adds that element to the op.
-                drop_node.add_node(drag_node.object, pos=0)
-                event.Allow()
-                return
-            elif drop_node.type == "elem":
-                # Dragging element into element.
-                if drag_node.parent is drop_node.parent:
-                    # Dragging and dropping within the same parent puts insert on other side.
-                    drag_index = drag_node.parent.children.index(drag_node)
-                    drop_index = drop_node.parent.children.index(drop_node)
-                    if drag_index > drop_index:
-                        # TODO: CORRECT.
-                        drop_node.parent.move_node.insert(drop_index, drag_node.object)
-                    else:
-                        drop_node.parent.object.insert(drop_index + 1, drag_node.object)
-                else:
-                    drag_index = drag_node.parent.index(drag_node)
-                    drag_node.parent.object[drag_index] = None
-
-                    drop_index = drop_node.parent.index(drop_node)
-                    drop_node.parent.object.insert(drop_index, drag_node.object)
-
-                nodes = [n for n in drag_node.parent.object if n is not None]
-                drag_node.parent.object.clear()  # TODO: Correct
-                drag_node.parent.object.extend(nodes)
-                event.Allow()
-                return
-            elif drop_node.type == "opnode":
-                # TODO: Correct
-                drop_index = drop_node.parent.object.index(drop_node.object)
-                drop_node.parent.object.insert(drop_index, drag_node.object)
-                event.Allow()
-                return
-            elif drop_node.type == "branch ops":
-                obj = drag_node.object
-                self.context.classify([obj])
-                event.Allow()
-        elif drag_node.type == "opnode":
-            if drop_node.type == "op":
-                # Dragging from op element to operation.
-                drag_index = drag_node.parent.index(drag_node)
-                drag_node.parent.object[drag_index] = None
-                drop_node.object.append(drag_node.object)
-                nodes = [
-                    op_elem
-                    for op_elem in drag_node.parent.object
-                    if op_elem is not None
-                ]
-                # TODO: Correct
-                drag_node.parent.object.clear()
-                drag_node.parent.object.extend(nodes)
-                event.Allow()
-                return
-            if drop_node.type == "opnode":
-                if drag_node.parent is drop_node.parent:
-                    # Dragging and dropping within the same parent puts insert on other side.
-                    drag_index = drag_node.parent.index(drag_node)
-                    drag_node.parent.object[drag_index] = None
-                    drop_index = drop_node.parent.index(drop_node)
-                    if drag_index > drop_index:
-                        drop_node.parent.object.insert(drop_index, drag_node.object)
-                    else:
-                        drop_node.parent.object.insert(drop_index + 1, drag_node.object)
-                else:
-                    drag_index = drag_node.parent.index(drag_node)
-                    drag_node.parent.object[drag_index] = None
-
-                    drop_index = drop_node.parent.index(drop_node)
-                    drop_node.parent.object.insert(drop_index, drag_node.object)
-
-                nodes = [n for n in drag_node.parent.object if n is not None]
-                # TODO: Correct
-                drag_node.parent.object.clear()
-                drag_node.parent.object.extend(nodes)
-
-                event.Allow()
-                return
-        elif drag_node.type == "op":
-            if drop_node.type == "op":
-                # Dragging operation to different operation.
-                ops = drop_node.parent
-                drop_pos = ops.index(drop_node)
-                drag_pos = ops.index(drag_node)
-                ops.object[drag_pos] = None
-                if drag_pos > drop_pos:
-                    ops.object.insert(drop_pos, drag_node.object)
-                else:
-                    ops.object.insert(drop_pos + 1, drag_node.object)
-
-                nodes = [n for n in ops.object if n is not None]
-                # TODO: Correct
-                ops.object.clear()
-                ops.object.extend(nodes)
-                event.Allow()
-                return
-            elif drop_node.type == "branch ops":
-                # Dragging operation to op branch.
-                pass
+        if drop_node.drop(drag_node):
+            event.Allow()
+            return
+        event.Skip()
 
     def on_item_right_click(self, event):
         """

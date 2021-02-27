@@ -76,6 +76,75 @@ class Node:
     def __eq__(self, other):
         return other is self
 
+    def is_movable(self):
+        return self.type not in ("branch elems", "branch ops", "root")
+
+    def drop(self, drag_node):
+        drop_node = self
+
+        if drag_node.type == "elem":
+            if drop_node.type == "op":
+                # Dragging element into operation adds that element to the op.
+                drop_node.add_node(drag_node.object, pos=0)
+                return True
+            elif drop_node.type == "opnode":
+                # TODO: Correct
+                drop_index = drop_node.parent.object.index(drop_node.object)
+                drop_node.parent.object.insert(drop_index, drag_node.object)
+                return True
+            elif drop_node.type == "branch ops":
+                obj = drag_node.object
+                self.context.classify([obj])
+                return True
+
+        if drag_node.type == "opnode":
+            if drop_node.type == "op":
+                # Dragging from op element to operation.
+                drag_index = drag_node.parent.index(drag_node)
+                drag_node.parent.object[drag_index] = None
+                drop_node.object.append(drag_node.object)
+                nodes = [
+                    op_elem
+                    for op_elem in drag_node.parent.object
+                    if op_elem is not None
+                ]
+                # TODO: Correct
+                drag_node.parent.object.clear()
+                drag_node.parent.object.extend(nodes)
+                return True
+            if drop_node.type == "opnode":
+                if drag_node.parent is drop_node.parent:
+                    # Dragging and dropping within the same parent puts insert on other side.
+                    drag_index = drag_node.parent.index(drag_node)
+                    drag_node.parent.object[drag_index] = None
+                    drop_index = drop_node.parent.index(drop_node)
+                    if drag_index > drop_index:
+                        drop_node.parent.object.insert(drop_index, drag_node.object)
+                    else:
+                        drop_node.parent.object.insert(drop_index + 1, drag_node.object)
+                else:
+                    drag_index = drag_node.parent.index(drag_node)
+                    drag_node.parent.object[drag_index] = None
+
+                    drop_index = drop_node.parent.index(drop_node)
+                    drop_node.parent.object.insert(drop_index, drag_node.object)
+
+                nodes = [n for n in drag_node.parent.object if n is not None]
+                # TODO: Correct
+                drag_node.parent.object.clear()
+                drag_node.parent.object.extend(nodes)
+
+                return True
+        elif drag_node.type == "op":
+            if drop_node.type == "op":
+                # Dragging operation to different operation.
+                parent = drop_node.parent
+                drag_node.move_node(drop_node)
+                return True
+            elif drop_node.type == "branch ops":
+                # Dragging operation to op branch.
+                pass
+
     @property
     def children(self):
         return self._children
@@ -287,6 +356,24 @@ class Node:
             for o in q.objects_of_children(types):
                 yield o
 
+    def move_node(self, drop_node):
+        drag_node = self
+        drag_siblings = drag_node.parent.children
+        drop_siblings = drop_node.parent.children
+
+        drag_pos = drag_siblings.index(drag_node)
+        drop_pos = drop_siblings.index(drop_node)
+
+        drag_siblings.remove(drag_node)
+        drag_node.notify_removed(drag_node)
+
+        # if drag_siblings is drop_siblings:
+        #     if drag_pos <= drop_pos:
+        #         drop_pos += 1
+        drop_siblings.insert(drop_pos, drag_node)
+        drag_node._parent = drop_node._parent
+        drag_node.notify_added(drag_node, pos=drop_pos)
+
     def replace_node(self, *args, **kwargs):
         parent = self._parent
         index = parent._children.index(self)
@@ -332,6 +419,14 @@ class ElemNode(Node):
         super(ElemNode, self).__init__(data_object)
         self.last_transform = None
         data_object.node = self
+
+    def drop(self, drag_node):
+        drop_node = self
+        # Dragging element into element.
+        if drag_node.type == "elem":
+            drag_node.move_node(drop_node)
+            return True
+        return False
 
 
 class RootNode(Node):
