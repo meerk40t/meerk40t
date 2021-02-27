@@ -295,6 +295,7 @@ class MeerK40t(wx.Frame, Module):
 
         # Menu Bar
         self.main_menubar = wx.MenuBar()
+        wx.MenuBar.MacSetCommonMenuBar(self.main_menubar)
         wxglade_tmp_menu = wx.Menu()
 
         wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
