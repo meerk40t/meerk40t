@@ -616,7 +616,7 @@ class SelectionWidget(Widget):
             self.tool = self.tool_translate
             cursor = self.cursor
             self.cursor = wx.CURSOR_SIZING
-            first = elements.first_element(selected=True)
+            first = elements.first_element(emphasized=True)
             try:
                 if first.lock:
                     if self.cursor != cursor:

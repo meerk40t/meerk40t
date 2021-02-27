@@ -57,9 +57,10 @@ class Node:
         self.object = data_object
         self.type = type
 
-        self._selected = False
         self._emphasized = False
         self._highlighted = False
+        self._target = False
+
         self._opened = False
 
         self._bounds = None
@@ -114,13 +115,13 @@ class Node:
         return self._children
 
     @property
-    def selected(self):
-        return self._selected
+    def targeted(self):
+        return self._target
 
-    @selected.setter
-    def selected(self, value):
-        self._selected = value
-        self.notify_selected(self)
+    @targeted.setter
+    def targeted(self, value):
+        self._target = value
+        self.notify_targeted(self)
 
     @property
     def highlighted(self):
@@ -182,11 +183,11 @@ class Node:
                 node = self
             self._root.notify_emphasized(node=node, **kwargs)
 
-    def notify_selected(self, node=None, **kwargs):
+    def notify_targeted(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_selected(node=node, **kwargs)
+            self._root.notify_targeted(node=node, **kwargs)
 
     def notify_highlighted(self, node=None, **kwargs):
         if self._root is not None:
@@ -246,7 +247,7 @@ class Node:
         except AttributeError:
             pass
         try:
-            self.selected = False
+            self.targeted = False
             self.emphasized = False
             self.highlighted = False
             self.modified()
@@ -453,10 +454,10 @@ class RootNode(Node):
             if hasattr(listen, "emphasized"):
                 listen.emphasized(node, **kwargs)
 
-    def notify_selected(self, node=None, **kwargs):
+    def notify_targeted(self, node=None, **kwargs):
         for listen in self.listeners:
-            if hasattr(listen, "selected"):
-                listen.selected(node, **kwargs)
+            if hasattr(listen, "targeted"):
+                listen.targeted(node, **kwargs)
 
     def notify_highlighted(self, node=None, **kwargs):
         for listen in self.listeners:
@@ -919,8 +920,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
-                if not e.selected:
-                    e.node.selected = True
+                if not e.emphasized:
                     e.node.emphasized = True
             return "elements", list(self.elems(emphasized=True))
 
@@ -932,8 +932,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
-                if e.node.selected:
-                    e.node.selected = False
+                if e.node.emphasized:
                     e.node.emphasized = False
             return "elements", list(self.elems(emphasized=True))
 
@@ -945,12 +944,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
-                if e.node.selected:
-                    e.node.selected = False
-                    e.node.emphasize = False
-                else:
-                    e.node.selected = True
-                    e.node.emphasized = True
+                e.node.emphasized = not e.node.emphasized
             return "elements", list(self.elems(emphasized=True))
 
         # Operation Select
@@ -972,8 +966,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
-                if not e.selected:
-                    e.selected = True
+                if not e.emphasized:
                     e.emphasized = True
             return "ops", list(self.ops(emphasized=True))
 
@@ -985,8 +978,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
-                if e.selected:
-                    e.selected = False
+                if e.emphasized:
                     e.emphasize = False
             return "ops", list(self.ops(emphasized=True))
 
@@ -998,12 +990,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             for e in data:
-                if e.selected:
-                    e.selected = False
-                    e.emphasize = False
-                else:
-                    e.selected = True
-                    e.emphasized = True
+                e.emphasized = not e.emphasized
             return "ops", list(self.ops(emphasized=True))
 
         # Element Base
@@ -1101,7 +1088,7 @@ class Elemental(Modifier):
             channel(_("----------"))
             channel(_("Operations:"))
             for i, operation in enumerate(self.ops()):
-                selected = False  # operation.selected #TODO: Restore in some fashion.
+                selected = operation.emphasized
                 select = " *" if selected else "  "
                 color = (
                     "None"
@@ -1166,7 +1153,7 @@ class Elemental(Modifier):
         )
         def operation(command, channel, _, args=tuple(), **kwargs):
             arg = command[9:]
-            op_selected = []
+            op_values = []
             for value in arg.split(","):
                 try:
                     value = int(value)
@@ -1174,10 +1161,10 @@ class Elemental(Modifier):
                     continue
                 try:
                     op = self.get_op(value)
-                    op_selected.append(op)
+                    op_values.append(op)
                 except IndexError:
                     channel(_("index %d out of range") % value)
-            return "ops", op_selected
+            return "ops", op_values
 
         @context.console_command(
             "tree", help="access and alter tree elements", output_type="tree"
@@ -2560,7 +2547,7 @@ class Elemental(Modifier):
         )
         def execute_job(node, **kwargs):
             # self.context.open("window/JobPreview", self.gui, "0", selected=True)
-            node.selected = True
+            self._tree.set_emphasized([node])
             self.context.console("plan0 copy-selected\n")
             self.context.console("window open JobPreview 0\n")
 
@@ -3138,49 +3125,6 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
         self.classify(list(self.elems()))
 
-    def _filtered_list(self, item_list, types, depth=None, **kwargs):
-        """
-        Filters a list of items with selected, emphasized, and highlighted.
-        False values means find where that parameter is false.
-        True values means find where that parameter is true.
-        If the filter does not exist then it isn't used to filter that data.
-
-        Items which are set to None are skipped.
-
-        :param item_list:
-        :param depth max depth to filter list children.
-        :param kwargs:
-        :return:
-        """
-        s = "selected" in kwargs
-        if s:
-            s = kwargs["selected"]
-        else:
-            s = None
-        e = "emphasized" in kwargs
-        if e:
-            e = kwargs["emphasized"]
-        else:
-            e = None
-        h = "highlighted" in kwargs
-        if h:
-            h = kwargs["highlighted"]
-        else:
-            h = None
-
-        for node in self.flatten(item_list, depth=depth):
-            if node is None:
-                continue
-            if node.type not in types:
-                continue
-            if s is not None and s != node.selected:
-                continue
-            if e is not None and e != node.emphasized:
-                continue
-            if h is not None and s != node.highlighted:
-                continue
-            yield node
-
     def flatten(self, item_list, depth=None):
         if depth is not None:
             depth -= 1
@@ -3195,6 +3139,37 @@ class Elemental(Modifier):
                     continue
                 for s in self.flatten(child, depth=depth):
                     yield s
+
+    def _filtered_list(self, item_list, types, depth=None, **kwargs):
+        """
+        Filters a list of items with selected, emphasized, and highlighted.
+        False values means find where that parameter is false.
+        True values means find where that parameter is true.
+        If the filter does not exist then it isn't used to filter that data.
+
+        Items which are set to None are skipped.
+
+        :param item_list:
+        :param depth max depth to filter list children.
+        :param kwargs:
+        :return:
+        """
+        e = kwargs.get("emphasized")
+        s = kwargs.get("targeted")
+        h = kwargs.get("highlighted")
+
+        for node in self.flatten(item_list, depth=depth):
+            if node is None:
+                continue
+            if node.type not in types:
+                continue
+            if s is not None and s != node.targeted:
+                continue
+            if e is not None and e != node.emphasized:
+                continue
+            if h is not None and s != node.highlighted:
+                continue
+            yield node
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
@@ -3359,22 +3334,6 @@ class Elemental(Modifier):
             self._bounds = new_bounds
             self.context.signal("selected_bounds", self._bounds)
 
-    def is_in_set(self, value, selected_set, flat=True):
-        """
-        Find whether the value is tree.
-
-        :param value:
-        :param selected_set:
-        :param flat:
-        :return:
-        """
-        for q in selected_set:
-            if flat and isinstance(q, (list, tuple)) and self.is_in_set(value, q, flat):
-                return True
-            if q is value:
-                return True
-        return False
-
     def highlight_children(self, node_context):
         """
         Recursively highlight the children.
@@ -3385,18 +3344,35 @@ class Elemental(Modifier):
             child.highlighted = True
             self.highlight_children(child)
 
+    def target_clones(self, node_context, node_exclude, object_search):
+        """
+        Recursively highlight the children.
+        :param node_context:
+        :return:
+        """
+        for child in node_context.children:
+            self.target_clones(child, node_exclude, object_search)
+            if child is node_exclude:
+                continue
+            if child.object is None:
+                continue
+            if object_search is child.object:
+                child.targeted = True
+
     def set_emphasis(self, emphasize):
         """
-        If elements itself is selected, all subelements are semiselected.
         If any operation is selected, all sub-operations are highlighted.
         If any element is emphasized, all copies are highlighted.
+        If any element is emphasized, all operations containing that element are targeted.
         """
         for s in self.flatten(self._tree):
             if s.highlighted:
                 s.highlighted = False
+            if s.targeted:
+                s.targeted = False
 
             if s.emphasized:
-                if s not in emphasize:
+                if emphasize is not None and s not in emphasize:
                     s.emphasized = False
             else:
                 if emphasize is not None and s in emphasize:
@@ -3405,8 +3381,10 @@ class Elemental(Modifier):
             for e in emphasize:
                 if hasattr(e, "node"):
                     e = e.node
-                e.emphasized = True
                 self.highlight_children(e)
+            for e in emphasize:
+                if hasattr(e, "object"):
+                    self.target_clones(self._tree, e, e.object)
 
     def center(self):
         bounds = self._bounds
@@ -3458,7 +3436,7 @@ class Elemental(Modifier):
         ymax = max([e[1] for e in boundary_points])
         return xmin, ymin, xmax, ymax
 
-    def move_selected(self, dx, dy):
+    def move_emphasized(self, dx, dy):
         for obj in self.elems(emphasized=True):
             obj.transform.post_translate(dx, dy)
             obj.node.modified()

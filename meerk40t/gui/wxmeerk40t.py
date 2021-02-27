@@ -2130,7 +2130,7 @@ class MeerK40t(wx.Frame, Module, Job):
     def open_fill_dialog(self):
         context = self.context
         elements = context.elements
-        first_selected = elements.first_element(selected=True)
+        first_selected = elements.first_element(emphasized=True)
         if first_selected is None:
             return
         data = wx.ColourData()
@@ -2393,7 +2393,7 @@ class ShadowTree:
     def emphasized(self, node):
         self.update_name(node)
 
-    def selected(self, node):
+    def targeted(self, node):
         self.update_name(node)
 
     def highlighted(self, node):
@@ -2442,7 +2442,7 @@ class ShadowTree:
                     tree.SetItemBackgroundColour(child, wx.YELLOW)
                 elif element.emphasized:
                     tree.SetItemBackgroundColour(child, wx.CYAN)
-                elif element.selected:
+                elif element.targeted:
                     tree.SetItemBackgroundColour(child, wx.RED)
             except AttributeError:
                 pass
@@ -2672,7 +2672,7 @@ class ShadowTree:
             self.activated_object(node.object)
 
     def activate_selected_node(self):
-        self.activated_object(self.elements.first_element(selected=True))
+        self.activated_object(self.elements.first_element(emphasized=True))
 
     def activated_object(self, obj):
         if obj is None:
@@ -2711,7 +2711,7 @@ class ShadowTree:
         """
         self.do_not_select = True
         for e in self.elements.elems_nodes(emphasized=True):
-            self.wxtree.SelectItem(e.item, e.selected)
+            self.wxtree.SelectItem(e.item, True)
         self.do_not_select = False
 
     def contains(self, box, x, y=None):
