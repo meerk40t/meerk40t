@@ -212,7 +212,6 @@ class Node:
         The matrix transformation was changed.
         """
         self.notify_modified(self)
-        self._bounds_dirty = True
 
     def altered(self):
         """
@@ -3401,7 +3400,7 @@ class Elemental(Modifier):
         self.context.signal("selected_bounds", self._bounds)
 
     def update_bounds(self, b):
-        self._bounds = [b[0], b[1], b[0], b[1]]
+        self._bounds = [b[0], b[1], b[2], b[3]]
         self.context.signal("selected_bounds", self._bounds)
 
     @staticmethod

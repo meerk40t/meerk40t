@@ -21,50 +21,95 @@ import wx.ribbon as RB
 
 from ..core.cutplanner import CutPlanner
 from ..core.elements import CommandOperation, LaserOperation
-from ..device.lasercommandconstants import (COMMAND_BEEP, COMMAND_FUNCTION,
-                                            COMMAND_HOME, COMMAND_JOG,
-                                            COMMAND_JOG_FINISH,
-                                            COMMAND_JOG_SWITCH,
-                                            COMMAND_LASER_OFF,
-                                            COMMAND_LASER_ON,
-                                            COMMAND_MODE_PROGRAM,
-                                            COMMAND_MODE_RAPID, COMMAND_MOVE,
-                                            COMMAND_SET_ABSOLUTE,
-                                            COMMAND_SET_DIRECTION,
-                                            COMMAND_SET_SPEED, COMMAND_WAIT,
-                                            COMMAND_WAIT_FINISH,
-                                            REALTIME_RESET)
+from ..device.lasercommandconstants import (
+    COMMAND_BEEP,
+    COMMAND_FUNCTION,
+    COMMAND_HOME,
+    COMMAND_JOG,
+    COMMAND_JOG_FINISH,
+    COMMAND_JOG_SWITCH,
+    COMMAND_LASER_OFF,
+    COMMAND_LASER_ON,
+    COMMAND_MODE_PROGRAM,
+    COMMAND_MODE_RAPID,
+    COMMAND_MOVE,
+    COMMAND_SET_ABSOLUTE,
+    COMMAND_SET_DIRECTION,
+    COMMAND_SET_SPEED,
+    COMMAND_WAIT,
+    COMMAND_WAIT_FINISH,
+    REALTIME_RESET,
+)
 from ..kernel import STATE_BUSY, Job, Module
 from ..svgelements import (
-    SVG_ATTR_STROKE, Angle, Color, Length, Matrix, Path, SVGElement, SVGImage,
-    SVGText)
+    SVG_ATTR_STROKE,
+    Angle,
+    Color,
+    Length,
+    Matrix,
+    Path,
+    SVGElement,
+    SVGImage,
+    SVGText,
+)
 from .about import About
 from .bufferview import BufferView
 from .camerainteface import CameraInterface
 from .controller import Controller
 from .devicemanager import DeviceManager
 from .icons import (
-    icon_meerk40t, icons8_administrative_tools_50, icons8_camera_50,
-    icons8_comments_50, icons8_connected_50, icons8_console_50,
-    icons8_direction_20, icons8_emergency_stop_button_50, icons8_fantasy_50,
-    icons8_file_20, icons8_keyboard_50, icons8_laser_beam_20,
-    icons8_laser_beam_52, icons8_lock_50, icons8_manager_50, icons8_move_50,
-    icons8_opened_folder_50, icons8_padlock_50, icons8_pause_50,
-    icons8_roll_50, icons8_route_50, icons8_save_50, icons8_usb_connector_50,
-    icons8_vector_20)
+    icon_meerk40t,
+    icons8_administrative_tools_50,
+    icons8_camera_50,
+    icons8_comments_50,
+    icons8_connected_50,
+    icons8_console_50,
+    icons8_direction_20,
+    icons8_emergency_stop_button_50,
+    icons8_fantasy_50,
+    icons8_file_20,
+    icons8_keyboard_50,
+    icons8_laser_beam_20,
+    icons8_laser_beam_52,
+    icons8_lock_50,
+    icons8_manager_50,
+    icons8_move_50,
+    icons8_opened_folder_50,
+    icons8_padlock_50,
+    icons8_pause_50,
+    icons8_roll_50,
+    icons8_route_50,
+    icons8_save_50,
+    icons8_usb_connector_50,
+    icons8_vector_20,
+    icons8_group_objects_20,
+)
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
 from .jobspooler import JobSpooler
 from .keymap import Keymap
-from .laserrender import (DRAW_MODE_ANIMATE, DRAW_MODE_BACKGROUND,
-                          DRAW_MODE_CACHE, DRAW_MODE_FILLS, DRAW_MODE_FLIPXY,
-                          DRAW_MODE_GRID, DRAW_MODE_GUIDES, DRAW_MODE_ICONS,
-                          DRAW_MODE_IMAGE, DRAW_MODE_INVERT,
-                          DRAW_MODE_LASERPATH, DRAW_MODE_PATH,
-                          DRAW_MODE_REFRESH, DRAW_MODE_RETICLE,
-                          DRAW_MODE_SELECTION, DRAW_MODE_STROKES,
-                          DRAW_MODE_TEXT, DRAW_MODE_TREE, LaserRender,
-                          swizzlecolor)
+from .laserrender import (
+    DRAW_MODE_ANIMATE,
+    DRAW_MODE_BACKGROUND,
+    DRAW_MODE_CACHE,
+    DRAW_MODE_FILLS,
+    DRAW_MODE_FLIPXY,
+    DRAW_MODE_GRID,
+    DRAW_MODE_GUIDES,
+    DRAW_MODE_ICONS,
+    DRAW_MODE_IMAGE,
+    DRAW_MODE_INVERT,
+    DRAW_MODE_LASERPATH,
+    DRAW_MODE_PATH,
+    DRAW_MODE_REFRESH,
+    DRAW_MODE_RETICLE,
+    DRAW_MODE_SELECTION,
+    DRAW_MODE_STROKES,
+    DRAW_MODE_TEXT,
+    DRAW_MODE_TREE,
+    LaserRender,
+    swizzlecolor,
+)
 from .navigation import Navigation
 from .notes import Notes
 from .operationproperty import OperationProperty
@@ -76,8 +121,16 @@ from .settings import Settings
 from .terminal import Terminal
 from .textproperty import TextProperty
 from .usbconnect import UsbConnect
-from .widget import (ElementsWidget, GridWidget, GuideWidget, LaserPathWidget,
-                     RectSelectWidget, ReticleWidget, Scene, SelectionWidget)
+from .widget import (
+    ElementsWidget,
+    GridWidget,
+    GuideWidget,
+    LaserPathWidget,
+    RectSelectWidget,
+    ReticleWidget,
+    Scene,
+    SelectionWidget,
+)
 
 """
 Laser software for the Stock-LIHUIYU laserboard.
@@ -2406,7 +2459,6 @@ class ShadowTree:
             self.set_color(node, c)
         except AttributeError:
             pass
-        self.set_icon(node)
 
     def altered(self, node):
         self.update_name(node)
@@ -2443,7 +2495,7 @@ class ShadowTree:
                 elif element.emphasized:
                     tree.SetItemBackgroundColour(child, wx.CYAN)
                 elif element.targeted:
-                    tree.SetItemBackgroundColour(child, wx.RED)
+                    tree.SetItemBackgroundColour(child, wx.Colour(0xFF00FF))
             except AttributeError:
                 pass
             self.refresh_tree(child)
@@ -2467,11 +2519,6 @@ class ShadowTree:
         node_elements = self.element_root.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap(True))
 
-        # node_files = self.element_root.get_branch(NODE_FILES_BRANCH)
-        # self.set_icon(node_files, icons8_file_20.GetBitmap(True))
-
-        # for n in node_files.children:
-        #     self.set_icon(n, icons8_file_20.GetBitmap(True))
         self.wxtree.ExpandAll()
 
     def build_tree(self, parent_node):
@@ -2547,6 +2594,10 @@ class ShadowTree:
                     self.set_color(node, c)
                 except AttributeError:
                     pass
+            elif node.type == "file":
+                self.set_icon(node, icons8_file_20.GetBitmap(True))
+            elif node.type == "group":
+                self.set_icon(node, icons8_group_objects_20.GetBitmap(True))
         else:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
@@ -2730,6 +2781,8 @@ class ShadowTree:
         """
         if node is None:
             return
+        if hasattr(node, "node"):
+            node = node.node
         menu = wx.Menu()
         if node.parent is None:
             return

@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------
 from wx import Bitmap
-from wx.lib.embeddedimage import PyEmbeddedImage
+from wx.lib.embeddedimage import PyEmbeddedImage as PEI
 
 theme = False
 icon_r = 230
@@ -8,12 +8,12 @@ icon_g = 230
 icon_b = 230
 
 
-class PyEmbeddedImageTheme(PyEmbeddedImage):
+class PyEmbeddedImage(PEI):
     def __init__(self, data):
         super().__init__(data)
 
     def GetBitmap(self, use_theme=True, resize=None):
-        image = PyEmbeddedImage.GetImage(self)
+        image = PEI.GetImage(self)
         if theme and use_theme:
             image.Replace(0, 0, 0, icon_r, icon_g, icon_b)
         if resize is not None:
@@ -21,7 +21,7 @@ class PyEmbeddedImageTheme(PyEmbeddedImage):
         return Bitmap(image)
 
 
-icons8_add_file_50 = PyEmbeddedImageTheme(
+icons8_add_file_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAALdSURBVGhD7Zq5qhRBFIYH10BETFxQ"
     b"UUEMBCMFF0xMFBNBcF8QDBTEB/ANTAVxx9DtGcw0ckP0BUTcMFFQEVxQ/w/mwKHt7ntmqqrn"
@@ -41,7 +41,7 @@ icons8_add_file_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_comments_50 = PyEmbeddedImageTheme(
+icons8_comments_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEcSURBVGhD7Zm7DcIwFEWzBzOwARvQ"
     b"0LAKtJSUtIxAzwAMQEXJAkhUbADvFpaiyI7jzzN2dI90msRx3pH4REpHCCGEEDtL8Vy5mNHL"
@@ -53,7 +53,7 @@ icons8_comments_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_connected_50 = PyEmbeddedImageTheme(
+icons8_connected_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKaSURBVGhD7ZjLrkxBFIabEIIEcyaI"
     b"4BnELSRuMWQk4QGEiaEQnsCEEQ+AgYmIRI7BSZi4DzwGIi4Dcfk+rGRlp7vP3rprdw/qS744"
@@ -72,7 +72,7 @@ icons8_connected_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_down = PyEmbeddedImageTheme(
+icons8_down = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD7SURBVGhD7Y9JCgIxFAV77bTUe7h2"
     b"PIIX0a2H8SyC0xH0IA4LN+r7yoMgjbZ00ibwCgqSQH5SmRBCCCGEEEKI6pjA6WsZnDpcwM5z"
@@ -83,7 +83,7 @@ icons8_down = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_left = PyEmbeddedImageTheme(
+icons8_left = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADASURBVGhD7c+5DcJAAERRx1wh9EHM"
     b"WQKNQEox1ILEVQIUwhGQAH9lnKy0sXfs+dKTJp3COeecE2yJVTl1W+CFN2TPzBFOfP8kz8Qn"
@@ -93,7 +93,7 @@ icons8_left = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_right = PyEmbeddedImageTheme(
+icons8_right = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVGhD7ZHJCQJREAUHvbkdNQUD"
     b"8OgagoloQmbhXXALQQNxOYigVjszoDBzUobpzysofv++FR0JIYQQP1BN3n/Rxife3z+ndPCA"
@@ -103,7 +103,7 @@ icons8_right = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_home_filled_50 = PyEmbeddedImageTheme(
+icons8_home_filled_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHeSURBVGhD7dk9SxxRGMXxJUGSqBhE"
     b"LGwUVLSxkFjEIvoFtDGVtVYRxNQpAkkVrCwTsUlAzDdIpY2lghAiaGMQBUsJgSiKJv8DzjLM"
@@ -118,7 +118,7 @@ icons8_home_filled_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_disconnected_50 = PyEmbeddedImageTheme(
+icons8_disconnected_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAMOSURBVGhD7ZlNqw9RHMf/QhQKb4Cw"
     b"s7pRVh4SEeXhFXhcWJPssLAkL4CFlLhuNxJRHha8EHZuoTxbie+HfvXrdGb+Z2ZOM2cx3/rU"
@@ -139,7 +139,7 @@ icons8_disconnected_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_gas_industry_50 = PyEmbeddedImageTheme(
+icons8_gas_industry_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAVlSURBVGhD7Zl3yIVTHMdfe0cie0XI"
     b"yN6SkWQkW0b+IFvJLpFNQsmKJCs7QoSUnZA9IitbSPaen8+5z6/3eU/n3vd93ee5977lW5/u"
@@ -171,7 +171,7 @@ icons8_gas_industry_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_laser_beam_52 = PyEmbeddedImageTheme(
+icons8_laser_beam_52 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"0UlEQVRoge2av2sUQRTHP3cXA5IEtNPEQoOggmBh0AQLlSAo/gsxWqmNCsbGRgRFI3aChaAQ"
     b"vM4QG8HKOiGFRP0DJCbxBzGaJhhRvLV4u2T27cwkuZu9u+K+MHA3783M9zu78+bN3BXIH5H6"
@@ -195,7 +195,7 @@ icons8_laser_beam_52 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_padlock_50 = PyEmbeddedImageTheme(
+icons8_padlock_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFqSURBVGhD7dXPKgVhGMfxIcUdKG5A"
     b"hJKyscFCFFaW1jYnW25ALsEV2CALC7KykLKwslK2SllIiUL+fH/lqdN0GF7nnT+n51uf0mSa"
@@ -208,7 +208,7 @@ icons8_padlock_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_opened_folder_50 = PyEmbeddedImageTheme(
+icons8_opened_folder_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAK9SURBVGhD7Zk7aBRRFIYXLIKCEQux"
     b"ExEhYhcFCxEFUSsxCJFgAqJ2goWIdiJaiIrgI50kjRoLEdJpumApsfIBFpKg4AvxBYqF7/87"
@@ -227,7 +227,7 @@ icons8_opened_folder_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8up = PyEmbeddedImageTheme(
+icons8up = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADySURBVGhD7c9JCsJAEIXhrJ2Weg/X"
     b"jkfwIrr1MJ5FcDqCHsRh4UZ9jRaEkEokdsdqeB88aGrR8CdERERERBY0sP77GS8XscbO2MAd"
@@ -238,7 +238,7 @@ icons8up = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_usb_connector_50 = PyEmbeddedImageTheme(
+icons8_usb_connector_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAMvSURBVGhD7ZlLqE1RGMeP9yuKJPKM"
     b"DBSllJC8MiIkMUAZkFeSIhOPDKSUgQETjJSBMvEoEga4pRBFCil5JEKSV96/37l71b7bOfse"
@@ -260,7 +260,7 @@ icons8_usb_connector_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icon_meerk40t = PyEmbeddedImageTheme(
+icon_meerk40t = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAAAA3NCSVQICAjb4U/gAAAgAElE"
     b"QVR4nGy8Wawk6XUmdv4l9oiM3Je7L9W31q7u6m51s7mIpJqkRGqGoiBpJHkkeTDSAB6PBvCD"
     b"AdlPnmcvAwMW4AfDDza8YCCNOCPKlEVSHKopsnrvWrq6uqpu3f3mvbkvsUf8ix/+qmSxx/lQ"
@@ -608,7 +608,7 @@ icon_meerk40t = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_administrative_tools_50 = PyEmbeddedImageTheme(
+icons8_administrative_tools_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAXWSURBVGhD1ZllqC1VGIaPjV2YYNdV"
     b"FMQuFDHwly02Jooo6g8xMFDEThT7h3FtMLFFQcTEwBY7sTuw9XnG/XHXnTNr9szes8/lvPBw"
@@ -642,7 +642,7 @@ icons8_administrative_tools_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_play_50 = PyEmbeddedImageTheme(
+icons8_play_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFKSURBVGhD7dm/KsVxGMfxX4pBNjLJ"
     b"qpTNYDqDhUuQO1DcgMEVWIwGC5egcwVyATLLjAUpSf68H3zrk4iDzu/7PJ53veo426fw/Z3v"
@@ -655,7 +655,7 @@ icons8_play_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_pause_50 = PyEmbeddedImageTheme(
+icons8_pause_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAB2SURBVGhD7dnBCcNADETRrSrFpI8U"
     b"k3pSWGzBuACTAQfzHuiyIME/7wIAfvfY5515zcNJs3Psz63LPPf5Zj7zcNLsHPtz6zJCQkib"
@@ -664,7 +664,7 @@ icons8_pause_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_lock_50 = PyEmbeddedImageTheme(
+icons8_lock_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGGSURBVGhD7ZXBKkVRFIZvMeAJJHkB"
     b"JSVlIgOKKIw8gkxkes0ljyAPYCJRUjIykJmRIVOlKDGgUPj+Oqu0w3G3e/Y5buurr07rnL32"
@@ -678,7 +678,7 @@ icons8_lock_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_move_32 = PyEmbeddedImageTheme(
+icons8_move_32 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADiSURBVFhH7ZUBDsIgEAT5hH/U6HP9"
     b"T+1GNtlcSuEKHIlxkoukhduxVkh/OrnlWgKC37nCJRi+5QqVsOGhEhpun0CIxGsvDaKAimHO"
@@ -688,7 +688,7 @@ icons8_move_32 = PyEmbeddedImageTheme(
     b"AElFTkSuQmCC"
 )
 
-icons8_move_50 = PyEmbeddedImageTheme(
+icons8_move_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"zUlEQVRoge2Z7U7CMBSGnxhN9I8OZEPh/u8AE2OiIVFQgciHIsLN4I+2aZ0BaffRzfRJmmwj"
     b"63lfoO1pDwQCtSWSrdZEwCvwBlx61uJMBIyArWxTamimAYzRJkwzLY+6rGgBM4TwL7QJdT2j"
@@ -702,7 +702,7 @@ icons8_move_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_route_50 = PyEmbeddedImageTheme(
+icons8_route_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHQSURBVGhD7dZJTgMxFIThHIIlK2Zu"
     b"wIYdO7ZwAeZZnDV7FszcATFUCT/JMk7Hr+12/KT+pRJR6LjzKSCYjI3Z7cjNdAR8uZnFCOLH"
@@ -716,7 +716,7 @@ icons8_route_50 = PyEmbeddedImageTheme(
     b"Rkh3bmNj9ppMfgF/kbj+SZ89mgAAAABJRU5ErkJggg=="
 )
 
-icons8_resize_horizontal_50 = PyEmbeddedImageTheme(
+icons8_resize_horizontal_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAECSURBVGhD7dhZDoJAEIRhzuNyKJcH"
     b"vYnn8VjewaWbUMkEDRGmu2lI/UmFt2G+RF9oGGOMMcbaNt3TMo8zB7vInt3TKo8zB9MXvWTv"
@@ -726,7 +726,7 @@ icons8_resize_horizontal_50 = PyEmbeddedImageTheme(
     b"+iLrz5s4MwyBVvERmzHGGGP5apoPcwpl40zo9wQAAAAASUVORK5CYII="
 )
 
-icons8_resize_vertical_50 = PyEmbeddedImageTheme(
+icons8_resize_vertical_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFSSURBVGhD7doxTsNAEIVhi3NwmECB"
     b"aJLj5VQUUHOOFFTJPMlPWq1md8aRbM+Y/aUnnBRxvm4NTKNR3j7mpe4i+5uH65QRcZ+XElMj"
@@ -738,7 +738,7 @@ icons8_resize_vertical_50 = PyEmbeddedImageTheme(
     b"sQAAAABJRU5ErkJggg=="
 )
 
-icons8_save_50 = PyEmbeddedImageTheme(
+icons8_save_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"XElEQVRoge2YS1ICMRBAn5aFx9E1eD0/HEV3bLwAehOHjZ5BXBBKoDLm051Jl/SrSg1Uejp5"
     b"hGSgwXGcUmbAEtgA207tOcxDxFNHgcO2ksoMIdF8pH8/UAv2ub9QkElNdAqRG+AzvH4FriXJ"
@@ -749,7 +749,7 @@ icons8_save_50 = PyEmbeddedImageTheme(
     b"ToOiIl7rApxGSxXxgHYFOI2WW8RzHOeEH/58jcLJRDukAAAAAElFTkSuQmCC"
 )
 
-icons8_plus_50 = PyEmbeddedImageTheme(
+icons8_plus_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"yElEQVRoge3az29VRRQH8E+18h4Bhb5aYCnxJ2gqe4I/FmoRF2iiiYo7DG74EXSr/g8mTfxH"
     b"DBGjCKKxiigbawHdqCSaYOOvCkHzWMxM5tb0te++N30tCd/k5iR3Zs6PO3POnDlzuYnVhaGC"
@@ -772,7 +772,7 @@ icons8_plus_50 = PyEmbeddedImageTheme(
     b"HNfefn4AAAAASUVORK5CYII="
 )
 
-icons8_trash_50 = PyEmbeddedImageTheme(
+icons8_trash_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFwSURBVGhD7ZmtSgVRFIVHBDEIahMU"
     b"X0AFg8EgWHwEQRCsPoAWq8Fg1SCCVYuCJvEHk8VkEGwWX8AsFl0L9oaDHPHOZZ87w2V98JXF"
@@ -784,7 +784,7 @@ icons8_trash_50 = PyEmbeddedImageTheme(
     b"izME+ShcwNwHz269gltwBAohRF9SVT/YcCJDemJ9EwAAAABJRU5ErkJggg=="
 )
 
-icons8_manager_50 = PyEmbeddedImageTheme(
+icons8_manager_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"60lEQVRoge3ZXYhVVRQH8N+MqZWplRA1RoaZ9IWFBUX2RfSBD4VFEdWLwWCYZS9F9RAGRQV9"
     b"GSRU0EtBgVFUmMQYvuijEVlWMAZJmYTgV1oONjM9rDvMvqdzzz3ee+begvnDgnPP3mvv///s"
@@ -807,7 +807,7 @@ icons8_manager_50 = PyEmbeddedImageTheme(
     b"yw+xR8TlxKxuEWwF54h7rR/FHdfb4hA3iUlMYhLl8Q8zzJ/A80nLpwAAAABJRU5ErkJggg=="
 )
 
-icons8_center_of_gravity_50 = PyEmbeddedImageTheme(
+icons8_center_of_gravity_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKRSURBVGhD7ZpLbtUwFIavQCp7AKmw"
     b"gjKAYWnZC6LlsQHGjJjx6GOIugr6WEQLzHirSygSApUB/F97j3SUJre2414nt/mlTzdNcmyf"
@@ -825,7 +825,7 @@ icons8_center_of_gravity_50 = PyEmbeddedImageTheme(
     b"SUVORK5CYII="
 )
 
-icons8_delete_50 = PyEmbeddedImageTheme(
+icons8_delete_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"bklEQVRoge2ZsW7CMBCGv3aAEdSRvEkbpLIUHh2G9l0oZaYDtkBRCPH5bJ8if5I3uD8f+BzL"
     b"hkqlUpkqc2ALNBmyGmAHzLQLL4EDcAGOQKsdcEfrMi4uc6lVeMFNwo8/4FMr4I4P4LeT9QO8"
@@ -837,7 +837,7 @@ icons8_delete_50 = PyEmbeddedImageTheme(
     b"AElFTkSuQmCC"
 )
 
-icons8_goal_50 = PyEmbeddedImageTheme(
+icons8_goal_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAF"
     b"vElEQVRoge2a329URRTHP7ttY+VXy4PUmhCNNj4QoCXRBLUSrZBY22CKMaGAkb+gShA1URIF"
     b"bE1DouEPsGhgK30ioomJTXyAqqE8+SNqVaS/7LZoKNQHpNr6cO5lz5yd3Xv3R996kknm3u/M"
@@ -869,7 +869,7 @@ icons8_goal_50 = PyEmbeddedImageTheme(
     b"0mKZx1+WZSm3/A9x0g4/FKsS0gAAAABJRU5ErkJggg=="
 )
 
-icons8_file_50 = PyEmbeddedImageTheme(
+icons8_file_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"R0lEQVRoge3asU7CQBjA8b/GTiZOjq2Y6DsQnsVBjAuPwOAD6FM4uTj5BCjREN6C0Jm1mwaG"
     b"c7gO9E76nfcN3z9pQqFc75emoWkBy0rSUeR2BXAPDIFTgf1ugEegFhgrugL4ArbCSw1c/aOD"
@@ -880,7 +880,7 @@ icons8_file_50 = PyEmbeddedImageTheme(
     b"ZeVoB0LBdk/cOVz+AAAAAElFTkSuQmCC"
 )
 
-icons8_file_20 = PyEmbeddedImageTheme(
+icons8_file_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"qElEQVQ4je3VMQ4BQRSA4Y+o6NxBsfXWWyhU7uFOtA6gYhOtwhEUSoWKQkKt2Y2xwSw68SeT"
     b"vJc3+eclLzPTcKONRJwtTs+KrSBOMMXqhSxBBwMcYyenGEf2jDDDGt1Yh3XJscMCQxy+FZZS"
@@ -888,7 +888,7 @@ icons8_file_20 = PyEmbeddedImageTheme(
     b"/QIescEFrkM5GgOS//FxAAAAAElFTkSuQmCC"
 )
 
-icons8_vector_50 = PyEmbeddedImageTheme(
+icons8_vector_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"yklEQVRoge2YS0oDQRCGv4TgCURBAxp3egdd6BkiIngCEQSXwYXiYiKeQpc+Alm5EK/gKYwS"
     b"Nz52URMXXWPCMEPPo2cSQn3QTDJ0/39Vd9e8QFEURVHSU3KsNxiXf9mV0Lip5KRrm+mkK2el"
@@ -901,7 +901,7 @@ icons8_vector_50 = PyEmbeddedImageTheme(
     b"aCKThiYyaUTdR/K+T9hI7D81K6IoiqIoCvAH9xeE5oCkha8AAAAASUVORK5CYII="
 )
 
-icons8_vector_20 = PyEmbeddedImageTheme(
+icons8_vector_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"JElEQVQ4je3SvUpDQRCG4ScmNooK/tQBCzsbTWOhtSAiURCsLIR4D2qrhZdgITbiNVgrCBIr"
     b"i4AIxkYQgiEIaQSxcENO1kMSsBNfOLDz7Tezs7OHfyKKKEdfsVtCFmvYxA0+o/0l3GEXJ0Eb"
@@ -911,7 +911,7 @@ icons8_vector_20 = PyEmbeddedImageTheme(
     b"KspB+1FqGEroV3o/SjOKL1Hpo5G/xhdkBjoJ6swePgAAAABJRU5ErkJggg=="
 )
 
-icons8_system_task_20 = PyEmbeddedImageTheme(
+icons8_system_task_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"TElEQVQ4ja3UzStEURjH8c9goWyxY1jITkrs8AewoPgLSLKztLJR/gEpxcbWwsbWhrLwlh3K"
     b"S40lKYlmIxbnjJm57ryU+dXt3OeeX9/znOc852bQiS6N0VMG1zhqEHCsCR9YRf4foHxkfLTE"
@@ -922,7 +922,7 @@ icons8_system_task_20 = PyEmbeddedImageTheme(
     b"rZ7LCne8DPgDBhc9y356EnYAAAAASUVORK5CYII="
 )
 
-icons8_laser_beam_20 = PyEmbeddedImageTheme(
+icons8_laser_beam_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"VklEQVQ4jd3TO0udQRSF4UeDCoJi4KhJEy8g2EQLQRtLCzsxfboo2NmIlaXgHxCTJm2wE0UQ"
     b"QSy0ECxELCLGpEolaiEkKHgrvi0eD4PfUaxcsGBm9ux3LnuG8rQZzlVlmcCy9XqBHWh/KWA9"
@@ -933,7 +933,7 @@ icons8_laser_beam_20 = PyEmbeddedImageTheme(
     b"ROxkOPrL4Wdr2sP/2iDxiFO6BclXXCxkXMUWAAAAAElFTkSuQmCC"
 )
 
-icons8_direction_20 = PyEmbeddedImageTheme(
+icons8_direction_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"yUlEQVQ4jc3UQUqCURDA8V/5RVAtwqBw0TmkGyhoeA33LTtHuGihtIs2FXoCpWu4EFwpHcGF"
     b"84ELKV7fo/pv5r1h5s/AYx7/iBM0cws/0MkpPccUt2XiIOIlVlFQw3WCtI5H9DEpItnCGDc4"
@@ -942,7 +942,7 @@ icons8_direction_20 = PyEmbeddedImageTheme(
     b"TkSuQmCC"
 )
 
-icons8_bold_50 = PyEmbeddedImageTheme(
+icons8_bold_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"t0lEQVRoge3ZS2icVRQH8J/axCrUPrQ+qlB1UaGCSuqLilAUEbTUggtBpRVR0o0ggqBkZTfi"
     b"RisKVUGh4ANd+IAspCqoGBdVWkUqVtCurFip9RFN0gTHxbnjTGK+b+4kXzKDzB8+zsA9c+45"
@@ -964,7 +964,7 @@ icons8_bold_50 = PyEmbeddedImageTheme(
     b"20aORz7CAcV3tO3iLzG/HBffTQ7gM3xTkfweeujh/4x/ALbGH+I/qO5zAAAAAElFTkSuQmCC"
 )
 
-icons8_italic_50 = PyEmbeddedImageTheme(
+icons8_italic_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
     b"LElEQVRoge2ZTSuFQRTHf14LKZHIRpSFknKFFSI7G0ufga/mI9goG9d12SgLShaKiPKW12tx"
     b"ZrrjGlceZ+bpqedXT3Pvv+495zTnzJmZB3JycurREMnOOrDi0c+ANeA5kh//ohV4Aio/PKPp"
@@ -979,7 +979,7 @@ icons8_italic_50 = PyEmbeddedImageTheme(
     b"soHsfGsp8fUlT05OTs7/+ATr8IVDpqnfoQAAAABJRU5ErkJggg=="
 )
 
-icons8_underline_50 = PyEmbeddedImageTheme(
+icons8_underline_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
     b"dElEQVRoge2aQWtTQRDHfxWqBatIRWirRSu29KJIVTz10LNKToJ+BUX6CRS8KPgBBMWTB1u8"
     b"txdFQakerEhPCmqFinq1NoKxvsTDzLrlJZV5ySZdZX+wTHbe25n9Lzv7Ql4gkUgk/kceAbVc"
@@ -997,7 +997,7 @@ icons8_underline_50 = PyEmbeddedImageTheme(
 )
 
 
-icons8_camera_50 = PyEmbeddedImageTheme(
+icons8_camera_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"fUlEQVRoge2YTU8UQRCGn5j1ICwfiXjBRC8iGg+i6NGIGlFCAsKP8AcYlagJQUGvft80XrkY"
     b"DZ5wMTEQDiaCXhSvApGDUeQ7UWA8VDUzkN3Z3pleVsy+Sadnpqverpqu7q5uKKKIIgqBHcAN"
@@ -1018,7 +1018,7 @@ icons8_camera_50 = PyEmbeddedImageTheme(
     b"nc4JgyrkZnsE/9T3L5VZ4D0yJ9bCqYgiiihi6+EvESa3u9XaFVMAAAAASUVORK5CYII="
 )
 
-icons8_detective_50 = PyEmbeddedImageTheme(
+icons8_detective_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
     b"tUlEQVRoge2Zb2jVVRjHP1eh0nStsk1tumYJScIKCcI/s15EqETEZjgXZNGLwJIKp6KZoIXa"
     b"i15J0KuyKGTYH2dK0YvKUhFLgsiMqBSZkhNXs7np7nZ78TzH89u553d3f/f3u/dq7guH391z"
@@ -1045,7 +1045,7 @@ icons8_detective_50 = PyEmbeddedImageTheme(
     b"xO7MhjLrEhtNSCU+ghGUCv8BPlKp3kSlWv0AAAAASUVORK5CYII="
 )
 
-icons8_picture_in_picture_alternative_50 = PyEmbeddedImageTheme(
+icons8_picture_in_picture_alternative_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"qUlEQVRoge3YUQqDMBCE4bF4/0tpz2WfIgmY4sNunMj/QZ+EsrMxsKsEAHjYV9Ix2W8rxS9V"
     b"kCOmH8MtkrT2HkygafznqSqiEcQNQdwQxA1B3BDEDUFuil4NNnVcjfGR02/GalDqa+q9GuMz"
@@ -1055,7 +1055,7 @@ icons8_picture_in_picture_alternative_50 = PyEmbeddedImageTheme(
 
 
 # ----------------------------------------------------------------------
-icon_corner1 = PyEmbeddedImageTheme(
+icon_corner1 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAGYktHRAD/AP8A/6C9p5MAAACFSURB"
     b"VGhD7dhBCoAwDADBxP//WT30AZGWsK07F73JQkKLeb/iANd4bs8QGkNoDKExhKZ8smfmeOtV"
@@ -1064,7 +1064,7 @@ icon_corner1 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icon_corner2 = PyEmbeddedImageTheme(
+icon_corner2 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAGYktHRAD/AP8A/6C9p5MAAACESURB"
     b"VGhD7daxCsAgDABR0///59bBsUMgoKfeW9pNDgwx3q4d4Bnf7RlCYwiNITSG0KQ3e0SMv7my"
@@ -1073,7 +1073,7 @@ icon_corner2 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icon_corner3 = PyEmbeddedImageTheme(
+icon_corner3 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAGYktHRAD/AP8A/6C9p5MAAACJSURB"
     b"VGhD7dnBCoAgEABRt///5zLwJB42BBtlHkTdaqhFobircoCrnbdnCI0hNIbQGEKzZGWPiHb1"
@@ -1082,7 +1082,7 @@ icon_corner3 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icon_corner4 = PyEmbeddedImageTheme(
+icon_corner4 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAGYktHRAD/AP8A/6C9p5MAAACLSURB"
     b"VGhD7dnNCoUgEEBhp/d/537AVbgwJvQo54O4bSIOKQ3dOG9lA0f9XZ4hNIbQGEJjCE33mz0i"
@@ -1091,7 +1091,7 @@ icon_corner4 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_down_50 = PyEmbeddedImageTheme(
+icons8_down_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"9UlEQVRoge3YOw6CQBRG4RM3gGBL4cZdhZ2JhZ1vKysLl4IFTCCEx4ijXMz/JZNQkOGeZkgG"
     b"REREbNsBp7GHCCEr1lfNvv2BX1GINQqxRiHWKMQahVijEGsUYo1CrFGINUNDVsAVSAPOkgJ3"
@@ -1101,7 +1101,7 @@ icons8_down_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_down_left_50 = PyEmbeddedImageTheme(
+icons8_down_left_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"yUlEQVRoge3XPQ6CQBRF4RP3IHH/OzEWhsJGCpczFkDA+MeM6NwX70leQQF5X6ZhwDnn3Po1"
     b"wAnY117kkxqgAxLQVt6luC1wpkdcgF3ddcoyQiUjVDJCJSNUMkIlI1QyQiUjVJJBtMCx8N35"
@@ -1111,7 +1111,7 @@ icons8_down_left_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_down_right_50 = PyEmbeddedImageTheme(
+icons8_down_right_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"v0lEQVRoge3XMQ6CQBRF0Rv3IIn734kWRmKlhcvBAhsCKMzHzPvk3WT6dzLNDDjn3F46A3eg"
     b"qT0kWgt0wJPkmCPwoMe8gFPdObGMUc0Y1YxRzRjVjFHNGNWMUc0Y1XaFaei/y9Fv8w24bjWq"
@@ -1120,7 +1120,7 @@ icons8_down_right_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_pentagon_50 = PyEmbeddedImageTheme(
+icons8_pentagon_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"HUlEQVRoge2ZSU8UQRTHfwPjAi5xwT2SqBeXxMSDJ/VAMNGRGAQOIiae5WTCJ/ArGL6BJt7g"
     b"YEIMaozbQbxoPKAHLjBAxC1KQFDU8fCq0j2dmV6ruoc4v6Qz0+nX7/27q+rVq2qoU2dV0gFM"
@@ -1141,7 +1141,7 @@ icons8_pentagon_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_pentagon_square_50 = PyEmbeddedImageTheme(
+icons8_pentagon_square_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
     b"xElEQVRoge3ZTYsUVxTG8V+LiBJBcBQdiLpRBFEEFcWAm+gsXPqyUYkvn8ClGwVB0J3iQj+A"
     b"KzejgbgRXWnIqLNSFzMKAyIYlYRAENHEl3Zxb9s97VR3163qHpD6Q9FQVeec51Tde+651VRU"
@@ -1160,7 +1160,7 @@ icons8_pentagon_square_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_right_50 = PyEmbeddedImageTheme(
+icons8_right_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"o0lEQVRoge3YMQrCMBxG8ad0V3TtsTykJ/AODrEObh5AHL2AOugkIsUEEv++H3QN3xtaQkGS"
     b"JElq1BrYALPaQ3Il4AZs+fGYHjjyiEnAou6cPGFjdhjTjteYZd05ecLGDBjTjuIxE2D/PLDm"
@@ -1169,7 +1169,7 @@ icons8_right_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_square_border_50 = PyEmbeddedImageTheme(
+icons8_square_border_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"7klEQVRoge3Z4Q6CIBQF4GNrPlQ9X1nvGb1G/UA2t+wKFxCB821tzTa5cBSRACKSDCvHPgnO"
     b"oRHV7ilREcWdhd+2Rjp0BH2p2u0iESfXyIe2JybVVSJOqtkp9PxeV0QzibAjRyPdI3vPVlvE"
@@ -1179,7 +1179,7 @@ icons8_square_border_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_up_50 = PyEmbeddedImageTheme(
+icons8_up_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"8klEQVRoge3XsQ6CMBRG4RPjDurK4Kv42ro6qEGdmBxceA8drKmIKJZIL+Y/SROGAvcLCQRQ"
     b"Sin1p6VuDbopsHdrGnmW4FJgB1zcOgKzqBMF9IwYJGYC5NwGP+ER9+Pc7TFdCmy5DXwG5nhI"
@@ -1189,7 +1189,7 @@ icons8_up_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_up_left_50 = PyEmbeddedImageTheme(
+icons8_up_left_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"w0lEQVRoge3XTQrCMBRF4YN7MOD+d2IHBXGkA5dTR4Eg/rRpa+4L90DpKOF9yaQF55zrpWmD"
     b"Z/jXsIed95923n9W5ck+gFPbcerLiHvxTk0nqixDjsCNwDeTIRAcU0IgMOYVAkEx7yAQEPMJ"
@@ -1198,7 +1198,7 @@ icons8_up_left_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_up_right_50 = PyEmbeddedImageTheme(
+icons8_up_right_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"vUlEQVRoge3XTUoDQRSF0YN7MGT/SzGDDHQUBy5HByEQpNX+E2/J/aCpWfMOb1JFa6216U54"
     b"3+Gb7OEXB293PeJixkaSO+DVdfjbORzkfhNvOBoQMoVgMMhXCAaCfIdgEMhPCAaAzEEQDpmL"
@@ -1206,7 +1206,7 @@ icons8_up_right_50 = PyEmbeddedImageTheme(
     b"ikipiJSKSKmIlP4FAp5tf55GdMaLwRGttZbZBwfblLXkvxCIAAAAAElFTkSuQmCC"
 )
 
-icons8_left_50 = PyEmbeddedImageTheme(
+icons8_left_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"mUlEQVRoge3WOwrCQBRG4YMbmCzBrbsGS+1sfGDlAlxKLMLtBCEjucPlfJA2/AeGYUCSJEna"
     b"UAOOwCF7SI8G3IAZeCRvWa0BV5aIN7BPXbNSmYg4TkZkmjBiDBNwx4h8ZSKeLBGZ3+XX0F1/"
@@ -1215,7 +1215,7 @@ icons8_left_50 = PyEmbeddedImageTheme(
 )
 
 
-icons8_compress_50 = PyEmbeddedImageTheme(
+icons8_compress_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHKSURBVGhD7ZpNSgQxEEZnpd7DlUtd"
     b"ewPXHsITeCfx/xe8kzcQtR5OQ1GkeyZRqC9DHnww0yjUo7rpJDWrwWAAB5aj3495HFrO1znl"
@@ -1230,7 +1230,7 @@ icons8_compress_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_enlarge_50 = PyEmbeddedImageTheme(
+icons8_enlarge_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEVSURBVGhD7dldCoJQEIZhr4r2EBHd"
     b"d9Xi21VELaDOCwki/hznTMcZmRe+i4SEB8JEmyiKomhL7dJuyjukVe+U9lHeNa16m4Ec0x7C"
@@ -1242,7 +1242,7 @@ icons8_enlarge_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_rotate_left_50 = PyEmbeddedImageTheme(
+icons8_rotate_left_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANgSURBVGhD7ZlLyA1hGMePO4Xo27gU"
     b"uSwkt5S7FDbuC5KiWLmVz20hsVZkoSgLOxulSBELt40Fio1yXZDLQoqk3In/75x56u0035mZ"
@@ -1264,7 +1264,7 @@ icons8_rotate_left_50 = PyEmbeddedImageTheme(
 )
 
 # ----------------------------------------------------------------------
-icons8_rotate_right_50 = PyEmbeddedImageTheme(
+icons8_rotate_right_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANbSURBVGhD7ZlLyA9RGIc/d0oiC7Jw"
     b"T5Jbyi2ykOS+ICmKjegr95VYk4VSFFmyUIoUodxKFigLKdeFexaKWLgTv+f/n7dO03zN9cyM"
@@ -1285,7 +1285,7 @@ icons8_rotate_right_50 = PyEmbeddedImageTheme(
     b"uakngGXDwmeMZEm6KHCOpHfKvTHd0NCQlo6Of9ewYWPOK1cIAAAAAElFTkSuQmCC"
 )
 
-icons8_choose_font_50 = PyEmbeddedImageTheme(
+icons8_choose_font_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
     b"RElEQVRoge3ZvWsUQRiA8d8lQYyIH6CHBCsV/ACtLMQqEBQrMYpGxcpSELT1T7BSBFsbKytR"
     b"o1ZCCkXETtRgEwlpVBANKDGJOYtNuFxmL3u37N5eZB/YZvZl5nl3bvbemaWkpKRkLVHJqJ8N"
@@ -1301,7 +1301,7 @@ icons8_choose_font_50 = PyEmbeddedImageTheme(
     b"RU5ErkJggg=="
 )
 
-icons8_level_1_50 = PyEmbeddedImageTheme(
+icons8_level_1_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
     b"mklEQVRoge2aO2sUURSAP6OFidkNG2MSBOu0EUERhdjbyZLSTiWFhSCWoiDoT/CFjb1/QAQf"
     b"6xIbFWOTgCDEN2wUjYXIZi3ODutOzszunXPnUcwHp8jd7LnnS2buawZKSkri2OE53xSwABwE"
@@ -1318,7 +1318,7 @@ icons8_level_1_50 = PyEmbeddedImageTheme(
     b"5C9kubKKvDDwFGUVW1JSkg7/AOZX0ILb/Rs6AAAAAElFTkSuQmCC"
 )
 
-icons8_keyboard_50 = PyEmbeddedImageTheme(
+icons8_keyboard_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"nUlEQVRoge3YMU8UQRjG8d+dFDQqNXcUJkhICPYUFvYW9tR8D/wMFNpbGUKFFlDpJyCBykQb"
     b"a0/uiLHCLMXsHRdzkNu93M0smX/yZu4mO7vPs7P77puXTFo8ii1gAm08w1P0I2uZiS4K/Kyy"
@@ -1331,7 +1331,7 @@ icons8_keyboard_50 = PyEmbeddedImageTheme(
     b"YII="
 )
 
-icons8_roll_50 = PyEmbeddedImageTheme(
+icons8_roll_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"60lEQVRogd3a3Y9dUxgG8B89M1PpHKLtuBEqqSolbXzFx4UIE8y0IxE30vi64kJk2rpF8R+4"
     b"J5qQ+A+4QLSIdlAXbWZ8lUjRb0GHpF8xLtbaWVv17Dnn7HXO4El21snJ2s/7vHuvtd53v2vx"
@@ -1354,7 +1354,7 @@ icons8_roll_50 = PyEmbeddedImageTheme(
     b"Lud5LUK6PSqc2boKl0sLwix+EPbtPxbOas2cg6Mr/AVMUjVunZJoRgAAAABJRU5ErkJggg=="
 )
 
-icons8_console_50 = PyEmbeddedImageTheme(
+icons8_console_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"ZklEQVRoge2ZQUoDQRBFXzS4iIKCEoILA15Br+LZ1Ft4A0UlCyEuxGBUBPealTsXaRdd0UEM"
     b"2tPlTE2oBwUNSVf+o6fTMwk4zr+xBhwBEyA0rCaSfRXg2ECg3DqksBJ78xfNLPvE7K8tGQC0"
@@ -1366,7 +1366,7 @@ icons8_console_50 = PyEmbeddedImageTheme(
     b"gg=="
 )
 
-icons8_text_50 = PyEmbeddedImageTheme(
+icons8_text_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"3UlEQVRoge2ZWwqDMBBFr6WLq922O6nuo/0xICGayftS74EggsnkYDIfM4AQQvwjbwAbgG/n"
     b"sQKYa4qMkHDjU1PELdobc9xH4410I1dkge1YLIVzzEzG79zvnbz3lBglc6L7fCYsfhUwxNnG"
@@ -1375,7 +1375,7 @@ icons8_text_50 = PyEmbeddedImageTheme(
     b"6wohxBh+1Qai3Sp+mhwAAAAASUVORK5CYII="
 )
 
-icons8_info_50 = PyEmbeddedImageTheme(
+icons8_info_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"7ElEQVRoge3ay29XRRQH8E/1Z/sjoNCWAkuJT9RU9gQfGy3BBZpoouIOgxseQbfq0ro1aeI/"
     b"YogYRRCNVUTdWAvoRmuiCTa+KgTNdTFzM7e1r9+98/sVEr7JzUlm5p7HnTlnzpy53MC1hb6M"
@@ -1398,7 +1398,7 @@ icons8_info_50 = PyEmbeddedImageTheme(
     b"o1CL3S1ULe8UwvWtsf8PoQ51UQjpHwmzsmQqfgPXM/4DBaQ+gHlAM7wAAAAASUVORK5CYII="
 )
 
-icons8_laser_beam_hazard_50 = PyEmbeddedImageTheme(
+icons8_laser_beam_hazard_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"tklEQVRoge3ZT2hdRRTH8U9erEltqjFtasVKg1i1GEQSja1VidQuRFCx+Kc0CCpmY6UWq6iI"
     b"IqKNGmiLLYhQXUjRTV0ItouCiEihLvwDQguCqFijdVNcCF3pYs7z3b7c/LkvuUmE94VL5s09"
@@ -1420,7 +1420,7 @@ icons8_laser_beam_hazard_50 = PyEmbeddedImageTheme(
     b"QgcuV/BA2Sq9G5yV/jGzEK6zeMcMXoebNGnSpEmTifgXBxu98dH6sbAAAAAASUVORK5CYII="
 )
 
-icons8_about_50 = PyEmbeddedImageTheme(
+icons8_about_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
     b"cElEQVRogd3aaahVVRQH8N+7ms/qORSvjMih8EkWFWI2SoVlUERBaBEFCpFgZUESBRVaRBF9"
     b"qQ8OfcuywqCiAQoqo5kmQiuTnLCQcMjZetXT24e1r+e+x5vuved6n/3hsM85d5+1/vvsfdaw"
@@ -1446,7 +1446,7 @@ icons8_about_50 = PyEmbeddedImageTheme(
     b"qsR/ME41xQZApAYAAAAASUVORK5CYII="
 )
 
-icons8_align_bottom_50 = PyEmbeddedImageTheme(
+icons8_align_bottom_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"oUlEQVRoge3ZTQ6CMBQA4afx/ldygZ4Ldi4MSX9oH5NmvoSVUjtAgNgI6RbviNg7ty1zoo/C"
     b"5/vk8Yd5VX6vdUJXD0CzZ/YPzmIIjSE0htBkh3xj0ptC7ZO994H4v9+0NwUvLRpDaAyhMYTG"
@@ -1455,7 +1455,7 @@ icons8_align_bottom_50 = PyEmbeddedImageTheme(
 )
 
 
-icons8_align_top_50 = PyEmbeddedImageTheme(
+icons8_align_top_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"qElEQVRoge3aTQqDMBQA4Vi8/5HcWM+lC7GL4B95Eqc6H3TRheENbVLQpiSWJns/3jJFud/8"
     b"nzun0Jt1ad43Ja9+Zb0hsN53b9B8s+eim//qw2Rz3ja6wIbqp99jTi1DaAyhMYTGEBpDaAyh"
@@ -1463,7 +1463,7 @@ icons8_align_top_50 = PyEmbeddedImageTheme(
     b"tefs0r+ZAAn6K06SZpqKAAAAAElFTkSuQmCC"
 )
 
-icons8_align_right_50 = PyEmbeddedImageTheme(
+icons8_align_right_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGYktHRAD/AP8A/6C9p5MAAACgSURB"
     b"VGhD7dfLCoAgEIVh6/0fKip6rS4ys0hcWAs92f/BMAgRHkxoAoDUbhWN1j+PIGreBlnO8m+0"
@@ -1472,7 +1472,7 @@ icons8_align_right_50 = PyEmbeddedImageTheme(
     b"wmDyAAAAAElFTkSuQmCC"
 )
 
-icons8_align_left_50 = PyEmbeddedImageTheme(
+icons8_align_left_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGYktHRAD/AP8A/6C9p5MAAACvSURB"
     b"VGhD7dnRCoMwDIXhbu//TsKcvpZrIBnDiuhAPa3/ByHUC+lBAi0m4HiTV5We3qtHEDVrQd65"
@@ -1481,7 +1481,7 @@ icons8_align_left_50 = PyEmbeddedImageTheme(
     b"wrCraSYIcIiUPoSrXBiRr7O2AAAAAElFTkSuQmCC"
 )
 
-icons8_circle_50 = PyEmbeddedImageTheme(
+icons8_circle_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"l0lEQVRoge2az0tVQRTHP6l5BU18Wgq1SOiXukjdFVhtQhGKWliE7toX4n/hDypJWmZ/gRkk"
     b"/SCCqEVIKBjlr2ihtagMNAnqKb0Wc6/de+687o9352nhFwbu9Z5z5nucMzNnzhvYxtbCjgRt"
@@ -1503,7 +1503,7 @@ icons8_circle_50 = PyEmbeddedImageTheme(
     b"+A3NNtEphGbglwAAAABJRU5ErkJggg=="
 )
 
-icons8_flip_horizontal_50 = PyEmbeddedImageTheme(
+icons8_flip_horizontal_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"+klEQVRoge2aO0sDQRCAv0Sw8IEIIiIERBAsREEQRFLaWtra+APEytbS1tLW0tZSBEULRUEQ"
     b"EURLFUREIuIDTWKxGbwcm3CPvds9uA+uSMjNzgd3l5nZg5ycnKzTCSwDN8CB3VSi0QksAXdA"
@@ -1517,7 +1517,7 @@ icons8_flip_horizontal_50 = PyEmbeddedImageTheme(
     b"RJDt6VsCTFGygPeFgUPLueTkZJY/7wYg/LWeLJAAAAAASUVORK5CYII="
 )
 
-icons8_flip_vertical_50 = PyEmbeddedImageTheme(
+icons8_flip_vertical_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
     b"j0lEQVRoge2ZTYhNURzAf+Qj8pFEKESJEqUoSaIUZaEUK1asWIiFWIgSC7EQC7EQpShFiYWP"
     b"1TRDSlKTj5WSml7SJJPJMPO3OP/xnut+nHPuOfc9dX81Ne/e/zn393t3mundgZqampoSjAOe"
@@ -1534,7 +1534,7 @@ icons8_flip_vertical_50 = PyEmbeddedImageTheme(
     b"q6ampqYN/Ab7PEdZ7CnXLgAAAABJRU5ErkJggg=="
 )
 
-icons8_group_objects_50 = PyEmbeddedImageTheme(
+icons8_group_objects_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"pElEQVRoge2ZQQ6AIAwE0fj/L+NJDx5A1NbNMnMj4dDJhjakpQCEsFzOdfB+NLfrWYMLScNG"
     b"ZBu834v6N6ZNRO2xn9gkYiPSohatx92sxyaR0cd+8CapkIZhkwgiaiCiBiJqPJ0jX9CaRcOz"
@@ -1542,7 +1542,7 @@ icons8_group_objects_50 = PyEmbeddedImageTheme(
     b"AEHsbs4PYp2OHEMAAAAASUVORK5CYII="
 )
 
-icons8_ungroup_objects_50 = PyEmbeddedImageTheme(
+icons8_ungroup_objects_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"rElEQVRoge2Z0Q6AIAgArfX/v2xPvTQrRSTEu7dWsOFJLEsJAGAmtpd7WRBTi3ruXRrojUMQ"
     b"87Sav7K0kZE9IiaMkRpyGtcXarnDGAlTiKTZrWgamhhRprvhMaJMad83WcKIAZelfLsuEsYI"
@@ -1550,7 +1550,7 @@ icons8_ungroup_objects_50 = PyEmbeddedImageTheme(
     b"wPwfShgjAABzcQJJkRZZ1xWWJgAAAABJRU5ErkJggg=="
 )
 
-icons8_oval_50 = PyEmbeddedImageTheme(
+icons8_oval_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"TElEQVRoge3ZzW8VVRzG8Q+3yltLWxcI9YWYGDHGEIFYMNGFVTdojBr1L3ADSohB3BsCuFJ3"
     b"KqjhD0DRDejK+FaQutFECyTiQqoLSbA0JpbwUhdnGm/PzNw7vS9zr/F+k7OYM79zfs+9M+dl"
@@ -1571,7 +1571,7 @@ icons8_oval_50 = PyEmbeddedImageTheme(
     b"gg=="
 )
 
-icons8_place_marker_50 = PyEmbeddedImageTheme(
+icons8_place_marker_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAF"
     b"XElEQVRogcWaW2wWRRTHf1/hq4iNtJi0pSXBIhob610LmBoUiNJ6CYYoXtDok8YYwUuioklF"
     b"H3wg+OSLGhOjqFhNCSJq8BJFqtUnEZSId0wVKMYGsFR6WR/Omex2O7Pd3c4H/2Sz7ZyZ/5y5"
@@ -1601,7 +1601,7 @@ icons8_place_marker_50 = PyEmbeddedImageTheme(
     b"zPAkRq8AjF6hYVXur8hjVngPsqKZ8D/iZ4huqztQ5AAAAABJRU5ErkJggg=="
 )
 
-icons8_polygon_50 = PyEmbeddedImageTheme(
+icons8_polygon_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
     b"/0lEQVRogdXZT6gVZRjH8c+9edHECrWgugspCyJqJUirFv4Bb2FK0qJNLhRcikXoJhBdtYhA"
     b"JajlRTcuNHPhIoJAF+FKCgnh3sXtamVGKvgv/02L5xxmzumce+f80XnnBwOHeZ/3eX/fmTnv"
@@ -1620,7 +1620,7 @@ icons8_polygon_50 = PyEmbeddedImageTheme(
     b"VLP11ny0Wpasveo/T0QoE45QIQcAAAAASUVORK5CYII="
 )
 
-icons8_polyline_50 = PyEmbeddedImageTheme(
+icons8_polyline_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
     b"E0lEQVRogd2azW+MQRzHP1tV4qA9IF4S4Wma6EGCiwtOxEtLpE2chCxWRYtGw9FFwhEXf4Aj"
     b"J3rYNOEiIqFJaR3EQV1FSF+U7tq+OMzT9Jl55tl9dsx0uj7J5Nlndp/f7/vdZ+b37EwLtUc7"
@@ -1639,7 +1639,7 @@ icons8_polyline_50 = PyEmbeddedImageTheme(
     b"p6hqqUP8INSR1L9saUN/R475FGVKG+JfhX6Gx5oz8RfUZnMRWR+s4AAAAABJRU5ErkJggg=="
 )
 
-icons8_rectangular_50 = PyEmbeddedImageTheme(
+icons8_rectangular_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"U0lEQVRoge2ZPU7DQBBGHwi3lAS65ATIiQInyQEQKOIGiANAzoAiwVkQFEAD3CBUEVSEFiQo"
     b"lmI8sdeEyPaA5klb7NojvW/9U8yC4ziO4/yelZy1BNgHdoBn4AyY1OiURwcYAi3gFjgH3mMF"
@@ -1650,7 +1650,7 @@ icons8_rectangular_50 = PyEmbeddedImageTheme(
     b"wBbhSVwAH00KOY7jOP+LL8rEkimh6HlnAAAAAElFTkSuQmCC"
 )
 
-icons8_type_50 = PyEmbeddedImageTheme(
+icons8_type_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
     b"m0lEQVRoge3ZTQ5AMBRF4cvqsP8VqH0wEBPx8yJt3XC+pDPhnURHTwKALxokJUlz5ZMk9TlD"
     b"3ojYzhgZsAmGzMHnSrmds60xRQ3RkKnoFNdSzpf1Wv/VN+5HFxkwekeeOLtXRb75uztijxA3"
@@ -1658,7 +1658,7 @@ icons8_type_50 = PyEmbeddedImageTheme(
     b"O0QAAAAASUVORK5CYII="
 )
 
-icons8_fantasy_50 = PyEmbeddedImageTheme(
+icons8_fantasy_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
     b"70lEQVRogc3Za4hVVRQH8N/MpIVRoVZkDTUfggqLHn4ow6BQw0J6IPYCbUhTZ3ylidHLHtS3"
     b"oj5UUlAgRUlKlJEaFdHL6kNZJFlRaQ8ijfxQpviYuX3Y+3DO3HvPnfuc8Q+He+7ea++z/mev"
@@ -1687,7 +1687,7 @@ icons8_fantasy_50 = PyEmbeddedImageTheme(
 )
 
 
-icons8_end_50 = PyEmbeddedImageTheme(
+icons8_end_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"YElEQVRoge3ZPUvDUBiG4asqCCIiguAiFAQHwR8guDmKi+BfcHV0cHV1cHR1FFcHJ8HBwV1w"
     b"cRJxERFBEfFraIIZtLbmaJPDuaGEvsm5m4c0yckbEolEIpH4PzYx2OudCME7zjAX2Nnu8yfk"
@@ -1723,3 +1723,29 @@ icons8_emergency_stop_button_50 = PyEmbeddedImage(
     b"255y6H4PsBP4SOLGPcV0KZ5F+dDTL3FiGoMAGblTXKlAgIKkHZk4FhD3x9CEZKjz5bQmKpu5"
     b"LnecNilgtDIIP4bWUEMNNdwb/A9jBMuJwvmIngAAAABJRU5ErkJggg=="
 )
+
+#----------------------------------------------------------------------
+icons8_group_objects_20 = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA'
+    b'0ElEQVQ4jcWUIRLCMBBFHwwOzxmKJRo8shrNAdBYqvHV9dwhvrVgexNEN9MtkzZNp8CfyXRn'
+    b'tvvz/24S+BIKoJSVRtSlqq4AWEliC+wkvgDHkYSJqkMTaljgEaFw35ewwE12HYtEaiyeVuWA'
+    b'kVj3VC/fZkZqAb9l6PZUYx2SvAz9EIs+hUNw9mogm4PwLN/KR/gzyyf8A3hOJXypOKe1GcRf'
+    b'plzTDOATg/Znu3oLSZS0NyMj7nG4SlwBxmf5AGwiFHbgCHU/7pEK3fEKHqlJeAOCaiebx3Kk'
+    b'lAAAAABJRU5ErkJggg==')
+
+#----------------------------------------------------------------------
+icons8_group_objects_50 = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA'
+    b'pElEQVRoge2ZQQ6AIAwE0fj/L+NJDx5A1NbNMnMj4dDJhjakpQCEsFzOdfB+NLfrWYMLScNG'
+    b'ZBu834v6N6ZNRO2xn9gkYiPSohatx92sxyaR0cd+8CapkIZhkwgiaiCiBiJqPJ0jX9CaRcOz'
+    b'xiYRRNRARA0bkaftN/vv3mX6RHqkf5FtEkFEDUTUsBGJar/pA9MmEXaIatiIsENUgx2iGjYi'
+    b'AEHsbs4PYp2OHEMAAAAASUVORK5CYII=')
+
+#----------------------------------------------------------------------
+icons8_ungroup_objects_50 = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA'
+    b'rElEQVRoge2Z0Q6AIAgArfX/v2xPvTQrRSTEu7dWsOFJLEsJAGAmtpd7WRBTi3ruXRrojUMQ'
+    b'87Sav7K0kZE9IiaMkRpyGtcXarnDGAlTiKTZrWgamhhRprvhMaJMad83WcKIAZelfLsuEsYI'
+    b'hXiDQrxBId6Y4ThorTnCcZA3tI6DqvZx4Xk1ljCi8XYyyx3GSJhCehV7GZpxjIz61DUfmhj5'
+    b'wPwfShgjAABzcQJJkRZZ1xWWJgAAAABJRU5ErkJggg==')
+
