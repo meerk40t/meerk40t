@@ -465,7 +465,6 @@ class RootNode(Node):
 
     def notify_modified(self, node=None, **kwargs):
         self._bounds = None
-        # self.validate_bounds()
         for listen in self.listeners:
             if hasattr(listen, "modified"):
                 listen.modified(node, **kwargs)
@@ -909,7 +908,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
-            self.set_selected(data)
+            self.set_emphasis(data)
             return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
@@ -962,7 +961,7 @@ class Elemental(Modifier):
             output_type="ops",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
-            self.set_selected(data)
+            self.set_emphasis(data)
             return "ops", list(self.ops(emphasized=True))
 
         @context.console_command(
@@ -2585,7 +2584,7 @@ class Elemental(Modifier):
                 self.context.console("element delete\n")
             elif node.type == "opnode":
                 node.remove_node()
-            self.set_selected(None)
+            self.set_emphasis(None)
 
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
@@ -2615,7 +2614,8 @@ class Elemental(Modifier):
             ]
             elements.add_elems(adding_elements)
             elements.classify(adding_elements)
-            elements.set_selected(None)
+            elements.set_emphasized(None)
+            elements.set_emphasis(None)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
@@ -2809,7 +2809,7 @@ class Elemental(Modifier):
             ]
             elements.add_elems(adding_elements)
             elements.classify(adding_elements)
-            elements.set_selected(None)
+            elements.set_emphasis(None)
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -3031,6 +3031,8 @@ class Elemental(Modifier):
         def cutcode_operation(node, **kwargs):
             self.context.elements.add_op(node.object)
 
+        self.listen(self)
+
     def detach(self, *a, **kwargs):
         context = self.context
         settings = context.derive("operations")
@@ -3054,6 +3056,7 @@ class Elemental(Modifier):
                         value = value.value
                     op_set.write_persistent(key, value)
         settings.close_subpaths()
+        self.unlisten(self)
 
     def boot(self, *a, **kwargs):
         self.context.setting(bool, "operation_default_empty", True)
@@ -3076,6 +3079,9 @@ class Elemental(Modifier):
         self.add_ops([o for o in ops if o is not None])
         self.context.signal("rebuild_tree")
 
+    def emphasized(self, *args):
+        self.validate_bounds()
+
     def listen(self, listener):
         self._tree.listen(listener)
 
@@ -3093,7 +3099,7 @@ class Elemental(Modifier):
         if hasattr(element, "stroke") and element.stroke is None:
             element.stroke = Color(stroke)
         node = context_root.elements.add_elem(element)
-        context_root.elements.set_selected([element])
+        context_root.elements.set_emphasis([element])
         return node
 
     def load_default(self):
@@ -3132,7 +3138,7 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
         self.classify(list(self.elems()))
 
-    def _filtered_list(self, item_list, depth=None, **kwargs):
+    def _filtered_list(self, item_list, types, depth=None, **kwargs):
         """
         Filters a list of items with selected, emphasized, and highlighted.
         False values means find where that parameter is false.
@@ -3165,6 +3171,8 @@ class Elemental(Modifier):
         for node in self.flatten(item_list, depth=depth):
             if node is None:
                 continue
+            if node.type not in types:
+                continue
             if s is not None and s != node.selected:
                 continue
             if e is not None and e != node.emphasized:
@@ -3190,17 +3198,17 @@ class Elemental(Modifier):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in self._filtered_list(operations, depth=1, **kwargs):
+        for item in self._filtered_list(operations, ("ops"), depth=1, **kwargs):
             yield item
 
     def elems(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self._filtered_list(elements, depth=depth, **kwargs):
+        for item in self._filtered_list(elements, ("elems"), depth=depth, **kwargs):
             yield item.object
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self._filtered_list(elements, depth=depth, **kwargs):
+        for item in self._filtered_list(elements, ("elems", "file", "group"), depth=depth, **kwargs):
             yield item
 
     def first_element(self, **kwargs):
@@ -3301,9 +3309,9 @@ class Elemental(Modifier):
 
     def remove_elements(self, elements_list):
         for elem in elements_list:
-            for i, e in enumerate(self.elems_nodes()):
-                if elem is e.object:
-                    e.remove_node()
+            for i, e in enumerate(self.elems()):
+                if elem is e:
+                    e.node.remove_node()
         self.remove_elements_from_operations(elements_list)
         self.validate_bounds()
 
@@ -3351,57 +3359,54 @@ class Elemental(Modifier):
             self._bounds = new_bounds
             self.context.signal("selected_bounds", self._bounds)
 
-    def is_in_set(self, v, selected, flat=True):
-        for q in selected:
-            if flat and isinstance(q, (list, tuple)) and self.is_in_set(v, q, flat):
+    def is_in_set(self, value, selected_set, flat=True):
+        """
+        Find whether the value is tree.
+
+        :param value:
+        :param selected_set:
+        :param flat:
+        :return:
+        """
+        for q in selected_set:
+            if flat and isinstance(q, (list, tuple)) and self.is_in_set(value, q, flat):
                 return True
-            if q is v:
+            if q is value:
                 return True
         return False
 
-    def set_selected(self, selected):
+    def highlight_children(self, node_context):
         """
-        Sets selected and other properties of a given element.
+        Recursively highlight the children.
+        :param node_context:
+        :return:
+        """
+        for child in node_context.children:
+            child.highlighted = True
+            self.highlight_children(child)
 
-        All selected elements are also semi-selected.
-
+    def set_emphasis(self, emphasize):
+        """
         If elements itself is selected, all subelements are semiselected.
-
         If any operation is selected, all sub-operations are highlighted.
-
+        If any element is emphasized, all copies are highlighted.
         """
-        if selected is None:
-            selected = []
-        for s in self.elems_nodes():
-            should_select = self.is_in_set(s, selected, False)
-            should_emphasize = self.is_in_set(s, selected)
+        for s in self.flatten(self._tree):
+            if s.highlighted:
+                s.highlighted = False
+
             if s.emphasized:
-                if not should_emphasize:
+                if s not in emphasize:
                     s.emphasized = False
             else:
-                if should_emphasize:
+                if emphasize is not None and s in emphasize:
                     s.emphasized = True
-            if s.selected:
-                if not should_select:
-                    s.selected = False
-            else:
-                if should_select:
-                    s.selected = True
-        for s in self.ops():
-            should_select = self.is_in_set(s, selected, False)
-            should_emphasize = self.is_in_set(s, selected)
-            if s.emphasized:
-                if not should_emphasize:
-                    s.emphasized = False
-            else:
-                if should_emphasize:
-                    s.emphasized = True
-            if s.selected:
-                if not should_select:
-                    s.selected = False
-            else:
-                if should_select:
-                    s.selected = True
+        if emphasize is not None:
+            for e in emphasize:
+                if hasattr(e, "node"):
+                    e = e.node
+                e.emphasized = True
+                self.highlight_children(e)
 
     def center(self):
         bounds = self._bounds
@@ -3458,7 +3463,7 @@ class Elemental(Modifier):
             obj.transform.post_translate(dx, dy)
             obj.node.modified()
 
-    def set_selected_by_position(self, position):
+    def set_emphasized_by_position(self, position):
         def contains(box, x, y=None):
             if y is None:
                 y = x[1]
@@ -3476,9 +3481,9 @@ class Elemental(Modifier):
             if bounds is None:
                 continue
             if contains(bounds, position):
-                self.set_selected([e])
+                self.set_emphasis([e])
                 return
-        self.set_selected(None)
+        self.set_emphasis(None)
 
     def classify(self, elements, items=None, add_funct=None):
         """

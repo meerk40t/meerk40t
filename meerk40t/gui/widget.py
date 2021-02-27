@@ -553,10 +553,10 @@ class ElementsWidget(Widget):
         )
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        if event_type in ("leftclick"):
+        if event_type == "leftclick":
             elements = self.scene.context.elements
-            elements.set_selected_by_position(space_pos)
-            self.root.select_in_tree_by_selected()
+            elements.set_emphasized_by_position(space_pos)
+            self.root.select_in_tree_by_emphasis()
             return RESPONSE_CONSUME
         return RESPONSE_DROP
 
@@ -655,7 +655,7 @@ class SelectionWidget(Widget):
         dy = space_pos[5]
 
         if event_type == "rightdown":
-            elements.set_selected_by_position(space_pos)
+            elements.set_emphasized_by_position(space_pos)
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
             self.root.create_menu(
@@ -663,7 +663,7 @@ class SelectionWidget(Widget):
             )
             return RESPONSE_CONSUME
         if event_type == "doubleclick":
-            elements.set_selected_by_position(space_pos)
+            elements.set_emphasized_by_position(space_pos)
             self.root.activate_selected_node()
             return RESPONSE_CONSUME
         if event_type == "leftdown":

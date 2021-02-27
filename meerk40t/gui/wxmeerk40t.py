@@ -1596,7 +1596,6 @@ class MeerK40t(wx.Frame, Module, Job):
     def on_emphasized_elements_changed(self, *args):
         self.update_ribbon_position()
         self.clear_laserpath()
-        self.shadow_tree.select_in_tree_by_selected()
         self.request_refresh()
 
     def on_element_modified(self, *args):
@@ -2701,17 +2700,17 @@ class ShadowTree:
         selected = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
-        self.elements.set_selected(selected)
+        self.elements.set_emphasis(selected)
         self.refresh_tree()
         self.gui.request_refresh()
         event.Allow()
 
-    def select_in_tree_by_selected(self):
+    def select_in_tree_by_emphasis(self):
         """
         :return:
         """
         self.do_not_select = True
-        for e in self.elements.elems_nodes():
+        for e in self.elements.elems_nodes(emphasized=True):
             self.wxtree.SelectItem(e.item, e.selected)
         self.do_not_select = False
 
