@@ -29,6 +29,15 @@ class Terminal(wx.Frame, Module):
         self.command_log = []
         self.command_position = 0
 
+        # OSX Window close
+        def on_key_down(event):
+            if event.GetKeyCode() == ord('W') and event.CmdDown():
+                self.Close(False)
+                return
+            event.Skip()
+
+        self.Bind(wx.EVT_KEY_DOWN, on_key_down)
+
     def on_middle_click(self, event):
         self.text_main.SetValue('')
 

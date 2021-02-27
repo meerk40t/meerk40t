@@ -120,6 +120,15 @@ class CameraInterface(wx.Frame, Module):
         self.camera_job = None
         self.fetch_job = None
 
+        # OSX Window close
+        def on_key_down(event):
+            if event.GetKeyCode() == ord('W') and event.CmdDown():
+                self.Close(False)
+                return
+            event.Skip()
+
+        self.Bind(wx.EVT_KEY_DOWN, on_key_down)
+
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)

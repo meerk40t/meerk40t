@@ -1249,6 +1249,9 @@ class MeerK40t(wx.Frame, Module):
         # event.Skip()
 
     def on_key_down(self, event):
+        if event.GetKeyCode() == ord('W') and event.GetModifiers() == wx.MOD_CONTROL:
+            self.Close(False)
+            return
         self._shift_down = event.ShiftDown()
         self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)

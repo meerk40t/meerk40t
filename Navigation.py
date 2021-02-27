@@ -132,6 +132,15 @@ class Navigation(wx.Frame, Module):
         self.drag_ready(False)
         self.select_ready(False)
 
+        # OSX Window close
+        def on_key_down(event):
+            if event.GetKeyCode() == ord('W') and event.CmdDown():
+                self.Close(False)
+                return
+            event.Skip()
+
+        self.Bind(wx.EVT_KEY_DOWN, on_key_down)
+
     def __set_properties(self):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_move_50.GetBitmap())

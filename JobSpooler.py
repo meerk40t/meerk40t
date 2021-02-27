@@ -33,6 +33,15 @@ class JobSpooler(wx.Frame, Module):
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+        # OSX Window close
+        def on_key_down(event):
+            if event.GetKeyCode() == ord('W') and event.CmdDown():
+                self.Close(False)
+                return
+            event.Skip()
+
+        self.Bind(wx.EVT_KEY_DOWN, on_key_down)
+
     def on_close(self, event):
         if self.state == 5:
             event.Veto()

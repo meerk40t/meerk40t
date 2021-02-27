@@ -182,6 +182,14 @@ class Alignment(wx.Frame, Module):
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
+        # OSX Window close
+        def on_key_down(event):
+            if event.GetKeyCode() == ord('W') and event.CmdDown():
+                self.Close(False)
+                return
+            event.Skip()
+
+        self.Bind(wx.EVT_KEY_DOWN, on_key_down)
 
     def on_button_vertical_align_nearfar(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
