@@ -2,26 +2,24 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-01-24 03:44-0800\n"
-"PO-Revision-Date: 2021-02-21 13:08-0500\n"
+"POT-Creation-Date: 2021-02-27 00:07-0800\n"
+"PO-Revision-Date: 2021-02-27 01:12-0800\n"
 "Last-Translator: Peter Cuevas <petercuevas.6@gmail.com>\n"
-"Language-Team: Spanish\n"
 "Language: es\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+"Language-Team: Spanish\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Poedit 2.4.1\n"
-"X-Loco-Source-Locale: en\n"
-"X-Loco-Project-Id: 91657\n"
-"X-Loco-Api-Version: 1.0.24 20200814-1\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"X-Generator: Poedit 2.4.2\n"
 
-#: About.py:34
+#: About.py:42
 #, python-format
 msgid "About %s v%s"
 msgstr "Acerca de %s v%s"
 
-#: About.py:55 wxMeerK40t.py:363
+#: About.py:63 wxMeerK40t.py:366
 msgid "About"
 msgstr "Acerca de"
 
@@ -29,92 +27,90 @@ msgstr "Acerca de"
 msgid "Group Pulses"
 msgstr "Pulsos grupales"
 
-#: Adjustments.py:75
+#: Adjustments.py:76
 msgid "Adjustments"
 msgstr "Ajustes"
 
-#: Adjustments.py:76
+#: Adjustments.py:77
 msgid "Override the Speed setting. Use this instead."
 msgstr "Anular la configuración de velocidad. Use esto en su lugar."
 
-#: Adjustments.py:78
+#: Adjustments.py:79
 msgid "Override the Power setting. Use this instead."
 msgstr "Anule la configuración de Energía. Use esto en su lugar."
 
-#: Adjustments.py:80
+#: Adjustments.py:81
 msgid "Override the Overscan setting. Use this instead."
 msgstr "Anule la configuración de Overscan. Use esto en su lugar."
 
-#: Adjustments.py:82
+#: Adjustments.py:83
 msgid "Scale the desired speed settings by this percent."
 msgstr "Escale la configuración de velocidad deseada en este porcentaje."
 
-#: Adjustments.py:84
+#: Adjustments.py:85
 msgid "Scale the Power settings by this Percent. (Crimps to [0,1000])"
 msgstr ""
-"Escale la configuración de Potencia en este porcentaje. (Se engarza a "
-"[0,1000])"
+"Escale la configuración de Potencia en este porcentaje. (Se engarza a [0,1000])"
 
-#: Adjustments.py:86 OperationProperty.py:236
+#: Adjustments.py:87 OperationProperty.py:245
 msgid "Attempts to adjust the pulse grouping for data efficiency."
 msgstr ""
-"Intenta ajustar la agrupación de pulsos para mejorar la eficiencia de los "
-"datos."
+"Intenta ajustar la agrupación de pulsos para mejorar la eficiencia de los datos."
 
-#: Adjustments.py:88
+#: Adjustments.py:89
 msgid "Move writer position towards top."
 msgstr "Mover la posición del escritor hacia la parte superior."
 
-#: Adjustments.py:90
+#: Adjustments.py:91
 msgid "Move writer position towards left."
 msgstr "Mueva la posición del escritor hacia la izquierda."
 
-#: Adjustments.py:91
+#: Adjustments.py:92
 msgid "Set writer position as origin (0,0)"
 msgstr "Establecer la posición del escritor como origen (0,0)"
 
-#: Adjustments.py:94
+#: Adjustments.py:95
 msgid "Move writer position towards right."
 msgstr "Mover la posición del escritor hacia la derecha."
 
-#: Adjustments.py:96
+#: Adjustments.py:97
 msgid "Move writer position towards bottom."
 msgstr "Mueva la posición del escritor hacia abajo."
 
-#: Adjustments.py:98
+#: Adjustments.py:99
 msgid "Flush buffers to empty."
 msgstr "Lave los tampones para vaciarlos."
 
-#: Adjustments.py:99
+#: Adjustments.py:100
 msgid "Safely exit current job, purge the spooler."
 msgstr "Salga de forma segura del trabajo actual, purgue la cola de impresión."
 
-#: Adjustments.py:102
+#: Adjustments.py:103
 msgid "Emergency Stop. Kill all buffers stop at this location."
 msgstr ""
 "Parada de emergencia. Mata a todos los buffers que se detienen en este lugar."
 
-#: Adjustments.py:103
+#: Adjustments.py:104
 msgid "Status Information"
 msgstr "Informacion de estado"
 
-#: Adjustments.py:112
+#: Adjustments.py:113
 msgid "Power Ratio"
 msgstr "Relación de potencia"
 
-#: Adjustments.py:113
+#: Adjustments.py:114
 msgid "Speed Ratio"
 msgstr "Relación de velocidad"
 
-#: Adjustments.py:114
+#: Adjustments.py:115
 msgid "Overscan Override"
 msgstr "Overscan Override"
 
-#: Adjustments.py:115
+#: Adjustments.py:116
 msgid "Power Override"
 msgstr "Anulación de energía"
 
-#: Adjustments.py:116
+#: Adjustments.py:117
 msgid "Speed Override"
 msgstr "Anulación de velocidad"
 
@@ -144,11 +140,11 @@ msgstr "¿Qué tan abajo debemos movernos para probar?"
 
 #: Alignment.py:102 Alignment.py:117
 msgid ""
-"Heavily misaligned mirrors will need more power to see the line. Once you "
-"can see the line. Turn this down."
+"Heavily misaligned mirrors will need more power to see the line. Once you can "
+"see the line. Turn this down."
 msgstr ""
-"Los espejos muy desalineados necesitarán más potencia para ver la línea. Una "
-"vez que puedas ver la línea. Baja esto."
+"Los espejos muy desalineados necesitarán más potencia para ver la línea. Una vez "
+"que puedas ver la línea. Baja esto."
 
 #: Alignment.py:104
 msgid "We are done with vertical alignment."
@@ -179,10 +175,8 @@ msgid ""
 "You are not centering. The misalignment increases over distance.\n"
 "Get the beam to hit the same point regardless of distance. (Usually not the "
 "center)\n"
-"All beam points should overlap at exactly 1 point, when misalignment is "
-"zero.\n"
-"The overlap point should be nearer to the close point. Aim for that. "
-"Repeat.\n"
+"All beam points should overlap at exactly 1 point, when misalignment is zero.\n"
+"The overlap point should be nearer to the close point. Aim for that. Repeat.\n"
 msgstr ""
 "No te estás centrando. La desalineación aumenta con la distancia. \n"
 "Haga que el rayo alcance el mismo punto independientemente de la distancia. "
@@ -208,213 +202,216 @@ msgstr "Haga que el movimiento de la viga se superponga correctamente. "
 msgid "Testing height in mm"
 msgstr "Altura de prueba en mm"
 
-#: BufferView.py:56
+#: BufferView.py:65
 msgid "Could not find buffer.\n"
 msgstr "No se pudo encontrar el búfer.\n"
 
-#: BufferView.py:85
+#: BufferView.py:94
 msgid "BufferView"
 msgstr "BufferView"
 
-#: BufferView.py:93
+#: BufferView.py:102
 msgid "Buffer"
 msgstr "Buffer"
 
-#: CH341DriverBase.py:61
+#: CH341DriverBase.py:62
 msgid "Uninitialized."
 msgstr "Sin inicializar."
 
-#: CH341DriverBase.py:63
+#: CH341DriverBase.py:64
 msgid "Attempting connection to USB."
 msgstr "Intentando conexión a USB."
 
-#: CH341DriverBase.py:65
+#: CH341DriverBase.py:66
 msgid "Connection to USB failed.\n"
 msgstr "La conexión al USB falló.\n"
 
-#: CH341DriverBase.py:67
+#: CH341DriverBase.py:68
 msgid "Using LibUSB to connect."
 msgstr "Usando LibUSB para conectar."
 
-#: CH341DriverBase.py:69
+#: CH341DriverBase.py:70
 msgid "Using CH341 Driver to connect."
 msgstr "Utilizando el controlador CH341 para conectarse."
 
-#: CH341DriverBase.py:71
+#: CH341DriverBase.py:72
 msgid "Using Mock Driver."
 msgstr "Usando Mock Driver."
 
-#: CH341DriverBase.py:73
+#: CH341DriverBase.py:74
 msgid "Finding devices."
 msgstr "Buscando dispositivos."
 
-#: CH341DriverBase.py:75
+#: CH341DriverBase.py:76
 msgid "PyUsb detected no backend LibUSB driver."
 msgstr "PyUsb no detectó ningún controlador LibUSB de fondo."
 
-#: CH341DriverBase.py:77
+#: CH341DriverBase.py:78
 msgid "PyUsb is not installed. Skipping."
 msgstr "PyUsb no está instalado. Salto a la comba."
 
-#: CH341DriverBase.py:79
+#: CH341DriverBase.py:80
+msgid "No Windll interfacing. Skipping."
+msgstr ""
+
+#: CH341DriverBase.py:82
 msgid "K40 device detected:"
 msgstr "Dispositivo K40 detectado:"
 
-#: CH341DriverBase.py:81
+#: CH341DriverBase.py:84
 msgid "Devices Not Found."
 msgstr "Dispositivos no encontrados."
 
-#: CH341DriverBase.py:83
+#: CH341DriverBase.py:86
 msgid "K40 devices were found but they were rejected."
 msgstr "Se encontraron dispositivos K40 pero fueron rechazados."
 
-#: CH341DriverBase.py:85
+#: CH341DriverBase.py:88
 msgid "Config Set"
 msgstr "Conjunto de configuración"
 
-#: CH341DriverBase.py:87
+#: CH341DriverBase.py:90
 msgid "Config Set: Success"
 msgstr "Conjunto de configuración: éxito"
 
-#: CH341DriverBase.py:89
+#: CH341DriverBase.py:92
 msgid ""
 "Config Set: Fail\n"
 "(Hint: may recover if you change where the USB is plugged in.)"
 msgstr ""
 "Establecer la configuración: falló\n"
-"(Sugerencia: puede restablecerse si cambia el lugar donde está conectado el "
-"USB)."
+"(Sugerencia: puede restablecerse si cambia el lugar donde está conectado el USB)."
 
-#: CH341DriverBase.py:91
+#: CH341DriverBase.py:94
 msgid "Attempting to detach kernel."
 msgstr "Intentando separar el núcleo."
 
-#: CH341DriverBase.py:93
+#: CH341DriverBase.py:96
 msgid "Kernel detach: Success."
 msgstr "Separación del grano: éxito."
 
-#: CH341DriverBase.py:95
+#: CH341DriverBase.py:98
 msgid "Kernel detach: Failed."
 msgstr "Separación del grano: falló."
 
-#: CH341DriverBase.py:97
+#: CH341DriverBase.py:100
 msgid "Kernel detach: Not Implemented."
 msgstr "Separación de kernel: no implementado."
 
-#: CH341DriverBase.py:99
+#: CH341DriverBase.py:102
 msgid "Setting Active Config"
 msgstr "Configuración de configuración activa"
 
-#: CH341DriverBase.py:101
+#: CH341DriverBase.py:104
 msgid "Active Config: Success."
 msgstr "Configuración activa: éxito."
 
-#: CH341DriverBase.py:103
+#: CH341DriverBase.py:106
 msgid "Active Config: Failed."
 msgstr "Configuración activa: fallida."
 
-#: CH341DriverBase.py:105
+#: CH341DriverBase.py:108
 msgid "Attempting to claim interface."
 msgstr "Intentando reclamar la interfaz."
 
-#: CH341DriverBase.py:107
+#: CH341DriverBase.py:110
 msgid "Interface claim: Success"
 msgstr "Reclamación de interfaz: éxito"
 
-#: CH341DriverBase.py:109
+#: CH341DriverBase.py:112
 msgid "Interface claim: Failed. (Interface is in use.)"
 msgstr "Reclamación de interfaz: fallida. (La interfaz está en uso)."
 
-#: CH341DriverBase.py:111
+#: CH341DriverBase.py:114
 msgid "USB Connected."
 msgstr "Usb conectado."
 
-#: CH341DriverBase.py:113
+#: CH341DriverBase.py:116
 msgid "Sending CH341 mode change to EPP1.9."
 msgstr "El envío del modo CH341 cambia a EPP1.9."
 
-#: CH341DriverBase.py:115
+#: CH341DriverBase.py:118
 msgid "CH341 mode change to EPP1.9: Success."
 msgstr "Cambio de modo CH341 a EPP1.9: Éxito."
 
-#: CH341DriverBase.py:117
+#: CH341DriverBase.py:120
 msgid "CH341 mode change to EPP1.9: Fail."
 msgstr "Cambio de modo CH341 a EPP1.9: Error."
 
-#: CH341DriverBase.py:119
+#: CH341DriverBase.py:122
 msgid "Device Connected.\n"
 msgstr "Dispositivo conectado\n"
 
-#: CH341DriverBase.py:121
+#: CH341DriverBase.py:124
 msgid "Attempting disconnection from USB."
 msgstr "Intentando desconectarse del USB."
 
-#: CH341DriverBase.py:123
+#: CH341DriverBase.py:126
 msgid "Attempting kernel attach"
 msgstr "Intentando kernel attach"
 
-#: CH341DriverBase.py:125
+#: CH341DriverBase.py:128
 msgid "Kernel attach: Success."
 msgstr "Kernel adjuntar: éxito."
 
-#: CH341DriverBase.py:127
+#: CH341DriverBase.py:130
 msgid "Kernel attach: Fail."
 msgstr "Kernel adjuntar: falla."
 
-#: CH341DriverBase.py:129
+#: CH341DriverBase.py:132
 msgid "Attempting to release interface."
 msgstr "Intentando liberar la interfaz."
 
-#: CH341DriverBase.py:131
+#: CH341DriverBase.py:134
 msgid "Interface released."
 msgstr "Interfaz lanzada."
 
-#: CH341DriverBase.py:133
+#: CH341DriverBase.py:136
 msgid "Interface did not exist."
 msgstr "La interfaz no existía."
 
-#: CH341DriverBase.py:135
+#: CH341DriverBase.py:138
 msgid "Attempting to dispose resources."
 msgstr "Intentar disponer de recursos."
 
-#: CH341DriverBase.py:137
+#: CH341DriverBase.py:140
 msgid "Dispose Resources: Success"
 msgstr "Desechar recursos: éxito"
 
-#: CH341DriverBase.py:139
+#: CH341DriverBase.py:142
 msgid "Dispose Resources: Fail"
 msgstr "Desechar recursos: fallar"
 
-#: CH341DriverBase.py:141
+#: CH341DriverBase.py:144
 msgid "Attempting USB reset."
 msgstr "Intentando restablecer USB."
 
-#: CH341DriverBase.py:143
+#: CH341DriverBase.py:146
 msgid "USB connection did not exist."
 msgstr "La conexión USB no existía."
 
-#: CH341DriverBase.py:145
+#: CH341DriverBase.py:148
 msgid "USB connection reset."
 msgstr "Restablecimiento de la conexión USB."
 
-#: CH341DriverBase.py:147
+#: CH341DriverBase.py:150
 msgid "USB Disconnection Successful.\n"
 msgstr "Desconexión USB exitosa.\n"
 
-#: CH341DriverBase.py:149
+#: CH341DriverBase.py:152
 #, python-format
 msgid "CH341 Chip Version: %d"
 msgstr "Versión del chip CH341: %d"
 
-#: CH341DriverBase.py:151
+#: CH341DriverBase.py:154
 msgid "Driver Detected: LibUsb"
 msgstr "Controlador detectado: LibUsb"
 
-#: CH341DriverBase.py:153
+#: CH341DriverBase.py:156
 msgid "Driver Detected: CH341"
 msgstr "Controlador detectado: CH341"
 
-#: CH341DriverBase.py:154 Kernel.py:2237
+#: CH341DriverBase.py:157 Kernel.py:2240
 msgid "Unknown"
 msgstr "Desconocido"
 
@@ -458,7 +455,7 @@ msgstr "Establecer cámara 3"
 msgid "Set Camera 4"
 msgstr "Establecer cámara 4"
 
-#: CameraInteface.py:56 wxMeerK40t.py:205 wxMeerK40t.py:350
+#: CameraInteface.py:56 wxMeerK40t.py:202 wxMeerK40t.py:345
 msgid "Camera"
 msgstr "Cámara"
 
@@ -470,52 +467,52 @@ msgstr "Corregir ojo de pez"
 msgid "Correct Perspective"
 msgstr "Perspectiva correcta"
 
-#: CameraInteface.py:145
+#: CameraInteface.py:154
 msgid "Update Image"
 msgstr "Actualizar imagen"
 
-#: CameraInteface.py:147
+#: CameraInteface.py:156
 msgid "Export Snapsnot"
 msgstr "Exportar snapsnot"
 
-#: CameraInteface.py:149
+#: CameraInteface.py:158
 msgid "Detect Distortions/Calibration"
 msgstr "Detectar distorsiones / calibración"
 
-#: CameraInteface.py:264
+#: CameraInteface.py:273
 msgid "Could not import Camera requirements"
 msgstr "No se pudieron importar los requisitos de la cámara"
 
-#: CameraInteface.py:265
+#: CameraInteface.py:274
 msgid "Imports Failed"
 msgstr "Importaciones fallidas"
 
-#: CameraInteface.py:286
+#: CameraInteface.py:295
 msgid "Checkerboard 6x9 pattern not found."
 msgstr "Patrón de tablero de ajedrez 6x9 no encontrado."
 
-#: CameraInteface.py:287
+#: CameraInteface.py:296
 msgid "Pattern not found."
 msgstr "Patrón no encontrado."
 
-#: CameraInteface.py:313
+#: CameraInteface.py:322
 msgid "Ill-conditioned Matrix. Keep trying."
 msgstr "Matriz mal condicionada. Sigue intentándolo."
 
-#: CameraInteface.py:314
+#: CameraInteface.py:323
 msgid "Matrix."
 msgstr "Matriz."
 
-#: CameraInteface.py:318
+#: CameraInteface.py:327
 #, python-format
 msgid "Success. %d images so far."
 msgstr "Éxito. % d imágenes hasta ahora."
 
-#: CameraInteface.py:319
+#: CameraInteface.py:328
 msgid "Image Captured"
 msgstr "Imagen capturada"
 
-#: CameraInteface.py:353
+#: CameraInteface.py:362
 msgid ""
 "If using a precompiled binary, this was requirement was not included.\n"
 "If using pure Python, add it with: pip install opencv-python-headless"
@@ -523,24 +520,24 @@ msgstr ""
 "Si utiliza un binario precompilado, este requisito no se incluyó. \n"
 "Si usa Python puro, agréguelo con: pip install opencv-python-headless"
 
-#: CameraInteface.py:355
+#: CameraInteface.py:364
 msgid "Interface Requires OpenCV."
 msgstr "La interfaz requiere OpenCV."
 
-#: CameraInteface.py:367
+#: CameraInteface.py:376
 msgid "No Webcam found."
 msgstr "No se encontró la cámara web."
 
-#: CameraInteface.py:368
+#: CameraInteface.py:377
 msgid "Error"
 msgstr "Error"
 
-#: CameraInteface.py:378
+#: CameraInteface.py:387
 #, python-format
 msgid "Enter the HTTP or RTSP uri for the webcam #%d"
 msgstr "Ingrese el URL HTTP o RTSP para la cámara web #%d"
 
-#: CameraInteface.py:380
+#: CameraInteface.py:389
 msgid "Webcam URI Update"
 msgstr "Actualización de URI de cámara web"
 
@@ -556,39 +553,39 @@ msgstr "Conección"
 msgid "Limit Write Buffer"
 msgstr "Limitar la memoria intermedia de escritura"
 
-#: Controller.py:120
+#: Controller.py:129
 msgid "Kernel Force Event"
 msgstr "Kernel Force Event"
 
-#: Controller.py:130 wxMeerK40t.py:202 wxMeerK40t.py:353
+#: Controller.py:139 wxMeerK40t.py:199 wxMeerK40t.py:348
 msgid "Controller"
 msgstr "Controlador"
 
-#: Controller.py:134
+#: Controller.py:144
 msgid "Change the currently performed operation."
 msgstr "Cambiar la operación realizada actualmente."
 
-#: Controller.py:136
+#: Controller.py:146
 msgid "Displays the controller's current process."
 msgstr "Muestra el proceso actual del controlador."
 
-#: Controller.py:140
+#: Controller.py:151
 msgid "Force connection/disconnection from the device."
 msgstr "Conectar/desconectar del dispositivo."
 
-#: Controller.py:142
+#: Controller.py:153
 msgid "Connection status"
 msgstr "Estado de la conección"
 
-#: Controller.py:143
+#: Controller.py:154
 msgid "Device being used"
 msgstr "Dispositivo utilizado"
 
-#: Controller.py:144
+#: Controller.py:155
 msgid "Connection location"
 msgstr "Ubicación de la conección"
 
-#: Controller.py:146
+#: Controller.py:157
 msgid ""
 "Limit the write buffer to a certain amount. Permits on-the-fly command "
 "production."
@@ -596,394 +593,445 @@ msgstr ""
 "Limite el búfer de escritura a una cierta cantidad. Permite la producción de "
 "comandos sobre la marcha."
 
-#: Controller.py:149
+#: Controller.py:160
 msgid "Current number of bytes in the write buffer."
 msgstr "Número actual de bytes en el búfer de escritura."
 
-#: Controller.py:150
+#: Controller.py:161
 msgid "Current maximum write buffer limit."
 msgstr "Límite actual máximo de búfer de escritura."
 
-#: Controller.py:152
+#: Controller.py:163
 msgid "View a snapshot of the current buffer"
 msgstr "Ver una instantánea del búfer actual"
 
-#: Controller.py:154
+#: Controller.py:165
 msgid "Total number of packets sent"
 msgstr "Total paquetes enviados"
 
-#: Controller.py:156
+#: Controller.py:167
 msgid "Total number of packets rejected"
 msgstr "Total paquetes rechazados"
 
-#: Controller.py:157
+#: Controller.py:168
 msgid "Last packet information sent"
 msgstr "Última información de paquete enviada"
 
-#: Controller.py:161
+#: Controller.py:172
 msgid "The meaning of Byte 1"
 msgstr "El significado del Byte 1"
 
-#: Controller.py:167
+#: Controller.py:178
 msgid "Pause/Resume the controller"
 msgstr "Pausar / reanudar el controlador"
 
-#: Controller.py:170
+#: Controller.py:181
 msgid "Emergency stop/reset the controller."
 msgstr "Parada de emergencia / reinicio del controlador."
 
-#: Controller.py:193
+#: Controller.py:204
 msgid "Process"
 msgstr "Proceso"
 
-#: Controller.py:201 JobSpooler.py:73
+#: Controller.py:212 JobSpooler.py:82
 msgid "Status"
 msgstr "Estado"
 
-#: Controller.py:205 JobSpooler.py:74
+#: Controller.py:216 JobSpooler.py:83
 msgid "Device"
 msgstr "Dispositivo"
 
-#: Controller.py:209 DeviceManager.py:89
+#: Controller.py:220 DeviceManager.py:98
 msgid "Location"
 msgstr "Ubicación"
 
-#: Controller.py:227
+#: Controller.py:238
 msgid "Packet Count"
 msgstr "Total paquetes"
 
-#: Controller.py:231
+#: Controller.py:242
 msgid "Rejected Packets"
 msgstr "Paquetes rechazados"
 
-#: Controller.py:235
+#: Controller.py:246
 msgid "Packet Info"
 msgstr "Información del paquete"
 
-#: Controller.py:240
+#: Controller.py:251
 msgid "Byte 0"
 msgstr "Byte 0"
 
-#: Controller.py:244
+#: Controller.py:255
 msgid "Byte 1"
 msgstr "Byte 1"
 
-#: Controller.py:249
+#: Controller.py:260
 msgid "Byte 2"
 msgstr "Byte 2"
 
-#: Controller.py:253
+#: Controller.py:264
 msgid "Byte 3"
 msgstr "Byte 3"
 
-#: Controller.py:257
+#: Controller.py:268
 msgid "Byte 4"
 msgstr "Byte 4"
 
-#: Controller.py:261
+#: Controller.py:272
 msgid "Byte 5"
 msgstr "Byte 5"
 
-#: Controller.py:324
+#: Controller.py:335
 msgid "Connect"
 msgstr "Conectar"
 
-#: Controller.py:329
+#: Controller.py:340
 msgid "Disconnecting..."
 msgstr "Desconectando..."
 
-#: Controller.py:334
+#: Controller.py:345
 msgid "Disconnect"
 msgstr "Desconectar"
 
-#: Controller.py:339
+#: Controller.py:350
 msgid "Connecting..."
 msgstr "Conectando..."
 
-#: Controller.py:351
+#: Controller.py:362
 msgid "Connection Refused. See USB Log for detailed information."
 msgstr ""
-"Conexión denegada. Consulte el Registro USB para obtener información "
-"detallada."
+"Conexión denegada. Consulte el Registro USB para obtener información detallada."
 
-#: Controller.py:352
+#: Controller.py:363
 msgid "Manual Connection"
 msgstr "Conexión manual"
 
-#: Controller.py:382
+#: Controller.py:393
 msgid "Hold Controller"
 msgstr "Mantenga el controlador"
 
-#: Controller.py:387
+#: Controller.py:398
 msgid "LOCKED"
 msgstr "BLOQUEADO"
 
-#: Controller.py:396
+#: Controller.py:407
 msgid "Force Continue"
 msgstr "Forzar la continuidad"
 
-#: Controller.py:405
+#: Controller.py:416
 msgid "Resume Controller"
 msgstr "Reanudar controlador"
 
-#: Controller.py:414
+#: Controller.py:425
 msgid "Pause Controller"
 msgstr "Controlador de pausa"
 
-#: Controller.py:423
+#: Controller.py:434
 msgid "Manual Reset"
 msgstr "Restablecimiento manual"
 
-#: DeviceManager.py:86
+#: DeviceManager.py:95
 msgid "Id"
 msgstr "Carné de identidad"
 
-#: DeviceManager.py:87
+#: DeviceManager.py:96
 msgid "Driver"
 msgstr "Conductor"
 
-#: DeviceManager.py:88
+#: DeviceManager.py:97
 msgid "State"
 msgstr "Estado"
 
-#: DeviceManager.py:90
+#: DeviceManager.py:99
 msgid "Boot"
 msgstr "Bota"
 
-#: DeviceManager.py:91
+#: DeviceManager.py:100
 msgid "Add a new device"
 msgstr "Agregar un nuevo dispositivo"
 
-#: DeviceManager.py:93
+#: DeviceManager.py:102
 msgid "Remove selected device"
 msgstr "Quitar dispositivo seleccionado"
 
-#: DeviceManager.py:95
+#: DeviceManager.py:104
 msgid "View Device Properties"
 msgstr "Ver propiedades del dispositivo"
 
-#: DeviceManager.py:97
-msgid "Move device up"
-msgstr "Mover el dispositivo hacia arriba"
-
-#: DeviceManager.py:99
-msgid "Move device down"
-msgstr "Mover dispositivo hacia abajo"
-
-#: DeviceManager.py:178
+#: DeviceManager.py:187
 msgid "That device already booted."
 msgstr "Ese dispositivo ya arrancó."
 
-#: DeviceManager.py:179
+#: DeviceManager.py:188
 msgid "Cannot Boot Selected Device"
 msgstr "No se puede iniciar el dispositivo seleccionado"
 
-#: DeviceManager.py:185
+#: DeviceManager.py:194
 msgid "What type of device is being added?"
 msgstr "¿Qué tipo de dispositivo se está agregando?"
 
-#: DeviceManager.py:185
+#: DeviceManager.py:194
 msgid "Device Type"
 msgstr "Tipo de dispositivo"
 
-#: ImageProperty.py:95
+#: ImageProperty.py:104
 msgid "Image Properties"
 msgstr "Propiedades de imagen"
 
-#: ImageProperty.py:97
+#: ImageProperty.py:106
 msgid "Scan gap / step size image native value."
 msgstr "Valor nativo de la imagen de tamaño de espacio / paso de escaneo."
 
-#: ImageProperty.py:99
+#: ImageProperty.py:108
 msgid "X property of image"
 msgstr "Propiedad X de la imagen"
 
-#: ImageProperty.py:101
+#: ImageProperty.py:110
 msgid "Y property of image"
 msgstr "Propiedad Y de imagen"
 
-#: ImageProperty.py:103
+#: ImageProperty.py:112
 msgid "Width property of image"
 msgstr "Ancho de propiedad de la imagen"
 
-#: ImageProperty.py:105
+#: ImageProperty.py:114
 msgid "Height property of image"
 msgstr "Propiedad de altura de la imagen"
 
-#: ImageProperty.py:118
+#: ImageProperty.py:127
 msgid "DPP"
 msgstr "DPP"
 
-#: ImageProperty.py:119
+#: ImageProperty.py:128
 msgid "Dots Per Pixel"
 msgstr "Puntos por píxel"
 
-#: ImageProperty.py:123
+#: ImageProperty.py:132
 msgid "DPI:"
 msgstr "DPI:"
 
-#: ImageProperty.py:124
+#: ImageProperty.py:133
 msgid "Dots Per Inch"
 msgstr "Puntos por pulgada"
 
-#: ImageProperty.py:128 Navigation.py:328
+#: ImageProperty.py:137 Navigation.py:337
 msgid "X:"
 msgstr "X:"
 
-#: ImageProperty.py:132 Navigation.py:332
+#: ImageProperty.py:141 Navigation.py:341
 msgid "Y:"
 msgstr "Y:"
 
-#: ImageProperty.py:136
+#: ImageProperty.py:145
 msgid "Width:"
 msgstr "Anchura:"
 
-#: ImageProperty.py:140
+#: ImageProperty.py:149
 msgid "Height:"
 msgstr "Altura:"
 
-#: JobInfo.py:21 JobInfo.py:309 wxMeerK40t.py:193
+#: JobInfo.py:22 JobInfo.py:467 wxMeerK40t.py:190
 msgid "Start Job"
 msgstr "Comenzar trabajo"
 
-#: JobInfo.py:29
+#: JobInfo.py:30
 msgid "Home Before"
 msgstr "Inicio antes"
 
-#: JobInfo.py:31
+#: JobInfo.py:32
 msgid "Home After"
 msgstr "Inicio despues"
 
-#: JobInfo.py:34
+#: JobInfo.py:35
+msgid "Physical Home Before"
+msgstr ""
+
+#: JobInfo.py:37
+msgid "Physical Home After"
+msgstr ""
+
+#: JobInfo.py:40
 msgid "Return to Origin After"
 msgstr "Volver al origen después"
 
-#: JobInfo.py:37
+#: JobInfo.py:43
 msgid "Beep After"
 msgstr "Bip después"
 
-#: JobInfo.py:39
+#: JobInfo.py:45
 msgid "Automatic"
 msgstr "Automático"
 
-#: JobInfo.py:42 wxMeerK40t.py:185
+#: JobInfo.py:48 wxMeerK40t.py:182
 msgid "Home"
 msgstr "Hogar"
 
-#: JobInfo.py:44
+#: JobInfo.py:50
+msgid "Physical Home"
+msgstr ""
+
+#: JobInfo.py:52
 msgid "Wait"
 msgstr "Espere"
 
-#: JobInfo.py:46
+#: JobInfo.py:54
 msgid "Beep"
 msgstr "Bip"
 
-#: JobInfo.py:48 JobInfo.py:112
+#: JobInfo.py:56 JobInfo.py:224
 msgid "Interrupt"
 msgstr "Interrumpir"
 
-#: JobInfo.py:50
+#: JobInfo.py:58
 msgid "Add"
 msgstr "Añadir"
 
-#: JobInfo.py:53
+#: JobInfo.py:61
 msgid "Rapid Between"
 msgstr "Rapidez entre"
 
-#: JobInfo.py:56
+#: JobInfo.py:64
 msgid "Jog Standard"
 msgstr "Jog estándar"
 
-#: JobInfo.py:60
+#: JobInfo.py:68
 msgid "Jog Finish"
 msgstr "Final del recorrido"
 
-#: JobInfo.py:62 JobSpooler.py:77 Settings.py:115 wxMeerK40t.py:345
+#: JobInfo.py:70 JobSpooler.py:86 Settings.py:120 wxMeerK40t.py:340
 msgid "Settings"
 msgstr "Configuraciones"
 
-#: JobInfo.py:111
+#: JobInfo.py:73
+msgid "Step and Repeat"
+msgstr ""
+
+#: JobInfo.py:75 wxMeerK40t.py:354
+msgid "Tools"
+msgstr ""
+
+#: JobInfo.py:110
+msgid "How many copies wide?"
+msgstr ""
+
+#: JobInfo.py:110
+msgid "Enter Columns"
+msgstr ""
+
+#: JobInfo.py:124
+msgid "How many copies high?"
+msgstr ""
+
+#: JobInfo.py:124
+msgid "Enter Rows"
+msgstr ""
+
+#: JobInfo.py:137
+msgid "How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"
+msgstr ""
+
+#: JobInfo.py:137
+msgid "Enter X Gap"
+msgstr ""
+
+#: JobInfo.py:153
+msgid "How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"
+msgstr ""
+
+#: JobInfo.py:153
+msgid "Enter Y Gap"
+msgstr ""
+
+#: JobInfo.py:223
 msgid "Spooling Interrupted. Press OK to Continue."
 msgstr "Spooling interrumpido. Presione OK para continuar."
 
-#: JobInfo.py:163
+#: JobInfo.py:283
+msgid "Physical Home Before: Disabled (Rotary On)"
+msgstr ""
+
+#: JobInfo.py:288
 msgid "Home Before: Disabled (Rotary On)"
 msgstr "Hogar antes: discapacitado (giratorio encendido)"
 
-#: JobInfo.py:177
+#: JobInfo.py:305
+msgid "Physical Home After: Disabled (Rotary On)"
+msgstr ""
+
+#: JobInfo.py:310
 msgid "Home After: Disabled (Rotary On)"
 msgstr "Inicio después: Deshabilitado (giratorio encendido)"
 
-#: JobInfo.py:203
+#: JobInfo.py:336
 msgid "operation List"
 msgstr "lista de operaciones"
 
-#: JobInfo.py:204
+#: JobInfo.py:337
 msgid "Command List"
 msgstr "Lista de comandos"
 
-#: JobInfo.py:205
+#: JobInfo.py:338
 msgid "Start the Job"
 msgstr "Comience el trabajo"
 
-#: JobInfo.py:208
+#: JobInfo.py:342
 msgid "View Spooler"
 msgstr "Ver cola de impresión"
 
-#: JobInfo.py:215
+#: JobInfo.py:349
 msgid "Operations and Commands"
 msgstr "Operaciones y comandos"
 
-#: JobInfo.py:306
+#: JobInfo.py:464
 msgid "Execute Commands"
 msgstr "Ejecutar comandos"
 
-#: JobSpooler.py:70
+#: JobSpooler.py:79
 msgid "List and modify the queued operations"
 msgstr "Enumerar y modificar las operaciones en cola"
 
-#: JobSpooler.py:72
+#: JobSpooler.py:81
 msgid "Name"
 msgstr "Nombre"
 
-#: JobSpooler.py:75
+#: JobSpooler.py:84
 msgid "Type"
 msgstr "Tipo"
 
-#: JobSpooler.py:76
+#: JobSpooler.py:85
 msgid "Speed"
 msgstr "Velocidad"
 
-#: JobSpooler.py:78
+#: JobSpooler.py:87
 msgid "Time Estimate"
 msgstr "Tiempo estimado"
 
-#: JobSpooler.py:99 Keymap.py:90
+#: JobSpooler.py:108 Keymap.py:99
 #, python-format
 msgid "Remove %s"
 msgstr "Elimina %s"
 
-#: JobSpooler.py:101 wxMeerK40t.py:2316 wxMeerK40t.py:2319 wxMeerK40t.py:2322
-#: wxMeerK40t.py:2325
+#: JobSpooler.py:110 wxMeerK40t.py:2426 wxMeerK40t.py:2429 wxMeerK40t.py:2432
+#: wxMeerK40t.py:2435
 msgid "Clear All"
 msgstr "Limpiar todo"
 
-#: JobSpooler.py:136
+#: JobSpooler.py:145
 #, python-format
 msgid "%.1fmm/s"
 msgstr "%.1fmm/s"
 
-#: JobSpooler.py:141
+#: JobSpooler.py:150
 #, python-format
 msgid "power=%g"
 msgstr "potencia=%g"
 
-#: JobSpooler.py:145
+#: JobSpooler.py:154
 #, python-format
 msgid "step=%d"
 msgstr "paso=%d"
 
-#: JobSpooler.py:149
+#: JobSpooler.py:158
 #, python-format
 msgid "overscan=%d"
 msgstr "overscan=%d"
@@ -993,125 +1041,125 @@ msgstr "overscan=%d"
 msgid "WARNING: Listener '%s' still registered to %s."
 msgstr "ADVERTENCIA: El oyente '%s' todavía está registrado en %s."
 
-#: Kernel.py:1707
+#: Kernel.py:1710
 #, python-format
 msgid "Suspended Signal: %s for %s"
 msgstr "Señal suspendida: %s para %s"
 
-#: Kernel.py:1759
+#: Kernel.py:1762
 msgid "Shutting down."
 msgstr "Apagando."
 
-#: Kernel.py:1761
+#: Kernel.py:1764
 #, python-format
 msgid "Saving Device State: '%s'"
 msgstr "Guardando estado del dispositivo: '%s'"
 
-#: Kernel.py:1771
+#: Kernel.py:1774
 #, python-format
 msgid "Device Shutdown Started: '%s'"
 msgstr "Apagado del dispositivo iniciado: '%s'"
 
-#: Kernel.py:1776
+#: Kernel.py:1779
 #, python-format
 msgid "Device Shutdown Finished: '%s'"
 msgstr "Apagado del dispositivo terminado: '%s'"
 
-#: Kernel.py:1786
+#: Kernel.py:1789
 #, python-format
 msgid "Stopping %s %s: %s"
 msgstr "Deteniendo %s %s: %s"
 
-#: Kernel.py:1789
+#: Kernel.py:1792
 #, python-format
 msgid "Closing %s %s: %s"
 msgstr "Cierre %s %s: %s"
 
-#: Kernel.py:1799
+#: Kernel.py:1802
 #, python-format
 msgid "Thread %s exited safely %s"
 msgstr "El hilo %s salió con seguridad %s"
 
-#: Kernel.py:1802
+#: Kernel.py:1805
 #, python-format
 msgid "WARNING: Dead thread %s still registered to %s."
 msgstr "ADVERTENCIA: El hilo muerto %s todavía está registrado en %s."
 
-#: Kernel.py:1804
+#: Kernel.py:1807
 #, python-format
 msgid "Finishing Thread %s for %s"
 msgstr "Hilo de acabado %s para %s"
 
-#: Kernel.py:1806
+#: Kernel.py:1809
 #, python-format
 msgid "%s is the current shutdown thread"
 msgstr "%s es el hilo de apagado actual"
 
-#: Kernel.py:1810
+#: Kernel.py:1813
 msgid "Asking thread to stop."
 msgstr "Pidiendo hilo para parar."
 
-#: Kernel.py:1814
+#: Kernel.py:1817
 #, python-format
 msgid "Waiting for thread %s: %s"
 msgstr "Esperando hilo %s: %s"
 
-#: Kernel.py:1816
+#: Kernel.py:1819
 #, python-format
 msgid "Thread %s finished. %s"
 msgstr "Hilo %s terminado. %s"
 
-#: Kernel.py:1818
+#: Kernel.py:1821
 msgid "No threads required halting."
 msgstr "No hay hilos necesarios para detenerse."
 
-#: Kernel.py:1828
+#: Kernel.py:1831
 #, python-format
 msgid "Shutting down %s %s: %s"
 msgstr "Apagando %s %s: %s"
 
-#: Kernel.py:1840
+#: Kernel.py:1843
 #, python-format
 msgid "WARNING: %s %s was not closed."
 msgstr "ADVERTENCIA: %s %s no se cerró."
 
-#: Kernel.py:1842
+#: Kernel.py:1845
 msgid "Shutdown."
 msgstr "Apagar."
 
-#: Kernel.py:1858
+#: Kernel.py:1861
 msgid "All Devices are shutdown. Stopping Kernel."
 msgstr "Todos los dispositivos están apagados. Deteniendo Kernel."
 
-#: Kernel.py:2221
+#: Kernel.py:2224
 msgid "Unstarted"
 msgstr "No iniciado"
 
-#: Kernel.py:2223
+#: Kernel.py:2226
 msgid "Abort"
 msgstr "Abortar"
 
-#: Kernel.py:2225
+#: Kernel.py:2228
 msgid "Finished"
 msgstr "Terminado"
 
-#: Kernel.py:2227 wxMeerK40t.py:194
+#: Kernel.py:2230 wxMeerK40t.py:191
 msgid "Pause"
 msgstr "Pausa"
 
-#: Kernel.py:2229
+#: Kernel.py:2232
 msgid "Busy"
 msgstr "Ocupado"
 
-#: Kernel.py:2231
+#: Kernel.py:2234
 msgid "Waiting"
 msgstr "Espere"
 
-#: Kernel.py:2233
+#: Kernel.py:2236
 msgid "Active"
 msgstr "Activo"
 
-#: Kernel.py:2235
+#: Kernel.py:2238
 msgid "Idle"
 msgstr "Ocioso"
 
@@ -1119,249 +1167,249 @@ msgstr "Ocioso"
 msgid "Add Hotkey"
 msgstr "Agregar tecla de acceso rápido"
 
-#: Keymap.py:62 wxMeerK40t.py:347
+#: Keymap.py:71 wxMeerK40t.py:342
 msgid "Keymap Settings"
 msgstr "Configuración del mapa de teclas"
 
-#: Keymap.py:63
+#: Keymap.py:72
 msgid "What keys are bound to which actions?"
 msgstr "¿Qué claves están vinculadas a qué acciones?"
 
-#: Keymap.py:64
+#: Keymap.py:73
 msgid "Key"
 msgstr "Llave"
 
-#: Keymap.py:65
+#: Keymap.py:74
 msgid "Command"
 msgstr "Mando"
 
-#: Keymap.py:66
+#: Keymap.py:75
 msgid "Add a new hotkey"
 msgstr "Agregar una nueva tecla de acceso rápido"
 
-#: Keymap.py:92
+#: Keymap.py:101
 msgid "Reset Default"
 msgstr "Restablecer predeterminado"
 
-#: Keymap.py:128
+#: Keymap.py:137
 msgid "Missing Keystroke"
 msgstr "Falta pulsación de tecla"
 
-#: Keymap.py:129
+#: Keymap.py:138
 msgid "No Keystroke for binding."
 msgstr "Sin pulsaciones de teclas para encuadernar."
 
-#: Keymap.py:135
+#: Keymap.py:144
 msgid "Missing Command"
 msgstr "Comando perdido"
 
-#: Keymap.py:136
+#: Keymap.py:145
 msgid "No Command for binding."
 msgstr "Sin comando para atar."
 
-#: Navigation.py:140 wxMeerK40t.py:199 wxMeerK40t.py:352
+#: Navigation.py:149 wxMeerK40t.py:196 wxMeerK40t.py:347
 msgid "Navigation"
 msgstr "Navegación"
 
-#: Navigation.py:142
+#: Navigation.py:151
 msgid "Set Jog Distance in mils (1/1000th of an inch)"
 msgstr ""
 "Establecer la distancia de desplazamiento en milésimas de pulgada (1/1000 de "
 "pulgada)"
 
-#: Navigation.py:144
+#: Navigation.py:153
 msgid "Set Jog Distance in mm"
 msgstr "Establecer la distancia de jog en mm"
 
-#: Navigation.py:146
+#: Navigation.py:155
 msgid "Set Jog Distance in cm"
 msgstr "Establecer la distancia de desplazamiento en cm"
 
-#: Navigation.py:148
+#: Navigation.py:157
 msgid "Set Jog Distance in inch"
 msgstr "Establecer la distancia de desplazamiento en pulgadas"
 
-#: Navigation.py:149
+#: Navigation.py:158
 msgid "Move laser diagonally in the up and left direction"
 msgstr "Mueva el láser en diagonal hacia arriba y hacia la izquierda"
 
-#: Navigation.py:151
+#: Navigation.py:160
 msgid "Move laser in the up direction"
 msgstr "Mueva el láser hacia arriba"
 
-#: Navigation.py:153
+#: Navigation.py:162
 msgid "Move laser diagonally in the up and right direction"
 msgstr "Mueva el láser en diagonal hacia arriba y hacia la derecha"
 
-#: Navigation.py:155
+#: Navigation.py:164
 msgid "Move laser in the left direction"
 msgstr "Mueva el láser en la dirección izquierda"
 
-#: Navigation.py:158
+#: Navigation.py:167
 msgid "Move laser in the right direction"
 msgstr "Mueve el láser en la dirección correcta"
 
-#: Navigation.py:160
+#: Navigation.py:169
 msgid "Move laser diagonally in the down and left direction"
 msgstr "Mueva el láser en diagonal hacia abajo y hacia la izquierda"
 
-#: Navigation.py:162
+#: Navigation.py:171
 msgid "Move laser in the down direction"
 msgstr "Mueva el láser hacia abajo"
 
-#: Navigation.py:164
+#: Navigation.py:173
 msgid "Move laser diagonally in the down and right direction"
 msgstr "Mueva el láser en diagonal hacia abajo y hacia la derecha"
 
-#: Navigation.py:166
+#: Navigation.py:175
 msgid "Unlock the laser rail"
 msgstr "Desbloquee el riel láser"
 
-#: Navigation.py:168
+#: Navigation.py:177
 msgid "Lock the laser rail"
 msgstr "Bloquear el raíl láser"
 
-#: Navigation.py:170
+#: Navigation.py:179
 msgid "Align laser with the upper left corner of the selection"
 msgstr "Alinear el láser con la esquina superior izquierda de la selección"
 
-#: Navigation.py:173
+#: Navigation.py:182
 msgid "Align laser with the upper right corner of the selection"
 msgstr "Alinee el láser con la esquina superior derecha de la selección"
 
-#: Navigation.py:176
+#: Navigation.py:185
 msgid "Align laser with the center of the selection"
 msgstr "Alinear el láser con el centro de la selección"
 
-#: Navigation.py:179
+#: Navigation.py:188
 msgid "Align laser with the lower left corner of the selection"
 msgstr "Alinear el láser con la esquina inferior izquierda de la selección"
 
-#: Navigation.py:182
+#: Navigation.py:191
 msgid "Align laser with the lower right corner of the selection"
 msgstr "Alinear el láser con la esquina inferior derecha de la selección"
 
-#: Navigation.py:184
+#: Navigation.py:193
 msgid "Align laser with the first position"
 msgstr "Alinear el láser con la primera posición"
 
-#: Navigation.py:186
+#: Navigation.py:195
 msgid "Perform a convex hull trace of the selection"
 msgstr "Realice un trazado convexo del casco de la selección"
 
-#: Navigation.py:188
+#: Navigation.py:197
 msgid "Perform a simple trace of the selection"
 msgstr "Realizar un seguimiento simple de la selección"
 
-#: Navigation.py:201
+#: Navigation.py:210
 msgid "Scale Down"
 msgstr "Reducir proporcionalmente"
 
-#: Navigation.py:202
+#: Navigation.py:211
 msgid "Translate Top"
 msgstr "Traducir arriba"
 
-#: Navigation.py:203
+#: Navigation.py:212
 msgid "Scale Up"
 msgstr "Aumentar proporcionalmente"
 
-#: Navigation.py:204
+#: Navigation.py:213
 msgid "Translate Left"
 msgstr "Traducir a la izquierda"
 
-#: Navigation.py:205
+#: Navigation.py:214
 msgid "Reset Matrix"
 msgstr "Restablecer matriz"
 
-#: Navigation.py:206
+#: Navigation.py:215
 msgid "Translate Right"
 msgstr "Traducir a la derecha"
 
-#: Navigation.py:207
+#: Navigation.py:216
 msgid "Rotate Counterclockwise"
 msgstr "Girar en sentido antihorario"
 
-#: Navigation.py:208
+#: Navigation.py:217
 msgid "Translate Bottom"
 msgstr "Traducir abajo"
 
-#: Navigation.py:209
+#: Navigation.py:218
 msgid "Rotate Clockwise"
 msgstr "Rotar las agujas del reloj"
 
-#: Navigation.py:212
+#: Navigation.py:221
 msgid "Transform: Scale X"
 msgstr "Transformar: Escala X"
 
-#: Navigation.py:214
+#: Navigation.py:223
 msgid "Transform: Skew Y"
 msgstr "Transformar: sesgar Y"
 
-#: Navigation.py:216
+#: Navigation.py:225
 msgid "Transform: Translate X"
 msgstr "Transformar: Traducir X"
 
-#: Navigation.py:218
+#: Navigation.py:227
 msgid "Transform: Skew X"
 msgstr "Transformar: sesgar X"
 
-#: Navigation.py:220
+#: Navigation.py:229
 msgid "Transform: Scale Y"
 msgstr "Transformar: escala Y"
 
-#: Navigation.py:222
+#: Navigation.py:231
 msgid "Transform: Translate Y"
 msgstr "Transformar: Traducir Y"
 
-#: Navigation.py:224
+#: Navigation.py:233
 msgid "Fire a short laser pulse"
 msgstr "Dispara un pulso láser corto"
 
-#: Navigation.py:227
+#: Navigation.py:236
 msgid "Set the duration of the laser pulse"
 msgstr "Establecer la duración del pulso láser"
 
-#: Navigation.py:228
+#: Navigation.py:237
 msgid "Move to the set position"
 msgstr "Mover a la posición establecida"
 
-#: Navigation.py:230
+#: Navigation.py:239
 msgid "Set X value for the Move To"
 msgstr "Establecer el valor X para Mover a"
 
-#: Navigation.py:231
+#: Navigation.py:240
 msgid "Set Y value for the Move To"
 msgstr "Establecer el valor Y para Mover a"
 
-#: Navigation.py:238
+#: Navigation.py:247
 msgid "Move To"
 msgstr "Mover a"
 
-#: Navigation.py:242
+#: Navigation.py:251
 msgid "Short Pulse"
 msgstr "Pulso corto"
 
-#: Navigation.py:252
+#: Navigation.py:261
 msgid "Jog Distance"
 msgstr "Distancia de jogging"
 
-#: Navigation.py:258
+#: Navigation.py:267
 msgid "mils"
 msgstr "mils"
 
-#: Navigation.py:262
+#: Navigation.py:271
 msgid " mm"
 msgstr " mm"
 
-#: Navigation.py:266 RasterWizard.py:621
+#: Navigation.py:275 RasterWizard.py:630
 msgid "cm"
 msgstr "cm"
 
-#: Navigation.py:270
+#: Navigation.py:279
 msgid "inch"
 msgstr "pulgada"
 
-#: Navigation.py:324
+#: Navigation.py:333
 msgid " ms"
 msgstr " ms"
 
@@ -1369,7 +1417,7 @@ msgstr " ms"
 msgid "Automatically Open Notes"
 msgstr "Abrir notas automáticamente"
 
-#: Notes.py:63
+#: Notes.py:72
 msgid "Automatically open notes if they exist when file is opened."
 msgstr "Abrir notas automáticamente si existen cuando se abre el archivo."
 
@@ -1381,15 +1429,15 @@ msgstr "Grabar"
 msgid "Cut"
 msgstr "Cortar"
 
-#: OperationProperty.py:27 OperationProperty.py:272
+#: OperationProperty.py:27 OperationProperty.py:281
 msgid "Raster"
 msgstr "Trama"
 
-#: OperationProperty.py:27 wxMeerK40t.py:2480
+#: OperationProperty.py:27 wxMeerK40t.py:2590
 msgid "Image"
 msgstr "Imagen"
 
-#: OperationProperty.py:29 RasterWizard.py:1289
+#: OperationProperty.py:29 RasterWizard.py:1298
 msgid "Output"
 msgstr "Salida"
 
@@ -1445,140 +1493,139 @@ msgstr "Aceleración"
 msgid "Dot Length (mils)"
 msgstr "Longitud de punto (mils)"
 
-#: OperationProperty.py:56 OperationProperty.py:263 wxMeerK40t.py:2377
+#: OperationProperty.py:56 OperationProperty.py:272 wxMeerK40t.py:2487
 msgid "Passes"
 msgstr "Pases"
 
-#: OperationProperty.py:209
+#: OperationProperty.py:218
 msgid "Operation Properties"
 msgstr "Propiedades de operación"
 
-#: OperationProperty.py:214
+#: OperationProperty.py:223
 msgid "Change/View color of this layer"
 msgstr "Cambiar/Ver el color de esta capa"
 
-#: OperationProperty.py:215
+#: OperationProperty.py:224
 msgid "Default Operation Mode Type"
 msgstr "Tipo de modo de operación predeterminado"
 
-#: OperationProperty.py:217
+#: OperationProperty.py:226
 msgid "Output This Layer"
 msgstr "Salida de esta capa"
 
-#: OperationProperty.py:219
+#: OperationProperty.py:228
 msgid "Show This Layer"
 msgstr "Mostrar esta capa"
 
-#: OperationProperty.py:221
+#: OperationProperty.py:230
 msgid "Speed at which to perform the action in mm/s."
 msgstr "Velocidad a la que realizar la acción en mm / s."
 
-#: OperationProperty.py:222
+#: OperationProperty.py:231
 msgid ""
-"1000 always on. 500 it's half power (fire every other step). This is "
-"software PPI control."
+"1000 always on. 500 it's half power (fire every other step). This is software "
+"PPI control."
 msgstr ""
-"1000 siempre encendido. 500 es la mitad de potencia (dispara cada dos "
-"pasos). Este es el software de control PPI."
+"1000 siempre encendido. 500 es la mitad de potencia (dispara cada dos pasos). "
+"Este es el software de control PPI."
 
-#: OperationProperty.py:223
+#: OperationProperty.py:232
 msgid ""
 "Scan gap / step size, is the distance between scanlines in a raster engrave. "
 "Distance here is in 1/1000th of an inch."
 msgstr ""
-"Tamaño de espacio / paso de escaneo, es la distancia entre líneas de escaneo "
-"en un grabado ráster. La distancia aquí es de 1/1000 de pulgada."
+"Tamaño de espacio / paso de escaneo, es la distancia entre líneas de escaneo en "
+"un grabado ráster. La distancia aquí es de 1/1000 de pulgada."
 
-#: OperationProperty.py:224
+#: OperationProperty.py:233
 msgid "Overscan amount"
 msgstr "Cantidad de sobreexploración"
 
-#: OperationProperty.py:225
+#: OperationProperty.py:234
 msgid "Direction to perform a raster"
 msgstr "Dirección para realizar una trama"
 
-#: OperationProperty.py:227
+#: OperationProperty.py:236
 msgid "Rastering on forward and backswing or only forward swing?"
 msgstr "¿Desplazamiento hacia adelante y hacia atrás o solo hacia adelante?"
 
-#: OperationProperty.py:229
+#: OperationProperty.py:238
 msgid "Turn on advanced options?"
 msgstr "¿Activar opciones avanzadas?"
 
-#: OperationProperty.py:230
+#: OperationProperty.py:239
 msgid "Enables the ability to modify the diagonal ratio."
 msgstr "Permite modificar la proporción de los diagonales."
 
-#: OperationProperty.py:231
+#: OperationProperty.py:240
 msgid ""
-"Diagonal ratio is the ratio of additional time needed to perform a diagonal "
-"step rather than an orthogonal step. (0.261 default)"
+"Diagonal ratio is the ratio of additional time needed to perform a diagonal step "
+"rather than an orthogonal step. (0.261 default)"
 msgstr ""
 "La proporción diagonal es la proporción de tiempo adicional necesario para "
-"realizar un paso diagonal en lugar de un paso ortogonal. (0,261 "
-"predeterminado)"
+"realizar un paso diagonal en lugar de un paso ortogonal. (0,261 predeterminado)"
 
-#: OperationProperty.py:232
+#: OperationProperty.py:241
 msgid "Enables the ability to modify the acceleration factor."
 msgstr "Permite la capacidad de modificar el factor de aceleración."
 
-#: OperationProperty.py:233
+#: OperationProperty.py:242
 msgid "Acceleration Factor Override"
 msgstr "Anulación del factor de aceleración"
 
-#: OperationProperty.py:234
+#: OperationProperty.py:243
 msgid "Enable Dot Length Feature"
 msgstr "Habilitar característica de longitud de punto"
 
-#: OperationProperty.py:235
+#: OperationProperty.py:244
 msgid "PPI minimum on length for making dash patterns"
 msgstr "PPI mínimo en longitud para hacer patrones de guiones"
 
-#: OperationProperty.py:237
+#: OperationProperty.py:246
 msgid "Enable Passes"
 msgstr "Habilitar pases"
 
-#: OperationProperty.py:238
+#: OperationProperty.py:247
 msgid "Run operation how many times?"
 msgstr "Ejecute la operación ¿cuántas veces?"
 
-#: OperationProperty.py:265
+#: OperationProperty.py:274
 msgid "PPI Advanced"
 msgstr "PPI avanzado"
 
-#: OperationProperty.py:268
+#: OperationProperty.py:277
 msgid "Speedcode Advanced"
 msgstr "Speedcode avanzado"
 
-#: OperationProperty.py:273
+#: OperationProperty.py:282
 msgid "Start Preference"
 msgstr "Preferencia de inicio"
 
-#: OperationProperty.py:279
+#: OperationProperty.py:288
 msgid "Power (ppi)"
 msgstr "Poder (ppi)"
 
-#: OperationProperty.py:280
+#: OperationProperty.py:289
 msgid "Speed (mm/s)"
 msgstr "Velocidad (mm / s)"
 
-#: OperationProperty.py:281
+#: OperationProperty.py:290
 msgid "Layer"
 msgstr "Capa"
 
-#: OperationProperty.py:297
+#: OperationProperty.py:306
 msgid "Raster Step (mils)"
 msgstr "Paso de trama (mils)"
 
-#: OperationProperty.py:301
+#: OperationProperty.py:310
 msgid "Overscan (mils)"
 msgstr "Overscan (mils)"
 
-#: OperationProperty.py:305
+#: OperationProperty.py:314
 msgid "Raster Direction"
 msgstr "Dirección de trama"
 
-#: OperationProperty.py:505
+#: OperationProperty.py:514
 msgid "Pass Through"
 msgstr "Pasar por"
 
@@ -1586,51 +1633,44 @@ msgstr "Pasar por"
 msgid "None"
 msgstr "Ninguna"
 
-#: PathProperty.py:124
+#: PathProperty.py:133
 msgid "Path Properties"
 msgstr "Propiedades de ruta"
 
-#: PathProperty.py:125 PathProperty.py:140 TextProperty.py:132
-#: TextProperty.py:147
+#: PathProperty.py:134 PathProperty.py:149 TextProperty.py:141 TextProperty.py:156
 msgid "\"none\" defined value"
 msgstr "valor definido \"ninguno\""
 
-#: PathProperty.py:127 PathProperty.py:142 TextProperty.py:134
-#: TextProperty.py:149
+#: PathProperty.py:136 PathProperty.py:151 TextProperty.py:143 TextProperty.py:158
 msgid "#FF0000 defined values."
 msgstr "#FF0000 valores definidos."
 
-#: PathProperty.py:129 PathProperty.py:131 PathProperty.py:144
-#: PathProperty.py:146 TextProperty.py:136 TextProperty.py:138
-#: TextProperty.py:151 TextProperty.py:153
+#: PathProperty.py:138 PathProperty.py:140 PathProperty.py:153 PathProperty.py:155
+#: TextProperty.py:145 TextProperty.py:147 TextProperty.py:160 TextProperty.py:162
 msgid "#00FF00 defined values."
 msgstr "#00FF00 valores definidos."
 
-#: PathProperty.py:133 PathProperty.py:148 TextProperty.py:140
-#: TextProperty.py:155
+#: PathProperty.py:142 PathProperty.py:157 TextProperty.py:149 TextProperty.py:164
 msgid "#FF00FF defined values."
 msgstr "#FF00FF valores definidos."
 
-#: PathProperty.py:135 PathProperty.py:150 TextProperty.py:142
-#: TextProperty.py:157
+#: PathProperty.py:144 PathProperty.py:159 TextProperty.py:151 TextProperty.py:166
 msgid "#00FFFF defined values."
 msgstr "#00FFFF valores definidos."
 
-#: PathProperty.py:137 PathProperty.py:152 TextProperty.py:144
-#: TextProperty.py:159
+#: PathProperty.py:146 PathProperty.py:161 TextProperty.py:153 TextProperty.py:168
 msgid "#FFFF00 defined values."
 msgstr "#FFFF00 valores definidos."
 
-#: PathProperty.py:139 PathProperty.py:154 TextProperty.py:146
-#: TextProperty.py:161
+#: PathProperty.py:148 PathProperty.py:163 TextProperty.py:155 TextProperty.py:170
 msgid "#000000 defined values."
 msgstr "#000000 valores definidos."
 
-#: PathProperty.py:161 TextProperty.py:168
+#: PathProperty.py:170 TextProperty.py:177
 msgid "Fill Color"
 msgstr "Color de relleno"
 
-#: PathProperty.py:162 TextProperty.py:169
+#: PathProperty.py:171 TextProperty.py:178
 msgid "Stroke Color"
 msgstr "Color del trazo"
 
@@ -1674,522 +1714,518 @@ msgstr "Inicio después de completar el trabajo"
 msgid "Beep after job complete"
 msgstr "Pitido después de completar el trabajo"
 
-#: Preferences.py:154 wxMeerK40t.py:203 wxMeerK40t.py:344
+#: Preferences.py:163 wxMeerK40t.py:200 wxMeerK40t.py:339
 msgid "Preferences"
 msgstr "Preferencias"
 
-#: Preferences.py:155
+#: Preferences.py:164
 msgid "Select the board to use. This has affects the speedcodes used."
 msgstr ""
 "Seleccione el tablero a usar. Esto ha afectado a los códigos de velocidad "
 "utilizados."
 
-#: Preferences.py:157
+#: Preferences.py:166
 msgid "Swaps the X and Y axis. This happens before the FlipX and FlipY."
 msgstr "Intercambia los ejes X e Y. Esto sucede antes de FlipX y FlipY."
 
-#: Preferences.py:158
+#: Preferences.py:167
 msgid "Flip the Right and Left commands sent to the controller"
 msgstr "Voltea los comandos de derecha e izquierda enviados al controlador"
 
-#: Preferences.py:159
+#: Preferences.py:168
 msgid "Indicates the device Home is on the right"
 msgstr "Indica que el dispositivo Inicio está a la derecha"
 
-#: Preferences.py:160
+#: Preferences.py:169
 msgid "Flip the Top and Bottom commands sent to the controller"
 msgstr "Invertir los comandos superior e inferior enviados al controlador"
 
-#: Preferences.py:161
+#: Preferences.py:170
 msgid "Indicates the device Home is on the bottom"
 msgstr "Indica que el dispositivo Inicio está en la parte inferior"
 
-#: Preferences.py:163
+#: Preferences.py:172
 msgid ""
-"DEBUG. Without a K40 connected continue to process things as if there was "
-"one."
+"DEBUG. Without a K40 connected continue to process things as if there was one."
 msgstr ""
-"DEPURAR. Sin un K40 conectado, continúe procesando las cosas como si lo "
-"hubiera."
+"DEPURAR. Sin un K40 conectado, continúe procesando las cosas como si lo hubiera."
 
-#: Preferences.py:164 Preferences.py:165 Preferences.py:166
+#: Preferences.py:173 Preferences.py:174 Preferences.py:175
 msgid "-1 match anything. 0-5 match exactly that value."
-msgstr ""
-"-1 coincide con cualquier cosa. 0-5 coincide exactamente con ese valor."
+msgstr "-1 coincide con cualquier cosa. 0-5 coincide exactamente con ese valor."
 
-#: Preferences.py:167
+#: Preferences.py:176
 msgid "-1 match anything. 0-255 match exactly that value."
-msgstr ""
-"-1 coincide con cualquier cosa. 0-255 coinciden exactamente con ese valor."
+msgstr "-1 coincide con cualquier cosa. 0-255 coinciden exactamente con ese valor."
 
-#: Preferences.py:169
+#: Preferences.py:178
 msgid "Translate Home X"
 msgstr "Traducir Inicio X"
 
-#: Preferences.py:171
+#: Preferences.py:180
 msgid "Translate Home Y"
 msgstr "Traducir Inicio Y"
 
-#: Preferences.py:172
+#: Preferences.py:181
 msgid "Set Home Position based on the current position"
 msgstr "Establecer la posición de inicio según la posición actual"
 
-#: Preferences.py:174
+#: Preferences.py:183
 msgid "Width of the laser bed."
 msgstr "Ancho de la cama láser."
 
-#: Preferences.py:176
+#: Preferences.py:185
 msgid "Height of the laser bed."
 msgstr "Altura de la cama láser."
 
-#: Preferences.py:177
+#: Preferences.py:186
 msgid "Lock rail after operations are finished."
 msgstr "Bloquee el riel una vez finalizadas las operaciones."
 
-#: Preferences.py:179
+#: Preferences.py:188
 msgid "Home the machine after job is finished"
 msgstr "Dirija la máquina una vez que finalice el trabajo"
 
-#: Preferences.py:180
+#: Preferences.py:189
 msgid "Beep after the job is finished."
 msgstr "Pitido después de que termine el trabajo."
 
-#: Preferences.py:187
+#: Preferences.py:196
 msgid "General Options"
 msgstr "Opciones generales"
 
-#: Preferences.py:188
+#: Preferences.py:197
 msgid "Bed Dimensions"
 msgstr "Dimensiones de la cama"
 
-#: Preferences.py:189
+#: Preferences.py:198
 msgid "Shift Home Position"
 msgstr "Cambiar posición de inicio"
 
-#: Preferences.py:190
+#: Preferences.py:199
 msgid "USB Settings"
 msgstr "Configuraciones USB"
 
-#: Preferences.py:195
+#: Preferences.py:204
 msgid "Board Setup"
 msgstr "Configuración de la placa"
 
-#: Preferences.py:209
+#: Preferences.py:218
 msgid "Device Index:"
 msgstr "Índice de dispositivo:"
 
-#: Preferences.py:213
+#: Preferences.py:222
 msgid "Device Address:"
 msgstr "Dirección del dispositivo:"
 
-#: Preferences.py:217
+#: Preferences.py:226
 msgid "Device Bus:"
 msgstr "Bus de dispositivo:"
 
-#: Preferences.py:221
+#: Preferences.py:230
 msgid "Chip Version:"
 msgstr "Versión de chip:"
 
-#: Preferences.py:226
+#: Preferences.py:235
 msgid "X"
 msgstr "X"
 
-#: Preferences.py:229 Preferences.py:235
+#: Preferences.py:238 Preferences.py:244
 msgid "mil"
 msgstr "mil"
 
-#: Preferences.py:232
+#: Preferences.py:241
 msgid "Y"
 msgstr "Y"
 
-#: Preferences.py:240 RasterWizard.py:674
+#: Preferences.py:249 RasterWizard.py:683
 msgid "Width"
 msgstr "Anchura"
 
-#: Preferences.py:243 Preferences.py:249 RasterWizard.py:621
-#: RotarySettings.py:137 RotarySettings.py:141
+#: Preferences.py:252 Preferences.py:258 RasterWizard.py:630 RotarySettings.py:146
+#: RotarySettings.py:150
 msgid "mm"
 msgstr "mm"
 
-#: Preferences.py:246 RasterWizard.py:680
+#: Preferences.py:255 RasterWizard.py:689
 msgid "Height"
 msgstr "Altura"
 
-#: RasterWizard.py:56 RasterWizard.py:94
+#: RasterWizard.py:56 RasterWizard.py:103
 msgid "name"
 msgstr "nombre"
 
-#: RasterWizard.py:146
+#: RasterWizard.py:155
 msgid "Raster Wizard"
 msgstr "Asistente de ráster"
 
-#: RasterWizard.py:147
+#: RasterWizard.py:156
 msgid "Processed image preview"
 msgstr "Vista previa de la imagen procesada"
 
-#: RasterWizard.py:148
+#: RasterWizard.py:157
 msgid "Image operations applied in order to generate a raster image."
 msgstr "Operaciones de imagen aplicadas para generar una imagen rasterizada."
 
-#: RasterWizard.py:150
+#: RasterWizard.py:159
 msgid "Process Image and Export"
 msgstr "Imagen de proceso y exportación"
 
-#: RasterWizard.py:297 RasterWizard.py:318
+#: RasterWizard.py:306 RasterWizard.py:327
 msgid "Processing..."
 msgstr "Procesando..."
 
-#: RasterWizard.py:299
+#: RasterWizard.py:308
 msgid "No image..."
 msgstr "Sin imágen..."
 
-#: RasterWizard.py:362
+#: RasterWizard.py:371
 msgid "Raster Script"
 msgstr "Script de trama"
 
-#: RasterWizard.py:484 RasterWizard.py:542 RasterWizard.py:616
-#: RasterWizard.py:809 RasterWizard.py:884 RasterWizard.py:994
-#: RasterWizard.py:1145 RasterWizard.py:1266 RasterWizard.py:1320
-#: RasterWizard.py:1338 RasterWizard.py:1363
+#: RasterWizard.py:493 RasterWizard.py:551 RasterWizard.py:625 RasterWizard.py:818
+#: RasterWizard.py:893 RasterWizard.py:1003 RasterWizard.py:1154
+#: RasterWizard.py:1275 RasterWizard.py:1329 RasterWizard.py:1347
+#: RasterWizard.py:1372
 msgid "Enable"
 msgstr "Habilitar"
 
-#: RasterWizard.py:502
+#: RasterWizard.py:511
 msgid "Enable Dither"
 msgstr "Habilitar Dither"
 
-#: RasterWizard.py:504
+#: RasterWizard.py:513
 msgid "Select dither algorithm to use"
 msgstr "Seleccione el algoritmo de tramado para usar"
 
-#: RasterWizard.py:511
+#: RasterWizard.py:520
 msgid "Dither"
 msgstr "Vacilar"
 
-#: RasterWizard.py:543 RasterWizard.py:810 RasterWizard.py:995
-#: RasterWizard.py:1146 RasterWizard.py:1364
+#: RasterWizard.py:552 RasterWizard.py:819 RasterWizard.py:1004
+#: RasterWizard.py:1155 RasterWizard.py:1373
 msgid "Reset"
 msgstr "Reiniciar"
 
-#: RasterWizard.py:557
+#: RasterWizard.py:566
 msgid "Enable Cropping"
 msgstr "Habilitar recorte"
 
-#: RasterWizard.py:559
+#: RasterWizard.py:568
 msgid "Reset Cropping"
 msgstr "Restablecer recorte"
 
-#: RasterWizard.py:560
+#: RasterWizard.py:569
 msgid "Crop field"
 msgstr "Campo de cultivo"
 
-#: RasterWizard.py:565
+#: RasterWizard.py:574
 msgid "Crop"
 msgstr "Cosecha"
 
-#: RasterWizard.py:618
+#: RasterWizard.py:627
 msgid "Maintain Aspect Ratio"
 msgstr "Mantener la relación de aspecto"
 
-#: RasterWizard.py:621
+#: RasterWizard.py:630
 msgid "pixels"
 msgstr "píxeles"
 
-#: RasterWizard.py:621
+#: RasterWizard.py:630
 msgid "percent"
 msgstr "por ciento"
 
-#: RasterWizard.py:621
+#: RasterWizard.py:630
 msgid "inches"
 msgstr "pulgadas"
 
-#: RasterWizard.py:652
+#: RasterWizard.py:661
 msgid "Enable Resampling"
 msgstr "Habilitar remuestreo"
 
-#: RasterWizard.py:654
+#: RasterWizard.py:663
 msgid "Image Width"
 msgstr "Ancho de la imagen"
 
-#: RasterWizard.py:655
+#: RasterWizard.py:664
 msgid "Maintain Aspect Ratio for Resample"
 msgstr "Mantener la relación de aspecto para volver a muestrear"
 
-#: RasterWizard.py:657
+#: RasterWizard.py:666
 msgid "Image Height"
 msgstr "Altura de imagen"
 
-#: RasterWizard.py:659
+#: RasterWizard.py:668
 msgid "Image resample step"
 msgstr "Paso de remuestreo de imagen"
 
-#: RasterWizard.py:661
+#: RasterWizard.py:670
 msgid "Image resample DPI at given step"
 msgstr "Remuestrear la imagen DPI en un paso dado"
 
-#: RasterWizard.py:667
+#: RasterWizard.py:676
 msgid "Resample"
 msgstr "Remuestreo"
 
-#: RasterWizard.py:688 wxMeerK40t.py:2386 wxMeerK40t.py:2447
+#: RasterWizard.py:697 wxMeerK40t.py:2496 wxMeerK40t.py:2557
 msgid "Step"
 msgstr "Paso"
 
-#: RasterWizard.py:693
+#: RasterWizard.py:702
 msgid "pixels/in"
 msgstr "píxeles / pulg"
 
-#: RasterWizard.py:828
+#: RasterWizard.py:837
 msgid "Enable Gamma Shift"
 msgstr "Habilitar Gamma Shift"
 
-#: RasterWizard.py:830
+#: RasterWizard.py:839
 msgid "Reset Gamma Shift"
 msgstr "Restablecer cambio de gamma"
 
-#: RasterWizard.py:831
+#: RasterWizard.py:840
 msgid "Gamma factor slider"
 msgstr "Control deslizante del factor gamma"
 
-#: RasterWizard.py:832
+#: RasterWizard.py:841
 msgid "Amount of gamma factor"
 msgstr "Cantidad de factor gamma"
 
-#: RasterWizard.py:837
+#: RasterWizard.py:846
 msgid "Gamma"
 msgstr "Gamma"
 
-#: RasterWizard.py:838
+#: RasterWizard.py:847
 msgid "Gamma Factor"
 msgstr "Factor gamma"
 
-#: RasterWizard.py:885 wxMeerK40t.py:338
+#: RasterWizard.py:894 wxMeerK40t.py:333
 msgid "Invert"
 msgstr "Invertir"
 
-#: RasterWizard.py:910
+#: RasterWizard.py:919
 msgid "Enable Grayscale Convert"
 msgstr "Habilitar conversión de escala de grises"
 
-#: RasterWizard.py:912
+#: RasterWizard.py:921
 msgid "Invert Grayscale"
 msgstr "Invertir escala de grises"
 
-#: RasterWizard.py:913
+#: RasterWizard.py:922
 msgid "Red component amount"
 msgstr "Cantidad de componente rojo"
 
-#: RasterWizard.py:914
+#: RasterWizard.py:923
 msgid "Red Factor"
 msgstr "Factor rojo"
 
-#: RasterWizard.py:915
+#: RasterWizard.py:924
 msgid "Green component control"
 msgstr "Control de componentes verdes"
 
-#: RasterWizard.py:916
+#: RasterWizard.py:925
 msgid "Green Factor"
 msgstr "Factor verde"
 
-#: RasterWizard.py:917
+#: RasterWizard.py:926
 msgid "Blue component control"
 msgstr "Control de componente azul"
 
-#: RasterWizard.py:918
+#: RasterWizard.py:927
 msgid "Blue Factor"
 msgstr "Factor azul"
 
-#: RasterWizard.py:922
+#: RasterWizard.py:931
 msgid "Grayscale"
 msgstr "Escala de grises"
 
-#: RasterWizard.py:923
+#: RasterWizard.py:932
 msgid "Lightness"
 msgstr "Ligereza"
 
-#: RasterWizard.py:924
+#: RasterWizard.py:933
 msgid "Blue"
 msgstr "Azul"
 
-#: RasterWizard.py:925
+#: RasterWizard.py:934
 msgid "Green"
 msgstr "Verde"
 
-#: RasterWizard.py:926
+#: RasterWizard.py:935
 msgid "Red"
 msgstr "Rojo"
 
-#: RasterWizard.py:1015
+#: RasterWizard.py:1024
 msgid "Enable Tone Curve"
 msgstr "Activar curva de tono"
 
-#: RasterWizard.py:1017
+#: RasterWizard.py:1026
 msgid "Reset Tone Curve"
 msgstr "Restablecer curva de tono"
 
-#: RasterWizard.py:1024
+#: RasterWizard.py:1033
 msgid "Tone Curve"
 msgstr "Curva de tono"
 
-#: RasterWizard.py:1171
+#: RasterWizard.py:1180
 msgid "Enable Sharpen"
 msgstr "Habilitar nitidez"
 
-#: RasterWizard.py:1173
+#: RasterWizard.py:1182
 msgid "Sharpen Reset"
 msgstr "Mejorar Restablecer"
 
-#: RasterWizard.py:1174
+#: RasterWizard.py:1183
 msgid "Strength of sharpening in percent"
 msgstr "Fuerza de afilado en porcentaje"
 
-#: RasterWizard.py:1175
+#: RasterWizard.py:1184
 msgid "amount of sharpening in %"
 msgstr "cantidad de afilado en %"
 
-#: RasterWizard.py:1176
+#: RasterWizard.py:1185
 msgid "Blur radius for the sharpening operation"
 msgstr "Radio de desenfoque para la operación de afilado"
 
-#: RasterWizard.py:1177
+#: RasterWizard.py:1186
 msgid "Sharpen radius amount"
 msgstr "Cantidad de radio de nitidez"
 
-#: RasterWizard.py:1179
+#: RasterWizard.py:1188
 msgid "Threshold controls the minimum brighteness change to be sharpened."
 msgstr ""
 "Threshold controla el cambio mínimo de brillo que se va a hacer más nítido."
 
-#: RasterWizard.py:1180
+#: RasterWizard.py:1189
 msgid "Sharpen Threshold Amount"
 msgstr "Cantidad de umbral de nitidez"
 
-#: RasterWizard.py:1185
+#: RasterWizard.py:1194
 msgid "Sharpen"
 msgstr "Afilar"
 
-#: RasterWizard.py:1186
+#: RasterWizard.py:1195
 msgid "Threshold"
 msgstr "Límite"
 
-#: RasterWizard.py:1187
+#: RasterWizard.py:1196
 msgid "Radius"
 msgstr "Radio"
 
-#: RasterWizard.py:1188
+#: RasterWizard.py:1197
 msgid "Percent"
 msgstr "Por ciento"
 
-#: RasterWizard.py:1267
+#: RasterWizard.py:1276
 msgid "Replace Image"
 msgstr "Reemplazar imagen"
 
-#: RasterWizard.py:1280
+#: RasterWizard.py:1289
 msgid "Enable Output"
 msgstr "Habilitar salida"
 
-#: RasterWizard.py:1282
+#: RasterWizard.py:1291
 msgid "Replace image with this output"
 msgstr "Reemplazar imagen con esta salida"
 
-#: RasterWizard.py:1332
+#: RasterWizard.py:1341
 msgid "Enable Operation"
 msgstr "Habilitar operación"
 
-#: RasterWizard.py:1346
+#: RasterWizard.py:1355
 #, python-format
 msgid "Enable %s"
 msgstr "Habilitar %s"
 
-#: RasterWizard.py:1385
+#: RasterWizard.py:1394
 msgid "Enable Contrast"
 msgstr "Habilitar contraste"
 
-#: RasterWizard.py:1387
+#: RasterWizard.py:1396
 msgid "Reset Contrast"
 msgstr "Restablecer contraste"
 
-#: RasterWizard.py:1388
+#: RasterWizard.py:1397
 msgid "Contrast amount"
 msgstr "Cantidad de contraste"
 
-#: RasterWizard.py:1389
+#: RasterWizard.py:1398
 msgid "Contrast the lights and darks by how much?"
 msgstr "¿Cuánto contrasta las luces y las sombras?"
 
-#: RasterWizard.py:1390
+#: RasterWizard.py:1399
 msgid "Brightness amount"
 msgstr "Cantidad de brillo"
 
-#: RasterWizard.py:1391
+#: RasterWizard.py:1400
 msgid "Make the image how much more bright?"
 msgstr "¿Hacer la imagen mucho más brillante?"
 
-#: RasterWizard.py:1396
+#: RasterWizard.py:1405
 msgid "Contrast"
 msgstr "Contraste"
 
-#: RasterWizard.py:1397
+#: RasterWizard.py:1406
 msgid "Brightness Amount"
 msgstr "Cantidad de brillo"
 
-#: RasterWizard.py:1399
+#: RasterWizard.py:1408
 msgid "Contrast Amount"
 msgstr "Cantidad de contraste"
 
-#: RasterWizard.py:1479
+#: RasterWizard.py:1488
 msgid "Enable Halftone"
 msgstr "Activar trama"
 
-#: RasterWizard.py:1481
+#: RasterWizard.py:1490
 msgid "Halftone Reset"
 msgstr "Restablecimiento de la trama"
 
-#: RasterWizard.py:1482
+#: RasterWizard.py:1491
 msgid "Use black rather than white dots"
 msgstr "Utilizar puntos negros en lugar de blancos"
 
-#: RasterWizard.py:1483
+#: RasterWizard.py:1492
 msgid "Sample size for halftone dots"
 msgstr "Tamaño de la malla para los puntos de la trama"
 
-#: RasterWizard.py:1484
+#: RasterWizard.py:1493
 msgid "Halftone dot size"
 msgstr "Tamaño de los puntos de la trama"
 
-#: RasterWizard.py:1485
+#: RasterWizard.py:1494
 msgid "Angle for halftone dots"
 msgstr "Ángulo para los puntos de la trama"
 
-#: RasterWizard.py:1486
+#: RasterWizard.py:1495
 msgid "Halftone dot angle"
 msgstr "Ángulo de los puntos de la trama"
 
-#: RasterWizard.py:1487
+#: RasterWizard.py:1496
 msgid "Oversampling amount for halftone-dots"
 msgstr "Cantidad de sobremuestreo para los puntos de la trama"
 
-#: RasterWizard.py:1488
+#: RasterWizard.py:1497
 msgid "Halftone dot oversampling amount"
 msgstr "Cantidad de sobremuestreo de puntos de la trama"
 
-#: RasterWizard.py:1493
+#: RasterWizard.py:1502
 msgid "Halftone"
 msgstr "Trama"
 
-#: RasterWizard.py:1494
+#: RasterWizard.py:1503
 msgid "Oversample"
 msgstr "Sobremuestreo"
 
-#: RasterWizard.py:1495
+#: RasterWizard.py:1504
 msgid "Angle"
 msgstr "Ángulo"
 
-#: RasterWizard.py:1496
+#: RasterWizard.py:1505
 msgid "Sample"
 msgstr "Muestra"
 
-#: RotarySettings.py:29 wxMeerK40t.py:209
+#: RotarySettings.py:29 wxMeerK40t.py:206
 msgid "Rotary"
 msgstr "Giratorio"
 
@@ -2201,51 +2237,51 @@ msgstr "Bucle de campo"
 msgid "Uses Roller"
 msgstr "Utiliza rodillo"
 
-#: RotarySettings.py:95 RotarySettings.py:104
+#: RotarySettings.py:104 RotarySettings.py:113
 msgid "Use Rotary Settings"
 msgstr "Usar configuración giratoria"
 
-#: RotarySettings.py:97
+#: RotarySettings.py:106
 msgid "Rotary Scale Factor X"
 msgstr "Factor de escala giratoria X"
 
-#: RotarySettings.py:100
+#: RotarySettings.py:109
 msgid "Rotary Scale Factor Y"
 msgstr "Factor de escala rotativa Y"
 
-#: RotarySettings.py:106
+#: RotarySettings.py:115
 msgid "Steps required for a full rotation"
 msgstr "Pasos necesarios para una rotación completa"
 
-#: RotarySettings.py:109
+#: RotarySettings.py:118
 msgid "Circumference of roller"
 msgstr "Circunferencia del rodillo"
 
-#: RotarySettings.py:112
+#: RotarySettings.py:121
 msgid "Circumference of object in rotary"
 msgstr "Circunferencia del objeto en rotativo"
 
-#: RotarySettings.py:119
+#: RotarySettings.py:128
 msgid "Object Circumference"
 msgstr "Circunferencia de objeto"
 
-#: RotarySettings.py:120
+#: RotarySettings.py:129
 msgid "Roller Circumference"
 msgstr "Circunferencia del rodillo"
 
-#: RotarySettings.py:121
+#: RotarySettings.py:130
 msgid "Rotation Steps"
 msgstr "Pasos de rotación"
 
-#: RotarySettings.py:122
+#: RotarySettings.py:131
 msgid "Scale X"
 msgstr "Escala X"
 
-#: RotarySettings.py:123
+#: RotarySettings.py:132
 msgid "Scale Y"
 msgstr "Escala Y"
 
-#: RotarySettings.py:132
+#: RotarySettings.py:141
 msgid "steps"
 msgstr "pasos"
 
@@ -2253,25 +2289,21 @@ msgstr "pasos"
 msgid "Units"
 msgstr "Unidades"
 
-#: Settings.py:27
+#: Settings.py:28
 msgid "96 px/in Inkscape"
 msgstr "96 px/in Inkscape"
 
-#: Settings.py:28
+#: Settings.py:29
 msgid "72 px/in Illustrator"
 msgstr "72 px/in Illustrator"
 
-#: Settings.py:29
+#: Settings.py:30
 msgid "90 px/in Old Inkscape"
 msgstr "90 px/in Inkscape antiguo"
 
-#: Settings.py:30
+#: Settings.py:31
 msgid "Custom"
 msgstr "Personalizado"
-
-#: Settings.py:33
-msgid "Invert Mouse Wheel Zoom"
-msgstr "Invertir el zoom de la rueda del mouse"
 
 #: Settings.py:34
 msgid "Print Shutdown"
@@ -2286,553 +2318,572 @@ msgid "Image DPI Scaling"
 msgstr "Escala de DPI de imagen"
 
 #: Settings.py:37
+msgid "DXF Centering"
+msgstr ""
+
+#: Settings.py:38
 msgid "Show Negative Guide"
 msgstr "Mostrar guía negativa"
 
-#: Settings.py:38
+#: Settings.py:39
 msgid "Launch Spooler JobStart"
 msgstr "Iniciar trabajo de spooler"
 
-#: Settings.py:117
+#: Settings.py:40
+msgid "MouseWheel Pan"
+msgstr ""
+
+#: Settings.py:41
+msgid "Invert MouseWheel Pan"
+msgstr ""
+
+#: Settings.py:42
+msgid "Invert MouseWheel Zoom"
+msgstr ""
+
+#: Settings.py:43
+msgid "Default Operations"
+msgstr ""
+
+#: Settings.py:122
 msgid "Set default units for guides"
 msgstr "Establecer unidades predeterminadas para guías"
 
-#: Settings.py:119
+#: Settings.py:124
 msgid "Select the desired language to use."
 msgstr "Seleccione el idioma que desee utilizar."
 
-#: Settings.py:120
+#: Settings.py:125
 msgid "Select the Pixels Per Inch to use when loading an SVG file"
 msgstr ""
 "Seleccione los píxeles por pulgada que se utilizarán al cargar un archivo SVG"
 
-#: Settings.py:122
+#: Settings.py:127
 msgid "Custom Pixels Per Inch to use when loading an SVG file"
 msgstr "Píxeles por pulgada personalizados para usar al cargar un archivo SVG"
 
-#: Settings.py:129
+#: Settings.py:134
 msgid "SVG Pixel Per Inch"
 msgstr "Píxeles por pulgada SVG"
 
-#: Settings.py:130
+#: Settings.py:135
 msgid "Language"
 msgstr "Idioma"
 
-#: Terminal.py:80 wxMeerK40t.py:208 wxMeerK40t.py:351
+#: Terminal.py:89 wxMeerK40t.py:205 wxMeerK40t.py:346
 msgid "Terminal"
 msgstr "Terminal"
 
-#: UsbConnect.py:70
+#: UsbConnect.py:79
 msgid "UsbConnect"
 msgstr "UsbConnect"
 
-#: wxMeerK40t.py:187
+#: wxMeerK40t.py:184
 msgid "Main"
 msgstr "Principal"
 
-#: wxMeerK40t.py:191 wxMeerK40t.py:1348
+#: wxMeerK40t.py:188 wxMeerK40t.py:1448
 msgid "Open"
 msgstr "Abierto"
 
-#: wxMeerK40t.py:192 wxMeerK40t.py:310
+#: wxMeerK40t.py:189
 msgid "Save"
 msgstr "Salvar"
 
-#: wxMeerK40t.py:196 wxMeerK40t.py:359
+#: wxMeerK40t.py:193
 msgid "Windows"
 msgstr "Ventanas"
 
-#: wxMeerK40t.py:200
+#: wxMeerK40t.py:197
 msgid "Usb"
 msgstr "Usb"
 
-#: wxMeerK40t.py:201
+#: wxMeerK40t.py:198
 msgid "Spooler"
 msgstr "Spooler"
 
-#: wxMeerK40t.py:204
+#: wxMeerK40t.py:201
 msgid "Devices"
 msgstr "Dispositivos"
 
-#: wxMeerK40t.py:206
+#: wxMeerK40t.py:203
 msgid "Keymap"
 msgstr "Mapa de teclas"
 
-#: wxMeerK40t.py:207 wxMeerK40t.py:354
+#: wxMeerK40t.py:204 wxMeerK40t.py:349
 msgid "Notes"
 msgstr "Notas"
 
-#: wxMeerK40t.py:210 wxMeerK40t.py:2488
+#: wxMeerK40t.py:207 wxMeerK40t.py:2598
 msgid "RasterWizard"
 msgstr "RasterWizard"
 
-#: wxMeerK40t.py:244 wxMeerK40t.py:245
+#: wxMeerK40t.py:241 wxMeerK40t.py:242
 msgid "Position"
 msgstr "Posición"
 
-#: wxMeerK40t.py:304
-msgid "New"
-msgstr "Nuevo"
+#: wxMeerK40t.py:299
+msgid "New\tCtrl-N"
+msgstr "Nuev\tCtrl-N"
 
-#: wxMeerK40t.py:305
-msgid "Open Project"
-msgstr "Proyecto abierto"
+#: wxMeerK40t.py:300
+msgid "Open Project\tCtrl-O"
+msgstr "Proyecto abierto\tCtrl-O"
 
-#: wxMeerK40t.py:307
+#: wxMeerK40t.py:302
 msgid "Recent"
 msgstr "Reciente"
 
-#: wxMeerK40t.py:308
+#: wxMeerK40t.py:303
 msgid "Import File"
 msgstr "Importar archivo"
 
-#: wxMeerK40t.py:311
-msgid "Save As"
-msgstr "Guardar como"
+#: wxMeerK40t.py:305
+msgid "Save\tAlt-S"
+msgstr "Salvar\tAlt-S"
 
-#: wxMeerK40t.py:314
+#: wxMeerK40t.py:306
+msgid "Save As\tAlt-Shift-S"
+msgstr "Guardar como\tAlt-Shift-S"
+
+#: wxMeerK40t.py:309
 msgid "Exit"
 msgstr "Salida"
 
-#: wxMeerK40t.py:315
+#: wxMeerK40t.py:310
 msgid "File"
 msgstr "Expediente"
 
-#: wxMeerK40t.py:318
+#: wxMeerK40t.py:313
 msgid "Zoom Out"
 msgstr "Disminuir el zoom"
 
-#: wxMeerK40t.py:319
+#: wxMeerK40t.py:314
 msgid "Zoom In"
 msgstr "Acercarse"
 
-#: wxMeerK40t.py:320
+#: wxMeerK40t.py:315
 msgid "Zoom To Size"
 msgstr "Zoom a tamaño"
 
-#: wxMeerK40t.py:322
+#: wxMeerK40t.py:317
 msgid "Hide Grid"
 msgstr "Ocultar cuadrícula"
 
-#: wxMeerK40t.py:323
+#: wxMeerK40t.py:318
 msgid "Hide Background"
 msgstr "Ocultar fondo"
 
-#: wxMeerK40t.py:324
+#: wxMeerK40t.py:319
 msgid "Hide Guides"
 msgstr "Ocultar guías"
 
-#: wxMeerK40t.py:325
+#: wxMeerK40t.py:320
 msgid "Hide Paths"
 msgstr "Ocultar caminos"
 
-#: wxMeerK40t.py:326
+#: wxMeerK40t.py:321
 msgid "Hide Images"
 msgstr "Ocultar imágenes"
 
-#: wxMeerK40t.py:327
+#: wxMeerK40t.py:322
 msgid "Hide Text"
 msgstr "Ocultar texto"
 
-#: wxMeerK40t.py:328
+#: wxMeerK40t.py:323
 msgid "Hide Fills"
 msgstr "Ocultar rellenos"
 
-#: wxMeerK40t.py:329
+#: wxMeerK40t.py:324
 msgid "Hide Strokes"
 msgstr "Ocultar trazos"
 
-#: wxMeerK40t.py:330
+#: wxMeerK40t.py:325
 msgid "Hide Laserpath"
 msgstr "Ocultar ruta láser"
 
-#: wxMeerK40t.py:331
+#: wxMeerK40t.py:326
 msgid "Hide Reticle"
 msgstr "Ocultar retícula"
 
-#: wxMeerK40t.py:332
+#: wxMeerK40t.py:327
 msgid "Hide Selection"
 msgstr "Esconder selección"
 
-#: wxMeerK40t.py:333
+#: wxMeerK40t.py:328
 msgid "Hide Icons"
 msgstr "Ocultar iconos"
 
-#: wxMeerK40t.py:334
+#: wxMeerK40t.py:329
 msgid "Hide Tree"
 msgstr "Ocultar árbol"
 
-#: wxMeerK40t.py:335
+#: wxMeerK40t.py:330
 msgid "Do Not Cache Image"
 msgstr "Imagen de no almacenar en caché"
 
-#: wxMeerK40t.py:336
+#: wxMeerK40t.py:331
 msgid "Do Not Refresh"
 msgstr "No actualizar"
 
-#: wxMeerK40t.py:337
+#: wxMeerK40t.py:332
 msgid "Do Not Animate"
 msgstr "No animar"
 
-#: wxMeerK40t.py:339
+#: wxMeerK40t.py:334
 msgid "Flip XY"
 msgstr "Flip XY"
 
-#: wxMeerK40t.py:341
+#: wxMeerK40t.py:336
 msgid "View"
 msgstr "Ver"
 
-#: wxMeerK40t.py:346
+#: wxMeerK40t.py:341
 msgid "Rotary Settings"
 msgstr "Configuraciones rotativas"
 
-#: wxMeerK40t.py:348
+#: wxMeerK40t.py:343
 msgid "Device Manager"
 msgstr "Administrador de dispositivos"
 
-#: wxMeerK40t.py:349
+#: wxMeerK40t.py:344
 msgid "Alignment Ally"
 msgstr "Alineamiento Aliado"
 
-#: wxMeerK40t.py:355
+#: wxMeerK40t.py:350
 msgid "USB"
 msgstr "USB"
 
-#: wxMeerK40t.py:356
+#: wxMeerK40t.py:351
 msgid "Job Spooler"
 msgstr "Job Spooler"
 
-#: wxMeerK40t.py:357 wxMeerK40t.py:2313
+#: wxMeerK40t.py:352 wxMeerK40t.py:2423
 msgid "Execute Job"
 msgstr "Ejecutar trabajo"
 
-#: wxMeerK40t.py:362
-msgid "Webpage"
-msgstr "Página web"
-
-#: wxMeerK40t.py:364
+#: wxMeerK40t.py:364 wxMeerK40t.py:367
 msgid "Help"
 msgstr "Ayuda"
 
-#: wxMeerK40t.py:541
+#: wxMeerK40t.py:365
+msgid "Webpage"
+msgstr "Página web"
+
+#: wxMeerK40t.py:587
 msgid "Languages"
 msgstr "Idiomas"
 
-#: wxMeerK40t.py:804
+#: wxMeerK40t.py:851
 msgid "All attempts to connect to USB have failed."
 msgstr "Todos los intentos de conexión a USB han fallado."
 
-#: wxMeerK40t.py:805
+#: wxMeerK40t.py:852
 msgid "Usb Connection Problem."
 msgstr "Problema de conexión USB."
 
-#: wxMeerK40t.py:810
+#: wxMeerK40t.py:857
 #, python-format
 msgid "Usb: %s"
 msgstr "Usb: %s"
 
-#: wxMeerK40t.py:817
+#: wxMeerK40t.py:864
 #, python-format
 msgid "Controller: %s"
 msgstr "Controlador: %s"
 
-#: wxMeerK40t.py:821
+#: wxMeerK40t.py:868
 #, python-format
 msgid "Spooler: %s"
 msgstr "Cola de impresión: %s"
 
-#: wxMeerK40t.py:842
+#: wxMeerK40t.py:889
 #, python-format
 msgid "%s v%s %s"
 msgstr "%s v%s %s"
 
-#: wxMeerK40t.py:902
+#: wxMeerK40t.py:949
 msgid "Clear Recent"
 msgstr "Borrar reciente"
 
-#: wxMeerK40t.py:930 wxMeerK40t.py:1562
+#: wxMeerK40t.py:980 wxMeerK40t.py:1662
 msgid "Loading File..."
 msgstr "Cargando archivo ..."
 
-#: wxMeerK40t.py:968
+#: wxMeerK40t.py:1018
 #, python-format
 msgid ""
 "Some files were unrecognized:\n"
 "%s"
 msgstr "Algunos archivos no se reconocieron: %s"
 
-#: wxMeerK40t.py:969
+#: wxMeerK40t.py:1019
 msgid "Error encountered"
 msgstr "Error encontrado"
 
-#: wxMeerK40t.py:1425
+#: wxMeerK40t.py:1525
 msgid "Enter Forced Gear"
 msgstr "Entrar en equipo forzado"
 
-#: wxMeerK40t.py:1425
+#: wxMeerK40t.py:1525
 msgid "Gear Entry"
 msgstr "Entrada de engranajes"
 
-#: wxMeerK40t.py:1437
+#: wxMeerK40t.py:1537
 msgid "Enter FPS Limit"
 msgstr "Ingrese el límite de FPS"
 
-#: wxMeerK40t.py:1437
+#: wxMeerK40t.py:1537
 msgid "FPS Limit Entry"
 msgstr "Entrada de límite de FPS"
 
-#: wxMeerK40t.py:1449
+#: wxMeerK40t.py:1549
 msgid ""
 "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
 "translate, etc..."
 msgstr ""
-"Ingrese la instrucción de transformación SVG, por ejemplo, 'scale(1.49, 1, "
-"$x, $y)', rotate, translate, etc."
+"Ingrese la instrucción de transformación SVG, por ejemplo, 'scale(1.49, 1, $x, "
+"$y)', rotate, translate, etc."
 
-#: wxMeerK40t.py:1451
+#: wxMeerK40t.py:1551
 msgid "Transform Entry"
 msgstr "Transformar entrada"
 
-#: wxMeerK40t.py:1466
+#: wxMeerK40t.py:1566
 msgid "The entered command does nothing."
 msgstr "El comando introducido no hace nada."
 
-#: wxMeerK40t.py:1467
+#: wxMeerK40t.py:1567
 msgid "Non-Useful Matrix."
 msgstr "Matriz no útil."
 
-#: wxMeerK40t.py:1519
+#: wxMeerK40t.py:1619
 msgid ""
 "Material must be jigged at 0,0 either home or home offset.\n"
 "How wide is your material (give units: in, mm, cm, px, etc)?"
 msgstr ""
 "El material debe ser calibrado a 0,0 ya sea en casa o en casa.\n"
-"¿Qué tan ancho es su material (proporcione unidades: pulgadas, mm, cm, px, "
-"etc.)?"
+"¿Qué tan ancho es su material (proporcione unidades: pulgadas, mm, cm, px, etc.)?"
 
-#: wxMeerK40t.py:1521
+#: wxMeerK40t.py:1621
 msgid "Double Side Flip"
 msgstr "Flip lateral doble"
 
-#: wxMeerK40t.py:1540
+#: wxMeerK40t.py:1640
 msgid "Enter SVG Path Data"
 msgstr "Ingresar datos de ruta SVG"
 
-#: wxMeerK40t.py:1540
+#: wxMeerK40t.py:1640
 msgid "Path Entry"
 msgstr "Entrada de ruta"
 
-#: wxMeerK40t.py:1555
+#: wxMeerK40t.py:1655
 msgid "Import EGV"
 msgstr "Importar EGV"
 
-#: wxMeerK40t.py:1570
+#: wxMeerK40t.py:1670
 msgid "Export EGV"
 msgstr "Exportar EGV"
 
-#: wxMeerK40t.py:1576
+#: wxMeerK40t.py:1676
 msgid "Saving File..."
 msgstr "Guardando archivo..."
 
-#: wxMeerK40t.py:1973
+#: wxMeerK40t.py:2083
 msgid "Operations"
 msgstr "Operaciones"
 
-#: wxMeerK40t.py:1987
+#: wxMeerK40t.py:2097
 msgid "Elements"
 msgstr "Elementos"
 
-#: wxMeerK40t.py:1991
+#: wxMeerK40t.py:2101
 msgid "Files"
 msgstr "Archivos"
 
-#: wxMeerK40t.py:2328
+#: wxMeerK40t.py:2438
 #, python-format
 msgid "Remove: %s"
 msgstr "Elimina: %s"
 
-#: wxMeerK40t.py:2331
+#: wxMeerK40t.py:2441
 #, python-format
 msgid "Remove: %d objects"
 msgstr "Eliminar: %d objetos"
 
-#: wxMeerK40t.py:2336 wxMeerK40t.py:2341 wxMeerK40t.py:2398
+#: wxMeerK40t.py:2446 wxMeerK40t.py:2451 wxMeerK40t.py:2508
 #, python-format
 msgid "Make %d copies."
 msgstr "Haga %d copias."
 
-#: wxMeerK40t.py:2337
+#: wxMeerK40t.py:2447
 msgid "Clone Reference"
 msgstr "Referencia de clonación"
 
-#: wxMeerK40t.py:2342 wxMeerK40t.py:2399
+#: wxMeerK40t.py:2452 wxMeerK40t.py:2509
 msgid "Duplicate"
 msgstr "Duplicar"
 
-#: wxMeerK40t.py:2345
+#: wxMeerK40t.py:2455
 msgid "Reverse Layer Order"
 msgstr "Orden de capa inversa"
 
-#: wxMeerK40t.py:2350
+#: wxMeerK40t.py:2460
 msgid "Refresh Classification"
 msgstr "Actualizar clasificación"
 
-#: wxMeerK40t.py:2352
+#: wxMeerK40t.py:2462
 msgid "Set Other/Blue/Red Classify"
 msgstr "Establecer Otro / Azul / Rojo Clasificar"
 
-#: wxMeerK40t.py:2354
+#: wxMeerK40t.py:2464
 msgid "Set Basic Classification"
 msgstr "Establecer clasificación básica"
 
-#: wxMeerK40t.py:2356
+#: wxMeerK40t.py:2466
 msgid "Add Operation"
 msgstr "Agregar operación"
 
-#: wxMeerK40t.py:2360
+#: wxMeerK40t.py:2470
 msgid "Reclassify Operations"
 msgstr "Reclasificar operaciones"
 
-#: wxMeerK40t.py:2366
+#: wxMeerK40t.py:2476
 #, python-format
 msgid "Convert %s"
 msgstr "Convertir %s"
 
-#: wxMeerK40t.py:2368
+#: wxMeerK40t.py:2478
 msgid "Convert Operation"
 msgstr "Operación de conversión"
 
-#: wxMeerK40t.py:2370
+#: wxMeerK40t.py:2480
 msgid "Duplicate Operation"
 msgstr "Operación Duplicada"
 
-#: wxMeerK40t.py:2373
+#: wxMeerK40t.py:2483
 msgid "Add 1 pass."
 msgstr "Agrega 1 pasada."
 
-#: wxMeerK40t.py:2376
+#: wxMeerK40t.py:2486
 #, python-format
 msgid "Add %d passes."
 msgstr "Agregue %d pases."
 
-#: wxMeerK40t.py:2381 wxMeerK40t.py:2437
+#: wxMeerK40t.py:2491 wxMeerK40t.py:2547
 #, python-format
 msgid "Step %d"
 msgstr "Paso %d"
 
-#: wxMeerK40t.py:2388
+#: wxMeerK40t.py:2498
 msgid "Make Raster Image"
 msgstr "Hacer imagen ráster"
 
-#: wxMeerK40t.py:2393
+#: wxMeerK40t.py:2503
 #, python-format
 msgid "Reload %s"
 msgstr "Recargar %s"
 
-#: wxMeerK40t.py:2403
+#: wxMeerK40t.py:2513
 msgid "Reset User Changes"
 msgstr "Restablecer cambios de usuario"
 
-#: wxMeerK40t.py:2408
+#: wxMeerK40t.py:2518
 #, python-format
 msgid "Scale %.0f%%"
 msgstr "Escala %.0f %%"
 
-#: wxMeerK40t.py:2411
+#: wxMeerK40t.py:2521
 msgid "Scale"
 msgstr "Escala"
 
-#: wxMeerK40t.py:2417
+#: wxMeerK40t.py:2527
 #, python-format
 msgid "Rotate turn/%d, %.0f°"
 msgstr "Girar giro /%d,%.0f °"
 
-#: wxMeerK40t.py:2424
+#: wxMeerK40t.py:2534
 #, python-format
 msgid "Rotate turn/%d, -%.0f°"
 msgstr "Girar giro /%d, -%.0f °"
 
-#: wxMeerK40t.py:2427
+#: wxMeerK40t.py:2537
 msgid "Rotate"
 msgstr "Girar"
 
-#: wxMeerK40t.py:2430
+#: wxMeerK40t.py:2540
 msgid "Reify User Changes"
 msgstr "Reificar cambios de usuario"
 
-#: wxMeerK40t.py:2433
+#: wxMeerK40t.py:2543
 msgid "Break Subpaths"
 msgstr "Romper subpaths"
 
-#: wxMeerK40t.py:2449
+#: wxMeerK40t.py:2559
 msgid "Actualize Pixels"
 msgstr "Actualizar píxeles"
 
-#: wxMeerK40t.py:2453
+#: wxMeerK40t.py:2563
 #, python-format
 msgid "Divide Into %d Images"
 msgstr "Dividir en %d imágenes"
 
-#: wxMeerK40t.py:2456
+#: wxMeerK40t.py:2566
 msgid "ZDepth Divide"
 msgstr "ZDepth Divide"
 
-#: wxMeerK40t.py:2462
+#: wxMeerK40t.py:2572
 msgid "Unlock Manipulations"
 msgstr "Desbloquear manipulaciones"
 
-#: wxMeerK40t.py:2466
+#: wxMeerK40t.py:2576
 msgid "Dither to 1 bit"
 msgstr "Dither a 1 bit"
 
-#: wxMeerK40t.py:2468
+#: wxMeerK40t.py:2578
 msgid "Invert Image"
 msgstr "Invertir imagen"
 
-#: wxMeerK40t.py:2470
+#: wxMeerK40t.py:2580
 msgid "Mirror Horizontal"
 msgstr "Espejo horizontal"
 
-#: wxMeerK40t.py:2472
+#: wxMeerK40t.py:2582
 msgid "Flip Vertical"
 msgstr "Voltear vertical"
 
-#: wxMeerK40t.py:2474
+#: wxMeerK40t.py:2584
 msgid "Rotate CW"
 msgstr "Girar CW"
 
-#: wxMeerK40t.py:2476
+#: wxMeerK40t.py:2586
 msgid "Rotate CCW"
 msgstr "Girar CCW"
 
-#: wxMeerK40t.py:2478
+#: wxMeerK40t.py:2588
 msgid "Save output.png"
 msgstr "Guardar output.png"
 
-#: wxMeerK40t.py:2485
+#: wxMeerK40t.py:2595
 #, python-format
 msgid "RasterWizard: %s"
 msgstr "Asistente de ráster: %s"
 
-#: wxMeerK40t.py:2494
+#: wxMeerK40t.py:2604
 #, python-format
 msgid "Apply: %s"
 msgstr "Aplicar: %s"
 
-#: wxMeerK40t.py:2497
+#: wxMeerK40t.py:2607
 msgid "Apply Raster Script"
 msgstr "Aplicar secuencia de comandos ráster"
 
-#: wxMeerK40t.py:2502
-msgid "Convert to Raster"
-msgstr "Convertir a ráster"
-
-#: wxMeerK40t.py:3134
+#: wxMeerK40t.py:3261
 #, python-format
 msgid "Saving Log: %s"
 msgstr "Guardar registro: %s"
 
-#: wxMeerK40t.py:3141
+#: wxMeerK40t.py:3268
 msgid "Please Report to Development Team"
 msgstr "Por favor, informe al equipo de desarrollo"
 
@@ -2864,11 +2915,11 @@ msgstr "Por favor, informe al equipo de desarrollo"
 #~ msgstr "Propiedades de corte"
 
 #~ msgid ""
-#~ "Diagonal ratio is the ratio of additional time needed to perform a "
-#~ "diagonal step rather than an orthogonal step."
+#~ "Diagonal ratio is the ratio of additional time needed to perform a diagonal "
+#~ "step rather than an orthogonal step."
 #~ msgstr ""
-#~ "La proporción diagonal es la proporción de tiempo adicional necesario "
-#~ "para realizar un paso diagonal en lugar de un paso ortogonal."
+#~ "La proporción diagonal es la proporción de tiempo adicional necesario para "
+#~ "realizar un paso diagonal en lugar de un paso ortogonal."
 
 #~ msgid "mm/s"
 #~ msgstr "mm/s"
@@ -2900,7 +2951,6 @@ msgstr "Por favor, informe al equipo de desarrollo"
 #~ msgid "Path"
 #~ msgstr "Camino"
 
-#, python-format
 #~ msgid "power=%.0f"
 #~ msgstr "potencia=%.0f"
 
@@ -2910,46 +2960,36 @@ msgstr "Por favor, informe al equipo de desarrollo"
 #~ msgid "unknown"
 #~ msgstr "desconocido"
 
-#, python-format
 #~ msgid "WARNING: Listener '%s' still registered to %s.\n"
 #~ msgstr "ADVERTENCIA: El oyente '%s' todavía está registrado en %s.\n"
 
 #~ msgid "Shutting down.\n"
 #~ msgstr "Apagando.\n"
 
-#, python-format
 #~ msgid "Device Shutdown Started: '%s'\n"
 #~ msgstr "Apagado del dispositivo iniciado: '%s'\n"
 
-#, python-format
 #~ msgid "Device Shutdown Finished: '%s'\n"
 #~ msgstr "Apagado del dispositivo terminado: '%s'\n"
 
-#, python-format
 #~ msgid "Saving Device State: '%s'\n"
 #~ msgstr "Guardando estado del dispositivo: '%s'\n"
 
-#, python-format
 #~ msgid "Shutting down %s %s: %s\n"
 #~ msgstr "Apagando %s %s: %s\n"
 
-#, python-format
 #~ msgid "WARNING: %s %s was not closed.\n"
 #~ msgstr "ADVERTENCIA: %s %s no se cerró.\n"
 
-#, python-format
 #~ msgid "WARNING: Dead thread %s still registered to %s.\n"
 #~ msgstr "ADVERTENCIA: El hilo muerto %s todavía está registrado en %s.\n"
 
-#, python-format
 #~ msgid "Finishing Thread %s for %s\n"
 #~ msgstr "Hilo de acabado %s para %s\n"
 
-#, python-format
 #~ msgid "Waiting for thread %s: %s\n"
 #~ msgstr "Esperando hilo %s: %s\n"
 
-#, python-format
 #~ msgid "Thread %s finished. %s\n"
 #~ msgstr "Hilo %s terminado. %s\n"
 
@@ -3010,3 +3050,24 @@ msgstr "Por favor, informe al equipo de desarrollo"
 
 #~ msgid "Enter the HTTP or RTSP uri"
 #~ msgstr "Ingrese el URL HTTP o RTSP"
+
+#~ msgid "Move device up"
+#~ msgstr "Mover el dispositivo hacia arriba"
+
+#~ msgid "Move device down"
+#~ msgstr "Mover dispositivo hacia abajo"
+
+#~ msgid "Invert Mouse Wheel Zoom"
+#~ msgstr "Invertir el zoom de la rueda del mouse"
+
+#~ msgid "New"
+#~ msgstr "Nuevo"
+
+#~ msgid "Open Project"
+#~ msgstr "Proyecto abierto"
+
+#~ msgid "Save As"
+#~ msgstr "Guardar como"
+
+#~ msgid "Convert to Raster"
+#~ msgstr "Convertir a ráster"
