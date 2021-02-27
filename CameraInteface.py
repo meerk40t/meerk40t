@@ -15,10 +15,10 @@ CORNER_SIZE = 25
 
 
 class CameraInterface(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: CameraInterface.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, *args, **kwds)
         Module.__init__(self)
         self.SetSize((608, 549))
         self.CameraInterface_menubar = wx.MenuBar()
@@ -121,13 +121,8 @@ class CameraInterface(wx.Frame, Module):
         self.fetch_job = None
 
         # OSX Window close
-        def on_key_down(event):
-            if event.GetKeyCode() == ord('W') and event.CmdDown():
-                self.Close(False)
-                return
-            event.Skip()
-
-        self.Bind(wx.EVT_KEY_DOWN, on_key_down)
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)

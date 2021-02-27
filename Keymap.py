@@ -30,13 +30,8 @@ class Keymap(wx.Frame, Module):
         self.SetFocus()
 
         # OSX Window close
-        def on_key_down(event):
-            if event.GetKeyCode() == ord('W') and event.CmdDown():
-                self.Close(False)
-                return
-            event.Skip()
-
-        self.Bind(wx.EVT_KEY_DOWN, on_key_down)
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def on_close(self, event):
         if self.state == 5:

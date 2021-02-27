@@ -83,13 +83,8 @@ class RasterWizard(wx.Frame, Module):
         self.thread_update_lock = threading.Lock()
 
         # OSX Window close
-        def on_key_down(event):
-            if event.GetKeyCode() == ord('W') and event.CmdDown():
-                self.Close(False)
-                return
-            event.Skip()
-
-        self.Bind(wx.EVT_KEY_DOWN, on_key_down)
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def set_wizard_script(self, name=None, ops=None):
         if name is None:

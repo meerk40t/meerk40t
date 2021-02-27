@@ -89,15 +89,9 @@ class JobInfo(wx.Frame, Module):
         # end wxGlade
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
         # OSX Window close
-        def on_key_down(event):
-            if event.GetKeyCode() == ord('W') and event.CmdDown():
-                self.Close(False)
-                return
-            event.Skip()
-
-        self.Bind(wx.EVT_KEY_DOWN, on_key_down)
+        if parent is not None:
+            parent.accelerator_table(self)
 
         # Moved to elements in 0.7.0
         self.preprocessor = OperationPreprocessor()

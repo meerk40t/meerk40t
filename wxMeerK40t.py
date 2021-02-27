@@ -537,6 +537,8 @@ class MeerK40t(wx.Frame, Module):
         self._rotary_view = False
         self._has_modifiers = False
         self._shift_down = False
+        self._close_window_id = wx.NewId()
+        self._accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('W'), self._close_window_id)])
 
     def add_language_menu(self):
         tl = wx.FileTranslationsLoader()
@@ -593,6 +595,13 @@ class MeerK40t(wx.Frame, Module):
             self.state = 5
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
+
+    def accelerator_table(self, window):
+        def close_window(e=None):
+            window.Close(False)
+
+        self.Bind(wx.EVT_MENU, close_window, id=self._close_window_id)
+        window.SetAcceleratorTable(self._accel_tbl)
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
