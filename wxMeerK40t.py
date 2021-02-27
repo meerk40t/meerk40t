@@ -295,7 +295,6 @@ class MeerK40t(wx.Frame, Module):
 
         # Menu Bar
         self.main_menubar = wx.MenuBar()
-        wx.MenuBar.MacSetCommonMenuBar(self.main_menubar)
         wxglade_tmp_menu = wx.Menu()
 
         wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
@@ -3097,6 +3096,8 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
+        self.menubar = wx.MenuBar()
+        wx.MenuBar.MacSetCommonMenuBar(self.menubar)
 
     def on_app_close(self, event):
         try:
@@ -3210,6 +3211,7 @@ class wxMeerK40t(wx.App, Module):
         language = device.language
         if language is not None and language != 0:
             self.update_language(language)
+
 
     def clear_control(self):
         device = self.device.device_root
