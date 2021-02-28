@@ -274,11 +274,6 @@ class LhystudioController(Module):
             self.start()
             channel("Lhystudios Channel Resumed.")
 
-        @self.context.console_command("abort", help="Abort Job")
-        def pipe_abort(command, channel, _, args=tuple(), **kwargs):
-            self.reset()
-            channel("Lhystudios Channel Aborted.")
-
         context.setting(int, "packet_count", 0)
         context.setting(int, "rejected_count", 0)
 
