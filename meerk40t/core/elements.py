@@ -19,6 +19,10 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "boot":
         kernel_root = kernel.get_context("/")
         kernel_root.activate("modifier/Elemental")
+    elif lifecycle == "ready":
+        context = kernel.get_context("/")
+        context.signal("rebuild_tree")
+        context.signal("refresh_tree")
 
 
 """
@@ -3056,7 +3060,6 @@ class Elemental(Modifier):
             self.load_default()
             return
         self.add_ops([o for o in ops if o is not None])
-        self.context.signal("rebuild_tree")
 
     def emphasized(self, *args):
         self.validate_bounds()
