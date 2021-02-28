@@ -2475,9 +2475,10 @@ class ShadowTree:
 
     def on_element_update(self, *args):
         element = args[0]
-        for node in self.elements.elems_nodes():
-            if element is node.object or element is node:
-                self.update_name(node)
+        if hasattr(element, "node"):
+            self.update_name(element.node, True)
+        else:
+            self.update_name(element, True)
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -2614,13 +2615,16 @@ class ShadowTree:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
 
-    def update_name(self, node):
+    def update_name(self, node, force=False):
         try:
             node.name = node.object.id
         except AttributeError:
             pass
-        if node.name is None:
-            node.name = str(node.object)
+        if node.name is None or force:
+            if node.object is not None:
+                node.name = str(node.object)
+            else:
+                node.name = str(node)
         self.wxtree.SetItemText(node.item, node.name)
         try:
             stroke = node.object.stroke
