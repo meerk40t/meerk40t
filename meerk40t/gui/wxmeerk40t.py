@@ -2469,6 +2469,10 @@ class ShadowTree:
             pass
         self.set_icon(node)
 
+    def expand(self, node):
+        item = node.item
+        self.wxtree.ExpandAllChildren(item)
+
     def on_element_update(self, *args):
         element = args[0]
         for node in self.elements.elems_nodes():

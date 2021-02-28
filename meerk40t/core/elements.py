@@ -209,7 +209,13 @@ class Node:
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_changed(node=node, **kwargs)
+            self._root.notify_altered(node=node, **kwargs)
+
+    def notify_expand(self, node=None, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_expand(node=node, **kwargs)
 
     def modified(self):
         """
@@ -438,45 +444,68 @@ class RootNode(Node):
         self.listeners.remove(listener)
 
     def notify_added(self, node=None, **kwargs):
+        if node is None:
+            node = self
         for listen in self.listeners:
             if hasattr(listen, "node_added"):
                 listen.node_added(node, **kwargs)
 
     def notify_removed(self, node=None, **kwargs):
+        if node is None:
+            node = self
         for listen in self.listeners:
             if hasattr(listen, "node_removed"):
                 listen.node_removed(node, **kwargs)
 
     def notify_changed(self, node=None, **kwargs):
+        if node is None:
+            node = self
         for listen in self.listeners:
             if hasattr(listen, "node_changed"):
                 listen.node_changed(node, **kwargs)
 
     def notify_emphasized(self, node=None, **kwargs):
+        if node is None:
+            node = self
         for listen in self.listeners:
             if hasattr(listen, "emphasized"):
                 listen.emphasized(node, **kwargs)
 
     def notify_targeted(self, node=None, **kwargs):
+        if node is None:
+            node = self
         for listen in self.listeners:
             if hasattr(listen, "targeted"):
                 listen.targeted(node, **kwargs)
 
     def notify_highlighted(self, node=None, **kwargs):
+        if node is None:
+            node = self
         for listen in self.listeners:
             if hasattr(listen, "highlighted"):
                 listen.highlighted(node, **kwargs)
 
     def notify_modified(self, node=None, **kwargs):
+        if node is None:
+            node = self
         self._bounds = None
         for listen in self.listeners:
             if hasattr(listen, "modified"):
                 listen.modified(node, **kwargs)
 
     def notify_altered(self, node=None, **kwargs):
+        if node is None:
+            node = self
         for listen in self.listeners:
             if hasattr(listen, "altered"):
                 listen.altered(node, **kwargs)
+
+    def notify_expand(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "expand"):
+                listen.expand(node, **kwargs)
 
 
 class LaserOperation(Node):
@@ -3014,6 +3043,14 @@ class Elemental(Modifier):
         @self.tree_operation(_("Process as Operation"), node_type="elem", help="")
         def cutcode_operation(node, **kwargs):
             self.context.elements.add_op(node.object)
+
+        @self.tree_operation(
+            _("Expand All Children"),
+            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
+            help="Expand all children of this given node.",
+        )
+        def expand_all_children(node, **kwargs):
+            node.notify_expand()
 
         self.listen(self)
 
