@@ -3169,12 +3169,12 @@ class Elemental(Modifier):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in self._filtered_list(operations, "ops", depth=1, **kwargs):
+        for item in self._filtered_list(operations, ("op",), depth=1, **kwargs):
             yield item
 
     def elems(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self._filtered_list(elements, "elem", depth=depth, **kwargs):
+        for item in self._filtered_list(elements, ("elem",), depth=depth, **kwargs):
             yield item.object
 
     def elems_nodes(self, depth=None, **kwargs):
@@ -3295,8 +3295,8 @@ class Elemental(Modifier):
 
     def remove_elements_from_operations(self, elements_list):
         for i, op in enumerate(self.ops()):
-            for e in op.children:
-                if e.object not in elements_list:
+            for e in list(op.children):
+                if e.object in elements_list:
                     e.remove_node()
 
     def bounds(self):
