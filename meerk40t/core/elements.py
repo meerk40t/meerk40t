@@ -2721,10 +2721,8 @@ class Elemental(Modifier):
         @self.tree_iterate("copies", 1, 10)
         @self.tree_operation(_("Add {iterator} pass(es)."), node_type="op", help="")
         def add_n_passes(node, copies=1, **kwargs):
-            op = node.object
-            adding_elements = list(op.children) * copies
-            op.add_all(adding_elements)
-            # op.children.extend(adding_elements)
+            adding_elements = list(node.children) * copies
+            node.add_all(adding_elements, type='opnode')
             self.context.signal("rebuild_tree", 0)
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
