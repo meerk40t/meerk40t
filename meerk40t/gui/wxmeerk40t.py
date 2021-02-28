@@ -2633,7 +2633,7 @@ class ShadowTree:
         except AttributeError:
             pass
         try:
-            color = node.object.color
+            color = node.color
             c = wx.Colour(swizzlecolor(Color(color)))
             self.wxtree.SetItemTextColour(node.item, c)
         except AttributeError:
