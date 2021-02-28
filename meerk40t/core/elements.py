@@ -2749,7 +2749,7 @@ class Elemental(Modifier):
         def make_raster_image(node, **kwargs):
             context = self.context
             elements = context.elements
-            renderer = self.renderer  # TODO: get the rendered processed.
+            make_raster = self.context.registered.get("render-op/make_raster")
             child_objects = Group()
             child_objects.extend(node.objects_of_children(SVGElement))
             bounds = child_objects.bbox()
@@ -2760,7 +2760,7 @@ class Elemental(Modifier):
                 step = 1.0
             xmin, ymin, xmax, ymax = bounds
 
-            image = renderer.make_raster(
+            image = make_raster(
                 child_objects,
                 bounds,
                 width=(xmax - xmin),
@@ -2771,12 +2771,7 @@ class Elemental(Modifier):
             image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
             image_element.values["raster_step"] = step
-
             elements.add_elem(image_element)
-            node.object.clear()
-            self.build_tree(self.node_elements, image_element)
-            node.object.append(image_element)
-            self.context.signal("rebuild_tree", 0)
 
         @self.tree_operation(_("Reload {name}"), node_type="file", help="")
         def reload_file(node, **kwargs):
@@ -3172,12 +3167,12 @@ class Elemental(Modifier):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in self._filtered_list(operations, ("ops"), depth=1, **kwargs):
+        for item in self._filtered_list(operations, ("ops",), depth=1, **kwargs):
             yield item
 
     def elems(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self._filtered_list(elements, ("elems"), depth=depth, **kwargs):
+        for item in self._filtered_list(elements, ("elems",), depth=depth, **kwargs):
             yield item.object
 
     def elems_nodes(self, depth=None, **kwargs):

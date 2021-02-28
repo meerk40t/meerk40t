@@ -2792,8 +2792,6 @@ class ShadowTree:
         if hasattr(node, "node"):
             node = node.node
         menu = wx.Menu()
-        if node.parent is None:
-            return
 
         submenus = {}
 

@@ -8,7 +8,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT, COMMAND_WAIT_FINISH)
 from ..kernel import Modifier
 from ..svgelements import (Angle, Length, Matrix, Move, Path, Point, Polygon,
-                           Polyline, SVGElement, SVGImage, SVGText)
+                           Polyline, SVGElement, SVGImage, SVGText, Group)
 from .elements import LaserOperation
 
 
@@ -447,15 +447,18 @@ class Planner(Modifier):
                     if op.operation == "Raster":
                         if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
                             continue
-                        bounds = CutPlanner.bounding_box(op)
+                        child_objects = Group()
+                        child_objects.extend(op.objects_of_children(SVGElement))
+                        bounds = child_objects.bbox()
+                        # bounds = CutPlanner.bounding_box(op.children)
                         if bounds is None:
                             continue
                         xmin, ymin, xmax, ymax = bounds
 
-                        image = make_raster(op, bounds, step=op.settings.raster_step)
+                        image = make_raster(child_objects, bounds, step=op.settings.raster_step)
                         image_element = SVGImage(image=image)
                         image_element.transform.post_translate(xmin, ymin)
-                        op.clear()
+                        op.children.clear()
                         op.add_node(image_element)
                 except AttributeError:
                     continue
