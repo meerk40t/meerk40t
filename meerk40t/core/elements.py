@@ -2686,7 +2686,8 @@ class Elemental(Modifier):
         def reclassify_operations(node, **kwargs):
             context = self.context
             elements = context.elements
-            elements.remove_elements_from_operations(list(elements.elems()))
+            elems = list(elements.elems())
+            elements.remove_elements_from_operations(elems)
             elements.classify(list(elements.elems()))
             self.context.signal("rebuild_tree", 0)
 
@@ -3168,17 +3169,17 @@ class Elemental(Modifier):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in self._filtered_list(operations, ("ops",), depth=1, **kwargs):
+        for item in self._filtered_list(operations, "ops", depth=1, **kwargs):
             yield item
 
     def elems(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self._filtered_list(elements, ("elems",), depth=depth, **kwargs):
+        for item in self._filtered_list(elements, "elem", depth=depth, **kwargs):
             yield item.object
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self._filtered_list(elements, ("elems", "file", "group"), depth=depth, **kwargs):
+        for item in self._filtered_list(elements, ("elem", "file", "group"), depth=depth, **kwargs):
             yield item
 
     def first_element(self, **kwargs):
