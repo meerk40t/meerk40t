@@ -2730,18 +2730,20 @@ class ShadowTree:
         node = self.wxtree.GetItemData(item)
         self.activated_node(node)
 
-    def activated_node(self, node):
-        if node is not None:
-            self.activated_object(node.object)
-
     def activate_selected_node(self):
-        self.activated_object(self.elements.first_element(emphasized=True))
+        first_element = self.elements.first_element(emphasized=True)
+        if hasattr(first_element, "node"):
+            self.activated_node(first_element.node)
 
-    def activated_object(self, obj):
+    def activated_node(self, node):
+        if isinstance(node, LaserOperation):
+            self.context.open("window/OperationProperty", self.gui, node)
+            return
+        if node is None:
+            return
+        obj = node.object
         if obj is None:
             return
-        if isinstance(obj, LaserOperation):
-            self.context.open("window/OperationProperty", self.gui, obj)
         elif isinstance(obj, Path):
             self.context.open("window/PathProperty", self.gui, obj)
         elif isinstance(obj, SVGText):
@@ -2750,6 +2752,7 @@ class ShadowTree:
             self.context.open("window/ImageProperty", self.gui, obj)
         elif isinstance(obj, SVGElement):
             self.context.open("window/PathProperty", self.gui, obj)
+
 
     def on_item_selection_changed(self, event):
         """
