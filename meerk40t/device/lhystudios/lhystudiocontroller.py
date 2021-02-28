@@ -385,6 +385,7 @@ class LhystudioController(Module):
             self._thread = self.context.threaded(
                 self._thread_data_send, thread_name="LhyPipe(%s)" % (self.context._path)
             )
+            self._thread.stop = self.stop
             self.update_state(STATE_INITIALIZE)
 
     def _pause_busy(self):
