@@ -445,7 +445,7 @@ class Planner(Modifier):
             for op in plan:
                 try:
                     if op.operation == "Raster":
-                        if len(op) == 1 and isinstance(op[0], SVGImage):
+                        if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
                             continue
                         bounds = CutPlanner.bounding_box(op)
                         if bounds is None:

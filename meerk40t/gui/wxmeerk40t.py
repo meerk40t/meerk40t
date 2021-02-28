@@ -2504,18 +2504,26 @@ class ShadowTree:
     def rebuild_tree(self):
         self.dragging_node = None
         self.wxtree.DeleteAllItems()
+
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
+
         self.wxtree.SetImageList(self.tree_images)
         self.element_root.item = self.wxtree.AddRoot(self.name)
+
+        self.wxtree.SetItemData(self.element_root.item, self.element_root)
+
         self.set_icon(
             self.element_root, icon_meerk40t.GetBitmap(False, resize=(20, 20))
         )
         self.build_tree(self.element_root)
+
         node_operations = self.element_root.get(type="branch ops")
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
+
         for n in node_operations.children:
             self.set_icon(n)
+
         node_elements = self.element_root.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap(True))
 
