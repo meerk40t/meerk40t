@@ -588,7 +588,7 @@ class MeerK40t(wx.Frame, Module, Job):
             else:
                 if args[0] == "open":
                     try:
-                        self.context.open("window/%s" % args[1], self, *args[2:])
+                        self.context.active.open("window/%s" % args[1], self, *args[2:])
                         channel(_("Window Opened."))
                     except KeyError:
                         channel(_("No such window as %s" % args[1]))
