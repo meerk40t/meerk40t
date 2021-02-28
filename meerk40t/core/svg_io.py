@@ -235,6 +235,7 @@ class SVGLoader:
 
     @staticmethod
     def parse(svg, elements_modifier, context_node, pathname, scale_factor):
+        operations_cleared = False
         for element in svg:
             try:
                 if element.values["visibility"] == "hidden":
@@ -286,6 +287,9 @@ class SVGLoader:
                     pass
                 try:
                     if str(element.values[SVG_ATTR_TAG]).lower() == "operation":
+                        if not operations_cleared:
+                            elements_modifier.clear_operations()
+                            operations_cleared = True
                         op = LaserOperation()
                         for key in dir(op):
                             if key.startswith("_"):
