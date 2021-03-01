@@ -2473,6 +2473,15 @@ class ShadowTree:
         item = node.item
         self.wxtree.ExpandAllChildren(item)
 
+    def collapse(self, node):
+        item = node.item
+        self.wxtree.CollapseAllChildren(item)
+
+    def reorder(self, node):
+        # item = node.item
+        # self.wxtree.RemoveAllChildren(item)
+        self.rebuild_tree()
+
     def on_element_update(self, *args):
         element = args[0]
         if hasattr(element, "node"):

@@ -114,6 +114,10 @@ class Node:
                 # Dragging operation to op branch.
                 drop_node.append_child(drag_node)
 
+    def reverse(self):
+        self._children.reverse()
+        self.notify_reorder()
+
     @property
     def children(self):
         return self._children
@@ -216,6 +220,21 @@ class Node:
             if node is None:
                 node = self
             self._root.notify_expand(node=node, **kwargs)
+
+
+    def notify_collapse(self, node=None, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_collapse(node=node, **kwargs)
+
+
+    def notify_reorder(self, node=None, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_reorder(node=node, **kwargs)
+
 
     def modified(self):
         """
@@ -508,6 +527,20 @@ class RootNode(Node):
         for listen in self.listeners:
             if hasattr(listen, "expand"):
                 listen.expand(node, **kwargs)
+
+    def notify_collapse(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "expand"):
+                listen.collapse(node, **kwargs)
+
+    def notify_reorder(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "expand"):
+                listen.reorder(node, **kwargs)
 
 
 class LaserOperation(Node):
@@ -2768,7 +2801,6 @@ class Elemental(Modifier):
             add_elements *= copies
             node.add_all(add_elements, type='opnode')
             self.context.signal("rebuild_tree", 0)
-
 
         @self.tree_submenu(_("Duplicate"))
         @self.tree_iterate("copies", 1, 10)
