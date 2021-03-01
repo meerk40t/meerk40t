@@ -1244,7 +1244,7 @@ class SceneSpaceWidget(Widget):
         elif self._placement_event_type == 'zoom':
             from math import e
             p = space_pos[0] - self._placement_event[0] + space_pos[1] - self._placement_event[1]
-            p /= 1000.0
+            p /= 250.0
             zoom_factor = e**p
             zoom_change = zoom_factor / self._previous_zoom
             self._previous_zoom = zoom_factor
