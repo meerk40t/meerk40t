@@ -283,6 +283,8 @@ class Node:
         """
         if isinstance(data_object, Node):
             node = data_object
+            if node._parent != None:
+                raise ValueError("Cannot reparent node on add.")
         else:
             node_class = Node
             try:
@@ -2633,7 +2635,6 @@ class Elemental(Modifier):
             ]
             elements.add_elems(adding_elements)
             elements.classify(adding_elements)
-            elements.set_emphasized(None)
             elements.set_emphasis(None)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
@@ -2753,10 +2754,10 @@ class Elemental(Modifier):
 
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 1, 10)
-        @self.tree_operation(_("Add {iterator} pass(es)."), node_type="op", help="")
+        @self.tree_operation(_("Add {copies} pass(es)."), node_type="op", help="")
         def add_n_passes(node, copies=1, **kwargs):
-            adding_elements = list(node.children) * copies
-            node.add_all(adding_elements, type='opnode')
+            add_elements = [child.object for child in node.children if child.object is not None] * copies
+            node.add_all(add_elements, type='opnode')
             self.context.signal("rebuild_tree", 0)
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
@@ -2915,7 +2916,7 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Step"))
         @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(_("Step {iterator}"), node_type="elem", help="")
+        @self.tree_operation(_("Step {i}"), node_type="elem", help="")
         def set_step_n_elem(node, i=1, **kwargs):
             # TODO: WAS A RADIOBUTTON
             # if "raster_step" in node.object.values:
@@ -2948,7 +2949,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("ZDepth Divide"))
         @self.tree_iterate("divide", 2, 10)
         @self.tree_operation(
-            _("Divide Into {iterator} Images"), node_type="elem", help=""
+            _("Divide Into {divide} Images"), node_type="elem", help=""
         )
         def image_zdepth(node, divide=1, **kwargs):
             element = node.object
