@@ -1174,14 +1174,17 @@ class SceneSpaceWidget(Widget):
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'rightdown+alt':
+            self._previous_zoom = 1.0
             self._placement_event = space_pos
             self._placement_event_type = "zoom"
             return RESPONSE_CONSUME
         elif event_type == 'rightdown+control':
+            self._previous_zoom = 1.0
             self._placement_event = space_pos
             self._placement_event_type = "pan"
             return RESPONSE_CONSUME
         elif event_type == 'rightup':
+            self._previous_zoom = None
             self._placement_event = None
             self._placement_event_type = None
         elif event_type == 'wheeldown' or event_type == 'wheeldown_ctrl':
@@ -1239,12 +1242,15 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
             self.scene.device.signal('refresh_scene', 0)
         elif self._placement_event_type == 'zoom':
-            print(self._placement_event)
-            zoom_factor = 1.0 + ((space_pos[1] - self._placement_event[1]) / 5000)
-            self.scene_widget.matrix.post_scale(zoom_factor, zoom_factor,  self._placement_event[0], self._placement_event[1])
+            from math import e
+            p = space_pos[0] - self._placement_event[0] + space_pos[1] - self._placement_event[1]
+            p /= 1000.0
+            zoom_factor = e**p
+            zoom_change = zoom_factor / self._previous_zoom
+            self._previous_zoom = zoom_factor
+            self.scene_widget.matrix.post_scale(zoom_change, zoom_change,  self._placement_event[0], self._placement_event[1])
             self.scene.device.signal('refresh_scene', 0)
         elif self._placement_event_type == 'pan':
-            print(self._placement_event)
             pan_factor_x = -(space_pos[0] - self._placement_event[0]) / 10
             pan_factor_y = -(space_pos[1] - self._placement_event[1]) / 10
             self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
