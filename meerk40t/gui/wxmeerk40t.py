@@ -1252,9 +1252,10 @@ class MeerK40t(wx.Frame, Module, Job):
         m.Check(self.context.draw_mode & DRAW_MODE_INVERT != 0)
 
     def add_language_menu(self):
-        if os.path.exists(resource_path("../locale")) or os.path.exists(
-            resource_path("./locale")
-        ):
+        tl = wx.FileTranslationsLoader()
+        trans = tl.GetAvailableTranslations("meerk40t")
+
+        if trans:
             wxglade_tmp_menu = wx.Menu()
             i = 0
             for lang in supported_languages:
@@ -1267,13 +1268,7 @@ class MeerK40t(wx.Frame, Module, Job):
                     return lambda e: self.context.app.update_language(q)
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
-                if (
-                    not (
-                        os.path.exists(resource_path("../locale/%s" % language_code))
-                        or os.path.exists(resource_path("./locale/%s" % language_code))
-                    )
-                    and i != 0
-                ):
+                if language_code not in trans and i != 0:
                     m.Enable(False)
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
@@ -2997,7 +2992,7 @@ class wxMeerK40t(wx.App, Module):
         wx.App.__init__(self, 0)
         import meerk40t.gui.icons as icons
 
-        icons.theme = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         icons.icon_r = 230
         icons.icon_g = 230
         icons.icon_b = 230
@@ -3094,7 +3089,21 @@ class wxMeerK40t(wx.App, Module):
 
     def initialize(self, *args, **kwargs):
         context = self.context
-        wx.Locale.AddCatalogLookupPathPrefix(resource_path("locale"))
+
+        try:  # pyinstaller internal location
+            _resource_path = os.path.join(sys._MEIPASS, 'locale')
+            wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
+        except:
+            pass
+
+        try:  # Mac py2app resource
+            _resource_path = os.path.join(os.environ['RESOURCEPATH'], 'locale')
+            wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
+        except:
+            pass
+
+        wx.Locale.AddCatalogLookupPathPrefix('locale')  # Default Locale, prepended. Check this first.
+
         context._kernel.run_later = self.run_later
         context._kernel.translation = wx.GetTranslation
         context._kernel.set_config(wx.Config(context._kernel.profile))

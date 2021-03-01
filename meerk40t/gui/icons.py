@@ -2,7 +2,7 @@
 from wx import Bitmap
 from wx.lib.embeddedimage import PyEmbeddedImage as PEI
 
-theme = False
+DARKMODE = False
 icon_r = 230
 icon_g = 230
 icon_b = 230
@@ -14,7 +14,7 @@ class PyEmbeddedImage(PEI):
 
     def GetBitmap(self, use_theme=True, resize=None):
         image = PEI.GetImage(self)
-        if theme and use_theme:
+        if DARKMODE and use_theme:
             image.Replace(0, 0, 0, icon_r, icon_g, icon_b)
         if resize is not None:
             image = image.Scale(*resize)
