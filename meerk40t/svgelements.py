@@ -7166,20 +7166,10 @@ class Group(SVGElement, Transformable, list):
     def reify(self):
         Transformable.reify(self)
 
-    def bbox(self, transformed=True):
-        """
-        Returns the bounding box of the given object.
-
-        In the case of groups this is the union of all the bounding boxes of all bound children.
-
-        Setting transformed to false, may yield unexpected results if subitems are transformed in non-uniform
-        ways.
-
-        :param transformed: bounding box of the properly transformed children.
-        :return:
-        """
+    @staticmethod
+    def union_bbox(elements, transformed=True):
         boundary_points = []
-        for e in self.select():
+        for e in elements:
             if not hasattr(e, "bbox"):
                 continue
             box = e.bbox(False)
@@ -7205,6 +7195,20 @@ class Group(SVGElement, Transformable, list):
         xmax = max([e[0] for e in boundary_points])
         ymax = max([e[1] for e in boundary_points])
         return xmin, ymin, xmax, ymax
+
+    def bbox(self, transformed=True):
+        """
+        Returns the bounding box of the given object.
+
+        In the case of groups this is the union of all the bounding boxes of all bound children.
+
+        Setting transformed to false, may yield unexpected results if subitems are transformed in non-uniform
+        ways.
+
+        :param transformed: bounding box of the properly transformed children.
+        :return:
+        """
+        return Group.union_bbox(self.select(), transformed)
 
 
 class ClipPath(SVGElement, list):

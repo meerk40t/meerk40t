@@ -863,9 +863,12 @@ class SelectionWidget(Widget):
     def tool_translate(self, position, dx, dy):
         elements = self.scene.context.elements
         b = elements.bounds()
-        for obj in elements.elems(emphasized=True):
-            obj.transform.post_translate(dx, dy)
-            obj.node.modified()
+        for e in elements.flat_emphasized(elements._tree):
+            if e.type == "elem":
+                obj = e.object
+                obj.transform.post_translate(dx, dy)
+                obj.node.modified()
+            e._bounds_dirty = True
         self.translate(dx, dy)
         elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.context.signal("refresh_scene", 0)

@@ -164,6 +164,15 @@ class Node:
                 self._bounds = self.object.bbox()
             except AttributeError:
                 self._bounds = None
+            for e in self._children:
+                bb = e.bounds
+                if bb is None:
+                    continue
+                elif self._bounds is None:
+                    self._bounds = bb
+                else:
+                    aa = self._bounds
+                    self._bounds = (min(aa[0], bb[0]), min(aa[1], bb[1]), max(aa[2], bb[2]), max(aa[3], bb[3]))
             self._bounds_dirty = False
         return self._bounds
 
@@ -235,12 +244,13 @@ class Node:
                 node = self
             self._root.notify_reorder(node=node, **kwargs)
 
-
     def modified(self):
         """
         The matrix transformation was changed.
         """
         self.notify_modified(self)
+        self._bounds_dirty = True
+        self._bounds = None
 
     def altered(self):
         """
@@ -368,15 +378,11 @@ class Node:
         drag_siblings = new_sibling.parent.children
         drop_siblings = destination_sibling.parent.children
 
-        # drag_pos = drag_siblings.index(drag_node)
         drop_pos = drop_siblings.index(destination_sibling)
 
         drag_siblings.remove(new_sibling)
         new_sibling.notify_removed(new_sibling)
 
-        # if drag_siblings is drop_siblings:
-        #     if drag_pos <= drop_pos:
-        #         drop_pos += 1
         drop_siblings.insert(drop_pos, new_sibling)
         new_sibling._parent = destination_sibling._parent
         new_sibling.notify_added(new_sibling, pos=drop_pos)
@@ -3198,22 +3204,36 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
         self.classify(list(self.elems()))
 
-    def flatten(self, item_list, depth=None):
+    def flatten(self, node, depth=None):
+        """
+        Return the flat list of this node and all descendants, up to the given depth.
+
+        :param node:
+        :param depth:
+        :return:
+        """
+        yield node
+        for f in self.flatten_children(node,depth):
+            yield f
+
+    def flatten_children(self, node, depth=None):
+        """
+        Returns a flat list of all descendants
+        :param node:
+        :param depth:
+        :return:
+        """
         if depth is not None:
+            if depth <= 0:
+                return
             depth -= 1
-        try:
-            item_list = item_list.children
-        except AttributeError:
-            pass
-        for child in item_list:
+        for child in node.children:
             yield child
             if hasattr(child, "children"):
-                if depth is not None and depth <= 0:
-                    continue
-                for s in self.flatten(child, depth=depth):
+                for s in self.flatten_children(child, depth=depth):
                     yield s
 
-    def _filtered_list(self, item_list, types, depth=None, **kwargs):
+    def _filtered_list(self, node, types, depth=None, **kwargs):
         """
         Filters a list of items with selected, emphasized, and highlighted.
         False values means find where that parameter is false.
@@ -3222,16 +3242,16 @@ class Elemental(Modifier):
 
         Items which are set to None are skipped.
 
-        :param item_list:
+        :param node: root node from which to search.
         :param depth max depth to filter list children.
-        :param kwargs:
+        :param kwargs: emphasized, targeted, and highlighted flagged true or false ensure matching.
         :return:
         """
         e = kwargs.get("emphasized")
         s = kwargs.get("targeted")
         h = kwargs.get("highlighted")
 
-        for node in self.flatten(item_list, depth=depth):
+        for node in self.flatten(node, depth=depth):
             if node is None:
                 continue
             if node.type not in types:
@@ -3249,6 +3269,31 @@ class Elemental(Modifier):
         for item in self._filtered_list(operations, ("op",), depth=1, **kwargs):
             yield item
 
+    def flat_elems_emphasized(self):
+        """
+        Returns all the elements which are either themselves emphasized or the child of emphasized container
+
+        :param node:
+        :return:
+        """
+        for e in self.flat_emphasized(self._tree):
+            if e.type == "elem":
+                yield e.object
+
+    def flat_emphasized(self, node):
+        """
+        Returns all the nodes which are either themselves emphasized or the child of emphasized container
+
+        :return: generator of nodes
+        """
+        if node.emphasized:
+            for c in self.flatten(node):
+                yield c
+            return
+        for c in node.children:
+            for q in self.flat_emphasized(c):
+                yield q
+
     def elems(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
         for item in self._filtered_list(elements, ("elem",), depth=depth, **kwargs):
@@ -3265,7 +3310,9 @@ class Elemental(Modifier):
         return None
 
     def has_emphasis(self):
-        return self.first_element(emphasized=True) is not None
+        for e in self.elems_nodes(emphasized=True):
+            return True
+        return False
 
     def count_elems(self, **kwargs):
         return len(list(self.elems(**kwargs)))
@@ -3381,14 +3428,14 @@ class Elemental(Modifier):
 
     def validate_bounds(self):
         boundary_points = []
-        for e in self.elems(emphasized=True):
-            if e.node.bounds is None:
+        for e in self.elems_nodes(emphasized=True):
+            if e.bounds is None:
                 continue
-            box = e.node.bounds
-            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
-            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
-            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
-            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            box = e.bounds
+            top_left = [box[0], box[1]]
+            top_right = [box[2], box[1]]
+            bottom_left = [box[0], box[3]]
+            bottom_right = [box[2], box[3]]
             boundary_points.append(top_left)
             boundary_points.append(top_right)
             boundary_points.append(bottom_left)
@@ -3477,38 +3524,6 @@ class Elemental(Modifier):
         self._bounds = [b[0], b[1], b[2], b[3]]
         self.context.signal("selected_bounds", self._bounds)
 
-    @staticmethod
-    def bounding_box(elements):
-        if isinstance(elements, SVGElement):
-            elements = [elements]
-        elif isinstance(elements, list):
-            try:
-                elements = [
-                    e.object for e in elements if isinstance(e.object, SVGElement)
-                ]
-            except AttributeError:
-                pass
-        boundary_points = []
-        for e in elements:
-            box = e.bbox(False)
-            if box is None:
-                continue
-            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
-            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
-            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
-            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
-            return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
-
     def move_emphasized(self, dx, dy):
         for obj in self.elems(emphasized=True):
             obj.transform.post_translate(dx, dy)
@@ -3524,42 +3539,52 @@ class Elemental(Modifier):
         if self.has_emphasis():
             if self._bounds is not None and contains(self._bounds, position):
                 return  # Select by position aborted since selection position within current select bounds.
-        for e in reversed(list(self.elems())):
+        for e in self.elems_nodes(depth=1):
             try:
-                bounds = e.bbox()
+                bounds = e.bounds
             except AttributeError:
                 continue  # No bounds.
             if bounds is None:
                 continue
             if contains(bounds, position):
-                self.set_emphasis([e])
+                e_list = [e]
+                self._bounds = bounds
+                self.set_emphasis(e_list)
                 return
         self.set_emphasis(None)
 
-    def classify(self, elements, items=None, add_funct=None):
+    def classify(self, elements, operations=None, add_op_function=None):
         """
-        Classify does the initial placement of elements as operations.
+        Classify does the placement of elements within operations.
+
         "Image" is the default for images.
+
+        Typically,
         If element strokes are red they get classed as cut operations
         If they are otherwise they get classed as engrave.
+        However, this differs based on the ops in question.
+
+        :param elements: list of elements to classify.
+        :param operations: operations list to classify into.
+        :param add_op_function: function to add a new operation, because of a lack of classification options.
+        :return:
         """
-        if items is None:
-            items = list(self.ops())
-        if add_funct is None:
-            add_funct = self.add_op
+
         if elements is None:
             return
-        if not isinstance(elements, list):
-            elements = [elements]
-        for element in self.flatten(elements):
+        if operations is None:
+            operations = list(self.ops())
+        if add_op_function is None:
+            add_op_function = self.add_op
+        for element in elements:
             was_classified = False
             image_added = False
             if hasattr(element, "operation"):
-                add_funct(element)
+                add_op_function(element)
                 continue
             if element is None:
                 continue
-            for op in items:
+            for op in operations:
                 if op.operation == "Raster":
                     if image_added:
                         continue  # already added to an image operation, is not added here.
@@ -3591,9 +3616,9 @@ class Elemental(Modifier):
                     op = LaserOperation(
                         operation="Engrave", color=element.stroke, speed=35.0
                     )
-                    add_funct(op)
+                    add_op_function(op)
                     op.add(element, type="opnode")
-                    items.append(op)
+                    operations.append(op)
 
     def load(self, pathname, **kwargs):
         kernel = self.context._kernel

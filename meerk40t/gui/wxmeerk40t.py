@@ -2251,7 +2251,7 @@ class MeerK40t(wx.Frame, Module, Job):
             path.stroke = "blue"
             p = abs(path)
             context.elements.add_elem(p)
-            self.context.classify(p)
+            self.context.classify([p])
         dlg.Destroy()
 
     def egv_import(self):
@@ -2440,12 +2440,15 @@ class ShadowTree:
 
     def emphasized(self, node):
         self.update_name(node)
+        self.set_enhancements(node)
 
     def targeted(self, node):
         self.update_name(node)
+        self.set_enhancements(node)
 
     def highlighted(self, node):
         self.update_name(node)
+        self.set_enhancements(node)
 
     def modified(self, node):
         self.update_name(node)
@@ -2496,17 +2499,7 @@ class ShadowTree:
         child, cookie = tree.GetFirstChild(node)
         while child.IsOk():
             child_node = self.wxtree.GetItemData(child)
-            element = child_node
-            tree.SetItemBackgroundColour(child, None)
-            try:
-                if element.highlighted:
-                    tree.SetItemBackgroundColour(child, wx.YELLOW)
-                elif element.emphasized:
-                    tree.SetItemBackgroundColour(child, wx.CYAN)
-                elif element.targeted:
-                    tree.SetItemBackgroundColour(child, wx.Colour(0xFF00FF))
-            except AttributeError:
-                pass
+            self.set_enhancements(child_node)
             self.refresh_tree(child)
             child, cookie = tree.GetNextChild(node, cookie)
 
@@ -2565,6 +2558,20 @@ class ShadowTree:
             pass
         self.set_icon(node)
         self.context.signal("refresh_tree")
+
+    def set_enhancements(self, node):
+        tree = self.wxtree
+        node_item = node.item
+        tree.SetItemBackgroundColour(node_item, None)
+        try:
+            if node.highlighted:
+                tree.SetItemBackgroundColour(node_item, wx.YELLOW)
+            elif node.emphasized:
+                tree.SetItemBackgroundColour(node_item, wx.CYAN)
+            elif node.targeted:
+                tree.SetItemBackgroundColour(node_item, wx.Colour(0xFF00FF))
+        except AttributeError:
+            pass
 
     def set_color(self, node, color=None):
         item = node.item

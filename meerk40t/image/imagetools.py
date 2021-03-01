@@ -1308,5 +1308,5 @@ class ImageLoader:
         file_node.filepath = pathname
         file_node.add(image, type="elem")
 
-        elements_modifier.classify(image)
+        elements_modifier.classify([image])
         return True
