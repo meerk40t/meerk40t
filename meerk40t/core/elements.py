@@ -2652,23 +2652,11 @@ class Elemental(Modifier):
         @self.tree_iterate("copies", 1, 10)
         @self.tree_operation(_("Make {copies} copies."), node_type="opnode", help="")
         def clone_element_op(node, copies=1, **kwargs):
+            index = node.parent.children.index(node)
             for i in range(copies):
-                node.add(node.object, type="opnode")
+                node.parent.add(node.object, type="opnode", pos=index)
             node.modified()
             self.context.signal("rebuild_tree", 0)
-
-        @self.tree_submenu(_("Duplicate"))
-        @self.tree_iterate("copies", 1, 10)
-        @self.tree_operation(_("Make {copies} copies."), node_type="opnode", help="")
-        def duplicate_element_op(node, copies=1, **kwargs):
-            context = self.context
-            elements = context.elements
-            adding_elements = [
-                copy(e) for e in list(self.elems(emphasized=True)) * copies
-            ]
-            elements.add_elems(adding_elements)
-            elements.classify(adding_elements)
-            elements.set_emphasis(None)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
