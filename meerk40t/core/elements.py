@@ -3445,19 +3445,19 @@ class Elemental(Modifier):
                 s.targeted = False
 
             if s.emphasized:
-                if emphasize is not None and s not in emphasize:
+                if emphasize is None or s not in emphasize:
                     s.emphasized = False
             else:
-                if emphasize is not None and s in emphasize:
+                if emphasize is not None and (s in emphasize or (hasattr(s, 'object') and s.object in emphasize)):
                     s.emphasized = True
         if emphasize is not None:
             for e in emphasize:
+                e.emphasized = True
+                if hasattr(e, "object"):
+                    self.target_clones(self._tree, e, e.object)
                 if hasattr(e, "node"):
                     e = e.node
                 self.highlight_children(e)
-            for e in emphasize:
-                if hasattr(e, "object"):
-                    self.target_clones(self._tree, e, e.object)
 
     def center(self):
         bounds = self._bounds
