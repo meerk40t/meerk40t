@@ -566,7 +566,6 @@ class MeerK40t(wx.Frame, Module):
             except (IndexError, ValueError):
                 return "Failed."
 
-
         self.device.device_root.translate_list = translate_list
         self.device.device_root.translate_active = translate_active
 
@@ -1166,8 +1165,9 @@ class MeerK40t(wx.Frame, Module):
         if self.scene.HasCapture():
             return
         rotation = event.GetWheelRotation()
-        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not self._shift_down:
-            if self._has_modifiers:
+        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not event.ShiftDown():
+
+            if event.HasModifiers():
                 if rotation > 1:
                     self.widget_scene.event(event.GetPosition(), 'wheelup_ctrl')
                 elif rotation < -1:
@@ -1229,7 +1229,12 @@ class MeerK40t(wx.Frame, Module):
 
     def on_right_mouse_down(self, event):
         self.scene.SetFocus()
-        self.widget_scene.event(event.GetPosition(), 'rightdown')
+        if event.AltDown():
+            self.widget_scene.event(event.GetPosition(), 'rightdown+alt')
+        elif event.ControlDown():
+            self.widget_scene.event(event.GetPosition(), 'rightdown+control')
+        else:
+            self.widget_scene.event(event.GetPosition(), 'rightdown')
 
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), 'rightup')
@@ -1264,8 +1269,6 @@ class MeerK40t(wx.Frame, Module):
         if event.GetKeyCode() == ord('W') and event.GetModifiers() == wx.MOD_CONTROL:
             self.Close(False)
             return
-        self._shift_down = event.ShiftDown()
-        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
@@ -1275,8 +1278,6 @@ class MeerK40t(wx.Frame, Module):
             event.Skip()
 
     def on_key_up(self, event):
-        self._shift_down = event.ShiftDown()
-        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
@@ -3199,7 +3200,7 @@ class wxMeerK40t(wx.App, Module):
 
     def initialize(self, channel=None):
         device = self.device
-        _ = wx.GetTranslation
+
         try:  # pyinstaller internal location
             _resource_path = os.path.join(sys._MEIPASS, 'locale')
             wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
@@ -3224,7 +3225,6 @@ class wxMeerK40t(wx.App, Module):
         language = device.language
         if language is not None and language != 0:
             self.update_language(language)
-
 
     def clear_control(self):
         device = self.device.device_root

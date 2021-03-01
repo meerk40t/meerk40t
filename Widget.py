@@ -164,7 +164,7 @@ class Scene(Module):
             previous_top_element = self.hit_chain[0][0]
         except (IndexError, TypeError):
             previous_top_element = None
-        if event_type in ('leftdown', 'middledown', 'rightdown', 'wheeldown', 'wheelup', 'wheelright', 'wheelleft', 'hover'):
+        if event_type in ('leftdown', 'middledown', 'rightdown', 'rightdown+alt', 'wheeldown', 'wheelup', 'wheelright', 'wheelleft', 'hover'):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
@@ -1143,6 +1143,8 @@ class SceneSpaceWidget(Widget):
         self.add_widget(-1, self.scene_widget)
         self.last_position = None
         self._previous_zoom = None
+        self._placement_event = None
+        self._placement_event_type = None
 
     def hit(self):
         return HITCHAIN_DELEGATE_AND_HIT
@@ -1171,6 +1173,17 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
+        elif event_type == 'rightdown+alt':
+            self._placement_event = space_pos
+            self._placement_event_type = "zoom"
+            return RESPONSE_CONSUME
+        elif event_type == 'rightdown+control':
+            self._placement_event = space_pos
+            self._placement_event_type = "pan"
+            return RESPONSE_CONSUME
+        elif event_type == 'rightup':
+            self._placement_event = None
+            self._placement_event_type = None
         elif event_type == 'wheeldown' or event_type == 'wheeldown_ctrl':
             if self.scene.device.device_root.mouse_zoom_invert:
                 self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
@@ -1221,8 +1234,21 @@ class SceneSpaceWidget(Widget):
             self.scene.device.signal('refresh_scene', 0)
 
             return RESPONSE_CONSUME
-        self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
-        self.scene.device.signal('refresh_scene', 0)
+        # Movement
+        if self._placement_event_type is None:
+            self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
+            self.scene.device.signal('refresh_scene', 0)
+        elif self._placement_event_type == 'zoom':
+            print(self._placement_event)
+            zoom_factor = 1.0 + ((space_pos[1] - self._placement_event[1]) / 5000)
+            self.scene_widget.matrix.post_scale(zoom_factor, zoom_factor,  self._placement_event[0], self._placement_event[1])
+            self.scene.device.signal('refresh_scene', 0)
+        elif self._placement_event_type == 'pan':
+            print(self._placement_event)
+            pan_factor_x = -(space_pos[0] - self._placement_event[0]) / 10
+            pan_factor_y = -(space_pos[1] - self._placement_event[1]) / 10
+            self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
+            self.scene.device.signal('refresh_scene', 0)
         return RESPONSE_CONSUME
 
     def focus_position_scene(self, scene_point, scene_size):
