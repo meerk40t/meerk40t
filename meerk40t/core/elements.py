@@ -2756,7 +2756,26 @@ class Elemental(Modifier):
         @self.tree_iterate("copies", 1, 10)
         @self.tree_operation(_("Add {copies} pass(es)."), node_type="op", help="")
         def add_n_passes(node, copies=1, **kwargs):
-            add_elements = [child.object for child in node.children if child.object is not None] * copies
+            add_elements = [child.object for child in node.children if child.object is not None]
+            removed = False
+            for i in range(0, len(add_elements)):
+                for q in range(0,i):
+                    if add_elements[q] is add_elements[i]:
+                        add_elements[i] = None
+                        removed = True
+            if removed:
+                add_elements = [c for c in add_elements if c is not None]
+            add_elements *= copies
+            node.add_all(add_elements, type='opnode')
+            self.context.signal("rebuild_tree", 0)
+
+
+        @self.tree_submenu(_("Duplicate"))
+        @self.tree_iterate("copies", 1, 10)
+        @self.tree_operation(_("Duplicate elements {copies} time(s)."), node_type="op", help="")
+        def dup_n_copies(node, copies=1, **kwargs):
+            add_elements = [child.object for child in node.children if child.object is not None]
+            add_elements *= copies
             node.add_all(add_elements, type='opnode')
             self.context.signal("rebuild_tree", 0)
 
