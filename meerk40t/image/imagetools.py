@@ -590,11 +590,11 @@ def plugin(kernel, lifecycle=None):
     )
     def halftone(command, channel, _, args=tuple(), **kwargs):
         """
-        Returns list of half-tone images for cmyk image. sample (pixels),
-        determines the sample box size from the original image. The maximum
-        output dot diameter is given by sample * scale (which is also the number
-        of possible dot sizes). So sample=1 will presevere the original image
-        resolution, but scale must be >1 to allow variation in dot size."""
+        Returns half-tone image for image.
+
+        The maximum output dot diameter is given by sample * scale (which is also the number of possible dot sizes).
+        So sample=1 will presevere the original image resolution, but scale must be >1 to allow variation in dot size.
+        """
         from PIL import Image, ImageDraw, ImageStat
 
         elements = context.elements
@@ -1048,7 +1048,7 @@ class RasterScripts:
                                 pass
                             m = [r, g, b, 1.0]
                             if image.mode != "L":
-                                if image.mode in ("P", "1", "CMYK", "LAB"):
+                                if image.mode in ("P", "1", "CMYK", "LAB", "YCbCr", "HSV"):
                                     image = image.convert("RGBA")
                                 if op["invert"]:
                                     color = 0, 0, 0
