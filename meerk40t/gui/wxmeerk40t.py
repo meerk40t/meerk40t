@@ -2643,6 +2643,11 @@ class ShadowTree:
                 node.name = str(node.object)
             else:
                 node.name = str(node)
+        if not hasattr(node, "item"):
+            # Unregistered node updating name.
+            self.rebuild_tree()
+            return
+
         self.wxtree.SetItemText(node.item, node.name)
         try:
             stroke = node.object.stroke
