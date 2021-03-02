@@ -2684,14 +2684,18 @@ class Elemental(Modifier):
             _("Remove: {name}"), node_type="op", help=""
         )
         def remove_types(node, **kwargs):
-            self.context.console("operation delete\n")
+            # self.context.console("operation delete\n")
+            node.remove_node()
+            # self.remove_orphaned_opnodes()
             self.set_emphasis(None)
 
         @self.tree_operation(
             _("Remove: {name}"), node_type="elem", help=""
         )
         def remove_types(node, **kwargs):
-            self.context.console("element delete\n")
+            # self.context.console("element delete\n")
+            node.remove_node()
+            self.remove_orphaned_opnodes()
             self.set_emphasis(None)
 
         @self.tree_operation(
@@ -3344,7 +3348,7 @@ class Elemental(Modifier):
             depth -= 1
         # Check all children.
         for c in node.children:
-            for q in self.flat(c, types, depth, emphasized, targeted, highlighted):
+            for q in self.flat(c, types, cascade, depth, emphasized, targeted, highlighted):
                 yield q
 
     def ops(self, **kwargs):
@@ -3615,7 +3619,7 @@ class Elemental(Modifier):
                 self._emphasized_bounds, position
             ):
                 return  # Select by position aborted since selection position within current select bounds.
-        for e in self.elems_nodes(depth=1):
+        for e in self.elems_nodes(depth=1, cascade=False):
             try:
                 bounds = e.bounds
             except AttributeError:
@@ -3627,6 +3631,7 @@ class Elemental(Modifier):
                 self._emphasized_bounds = bounds
                 self.set_emphasis(e_list)
                 return
+        self._emphasized_bounds = None
         self.set_emphasis(None)
 
     def classify(self, elements, operations=None, add_op_function=None):
