@@ -196,7 +196,7 @@ class DxfLoader:
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
             element = Path()
             if entity.bgcolor is not None:
-                Path.fill = Color(entity.bgcolor)
+                Path.fill = Color(*entity.bgcolor)
             for p in entity.paths:
                 if p.path_type_flags & 2:
                     for v in p.vertices:
@@ -269,7 +269,7 @@ class DxfLoader:
             element.line((entity[2][0], entity[2][1]))
             element.line((entity[3][0], entity[3][1]))
             element.closed()
-            element.fill = Color("Black")
+            element.fill = Color("black")
         elif entity.dxftype() == "SPLINE":
             element = Path()
             try:
