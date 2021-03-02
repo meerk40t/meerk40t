@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2021-01-24 03:44-0800\n"
-"PO-Revision-Date: 2021-02-21 13:08-0500\n"
+"PO-Revision-Date: 2021-03-01 17:57-0500\n"
 "Last-Translator: Peter Cuevas <petercuevas.6@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -11,7 +11,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Poedit 2.4.1\n"
+"X-Generator: Poedit 2.4.2\n"
 "X-Loco-Source-Locale: en\n"
 "X-Loco-Project-Id: 91657\n"
 "X-Loco-Api-Version: 1.0.24 20200814-1\n"
@@ -108,7 +108,7 @@ msgstr "Relación de velocidad"
 
 #: Adjustments.py:114
 msgid "Overscan Override"
-msgstr "Overscan Override"
+msgstr "Anulación del sobreescaneo"
 
 #: Adjustments.py:115
 msgid "Power Override"
@@ -327,7 +327,7 @@ msgstr "Reclamación de interfaz: fallida. (La interfaz está en uso)."
 
 #: CH341DriverBase.py:111
 msgid "USB Connected."
-msgstr "Usb conectado."
+msgstr "USB conectado."
 
 #: CH341DriverBase.py:113
 msgid "Sending CH341 mode change to EPP1.9."
@@ -428,15 +428,15 @@ msgstr "Restablecer ojo de pez"
 
 #: CameraInteface.py:32
 msgid "Set IP Camera 1"
-msgstr "Establecer cámara IP 1"
+msgstr "Configurar la cámara IP 1"
 
 #: CameraInteface.py:35
 msgid "Set IP Camera 2"
-msgstr "Establecer cámara IP 2"
+msgstr "Configurar la cámara IP 2"
 
 #: CameraInteface.py:38
 msgid "Set IP Camera 3"
-msgstr "Configurar cámara IP 3"
+msgstr "Configurar la cámara IP 3"
 
 #: CameraInteface.py:41
 msgid "Set Camera 0"
@@ -480,7 +480,7 @@ msgstr "Exportar snapsnot"
 
 #: CameraInteface.py:149
 msgid "Detect Distortions/Calibration"
-msgstr "Detectar distorsiones / calibración"
+msgstr "Detectar distorsiones/calibración"
 
 #: CameraInteface.py:264
 msgid "Could not import Camera requirements"
@@ -626,11 +626,11 @@ msgstr "El significado del Byte 1"
 
 #: Controller.py:167
 msgid "Pause/Resume the controller"
-msgstr "Pausar / reanudar el controlador"
+msgstr "Pausar/reanudar el controlador"
 
 #: Controller.py:170
 msgid "Emergency stop/reset the controller."
-msgstr "Parada de emergencia / reinicio del controlador."
+msgstr "Parada de emergencia/reinicio del controlador."
 
 #: Controller.py:193
 msgid "Process"
@@ -736,7 +736,7 @@ msgstr "Restablecimiento manual"
 
 #: DeviceManager.py:86
 msgid "Id"
-msgstr "Carné de identidad"
+msgstr "ID"
 
 #: DeviceManager.py:87
 msgid "Driver"
@@ -792,7 +792,7 @@ msgstr "Propiedades de imagen"
 
 #: ImageProperty.py:97
 msgid "Scan gap / step size image native value."
-msgstr "Valor nativo de la imagen de tamaño de espacio / paso de escaneo."
+msgstr "Valor nativo de la imagen de tamaño de espacio/paso de escaneo."
 
 #: ImageProperty.py:99
 msgid "X property of image"
@@ -848,11 +848,11 @@ msgstr "Comenzar trabajo"
 
 #: JobInfo.py:29
 msgid "Home Before"
-msgstr "Inicio antes"
+msgstr "Ir al Inicio antes"
 
 #: JobInfo.py:31
 msgid "Home After"
-msgstr "Inicio despues"
+msgstr "Regresar al Inicio al finalizar"
 
 #: JobInfo.py:34
 msgid "Return to Origin After"
@@ -868,7 +868,7 @@ msgstr "Automático"
 
 #: JobInfo.py:42 wxMeerK40t.py:185
 msgid "Home"
-msgstr "Hogar"
+msgstr "Inicio"
 
 #: JobInfo.py:44
 msgid "Wait"
@@ -908,11 +908,11 @@ msgstr "Spooling interrumpido. Presione OK para continuar."
 
 #: JobInfo.py:163
 msgid "Home Before: Disabled (Rotary On)"
-msgstr "Hogar antes: discapacitado (giratorio encendido)"
+msgstr "Ir al Inicio antes: deshabilitado (giratorio encendido)"
 
 #: JobInfo.py:177
 msgid "Home After: Disabled (Rotary On)"
-msgstr "Inicio después: Deshabilitado (giratorio encendido)"
+msgstr "Regresar al Inicio al finalizar: deshabilitado (giratorio encendido)"
 
 #: JobInfo.py:203
 msgid "operation List"
@@ -986,7 +986,7 @@ msgstr "paso=%d"
 #: JobSpooler.py:149
 #, python-format
 msgid "overscan=%d"
-msgstr "overscan=%d"
+msgstr "sobreescaneo=%d"
 
 #: Kernel.py:674
 #, python-format
@@ -1105,7 +1105,7 @@ msgstr "Ocupado"
 
 #: Kernel.py:2231
 msgid "Waiting"
-msgstr "Espere"
+msgstr "Esperando"
 
 #: Kernel.py:2233
 msgid "Active"
@@ -1113,7 +1113,7 @@ msgstr "Activo"
 
 #: Kernel.py:2235
 msgid "Idle"
-msgstr "Ocioso"
+msgstr "Inactivo"
 
 #: Keymap.py:17
 msgid "Add Hotkey"
@@ -1259,7 +1259,7 @@ msgstr "Reducir proporcionalmente"
 
 #: Navigation.py:202
 msgid "Translate Top"
-msgstr "Traducir arriba"
+msgstr "Trasladar al arriba"
 
 #: Navigation.py:203
 msgid "Scale Up"
@@ -1267,7 +1267,7 @@ msgstr "Aumentar proporcionalmente"
 
 #: Navigation.py:204
 msgid "Translate Left"
-msgstr "Traducir a la izquierda"
+msgstr "Trasladar a la izquierda"
 
 #: Navigation.py:205
 msgid "Reset Matrix"
@@ -1275,7 +1275,7 @@ msgstr "Restablecer matriz"
 
 #: Navigation.py:206
 msgid "Translate Right"
-msgstr "Traducir a la derecha"
+msgstr "Trasladar a la derecha"
 
 #: Navigation.py:207
 msgid "Rotate Counterclockwise"
@@ -1283,7 +1283,7 @@ msgstr "Girar en sentido antihorario"
 
 #: Navigation.py:208
 msgid "Translate Bottom"
-msgstr "Traducir abajo"
+msgstr "Trasladar a abajo"
 
 #: Navigation.py:209
 msgid "Rotate Clockwise"
@@ -1447,7 +1447,7 @@ msgstr "Longitud de punto (mils)"
 
 #: OperationProperty.py:56 OperationProperty.py:263 wxMeerK40t.py:2377
 msgid "Passes"
-msgstr "Pases"
+msgstr "Pasadas"
 
 #: OperationProperty.py:209
 msgid "Operation Properties"
@@ -1471,7 +1471,7 @@ msgstr "Mostrar esta capa"
 
 #: OperationProperty.py:221
 msgid "Speed at which to perform the action in mm/s."
-msgstr "Velocidad a la que realizar la acción en mm / s."
+msgstr "Velocidad a la que se realizará la acción en mm/s."
 
 #: OperationProperty.py:222
 msgid ""
@@ -1486,7 +1486,7 @@ msgid ""
 "Scan gap / step size, is the distance between scanlines in a raster engrave. "
 "Distance here is in 1/1000th of an inch."
 msgstr ""
-"Tamaño de espacio / paso de escaneo, es la distancia entre líneas de escaneo "
+"Tamaño de espacio/paso de escaneo, es la distancia entre líneas de escaneo "
 "en un grabado ráster. La distancia aquí es de 1/1000 de pulgada."
 
 #: OperationProperty.py:224
@@ -1560,7 +1560,7 @@ msgstr "Poder (ppi)"
 
 #: OperationProperty.py:280
 msgid "Speed (mm/s)"
-msgstr "Velocidad (mm / s)"
+msgstr "Velocidad (mm/s)"
 
 #: OperationProperty.py:281
 msgid "Layer"
@@ -1572,7 +1572,7 @@ msgstr "Paso de trama (mils)"
 
 #: OperationProperty.py:301
 msgid "Overscan (mils)"
-msgstr "Overscan (mils)"
+msgstr "Sobreescaneo (mils)"
 
 #: OperationProperty.py:305
 msgid "Raster Direction"
@@ -1640,7 +1640,7 @@ msgstr "Voltear X"
 
 #: Preferences.py:26
 msgid "Homes Right"
-msgstr "Casas a la derecha"
+msgstr "Inicio en la parte derecha"
 
 #: Preferences.py:27
 msgid "Flip Y"
@@ -1648,7 +1648,7 @@ msgstr "Voltear Y"
 
 #: Preferences.py:28
 msgid "Homes Bottom"
-msgstr "Fondo de casas"
+msgstr "Inicio en la parte inferior"
 
 #: Preferences.py:29
 msgid "Swap X and Y"
@@ -1668,7 +1668,7 @@ msgstr "Bloquear automáticamente el riel"
 
 #: Preferences.py:41
 msgid "Home after job complete"
-msgstr "Inicio después de completar el trabajo"
+msgstr "Regresar al Inicio después de completar el trabajo"
 
 #: Preferences.py:42
 msgid "Beep after job complete"
@@ -1724,11 +1724,11 @@ msgstr ""
 
 #: Preferences.py:169
 msgid "Translate Home X"
-msgstr "Traducir Inicio X"
+msgstr "Trasladar al Inicio X"
 
 #: Preferences.py:171
 msgid "Translate Home Y"
-msgstr "Traducir Inicio Y"
+msgstr "Trasladar al Inicio Y"
 
 #: Preferences.py:172
 msgid "Set Home Position based on the current position"
@@ -1937,7 +1937,7 @@ msgstr "Paso"
 
 #: RasterWizard.py:693
 msgid "pixels/in"
-msgstr "píxeles / pulg"
+msgstr "píxeles/pulg"
 
 #: RasterWizard.py:828
 msgid "Enable Gamma Shift"
@@ -2336,7 +2336,7 @@ msgstr "Abierto"
 
 #: wxMeerK40t.py:192 wxMeerK40t.py:310
 msgid "Save"
-msgstr "Salvar"
+msgstr "Guardar"
 
 #: wxMeerK40t.py:196 wxMeerK40t.py:359
 msgid "Windows"
@@ -2348,7 +2348,7 @@ msgstr "Usb"
 
 #: wxMeerK40t.py:201
 msgid "Spooler"
-msgstr "Spooler"
+msgstr "Cola de impresión"
 
 #: wxMeerK40t.py:204
 msgid "Devices"
@@ -2400,7 +2400,7 @@ msgstr "Expediente"
 
 #: wxMeerK40t.py:318
 msgid "Zoom Out"
-msgstr "Disminuir el zoom"
+msgstr "Alejarse"
 
 #: wxMeerK40t.py:319
 msgid "Zoom In"
@@ -2679,7 +2679,7 @@ msgstr "Actualizar clasificación"
 
 #: wxMeerK40t.py:2352
 msgid "Set Other/Blue/Red Classify"
-msgstr "Establecer Otro / Azul / Rojo Clasificar"
+msgstr "Establecer la clasificación de otro/azul/rojo"
 
 #: wxMeerK40t.py:2354
 msgid "Set Basic Classification"
