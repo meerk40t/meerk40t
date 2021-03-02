@@ -945,22 +945,22 @@ class MeerK40t(wx.Frame, Module, Job):
     def __set_menubar(self):
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
-        wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project"), "")
+        wxglade_tmp_menu.Append(wx.ID_NEW, _("New\tCtrl-N"), "")
+        wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project\tCtrl-O"), "")
         self.recent_file_menu = wx.Menu()
         wxglade_tmp_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save"), "")
-        wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As"), "")
+        wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save\tAlt-S"), "")
+        wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As\tAlt-Shift-S"), "")
         wxglade_tmp_menu.AppendSeparator()
 
         wxglade_tmp_menu.Append(wx.ID_EXIT, _("Exit"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out"), "")
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out\tCtrl--"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In\tCtrl-+"), "")
         wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
