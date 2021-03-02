@@ -711,7 +711,7 @@ class Navigation(wx.Frame, Module):
 
     def on_button_align_center(self, event):  # wxGlade: Navigation.<event_handler>
         elements = self.elements
-        bbox = elements.bounds()
+        bbox = elements.selected_area()
         if bbox is None:
             return
         px = (bbox[0] + bbox[2]) / 2.0

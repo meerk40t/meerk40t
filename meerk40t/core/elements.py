@@ -1,16 +1,49 @@
 import functools
 from copy import copy
 
-from ..device.lasercommandconstants import (COMMAND_BEEP, COMMAND_FUNCTION,
-                                            COMMAND_HOME, COMMAND_MODE_RAPID,
-                                            COMMAND_MOVE, COMMAND_WAIT_FINISH)
+from ..device.lasercommandconstants import (
+    COMMAND_BEEP,
+    COMMAND_FUNCTION,
+    COMMAND_HOME,
+    COMMAND_MODE_RAPID,
+    COMMAND_MOVE,
+    COMMAND_WAIT_FINISH,
+)
 from ..kernel import Modifier
-from ..svgelements import (Angle, Arc, Circle, Close, Color, CubicBezier,
-                           Ellipse, Group, Length, Line, Matrix, Move, Path,
-                           Point, Polygon, Polyline, QuadraticBezier, Rect,
-                           Shape, SimpleLine, SVGElement, SVGImage, SVGText)
-from .cutcode import (ArcCut, CubicCut, CutCode, LaserSettings, LineCut,
-                      QuadCut, RasterCut)
+from ..svgelements import (
+    Angle,
+    Arc,
+    Circle,
+    Close,
+    Color,
+    CubicBezier,
+    Ellipse,
+    Group,
+    Length,
+    Line,
+    Matrix,
+    Move,
+    Path,
+    Point,
+    Polygon,
+    Polyline,
+    QuadraticBezier,
+    Rect,
+    Shape,
+    SimpleLine,
+    SVGElement,
+    SVGImage,
+    SVGText,
+)
+from .cutcode import (
+    ArcCut,
+    CubicCut,
+    CutCode,
+    LaserSettings,
+    LineCut,
+    QuadCut,
+    RasterCut,
+)
 
 
 def plugin(kernel, lifecycle=None):
@@ -76,7 +109,7 @@ class Node:
         self.last_transform = None
 
     def __repr__(self):
-        return "Node(%s, %s, %s)" % (self.type, str(self.object), str(self._parent))
+        return "Node('%s', %s, %s)" % (self.type, str(self.object), str(self._parent))
 
     def __eq__(self, other):
         return other is self
@@ -172,7 +205,12 @@ class Node:
                     self._bounds = bb
                 else:
                     aa = self._bounds
-                    self._bounds = (min(aa[0], bb[0]), min(aa[1], bb[1]), max(aa[2], bb[2]), max(aa[3], bb[3]))
+                    self._bounds = (
+                        min(aa[0], bb[0]),
+                        min(aa[1], bb[1]),
+                        max(aa[2], bb[2]),
+                        max(aa[3], bb[3]),
+                    )
             self._bounds_dirty = False
         return self._bounds
 
@@ -230,13 +268,11 @@ class Node:
                 node = self
             self._root.notify_expand(node=node, **kwargs)
 
-
     def notify_collapse(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
             self._root.notify_collapse(node=node, **kwargs)
-
 
     def notify_reorder(self, node=None, **kwargs):
         if self._root is not None:
@@ -408,6 +444,7 @@ class Node:
 
     def remove_all_children(self):
         for child in list(self.children):
+            child.remove_all_children()
             child.remove_node()
 
     def get(self, obj=None, type=None):
@@ -432,6 +469,9 @@ class ElemNode(Node):
         super(ElemNode, self).__init__(data_object)
         self.last_transform = None
         data_object.node = self
+
+    def __repr__(self):
+        return "ElemNode('%s', %s, %s)" % (self.type, str(self.object), str(self._parent))
 
     def drop(self, drag_node):
         drop_node = self
@@ -463,6 +503,9 @@ class RootNode(Node):
         }
         self.add(type="branch ops", name="Operations")
         self.add(type="branch elems", name="Elements")
+
+    def __repr__(self):
+        return "RootNode(%s)" % (str(self.context))
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -615,6 +658,10 @@ class LaserOperation(Node):
                 self.settings.speed = 150.0
             if self.settings.power is None:
                 self.settings.power = 1000.0
+
+
+    def __repr__(self):
+        return "LaserOperation('%s', %s)" % (self.type, str(self.operation))
 
     def __str__(self):
         op = self.operation
@@ -806,6 +853,9 @@ class CommandOperation(Node):
         self.output = True
         self.operation = "Command"
 
+    def __repr__(self):
+        return "CommandOperation('%s', '%s')" % (self.name, str(self.command))
+
     def __str__(self):
         return "%s: %s" % (self.name, str(self.args))
 
@@ -836,7 +886,7 @@ class Elemental(Modifier):
         self._clipboard_default = "0"
 
         self.note = None
-        self._bounds = None
+        self._emphasized_bounds = None
         self._tree = None
 
     def tree_operations_for_node(self, node):
@@ -1405,7 +1455,7 @@ class Elemental(Modifier):
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
-            if len(data) == 0 or self._bounds is None:
+            if len(data) == 0 or self._emphasized_bounds is None:
                 channel(_("No item selected."))
                 return
             if r is None:
@@ -1415,7 +1465,7 @@ class Elemental(Modifier):
                 y = y.value(ppi=1000)
             else:
                 try:
-                    bounds = self._bounds
+                    bounds = self._emphasized_bounds
                     x = bounds[2] - bounds[0]
                     y = bounds[3] - bounds[1]
                 except:
@@ -1920,7 +1970,7 @@ class Elemental(Modifier):
                 raise SyntaxError
             self.context.setting(int, "bed_width", 310)  # Default Value
             self.context.setting(int, "bed_height", 210)  # Default Value
-            bounds = self.bounds()
+            bounds = self.selected_area()
             if bounds is None:
                 yield "Nothing Selected"
                 return
@@ -2003,8 +2053,8 @@ class Elemental(Modifier):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            self.validate_bounds()
-            bounds = self.bounds()
+            self.validate_selected_area()
+            bounds = self.selected_area()
             rot = angle.as_degrees
 
             if cx is not None:
@@ -2096,13 +2146,11 @@ class Elemental(Modifier):
                 channel(_("----------"))
                 return
             if data is None:
-                data = list(self.elems(emphasized=True))
+                data = list(self.flat_cascade())
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            group = Group()
-            group.extend(data)
-            bounds = group.bbox()
+            bounds = Group.union_bbox(data)
             if scale_y is None:
                 scale_y = scale_x
             if px is not None:
@@ -2269,7 +2317,7 @@ class Elemental(Modifier):
                 height = height.value(
                     ppi=1000.0, relative_length=self.context.bed_height * 39.3701
                 )
-                x, y, x1, y1 = self.bounds()
+                x, y, x1, y1 = self.selected_area()
                 w, h = x1 - x, y1 - y
                 sx = width / w
                 sy = height / h
@@ -2592,7 +2640,7 @@ class Elemental(Modifier):
             if context.active is None:
                 return
             spooler = context.active.spooler
-            bbox = self.bounds()
+            bbox = self.selected_area()
             if bbox is None:
                 channel(_("No elements bounds to trace."))
                 return
@@ -2633,17 +2681,33 @@ class Elemental(Modifier):
             self.context.console("element* delete\n")
 
         @self.tree_operation(
-            _("Remove: {name}"), node_type=("op", "elem", "file", "opnode"), help=""
+            _("Remove: {name}"), node_type="op", help=""
         )
         def remove_types(node, **kwargs):
-            if node.type == "elem":
-                self.context.console("element delete\n")
-            elif node.type == "op":
-                self.context.console("operation delete\n")
-            elif node.type == "file":
-                self.context.console("element delete\n")
-            elif node.type == "opnode":
-                node.remove_node()
+            self.context.console("operation delete\n")
+            self.set_emphasis(None)
+
+        @self.tree_operation(
+            _("Remove: {name}"), node_type="elem", help=""
+        )
+        def remove_types(node, **kwargs):
+            self.context.console("element delete\n")
+            self.set_emphasis(None)
+
+        @self.tree_operation(
+            _("Remove: {name}"), node_type="file", help=""
+        )
+        def remove_types(node, **kwargs):
+            node.remove_all_children()
+            node.remove_node()
+            self.remove_orphaned_opnodes()
+            self.set_emphasis(None)
+
+        @self.tree_operation(
+            _("Remove: {name}"), node_type="opnode", help=""
+        )
+        def remove_types(node, **kwargs):
+            node.remove_node()
             self.set_emphasis(None)
 
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
@@ -2783,26 +2847,32 @@ class Elemental(Modifier):
         @self.tree_iterate("copies", 1, 10)
         @self.tree_operation(_("Add {copies} pass(es)."), node_type="op", help="")
         def add_n_passes(node, copies=1, **kwargs):
-            add_elements = [child.object for child in node.children if child.object is not None]
+            add_elements = [
+                child.object for child in node.children if child.object is not None
+            ]
             removed = False
             for i in range(0, len(add_elements)):
-                for q in range(0,i):
+                for q in range(0, i):
                     if add_elements[q] is add_elements[i]:
                         add_elements[i] = None
                         removed = True
             if removed:
                 add_elements = [c for c in add_elements if c is not None]
             add_elements *= copies
-            node.add_all(add_elements, type='opnode')
+            node.add_all(add_elements, type="opnode")
             self.context.signal("rebuild_tree", 0)
 
         @self.tree_submenu(_("Duplicate"))
         @self.tree_iterate("copies", 1, 10)
-        @self.tree_operation(_("Duplicate elements {copies} time(s)."), node_type="op", help="")
+        @self.tree_operation(
+            _("Duplicate elements {copies} time(s)."), node_type="op", help=""
+        )
         def dup_n_copies(node, copies=1, **kwargs):
-            add_elements = [child.object for child in node.children if child.object is not None]
+            add_elements = [
+                child.object for child in node.children if child.object is not None
+            ]
             add_elements *= copies
-            node.add_all(add_elements, type='opnode')
+            node.add_all(add_elements, type="opnode")
             self.context.signal("rebuild_tree", 0)
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
@@ -3146,7 +3216,7 @@ class Elemental(Modifier):
         self.add_ops([o for o in ops if o is not None])
 
     def emphasized(self, *args):
-        self.validate_bounds()
+        self.validate_selected_area()
 
     def listen(self, listener):
         self._tree.listen(listener)
@@ -3204,104 +3274,94 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
         self.classify(list(self.elems()))
 
-    def flatten(self, node, depth=None):
+    def _flatten(self, node):
         """
-        Return the flat list of this node and all descendants, up to the given depth.
+        Yield this node and all descendants in a flat generation.
 
-        :param node:
-        :param depth:
+        :param node: starting node
         :return:
         """
         yield node
-        for f in self.flatten_children(node,depth):
-            yield f
+        for c in self._flatten_children(node):
+            yield c
 
-    def flatten_children(self, node, depth=None):
+    def _flatten_children(self, node):
         """
-        Returns a flat list of all descendants
-        :param node:
-        :param depth:
+        Yield all descendants in a flat generation.
+
+        :param node: starting node
         :return:
         """
-        if depth is not None:
-            if depth <= 0:
-                return
-            depth -= 1
         for child in node.children:
             yield child
-            if hasattr(child, "children"):
-                for s in self.flatten_children(child, depth=depth):
-                    yield s
+            for c in self._flatten_children(child):
+                yield c
 
-    def _filtered_list(self, node, types, depth=None, **kwargs):
+    def flat(
+        self,
+        node,
+        types=None,
+        cascade=True,
+        depth=None,
+        emphasized=None,
+        targeted=None,
+        highlighted=None,
+    ):
         """
-        Filters a list of items with selected, emphasized, and highlighted.
-        False values means find where that parameter is false.
-        True values means find where that parameter is true.
-        If the filter does not exist then it isn't used to filter that data.
+        Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
+        of the given type, even if those descendants are beyond the depth limit. The sub-elements do not need to match
+        the criteria with respect to either the depth or the emphases.
 
-        Items which are set to None are skipped.
-
-        :param node: root node from which to search.
-        :param depth max depth to filter list children.
-        :param kwargs: emphasized, targeted, and highlighted flagged true or false ensure matching.
+        :param node: root node to start search.
+        :param types: types of nodes permitted to be returned
+        :param cascade: cascade all subitems if a group matches the criteria.
+        :param depth: depth to search within the tree.
+        :param emphasized: match only emphasized nodes.
+        :param targeted: match only targeted nodes
+        :param highlighted: match only highlighted nodes
         :return:
         """
-        e = kwargs.get("emphasized")
-        s = kwargs.get("targeted")
-        h = kwargs.get("highlighted")
-
-        for node in self.flatten(node, depth=depth):
-            if node is None:
-                continue
-            if node.type not in types:
-                continue
-            if s is not None and s != node.targeted:
-                continue
-            if e is not None and e != node.emphasized:
-                continue
-            if h is not None and s != node.highlighted:
-                continue
-            yield node
+        if (
+            (targeted is None or targeted == node.targeted)
+            and (emphasized is None or emphasized == node.emphasized)
+            and (highlighted is None or highlighted != node.highlighted)
+        ):
+            # Matches the emphases.
+            if cascade:
+                # Give every type-matched descendant.
+                for c in self._flatten(node):
+                    if types is None or c.type in types:
+                        yield c
+                # Do not recurse further. This node is end node.
+                return
+            else:
+                if types is None or node.type in types:
+                    yield node
+        if depth is not None:
+            if depth <= 0:
+                # Depth limit reached. Do not evaluate children.
+                return
+            depth -= 1
+        # Check all children.
+        for c in node.children:
+            for q in self.flat(c, types, depth, emphasized, targeted, highlighted):
+                yield q
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in self._filtered_list(operations, ("op",), depth=1, **kwargs):
+        for item in self.flat(operations, ("op",), depth=1, **kwargs):
             yield item
 
-    def flat_elems_emphasized(self):
-        """
-        Returns all the elements which are either themselves emphasized or the child of emphasized container
-
-        :param node:
-        :return:
-        """
-        for e in self.flat_emphasized(self._tree):
-            if e.type == "elem":
-                yield e.object
-
-    def flat_emphasized(self, node):
-        """
-        Returns all the nodes which are either themselves emphasized or the child of emphasized container
-
-        :return: generator of nodes
-        """
-        if node.emphasized:
-            for c in self.flatten(node):
-                yield c
-            return
-        for c in node.children:
-            for q in self.flat_emphasized(c):
-                yield q
-
-    def elems(self, depth=None, **kwargs):
+    def elems(self, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self._filtered_list(elements, ("elem",), depth=depth, **kwargs):
+        for item in self.flat(elements, ("elem",), **kwargs):
             yield item.object
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self._filtered_list(elements, ("elem", "file", "group"), depth=depth, **kwargs):
+        for item in self.flat(
+            elements, ("elem", "file", "group"), depth=depth, **kwargs
+        ):
             yield item
 
     def first_element(self, **kwargs):
@@ -3397,7 +3457,7 @@ class Elemental(Modifier):
         self.clear_operations()
         self.clear_files()
         self.clear_note()
-        self.validate_bounds()
+        self.validate_selected_area()
 
     def clear_note(self):
         self.note = None
@@ -3408,7 +3468,7 @@ class Elemental(Modifier):
                 if elem is e:
                     e.node.remove_node()
         self.remove_elements_from_operations(elements_list)
-        self.validate_bounds()
+        self.validate_selected_area()
 
     def remove_operations(self, operations_list):
         for op in operations_list:
@@ -3423,10 +3483,22 @@ class Elemental(Modifier):
                 if e.object in elements_list:
                     e.remove_node()
 
-    def bounds(self):
-        return self._bounds
+    def remove_orphaned_opnodes(self):
+        """
+        Remove any opnodes whose objects do not appear in the elem list.
 
-    def validate_bounds(self):
+        :return:
+        """
+        elements_list = list(self.elems())
+        for i, op in enumerate(self.ops()):
+            for e in list(op.children):
+                if e.object not in elements_list:
+                    e.remove_node()
+
+    def selected_area(self):
+        return self._emphasized_bounds
+
+    def validate_selected_area(self):
         boundary_points = []
         for e in self.elems_nodes(emphasized=True):
             if e.bounds is None:
@@ -3450,9 +3522,9 @@ class Elemental(Modifier):
             ymax = max([e[1] for e in boundary_points])
             new_bounds = [xmin, ymin, xmax, ymax]
 
-        if self._bounds != new_bounds:
-            self._bounds = new_bounds
-            self.context.signal("selected_bounds", self._bounds)
+        if self._emphasized_bounds != new_bounds:
+            self._emphasized_bounds = new_bounds
+            self.context.signal("selected_bounds", self._emphasized_bounds)
 
     def highlight_children(self, node_context):
         """
@@ -3485,7 +3557,7 @@ class Elemental(Modifier):
         If any element is emphasized, all copies are highlighted.
         If any element is emphasized, all operations containing that element are targeted.
         """
-        for s in self.flatten(self._tree):
+        for s in self.flat(self._tree):
             if s.highlighted:
                 s.highlighted = False
             if s.targeted:
@@ -3495,7 +3567,9 @@ class Elemental(Modifier):
                 if emphasize is None or s not in emphasize:
                     s.emphasized = False
             else:
-                if emphasize is not None and (s in emphasize or (hasattr(s, 'object') and s.object in emphasize)):
+                if emphasize is not None and (
+                    s in emphasize or (hasattr(s, "object") and s.object in emphasize)
+                ):
                     s.emphasized = True
         if emphasize is not None:
             for e in emphasize:
@@ -3507,22 +3581,22 @@ class Elemental(Modifier):
                 self.highlight_children(e)
 
     def center(self):
-        bounds = self._bounds
+        bounds = self._emphasized_bounds
         return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
 
     def ensure_positive_bounds(self):
-        b = self._bounds
-        self._bounds = [
+        b = self._emphasized_bounds
+        self._emphasized_bounds = [
             min(b[0], b[2]),
             min(b[1], b[3]),
             max(b[0], b[2]),
             max(b[1], b[3]),
         ]
-        self.context.signal("selected_bounds", self._bounds)
+        self.context.signal("selected_bounds", self._emphasized_bounds)
 
     def update_bounds(self, b):
-        self._bounds = [b[0], b[1], b[2], b[3]]
-        self.context.signal("selected_bounds", self._bounds)
+        self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
+        self.context.signal("selected_bounds", self._emphasized_bounds)
 
     def move_emphasized(self, dx, dy):
         for obj in self.elems(emphasized=True):
@@ -3537,7 +3611,9 @@ class Elemental(Modifier):
             return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
         if self.has_emphasis():
-            if self._bounds is not None and contains(self._bounds, position):
+            if self._emphasized_bounds is not None and contains(
+                self._emphasized_bounds, position
+            ):
                 return  # Select by position aborted since selection position within current select bounds.
         for e in self.elems_nodes(depth=1):
             try:
@@ -3548,7 +3624,7 @@ class Elemental(Modifier):
                 continue
             if contains(bounds, position):
                 e_list = [e]
-                self._bounds = bounds
+                self._emphasized_bounds = bounds
                 self.set_emphasis(e_list)
                 return
         self.set_emphasis(None)

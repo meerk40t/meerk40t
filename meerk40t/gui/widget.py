@@ -577,7 +577,7 @@ class SelectionWidget(Widget):
 
     def hit(self):
         elements = self.elements
-        bounds = elements.bounds()
+        bounds = elements.selected_area()
         if bounds is not None:
             self.left = bounds[0]
             self.top = bounds[1]
@@ -691,7 +691,7 @@ class SelectionWidget(Widget):
 
     def tool_scalexy(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
+        b = elements.selected_area()
         scalex = (position[0] - self.left) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
         self.save_width *= scalex
@@ -709,7 +709,7 @@ class SelectionWidget(Widget):
 
     def tool_scalexy_se(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
+        b = elements.selected_area()
         scalex = (position[0] - self.left) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
         if self.uniform:
@@ -731,7 +731,7 @@ class SelectionWidget(Widget):
 
     def tool_scalexy_nw(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
+        b = elements.selected_area()
         scalex = (self.right - position[0]) / self.save_width
         scaley = (self.bottom - position[1]) / self.save_height
         if self.uniform:
@@ -753,7 +753,7 @@ class SelectionWidget(Widget):
 
     def tool_scalexy_ne(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
+        b = elements.selected_area()
         scalex = (position[0] - self.left) / self.save_width
         scaley = (self.bottom - position[1]) / self.save_height
         if self.uniform:
@@ -775,7 +775,7 @@ class SelectionWidget(Widget):
 
     def tool_scalexy_sw(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
+        b = elements.selected_area()
         scalex = (self.right - position[0]) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
         if self.uniform:
@@ -797,7 +797,7 @@ class SelectionWidget(Widget):
 
     def tool_scalex_e(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
+        b = elements.selected_area()
         scalex = (position[0] - self.left) / self.save_width
         self.save_width *= scalex
         for obj in elements.elems(emphasized=True):
@@ -813,7 +813,7 @@ class SelectionWidget(Widget):
 
     def tool_scalex_w(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
+        b = elements.selected_area()
         scalex = (self.right - position[0]) / self.save_width
         self.save_width *= scalex
         for obj in elements.elems(emphasized=True):
@@ -829,7 +829,7 @@ class SelectionWidget(Widget):
 
     def tool_scaley_s(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
+        b = elements.selected_area()
         scaley = (position[1] - self.top) / self.save_height
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
@@ -846,7 +846,7 @@ class SelectionWidget(Widget):
 
     def tool_scaley_n(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
+        b = elements.selected_area()
         scaley = (self.bottom - position[1]) / self.save_height
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
@@ -862,12 +862,12 @@ class SelectionWidget(Widget):
 
     def tool_translate(self, position, dx, dy):
         elements = self.scene.context.elements
-        b = elements.bounds()
-        for e in elements.flat_emphasized(elements._tree):
-            if e.type == "elem":
-                obj = e.object
-                obj.transform.post_translate(dx, dy)
-                obj.node.modified()
+        b = elements.selected_area()
+        for e in elements.flat(elements._tree, types=("elem",)):
+            obj = e.object
+            obj.transform.post_translate(dx, dy)
+            obj.node.modified()
+        for e in elements.flat(elements._tree, types=("group", "file", "op element")):
             e._bounds_dirty = True
         self.translate(dx, dy)
         elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
@@ -879,7 +879,7 @@ class SelectionWidget(Widget):
         context = self.scene.context
         draw_mode = context.draw_mode
         elements = self.scene.context.elements
-        bounds = elements.bounds()
+        bounds = elements.selected_area()
         matrix = self.parent.matrix
         if bounds is not None:
             linewidth = 2.0 / matrix.value_scale_x()
@@ -930,7 +930,7 @@ class RectSelectWidget(Widget):
             self.end_location = space_pos
             return RESPONSE_CONSUME
         elif event_type == "leftup":
-            elements.validate_bounds()
+            elements.validate_selected_area()
             for obj in elements.elems():
                 try:
                     q = obj.bbox(True)

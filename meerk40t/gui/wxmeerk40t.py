@@ -1850,7 +1850,7 @@ class MeerK40t(wx.Frame, Module, Job):
     def update_ribbon_position(self):
         p = self.context
         elements = p.elements
-        bounds = elements.bounds()
+        bounds = elements.selected_area()
         self.text_w.Enable(bounds is not None)
         self.text_h.Enable(bounds is not None)
         self.text_x.Enable(bounds is not None)
@@ -2091,7 +2091,7 @@ class MeerK40t(wx.Frame, Module, Job):
         Zoom size button press.
         """
         elements = self.context.elements
-        bbox = elements.bounds()
+        bbox = elements.selected_area()
         if bbox is None:
             bedwidth = self.context.bed_width
             bedheight = self.context.bed_height
