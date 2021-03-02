@@ -2882,6 +2882,14 @@ class Elemental(Modifier):
             node.add_all(add_elements, type="opnode")
             self.context.signal("rebuild_tree", 0)
 
+        @self.tree_submenu(_("Set Operation Passes"))
+        @self.tree_iterate("passvalue", 1, 10)
+        @self.tree_operation(_("Passes={passvalue}"), node_type="op", help="")
+        def set_n_passes(node, passvalue=1, **kwargs):
+            node.settings.passes = passvalue
+            node.settings.passes_custom = passvalue != 1
+            self.context.signal("element_property_update", node)
+
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_submenu(_("Step"))
         @self.tree_iterate("i", 1, 10)
