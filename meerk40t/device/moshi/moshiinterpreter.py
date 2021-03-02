@@ -308,7 +308,8 @@ class MoshiInterpreter(Interpreter, Modifier):
         if self.settings.raster_step == 0:
             self.ensure_program_mode()
         else:
-            self.ensure_raster_mode()
+            self.ensure_program_mode()
+            # self.ensure_raster_mode() # Rastermode is not functional.
         if self.state == INTERPRETER_STATE_PROGRAM:
             if cut:
                 self.write_cut_abs(x, y)
