@@ -3601,6 +3601,8 @@ class Elemental(Modifier):
 
     def ensure_positive_bounds(self):
         b = self._emphasized_bounds
+        if b is None:
+            return
         self._emphasized_bounds = [
             min(b[0], b[2]),
             min(b[1], b[3]),
