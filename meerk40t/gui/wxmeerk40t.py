@@ -326,9 +326,16 @@ class MeerK40t(wx.Frame, Module, Job):
         stop = wx.BitmapButton(
             self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
         )
+
+        def on_stop_button(e=None):
+            try:
+                self.context.active.interpreter.realtime_command(REALTIME_RESET)
+            except AttributeError:
+                pass
+
         self.Bind(
             wx.EVT_BUTTON,
-            lambda e: self.context.active.interpreter.realtime_command(REALTIME_RESET),
+            on_stop_button,
             stop,
         )
         stop.SetBackgroundColour(wx.Colour(127, 0, 0))
