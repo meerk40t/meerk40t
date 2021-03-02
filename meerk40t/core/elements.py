@@ -482,116 +482,6 @@ class ElemNode(Node):
         return False
 
 
-class RootNode(Node):
-    """
-    RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
-    """
-
-    def __init__(self, context):
-        super().__init__(None)
-        self._root = self
-        self.set_name("Project")
-        self.type = "root"
-        self.context = context
-        self.listeners = []
-
-        self.elements = context.elements
-        self.bootstrap = {
-            "op": LaserOperation,
-            "cmdop": CommandOperation,
-            "elem": ElemNode,
-        }
-        self.add(type="branch ops", name="Operations")
-        self.add(type="branch elems", name="Elements")
-
-    def __repr__(self):
-        return "RootNode(%s)" % (str(self.context))
-
-    def listen(self, listener):
-        self.listeners.append(listener)
-
-    def unlisten(self, listener):
-        self.listeners.remove(listener)
-
-    def notify_added(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "node_added"):
-                listen.node_added(node, **kwargs)
-
-    def notify_removed(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "node_removed"):
-                listen.node_removed(node, **kwargs)
-
-    def notify_changed(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "node_changed"):
-                listen.node_changed(node, **kwargs)
-
-    def notify_emphasized(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "emphasized"):
-                listen.emphasized(node, **kwargs)
-
-    def notify_targeted(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "targeted"):
-                listen.targeted(node, **kwargs)
-
-    def notify_highlighted(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "highlighted"):
-                listen.highlighted(node, **kwargs)
-
-    def notify_modified(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        self._bounds = None
-        for listen in self.listeners:
-            if hasattr(listen, "modified"):
-                listen.modified(node, **kwargs)
-
-    def notify_altered(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "altered"):
-                listen.altered(node, **kwargs)
-
-    def notify_expand(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "expand"):
-                listen.expand(node, **kwargs)
-
-    def notify_collapse(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "expand"):
-                listen.collapse(node, **kwargs)
-
-    def notify_reorder(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "expand"):
-                listen.reorder(node, **kwargs)
-
-
 class LaserOperation(Node):
     """
     Default object defining any operation done on the laser.
@@ -867,6 +757,116 @@ class CommandOperation(Node):
 
     def generate(self):
         yield (self.command,) + self.args
+
+
+class RootNode(Node):
+    """
+    RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
+    """
+
+    def __init__(self, context):
+        super().__init__(None)
+        self._root = self
+        self.set_name("Project")
+        self.type = "root"
+        self.context = context
+        self.listeners = []
+
+        self.elements = context.elements
+        self.bootstrap = {
+            "op": LaserOperation,
+            "cmdop": CommandOperation,
+            "elem": ElemNode,
+        }
+        self.add(type="branch ops", name="Operations")
+        self.add(type="branch elems", name="Elements")
+
+    def __repr__(self):
+        return "RootNode(%s)" % (str(self.context))
+
+    def listen(self, listener):
+        self.listeners.append(listener)
+
+    def unlisten(self, listener):
+        self.listeners.remove(listener)
+
+    def notify_added(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "node_added"):
+                listen.node_added(node, **kwargs)
+
+    def notify_removed(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "node_removed"):
+                listen.node_removed(node, **kwargs)
+
+    def notify_changed(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "node_changed"):
+                listen.node_changed(node, **kwargs)
+
+    def notify_emphasized(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "emphasized"):
+                listen.emphasized(node, **kwargs)
+
+    def notify_targeted(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "targeted"):
+                listen.targeted(node, **kwargs)
+
+    def notify_highlighted(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "highlighted"):
+                listen.highlighted(node, **kwargs)
+
+    def notify_modified(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        self._bounds = None
+        for listen in self.listeners:
+            if hasattr(listen, "modified"):
+                listen.modified(node, **kwargs)
+
+    def notify_altered(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "altered"):
+                listen.altered(node, **kwargs)
+
+    def notify_expand(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "expand"):
+                listen.expand(node, **kwargs)
+
+    def notify_collapse(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "expand"):
+                listen.collapse(node, **kwargs)
+
+    def notify_reorder(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "expand"):
+                listen.reorder(node, **kwargs)
 
 
 class Elemental(Modifier):
