@@ -590,7 +590,7 @@ class LaserOperation(Node):
         if self.settings.acceleration_custom:
             parts.append("a:%d" % self.settings.acceleration)
         if self.settings.passes_custom:
-            parts.append("passes: %d" % self.settings.passes)
+            parts.append("** %d" % self.settings.passes)
         if self.settings.dot_length_custom:
             parts.append("dot: %d" % self.settings.dot_length)
         if not self.output:
@@ -707,22 +707,25 @@ class LaserOperation(Node):
                     object_image = object_image.object
                     c.append(RasterCut(object_image, settings))
         elif self.operation == "Image":
-            for object_image in self.children:
-                object_image = object_image.object
-                settings = LaserSettings(self.settings)
-                try:
-                    settings.raster_step = int(object_image.values["raster_step"])
-                except KeyError:
-                    settings.raster_step = 1
-                direction = settings.raster_direction
-                settings.crosshatch = False
-                if direction == 4:
-                    cross_settings = LaserSettings(settings)
-                    cross_settings.crosshatch = True
-                    c.append(RasterCut(object_image, settings))
-                    c.append(RasterCut(object_image, cross_settings))
-                else:
-                    c.append(RasterCut(object_image, settings))
+                for object_image in self.children:
+                    object_image = object_image.object
+                    settings = LaserSettings(self.settings)
+                    try:
+                        settings.raster_step = int(object_image.values["raster_step"])
+                    except KeyError:
+                        settings.raster_step = 1
+                    direction = settings.raster_direction
+                    settings.crosshatch = False
+                    if direction == 4:
+                        cross_settings = LaserSettings(settings)
+                        cross_settings.crosshatch = True
+                        c.append(RasterCut(object_image, settings))
+                        c.append(RasterCut(object_image, cross_settings))
+                    else:
+                        c.append(RasterCut(object_image, settings))
+
+        if settings.passes_custom:
+            c *= settings.passes
         if len(c) == 0:
             return None
         return c

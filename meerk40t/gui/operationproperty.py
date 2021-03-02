@@ -179,6 +179,11 @@ class OperationProperty(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_shift_enabled)
+        self.Bind(
+            wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes
+        )
+        self.Bind(wx.EVT_TEXT, self.on_text_passes, self.text_passes)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_passes, self.text_passes)
         self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
         self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -331,8 +336,6 @@ class OperationProperty(wx.Frame, Module):
         self.slider_right.Enable(False)
         self.slider_left.Enable(False)
         self.slider_bottom.Enable(False)
-        self.check_passes.Enable(False)
-        self.text_passes.Enable(False)
         self.button_add_layer.Show(False)
         self.button_remove_layer.Show(False)
         self.listbox_layer.Show(False)
@@ -583,6 +586,9 @@ class OperationProperty(wx.Frame, Module):
     def on_combo_operation(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
+
+        self.text_dot_length.Enable(self.check_dot_length_custom.GetValue())
+        self.text_passes.Enable(self.check_passes.GetValue())
         select = self.combo_type.GetSelection()
         if select == 0:
             self.operation.operation = "Engrave"
@@ -732,7 +738,10 @@ class OperationProperty(wx.Frame, Module):
         self.context.signal("element_property_update", self.operation)
 
     def on_text_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.settings.dot_length = int(self.text_dot_length.GetValue())
+        try:
+            self.operation.settings.dot_length = int(self.text_dot_length.GetValue())
+        except ValueError:
+            return
         self.context.signal("element_property_update", self.operation)
 
     def on_check_group_pulses(
