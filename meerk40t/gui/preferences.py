@@ -137,6 +137,8 @@ class Preferences(wx.Frame, Module):
         self.context.setting(bool, "home_bottom", False)
         self.context.setting(int, "home_adjust_x", 0)
         self.context.setting(int, "home_adjust_y", 0)
+        self.context.setting(int, "current_x", 0)
+        self.context.setting(int, "current_y", 0)
 
         self.context.setting(bool, "mock", False)
         self.context.setting(bool, "autolock", True)
