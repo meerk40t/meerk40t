@@ -549,7 +549,6 @@ class LaserOperation(Node):
             if self.settings.power is None:
                 self.settings.power = 1000.0
 
-
     def __repr__(self):
         return "LaserOperation('%s', %s)" % (self.type, str(self.operation))
 
@@ -1543,7 +1542,11 @@ class Elemental(Modifier):
             command, channel, _, data=None, dx=None, dy=None, args=tuple(), **kwargs
         ):
             destination = self._clipboard_default
-            pasted = [copy(e) for e in self._clipboard[destination]]
+            try:
+                pasted = [copy(e) for e in self._clipboard[destination]]
+            except KeyError:
+                channel(_("Error: Clipboard Empty"))
+                return
             if dx is not None or dy is not None:
                 if dx is None:
                     dx = 0
