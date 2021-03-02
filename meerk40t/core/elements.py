@@ -125,8 +125,8 @@ class Node:
                 drop_node.add(drag_node.object, type="opnode", pos=0)
                 return True
             elif drop_node.type == "opnode":
-                drop_index = drop_node.parent.object.index(drop_node.object)
-                drop_node.add(drag_node.object, type="opnode", pos=drop_index)
+                drop_index = drop_node.parent.children.index(drop_node)
+                drop_node.parent.add(drag_node.object, type="opnode", pos=drop_index)
                 return True
         elif drag_node.type == "opnode":
             if drop_node.type == "op":
