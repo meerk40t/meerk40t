@@ -310,8 +310,8 @@ class MeerK40t(wx.Frame, Module):
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out"), "")
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out") + "\tCtrl--", "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In") + "\tCtrl-+", "")
         wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
