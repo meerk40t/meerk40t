@@ -492,15 +492,16 @@ class RasterWizard(wx.Frame, Module):
     def on_buttons_operations(self, event):  # wxGlade: RasterWizard.<event_handler>
         if self.wizard_thread is not None:
             return
-        self.svg_image.image = self.pil_image
-        self.svg_image.values["raster_step"] = self.step_image
-        self.svg_image.transform = self.matrix_image
-        self.svg_image.image_width, self.svg_image.image_height = self.pil_image.size
-        self.svg_image.lock = True
-        try:
-            self.svg_image.node.altered()
-        except AttributeError:
-            pass
+        if self.svg_image is not None:
+            self.svg_image.image = self.pil_image
+            self.svg_image.values["raster_step"] = self.step_image
+            self.svg_image.transform = self.matrix_image
+            self.svg_image.image_width, self.svg_image.image_height = self.pil_image.size
+            self.svg_image.lock = True
+            try:
+                self.svg_image.node.altered()
+            except AttributeError:
+                pass
         self.Close()
 
 
