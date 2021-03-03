@@ -310,8 +310,8 @@ class MeerK40t(wx.Frame, Module):
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out") + "\tCtrl--", "")
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In") + "\tCtrl-+", "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out\tCtrl--"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In\tCtrl-+"), "")
         wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
@@ -3111,7 +3111,10 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
-        self.InitLocale()
+        try:
+            self.InitLocale()
+        except AttributeError:
+            pass  # 4.1
 
     def on_app_close(self, event):
         try:
