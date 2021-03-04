@@ -2435,6 +2435,11 @@ class ShadowTree:
         self.do_not_select = False
 
     def node_removed(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
+        if self.wxtree.ItemHasChildren(item):
+            raise ValueError("Trying to delete parent before child")
         self.wxtree.Delete(node.item)
         for i in self.wxtree.GetSelections():
             self.wxtree.SelectItem(i, False)

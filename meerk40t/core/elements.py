@@ -3460,7 +3460,8 @@ class Elemental(Modifier):
         return items
 
     def clear_operations(self):
-        for op in list(self.ops()):
+        operations = self._tree.get(type="branch ops")
+        for op in reversed(list(self.flat(operations, ("op", "opnode")))):
             if op is not None:
                 op.remove_node()
 
