@@ -2152,7 +2152,7 @@ class Elemental(Modifier):
                 channel(_("----------"))
                 return
             if data is None:
-                data = list(self.flat_cascade())
+                data = list(self.elems(emphasized=True))
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
@@ -2712,6 +2712,12 @@ class Elemental(Modifier):
             node.remove_node()
             self.remove_orphaned_opnodes()
             self.set_emphasis(None)
+
+        @self.tree_operation(
+            _("NUKE: {name}"), node_type="*", help=""
+        )
+        def nuke_node(node, **kwargs):
+            node.remove_node()
 
         @self.tree_operation(
             _("Remove: {name}"), node_type="opnode", help=""
@@ -3459,7 +3465,7 @@ class Elemental(Modifier):
                 op.remove_node()
 
     def clear_elements(self):
-        for e in list(self.elems_nodes()):
+        for e in reversed(list(self.elems_nodes())):
             if e is not None:
                 e.remove_node()
 
