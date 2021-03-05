@@ -103,6 +103,19 @@ class JobPreview(wx.Frame, Module):
             self.on_check_interrupt_after,
             id=self.preview_menu.menu_autointerrupt.GetId(),
         )
+
+        self.preview_menu.menu_autounlock = wxglade_tmp_menu_sub.Append(
+            wx.ID_ANY,
+            "Unlock",
+            "Automatically unlock the rail after all jobs",
+            wx.ITEM_CHECK,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.on_check_unlock_after,
+            id=self.preview_menu.menu_autounlock.GetId(),
+        )
+
         wxglade_tmp_menu.Append(wx.ID_ANY, "After", wxglade_tmp_menu_sub, "")
         self.preview_menu.Append(wxglade_tmp_menu, "Automatic")
         wxglade_tmp_menu = wx.Menu()
@@ -355,6 +368,9 @@ class JobPreview(wx.Frame, Module):
 
     def on_check_interrupt_after(self, event):  # wxGlade: Preview.<event_handler>
         self.context.autointerrupt = self.preview_menu.menu_autointerrupt.IsChecked()
+
+    def on_check_unlock_after(self, event):  # wxGlade: Preview.<event_handler>
+        self.context.postunlock = self.preview_menu.menu_autounlock.IsChecked()
 
     def on_check_reduce_travel(self, event):  # wxGlade: Preview.<event_handler>
         self.context.reduce_travel = self.check_reduce_travel_time.IsChecked()
