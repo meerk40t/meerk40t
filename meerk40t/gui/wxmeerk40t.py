@@ -3256,7 +3256,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :return:
     """
     error_log = "MeerK40t crash log. Version: %s on %s\n" % (
-        "0.7.0 Buggy-Beta-8",
+        "0.7.0 Buggy-Beta-9",
         sys.platform,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
