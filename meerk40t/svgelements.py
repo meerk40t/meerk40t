@@ -7547,18 +7547,21 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
         )  # Dataurl requires this be processed first.
 
         if self.url is not None:
-            if self.url.startswith("data:image/"):
-                # Data URL
-                from base64 import b64decode
+            try:
+                if self.url.startswith("data:image/"):
+                    # Data URL
+                    from base64 import b64decode
 
-                if self.url.startswith("data:image/png;base64,"):
-                    self.data = b64decode(self.url[22:])
-                elif self.url.startswith("data:image/jpg;base64,"):
-                    self.data = b64decode(self.url[22:])
-                elif self.url.startswith("data:image/jpeg;base64,"):
-                    self.data = b64decode(self.url[23:])
-                elif self.url.startswith("data:image/svg+xml;base64,"):
-                    self.data = b64decode(self.url[26:])
+                    if self.url.startswith("data:image/png;base64,"):
+                        self.data = b64decode(self.url[22:])
+                    elif self.url.startswith("data:image/jpg;base64,"):
+                        self.data = b64decode(self.url[22:])
+                    elif self.url.startswith("data:image/jpeg;base64,"):
+                        self.data = b64decode(self.url[23:])
+                    elif self.url.startswith("data:image/svg+xml;base64,"):
+                        self.data = b64decode(self.url[26:])
+            except AttributeError:
+                pass
 
     def property_by_object(self, s):
         SVGElement.property_by_object(self, s)

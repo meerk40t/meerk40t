@@ -3723,7 +3723,7 @@ class Elemental(Modifier):
         for loader_name in kernel.match("load"):
             loader = kernel.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
-                if pathname.lower().endswith(extensions):
+                if str(pathname).lower().endswith(extensions):
                     try:
                         results = loader.load(self.context, self, pathname, **kwargs)
                     except FileNotFoundError:

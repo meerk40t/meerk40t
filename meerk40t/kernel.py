@@ -2257,8 +2257,10 @@ class Kernel:
             if not os.path.isfile(remainder):
                 channel(_("Not a file: %s" % remainder))
                 return
-
-            self.get_context("/").load(new_file)
+            from pathlib import PosixPath
+            path = PosixPath(new_file)
+            # path = WindowsPath(new_file)
+            self.get_context("/").load(path)
             channel(_("loading..."))
             return "file", new_file
 
