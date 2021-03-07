@@ -1430,7 +1430,10 @@ class Color(object):
             return Color.rgb_to_int(255, 255, 0)
         if v == "yellowgreen":
             return Color.rgb_to_int(154, 205, 50)
-        return Color.rgb_to_int(0, 0, 0)
+        try:
+            return int(v)
+        except ValueError:
+            return Color.rgb_to_int(0, 0, 0)
 
     @staticmethod
     def parse_color_hex(hex_string):
