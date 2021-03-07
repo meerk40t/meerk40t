@@ -2714,12 +2714,6 @@ class Elemental(Modifier):
             self.set_emphasis(None)
 
         @self.tree_operation(
-            _("NUKE: {name}"), node_type="*", help=""
-        )
-        def nuke_node(node, **kwargs):
-            node.remove_node()
-
-        @self.tree_operation(
             _("Remove: {name}"), node_type="opnode", help=""
         )
         def remove_types(node, **kwargs):
