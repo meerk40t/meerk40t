@@ -2040,6 +2040,9 @@ class Kernel:
 
         @self.console_command("thread", help="show threads")
         def thread(command, channel, _, args=tuple(), **kwargs):
+            """
+            Display the currently registered threads within the Kernel.
+            """
             channel(_("----------"))
             channel(_("Registered Threads:"))
             for i, thread_name in enumerate(list(self.threads)):
