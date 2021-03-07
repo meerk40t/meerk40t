@@ -84,6 +84,9 @@ class SVGWriter:
             subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
 
+            if isinstance(element, Shape) and not isinstance(element, Path):
+                element = Path(element)
+
             if isinstance(element, Path):
                 element = abs(element)
                 subelement = SubElement(root, SVG_TAG_PATH)
@@ -128,6 +131,7 @@ class SVGWriter:
                         "y",
                     ):
                         subelement.set(key, str(val))
+
             else:  # Image.
                 subelement = SubElement(root, SVG_TAG_IMAGE)
                 stream = BytesIO()
@@ -177,6 +181,7 @@ class SVGWriter:
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
                 except AttributeError:
                     pass
+
             fill = element.fill
             if fill is not None:
                 fill_opacity = fill.opacity
@@ -188,8 +193,11 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_FILL, fill)
                 if fill_opacity != 1.0 and fill_opacity is not None:
                     subelement.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
-                if element.id is not None:
-                    subelement.set(SVG_ATTR_ID, str(element.id))
+            else:
+                subelement.set(SVG_ATTR_FILL, SVG_VALUE_NONE)
+
+            if element.id is not None:
+                subelement.set(SVG_ATTR_ID, str(element.id))
         SVGWriter._pretty_print(root)
         tree = ElementTree(root)
         tree.write(f)
