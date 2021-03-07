@@ -2234,7 +2234,7 @@ class Kernel:
         @self.console_command(
             "load", help="load file", input_type=None, output_type="file"
         )
-        def load(command, channel, _, filename=None, args=tuple(), **kwargs):
+        def load(command, channel, _, filename=None, args=tuple(), remainder=None, **kwargs):
             import os
             new_file = os.path.join(self._current_directory, filename)
             if not os.path.exists(new_file):
@@ -2244,6 +2244,24 @@ class Kernel:
             self.get_context("/").load(new_file)
             channel(_("loading..."))
             return "file", new_file
+
+        @self.console_command(
+            "read", help="read file", input_type=None
+        )
+        def load(command, channel, _, args=tuple(), remainder=None, **kwargs):
+            import os
+            new_file = remainder
+            if not os.path.exists(remainder):
+                channel(_("No such file: %s" % remainder))
+                return
+            if not os.path.isfile(remainder):
+                channel(_("Not a file: %s" % remainder))
+                return
+
+            self.get_context("/").load(new_file)
+            channel(_("loading..."))
+            return "file", new_file
+
 
     def console(self, data):
         """
