@@ -6184,8 +6184,6 @@ class Rect(Shape):
 
         Skewed and Rotated rectangles cannot be reified.
         """
-        GraphicObject.reify(self)
-        Transformable.reify(self)
         scale_x = self.transform.value_scale_x()
         scale_y = self.transform.value_scale_y()
         translate_x = self.transform.value_trans_x()
@@ -6196,6 +6194,8 @@ class Rect(Shape):
             and scale_x != 0
             and scale_y != 0
         ):
+            GraphicObject.reify(self)
+            Transformable.reify(self)
             self.x *= scale_x
             self.y *= scale_y
             self.x += translate_x
@@ -6384,8 +6384,6 @@ class _RoundShape(Shape):
 
         Skewed and Rotated roundshapes cannot be reified.
         """
-        GraphicObject.reify(self)
-        Transformable.reify(self)
         scale_x = abs(self.transform.value_scale_x())
         scale_y = abs(self.transform.value_scale_y())
         translate_x = self.transform.value_trans_x()
@@ -6396,6 +6394,8 @@ class _RoundShape(Shape):
             and scale_x != 0
             and scale_y != 0
         ):
+            GraphicObject.reify(self)
+            Transformable.reify(self)
             self.cx *= scale_x
             self.cy *= scale_y
             self.cx += translate_x
