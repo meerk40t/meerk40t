@@ -2257,12 +2257,19 @@ class Kernel:
             if not os.path.isfile(remainder):
                 channel(_("Not a file: %s" % remainder))
                 return
-            from pathlib import PosixPath
+            from pathlib import PosixPath, WindowsPath
             path = PosixPath(new_file)
             # path = WindowsPath(new_file)
-            self.get_context("/").load(path)
-            channel(_("loading..."))
-            return "file", new_file
+            with path.open() as f:
+                while True:
+                    line = f.readline()
+                    channel(line)
+                    if not len(line):
+                        break
+            # self.get_context("/").load(path)
+            # channel(_("loading..."))
+            # for
+            # return "file", new_file
 
 
     def console(self, data):
