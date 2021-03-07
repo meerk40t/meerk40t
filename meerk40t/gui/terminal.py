@@ -131,4 +131,4 @@ class Terminal(wx.Frame, Module):
         self.text_entry.SetValue("")
         self.command_log.append(command)
         self.command_position = 0
-        event.Skip()
+        event.Skip(False)

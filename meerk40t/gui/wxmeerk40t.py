@@ -3215,7 +3215,7 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
                 channel(_("----------"))
                 return
-            if window is None:
+            if window is None or subcommand == 'list':
                 channel(_("----------"))
                 channel(_("Windows Registered:"))
                 for i, name in enumerate(context.match("window")):
@@ -3232,8 +3232,8 @@ class wxMeerK40t(wx.App, Module):
                 try:
                     use_context.open("window/%s" % window, parent, *args)
                     channel(_("Window Opened."))
-                except KeyError:
-                    channel(_("No such window as %s" % args[1]))
+                except (KeyError, ValueError):
+                    channel(_("No such window as %s" % window))
                 except IndexError:
                     raise SyntaxError
             else:
