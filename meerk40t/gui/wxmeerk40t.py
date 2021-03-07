@@ -459,10 +459,8 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self._rotary_view = False
 
-        self._close_window_id = wx.NewId()
-        self._accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('W'), self._close_window_id)])
-
         self.CenterOnScreen()
+        self.accelerator_table(self)
 
     @property
     def is_dark(self):
@@ -1335,7 +1333,6 @@ class MeerK40t(wx.Frame, Module, Job):
             # self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-
     def accelerator_table(self, window):
         def close_window(e=None):
             try:
@@ -1343,8 +1340,10 @@ class MeerK40t(wx.Frame, Module, Job):
             except RuntimeError:
                 pass
 
-        self.Bind(wx.EVT_MENU, close_window, id=self._close_window_id)
-        window.SetAcceleratorTable(self._accel_tbl)
+        keyid = wx.NewId()
+        accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('W'), keyid)])
+        window.Bind(wx.EVT_MENU, close_window, id=keyid)
+        window.SetAcceleratorTable(accel_tbl)
 
     def on_active_change(self, old_active, context_active):
         if old_active is not None:
