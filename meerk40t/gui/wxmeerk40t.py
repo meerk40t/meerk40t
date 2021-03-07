@@ -2544,21 +2544,36 @@ class ShadowTree:
         self.node_register(node, **kwargs)
 
     def node_changed(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
         self.update_name(node)
 
     def emphasized(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
         self.update_name(node)
         self.set_enhancements(node)
 
     def targeted(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
         self.update_name(node)
         self.set_enhancements(node)
 
     def highlighted(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
         self.update_name(node)
         self.set_enhancements(node)
 
     def modified(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
         self.update_name(node)
         try:
             c = node.color
@@ -2567,6 +2582,9 @@ class ShadowTree:
             pass
 
     def altered(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
         self.update_name(node)
         try:
             c = node.color
@@ -2577,10 +2595,14 @@ class ShadowTree:
 
     def expand(self, node):
         item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
         self.wxtree.ExpandAllChildren(item)
 
     def collapse(self, node):
         item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
         self.wxtree.CollapseAllChildren(item)
 
     def reorder(self, node):
