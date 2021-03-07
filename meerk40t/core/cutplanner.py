@@ -196,6 +196,18 @@ class Planner(Modifier):
                     list(elements.elems(emphasized=True)), plan, plan.append
                 )
                 return
+            elif subcommand == "copy-selected":
+                for c in elements.ops(emphasized=True):
+                    if not c.output:
+                        continue
+                    try:
+                        if len(c) == 0:
+                            continue
+                    except TypeError:
+                        pass
+                    plan.append(copy(c))
+                channel(_("Copied Operations."))
+                self.context.signal("plan", self._default_plan, 1)
             elif subcommand == "copy":
                 for c in elements.ops():
                     if not c.output:

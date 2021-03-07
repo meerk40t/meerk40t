@@ -2676,7 +2676,7 @@ class Elemental(Modifier):
             # self.context.open("window/JobPreview", self.gui, "0", selected=True)
             node.emphasized = True
             self.context.console("plan0 copy-selected\n")
-            self.context.console("window open JobPreview 0\n")
+            self.context.console("window -p / open JobPreview 0\n")
 
         @self.tree_operation(_("Clear All"), node_type="branch ops", help="")
         def clear_all(node, **kwargs):
