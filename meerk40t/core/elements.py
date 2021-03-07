@@ -3076,7 +3076,7 @@ class Elemental(Modifier):
             element.transform.post_translate(tx, ty)
             element.node.modified()
             self.context.signal("element_property_update", node.object)
-            self.element_root.gui.request_refresh()
+            self.context.gui.request_refresh()
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
