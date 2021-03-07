@@ -1,25 +1,25 @@
-
 msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-02 13:27-0800\n"
-"PO-Revision-Date: 2020-08-06 07:18-0700\n"
+"POT-Creation-Date: 2021-03-07 06:05-0800\n"
+"PO-Revision-Date: 2021-03-07 06:23-0800\n"
 "Last-Translator: tatarize\n"
 "Language: zh\n"
 "Language-Team: Chinese\n"
-"Plural-Forms: nplurals=1; plural=0\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
+"X-Generator: Poedit 2.4.2\n"
 
 #: About.py:38
 #, python-format
 msgid "About %s v%s"
 msgstr "关于  %s v  %s"
 
-#: About.py:59 wxMeerK40t.py:366
+#: About.py:59 wxMeerK40t.py:352
 msgid "About"
 msgstr "关于"
 
@@ -137,8 +137,8 @@ msgstr "我们应该进行多远的测试？"
 
 #: Alignment.py:105 Alignment.py:120
 msgid ""
-"Heavily misaligned mirrors will need more power to see the line. Once you"
-" can see the line. Turn this down."
+"Heavily misaligned mirrors will need more power to see the line. Once you "
+"can see the line. Turn this down."
 msgstr "严重未对准的后视镜将需要更多功率才能看到线。一旦看到线。拒绝这个。"
 
 #: Alignment.py:107
@@ -175,8 +175,9 @@ msgid ""
 "The overlap point should be nearer to the close point. Aim for that. "
 "Repeat.\n"
 msgstr ""
-"您没有居中。偏移量随着距离的增加而增加。无论距离多远，都使光束击中同一点。（通常不是中心）当偏移量为零时，所有光束点都应恰好在1个点处重叠。重叠点应更靠近闭合点。为此。."
-"\n"
+"您没有居中。偏移量随着距离的增加而增加。无论距离多远，都使光束击中同一点。"
+"（通常不是中心）当偏移量为零时，所有光束点都应恰好在1个点处重叠。重叠点应更"
+"靠近闭合点。为此。.\n"
 
 #: Alignment.py:152
 msgid "Testing width in mm"
@@ -447,7 +448,7 @@ msgstr "设置相机3"
 msgid "Set Camera 4"
 msgstr "设置相机4"
 
-#: CameraInteface.py:56 wxMeerK40t.py:202 wxMeerK40t.py:345
+#: CameraInteface.py:56 wxMeerK40t.py:188 wxMeerK40t.py:331
 msgid "Camera"
 msgstr "相机"
 
@@ -509,8 +510,8 @@ msgid ""
 "If using a precompiled binary, this was requirement was not included.\n"
 "If using pure Python, add it with: pip install opencv-python-headless"
 msgstr ""
-"如果使用预编译的二进制文件，则不包含此要求。如果使用纯Python，请添加以下内容：pip install opencv-python-"
-"headless"
+"如果使用预编译的二进制文件，则不包含此要求。如果使用纯Python，请添加以下内"
+"容：pip install opencv-python-headless"
 
 #: CameraInteface.py:359
 msgid "Interface Requires OpenCV."
@@ -549,7 +550,7 @@ msgstr "限制写缓冲区"
 msgid "Kernel Force Event"
 msgstr "核心力量事件"
 
-#: Controller.py:134 wxMeerK40t.py:199 wxMeerK40t.py:348
+#: Controller.py:134 wxMeerK40t.py:185 wxMeerK40t.py:334
 msgid "Controller"
 msgstr "控制者"
 
@@ -819,7 +820,7 @@ msgstr "宽度："
 msgid "Height:"
 msgstr "高度："
 
-#: JobInfo.py:22 JobInfo.py:461 wxMeerK40t.py:190
+#: JobInfo.py:22 JobInfo.py:461 wxMeerK40t.py:176
 msgid "Start Job"
 msgstr "开始工作"
 
@@ -851,7 +852,7 @@ msgstr "哔哔声"
 msgid "Automatic"
 msgstr "自动"
 
-#: JobInfo.py:48 wxMeerK40t.py:182
+#: JobInfo.py:48 wxMeerK40t.py:168
 msgid "Home"
 msgstr "家"
 
@@ -887,7 +888,7 @@ msgstr ""
 msgid "Jog Finish"
 msgstr ""
 
-#: JobInfo.py:70 JobSpooler.py:81 Settings.py:115 wxMeerK40t.py:340
+#: JobInfo.py:70 JobSpooler.py:81 Settings.py:115 wxMeerK40t.py:326
 msgid "Settings"
 msgstr "设定值"
 
@@ -895,7 +896,7 @@ msgstr "设定值"
 msgid "Step and Repeat"
 msgstr ""
 
-#: JobInfo.py:75 wxMeerK40t.py:354
+#: JobInfo.py:75 wxMeerK40t.py:340
 msgid "Tools"
 msgstr ""
 
@@ -1000,8 +1001,8 @@ msgstr "时间估算"
 msgid "Remove %s"
 msgstr "删除%s"
 
-#: JobSpooler.py:105 wxMeerK40t.py:2439 wxMeerK40t.py:2442 wxMeerK40t.py:2445
-#: wxMeerK40t.py:2448
+#: JobSpooler.py:105 wxMeerK40t.py:2426 wxMeerK40t.py:2429 wxMeerK40t.py:2432
+#: wxMeerK40t.py:2435
 msgid "Clear All"
 msgstr "全部清除"
 
@@ -1132,7 +1133,7 @@ msgstr "中止"
 msgid "Finished"
 msgstr "已完成"
 
-#: Kernel.py:2230 wxMeerK40t.py:191
+#: Kernel.py:2230 wxMeerK40t.py:177
 msgid "Pause"
 msgstr "暂停"
 
@@ -1156,7 +1157,7 @@ msgstr "闲"
 msgid "Add Hotkey"
 msgstr "添加热键"
 
-#: Keymap.py:66 wxMeerK40t.py:342
+#: Keymap.py:66 wxMeerK40t.py:328
 msgid "Keymap Settings"
 msgstr "键盘映射设置"
 
@@ -1196,7 +1197,7 @@ msgstr "缺少命令"
 msgid "No Command for binding."
 msgstr "没有用于绑定的命令。"
 
-#: Navigation.py:144 wxMeerK40t.py:196 wxMeerK40t.py:347
+#: Navigation.py:144 wxMeerK40t.py:182 wxMeerK40t.py:333
 msgid "Navigation"
 msgstr "导航"
 
@@ -1422,7 +1423,7 @@ msgstr "切"
 msgid "Raster"
 msgstr "栅格"
 
-#: OperationProperty.py:27 wxMeerK40t.py:2603
+#: OperationProperty.py:27 wxMeerK40t.py:2590
 msgid "Image"
 msgstr "图片"
 
@@ -1482,7 +1483,7 @@ msgstr "加速"
 msgid "Dot Length (mils)"
 msgstr "点长（密耳）"
 
-#: OperationProperty.py:56 OperationProperty.py:267 wxMeerK40t.py:2500
+#: OperationProperty.py:56 OperationProperty.py:267 wxMeerK40t.py:2487
 msgid "Passes"
 msgstr "Passes"
 
@@ -1548,7 +1549,8 @@ msgstr "启用修改对角线比例的功能。"
 msgid ""
 "Diagonal ratio is the ratio of additional time needed to perform a "
 "diagonal step rather than an orthogonal step. (0.261 default)"
-msgstr "对角比率是执行对角步骤而不是正交步骤所需的额外时间的比率。（默认为0.261）"
+msgstr ""
+"对角比率是执行对角步骤而不是正交步骤所需的额外时间的比率。（默认为0.261）"
 
 #: OperationProperty.py:236
 msgid "Enables the ability to modify the acceleration factor."
@@ -1706,7 +1708,7 @@ msgstr "Home after job complete"
 msgid "Beep after job complete"
 msgstr "Beep after job complete"
 
-#: Preferences.py:158 wxMeerK40t.py:200 wxMeerK40t.py:339
+#: Preferences.py:158 wxMeerK40t.py:186 wxMeerK40t.py:325
 msgid "Preferences"
 msgstr "Preferences"
 
@@ -1736,11 +1738,11 @@ msgstr "Indicates the device Home is on the bottom"
 
 #: Preferences.py:167
 msgid ""
-"DEBUG. Without a K40 connected continue to process things as if there was"
-" one."
+"DEBUG. Without a K40 connected continue to process things as if there was "
+"one."
 msgstr ""
-"DEBUG. Without a K40 connected continue to process things as if there was"
-" one."
+"DEBUG. Without a K40 connected continue to process things as if there was "
+"one."
 
 #: Preferences.py:168 Preferences.py:169 Preferences.py:170
 msgid "-1 match anything. 0-5 match exactly that value."
@@ -1959,7 +1961,7 @@ msgstr ""
 msgid "Resample"
 msgstr ""
 
-#: RasterWizard.py:692 wxMeerK40t.py:2509 wxMeerK40t.py:2570
+#: RasterWizard.py:692 wxMeerK40t.py:2496 wxMeerK40t.py:2557
 msgid "Step"
 msgstr "Step"
 
@@ -1991,7 +1993,7 @@ msgstr ""
 msgid "Gamma Factor"
 msgstr ""
 
-#: RasterWizard.py:889 wxMeerK40t.py:333
+#: RasterWizard.py:889 wxMeerK40t.py:319
 msgid "Invert"
 msgstr "倒置"
 
@@ -2216,7 +2218,7 @@ msgstr ""
 msgid "Sample"
 msgstr ""
 
-#: RotarySettings.py:29 wxMeerK40t.py:206
+#: RotarySettings.py:29 wxMeerK40t.py:192
 msgid "Rotary"
 msgstr "Rotary"
 
@@ -2360,7 +2362,7 @@ msgstr ""
 msgid "Language"
 msgstr "Language"
 
-#: Terminal.py:84 wxMeerK40t.py:205 wxMeerK40t.py:346
+#: Terminal.py:84 wxMeerK40t.py:191 wxMeerK40t.py:332
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -2368,239 +2370,239 @@ msgstr "Terminal"
 msgid "UsbConnect"
 msgstr "UsbConnect"
 
-#: wxMeerK40t.py:184
+#: wxMeerK40t.py:170
 msgid "Main"
 msgstr ""
 
-#: wxMeerK40t.py:188 wxMeerK40t.py:1461
+#: wxMeerK40t.py:174 wxMeerK40t.py:1448
 msgid "Open"
 msgstr "Open"
 
-#: wxMeerK40t.py:189
+#: wxMeerK40t.py:175
 msgid "Save"
 msgstr "Save"
 
-#: wxMeerK40t.py:193
+#: wxMeerK40t.py:179
 msgid "Windows"
 msgstr "Windows"
 
-#: wxMeerK40t.py:197
+#: wxMeerK40t.py:183
 msgid "Usb"
 msgstr "Usb"
 
-#: wxMeerK40t.py:198
+#: wxMeerK40t.py:184
 msgid "Spooler"
 msgstr "Spooler"
 
-#: wxMeerK40t.py:201
+#: wxMeerK40t.py:187
 msgid "Devices"
 msgstr "Devices"
 
-#: wxMeerK40t.py:203
+#: wxMeerK40t.py:189
 msgid "Keymap"
 msgstr ""
 
-#: wxMeerK40t.py:204 wxMeerK40t.py:349
+#: wxMeerK40t.py:190 wxMeerK40t.py:335
 msgid "Notes"
 msgstr ""
 
-#: wxMeerK40t.py:207 wxMeerK40t.py:2611
+#: wxMeerK40t.py:193 wxMeerK40t.py:2598
 msgid "RasterWizard"
 msgstr ""
 
-#: wxMeerK40t.py:241 wxMeerK40t.py:242
+#: wxMeerK40t.py:227 wxMeerK40t.py:228
 msgid "Position"
 msgstr ""
 
-#: wxMeerK40t.py:299
+#: wxMeerK40t.py:285
 msgid "New\tCtrl-N"
 msgstr ""
 
-#: wxMeerK40t.py:300
+#: wxMeerK40t.py:286
 msgid "Open Project\tCtrl-O"
 msgstr ""
 
-#: wxMeerK40t.py:302
+#: wxMeerK40t.py:288
 msgid "Recent"
 msgstr ""
 
-#: wxMeerK40t.py:303
+#: wxMeerK40t.py:289
 msgid "Import File"
 msgstr "Import File"
 
-#: wxMeerK40t.py:305
-msgid "Save\tAlt-S"
+#: wxMeerK40t.py:291
+msgid "Save\tCtrl-S"
 msgstr ""
 
-#: wxMeerK40t.py:306
-msgid "Save As\tAlt-Shift-S"
+#: wxMeerK40t.py:292
+msgid "Save As\tCtrl-Shift-S"
 msgstr ""
 
-#: wxMeerK40t.py:309
+#: wxMeerK40t.py:295
 msgid "Exit"
 msgstr "Exit"
 
-#: wxMeerK40t.py:310
+#: wxMeerK40t.py:296
 msgid "File"
 msgstr "File"
 
-#: wxMeerK40t.py:313
+#: wxMeerK40t.py:299
 msgid "Zoom Out\tCtrl--"
 msgstr ""
 
-#: wxMeerK40t.py:314
+#: wxMeerK40t.py:300
 msgid "Zoom In\tCtrl-+"
 msgstr ""
 
-#: wxMeerK40t.py:315
+#: wxMeerK40t.py:301
 msgid "Zoom To Size"
 msgstr "Zoom To Size"
 
-#: wxMeerK40t.py:317
+#: wxMeerK40t.py:303
 msgid "Hide Grid"
 msgstr "Hide Grid"
 
-#: wxMeerK40t.py:318
+#: wxMeerK40t.py:304
 msgid "Hide Background"
 msgstr ""
 
-#: wxMeerK40t.py:319
+#: wxMeerK40t.py:305
 msgid "Hide Guides"
 msgstr "Hide Guides"
 
-#: wxMeerK40t.py:320
+#: wxMeerK40t.py:306
 msgid "Hide Paths"
 msgstr "Hide Paths"
 
-#: wxMeerK40t.py:321
+#: wxMeerK40t.py:307
 msgid "Hide Images"
 msgstr "Hide Images"
 
-#: wxMeerK40t.py:322
+#: wxMeerK40t.py:308
 msgid "Hide Text"
 msgstr "Hide Text"
 
-#: wxMeerK40t.py:323
+#: wxMeerK40t.py:309
 msgid "Hide Fills"
 msgstr "Hide Fills"
 
-#: wxMeerK40t.py:324
+#: wxMeerK40t.py:310
 msgid "Hide Strokes"
 msgstr "Hide Strokes"
 
-#: wxMeerK40t.py:325
+#: wxMeerK40t.py:311
 msgid "Hide Laserpath"
 msgstr "Hide Laserpath"
 
-#: wxMeerK40t.py:326
+#: wxMeerK40t.py:312
 msgid "Hide Reticle"
 msgstr "Hide Reticle"
 
-#: wxMeerK40t.py:327
+#: wxMeerK40t.py:313
 msgid "Hide Selection"
 msgstr "Hide Selection"
 
-#: wxMeerK40t.py:328
+#: wxMeerK40t.py:314
 msgid "Hide Icons"
 msgstr ""
 
-#: wxMeerK40t.py:329
+#: wxMeerK40t.py:315
 msgid "Hide Tree"
 msgstr ""
 
-#: wxMeerK40t.py:330
+#: wxMeerK40t.py:316
 msgid "Do Not Cache Image"
 msgstr "不缓存图像"
 
-#: wxMeerK40t.py:331
+#: wxMeerK40t.py:317
 msgid "Do Not Refresh"
 msgstr "Do Not Refresh"
 
-#: wxMeerK40t.py:332
+#: wxMeerK40t.py:318
 msgid "Do Not Animate"
 msgstr "Do Not Animate"
 
-#: wxMeerK40t.py:334
+#: wxMeerK40t.py:320
 msgid "Flip XY"
 msgstr "XY翻转"
 
-#: wxMeerK40t.py:336
+#: wxMeerK40t.py:322
 msgid "View"
 msgstr "View"
 
-#: wxMeerK40t.py:341
+#: wxMeerK40t.py:327
 msgid "Rotary Settings"
 msgstr "Rotary Settings"
 
-#: wxMeerK40t.py:343
+#: wxMeerK40t.py:329
 msgid "Device Manager"
 msgstr "Device Manager"
 
-#: wxMeerK40t.py:344
+#: wxMeerK40t.py:330
 msgid "Alignment Ally"
 msgstr "Alignment Ally"
 
-#: wxMeerK40t.py:350
+#: wxMeerK40t.py:336
 msgid "USB"
 msgstr "USB"
 
-#: wxMeerK40t.py:351
+#: wxMeerK40t.py:337
 msgid "Job Spooler"
 msgstr "Job Spooler"
 
-#: wxMeerK40t.py:352 wxMeerK40t.py:2436
+#: wxMeerK40t.py:338 wxMeerK40t.py:2423
 msgid "Execute Job"
 msgstr "Execute Job"
 
-#: wxMeerK40t.py:364 wxMeerK40t.py:367
+#: wxMeerK40t.py:350 wxMeerK40t.py:353
 msgid "Help"
 msgstr "Help"
 
-#: wxMeerK40t.py:365
+#: wxMeerK40t.py:351
 msgid "Webpage"
 msgstr "Webpage"
 
-#: wxMeerK40t.py:588
+#: wxMeerK40t.py:573
 msgid "Languages"
 msgstr "Languages"
 
-#: wxMeerK40t.py:862
+#: wxMeerK40t.py:849
 msgid "All attempts to connect to USB have failed."
 msgstr "All attempts to connect to USB have failed."
 
-#: wxMeerK40t.py:863
+#: wxMeerK40t.py:850
 msgid "Usb Connection Problem."
 msgstr "Usb Connection Problem."
 
-#: wxMeerK40t.py:868
+#: wxMeerK40t.py:855
 #, python-format
 msgid "Usb: %s"
 msgstr "Usb: %s"
 
-#: wxMeerK40t.py:875
+#: wxMeerK40t.py:862
 #, python-format
 msgid "Controller: %s"
 msgstr "Controller: %s"
 
-#: wxMeerK40t.py:879
+#: wxMeerK40t.py:866
 #, python-format
 msgid "Spooler: %s"
 msgstr "Spooler: %s"
 
-#: wxMeerK40t.py:900
+#: wxMeerK40t.py:887
 #, python-format
 msgid "%s v%s %s"
 msgstr "%s v%s %s"
 
-#: wxMeerK40t.py:960
+#: wxMeerK40t.py:947
 msgid "Clear Recent"
 msgstr ""
 
-#: wxMeerK40t.py:991 wxMeerK40t.py:1675
+#: wxMeerK40t.py:978 wxMeerK40t.py:1662
 msgid "Loading File..."
 msgstr "正在载入档案..."
 
-#: wxMeerK40t.py:1029
+#: wxMeerK40t.py:1016
 #, python-format
 msgid ""
 "Some files were unrecognized:\n"
@@ -2609,27 +2611,27 @@ msgstr ""
 "Some files were unrecognized:\n"
 "%s"
 
-#: wxMeerK40t.py:1030
+#: wxMeerK40t.py:1017
 msgid "Error encountered"
 msgstr "Error encountered"
 
-#: wxMeerK40t.py:1538
+#: wxMeerK40t.py:1525
 msgid "Enter Forced Gear"
 msgstr "Enter Forced Gear"
 
-#: wxMeerK40t.py:1538
+#: wxMeerK40t.py:1525
 msgid "Gear Entry"
 msgstr "Gear Entry"
 
-#: wxMeerK40t.py:1550
+#: wxMeerK40t.py:1537
 msgid "Enter FPS Limit"
 msgstr "Enter FPS Limit"
 
-#: wxMeerK40t.py:1550
+#: wxMeerK40t.py:1537
 msgid "FPS Limit Entry"
 msgstr "FPS Limit Entry"
 
-#: wxMeerK40t.py:1562
+#: wxMeerK40t.py:1549
 msgid ""
 "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
 "translate, etc..."
@@ -2637,243 +2639,243 @@ msgstr ""
 "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
 "translate, etc..."
 
-#: wxMeerK40t.py:1564
+#: wxMeerK40t.py:1551
 msgid "Transform Entry"
 msgstr "Transform Entry"
 
-#: wxMeerK40t.py:1579
+#: wxMeerK40t.py:1566
 msgid "The entered command does nothing."
 msgstr "The entered command does nothing."
 
-#: wxMeerK40t.py:1580
+#: wxMeerK40t.py:1567
 msgid "Non-Useful Matrix."
 msgstr "Non-Useful Matrix."
 
-#: wxMeerK40t.py:1632
+#: wxMeerK40t.py:1619
 msgid ""
 "Material must be jigged at 0,0 either home or home offset.\n"
 "How wide is your material (give units: in, mm, cm, px, etc)?"
 msgstr ""
 
-#: wxMeerK40t.py:1634
+#: wxMeerK40t.py:1621
 msgid "Double Side Flip"
 msgstr ""
 
-#: wxMeerK40t.py:1653
+#: wxMeerK40t.py:1640
 msgid "Enter SVG Path Data"
 msgstr "Enter SVG Path Data"
 
-#: wxMeerK40t.py:1653
+#: wxMeerK40t.py:1640
 msgid "Path Entry"
 msgstr "Path Entry"
 
-#: wxMeerK40t.py:1668
+#: wxMeerK40t.py:1655
 msgid "Import EGV"
 msgstr ""
 
-#: wxMeerK40t.py:1683
+#: wxMeerK40t.py:1670
 msgid "Export EGV"
 msgstr ""
 
-#: wxMeerK40t.py:1689
+#: wxMeerK40t.py:1676
 msgid "Saving File..."
 msgstr ""
 
-#: wxMeerK40t.py:2096
+#: wxMeerK40t.py:2083
 msgid "Operations"
 msgstr "Operations"
 
-#: wxMeerK40t.py:2110
+#: wxMeerK40t.py:2097
 msgid "Elements"
 msgstr "Elements"
 
-#: wxMeerK40t.py:2114
+#: wxMeerK40t.py:2101
 msgid "Files"
 msgstr "Files"
 
-#: wxMeerK40t.py:2451
+#: wxMeerK40t.py:2438
 #, python-format
 msgid "Remove: %s"
 msgstr "Remove: %s"
 
-#: wxMeerK40t.py:2454
+#: wxMeerK40t.py:2441
 #, python-format
 msgid "Remove: %d objects"
 msgstr "Remove: %d objects"
 
-#: wxMeerK40t.py:2459 wxMeerK40t.py:2464 wxMeerK40t.py:2521
+#: wxMeerK40t.py:2446 wxMeerK40t.py:2451 wxMeerK40t.py:2508
 #, python-format
 msgid "Make %d copies."
 msgstr "Make %d copies."
 
-#: wxMeerK40t.py:2460
+#: wxMeerK40t.py:2447
 msgid "Clone Reference"
 msgstr ""
 
-#: wxMeerK40t.py:2465 wxMeerK40t.py:2522
+#: wxMeerK40t.py:2452 wxMeerK40t.py:2509
 msgid "Duplicate"
 msgstr "Duplicate"
 
-#: wxMeerK40t.py:2468
+#: wxMeerK40t.py:2455
 msgid "Reverse Layer Order"
 msgstr "Reverse Layer Order"
 
-#: wxMeerK40t.py:2473
+#: wxMeerK40t.py:2460
 msgid "Refresh Classification"
 msgstr "刷新分类"
 
-#: wxMeerK40t.py:2475
+#: wxMeerK40t.py:2462
 msgid "Set Other/Blue/Red Classify"
 msgstr "设置其他/蓝色/红色分类"
 
-#: wxMeerK40t.py:2477
+#: wxMeerK40t.py:2464
 msgid "Set Basic Classification"
 msgstr "设置基本分类"
 
-#: wxMeerK40t.py:2479
+#: wxMeerK40t.py:2466
 msgid "Add Operation"
 msgstr "添加操作"
 
-#: wxMeerK40t.py:2483
+#: wxMeerK40t.py:2470
 msgid "Reclassify Operations"
 msgstr "Reclassify Operations"
 
-#: wxMeerK40t.py:2489
+#: wxMeerK40t.py:2476
 #, python-format
 msgid "Convert %s"
 msgstr "Convert %s"
 
-#: wxMeerK40t.py:2491
+#: wxMeerK40t.py:2478
 msgid "Convert Operation"
 msgstr "Convert Operation"
 
-#: wxMeerK40t.py:2493
+#: wxMeerK40t.py:2480
 msgid "Duplicate Operation"
 msgstr "重复操作"
 
-#: wxMeerK40t.py:2496
+#: wxMeerK40t.py:2483
 msgid "Add 1 pass."
 msgstr "Add 1 pass."
 
-#: wxMeerK40t.py:2499
+#: wxMeerK40t.py:2486
 #, python-format
 msgid "Add %d passes."
 msgstr "Add %d passes."
 
-#: wxMeerK40t.py:2504 wxMeerK40t.py:2560
+#: wxMeerK40t.py:2491 wxMeerK40t.py:2547
 #, python-format
 msgid "Step %d"
 msgstr "Step %d"
 
-#: wxMeerK40t.py:2511
+#: wxMeerK40t.py:2498
 msgid "Make Raster Image"
 msgstr "Make Raster Image"
 
-#: wxMeerK40t.py:2516
+#: wxMeerK40t.py:2503
 #, python-format
 msgid "Reload %s"
 msgstr "Reload %s"
 
-#: wxMeerK40t.py:2526
+#: wxMeerK40t.py:2513
 msgid "Reset User Changes"
 msgstr "Reset User Changes"
 
-#: wxMeerK40t.py:2531
+#: wxMeerK40t.py:2518
 #, python-format
 msgid "Scale %.0f%%"
 msgstr "Scale %.0f%%"
 
-#: wxMeerK40t.py:2534
+#: wxMeerK40t.py:2521
 msgid "Scale"
 msgstr "Scale"
 
-#: wxMeerK40t.py:2540
+#: wxMeerK40t.py:2527
 #, python-format
 msgid "Rotate turn/%d, %.0f°"
 msgstr "Rotate turn/%d, %.0f°"
 
-#: wxMeerK40t.py:2547
+#: wxMeerK40t.py:2534
 #, python-format
 msgid "Rotate turn/%d, -%.0f°"
 msgstr "Rotate turn/%d, -%.0f°"
 
-#: wxMeerK40t.py:2550
+#: wxMeerK40t.py:2537
 msgid "Rotate"
 msgstr "Rotate"
 
-#: wxMeerK40t.py:2553
+#: wxMeerK40t.py:2540
 msgid "Reify User Changes"
 msgstr "Reify User Changes"
 
-#: wxMeerK40t.py:2556
+#: wxMeerK40t.py:2543
 msgid "Break Subpaths"
 msgstr "Break Subpaths"
 
-#: wxMeerK40t.py:2572
+#: wxMeerK40t.py:2559
 msgid "Actualize Pixels"
 msgstr "Actualize Pixels"
 
-#: wxMeerK40t.py:2576
+#: wxMeerK40t.py:2563
 #, python-format
 msgid "Divide Into %d Images"
 msgstr "Divide Into %d Images"
 
-#: wxMeerK40t.py:2579
+#: wxMeerK40t.py:2566
 msgid "ZDepth Divide"
 msgstr "ZDepth Divide"
 
-#: wxMeerK40t.py:2585
+#: wxMeerK40t.py:2572
 msgid "Unlock Manipulations"
 msgstr ""
 
-#: wxMeerK40t.py:2589
+#: wxMeerK40t.py:2576
 msgid "Dither to 1 bit"
 msgstr "Dither to 1 bit"
 
-#: wxMeerK40t.py:2591
+#: wxMeerK40t.py:2578
 msgid "Invert Image"
 msgstr ""
 
-#: wxMeerK40t.py:2593
+#: wxMeerK40t.py:2580
 msgid "Mirror Horizontal"
 msgstr ""
 
-#: wxMeerK40t.py:2595
+#: wxMeerK40t.py:2582
 msgid "Flip Vertical"
 msgstr ""
 
-#: wxMeerK40t.py:2597
+#: wxMeerK40t.py:2584
 msgid "Rotate CW"
 msgstr ""
 
-#: wxMeerK40t.py:2599
+#: wxMeerK40t.py:2586
 msgid "Rotate CCW"
 msgstr ""
 
-#: wxMeerK40t.py:2601
+#: wxMeerK40t.py:2588
 msgid "Save output.png"
 msgstr ""
 
-#: wxMeerK40t.py:2608
+#: wxMeerK40t.py:2595
 #, python-format
 msgid "RasterWizard: %s"
 msgstr ""
 
-#: wxMeerK40t.py:2617
+#: wxMeerK40t.py:2604
 #, python-format
 msgid "Apply: %s"
 msgstr ""
 
-#: wxMeerK40t.py:2620
+#: wxMeerK40t.py:2607
 msgid "Apply Raster Script"
 msgstr ""
 
-#: wxMeerK40t.py:3273
+#: wxMeerK40t.py:3263
 #, python-format
 msgid "Saving Log: %s"
 msgstr "Saving Log: %s"
 
-#: wxMeerK40t.py:3280
+#: wxMeerK40t.py:3270
 msgid "Please Report to Development Team"
 msgstr ""
 
@@ -2905,10 +2907,8 @@ msgstr ""
 #~ msgstr "切割属性"
 
 #~ msgid ""
-#~ "Diagonal ratio is the ratio of "
-#~ "additional time needed to perform a "
-#~ "diagonal step rather than an orthogonal"
-#~ " step."
+#~ "Diagonal ratio is the ratio of additional time needed to perform a "
+#~ "diagonal step rather than an orthogonal step."
 #~ msgstr "对角比率是执行对角步骤而不是正交步骤所需的额外时间的比率。"
 
 #~ msgid "mm/s"
@@ -3055,4 +3055,3 @@ msgstr ""
 
 #~ msgid "Zoom In"
 #~ msgstr "Zoom In"
-

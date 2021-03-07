@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-02 13:27-0800\n"
-"PO-Revision-Date: 2021-03-02 14:06-0800\n"
+"POT-Creation-Date: 2021-03-07 06:05-0800\n"
+"PO-Revision-Date: 2021-03-07 06:15-0800\n"
 "Last-Translator: tatarize\n"
 "Language: de\n"
 "Language-Team: German\n"
@@ -19,7 +19,7 @@ msgstr ""
 msgid "About %s v%s"
 msgstr "Über %s v%s"
 
-#: About.py:59 wxMeerK40t.py:366
+#: About.py:59 wxMeerK40t.py:352
 msgid "About"
 msgstr "Über"
 
@@ -452,7 +452,7 @@ msgstr "Kamera einstellen 3"
 msgid "Set Camera 4"
 msgstr "Kamera einstellen 4"
 
-#: CameraInteface.py:56 wxMeerK40t.py:202 wxMeerK40t.py:345
+#: CameraInteface.py:56 wxMeerK40t.py:188 wxMeerK40t.py:331
 msgid "Camera"
 msgstr "Kamera"
 
@@ -555,7 +555,7 @@ msgstr "Schreibpuffer begrenzen"
 msgid "Kernel Force Event"
 msgstr "Kernel Force Event"
 
-#: Controller.py:134 wxMeerK40t.py:199 wxMeerK40t.py:348
+#: Controller.py:134 wxMeerK40t.py:185 wxMeerK40t.py:334
 msgid "Controller"
 msgstr "Controller"
 
@@ -828,7 +828,7 @@ msgstr "Breite:"
 msgid "Height:"
 msgstr "Höhe:"
 
-#: JobInfo.py:22 JobInfo.py:461 wxMeerK40t.py:190
+#: JobInfo.py:22 JobInfo.py:461 wxMeerK40t.py:176
 msgid "Start Job"
 msgstr "Job starten"
 
@@ -860,7 +860,7 @@ msgstr "Piepton nach Abschluss des Jobs"
 msgid "Automatic"
 msgstr "Automatisch"
 
-#: JobInfo.py:48 wxMeerK40t.py:182
+#: JobInfo.py:48 wxMeerK40t.py:168
 msgid "Home"
 msgstr "Home"
 
@@ -896,7 +896,7 @@ msgstr ""
 msgid "Jog Finish"
 msgstr ""
 
-#: JobInfo.py:70 JobSpooler.py:81 Settings.py:115 wxMeerK40t.py:340
+#: JobInfo.py:70 JobSpooler.py:81 Settings.py:115 wxMeerK40t.py:326
 msgid "Settings"
 msgstr "Einstellungen"
 
@@ -904,7 +904,7 @@ msgstr "Einstellungen"
 msgid "Step and Repeat"
 msgstr ""
 
-#: JobInfo.py:75 wxMeerK40t.py:354
+#: JobInfo.py:75 wxMeerK40t.py:340
 msgid "Tools"
 msgstr ""
 
@@ -1009,8 +1009,8 @@ msgstr "Zeitschätzung"
 msgid "Remove %s"
 msgstr "%s entfernen"
 
-#: JobSpooler.py:105 wxMeerK40t.py:2439 wxMeerK40t.py:2442 wxMeerK40t.py:2445
-#: wxMeerK40t.py:2448
+#: JobSpooler.py:105 wxMeerK40t.py:2426 wxMeerK40t.py:2429 wxMeerK40t.py:2432
+#: wxMeerK40t.py:2435
 msgid "Clear All"
 msgstr "Alle/s löschen"
 
@@ -1141,7 +1141,7 @@ msgstr "Abbrechen"
 msgid "Finished"
 msgstr "Abgeschlossen"
 
-#: Kernel.py:2230 wxMeerK40t.py:191
+#: Kernel.py:2230 wxMeerK40t.py:177
 msgid "Pause"
 msgstr "Pause"
 
@@ -1165,7 +1165,7 @@ msgstr "Leerlauf"
 msgid "Add Hotkey"
 msgstr "Hotkey hinzufügen"
 
-#: Keymap.py:66 wxMeerK40t.py:342
+#: Keymap.py:66 wxMeerK40t.py:328
 msgid "Keymap Settings"
 msgstr "Keymap-Einstellungen"
 
@@ -1205,7 +1205,7 @@ msgstr "Fehlender Befehl"
 msgid "No Command for binding."
 msgstr "Kein Befehl zum Binden."
 
-#: Navigation.py:144 wxMeerK40t.py:196 wxMeerK40t.py:347
+#: Navigation.py:144 wxMeerK40t.py:182 wxMeerK40t.py:333
 msgid "Navigation"
 msgstr "Navigationsmenü"
 
@@ -1429,7 +1429,7 @@ msgstr "Schnitt"
 msgid "Raster"
 msgstr "Raster"
 
-#: OperationProperty.py:27 wxMeerK40t.py:2603
+#: OperationProperty.py:27 wxMeerK40t.py:2590
 msgid "Image"
 msgstr "Bild"
 
@@ -1489,7 +1489,7 @@ msgstr "Beschleunigung"
 msgid "Dot Length (mils)"
 msgstr "Punktlänge (mils)"
 
-#: OperationProperty.py:56 OperationProperty.py:267 wxMeerK40t.py:2500
+#: OperationProperty.py:56 OperationProperty.py:267 wxMeerK40t.py:2487
 msgid "Passes"
 msgstr "Passes"
 
@@ -1711,7 +1711,7 @@ msgstr "Zur Home-Position nach Job-Abschluss"
 msgid "Beep after job complete"
 msgstr "Piepton nach Job-Abschluss"
 
-#: Preferences.py:158 wxMeerK40t.py:200 wxMeerK40t.py:339
+#: Preferences.py:158 wxMeerK40t.py:186 wxMeerK40t.py:325
 msgid "Preferences"
 msgstr "Setup"
 
@@ -1964,7 +1964,7 @@ msgstr "Bild-Resample DPI bei gegebenem Schritt"
 msgid "Resample"
 msgstr ""
 
-#: RasterWizard.py:692 wxMeerK40t.py:2509 wxMeerK40t.py:2570
+#: RasterWizard.py:692 wxMeerK40t.py:2496 wxMeerK40t.py:2557
 msgid "Step"
 msgstr "Schritt"
 
@@ -1996,7 +1996,7 @@ msgstr "Gamma"
 msgid "Gamma Factor"
 msgstr "Gammafaktor"
 
-#: RasterWizard.py:889 wxMeerK40t.py:333
+#: RasterWizard.py:889 wxMeerK40t.py:319
 msgid "Invert"
 msgstr "Umkehren"
 
@@ -2223,7 +2223,7 @@ msgstr "Winkel"
 msgid "Sample"
 msgstr ""
 
-#: RotarySettings.py:29 wxMeerK40t.py:206
+#: RotarySettings.py:29 wxMeerK40t.py:192
 msgid "Rotary"
 msgstr "Rotary"
 
@@ -2368,7 +2368,7 @@ msgstr "SVG-Pixel pro Zoll"
 msgid "Language"
 msgstr "Sprache"
 
-#: Terminal.py:84 wxMeerK40t.py:205 wxMeerK40t.py:346
+#: Terminal.py:84 wxMeerK40t.py:191 wxMeerK40t.py:332
 msgid "Terminal"
 msgstr "Befehlszeile"
 
@@ -2376,266 +2376,266 @@ msgstr "Befehlszeile"
 msgid "UsbConnect"
 msgstr "USB-Verbindung"
 
-#: wxMeerK40t.py:184
+#: wxMeerK40t.py:170
 msgid "Main"
 msgstr "Projekt"
 
-#: wxMeerK40t.py:188 wxMeerK40t.py:1461
+#: wxMeerK40t.py:174 wxMeerK40t.py:1448
 msgid "Open"
 msgstr "Öffnen"
 
-#: wxMeerK40t.py:189
+#: wxMeerK40t.py:175
 msgid "Save"
 msgstr "Speichern"
 
-#: wxMeerK40t.py:193
+#: wxMeerK40t.py:179
 msgid "Windows"
 msgstr "Programme"
 
-#: wxMeerK40t.py:197
+#: wxMeerK40t.py:183
 msgid "Usb"
 msgstr "USB"
 
-#: wxMeerK40t.py:198
+#: wxMeerK40t.py:184
 msgid "Spooler"
 msgstr "Spooler"
 
-#: wxMeerK40t.py:201
+#: wxMeerK40t.py:187
 msgid "Devices"
 msgstr "Geräte"
 
-#: wxMeerK40t.py:203
+#: wxMeerK40t.py:189
 msgid "Keymap"
 msgstr "Tastenkürzel"
 
-#: wxMeerK40t.py:204 wxMeerK40t.py:349
+#: wxMeerK40t.py:190 wxMeerK40t.py:335
 msgid "Notes"
 msgstr "Notizen"
 
-#: wxMeerK40t.py:207 wxMeerK40t.py:2611
+#: wxMeerK40t.py:193 wxMeerK40t.py:2598
 msgid "RasterWizard"
 msgstr "RasterWizard"
 
-#: wxMeerK40t.py:241 wxMeerK40t.py:242
+#: wxMeerK40t.py:227 wxMeerK40t.py:228
 msgid "Position"
 msgstr "Position"
 
-#: wxMeerK40t.py:299
+#: wxMeerK40t.py:285
 msgid "New\tCtrl-N"
 msgstr "Neu\tCtrl-N"
 
-#: wxMeerK40t.py:300
+#: wxMeerK40t.py:286
 msgid "Open Project\tCtrl-O"
 msgstr "Datei öffnen\tCtrl-O"
 
-#: wxMeerK40t.py:302
+#: wxMeerK40t.py:288
 msgid "Recent"
 msgstr "Kürzlich"
 
-#: wxMeerK40t.py:303
+#: wxMeerK40t.py:289
 msgid "Import File"
 msgstr "Datei importieren"
 
-#: wxMeerK40t.py:305
-msgid "Save\tAlt-S"
-msgstr "Speichern\tAlt-S"
+#: wxMeerK40t.py:291
+msgid "Save\tCtrl-S"
+msgstr "Speichern\tCtrl-S"
 
-#: wxMeerK40t.py:306
-msgid "Save As\tAlt-Shift-S"
-msgstr "Speichern unter\tAlt-Shift-S"
+#: wxMeerK40t.py:292
+msgid "Save As\tCtrl-Shift-S"
+msgstr "Speichern unter\tCtrl-Shift-S"
 
-#: wxMeerK40t.py:309
+#: wxMeerK40t.py:295
 msgid "Exit"
 msgstr "Schließen"
 
-#: wxMeerK40t.py:310
+#: wxMeerK40t.py:296
 msgid "File"
 msgstr "Datei"
 
-#: wxMeerK40t.py:313
+#: wxMeerK40t.py:299
 msgid "Zoom Out\tCtrl--"
 msgstr "Rauszoomen\tCtrl--"
 
-#: wxMeerK40t.py:314
+#: wxMeerK40t.py:300
 msgid "Zoom In\tCtrl-+"
 msgstr "Hineinzoomen\tCtrl-+"
 
-#: wxMeerK40t.py:315
+#: wxMeerK40t.py:301
 msgid "Zoom To Size"
 msgstr "Auf Größe zoomen"
 
-#: wxMeerK40t.py:317
+#: wxMeerK40t.py:303
 msgid "Hide Grid"
 msgstr "Gitter ausblenden"
 
-#: wxMeerK40t.py:318
+#: wxMeerK40t.py:304
 msgid "Hide Background"
 msgstr "Hintergrund ausblenden"
 
-#: wxMeerK40t.py:319
+#: wxMeerK40t.py:305
 msgid "Hide Guides"
 msgstr "Guides ausblenden"
 
-#: wxMeerK40t.py:320
+#: wxMeerK40t.py:306
 msgid "Hide Paths"
 msgstr "Pfade ausblenden"
 
-#: wxMeerK40t.py:321
+#: wxMeerK40t.py:307
 msgid "Hide Images"
 msgstr "Bilder ausblenden"
 
-#: wxMeerK40t.py:322
+#: wxMeerK40t.py:308
 msgid "Hide Text"
 msgstr "Text verstecken"
 
-#: wxMeerK40t.py:323
+#: wxMeerK40t.py:309
 msgid "Hide Fills"
 msgstr "Füllungen ausblenden"
 
-#: wxMeerK40t.py:324
+#: wxMeerK40t.py:310
 msgid "Hide Strokes"
 msgstr "Striche ausblenden"
 
-#: wxMeerK40t.py:325
+#: wxMeerK40t.py:311
 msgid "Hide Laserpath"
 msgstr "Laserpfad ausblenden"
 
-#: wxMeerK40t.py:326
+#: wxMeerK40t.py:312
 msgid "Hide Reticle"
 msgstr "Fadenkreuz verstecken"
 
-#: wxMeerK40t.py:327
+#: wxMeerK40t.py:313
 msgid "Hide Selection"
 msgstr "Auswahl verbergen"
 
-#: wxMeerK40t.py:328
+#: wxMeerK40t.py:314
 msgid "Hide Icons"
 msgstr "Icons ausblenden"
 
-#: wxMeerK40t.py:329
+#: wxMeerK40t.py:315
 msgid "Hide Tree"
 msgstr "Verzeichnisse ausblenden"
 
-#: wxMeerK40t.py:330
+#: wxMeerK40t.py:316
 msgid "Do Not Cache Image"
 msgstr "Bild nicht zwischenspeichern"
 
-#: wxMeerK40t.py:331
+#: wxMeerK40t.py:317
 msgid "Do Not Refresh"
 msgstr "Nicht aktualisieren"
 
-#: wxMeerK40t.py:332
+#: wxMeerK40t.py:318
 msgid "Do Not Animate"
 msgstr "Nicht animieren"
 
-#: wxMeerK40t.py:334
+#: wxMeerK40t.py:320
 msgid "Flip XY"
 msgstr "Flip XY"
 
-#: wxMeerK40t.py:336
+#: wxMeerK40t.py:322
 msgid "View"
 msgstr "Ansicht"
 
-#: wxMeerK40t.py:341
+#: wxMeerK40t.py:327
 msgid "Rotary Settings"
 msgstr "Rotationseinstellungen"
 
-#: wxMeerK40t.py:343
+#: wxMeerK40t.py:329
 msgid "Device Manager"
 msgstr "Geräte Manager"
 
-#: wxMeerK40t.py:344
+#: wxMeerK40t.py:330
 msgid "Alignment Ally"
 msgstr "Alignment Ally"
 
-#: wxMeerK40t.py:350
+#: wxMeerK40t.py:336
 msgid "USB"
 msgstr "USB"
 
-#: wxMeerK40t.py:351
+#: wxMeerK40t.py:337
 msgid "Job Spooler"
 msgstr "Job Spooler"
 
-#: wxMeerK40t.py:352 wxMeerK40t.py:2436
+#: wxMeerK40t.py:338 wxMeerK40t.py:2423
 msgid "Execute Job"
 msgstr "Job ausführen"
 
-#: wxMeerK40t.py:364 wxMeerK40t.py:367
+#: wxMeerK40t.py:350 wxMeerK40t.py:353
 msgid "Help"
 msgstr "Hilfe"
 
-#: wxMeerK40t.py:365
+#: wxMeerK40t.py:351
 msgid "Webpage"
 msgstr "Website"
 
-#: wxMeerK40t.py:588
+#: wxMeerK40t.py:573
 msgid "Languages"
 msgstr "Sprachen"
 
-#: wxMeerK40t.py:862
+#: wxMeerK40t.py:849
 msgid "All attempts to connect to USB have failed."
 msgstr "Alle Versuche, eine Verbindung via USB herzustellen, sind fehlgeschlagen."
 
-#: wxMeerK40t.py:863
+#: wxMeerK40t.py:850
 msgid "Usb Connection Problem."
 msgstr "USB-Verbindungsproblem."
 
-#: wxMeerK40t.py:868
+#: wxMeerK40t.py:855
 #, python-format
 msgid "Usb: %s"
 msgstr "USB: %s"
 
-#: wxMeerK40t.py:875
+#: wxMeerK40t.py:862
 #, python-format
 msgid "Controller: %s"
 msgstr "Controller: %s"
 
-#: wxMeerK40t.py:879
+#: wxMeerK40t.py:866
 #, python-format
 msgid "Spooler: %s"
 msgstr "Spooler: %s"
 
-#: wxMeerK40t.py:900
+#: wxMeerK40t.py:887
 #, python-format
 msgid "%s v%s %s"
 msgstr "%s v%s %s"
 
-#: wxMeerK40t.py:960
+#: wxMeerK40t.py:947
 msgid "Clear Recent"
 msgstr "Letzte löschen"
 
-#: wxMeerK40t.py:991 wxMeerK40t.py:1675
+#: wxMeerK40t.py:978 wxMeerK40t.py:1662
 msgid "Loading File..."
 msgstr "Datei laden ..."
 
-#: wxMeerK40t.py:1029
+#: wxMeerK40t.py:1016
 #, python-format
 msgid ""
 "Some files were unrecognized:\n"
 "%s"
 msgstr "Einige Dateien wurden nicht erkannt:% s"
 
-#: wxMeerK40t.py:1030
+#: wxMeerK40t.py:1017
 msgid "Error encountered"
 msgstr "Fehler aufgetreten"
 
-#: wxMeerK40t.py:1538
+#: wxMeerK40t.py:1525
 msgid "Enter Forced Gear"
 msgstr "Forced Gear eingeben"
 
-#: wxMeerK40t.py:1538
+#: wxMeerK40t.py:1525
 msgid "Gear Entry"
 msgstr ""
 
-#: wxMeerK40t.py:1550
+#: wxMeerK40t.py:1537
 msgid "Enter FPS Limit"
 msgstr "FPS-Limit eingeben"
 
-#: wxMeerK40t.py:1550
+#: wxMeerK40t.py:1537
 msgid "FPS Limit Entry"
 msgstr "FPS-Limit-Eintrag"
 
-#: wxMeerK40t.py:1562
+#: wxMeerK40t.py:1549
 msgid ""
 "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
 "translate, etc..."
@@ -2643,19 +2643,19 @@ msgstr ""
 "Geben Sie die SVG-Transformationsanweisung ein, z. B. 'scale (1.49, 1, $ x, $ "
 "y)', drehen, übersetzen usw."
 
-#: wxMeerK40t.py:1564
+#: wxMeerK40t.py:1551
 msgid "Transform Entry"
 msgstr "Eintrag transformieren"
 
-#: wxMeerK40t.py:1579
+#: wxMeerK40t.py:1566
 msgid "The entered command does nothing."
 msgstr "Der eingegebene Befehl wird nicht erkannt."
 
-#: wxMeerK40t.py:1580
+#: wxMeerK40t.py:1567
 msgid "Non-Useful Matrix."
 msgstr "Fehlerhafte Matrix."
 
-#: wxMeerK40t.py:1632
+#: wxMeerK40t.py:1619
 msgid ""
 "Material must be jigged at 0,0 either home or home offset.\n"
 "How wide is your material (give units: in, mm, cm, px, etc)?"
@@ -2663,225 +2663,225 @@ msgstr ""
 "Das Material muss entweder zu Hause oder zu Hause mit 0,0 versetzt werden. Wie "
 "breit ist Ihr Material (geben Sie Einheiten an: in, mm, cm, px usw.)?"
 
-#: wxMeerK40t.py:1634
+#: wxMeerK40t.py:1621
 msgid "Double Side Flip"
 msgstr "Doppelseitiger Flip"
 
-#: wxMeerK40t.py:1653
+#: wxMeerK40t.py:1640
 msgid "Enter SVG Path Data"
 msgstr "SVG-Pfaddaten eingeben"
 
-#: wxMeerK40t.py:1653
+#: wxMeerK40t.py:1640
 msgid "Path Entry"
 msgstr "Pfadeintrag"
 
-#: wxMeerK40t.py:1668
+#: wxMeerK40t.py:1655
 msgid "Import EGV"
 msgstr ""
 
-#: wxMeerK40t.py:1683
+#: wxMeerK40t.py:1670
 msgid "Export EGV"
 msgstr ""
 
-#: wxMeerK40t.py:1689
+#: wxMeerK40t.py:1676
 msgid "Saving File..."
 msgstr ""
 
-#: wxMeerK40t.py:2096
+#: wxMeerK40t.py:2083
 msgid "Operations"
 msgstr "Operationen"
 
-#: wxMeerK40t.py:2110
+#: wxMeerK40t.py:2097
 msgid "Elements"
 msgstr "Elemente"
 
-#: wxMeerK40t.py:2114
+#: wxMeerK40t.py:2101
 msgid "Files"
 msgstr "Dateien"
 
-#: wxMeerK40t.py:2451
+#: wxMeerK40t.py:2438
 #, python-format
 msgid "Remove: %s"
 msgstr "Entfernen: %s"
 
-#: wxMeerK40t.py:2454
+#: wxMeerK40t.py:2441
 #, python-format
 msgid "Remove: %d objects"
 msgstr "Entfernen: %d Objekte"
 
-#: wxMeerK40t.py:2459 wxMeerK40t.py:2464 wxMeerK40t.py:2521
+#: wxMeerK40t.py:2446 wxMeerK40t.py:2451 wxMeerK40t.py:2508
 #, python-format
 msgid "Make %d copies."
 msgstr "%d Kopien erstellen."
 
-#: wxMeerK40t.py:2460
+#: wxMeerK40t.py:2447
 msgid "Clone Reference"
 msgstr "Klonreferenz"
 
-#: wxMeerK40t.py:2465 wxMeerK40t.py:2522
+#: wxMeerK40t.py:2452 wxMeerK40t.py:2509
 msgid "Duplicate"
 msgstr "Duplizieren"
 
-#: wxMeerK40t.py:2468
+#: wxMeerK40t.py:2455
 msgid "Reverse Layer Order"
 msgstr "Ebenenreihenfolge umkehren"
 
-#: wxMeerK40t.py:2473
+#: wxMeerK40t.py:2460
 msgid "Refresh Classification"
 msgstr "Einstellungen aktualisieren"
 
-#: wxMeerK40t.py:2475
+#: wxMeerK40t.py:2462
 msgid "Set Other/Blue/Red Classify"
 msgstr "Eigene Einstellungen für Other / Blau / Rot"
 
-#: wxMeerK40t.py:2477
+#: wxMeerK40t.py:2464
 msgid "Set Basic Classification"
 msgstr "Standardeinstellungen wiederherstellen"
 
-#: wxMeerK40t.py:2479
+#: wxMeerK40t.py:2466
 msgid "Add Operation"
 msgstr "Operation hinzufügen"
 
-#: wxMeerK40t.py:2483
+#: wxMeerK40t.py:2470
 msgid "Reclassify Operations"
 msgstr "Operationen neu klassifizieren"
 
-#: wxMeerK40t.py:2489
+#: wxMeerK40t.py:2476
 #, python-format
 msgid "Convert %s"
 msgstr "%s konvertieren"
 
-#: wxMeerK40t.py:2491
+#: wxMeerK40t.py:2478
 msgid "Convert Operation"
 msgstr "Projekt konvertieren"
 
-#: wxMeerK40t.py:2493
+#: wxMeerK40t.py:2480
 msgid "Duplicate Operation"
 msgstr "Doppelte Ausführung"
 
-#: wxMeerK40t.py:2496
+#: wxMeerK40t.py:2483
 msgid "Add 1 pass."
 msgstr "1 Pass hinzufügen."
 
-#: wxMeerK40t.py:2499
+#: wxMeerK40t.py:2486
 #, python-format
 msgid "Add %d passes."
 msgstr "Füge %d Passes hinzu."
 
-#: wxMeerK40t.py:2504 wxMeerK40t.py:2560
+#: wxMeerK40t.py:2491 wxMeerK40t.py:2547
 #, python-format
 msgid "Step %d"
 msgstr "Schritt %d"
 
-#: wxMeerK40t.py:2511
+#: wxMeerK40t.py:2498
 msgid "Make Raster Image"
 msgstr "Rasterbild erstellen"
 
-#: wxMeerK40t.py:2516
+#: wxMeerK40t.py:2503
 #, python-format
 msgid "Reload %s"
 msgstr "%s neu laden"
 
-#: wxMeerK40t.py:2526
+#: wxMeerK40t.py:2513
 msgid "Reset User Changes"
 msgstr "Benutzeränderungen zurücksetzen"
 
-#: wxMeerK40t.py:2531
+#: wxMeerK40t.py:2518
 #, python-format
 msgid "Scale %.0f%%"
 msgstr "Skalieren Sie %.0f %%"
 
-#: wxMeerK40t.py:2534
+#: wxMeerK40t.py:2521
 msgid "Scale"
 msgstr "Skalieren"
 
-#: wxMeerK40t.py:2540
+#: wxMeerK40t.py:2527
 #, python-format
 msgid "Rotate turn/%d, %.0f°"
 msgstr "Drehung drehen /%d, %.0f°"
 
-#: wxMeerK40t.py:2547
+#: wxMeerK40t.py:2534
 #, python-format
 msgid "Rotate turn/%d, -%.0f°"
 msgstr "Drehung drehen /%d, -%.0f°"
 
-#: wxMeerK40t.py:2550
+#: wxMeerK40t.py:2537
 msgid "Rotate"
 msgstr "Drehen"
 
-#: wxMeerK40t.py:2553
+#: wxMeerK40t.py:2540
 msgid "Reify User Changes"
 msgstr "Benutzeränderungen überprüfen"
 
-#: wxMeerK40t.py:2556
+#: wxMeerK40t.py:2543
 msgid "Break Subpaths"
 msgstr "Unterpfade unterbrechen"
 
-#: wxMeerK40t.py:2572
+#: wxMeerK40t.py:2559
 msgid "Actualize Pixels"
 msgstr "Pixel aktualisieren"
 
-#: wxMeerK40t.py:2576
+#: wxMeerK40t.py:2563
 #, python-format
 msgid "Divide Into %d Images"
 msgstr "In %d Bilder aufteilen"
 
-#: wxMeerK40t.py:2579
+#: wxMeerK40t.py:2566
 msgid "ZDepth Divide"
 msgstr "ZDepth Divide"
 
-#: wxMeerK40t.py:2585
+#: wxMeerK40t.py:2572
 msgid "Unlock Manipulations"
 msgstr "Manipulationen freischalten"
 
-#: wxMeerK40t.py:2589
+#: wxMeerK40t.py:2576
 msgid "Dither to 1 bit"
 msgstr "Dither auf 1 Bit"
 
-#: wxMeerK40t.py:2591
+#: wxMeerK40t.py:2578
 msgid "Invert Image"
 msgstr "Bild invertieren"
 
-#: wxMeerK40t.py:2593
+#: wxMeerK40t.py:2580
 msgid "Mirror Horizontal"
 msgstr "Horizontal spiegeln"
 
-#: wxMeerK40t.py:2595
+#: wxMeerK40t.py:2582
 msgid "Flip Vertical"
 msgstr "Vertikal spiegeln"
 
-#: wxMeerK40t.py:2597
+#: wxMeerK40t.py:2584
 msgid "Rotate CW"
 msgstr "Im Uhrzeigersinn drehen"
 
-#: wxMeerK40t.py:2599
+#: wxMeerK40t.py:2586
 msgid "Rotate CCW"
 msgstr "Gegen den Uhrzeigersinn drehen"
 
-#: wxMeerK40t.py:2601
+#: wxMeerK40t.py:2588
 msgid "Save output.png"
 msgstr "Speichern als .png"
 
-#: wxMeerK40t.py:2608
+#: wxMeerK40t.py:2595
 #, python-format
 msgid "RasterWizard: %s"
 msgstr "RasterWizard: %s"
 
-#: wxMeerK40t.py:2617
+#: wxMeerK40t.py:2604
 #, python-format
 msgid "Apply: %s"
 msgstr "Übernehmen: %s"
 
-#: wxMeerK40t.py:2620
+#: wxMeerK40t.py:2607
 msgid "Apply Raster Script"
 msgstr "Wenden Sie das Rasterskript an"
 
-#: wxMeerK40t.py:3273
+#: wxMeerK40t.py:3263
 #, python-format
 msgid "Saving Log: %s"
 msgstr "Protokoll speichern: %s"
 
-#: wxMeerK40t.py:3280
+#: wxMeerK40t.py:3270
 msgid "Please Report to Development Team"
 msgstr ""
 

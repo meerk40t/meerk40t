@@ -288,8 +288,8 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save\tAlt-S", ""))
-        wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As\tAlt-Shift-S", ""))
+        wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save\tCtrl-S", ""))
+        wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As\tCtrl-Shift-S", ""))
         wxglade_tmp_menu.AppendSeparator()
 
         wxglade_tmp_menu.Append(wx.ID_EXIT, _("Exit"), "")
