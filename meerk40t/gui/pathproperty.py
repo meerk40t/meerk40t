@@ -83,6 +83,9 @@ class PathProperty(wx.Frame, Module):
         # end wxGlade
         self.path_element = element
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def on_close(self, event):
         if self.state == 5:

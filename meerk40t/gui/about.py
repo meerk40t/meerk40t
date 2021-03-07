@@ -33,6 +33,9 @@ class About(wx.Frame, Module):
         self.SetTitle(_("About %s v%s" % (name, version)))
         self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
         self.Show()
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def on_close(self, event):
         if self.state == 5:

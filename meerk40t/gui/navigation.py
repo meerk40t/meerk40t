@@ -277,6 +277,9 @@ class Navigation(wx.Frame, Module):
         self.design_locked = False
         self.drag_ready(False)
         self.select_ready(False)
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def __set_properties(self):
         _icon = wx.NullIcon

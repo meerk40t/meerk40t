@@ -246,6 +246,9 @@ class JobPreview(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.stage = 0
         self.plan_name = plan_name
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def __set_properties(self):
         # begin wxGlade: Preview.__set_properties

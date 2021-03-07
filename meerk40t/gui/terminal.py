@@ -40,6 +40,9 @@ class Terminal(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.command_log = []
         self.command_position = 0
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def on_middle_click(self, event):
         self.text_main.SetValue("")

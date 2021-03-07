@@ -66,6 +66,9 @@ class DeviceManager(wx.Frame, Module):
         self.Show()
         self.context.setting(str, "list_devices", "")
         self.refresh_device_list()
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def on_close(self, event):
         item = self.devices_list.GetFirstSelected()

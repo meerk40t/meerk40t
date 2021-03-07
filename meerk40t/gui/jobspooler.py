@@ -53,6 +53,9 @@ class JobSpooler(wx.Frame, Module):
         self.listener_list = None
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def __set_properties(self):
         # begin wxGlade: Spooler.__set_properties

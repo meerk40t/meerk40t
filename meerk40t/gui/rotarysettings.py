@@ -49,7 +49,6 @@ class RotarySettings(wx.Frame, Module):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-
         # OSX Window close
         if parent is not None:
             parent.accelerator_table(self)

@@ -165,6 +165,9 @@ class CameraInterface(wx.Frame, Module, Job):
         self.slider_fps.SetValue(self.setting.fps)
         self.on_slider_fps()
         self.process = self.update_view
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def swap_camera(self, uri):
         def swap(event=None):
