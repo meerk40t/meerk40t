@@ -557,7 +557,6 @@ class Kernel:
 
         self.devices = {}
         self.active_device = None
-        self.last_path = None
 
         self.contexts = {}
         self.threads = {}
@@ -1776,14 +1775,17 @@ class Kernel:
                     channel(context_name)
             return
 
+        @self.console_option("path", "p", type=str, help="Path of variables to set.")
         @self.console_command("set", help="set [<key> <value>]")
-        def set(command, channel, _, args=tuple(), **kwargs):
-            last_path = self.last_path
-            if last_path is None:
-                last_path = self.active_device
+        def set(command, channel, _, path=None, args=tuple(), **kwargs):
+            relevant_context = None
+            if path is not None:
+                relevant_context = self.get_context(path)
+            if relevant_context is None:
+                relevant_context = self.active_device
             if len(args) == 0:
-                for attr in dir(last_path):
-                    v = getattr(last_path, attr)
+                for attr in dir(relevant_context):
+                    v = getattr(relevant_context, attr)
                     if attr.startswith("_") or not isinstance(
                         v, (int, float, str, bool)
                     ):
@@ -1794,19 +1796,19 @@ class Kernel:
                 attr = args[0]
                 value = args[1]
                 try:
-                    if hasattr(last_path, attr):
-                        v = getattr(last_path, attr)
+                    if hasattr(relevant_context, attr):
+                        v = getattr(relevant_context, attr)
                         if isinstance(v, bool):
                             if value == "False" or value == "false" or value == 0:
-                                setattr(last_path, attr, False)
+                                setattr(relevant_context, attr, False)
                             else:
-                                setattr(last_path, attr, True)
+                                setattr(relevant_context, attr, True)
                         elif isinstance(v, int):
-                            setattr(last_path, attr, int(value))
+                            setattr(relevant_context, attr, int(value))
                         elif isinstance(v, float):
-                            setattr(last_path, attr, float(value))
+                            setattr(relevant_context, attr, float(value))
                         elif isinstance(v, str):
-                            setattr(last_path, attr, str(value))
+                            setattr(relevant_context, attr, str(value))
                 except RuntimeError:
                     channel(_("Attempt failed. Produced a runtime error."))
                 except ValueError:
@@ -2068,12 +2070,15 @@ class Kernel:
                         break
             return
 
+        @self.console_option("path", "p", type=str, help="Path that should be flushed to disk.")
         @self.console_command("flush", help="flush")
-        def flush(command, channel, _, args=tuple(), **kwargs):
-            last_path = self.last_path
-            if last_path is None:
-                last_path = self.active_device
-            last_path.flush()
+        def flush(command, channel, _, path=None, args=tuple(), **kwargs):
+            relevant_context = None
+            if path is not None:
+                relevant_context = self.get_context(path)
+            if relevant_context is None:
+                relevant_context = self.active_device
+            relevant_context.flush()
             channel(_("Persistent settings force saved."))
 
         @self.console_command(
@@ -2219,16 +2224,8 @@ class Kernel:
                 remainder = ""
                 command = text
 
-            # Set context based on command path. # TODO: This might need deprecating.
             _ = self.translation
             command = command.lower()
-            if "/" in command:
-                path = command.split("/")
-                p = "/".join(path[:-1])
-                if len(p) == 0:
-                    p = "/"
-                self.last_path = self.get_context(p)
-                command = path[-1]
 
             # Process command matches.
             for command_name in self.match("command/%s/.*" % str(input_type)):
