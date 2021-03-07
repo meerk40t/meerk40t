@@ -581,6 +581,7 @@ class JobPreview(wx.Frame, Module):
         self.preview_menu.menu_autoorigin.Check(bool(self.context.autoorigin))
         self.preview_menu.menu_autobeep.Check(bool(self.context.autobeep))
         self.preview_menu.menu_autointerrupt.Check(bool(self.context.autointerrupt))
+        self.preview_menu.menu_autounlock.Check(bool(self.context.postunlock))
 
         self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
         self.check_cut_inner_first.SetValue(self.context.opt_inner_first)
