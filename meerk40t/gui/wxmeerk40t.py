@@ -159,7 +159,7 @@ def plugin(kernel, lifecycle):
     elif lifecycle == "mainloop":
         kernel_root = kernel.get_context("/")
         meerk40tgui = kernel_root.open("module/wxMeerK40t")
-        kernel_root.open("window/MeerK40t", None)
+        kernel.console("window -p / open MeerK40t\n")
         meerk40tgui.MainLoop()
 
 
@@ -588,46 +588,6 @@ class MeerK40t(wx.Frame, Module, Job):
         @context.console_command("rotaryscale", help="Rotary Scale selected elements")
         def toggle_rotary_view(*args, **kwargs):
             self.apply_rotary_scale()
-
-        @context.console_command("window", help="wxMeerK40 window information")
-        def window(command, channel, _, args=tuple(), **kwargs):
-            context = self.context
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Windows Registered:"))
-                for i, name in enumerate(context.match("window")):
-                    channel("%d: %s" % (i + 1, name))
-                channel(_("----------"))
-                channel(_("Loaded Windows in Context %s:") % str(context._path))
-                for i, name in enumerate(context.opened):
-                    if not name.startswith("window"):
-                        continue
-                    module = context.opened[name]
-                    channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
-                channel(_("----------"))
-                channel(_("Loaded Windows in Device %s:") % str(context.active._path))
-                for i, name in enumerate(context.active.opened):
-                    if not name.startswith("window"):
-                        continue
-                    module = context.active.opened[name]
-                    channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
-                channel(_("----------"))
-            else:
-                if args[0] == "open":
-                    try:
-                        self.context.active.open("window/%s" % args[1], self, *args[2:])
-                        channel(_("Window Opened."))
-                    except KeyError:
-                        channel(_("No such window as %s" % args[1]))
-                    except IndexError:
-                        raise SyntaxError
-
-        @context.console_command("refresh", help="wxMeerK40 refresh")
-        def refresh(command, channel, _, args=tuple(), **kwargs):
-            context.signal("refresh_scene")
-            context.signal("rebuild_tree")
-            channel(_("Refreshed."))
-            return
 
         self.SetSize((context.window_width, context.window_height))
         self.interval = 1.0 / float(context.fps)
@@ -3149,7 +3109,7 @@ class wxMeerK40t(wx.App, Module):
         try:
             self.InitLocale()
         except AttributeError:
-            pass # 4.1
+            pass  # 4.1
 
     def on_app_close(self, event):
         try:
@@ -3203,29 +3163,88 @@ class wxMeerK40t(wx.App, Module):
             pass
 
     @staticmethod
-    def sub_register(device):
-        device.register("window/MeerK40t", MeerK40t)
-        device.register("module/Scene", Scene)
-        device.register("window/PathProperty", PathProperty)
-        device.register("window/TextProperty", TextProperty)
-        device.register("window/ImageProperty", ImageProperty)
-        device.register("window/OperationProperty", OperationProperty)
-        device.register("window/Controller", Controller)
-        device.register("window/Preferences", Preferences)
-        device.register("window/CameraInterface", CameraInterface)
-        device.register("window/Terminal", Terminal)
-        device.register("window/Settings", Settings)
-        device.register("window/Rotary", RotarySettings)
-        device.register("window/About", About)
-        device.register("window/DeviceManager", DeviceManager)
-        device.register("window/Keymap", Keymap)
-        device.register("window/UsbConnect", UsbConnect)
-        device.register("window/Navigation", Navigation)
-        device.register("window/Notes", Notes)
-        device.register("window/JobSpooler", JobSpooler)
-        device.register("window/JobPreview", JobPreview)
-        device.register("window/BufferView", BufferView)
-        device.register("window/RasterWizard", RasterWizard)
+    def sub_register(kernel):
+        kernel.register("window/MeerK40t", MeerK40t)
+        kernel.register("module/Scene", Scene)
+        kernel.register("window/PathProperty", PathProperty)
+        kernel.register("window/TextProperty", TextProperty)
+        kernel.register("window/ImageProperty", ImageProperty)
+        kernel.register("window/OperationProperty", OperationProperty)
+        kernel.register("window/Controller", Controller)
+        kernel.register("window/Preferences", Preferences)
+        kernel.register("window/CameraInterface", CameraInterface)
+        kernel.register("window/Terminal", Terminal)
+        kernel.register("window/Settings", Settings)
+        kernel.register("window/Rotary", RotarySettings)
+        kernel.register("window/About", About)
+        kernel.register("window/DeviceManager", DeviceManager)
+        kernel.register("window/Keymap", Keymap)
+        kernel.register("window/UsbConnect", UsbConnect)
+        kernel.register("window/Navigation", Navigation)
+        kernel.register("window/Notes", Notes)
+        kernel.register("window/JobSpooler", JobSpooler)
+        kernel.register("window/JobPreview", JobPreview)
+        kernel.register("window/BufferView", BufferView)
+        kernel.register("window/RasterWizard", RasterWizard)
+
+        context = kernel.get_context('/')
+
+        @kernel.console_option('path', 'p', type=str, nargs=1, help="Context Path at which to open the window")
+        @kernel.console_argument('subcommand', help="open <window>")
+        @kernel.console_argument('window', help="window to apply subcommand to")
+        @kernel.console_command("window", help="wxMeerK40 window information")
+        def window(command, channel, _, subcommand=None, window=None, path=None, args=tuple(), **kwargs):
+            if subcommand is None:
+                channel(_("----------"))
+                channel(_("Loaded Windows in Context %s:") % str(context._path))
+                for i, name in enumerate(context.opened):
+                    if not name.startswith("window"):
+                        continue
+                    module = context.opened[name]
+                    channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
+
+                use_context = context.active
+                if path is not None:
+                    use_context = context.get_context(path)
+                channel(_("----------"))
+                channel(_("Loaded Windows in Device %s:") % str(use_context._path))
+                for i, name in enumerate(use_context.opened):
+                    if not name.startswith("window"):
+                        continue
+                    module = use_context.opened[name]
+                    channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
+                channel(_("----------"))
+                return
+            if window is None:
+                channel(_("----------"))
+                channel(_("Windows Registered:"))
+                for i, name in enumerate(context.match("window")):
+                    channel("%d: %s" % (i + 1, name))
+                return
+            if subcommand == "open":
+                try:
+                    parent = context.gui
+                except AttributeError:
+                    parent = None
+                use_context = context.active
+                if path is not None:
+                    use_context = context.get_context(path)
+                try:
+                    use_context.open("window/%s" % window, parent, *args)
+                    channel(_("Window Opened."))
+                except KeyError:
+                    channel(_("No such window as %s" % args[1]))
+                except IndexError:
+                    raise SyntaxError
+            else:
+                raise SyntaxError
+
+        @kernel.console_command("refresh", help="wxMeerK40 refresh")
+        def refresh(command, channel, _, args=tuple(), **kwargs):
+            context.signal("refresh_scene")
+            context.signal("rebuild_tree")
+            channel(_("Refreshed."))
+            return
 
     def run_later(self, command, *args):
         if wx.IsMainThread():
@@ -3235,6 +3254,7 @@ class wxMeerK40t(wx.App, Module):
 
     def initialize(self, *args, **kwargs):
         context = self.context
+        kernel = context._kernel
 
         try:  # pyinstaller internal location
             _resource_path = os.path.join(sys._MEIPASS, 'locale')
@@ -3250,9 +3270,9 @@ class wxMeerK40t(wx.App, Module):
 
         wx.Locale.AddCatalogLookupPathPrefix('locale')  # Default Locale, prepended. Check this first.
 
-        context._kernel.run_later = self.run_later
-        context._kernel.translation = wx.GetTranslation
-        context._kernel.set_config(wx.Config(context._kernel.profile))
+        kernel.run_later = self.run_later
+        kernel.translation = wx.GetTranslation
+        kernel.set_config(wx.Config(kernel.profile))
         context.app = self  # Registers self as kernel.app
 
         context.setting(int, "language", None)

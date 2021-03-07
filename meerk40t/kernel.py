@@ -922,6 +922,12 @@ class Kernel:
 
     @staticmethod
     def console_option(name, short=None, **kwargs):
+        try:
+            if short.startswith('-'):
+                short = short[1:]
+        except:
+            pass
+
         def decor(func):
             kwargs["name"] = name
             kwargs["short"] = short

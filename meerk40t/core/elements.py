@@ -2674,7 +2674,7 @@ class Elemental(Modifier):
         )
         def execute_job(node, **kwargs):
             # self.context.open("window/JobPreview", self.gui, "0", selected=True)
-            self._tree.set_emphasized([node])
+            node.emphasized = True
             self.context.console("plan0 copy-selected\n")
             self.context.console("window open JobPreview 0\n")
 
