@@ -459,7 +459,7 @@ class Planner(Modifier):
                         image_element = SVGImage(image=image)
                         image_element.transform.post_translate(xmin, ymin)
                         op.children.clear()
-                        op.add_node(image_element)
+                        op.add(image_element, type="opnode")
                 except AttributeError:
                     continue
 
