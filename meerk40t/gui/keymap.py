@@ -36,7 +36,6 @@ class Keymap(wx.Frame, Module):
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated, self.list_keymap)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
-        self.SetFocus()
         # OSX Window close
         if parent is not None:
             parent.accelerator_table(self)
