@@ -915,12 +915,12 @@ class MeerK40t(wx.Frame, Module, Job):
         )
         flip.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("scale -1 1\n"),
+            lambda e: self.context.console("scale 1 -1\n"),
             id=ID_FLIP_HORIZONTAL,
         )
         flip.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("scale 1 -1\n"),
+            lambda e: self.context.console("scale -1 1\n"),
             id=ID_FLIP_VERTICAL,
         )
         group.Bind(
