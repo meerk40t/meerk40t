@@ -958,7 +958,6 @@ class MeerK40t(wx.Frame, Module, Job):
         self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
 
-
     def on_camera_dropdown(self, event):
         menu = wx.Menu()
         menu.Append(ID_CAMERA1, "Camera %d" % 1)
@@ -2861,7 +2860,6 @@ class ShadowTree:
         elif isinstance(obj, SVGElement):
             self.context.open("window/PathProperty", self.gui, obj)
 
-
     def on_item_selection_changed(self, event):
         """
         Tree menu item is changed. Modify the selection.
@@ -3187,11 +3185,11 @@ class wxMeerK40t(wx.App, Module):
 
         context = kernel.get_context('/')
 
-        @kernel.console_option('path', 'p', type=str, nargs=1, help="Context Path at which to open the window")
+        @kernel.console_option('path', 'p', type=context.get_context, default=context.active, help="Context Path at which to open the window")
         @kernel.console_argument('subcommand', help="open <window>")
         @kernel.console_argument('window', help="window to apply subcommand to")
         @kernel.console_command("window", help="wxMeerK40 window information")
-        def window(command, channel, _, subcommand=None, window=None, path=None, args=tuple(), **kwargs):
+        def window(channel, _, subcommand=None, window=None, path=None, args=(), **kwargs):
             if subcommand is None:
                 channel(_("----------"))
                 channel(_("Loaded Windows in Context %s:") % str(context._path))
@@ -3201,15 +3199,14 @@ class wxMeerK40t(wx.App, Module):
                     module = context.opened[name]
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
 
-                use_context = context.active
-                if path is not None:
-                    use_context = context.get_context(path)
+                # if path is not None:
+                #     path = context.get_context(path)
                 channel(_("----------"))
-                channel(_("Loaded Windows in Device %s:") % str(use_context._path))
-                for i, name in enumerate(use_context.opened):
+                channel(_("Loaded Windows in Device %s:") % str(path._path))
+                for i, name in enumerate(path.opened):
                     if not name.startswith("window"):
                         continue
-                    module = use_context.opened[name]
+                    module = path.opened[name]
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
                 channel(_("----------"))
                 return
@@ -3224,11 +3221,8 @@ class wxMeerK40t(wx.App, Module):
                     parent = context.gui
                 except AttributeError:
                     parent = None
-                use_context = context.active
-                if path is not None:
-                    use_context = context.get_context(path)
                 try:
-                    use_context.open("window/%s" % window, parent, *args)
+                    path.open("window/%s" % window, parent, *args)
                     channel(_("Window Opened."))
                 except (KeyError, ValueError):
                     channel(_("No such window as %s" % window))
