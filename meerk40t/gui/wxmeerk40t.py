@@ -1855,7 +1855,12 @@ class MeerK40t(wx.Frame, Module, Job):
 
     def on_right_mouse_down(self, event):
         self.scene.SetFocus()
-        self.widget_scene.event(event.GetPosition(), "rightdown")
+        if event.AltDown():
+            self.widget_scene.event(event.GetPosition(), 'rightdown+alt')
+        elif event.ControlDown():
+            self.widget_scene.event(event.GetPosition(), 'rightdown+control')
+        else:
+            self.widget_scene.event(event.GetPosition(), 'rightdown')
 
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), "rightup")

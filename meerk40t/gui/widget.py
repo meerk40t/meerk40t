@@ -1199,6 +1199,9 @@ class SceneSpaceWidget(Widget):
         self.add_widget(-1, self.interface_widget)
         self.add_widget(-1, self.scene_widget)
         self.last_position = None
+        self._previous_zoom = None
+        self._placement_event = None
+        self._placement_event_type = None
 
     def hit(self):
         return HITCHAIN_DELEGATE_AND_HIT
@@ -1231,6 +1234,20 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
+        elif event_type == 'rightdown+alt':
+            self._previous_zoom = 1.0
+            self._placement_event = space_pos
+            self._placement_event_type = "zoom"
+            return RESPONSE_CONSUME
+        elif event_type == 'rightdown+control':
+            self._previous_zoom = 1.0
+            self._placement_event = space_pos
+            self._placement_event_type = "pan"
+            return RESPONSE_CONSUME
+        elif event_type == 'rightup':
+            self._previous_zoom = None
+            self._placement_event = None
+            self._placement_event_type = None
         elif event_type == "wheeldown" or event_type == "wheeldown_ctrl":
             if self.scene.context.mouse_zoom_invert:
                 self.scene_widget.matrix.post_scale(
@@ -1289,8 +1306,24 @@ class SceneSpaceWidget(Widget):
             self.scene.context.signal("refresh_scene", 0)
 
             return RESPONSE_CONSUME
-        self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
-        self.scene.context.signal("refresh_scene", 0)
+        # Movement
+        if self._placement_event_type is None:
+            self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
+            self.scene.context.signal('refresh_scene', 0)
+        elif self._placement_event_type == 'zoom':
+            from math import e
+            p = space_pos[0] - self._placement_event[0] + space_pos[1] - self._placement_event[1]
+            p /= 250.0
+            zoom_factor = e**p
+            zoom_change = zoom_factor / self._previous_zoom
+            self._previous_zoom = zoom_factor
+            self.scene_widget.matrix.post_scale(zoom_change, zoom_change,  self._placement_event[0], self._placement_event[1])
+            self.scene.context.signal('refresh_scene', 0)
+        elif self._placement_event_type == 'pan':
+            pan_factor_x = -(space_pos[0] - self._placement_event[0]) / 10
+            pan_factor_y = -(space_pos[1] - self._placement_event[1]) / 10
+            self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
+            self.scene.context.signal('refresh_scene', 0)
         return RESPONSE_CONSUME
 
     def focus_position_scene(self, scene_point, scene_size):
