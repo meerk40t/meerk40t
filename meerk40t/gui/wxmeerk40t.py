@@ -404,7 +404,6 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self._mgr.Update()
 
-        self.CenterOnScreen()
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         self.__set_menubar()
@@ -476,6 +475,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self._rotary_view = False
         self._has_modifiers = False
         self._shift_down = False
+        self.CenterOnScreen()
 
     @property
     def is_dark(self):
