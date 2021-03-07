@@ -2257,9 +2257,8 @@ class Kernel:
             if not os.path.isfile(remainder):
                 channel(_("Not a file: %s" % remainder))
                 return
-            from pathlib import PosixPath, WindowsPath
-            path = PosixPath(new_file)
-            # path = WindowsPath(new_file)
+            from pathlib import Path
+            path = Path(new_file)
             with path.open() as f:
                 while True:
                     line = f.readline()
