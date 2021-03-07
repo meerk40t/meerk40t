@@ -63,6 +63,8 @@ class SVGWriter:
             subelement = SubElement(root, "operation")
             c = getattr(operation, "color")
             if c is not None:
+                if isinstance(c, int):
+                    c = Color(c)
                 subelement.set("color", str(c))
             for key in dir(operation):
                 if key.startswith("_") or key.startswith("implicit"):

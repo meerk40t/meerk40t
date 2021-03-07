@@ -1068,7 +1068,11 @@ class Color(object):
             second = Color(second)
         if isinstance(second, Color):
             second = second.value
-        return first == second
+        if first is None:
+            return second is None
+        if second is None:
+            return first is None
+        return first & 0xFFFFFFFF == second & 0xFFFFFFFF
 
     def __ne__(self, other):
         return not self == other
@@ -1089,13 +1093,7 @@ class Color(object):
         g = Color.crimp(g)
         b = Color.crimp(b)
         a = Color.crimp(opacity * 255.0)
-        if a & 0x80 != 0:
-            a ^= 0x80
-            a <<= 24
-            a = ~a
-            a ^= 0x7FFFFFFF
-        else:
-            a <<= 24
+        a <<= 24
         r <<= 16
         g <<= 8
         c = r | g | b | a
