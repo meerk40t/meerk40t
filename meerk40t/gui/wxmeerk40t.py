@@ -473,8 +473,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.context.schedule(self)
 
         self._rotary_view = False
-        self._has_modifiers = False
-        self._shift_down = False
+
         self.CenterOnScreen()
 
     @property
@@ -1793,8 +1792,8 @@ class MeerK40t(wx.Frame, Module, Job):
         if self.scene.HasCapture():
             return
         rotation = event.GetWheelRotation()
-        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not self._shift_down:
-            if self._has_modifiers:
+        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not event.ShiftDown():
+            if event.HasAnyModifiers():
                 if rotation > 1:
                     self.widget_scene.event(event.GetPosition(), "wheelup_ctrl")
                 elif rotation < -1:
@@ -1888,8 +1887,6 @@ class MeerK40t(wx.Frame, Module, Job):
         # event.Skip()
 
     def on_key_down(self, event):
-        self._shift_down = event.ShiftDown()
-        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.context.keymap
         if keyvalue in keymap:
@@ -1899,8 +1896,6 @@ class MeerK40t(wx.Frame, Module, Job):
             event.Skip()
 
     def on_key_up(self, event):
-        self._shift_down = event.ShiftDown()
-        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.context.keymap
         if keyvalue in keymap:
