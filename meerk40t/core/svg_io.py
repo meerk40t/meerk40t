@@ -65,9 +65,16 @@ class SVGWriter:
             if c is not None:
                 subelement.set("color", str(c))
             for key in dir(operation):
-                if key.startswith("_"):
+                if key.startswith("_") or key.startswith("implicit"):
                     continue
                 value = getattr(operation, key)
+                if type(value) not in (int, float, str, bool):
+                    continue
+                subelement.set(key, str(value))
+            for key in dir(operation.settings):
+                if key.startswith("_") or key.startswith("implicit"):
+                    continue
+                value = getattr(operation.settings, key)
                 if type(value) not in (int, float, str, bool):
                     continue
                 subelement.set(key, str(value))
@@ -292,7 +299,7 @@ class SVGLoader:
                             operations_cleared = True
                         op = LaserOperation()
                         for key in dir(op):
-                            if key.startswith("_"):
+                            if key.startswith("_") or key.startswith("implicit"):
                                 continue
                             v = getattr(op, key)
                             if key in element.values:
@@ -310,7 +317,7 @@ class SVGLoader:
                                         in ("true", "1"),
                                     )
                         for key in dir(op.settings):
-                            if key.startswith("_"):
+                            if key.startswith("_") or key.startswith("implicit"):
                                 continue
                             v = getattr(op.settings, key)
                             if key in element.values:
