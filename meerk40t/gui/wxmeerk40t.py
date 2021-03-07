@@ -162,121 +162,106 @@ def plugin(kernel, lifecycle):
         kernel.console("window -p / open MeerK40t\n")
         meerk40tgui.MainLoop()
 
+ID_MAIN_TOOLBAR = wx.NewId()
+ID_ADD_FILE = wx.NewId()
+ID_OPEN = wx.NewId()
 
-class IdInc:
-    """
-    Id Incrementor
-    """
+ID_SAVE = wx.NewId()
+ID_NAV = wx.NewId()
+ID_USB = wx.NewId()
+ID_CONTROLLER = wx.NewId()
+ID_PREFERENCES = wx.NewId()
+ID_DEVICES = wx.NewId()
+ID_CAMERA = wx.NewId()
+ID_CAMERA1 = wx.NewId()
+ID_CAMERA2 = wx.NewId()
+ID_CAMERA3 = wx.NewId()
+ID_CAMERA4 = wx.NewId()
+ID_CAMERA5 = wx.NewId()
+ID_JOB = wx.NewId()
+ID_PAUSE = wx.NewId()
 
-    def __init__(self):
-        self.id_highest_value = wx.ID_HIGHEST
+ID_SPOOLER = wx.NewId()
+ID_KEYMAP = wx.NewId()
+ID_NOTES = wx.NewId()
+ID_OPERATIONS = wx.NewId()
+ID_TERMINAL = wx.NewId()
+ID_ROTARY = wx.NewId()
+ID_RASTER = wx.NewId()
 
-    def new(self):
-        self.id_highest_value += 1
-        return self.id_highest_value
+ID_HOMEPAGE = wx.NewId()
 
+ID_SELECT = wx.NewId()
 
-idinc = IdInc()
-ID_MAIN_TOOLBAR = idinc.new()
-ID_ADD_FILE = idinc.new()
-ID_OPEN = idinc.new()
-
-ID_SAVE = idinc.new()
-ID_NAV = idinc.new()
-ID_USB = idinc.new()
-ID_CONTROLLER = idinc.new()
-ID_PREFERENCES = idinc.new()
-ID_DEVICES = idinc.new()
-ID_CAMERA = idinc.new()
-ID_CAMERA1 = idinc.new()
-ID_CAMERA2 = idinc.new()
-ID_CAMERA3 = idinc.new()
-ID_CAMERA4 = idinc.new()
-ID_CAMERA5 = idinc.new()
-ID_JOB = idinc.new()
-ID_PAUSE = idinc.new()
-
-ID_SPOOLER = idinc.new()
-ID_KEYMAP = idinc.new()
-ID_NOTES = idinc.new()
-ID_OPERATIONS = idinc.new()
-ID_TERMINAL = idinc.new()
-ID_ROTARY = idinc.new()
-ID_RASTER = idinc.new()
-
-ID_HOMEPAGE = idinc.new()
-
-ID_SELECT = idinc.new()
-
-ID_MENU_IMPORT = idinc.new()
-ID_MENU_RECENT = idinc.new()
-ID_MENU_ZOOM_OUT = idinc.new()
-ID_MENU_ZOOM_IN = idinc.new()
-ID_MENU_ZOOM_SIZE = idinc.new()
+ID_MENU_IMPORT = wx.NewId()
+ID_MENU_RECENT = wx.NewId()
+ID_MENU_ZOOM_OUT = wx.NewId()
+ID_MENU_ZOOM_IN = wx.NewId()
+ID_MENU_ZOOM_SIZE = wx.NewId()
 
 # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
-ID_MENU_HIDE_FILLS = idinc.new()
-ID_MENU_HIDE_GUIDES = idinc.new()
-ID_MENU_HIDE_GRID = idinc.new()
-ID_MENU_HIDE_BACKGROUND = idinc.new()
-ID_MENU_HIDE_STROKES = idinc.new()
-ID_MENU_HIDE_ICONS = idinc.new()
-ID_MENU_HIDE_TREE = idinc.new()
-ID_MENU_HIDE_LASERPATH = idinc.new()
-ID_MENU_HIDE_RETICLE = idinc.new()
-ID_MENU_HIDE_SELECTION = idinc.new()
-ID_MENU_SCREEN_REFRESH = idinc.new()
-ID_MENU_SCREEN_ANIMATE = idinc.new()
-ID_MENU_SCREEN_INVERT = idinc.new()
-ID_MENU_SCREEN_FLIPXY = idinc.new()
-ID_MENU_PREVENT_CACHING = idinc.new()
-ID_MENU_HIDE_IMAGE = idinc.new()
-ID_MENU_HIDE_PATH = idinc.new()
-ID_MENU_HIDE_TEXT = idinc.new()
+ID_MENU_HIDE_FILLS = wx.NewId()
+ID_MENU_HIDE_GUIDES = wx.NewId()
+ID_MENU_HIDE_GRID = wx.NewId()
+ID_MENU_HIDE_BACKGROUND = wx.NewId()
+ID_MENU_HIDE_STROKES = wx.NewId()
+ID_MENU_HIDE_ICONS = wx.NewId()
+ID_MENU_HIDE_TREE = wx.NewId()
+ID_MENU_HIDE_LASERPATH = wx.NewId()
+ID_MENU_HIDE_RETICLE = wx.NewId()
+ID_MENU_HIDE_SELECTION = wx.NewId()
+ID_MENU_SCREEN_REFRESH = wx.NewId()
+ID_MENU_SCREEN_ANIMATE = wx.NewId()
+ID_MENU_SCREEN_INVERT = wx.NewId()
+ID_MENU_SCREEN_FLIPXY = wx.NewId()
+ID_MENU_PREVENT_CACHING = wx.NewId()
+ID_MENU_HIDE_IMAGE = wx.NewId()
+ID_MENU_HIDE_PATH = wx.NewId()
+ID_MENU_HIDE_TEXT = wx.NewId()
 
-ID_MENU_FILE0 = idinc.new()
-ID_MENU_FILE1 = idinc.new()
-ID_MENU_FILE2 = idinc.new()
-ID_MENU_FILE3 = idinc.new()
-ID_MENU_FILE4 = idinc.new()
-ID_MENU_FILE5 = idinc.new()
-ID_MENU_FILE6 = idinc.new()
-ID_MENU_FILE7 = idinc.new()
-ID_MENU_FILE8 = idinc.new()
-ID_MENU_FILE9 = idinc.new()
-ID_MENU_FILE_CLEAR = idinc.new()
+ID_MENU_FILE0 = wx.NewId()
+ID_MENU_FILE1 = wx.NewId()
+ID_MENU_FILE2 = wx.NewId()
+ID_MENU_FILE3 = wx.NewId()
+ID_MENU_FILE4 = wx.NewId()
+ID_MENU_FILE5 = wx.NewId()
+ID_MENU_FILE6 = wx.NewId()
+ID_MENU_FILE7 = wx.NewId()
+ID_MENU_FILE8 = wx.NewId()
+ID_MENU_FILE9 = wx.NewId()
+ID_MENU_FILE_CLEAR = wx.NewId()
 
-ID_MENU_KEYMAP = idinc.new()
-ID_MENU_DEVICE_MANAGER = idinc.new()
-ID_MENU_SETTINGS = idinc.new()
-ID_MENU_ROTARY = idinc.new()
-ID_MENU_NAVIGATION = idinc.new()
-ID_MENU_NOTES = idinc.new()
-ID_MENU_OPERATIONS = idinc.new()
-ID_MENU_CONTROLLER = idinc.new()
-ID_MENU_CAMERA = idinc.new()
-ID_MENU_TERMINAL = idinc.new()
-ID_MENU_USB = idinc.new()
-ID_MENU_SPOOLER = idinc.new()
-ID_MENU_JOB = idinc.new()
-ID_MENU_TREE = idinc.new()
+ID_MENU_KEYMAP = wx.NewId()
+ID_MENU_DEVICE_MANAGER = wx.NewId()
+ID_MENU_SETTINGS = wx.NewId()
+ID_MENU_ROTARY = wx.NewId()
+ID_MENU_NAVIGATION = wx.NewId()
+ID_MENU_NOTES = wx.NewId()
+ID_MENU_OPERATIONS = wx.NewId()
+ID_MENU_CONTROLLER = wx.NewId()
+ID_MENU_CAMERA = wx.NewId()
+ID_MENU_TERMINAL = wx.NewId()
+ID_MENU_USB = wx.NewId()
+ID_MENU_SPOOLER = wx.NewId()
+ID_MENU_JOB = wx.NewId()
+ID_MENU_TREE = wx.NewId()
 
-ID_ALIGN_LEFT = idinc.new()
-ID_ALIGN_RIGHT = idinc.new()
-ID_ALIGN_TOP = idinc.new()
-ID_ALIGN_BOTTOM = idinc.new()
+ID_ALIGN_LEFT = wx.NewId()
+ID_ALIGN_RIGHT = wx.NewId()
+ID_ALIGN_TOP = wx.NewId()
+ID_ALIGN_BOTTOM = wx.NewId()
 
-ID_FLIP_HORIZONTAL = idinc.new()
-ID_FLIP_VERTICAL = idinc.new()
-ID_GROUP = idinc.new()
-ID_UNGROUP = idinc.new()
-ID_TOOL_POSITION = idinc.new()
-ID_TOOL_OVAL = idinc.new()
-ID_TOOL_CIRCLE = idinc.new()
-ID_TOOL_POLYGON = idinc.new()
-ID_TOOL_POLYLINE = idinc.new()
-ID_TOOL_RECT = idinc.new()
-ID_TOOL_TEXT = idinc.new()
+ID_FLIP_HORIZONTAL = wx.NewId()
+ID_FLIP_VERTICAL = wx.NewId()
+ID_GROUP = wx.NewId()
+ID_UNGROUP = wx.NewId()
+ID_TOOL_POSITION = wx.NewId()
+ID_TOOL_OVAL = wx.NewId()
+ID_TOOL_CIRCLE = wx.NewId()
+ID_TOOL_POLYGON = wx.NewId()
+ID_TOOL_POLYLINE = wx.NewId()
+ID_TOOL_RECT = wx.NewId()
+ID_TOOL_TEXT = wx.NewId()
 
 _ = wx.GetTranslation
 supported_languages = (
@@ -473,6 +458,9 @@ class MeerK40t(wx.Frame, Module, Job):
         self.context.schedule(self)
 
         self._rotary_view = False
+
+        self._close_window_id = wx.NewId()
+        self._accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('W'), self._close_window_id)])
 
         self.CenterOnScreen()
 
@@ -1346,6 +1334,17 @@ class MeerK40t(wx.Frame, Module, Job):
             self.context.console("quit\n")
             # self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
+
+
+    def accelerator_table(self, window):
+        def close_window(e=None):
+            try:
+                window.Close(False)
+            except RuntimeError:
+                pass
+
+        self.Bind(wx.EVT_MENU, close_window, id=self._close_window_id)
+        window.SetAcceleratorTable(self._accel_tbl)
 
     def on_active_change(self, old_active, context_active):
         if old_active is not None:
