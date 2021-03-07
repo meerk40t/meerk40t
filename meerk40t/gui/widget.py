@@ -63,6 +63,10 @@ class Scene(Module):
         self.time = None
         self.distance = None
 
+    @staticmethod
+    def sub_register(kernel):
+        pass
+
     def initialize(self, *args, **kwargs):
         self.context.setting(int, "draw_mode", 0)
         self.context.setting(bool, "mouse_zoom_invert", False)

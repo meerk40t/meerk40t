@@ -82,7 +82,10 @@ from .icons import (
     icons8_save_50,
     icons8_usb_connector_50,
     icons8_vector_20,
-    icons8_group_objects_20,
+    icons8_group_objects_20, icons8_flip_horizontal_50, icons8_flip_vertical_50, icons8_group_objects_50,
+    icons8_ungroup_objects_50, icons8_place_marker_50, icons8_oval_50, icons8_circle_50, icons8_polygon_50,
+    icons8_polyline_50, icons8_rectangular_50, icons8_type_50, icons8_align_left_50, icons8_align_right_50,
+    icons8_align_top_50, icons8_align_bottom_50,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -257,6 +260,23 @@ ID_MENU_USB = idinc.new()
 ID_MENU_SPOOLER = idinc.new()
 ID_MENU_JOB = idinc.new()
 ID_MENU_TREE = idinc.new()
+
+ID_ALIGN_LEFT = idinc.new()
+ID_ALIGN_RIGHT = idinc.new()
+ID_ALIGN_TOP = idinc.new()
+ID_ALIGN_BOTTOM = idinc.new()
+
+ID_FLIP_HORIZONTAL = idinc.new()
+ID_FLIP_VERTICAL = idinc.new()
+ID_GROUP = idinc.new()
+ID_UNGROUP = idinc.new()
+ID_TOOL_POSITION = idinc.new()
+ID_TOOL_OVAL = idinc.new()
+ID_TOOL_CIRCLE = idinc.new()
+ID_TOOL_POLYGON = idinc.new()
+ID_TOOL_POLYLINE = idinc.new()
+ID_TOOL_RECT = idinc.new()
+ID_TOOL_TEXT = idinc.new()
 
 _ = wx.GetTranslation
 supported_languages = (
@@ -710,38 +730,40 @@ class MeerK40t(wx.Frame, Module, Job):
         windows.AddButton(
             ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
         )
-        # home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(), )
-        #
-        # align_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Align"), icons8_opened_folder_50.GetBitmap(),
-        #                              style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        # align = RB.RibbonButtonBar(align_panel)
-        # align.AddButton(ID_DEVICES, _("Align Left"), icons8_align_left_50.GetBitmap(), "")
-        # align.AddButton(ID_DEVICES, _("Align Right"), icons8_align_right_50.GetBitmap(), "")
-        # align.AddButton(ID_DEVICES, _("Align Top"), icons8_align_top_50.GetBitmap(), "")
-        # align.AddButton(ID_DEVICES, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), "")
-        #
-        # flip_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Flip"), icons8_opened_folder_50.GetBitmap(),
-        #                             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        # flip = RB.RibbonButtonBar(flip_panel)
-        # flip.AddButton(ID_DEVICES, _("Flip Horizontal"), icons8_flip_horizontal_50.GetBitmap(), "")
-        # flip.AddButton(ID_DEVICES, _("Flip Vertical"), icons8_flip_vertical_50.GetBitmap(), "")
-        #
-        # group_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Group"), icons8_opened_folder_50.GetBitmap(),
-        #                              style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        # group = RB.RibbonButtonBar(group_panel)
-        # group.AddButton(ID_DEVICES, _("Group"), icons8_group_objects_50.GetBitmap(), "")
-        # group.AddButton(ID_DEVICES, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), "")
-        #
-        # tool_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(),
-        #                             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        # tool = RB.RibbonButtonBar(tool_panel)
-        # tool.AddButton(ID_DEVICES, _("Set Position"), icons8_place_marker_50.GetBitmap(), "")
-        # tool.AddButton(ID_DEVICES, _("Oval"), icons8_oval_50.GetBitmap(), "")
-        # tool.AddButton(ID_DEVICES, _("Circle"), icons8_circle_50.GetBitmap(), "")
-        # tool.AddButton(ID_DEVICES, _("Polygon"), icons8_polygon_50.GetBitmap(), "")
-        # tool.AddButton(ID_DEVICES, _("Polyline"), icons8_polyline_50.GetBitmap(), "")
-        # tool.AddButton(ID_DEVICES, _("Rectangle"), icons8_rectangular_50.GetBitmap(), "")
-        # tool.AddButton(ID_DEVICES, _("Text"), icons8_type_50.GetBitmap(), "")
+        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(), )
+
+        align_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Align"), icons8_opened_folder_50.GetBitmap(),
+                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        align = RB.RibbonButtonBar(align_panel)
+        align.AddButton(ID_ALIGN_LEFT, _("Align Left"), icons8_align_left_50.GetBitmap(), "")
+        align.AddButton(ID_ALIGN_RIGHT, _("Align Right"), icons8_align_right_50.GetBitmap(), "")
+        align.AddButton(ID_ALIGN_TOP, _("Align Top"), icons8_align_top_50.GetBitmap(), "")
+        align.AddButton(ID_ALIGN_BOTTOM, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), "")
+
+        flip_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Flip"), icons8_opened_folder_50.GetBitmap(),
+                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        flip = RB.RibbonButtonBar(flip_panel)
+
+        flip.AddButton(ID_FLIP_HORIZONTAL, _("Flip Horizontal"), icons8_flip_horizontal_50.GetBitmap(), "")
+        flip.AddButton(ID_FLIP_VERTICAL, _("Flip Vertical"), icons8_flip_vertical_50.GetBitmap(), "")
+
+        group_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Group"), icons8_opened_folder_50.GetBitmap(),
+                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+
+        group = RB.RibbonButtonBar(group_panel)
+        group.AddButton(ID_GROUP, _("Group"), icons8_group_objects_50.GetBitmap(), "")
+        group.AddButton(ID_UNGROUP, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), "")
+
+        tool_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(),
+                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        tool = RB.RibbonButtonBar(tool_panel)
+        tool.AddButton(ID_TOOL_POSITION, _("Set Position"), icons8_place_marker_50.GetBitmap(), "")
+        tool.AddButton(ID_TOOL_OVAL, _("Oval"), icons8_oval_50.GetBitmap(), "")
+        tool.AddButton(ID_TOOL_CIRCLE, _("Circle"), icons8_circle_50.GetBitmap(), "")
+        tool.AddButton(ID_TOOL_POLYGON, _("Polygon"), icons8_polygon_50.GetBitmap(), "")
+        tool.AddButton(ID_TOOL_POLYLINE, _("Polyline"), icons8_polyline_50.GetBitmap(), "")
+        tool.AddButton(ID_TOOL_RECT, _("Rectangle"), icons8_rectangular_50.GetBitmap(), "")
+        tool.AddButton(ID_TOOL_TEXT, _("Text"), icons8_type_50.GetBitmap(), "")
 
         home = RB.RibbonPage(
             self._ribbon,
@@ -912,9 +934,85 @@ class MeerK40t(wx.Frame, Module, Job):
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
+        align.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("scene align left\n"),
+            id=ID_ALIGN_LEFT,
+        )
+        align.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("scene align right\n"),
+            id=ID_ALIGN_RIGHT,
+        )
+        align.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("scene align top\n"),
+            id=ID_ALIGN_TOP,
+        )
+        align.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("scene align bottom\n"),
+            id=ID_ALIGN_BOTTOM,
+        )
+        flip.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("scale -1 1\n"),
+            id=ID_FLIP_HORIZONTAL,
+        )
+        flip.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("scale 1 -1\n"),
+            id=ID_FLIP_VERTICAL,
+        )
+        group.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("group\n"),
+            id=ID_GROUP,
+        )
+        group.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("ungroup\n"),
+            id=ID_UNGROUP,
+        )
+        tool.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("tool position\n"),
+            id=ID_TOOL_POSITION,
+        )
+        tool.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("tool oval\n"),
+            id=ID_TOOL_OVAL,
+        )
+        tool.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("tool circle\n"),
+            id=ID_TOOL_CIRCLE,
+        )
+        tool.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("tool polygon\n"),
+            id=ID_TOOL_POLYGON,
+        )
+        tool.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("tool polyline\n"),
+            id=ID_TOOL_POLYLINE,
+        )
+        tool.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("tool rect\n"),
+            id=ID_TOOL_RECT,
+        )
+        tool.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("tool text\n"),
+            id=ID_TOOL_TEXT,
+        )
         self.context.setting(int, "units_index", 0)
         self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
+
 
     def on_camera_dropdown(self, event):
         menu = wx.Menu()
