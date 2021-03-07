@@ -2536,8 +2536,6 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        if self.wxtree.ItemHasChildren(item):
-            raise ValueError("Trying to delete parent before child")
         self.wxtree.Delete(node.item)
         for i in self.wxtree.GetSelections():
             self.wxtree.SelectItem(i, False)
