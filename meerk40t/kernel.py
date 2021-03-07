@@ -7,6 +7,7 @@ from threading import Lock, Thread
 
 from .svgelements import Color
 
+
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
 STATE_IDLE = 1
@@ -31,12 +32,10 @@ class Modifier:
     """
     A modifier alters a context with additional functionality set during attachment and detachment.
 
-    These are also booted and shutdown with the kernel. The modifications to the kernel are not expected to be undone.
-    Rather the detach should kill any secondary processes the modifier may possess.
+    These are also booted and shutdown with the kernel's lifecycle. The modifications to the kernel are not expected
+    to be undone. Rather the detach should kill any secondary processes the modifier may possess.
 
-    At detach the assumption is that the Modifier's ecosystem is the same.
-
-    Modifiers can only be called once at any particular context.
+    A modifiers can only be called once at any particular context.
     """
 
     def __init__(self, context, name=None, channel=None):
@@ -98,7 +97,8 @@ class Module:
         pass
 
     def restore(self, *args, **kwargs):
-        """Called with the same values of __init()__ on an attempted reopen."""
+        """Called with the same values of __init()__ on an attempted reopen of a module with the same name at the
+        same context."""
         pass
 
     def finalize(self, *args, **kwargs):
@@ -109,9 +109,17 @@ class Module:
 
 class Context:
     """
-    Contexts serve as path relevant snapshots of the kernel. These are are the primary interaction between the modules
+    Contexts serve as path-relevant snapshots of the kernel. These are are the primary interaction between the modules
     and the kernel. They permit getting other contexts of the kernel as well. This should serve as the primary interface
-    code between the kernel and the modules.
+    code between the kernel and the modules. And the location where modifiers are applied and modules are opened.
+
+    Context store the persistent settings and settings from these locations are saved and loaded.
+
+    Contexts have settings located at .<setting> and so long as this setting does not begin with _ or 'implicit' it
+    will be reloaded when .setting() is called for the given attribute. This should be called by any module that intends
+    access to an attribute even if it was already called.
+
+    Most modules and functions are applied at the root level '/'.
     """
 
     def __init__(self, kernel, path):
@@ -178,11 +186,20 @@ class Context:
             yield e
 
     def subpaths(self):
+        """
+        Generate all subpaths of the current context with their path name and the relevant context.
+        """
         for e in list(self._kernel.contexts):
             if e.startswith(self._path):
                 yield e, self._kernel.contexts[e]
 
     def close_subpaths(self):
+        """
+        Find all subpaths of the current context and set them to None.
+
+        This is not a maintenance operation. It's needed for rare instances during shutdown. All contexts will be
+        shutdown normally during the shutdown in the lifecycle.
+        """
         for e in list(self._kernel.contexts):
             if e.startswith(self._path):
                 self._kernel.contexts[e] = None
@@ -253,21 +270,38 @@ class Context:
 
     @staticmethod
     def console_argument(*args, **kwargs):
+        """
+        Delegate to Kernel
+        """
         return Kernel.console_argument(*args, **kwargs)
 
     @staticmethod
     def console_option(*args, **kwargs):
+        """
+        Delegate to Kernel
+        """
         return Kernel.console_option(*args, **kwargs)
 
     def console_command(self, *args, **kwargs):
+        """
+        Delegate to Kernel
+
+        Uses current context to be passed to the console_command being registered.
+        """
         return Kernel.console_command(self, *args, **kwargs)
 
     @property
     def registered(self):
+        """
+        Delegate to Kernel
+        """
         return self._kernel.registered
 
     @property
     def active(self):
+        """
+        Return the Active Device in the kernel.
+        """
         return self._kernel.active_device
 
     @property
@@ -277,7 +311,8 @@ class Context:
     def has_feature(self, feature):
         """
         Return whether or not this is a registered feature within the kernel.
-        :param feature:
+
+        :param feature: feature to check if exists in kernel.
         :return:
         """
         return feature in self._kernel.registered
@@ -285,6 +320,7 @@ class Context:
     def match(self, matchtext, suffix=False):
         """
         Delegate of Kernel match.
+
         :param matchtext:  regex matchtext to locate.
         :yield: matched entries.
         """
@@ -310,8 +346,10 @@ class Context:
 
     def open(self, registered_path, *args, **kwargs):
         """
-        Opens a registered module with the same instance path as the registered path. This is fairly standard but should
-        not be used if the goal would be to open the same module several times.
+        Opens a registered module with the same instance path as the registered path.
+
+        This is fairly standard but should not be used if the goal would be to open the same module several times.
+        Unless those modules are being opened at different contexts.
 
         :param registered_path: registered path of the given module.
         :param args: args to open the module with.
@@ -326,7 +364,7 @@ class Context:
 
         Instance_name is the name under which this given module is opened.
 
-        If the module already exists, the restore function is called on that object, if restore() exists, with the same
+        If the module already exists, the restore function is called on that object (if restore() exists), with the same
         args and kwargs that were intended for the init() routine.
 
         :param registered_path: path of object being opened.
@@ -359,9 +397,9 @@ class Context:
 
     def close(self, instance_path, *args, **kwargs):
         """
-        Closes an opened instance. Located at the instance_path location.
+        Closes an opened module instance. Located at the instance_path location.
 
-        This calls the close() function on the object (which may not exist). And calls finalize() on the module,
+        This calls the close() function on the object (which may not exist). Then calls finalize() on the module,
         which should exist.
 
         :param instance_path: Instance path to close.
@@ -384,10 +422,11 @@ class Context:
 
     def activate(self, registered_path, *args, **kwargs):
         """
-        Activates a modifier at this context. The activate calls and attaches a modifier located at the given path
+        Activates a modifier at this context. activate() calls and attaches a modifier located at the given path
         to be attached to this context.
 
-        The modifier is opened and attached at the current context.
+        The modifier is opened and attached at the current context. Unlike modules there is no instance_path and the
+        registered_path should be a singleton. It is expected that attached modifiers will modify the context.
 
         :param registered_path: registered_path location of the modifier.
         :param args: arguments to call the modifier
@@ -416,7 +455,9 @@ class Context:
     def deactivate(self, instance_path, *args, **kwargs):
         """
         Deactivate a modifier attached to this context.
-        The detach() is called on the modifier and modifier is deleted from the list of attached.
+        The detach() is called on the modifier and modifier is deleted from the list of attached. This should be called
+        during the shutdown of the Kernel. There is no expectation that modifiers actually remove their functions during
+        this call.
 
         :param instance_path: Attached path location.
         :return:
@@ -453,9 +494,18 @@ class Context:
                 pass
 
     def clear_persistent(self):
+        """
+        Delegate to Kernel to clear the persistent settings located at this context.
+        """
         self._kernel.clear_persistent(self._path)
 
     def write_persistent(self, key, value):
+        """
+        Delegate to Kernel to write the given key at this context to persistent settings. This is typically done during
+        shutdown but there are a variety of reasons to force this call early.
+
+        If the persistence object is not yet established this function cannot succeed.
+        """
         self._kernel.write_persistent(self.abs_path(key), value)
 
     def set_attrib_keys(self):
@@ -471,7 +521,8 @@ class Context:
 
     def signal(self, code, *message):
         """
-        Signal delegate to the kernel.
+        Send Signal to all registered listeners.
+
         :param code: Code to delegate at this given context location.
         :param message: Message to send.
         :return:
@@ -480,7 +531,7 @@ class Context:
 
     def last_signal(self, code):
         """
-        Last Signal delegate to the kernel.
+        Returns the last signal at the given code.
 
         :param code: Code to delegate at this given context location.
         :return: message value of the last signal sent for that code.
@@ -489,7 +540,7 @@ class Context:
 
     def listen(self, signal, process):
         """
-        Listen delegate to the kernel.
+        Listen at a particular signal with a given process.
 
         :param signal: Signal code to listen for
         :param process: listener to be attached
@@ -499,7 +550,9 @@ class Context:
 
     def unlisten(self, signal, process):
         """
-        Unlisten delegate to the kernel.
+        Unlisten to a particular signal with a given process.
+
+        This should be called on the ending of the lifecycle of whatever process listened to the given signal.
 
         :param signal: Signal to unlisten for.
         :param process: listener that is to be detached.
@@ -509,7 +562,7 @@ class Context:
 
     def channel(self, channel, *args, **kwargs):
         """
-        Channel channel_open delegate to the kernel.
+        Return a channel from the kernel location
 
         :param channel: Channel to be opened.
         :param buffer: Buffer to be applied to the given channel and sent to any watcher upon connection.
@@ -518,19 +571,44 @@ class Context:
         return self._kernel.channel(self.abs_path(channel), *args, **kwargs)
 
     def console_function(self, data):
+        """
+        Returns a function that calls a console command. This serves as a Job to be used in Scheduler or simply a
+        function with the command as the str form.
+        """
         return ConsoleFunction(self, data)
 
     def console(self, data):
+        """
+        Call the Kernel's Console with the given data.
+
+        Note: '\n' is usually used to execute these functions and this is not added by default.
+        """
         self._kernel.console(data)
 
     def schedule(self, job):
+        """
+        Call the Kernel's Scheduler with the given job.
+        """
         self._kernel.schedule(job)
 
     def unschedule(self, job):
+        """
+        Unschedule a given job.
+
+        This is often unneeded if the job completes on it's own, it will be removed from the scheduler.
+        """
         self._kernel.unschedule(job)
 
-    def threaded(self, func, thread_name=None, result=None):
-        return self._kernel.threaded(func, thread_name=thread_name, result=None)
+    def threaded(self, func, thread_name=None, result=None, daemon=False):
+        """
+        Calls a thread to be registered in the kernel.
+
+        Registered threads must complete before shutdown can be completed. These will told to stop and waited on until
+        completion.
+
+        The result function will be called with any returned result func.
+        """
+        return self._kernel.threaded(func, thread_name=thread_name, result=result, daemon=daemon)
 
 
 class Kernel:
@@ -545,30 +623,54 @@ class Kernel:
 
     Devices are contexts with a device. These are expected to have a Spooler attached, and the path should consist
     of numbers.
+
     """
 
     def __init__(self, name, version, profile, path="/", config=None):
+        """
+        Initialize the Kernel. This sets core attributes of the ecosystem that are accessable to all modules.
+
+        Name: The application name.
+        Version: The version number of the application.
+        Profile: The name to save our data under (this is often the same as name except if we want unused setting).
+        Path: The subpath all data should be saved under. This is a prefix of data to silently add to all data.
+        Config: This is the persistence object used to save. While official agnostic, it's actually strikingly identical
+                    to a wx.Config object.
+        """
         self.name = name
         self.profile = profile
         self.version = version
         self._path = path
         self.lifecycle = "init"
+
+        # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
         self._plugins = []
 
+        # Store devices and active devices. Currently these are automatically booted if autoboot is set. Devices are
+        # Always integers.
         self.devices = {}
         self.active_device = None
 
+        # All established contexts.
         self.contexts = {}
+
+        # All registered threads.
         self.threads = {}
         self.thread_lock = Lock()
+
+        # All registered locations within the kernel.
         self.registered = {}
+
+        # The translation object to be overridden by any valid transition functions
         self.translation = lambda e: e
+
+        # The function used to process the signals. This is useful if signals should be kept to a single thread.
         self.run_later = lambda listener, message: listener(message)
         self.state = STATE_INITIALIZE
+
+        # Scheduler
         self.jobs = {}
-
         self.scheduler_thread = None
-
         self.signal_job = None
         self.listeners = {}
         self.adding_listeners = []
@@ -578,8 +680,10 @@ class Kernel:
         self.message_queue = {}
         self._is_queue_processing = False
 
+        # Channels
         self.channels = {}
 
+        # Registered Commands.
         self.commands = []
         self.console_job = Job(
             job_name="kernel.console.ticks",
