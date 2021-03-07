@@ -3186,8 +3186,8 @@ class wxMeerK40t(wx.App, Module):
         context = kernel.get_context('/')
 
         @kernel.console_option('path', 'p', type=context.get_context, default=context.active, help="Context Path at which to open the window")
-        @kernel.console_argument('subcommand', help="open <window>")
-        @kernel.console_argument('window', help="window to apply subcommand to")
+        @kernel.console_argument('subcommand',  type=str, help="open <window>")
+        @kernel.console_argument('window', type=str, help="window to apply subcommand to")
         @kernel.console_command("window", help="wxMeerK40 window information")
         def window(channel, _, subcommand=None, window=None, path=None, args=(), **kwargs):
             if subcommand is None:

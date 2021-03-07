@@ -1760,7 +1760,7 @@ class Elemental(Modifier):
             input_type=("elements", None),
             output_type="elements",
         )
-        def rect(command, x0, y0, x1, y1, data=None, args=tuple(), **kwargs):
+        def line_command(command, x0, y0, x1, y1, data=None, args=tuple(), **kwargs):
             """
             Draws an svg line in the scene.
             """
@@ -1970,7 +1970,7 @@ class Elemental(Modifier):
             **kwargs
         ):
             """
-            Draws an svg rectangle with optional rounded corners.
+            Draws an outline of the current shape.
             """
             if x_offset is None:
                 raise SyntaxError
