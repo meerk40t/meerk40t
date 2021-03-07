@@ -131,8 +131,7 @@ class SVGWriter:
                         "y",
                     ):
                         subelement.set(key, str(val))
-
-            else:  # Image.
+            elif isinstance(element, SVGImage):
                 subelement = SubElement(root, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 element.image.save(stream, format="PNG")
@@ -161,6 +160,8 @@ class SVGWriter:
                             "d_ratio",
                         ):
                             subelement.set(key, str(val))
+            else:
+                raise ValueError("Attempting to save unknown element.")
             stroke = element.stroke
             if stroke is not None:
                 stroke_opacity = stroke.opacity
