@@ -132,6 +132,9 @@ class Context:
     def __str__(self):
         return "Context('%s')" % self._path
 
+    def __call__(self, data, **kwargs):
+        return self._kernel.console(data)
+
     def boot(self, channel=None):
         """
         Boot calls all attached modifiers with the boot command.
@@ -2269,7 +2272,6 @@ class Kernel:
             # channel(_("loading..."))
             # for
             # return "file", new_file
-
 
     def console(self, data):
         """

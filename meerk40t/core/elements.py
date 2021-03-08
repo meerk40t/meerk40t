@@ -2675,22 +2675,22 @@ class Elemental(Modifier):
         def execute_job(node, **kwargs):
             # self.context.open("window/JobPreview", self.gui, "0", selected=True)
             node.emphasized = True
-            self.context.console("plan0 copy-selected\n")
-            self.context.console("window -p / open JobPreview 0\n")
+            self.context("plan0 copy-selected\n")
+            self.context("window -p / open JobPreview 0\n")
 
         @self.tree_operation(_("Clear All"), node_type="branch ops", help="")
         def clear_all(node, **kwargs):
-            self.context.console("operation* delete\n")
+            self.context("operation* delete\n")
 
         @self.tree_operation(_("Clear All"), node_type="branch elems", help="")
         def clear_all_ops(node, **kwargs):
-            self.context.console("element* delete\n")
+            self.context("element* delete\n")
 
         @self.tree_operation(
             _("Remove: {name}"), node_type="op", help=""
         )
         def remove_types(node, **kwargs):
-            # self.context.console("operation delete\n")
+            # self.context("operation delete\n")
             node.remove_node()
             # self.remove_orphaned_opnodes()
             self.set_emphasis(None)
@@ -2699,7 +2699,7 @@ class Elemental(Modifier):
             _("Remove: {name}"), node_type="elem", help=""
         )
         def remove_types(node, **kwargs):
-            # self.context.console("element delete\n")
+            # self.context("element delete\n")
             node.remove_node()
             self.remove_orphaned_opnodes()
             self.set_emphasis(None)
@@ -2726,7 +2726,7 @@ class Elemental(Modifier):
             _("Remove: {ecount} objects"), node_type=("elem", "opnode"), help=""
         )
         def remove_n_objects(node, **kwargs):
-            self.context.console("element delete\n")
+            self.context("element delete\n")
 
         @self.tree_submenu(_("Clone Reference"))
         @self.tree_iterate("copies", 1, 10)
@@ -2964,7 +2964,7 @@ class Elemental(Modifier):
             _("Reset User Changes"), node_type=("branch elem", "elem"), help=""
         )
         def reset_user_changes(node, copies=1, **kwargs):
-            self.context.console("reset\n")
+            self.context("reset\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -2983,7 +2983,7 @@ class Elemental(Modifier):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context.console(
+            self.context(
                 "scale %f %f %f %f\n" % (scale, scale, center_x, center_y)
             )
 
@@ -3032,19 +3032,19 @@ class Elemental(Modifier):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context.console("rotate %fturn %f %f\n" % (value, center_x, center_y))
+            self.context("rotate %fturn %f %f\n" % (value, center_x, center_y))
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Reify User Changes"), node_type="elem", help="")
         def reify_elem_changes(node, **kwargs):
-            self.context.console("reify\n")
+            self.context("reify\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, Path))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
         def break_subpath_elem(node, **kwargs):
-            self.context.console("element subpath\n")
+            self.context("element subpath\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Step"))
@@ -3076,7 +3076,7 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Actualize Pixels"), node_type="elem", help="")
         def image_actualize_pixels(node, **kwargs):
-            self.context.console("image resample\n")
+            self.context("image resample\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("ZDepth Divide"))
@@ -3094,7 +3094,7 @@ class Elemental(Modifier):
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-                self.context.console(
+                self.context(
                     "image threshold %f %f\n" % (threshold_min, threshold_max)
                 )
 
@@ -3103,70 +3103,70 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Unlock Manipulations"), node_type="elem", help="")
         def image_unlock_manipulations(node, **kwargs):
-            self.context.console("image unlock\n")
+            self.context("image unlock\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Dither to 1 bit"), node_type="elem", help="")
         def image_dither(node, **kwargs):
-            self.context.console("image dither\n")
+            self.context("image dither\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Invert Image"), node_type="elem", help="")
         def image_invert(node, **kwargs):
-            self.context.console("image invert\n")
+            self.context("image invert\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Mirror Horizontal"), node_type="elem", help="")
         def image_mirror(node, **kwargs):
-            context.console("image mirror\n")
+            context("image mirror\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Flip Vertical"), node_type="elem", help="")
         def image_flip(node, **kwargs):
-            self.context.console("image flip\n")
+            self.context("image flip\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate CW"), node_type="elem", help="")
         def image_cw(node, **kwargs):
-            self.context.console("image cw\n")
+            self.context("image cw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate CCW"), node_type="elem", help="")
         def image_ccw(node, **kwargs):
-            self.context.console("image ccw\n")
+            self.context("image ccw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Save output.png"), node_type="elem", help="")
         def image_save(node, **kwargs):
-            self.context.console("image save output.png\n")
+            self.context("image save output.png\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("RasterWizard"))
         @self.tree_values("script", values=self.context.match("raster_script"))
         @self.tree_operation(_("RasterWizard: {script}"), node_type="elem", help="")
         def image_rasterwizard_open(node, script=None, **kwargs):
-            self.context.console("window open RasterWizard %s" % script)
+            self.context("window open RasterWizard %s" % script)
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply Raster Script"))
         @self.tree_values("script", values=self.context.match("raster_script"))
         @self.tree_operation(_("Apply: {script}"), node_type="elem", help="")
         def image_rasterwizard_apply(node, script=None, **kwargs):
-            self.context.console("image wizard %s\n" % script)
+            self.context("image wizard %s\n" % script)
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "as_elements"))
         @self.tree_operation(_("Convert to SVG"), node_type="elem", help="")

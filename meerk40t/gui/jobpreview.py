@@ -465,7 +465,7 @@ class JobPreview(wx.Frame, Module):
             dlg.Destroy()
             return
         dlg.Destroy()
-        self.context.console(
+        self.context(
             "plan%s step_repeat %s %s %s %s" % self.plan_name,
             cols,
             rows,
@@ -474,31 +474,31 @@ class JobPreview(wx.Frame, Module):
         )
 
     def jobadd_physicalhome(self, event=None):
-        self.context.console("plan%s command physicalhome\n" % self.plan_name)
+        self.context("plan%s command physicalhome\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_home(self, event=None):
-        self.context.console("plan%s command home\n" % self.plan_name)
+        self.context("plan%s command home\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_origin(self, event=None):
-        self.context.console("plan%s command origin\n" % self.plan_name)
+        self.context("plan%s command origin\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_wait(self, event=None):
-        self.context.console("plan%s command wait\n" % self.plan_name)
+        self.context("plan%s command wait\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_beep(self, event=None):
-        self.context.console("plan%s command beep\n" % self.plan_name)
+        self.context("plan%s command beep\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_interrupt(self, event=None):
-        self.context.console("plan%s command interrupt\n" % self.plan_name)
+        self.context("plan%s command interrupt\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_command(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context.console("plan%s command console\n" % self.plan_name)
+        self.context("plan%s command console\n" % self.plan_name)
         self.update_gui()
 
     def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
@@ -525,24 +525,24 @@ class JobPreview(wx.Frame, Module):
 
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
-            self.context.console("plan%s copy\n" % self.plan_name)
+            self.context("plan%s copy\n" % self.plan_name)
         elif self.stage == 1:
-            self.context.console("plan%s preprocess\n" % self.plan_name)
+            self.context("plan%s preprocess\n" % self.plan_name)
         elif self.stage == 2:
-            self.context.console("plan%s validate\n" % self.plan_name)
+            self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 3:
-            self.context.console("plan%s blob\n" % self.plan_name)
+            self.context("plan%s blob\n" % self.plan_name)
         elif self.stage == 4:
-            self.context.console("plan%s preopt\n" % self.plan_name)
+            self.context("plan%s preopt\n" % self.plan_name)
         elif self.stage == 5:
-            self.context.console("plan%s optimize\n" % self.plan_name)
+            self.context("plan%s optimize\n" % self.plan_name)
         elif self.stage == 6:
-            self.context.console("plan%s spool\n" % self.plan_name)
+            self.context("plan%s spool\n" % self.plan_name)
             self.Close()
         self.update_gui()
 
     def on_close(self, event):
-        self.context.console("plan%s clear\n" % self.plan_name)
+        self.context("plan%s clear\n" % self.plan_name)
         if self.state == 5:
             event.Veto()
         else:

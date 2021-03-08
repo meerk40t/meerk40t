@@ -171,7 +171,7 @@ class CameraInterface(wx.Frame, Module, Job):
 
     def swap_camera(self, uri):
         def swap(event=None):
-            self.context.console(
+            self.context(
                 "camera%d --uri %s stop start\n" % (self.index, str(uri))
             )
             self.frame_bitmap = None
@@ -245,14 +245,14 @@ class CameraInterface(wx.Frame, Module, Job):
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
-        self.context.console("camera%d start\n" % self.index)
+        self.context("camera%d start\n" % self.index)
         self.context.schedule(self)
 
     def finalize(self, *args, **kwargs):
         self.setting.window_width, self.setting.window_height = self.GetSize()
         try:
             self.Close()
-            self.context.console("camera%d stop\n" % self.index)
+            self.context("camera%d stop\n" % self.index)
         except RuntimeError:
             pass
         self.context.unschedule(self)
@@ -652,7 +652,7 @@ class CameraInterface(wx.Frame, Module, Job):
         :param event:
         :return:
         """
-        self.context.console("camera%d background\n" % self.index)
+        self.context("camera%d background\n" % self.index)
 
     def on_button_export(self, event):  # wxGlade: CameraInterface.<event_handler>
         """

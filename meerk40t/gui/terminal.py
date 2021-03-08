@@ -130,7 +130,7 @@ class Terminal(wx.Frame, Module):
 
     def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
         command = self.text_entry.GetValue()
-        self.context.console(command + "\n")
+        self.context(command + "\n")
         self.text_entry.SetValue("")
         self.command_log.append(command)
         self.command_position = 0

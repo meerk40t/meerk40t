@@ -87,7 +87,7 @@ class Controller(wx.Frame, Module):
         )
         self.Bind(
             wx.EVT_BUTTON,
-            lambda e: self.context.console("window open BufferView\n"),
+            lambda e: self.context("window open BufferView\n"),
             self.button_buffer_viewer,
         )
         self.Bind(wx.EVT_BUTTON, self.on_button_pause_resume, self.button_pause)
@@ -459,8 +459,8 @@ class Controller(wx.Frame, Module):
         if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
 
             def f(event):
-                self.context.console("start\n")
-                self.context.console("hold\n")
+                self.context("start\n")
+                self.context("hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#009900")
@@ -475,7 +475,7 @@ class Controller(wx.Frame, Module):
         elif state == STATE_WAIT:
 
             def f(event):
-                self.context.console("control Wait Abort\n")
+                self.context("control Wait Abort\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#dddd00")
@@ -485,7 +485,7 @@ class Controller(wx.Frame, Module):
         elif state == STATE_PAUSE:
 
             def f(event):
-                self.context.console("resume\n")
+                self.context("resume\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00dd00")
@@ -495,7 +495,7 @@ class Controller(wx.Frame, Module):
         elif state == STATE_ACTIVE:
 
             def f(event):
-                self.context.console("hold\n")
+                self.context("hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ff00")
@@ -505,7 +505,7 @@ class Controller(wx.Frame, Module):
         elif state == STATE_TERMINATE:
 
             def f(event):
-                self.context.console("abort\n")
+                self.context("abort\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ffff")

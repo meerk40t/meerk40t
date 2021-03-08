@@ -291,13 +291,13 @@ def run():
         if args.speed is not None:
             for o in elements.ops():
                 o.speed = args.speed
-        device.console("plan copy\n")
-        device.console("plan preprocess\n")
-        device.console("plan validate\n")
-        device.console("plan blob\n")
-        device.console("plan preopt\n")
-        device.console("plan optimize\n")
-        device.console("plan spool\n")
+        device("plan copy\n")
+        device("plan preprocess\n")
+        device("plan validate\n")
+        device("plan blob\n")
+        device("plan preopt\n")
+        device("plan optimize\n")
+        device("plan spool\n")
         device._quit = True
 
     if args.origin:
@@ -319,14 +319,14 @@ def run():
         for v in args.execute:
             if v is None:
                 continue
-            device.console(v.strip() + "\n")
+            device(v.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
     if args.batch:
         kernel_root.channel("console").watch(print)
         with args.batch as batch:
             for line in batch:
-                device.console(line.strip() + "\n")
+                device(line.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
     kernel.bootstrap("ready")
@@ -339,7 +339,7 @@ def run():
                 console_command = input(">")
                 if device._kernel.lifecycle == "shutdown":
                     return
-                device.console(console_command + "\n")
+                device(console_command + "\n")
                 if console_command in ("quit", "shutdown"):
                     break
             kernel_root.channel("console").unwatch(print)

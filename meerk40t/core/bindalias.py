@@ -102,7 +102,7 @@ class BindAlias(Modifier):
             if command in self.alias:
                 aliased_command = self.alias[command]
                 for cmd in aliased_command.split(";"):
-                    context.console("%s\n" % cmd)
+                    context("%s\n" % cmd)
             else:
                 raise ValueError  # This is not an alias.
 

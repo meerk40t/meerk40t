@@ -800,7 +800,7 @@ class MeerK40t(wx.Frame, Module, Job):
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open UsbConnect\n"),
+            lambda v: self.context("window open UsbConnect\n"),
             id=ID_USB,
         )
         windows.Bind(
@@ -1242,7 +1242,6 @@ class MeerK40t(wx.Frame, Module, Job):
             lambda v: self.context.console("window open JobSpooler\n"),
             id=ID_MENU_SPOOLER,
         )
-
         self.Bind(
             wx.EVT_MENU, lambda e: self.context.console("webhelp help\n"), id=wx.ID_HELP
         )

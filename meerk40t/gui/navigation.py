@@ -655,62 +655,62 @@ class Navigation(wx.Frame, Module):
         self.set_jog_distances(int(self.context.navigate_jog))
 
     def on_button_navigate_home(self, event):  # wxGlade: Navigation.<event_handler>
-        self.context.console("home\n")
+        self.context("home\n")
         self.drag_ready(False)
 
     def on_button_navigate_ul(self, event):  # wxGlade: Navigation.<event_handler>
         dx = -self.context.navigate_jog
         dy = -self.context.navigate_jog
-        self.context.console("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %d %d\n" % (dx, dy))
         self.drag_ready(False)
 
     def on_button_navigate_u(self, event):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = -self.context.navigate_jog
-        self.context.console("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %d %d\n" % (dx, dy))
         self.drag_ready(False)
 
     def on_button_navigate_ur(self, event):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
         dy = -self.context.navigate_jog
-        self.context.console("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %d %d\n" % (dx, dy))
         self.drag_ready(False)
 
     def on_button_navigate_l(self, event):  # wxGlade: Navigation.<event_handler>
         dx = -self.context.navigate_jog
         dy = 0
-        self.context.console("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %d %d\n" % (dx, dy))
         self.drag_ready(False)
 
     def on_button_navigate_r(self, event):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
         dy = 0
-        self.context.console("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %d %d\n" % (dx, dy))
         self.drag_ready(False)
 
     def on_button_navigate_dl(self, event):  # wxGlade: Navigation.<event_handler>
         dx = -self.context.navigate_jog
         dy = self.context.navigate_jog
-        self.context.console("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %d %d\n" % (dx, dy))
         self.drag_ready(False)
 
     def on_button_navigate_d(self, event):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = self.context.navigate_jog
-        self.context.console("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %d %d\n" % (dx, dy))
         self.drag_ready(False)
 
     def on_button_navigate_dr(self, event):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
         dy = self.context.navigate_jog
-        self.context.console("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %d %d\n" % (dx, dy))
         self.drag_ready(False)
 
     def on_button_navigate_unlock(self, event):  # wxGlade: Navigation.<event_handler>
-        self.context.console("unlock\n")
+        self.context("unlock\n")
 
     def on_button_navigate_lock(self, event):  # wxGlade: Navigation.<event_handler>
-        self.context.console("lock\n")
+        self.context("lock\n")
 
     def on_button_align_center(self, event):  # wxGlade: Navigation.<event_handler>
         elements = self.elements
@@ -719,7 +719,7 @@ class Navigation(wx.Frame, Module):
             return
         px = (bbox[0] + bbox[2]) / 2.0
         py = (bbox[3] + bbox[1]) / 2.0
-        self.context.console("move_absolute %f %f\n" % (px, py))
+        self.context("move_absolute %f %f\n" % (px, py))
         self.drag_ready(True)
 
     def on_button_align_corner_tl(self, event):  # wxGlade: Navigation.<event_handler>
@@ -727,7 +727,7 @@ class Navigation(wx.Frame, Module):
         bbox = elements.bounds()
         if bbox is None:
             return
-        self.context.console("move_absolute %f %f\n" % (bbox[0], bbox[1]))
+        self.context("move_absolute %f %f\n" % (bbox[0], bbox[1]))
         self.drag_ready(True)
 
     def on_button_align_corner_tr(self, event):  # wxGlade: Navigation.<event_handler>
@@ -735,7 +735,7 @@ class Navigation(wx.Frame, Module):
         bbox = elements.bounds()
         if bbox is None:
             return
-        self.context.console("move_absolute %f %f\n" % (bbox[2], bbox[1]))
+        self.context("move_absolute %f %f\n" % (bbox[2], bbox[1]))
         self.drag_ready(True)
 
     def on_button_align_corner_bl(self, event):  # wxGlade: Navigation.<event_handler>
@@ -743,7 +743,7 @@ class Navigation(wx.Frame, Module):
         bbox = elements.bounds()
         if bbox is None:
             return
-        self.context.console("move_absolute %f %f\n" % (bbox[0], bbox[3]))
+        self.context("move_absolute %f %f\n" % (bbox[0], bbox[3]))
         self.drag_ready(True)
 
     def on_button_align_corner_br(self, event):  # wxGlade: Navigation.<event_handler>
@@ -751,11 +751,11 @@ class Navigation(wx.Frame, Module):
         bbox = elements.bounds()
         if bbox is None:
             return
-        self.context.console("move_absolute %f %f\n" % (bbox[2], bbox[3]))
+        self.context("move_absolute %f %f\n" % (bbox[2], bbox[3]))
         self.drag_ready(True)
 
     def drag_relative(self, dx, dy):
-        self.context.console(
+        self.context(
             "move_relative %d %d\ntranslate %d %d\n" % (dx, dy, dx, dy)
         )
 
@@ -784,19 +784,19 @@ class Navigation(wx.Frame, Module):
             return
         if pos is None:
             return
-        self.context.console("move_absolute %f %f\n" % (pos[0], pos[1]))
+        self.context("move_absolute %f %f\n" % (pos[0], pos[1]))
         self.drag_ready(True)
 
     def on_button_align_trace_hull(self, event):  # wxGlade: Navigation.<event_handler>
-        self.context.console("trace_hull\n")
+        self.context("trace_hull\n")
 
     def on_button_align_trace_quick(self, event):  # wxGlade: Navigation.<event_handler>
-        self.context.console("trace_quick\n")
+        self.context("trace_quick\n")
         self.drag_ready(True)
 
     def on_button_navigate_pulse(self, event):  # wxGlade: Navigation.<event_handler>
         value = self.spin_pulse_duration.GetValue()
-        self.context.console("pulse %f\n" % value)
+        self.context("pulse %f\n" % value)
 
     def on_spin_pulse_duration(self, event):  # wxGlade: Navigation.<event_handler>
         self.context.navigate_pulse = float(self.spin_pulse_duration.GetValue())
@@ -805,7 +805,7 @@ class Navigation(wx.Frame, Module):
         try:
             x = int(self.text_position_x.GetValue())
             y = int(self.text_position_y.GetValue())
-            self.context.console("move %d %d\n" % (x, y))
+            self.context("move %d %d\n" % (x, y))
         except ValueError:
             return
 
@@ -816,7 +816,7 @@ class Navigation(wx.Frame, Module):
 
     def on_scale_down(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 19.0 / 20.0
-        self.context.console(
+        self.context(
             "scale %f %f %f %f\n"
             % (
                 scale,
@@ -829,7 +829,7 @@ class Navigation(wx.Frame, Module):
 
     def on_scale_up(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
-        self.context.console(
+        self.context(
             "scale %f %f %f %f\n"
             % (
                 scale,
@@ -843,40 +843,40 @@ class Navigation(wx.Frame, Module):
     def on_translate_up(self, event):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = -self.context.navigate_jog
-        self.context.console("translate %f %f\n" % (dx, dy))
+        self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
     def on_translate_left(self, event):  # wxGlade: Navigation.<event_handler>
         dx = -self.context.navigate_jog
         dy = 0
-        self.context.console("translate %f %f\n" % (dx, dy))
+        self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
     def on_translate_right(self, event):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
         dy = 0
-        self.context.console("translate %f %f\n" % (dx, dy))
+        self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
     def on_translate_down(self, event):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = self.context.navigate_jog
-        self.context.console("translate %f %f\n" % (dx, dy))
+        self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
     def on_reset(self, event):  # wxGlade: Navigation.<event_handler>
-        self.context.console("reset\n")
+        self.context("reset\n")
         self.matrix_updated()
 
     def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
-        self.context.console(
+        self.context(
             "rotate %fdeg %f %f\n"
             % (-5, self.context.active.current_x, self.context.active.current_y)
         )
         self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
-        self.context.console(
+        self.context(
             "rotate %fdeg %f %f\n"
             % (5, self.context.active.current_x, self.context.active.current_y)
         )
@@ -884,7 +884,7 @@ class Navigation(wx.Frame, Module):
 
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>
         try:
-            self.context.console(
+            self.context(
                 "matrix %f %f %f %f %s %s"
                 % (
                     float(self.text_a.GetValue()),
