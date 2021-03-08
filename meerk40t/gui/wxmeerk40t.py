@@ -2901,6 +2901,13 @@ class ShadowTree:
         selected = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
+        for i in range(len(selected)):
+            node = selected[i]
+            if node.type == "opnode":
+                selected[i] = node.object.node
+            # elif node.type == "operation":
+            #     for n in node.flat():
+            #
         self.elements.set_emphasis(selected)
         self.refresh_tree()
         self.gui.request_refresh()
