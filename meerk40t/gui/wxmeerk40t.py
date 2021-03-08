@@ -821,7 +821,7 @@ class MeerK40t(wx.Frame, Module, Job):
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context._kernel.active_device.open("window/Rotary", self),
+            lambda v: self.context.get_context('rotary/1').open("window/Rotary", self),
             id=ID_ROTARY,
         )
         windows.Bind(
@@ -1232,7 +1232,7 @@ class MeerK40t(wx.Frame, Module, Job):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.active.open("window/Rotary", self),
+            lambda v: self.context.get_context('rotary/1').open("window/Rotary", self),
             id=ID_MENU_ROTARY,
         )
         self.Bind(
@@ -2379,13 +2379,13 @@ class MeerK40t(wx.Frame, Module, Job):
             return
 
     def apply_rotary_scale(self):
-        kernel = self.context._kernel
-        sx = self.context.scale_x
-        sy = self.context.scale_y
-        p = self.context
+        r = self.context.get_context('rotary/1')
+        sx = r.scale_x
+        sy = r.scale_y
+        a = self.context.active
 
-        mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, p.current_x, p.current_y))
-        for element in kernel.elements.elems():
+        mx = Matrix("scale(%f, %f, %f, %f)" % (r.scale_x, r.scale_y, a.current_x, a.current_y))
+        for element in self.context.get_context('/').elements.elems():
             try:
                 element *= mx
                 element.node.modified()

@@ -48,9 +48,10 @@ class Planner(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
         elements = context.elements
-        self.context.setting(bool, "rotary", False)
-        self.context.setting(float, "scale_x", 1.0)
-        self.context.setting(float, "scale_y", 1.0)
+        rotary_context = self.context.get_context('rotary/1')
+        rotary_context.setting(bool, "rotary", False)
+        rotary_context.setting(float, "scale_x", 1.0)
+        rotary_context.setting(float, "scale_y", 1.0)
         self.context.setting(bool, "prehome", False)
         self.context.setting(bool, "prephysicalhome", False)
         self.context.setting(bool, "postunlock", False)
@@ -234,25 +235,26 @@ class Planner(Modifier):
                     channel(_("No plan command found."))
                 return
             elif subcommand == "preprocess":
+                rotary_context = self.context.get_context('rotary/1')
                 if self.context.prephysicalhome:
-                    if not self.context.rotary:
+                    if not rotary_context.rotary:
                         plan.insert(0, self.context.registered["plan/physicalhome"])
                     else:
                         plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
                 if self.context.prehome:
-                    if not self.context.rotary:
+                    if not rotary_context.rotary:
                         plan.insert(0, self.context.registered["plan/home"])
                     else:
                         plan.insert(0, _("Home Before: Disabled (Rotary On)"))
                 if self.context.autobeep:
                     plan.append(self.context.registered["plan/beep"])
                 if self.context.autohome:
-                    if not self.context.rotary:
+                    if not rotary_context.rotary:
                         plan.append(self.context.registered["plan/home"])
                     else:
                         plan.append(_("Home After: Disabled (Rotary On)"))
                 if self.context.autophysicalhome:
-                    if not self.context.rotary:
+                    if not rotary_context.rotary:
                         plan.append(self.context.registered["plan/physicalhome"])
                     else:
                         plan.append(_("Physical Home After: Disabled (Rotary On)"))
@@ -262,7 +264,7 @@ class Planner(Modifier):
                     plan.append(self.context.registered["plan/unlock"])
                 # divide
                 self.conditional_jobadd_strip_text()
-                if self.context.rotary:
+                if rotary_context.rotary:
                     self.conditional_jobadd_scale_rotary()
                 self.conditional_jobadd_actualize_image()
                 self.conditional_jobadd_make_raster()
@@ -556,17 +558,19 @@ class Planner(Modifier):
         commands.append(actualize)
 
     def conditional_jobadd_scale_rotary(self):
-        if self.context.scale_x != 1.0 or self.context.scale_y != 1.0:
+        rotary_context = self.context.get_context('rotary/1')
+        if rotary_context.scale_x != 1.0 or rotary_context.scale_y != 1.0:
             self.jobadd_scale_rotary()
 
     def jobadd_scale_rotary(self):
         def scale_for_rotary():
-            p = self.context
+            r = self.context.get_context('rotary/1')
+            a = self.context.active
             scale_str = "scale(%f,%f,%f,%f)" % (
-                p.scale_x,
-                p.scale_y,
-                p.current_x,
-                p.current_y,
+                r.scale_x,
+                r.scale_y,
+                a.current_x,
+                a.current_y,
             )
             plan, commands = self.default_plan()
             for o in plan:

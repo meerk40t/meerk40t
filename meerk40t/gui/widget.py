@@ -78,6 +78,20 @@ class Scene(Module):
         for e in elements.flat(elements._tree):
             e.unregister()
 
+    def rotary_stretch(self):
+        r = self.context.get_context('rotary/1')
+        scale_x = r.scale_x
+        scale_y = r.scale_y
+        self.widget_root.scene_widget.matrix.post_scale(scale_x, scale_y)
+        self.context.signal('refresh_scene', 0)
+
+    def rotary_unstretch(self):
+        r = self.context.get_context('rotary/1')
+        scale_x = r.scale_x
+        scale_y = r.scale_y
+        self.widget_root.scene_widget.matrix.post_scale(1.0 / scale_x, 1.0 / scale_y)
+        self.context.signal('refresh_scene', 0)
+
     def signal(self, *args, **kwargs):
         self._signal_widget(self.widget_root, *args, **kwargs)
 

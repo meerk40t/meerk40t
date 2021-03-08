@@ -553,9 +553,10 @@ class JobPreview(wx.Frame, Module):
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
-        self.context.setting(bool, "rotary", False)
-        self.context.setting(float, "scale_x", 1.0)
-        self.context.setting(float, "scale_y", 1.0)
+        rotary_context = self.context.get_context('rotary/1')
+        rotary_context.setting(bool, "rotary", False)
+        rotary_context.setting(float, "scale_x", 1.0)
+        rotary_context.setting(float, "scale_y", 1.0)
         self.context.setting(bool, "prehome", False)
         self.context.setting(bool, "autohome", False)
         self.context.setting(bool, "prephysicalhome", False)

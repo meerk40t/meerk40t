@@ -64,7 +64,6 @@ class RotarySettings(wx.Frame, Module):
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
-
         self.context.setting(bool, "rotary", False)
         self.context.setting(float, "scale_x", 1.0)
         self.context.setting(float, "scale_y", 1.0)
