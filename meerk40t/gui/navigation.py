@@ -714,6 +714,7 @@ class Navigation(wx.Frame, Module):
 
     def on_button_align_center(self, event):  # wxGlade: Navigation.<event_handler>
         elements = self.elements
+        elements.validate_selected_area()
         bbox = elements.selected_area()
         if bbox is None:
             return
@@ -724,7 +725,8 @@ class Navigation(wx.Frame, Module):
 
     def on_button_align_corner_tl(self, event):  # wxGlade: Navigation.<event_handler>
         elements = self.elements
-        bbox = elements.bounds()
+        elements.validate_selected_area()
+        bbox = elements.selected_area()
         if bbox is None:
             return
         self.context("move_absolute %f %f\n" % (bbox[0], bbox[1]))
@@ -732,7 +734,8 @@ class Navigation(wx.Frame, Module):
 
     def on_button_align_corner_tr(self, event):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
-        bbox = elements.bounds()
+        elements.validate_selected_area()
+        bbox = elements.selected_area()
         if bbox is None:
             return
         self.context("move_absolute %f %f\n" % (bbox[2], bbox[1]))
@@ -740,7 +743,8 @@ class Navigation(wx.Frame, Module):
 
     def on_button_align_corner_bl(self, event):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
-        bbox = elements.bounds()
+        elements.validate_selected_area()
+        bbox = elements.selected_area()
         if bbox is None:
             return
         self.context("move_absolute %f %f\n" % (bbox[0], bbox[3]))
@@ -748,7 +752,8 @@ class Navigation(wx.Frame, Module):
 
     def on_button_align_corner_br(self, event):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
-        bbox = elements.bounds()
+        elements.validate_selected_area()
+        bbox = elements.selected_area()
         if bbox is None:
             return
         self.context("move_absolute %f %f\n" % (bbox[2], bbox[3]))

@@ -2532,6 +2532,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_name(node)
         self.set_enhancements(node)
+        self.context.signal("emphasized", node)
 
     def targeted(self, node):
         item = node.item
@@ -2539,6 +2540,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_name(node)
         self.set_enhancements(node)
+        self.context.signal("targeted", node)
 
     def highlighted(self, node):
         item = node.item
@@ -2546,6 +2548,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_name(node)
         self.set_enhancements(node)
+        self.context.signal("highlighted", node)
 
     def modified(self, node):
         item = node.item
