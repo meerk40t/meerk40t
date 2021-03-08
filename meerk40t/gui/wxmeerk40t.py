@@ -1569,7 +1569,7 @@ class MeerK40t(wx.Frame, Module, Job):
         with wx.FileDialog(
                 self, _("Open"), defaultDir=defaultDir, defaultFile=defaultFile, wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
         ) as fileDialog:
-
+            fileDialog.SetFilename(defaultFile)
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
             pathname = fileDialog.GetPath()
