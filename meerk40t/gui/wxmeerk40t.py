@@ -1546,40 +1546,57 @@ class MeerK40t(wx.Frame, Module, Job):
         # self._mgr.Update()
         self.Layout()
 
+    def load_or_open(self, filename):
+        try:
+            self.load(filename)
+        except PermissionError:
+            files = self.context.load_types()
+            defaultFile = os.path.basename(filename)
+            defaultDir = os.path.dirname(filename)
+
+            with wx.FileDialog(
+                    self, _("Open"), defaultDir=defaultDir, defaultFile=defaultFile, wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+            ) as fileDialog:
+
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = fileDialog.GetPath()
+                self.load(pathname)
+
     def populate_recent_menu(self):
         for i in range(self.recent_file_menu.MenuItemCount):
             self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
         context = self.context
         if context.file0 is not None and len(context.file0):
             self.recent_file_menu.Append(ID_MENU_FILE0, context.file0, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file0), id=ID_MENU_FILE0)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file0), id=ID_MENU_FILE0)
         if context.file1 is not None and len(context.file1):
             self.recent_file_menu.Append(ID_MENU_FILE1, context.file1, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file1), id=ID_MENU_FILE1)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file1), id=ID_MENU_FILE1)
         if context.file2 is not None and len(context.file2):
             self.recent_file_menu.Append(ID_MENU_FILE2, context.file2, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file2), id=ID_MENU_FILE2)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file2), id=ID_MENU_FILE2)
         if context.file3 is not None and len(context.file3):
             self.recent_file_menu.Append(ID_MENU_FILE3, context.file3, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file3), id=ID_MENU_FILE3)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file3), id=ID_MENU_FILE3)
         if context.file4 is not None and len(context.file4):
             self.recent_file_menu.Append(ID_MENU_FILE4, context.file4, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file4), id=ID_MENU_FILE4)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file4), id=ID_MENU_FILE4)
         if context.file5 is not None and len(context.file5):
             self.recent_file_menu.Append(ID_MENU_FILE5, context.file5, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file5), id=ID_MENU_FILE5)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file5), id=ID_MENU_FILE5)
         if context.file6 is not None and len(context.file6):
             self.recent_file_menu.Append(ID_MENU_FILE6, context.file6, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file6), id=ID_MENU_FILE6)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file6), id=ID_MENU_FILE6)
         if context.file7 is not None and len(context.file7):
             self.recent_file_menu.Append(ID_MENU_FILE7, context.file7, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file7), id=ID_MENU_FILE7)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file7), id=ID_MENU_FILE7)
         if context.file8 is not None and len(context.file8):
             self.recent_file_menu.Append(ID_MENU_FILE8, context.file8, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file8), id=ID_MENU_FILE8)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file8), id=ID_MENU_FILE8)
         if context.file9 is not None and len(context.file9):
             self.recent_file_menu.Append(ID_MENU_FILE9, context.file9, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file9), id=ID_MENU_FILE9)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file9), id=ID_MENU_FILE9)
         if self.recent_file_menu.MenuItemCount != 0:
             self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
             self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
