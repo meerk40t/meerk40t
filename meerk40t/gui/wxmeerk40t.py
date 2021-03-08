@@ -159,7 +159,7 @@ def plugin(kernel, lifecycle):
     elif lifecycle == "mainloop":
         kernel_root = kernel.get_context("/")
         meerk40tgui = kernel_root.open("module/wxMeerK40t")
-        kernel.console("window -p / open MeerK40t\n")
+        kernel.console("window open -p / MeerK40t\n")
         meerk40tgui.MainLoop()
 
 ID_MAIN_TOOLBAR = wx.NewId()
@@ -794,77 +794,69 @@ class MeerK40t(wx.Frame, Module, Job):
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.open("window/JobPreview", self, "0"),
+            lambda v: self.context.console("window open -p / JobPreview 0\n"),
             id=ID_JOB,
         )
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context._kernel.active_device.open(
-                "window/UsbConnect", self
-            ),
+            lambda v: self.context.console("window open UsbConnect\n"),
             id=ID_USB,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context._kernel.active_device.open(
-                "window/Controller", self
-            ),
+            lambda v: self.context.console("window open Controller\n"),
             id=ID_CONTROLLER,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context._kernel.active_device.open(
-                "window/Preferences", self
-            ),
+            lambda v: self.context.console("window open Preferences\n"),
             id=ID_PREFERENCES,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.get_context('rotary/1').open("window/Rotary", self),
+            lambda v: self.context.console("window open -p rotary/1 Rotary\n"),
             id=ID_ROTARY,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context._kernel.active_device.open(
-                "window/JobSpooler", self
-            ),
+            lambda v: self.context.console("window open JobSpooler\n"),
             id=ID_SPOOLER,
         )
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA)
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.open("window/Navigation", self),
+            lambda v: self.context.console("window open -p / Navigation\n"),
             id=ID_NAV,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.open("window/DeviceManager", self),
+            lambda v: self.context.console("window open -p / DeviceManager\n"),
             id=ID_DEVICES,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.open("window/Keymap", self),
+            lambda v: self.context.console("window open -p / Keymap\n"),
             id=ID_KEYMAP,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.open("window/Notes", self),
+            lambda v: self.context.console("window open -p / Notes\n"),
             id=ID_NOTES,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.open("window/Terminal", self),
+            lambda v: self.context.console("window open -p / Terminal\n"),
             id=ID_TERMINAL,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.open("window/Operations", self),
+            lambda v: self.context.console("window open -p / Operations\n"),
             id=ID_OPERATIONS,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.open("window/RasterWizard", self),
+            lambda v: self.context.console("window open -p / RasterWizard\n"),
             id=ID_RASTER,
         )
         if self.context.has_feature("modifier/Camera"):
@@ -1181,73 +1173,73 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.open("window/About", self),
+            lambda v: self.context.console("window open -p / About\n"),
             id=wx.ID_ABOUT,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.open("window/Terminal", self),
+            lambda v: self.context.console("window open -p / Terminal\n"),
             id=ID_MENU_TERMINAL,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.open("window/DeviceManager", self),
+            lambda v: self.context.console("window open -p / DeviceManager\n"),
             id=ID_MENU_DEVICE_MANAGER,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.open("window/Keymap", self),
+            lambda v: self.context.console("window open -p / Keymap\n"),
             id=ID_MENU_KEYMAP,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.open("window/Settings", self),
+            lambda v: self.context.console("window open -p / Settings\n"),
             id=ID_MENU_SETTINGS,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.open("window/Notes", self),
+            lambda v: self.context.console("window open -p / Notes\n"),
             id=ID_MENU_NOTES,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.open("window/Navigation", self),
+            lambda v: self.context.console("window open -p / Navigation\n"),
             id=ID_MENU_NAVIGATION,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.open("window/JobPreview", self, "0"),
+            lambda v: self.context.console("window open -p / JobPreview 0\n"),
             id=ID_MENU_JOB,
         )
         if self.context.has_feature("modifier/Camera"):
             self.Bind(
                 wx.EVT_MENU,
-                lambda v: self.context.open("window/CameraInterface", self),
+                lambda v: self.context.console("window open -p / CameraInterface\n"),
                 id=ID_MENU_CAMERA,
             )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.active.open("window/Preferences", self),
+            lambda v: self.context.console("window open Preferences\n"),
             id=wx.ID_PREFERENCES,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.get_context('rotary/1').open("window/Rotary", self),
+            lambda v: self.context.console("window open -p rotary/1 Rotary\n"),
             id=ID_MENU_ROTARY,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.active.open("window/Controller", self),
+            lambda v: self.context.console("window open Controller\n"),
             id=ID_MENU_CONTROLLER,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.active.open("window/UsbConnect", self),
+            lambda v: self.context.console("window open UsbConnect\n"),
             id=ID_MENU_USB,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.active.open("window/JobSpooler", self),
+            lambda v: self.context.console("window open JobSpooler\n"),
             id=ID_MENU_SPOOLER,
         )
 
@@ -1648,7 +1640,7 @@ class MeerK40t(wx.Frame, Module, Job):
             if results:
                 self.save_recent(pathname)
                 if n != self.context.elements.note and self.context.auto_note:
-                    self.context.open("window/Notes", self)
+                    self.context.console("window open -p / Notes\n")
                 try:
                     if self.context.uniform_svg and pathname.lower().endswith("svg"):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
@@ -3230,6 +3222,8 @@ class wxMeerK40t(wx.App, Module):
         @kernel.console_argument('window', type=str, help="window to apply subcommand to")
         @kernel.console_command("window", help="wxMeerK40 window information")
         def window(channel, _, subcommand=None, window=None, path=None, args=(), **kwargs):
+            if path is None:
+                path = context.active
             if subcommand is None:
                 channel(_("----------"))
                 channel(_("Loaded Windows in Context %s:") % str(context._path))
@@ -3239,8 +3233,6 @@ class wxMeerK40t(wx.App, Module):
                     module = context.opened[name]
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
 
-                # if path is not None:
-                #     path = context.get_context(path)
                 channel(_("----------"))
                 channel(_("Loaded Windows in Device %s:") % str(path._path))
                 for i, name in enumerate(path.opened):

@@ -238,5 +238,4 @@ class DeviceManager(wx.Frame, Module):
         if item == -1:
             return
         uid = self.devices_list.GetItem(item).Text
-        context = self.context.get_context("/%s" % uid)
-        context.open("window/Preferences", self)
+        self.context.console("window open -p %s Preferences\n" % uid)
