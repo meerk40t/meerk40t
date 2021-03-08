@@ -2248,31 +2248,6 @@ class Kernel:
             channel(_("loading..."))
             return "file", new_file
 
-        @self.console_command(
-            "read", help="read file", input_type=None
-        )
-        def load(command, channel, _, args=tuple(), remainder=None, **kwargs):
-            import os
-            new_file = remainder
-            if not os.path.exists(remainder):
-                channel(_("No such file: %s" % remainder))
-                return
-            if not os.path.isfile(remainder):
-                channel(_("Not a file: %s" % remainder))
-                return
-            from pathlib import Path
-            path = Path(new_file)
-            with path.open() as f:
-                while True:
-                    line = f.readline()
-                    channel(line)
-                    if not len(line):
-                        break
-            # self.get_context("/").load(path)
-            # channel(_("loading..."))
-            # for
-            # return "file", new_file
-
     def console(self, data):
         """
         Console accepts console data information. When a '\n' is seen
