@@ -2905,9 +2905,13 @@ class ShadowTree:
             node = selected[i]
             if node.type == "opnode":
                 selected[i] = node.object.node
-            # elif node.type == "operation":
-            #     for n in node.flat():
-            #
+            elif node.type == "op":
+                for n in self.elements.flat(node, types=('opnode',), cascade=False):
+                    try:
+                        selected.append(n.object.node)
+                    except:
+                        pass
+
         self.elements.set_emphasis(selected)
         self.refresh_tree()
         self.gui.request_refresh()
