@@ -554,9 +554,9 @@ class Navigation(wx.Frame, Module):
         self.Show()
 
         self.elements = context_root.elements
+        context.setting(float, "navigate_jog", float(self.spin_jog_mils.GetValue()))
+        context.setting(float, "navigate_pulse", float(self.spin_pulse_duration.GetValue()))
 
-        context.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
-        context.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
         self.spin_pulse_duration.SetValue(self.context.navigate_pulse)
         self.set_jog_distances(self.context.navigate_jog)
 
