@@ -1547,21 +1547,33 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Layout()
 
     def load_or_open(self, filename):
-        try:
-            self.load(filename)
-        except PermissionError:
-            files = self.context.load_types()
-            defaultFile = os.path.basename(filename)
-            defaultDir = os.path.dirname(filename)
+        """
+        Loads recent file name given. If the filename cannot be opened attempts open dialog at last known location.
+        """
+        if os.path.exists(filename):
+            try:
+                self.load(filename)
+            except PermissionError:
+                self.tryopen(filename)
+        else:
+            self.tryopen(filename)
 
-            with wx.FileDialog(
-                    self, _("Open"), defaultDir=defaultDir, defaultFile=defaultFile, wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
-            ) as fileDialog:
+    def tryopen(self, filename):
+        """
+        Loads an open dialog at given filename to load data.
+        """
+        files = self.context.load_types()
+        defaultFile = os.path.basename(filename)
+        defaultDir = os.path.dirname(filename)
 
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-                self.load(pathname)
+        with wx.FileDialog(
+                self, _("Open"), defaultDir=defaultDir, defaultFile=defaultFile, wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+        ) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            self.load(pathname)
 
     def populate_recent_menu(self):
         for i in range(self.recent_file_menu.MenuItemCount):
