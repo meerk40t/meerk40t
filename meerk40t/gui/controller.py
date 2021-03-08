@@ -87,7 +87,7 @@ class Controller(wx.Frame, Module):
         )
         self.Bind(
             wx.EVT_BUTTON,
-            lambda e: self.context.open("window/BufferView", self),
+            lambda e: self.context.console("window open BufferView\n"),
             self.button_buffer_viewer,
         )
         self.Bind(wx.EVT_BUTTON, self.on_button_pause_resume, self.button_pause)
