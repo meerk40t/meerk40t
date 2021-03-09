@@ -75,8 +75,6 @@ class RotarySettings(wx.Frame, Module):
         self.on_check_rotary(None)
 
     def finalize(self, channel=None):
-        self.device.scale_x = float(self.text_rotary_scalex.GetValue())
-        self.device.scale_y = float(self.text_rotary_scaley.GetValue())
         try:
             self.Close()
         except RuntimeError:
