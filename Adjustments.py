@@ -70,6 +70,7 @@ class Adjustments(wx.Frame, Module):
         self.SetFocus()
         # end wxGlade
 
+
     def __set_properties(self):
         # begin wxGlade: Adjustments.__set_properties
         self.SetTitle(_("Adjustments"))
@@ -240,6 +241,10 @@ class Adjustments(wx.Frame, Module):
         event.Skip()
 
     def on_key_press(self, event):
+        # OSX Window close
+        if event.GetKeyCode() == ord('W') and event.CmdDown():
+            self.Close(False)
+            return
         keycode = event.GetKeyCode()
         if keycode == wx.WXK_ESCAPE:
             try:

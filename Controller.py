@@ -62,6 +62,10 @@ class Controller(wx.Frame, Module):
         self.last_control_state = None
         self.gui_update = True
 
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
+
     def on_close(self, event):
         self.gui_update = False
         if self.state == 5:

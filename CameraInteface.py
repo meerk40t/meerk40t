@@ -15,10 +15,10 @@ CORNER_SIZE = 25
 
 
 class CameraInterface(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: CameraInterface.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, *args, **kwds)
         Module.__init__(self)
         self.SetSize((608, 549))
         self.CameraInterface_menubar = wx.MenuBar()
@@ -119,6 +119,10 @@ class CameraInterface(wx.Frame, Module):
         self.process = self.fetch_image
         self.camera_job = None
         self.fetch_job = None
+
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
@@ -458,7 +462,7 @@ class CameraInterface(wx.Frame, Module):
         if self.frame_bitmap is None:
             return  # Need the bitmap to refresh.
         if self.device is None:
-            return # No window to draw in.
+            return  # No window to draw in.
         dm = self.device.draw_mode
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
@@ -583,6 +587,20 @@ class CameraInterface(wx.Frame, Module):
         if self.device is None:
             self.camera_lock.release()
             return
+        # ret = self.capture.grab()
+        # if not ret:
+        #     wx.CallAfter(self.camera_error_webcam)
+        #     self.capture = None
+        #     self.camera_lock.release()
+        #     return
+        # ret, frame = self.capture.retrieve()
+        # if not ret or frame is None:
+        #     wx.CallAfter(self.camera_error_webcam)
+        #     self.capture = None
+        #     self.camera_lock.release()
+        #     return
+
+        # Hammercode.
         for i in range(10):
             ret = self.capture.grab()
             if not ret:

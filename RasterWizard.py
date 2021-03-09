@@ -82,6 +82,10 @@ class RasterWizard(wx.Frame, Module):
         self.Bind(wx.EVT_SIZE, self.on_size, self)
         self.thread_update_lock = threading.Lock()
 
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
+
     def set_wizard_script(self, name=None, ops=None):
         if name is None:
             if ops is None:

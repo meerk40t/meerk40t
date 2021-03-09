@@ -45,6 +45,10 @@ class DeviceManager(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
+
     def on_close(self, event):
         item = self.devices_list.GetFirstSelected()
         if item != -1:

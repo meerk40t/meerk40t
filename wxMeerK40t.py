@@ -58,100 +58,86 @@ MEERK40T_HELP = "https://github.com/meerk40t/meerk40t/wiki"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
 
-class IdInc:
-    """
-    Id Incrementor
-    """
+ID_MAIN_TOOLBAR = wx.NewId()
+ID_ADD_FILE = wx.NewId()
+ID_OPEN = wx.NewId()
 
-    def __init__(self):
-        self.id_highest_value = wx.ID_HIGHEST
+ID_SAVE = wx.NewId()
+ID_NAV = wx.NewId()
+ID_USB = wx.NewId()
+ID_CONTROLLER = wx.NewId()
+ID_PREFERENCES = wx.NewId()
+ID_DEVICES = wx.NewId()
+ID_CAMERA = wx.NewId()
+ID_JOB = wx.NewId()
+ID_PAUSE = wx.NewId()
 
-    def new(self):
-        self.id_highest_value += 1
-        return self.id_highest_value
+ID_SPOOLER = wx.NewId()
+ID_KEYMAP = wx.NewId()
+ID_NOTES = wx.NewId()
+ID_OPERATIONS = wx.NewId()
+ID_TERMINAL = wx.NewId()
+ID_ROTARY = wx.NewId()
+ID_RASTER = wx.NewId()
 
+ID_HOMEPAGE = wx.NewId()
 
-idinc = IdInc()
-ID_MAIN_TOOLBAR = idinc.new()
-ID_ADD_FILE = idinc.new()
-ID_OPEN = idinc.new()
+ID_CUT_CONFIGURATION = wx.NewId()
+ID_SELECT = wx.NewId()
 
-ID_SAVE = idinc.new()
-ID_NAV = idinc.new()
-ID_USB = idinc.new()
-ID_CONTROLLER = idinc.new()
-ID_PREFERENCES = idinc.new()
-ID_DEVICES = idinc.new()
-ID_CAMERA = idinc.new()
-ID_JOB = idinc.new()
-ID_PAUSE = idinc.new()
-
-ID_SPOOLER = idinc.new()
-ID_KEYMAP = idinc.new()
-ID_NOTES = idinc.new()
-ID_OPERATIONS = idinc.new()
-ID_TERMINAL = idinc.new()
-ID_ROTARY = idinc.new()
-ID_RASTER = idinc.new()
-
-ID_HOMEPAGE = idinc.new()
-
-ID_CUT_CONFIGURATION = idinc.new()
-ID_SELECT = idinc.new()
-
-ID_MENU_IMPORT = idinc.new()
-ID_MENU_RECENT = idinc.new()
-ID_MENU_ZOOM_OUT = idinc.new()
-ID_MENU_ZOOM_IN = idinc.new()
-ID_MENU_ZOOM_SIZE = idinc.new()
+ID_MENU_IMPORT = wx.NewId()
+ID_MENU_RECENT = wx.NewId()
+ID_MENU_ZOOM_OUT = wx.NewId()
+ID_MENU_ZOOM_IN = wx.NewId()
+ID_MENU_ZOOM_SIZE = wx.NewId()
 
 # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
-ID_MENU_HIDE_FILLS = idinc.new()
-ID_MENU_HIDE_GUIDES = idinc.new()
-ID_MENU_HIDE_GRID = idinc.new()
-ID_MENU_HIDE_BACKGROUND = idinc.new()
-ID_MENU_HIDE_STROKES = idinc.new()
-ID_MENU_HIDE_ICONS = idinc.new()
-ID_MENU_HIDE_TREE = idinc.new()
-ID_MENU_HIDE_LASERPATH = idinc.new()
-ID_MENU_HIDE_RETICLE = idinc.new()
-ID_MENU_HIDE_SELECTION = idinc.new()
-ID_MENU_SCREEN_REFRESH = idinc.new()
-ID_MENU_SCREEN_ANIMATE = idinc.new()
-ID_MENU_SCREEN_INVERT = idinc.new()
-ID_MENU_SCREEN_FLIPXY = idinc.new()
-ID_MENU_PREVENT_CACHING = idinc.new()
-ID_MENU_HIDE_IMAGE = idinc.new()
-ID_MENU_HIDE_PATH = idinc.new()
-ID_MENU_HIDE_TEXT = idinc.new()
+ID_MENU_HIDE_FILLS = wx.NewId()
+ID_MENU_HIDE_GUIDES = wx.NewId()
+ID_MENU_HIDE_GRID = wx.NewId()
+ID_MENU_HIDE_BACKGROUND = wx.NewId()
+ID_MENU_HIDE_STROKES = wx.NewId()
+ID_MENU_HIDE_ICONS = wx.NewId()
+ID_MENU_HIDE_TREE = wx.NewId()
+ID_MENU_HIDE_LASERPATH = wx.NewId()
+ID_MENU_HIDE_RETICLE = wx.NewId()
+ID_MENU_HIDE_SELECTION = wx.NewId()
+ID_MENU_SCREEN_REFRESH = wx.NewId()
+ID_MENU_SCREEN_ANIMATE = wx.NewId()
+ID_MENU_SCREEN_INVERT = wx.NewId()
+ID_MENU_SCREEN_FLIPXY = wx.NewId()
+ID_MENU_PREVENT_CACHING = wx.NewId()
+ID_MENU_HIDE_IMAGE = wx.NewId()
+ID_MENU_HIDE_PATH = wx.NewId()
+ID_MENU_HIDE_TEXT = wx.NewId()
 
-ID_MENU_FILE0 = idinc.new()
-ID_MENU_FILE1 = idinc.new()
-ID_MENU_FILE2 = idinc.new()
-ID_MENU_FILE3 = idinc.new()
-ID_MENU_FILE4 = idinc.new()
-ID_MENU_FILE5 = idinc.new()
-ID_MENU_FILE6 = idinc.new()
-ID_MENU_FILE7 = idinc.new()
-ID_MENU_FILE8 = idinc.new()
-ID_MENU_FILE9 = idinc.new()
-ID_MENU_FILE_CLEAR = idinc.new()
+ID_MENU_FILE0 = wx.NewId()
+ID_MENU_FILE1 = wx.NewId()
+ID_MENU_FILE2 = wx.NewId()
+ID_MENU_FILE3 = wx.NewId()
+ID_MENU_FILE4 = wx.NewId()
+ID_MENU_FILE5 = wx.NewId()
+ID_MENU_FILE6 = wx.NewId()
+ID_MENU_FILE7 = wx.NewId()
+ID_MENU_FILE8 = wx.NewId()
+ID_MENU_FILE9 = wx.NewId()
+ID_MENU_FILE_CLEAR = wx.NewId()
 
-ID_MENU_ALIGNMENT = idinc.new()
-ID_MENU_KEYMAP = idinc.new()
-ID_MENU_DEVICE_MANAGER = idinc.new()
-ID_MENU_SETTINGS = idinc.new()
-ID_MENU_ROTARY = idinc.new()
-ID_MENU_NAVIGATION = idinc.new()
-ID_MENU_NOTES = idinc.new()
-ID_MENU_OPERATIONS = idinc.new()
-ID_MENU_CONTROLLER = idinc.new()
-ID_MENU_CAMERA = idinc.new()
-ID_MENU_TERMINAL = idinc.new()
-ID_MENU_USB = idinc.new()
-ID_MENU_SPOOLER = idinc.new()
-ID_MENU_JOB = idinc.new()
-ID_MENU_TREE = idinc.new()
+ID_MENU_ALIGNMENT = wx.NewId()
+ID_MENU_KEYMAP = wx.NewId()
+ID_MENU_DEVICE_MANAGER = wx.NewId()
+ID_MENU_SETTINGS = wx.NewId()
+ID_MENU_ROTARY = wx.NewId()
+ID_MENU_NAVIGATION = wx.NewId()
+ID_MENU_NOTES = wx.NewId()
+ID_MENU_OPERATIONS = wx.NewId()
+ID_MENU_CONTROLLER = wx.NewId()
+ID_MENU_CAMERA = wx.NewId()
+ID_MENU_TERMINAL = wx.NewId()
+ID_MENU_USB = wx.NewId()
+ID_MENU_SPOOLER = wx.NewId()
+ID_MENU_JOB = wx.NewId()
+ID_MENU_TREE = wx.NewId()
 
 _ = wx.GetTranslation
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
@@ -160,12 +146,6 @@ supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('de', u'Deutsch', wx.LANGUAGE_GERMAN),
                        ('es', u'español', wx.LANGUAGE_SPANISH),
                        ('zh', u'Chinese', wx.LANGUAGE_CHINESE))
-
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_path, relative_path)
 
 
 class MeerK40t(wx.Frame, Module):
@@ -302,23 +282,22 @@ class MeerK40t(wx.Frame, Module):
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-
-        wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
-        wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project"), "")
+        wxglade_tmp_menu.Append(wx.ID_NEW, _("New\tCtrl-N", ""))
+        wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project\tCtrl-O", ""))
         self.recent_file_menu = wx.Menu()
         wxglade_tmp_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save"), "")
-        wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As"), "")
+        wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save\tCtrl-S", ""))
+        wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As\tCtrl-Shift-S", ""))
         wxglade_tmp_menu.AppendSeparator()
 
         wxglade_tmp_menu.Append(wx.ID_EXIT, _("Exit"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out"), "")
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out\tCtrl--"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In\tCtrl-+"), "")
         wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
@@ -358,15 +337,21 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.Append(ID_MENU_SPOOLER, _("Job Spooler"), "")
         wxglade_tmp_menu.Append(ID_MENU_JOB, _("Execute Job"), "")
 
-        self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
+        self.main_menubar.Append(wxglade_tmp_menu, _("Tools"))
 
+        from sys import platform
+        if platform == "darwin":
+            wxglade_tmp_menu = wx.Menu()
+            self.main_menubar.Append(wxglade_tmp_menu, "Window")
+        
+        self.SetMenuBar(self.main_menubar)
+        
         wxglade_tmp_menu = wx.Menu()
         wxglade_tmp_menu.Append(wx.ID_HELP, _("Help"), "")
         wxglade_tmp_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
         wxglade_tmp_menu.Append(wx.ID_ABOUT, _("About"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
 
-        self.SetMenuBar(self.main_menubar)
         # Menu Bar end
 
         self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
@@ -538,9 +523,38 @@ class MeerK40t(wx.Frame, Module):
         self._rotary_view = False
         self._has_modifiers = False
         self._shift_down = False
+        self.accelerator_table(self)
 
     def add_language_menu(self):
-        if os.path.exists(resource_path('./locale')):
+        tl = wx.FileTranslationsLoader()
+        trans = tl.GetAvailableTranslations("meerk40t")
+
+        def translate_list():
+            tl = wx.FileTranslationsLoader()
+            trans = tl.GetAvailableTranslations("meerk40t")
+            for i in trans:
+                yield i
+
+        def translate_active(v):
+            try:
+                v = int(v)
+            except ValueError:
+                for i, lang in enumerate(supported_languages):
+                    language_code, language_name, language_index = lang
+                    if v == language_code:
+                        v = i
+                        break
+            try:
+                language_code, language_name, language_index = supported_languages[v]
+                self.device.device_root.app.update_language(v)
+                return language_name
+            except (IndexError, ValueError):
+                return "Failed."
+
+        self.device.device_root.translate_list = translate_list
+        self.device.device_root.translate_active = translate_active
+
+        if trans:
             wxglade_tmp_menu = wx.Menu()
             i = 0
             for lang in supported_languages:
@@ -553,7 +567,7 @@ class MeerK40t(wx.Frame, Module):
                     return lambda e: self.device.device_root.app.update_language(q)
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
-                if not os.path.exists(resource_path('./locale/%s' % language_code)) and i != 0:
+                if language_code not in trans and i != 0:
                     m.Enable(False)
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
@@ -565,6 +579,18 @@ class MeerK40t(wx.Frame, Module):
             self.state = 5
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
+
+    def accelerator_table(self, window):
+        def close_window(e=None):
+            try:
+                window.Close(False)
+            except RuntimeError:
+                pass
+
+        keyid = wx.NewId()
+        accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('W'), keyid)])
+        window.Bind(wx.EVT_MENU, close_window, id=keyid)
+        window.SetAcceleratorTable(accel_tbl)
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
@@ -883,40 +909,69 @@ class MeerK40t(wx.Frame, Module):
         self.SetSizer(main_sizer)
         self.Layout()
 
+    def load_or_open(self, filename):
+        """
+        Loads recent file name given. If the filename cannot be opened attempts open dialog at last known location.
+        """
+        if os.path.exists(filename):
+            try:
+                self.load(filename)
+            except PermissionError:
+                self.tryopen(filename)
+        else:
+            self.tryopen(filename)
+
+    def tryopen(self, filename):
+        """
+        Loads an open dialog at given filename to load data.
+        """
+        files = self.device.load_types()
+        defaultFile = os.path.basename(filename)
+        defaultDir = os.path.dirname(filename)
+
+        with wx.FileDialog(
+                self, _("Open"), defaultDir=defaultDir, defaultFile=defaultFile, wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+        ) as fileDialog:
+            fileDialog.SetFilename(defaultFile)
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            self.load(pathname)
+
     def populate_recent_menu(self):
         for i in range(self.recent_file_menu.MenuItemCount):
             self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
         device = self.device
         if device.file0 is not None and len(device.file0):
             self.recent_file_menu.Append(ID_MENU_FILE0, device.file0, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file0), id=ID_MENU_FILE0)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file0), id=ID_MENU_FILE0)
         if device.file1 is not None and len(device.file1):
             self.recent_file_menu.Append(ID_MENU_FILE1, device.file1, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file1), id=ID_MENU_FILE1)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file1), id=ID_MENU_FILE1)
         if device.file2 is not None and len(device.file2):
             self.recent_file_menu.Append(ID_MENU_FILE2, device.file2, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file2), id=ID_MENU_FILE2)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file2), id=ID_MENU_FILE2)
         if device.file3 is not None and len(device.file3):
             self.recent_file_menu.Append(ID_MENU_FILE3, device.file3, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file3), id=ID_MENU_FILE3)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file3), id=ID_MENU_FILE3)
         if device.file4 is not None and len(device.file4):
             self.recent_file_menu.Append(ID_MENU_FILE4, device.file4, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file4), id=ID_MENU_FILE4)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file4), id=ID_MENU_FILE4)
         if device.file5 is not None and len(device.file5):
             self.recent_file_menu.Append(ID_MENU_FILE5, device.file5, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file5), id=ID_MENU_FILE5)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file5), id=ID_MENU_FILE5)
         if device.file6 is not None and len(device.file6):
             self.recent_file_menu.Append(ID_MENU_FILE6, device.file6, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file6), id=ID_MENU_FILE6)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file6), id=ID_MENU_FILE6)
         if device.file7 is not None and len(device.file7):
             self.recent_file_menu.Append(ID_MENU_FILE7, device.file7, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file7), id=ID_MENU_FILE7)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file7), id=ID_MENU_FILE7)
         if device.file8 is not None and len(device.file8):
             self.recent_file_menu.Append(ID_MENU_FILE8, device.file8, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file8), id=ID_MENU_FILE8)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file8), id=ID_MENU_FILE8)
         if device.file9 is not None and len(device.file9):
             self.recent_file_menu.Append(ID_MENU_FILE9, device.file9, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file9), id=ID_MENU_FILE9)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file9), id=ID_MENU_FILE9)
         if self.recent_file_menu.MenuItemCount != 0:
             self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
             self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
@@ -946,6 +1001,9 @@ class MeerK40t(wx.Frame, Module):
         self.device.setting(bool, 'auto_note', True)
         self.device.device_root.setting(bool, 'uniform_svg', False)
         self.device.device_root.setting(float, 'svg_ppi', 96.0)
+        self.device.device_root.setting(bool, 'default_operations', False)
+        if self.device.device_root.default_operations:
+            self.device.device_root.elements.load_default()
         with wx.BusyInfo(_("Loading File...")):
             n = self.device.device_root.elements.note
             is_svg = pathname.lower().endswith('svg')
@@ -1123,8 +1181,9 @@ class MeerK40t(wx.Frame, Module):
         if self.scene.HasCapture():
             return
         rotation = event.GetWheelRotation()
-        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not self._shift_down:
-            if self._has_modifiers:
+        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not event.ShiftDown():
+
+            if event.HasModifiers():
                 if rotation > 1:
                     self.widget_scene.event(event.GetPosition(), 'wheelup_ctrl')
                 elif rotation < -1:
@@ -1186,7 +1245,12 @@ class MeerK40t(wx.Frame, Module):
 
     def on_right_mouse_down(self, event):
         self.scene.SetFocus()
-        self.widget_scene.event(event.GetPosition(), 'rightdown')
+        if event.AltDown():
+            self.widget_scene.event(event.GetPosition(), 'rightdown+alt')
+        elif event.ControlDown():
+            self.widget_scene.event(event.GetPosition(), 'rightdown+control')
+        else:
+            self.widget_scene.event(event.GetPosition(), 'rightdown')
 
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), 'rightup')
@@ -1218,8 +1282,9 @@ class MeerK40t(wx.Frame, Module):
         # event.Skip()
 
     def on_key_down(self, event):
-        self._shift_down = event.ShiftDown()
-        self._has_modifiers = event.HasAnyModifiers()
+        if event.GetKeyCode() == ord('W') and event.GetModifiers() == wx.MOD_CONTROL:
+            self.Close(False)
+            return
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
@@ -1229,8 +1294,6 @@ class MeerK40t(wx.Frame, Module):
             event.Skip()
 
     def on_key_up(self, event):
-        self._shift_down = event.ShiftDown()
-        self._has_modifiers = event.HasAnyModifiers()
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
@@ -3064,6 +3127,10 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
+        try:
+            self.InitLocale()
+        except AttributeError:
+            pass  # 4.1
 
     def on_app_close(self, event):
         try:
@@ -3152,11 +3219,24 @@ class wxMeerK40t(wx.App, Module):
 
     def initialize(self, channel=None):
         device = self.device
-        _ = wx.GetTranslation
-        wx.Locale.AddCatalogLookupPathPrefix(resource_path('locale'))
+
+        try:  # pyinstaller internal location
+            _resource_path = os.path.join(sys._MEIPASS, 'locale')
+            wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
+        except:
+            pass
+
+        try:  # Mac py2app resource
+            _resource_path = os.path.join(os.environ['RESOURCEPATH'], 'locale')
+            wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
+        except:
+            pass
+
+        wx.Locale.AddCatalogLookupPathPrefix('locale')  # Default Locale, prepended. Check this first.
 
         device.run_later = self.run_later
         device.translation = wx.GetTranslation
+
         device.set_config(wx.Config("MeerK40t"))
         device.app = self  # Registers self as kernel.app
         device.setting(int, 'language', None)
@@ -3212,7 +3292,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.20')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.21')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

@@ -25,7 +25,7 @@ open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 
 """
-MEERK40T_VERSION = '0.6.20'
+MEERK40T_VERSION = '0.6.21'
 kernel = Kernel()
 kernel.open('module', 'Signaler')
 kernel.open('module', 'Elemental')

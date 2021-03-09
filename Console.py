@@ -18,6 +18,7 @@ class Console(Module, Pipe):
         self.laser_on = False
         self.dx = 0
         self.dy = 0
+        self._current_directory = "."
 
     def initialize(self, channel=None):
         self.device.listen('interpreter;mode', self.on_mode_change)
@@ -25,6 +26,7 @@ class Console(Module, Pipe):
         self.device.setting(int, "bed_height", 200)
         self.channel = self.device.channel_open('console')
         self.active_device = self.device
+
 
     def finalize(self, channel=None):
         self.device.unlisten('interpreter;mode', self.on_mode_change)
@@ -2065,7 +2067,7 @@ class Console(Module, Pipe):
                     f.write("Document type : LHYMICRO-GL file\n")
                     f.write("File version: 1.0.01\n")
                     f.write("Copyright: Unknown\n")
-                    f.write("Creator-Software: MeerK40t v0.6.20\n")
+                    f.write("Creator-Software: MeerK40t v0.6.21\n")
                     f.write("\n")
                     f.write("%0%0%0%0%\n")
                     buffer = active_device.interpreter.pipe._buffer
@@ -2188,6 +2190,49 @@ class Console(Module, Pipe):
             active_device.signal('rebuild_tree')
             yield "Refreshed."
             return
+        elif command == 'ls':
+            import os
+            for f in os.listdir(self._current_directory):
+                yield str(f)
+        elif command == 'cd':
+            import os
+            if args[0] == "~":
+                self._current_directory = "."
+                yield "Working directory"
+                return
+            if args[0] == "@":
+                import sys
+                if hasattr(sys, "_MEIPASS"):
+                    self._current_directory = sys._MEIPASS
+                    yield "Internal Directory"
+                    return
+                else:
+                    yield "No internal directory."
+                    return
+            new_dir = os.path.join(self._current_directory, args[0])
+            if not os.path.exists(new_dir):
+                yield "No such directory."
+                return
+            self._current_directory = new_dir
+            yield os.path.abspath(new_dir)
+        elif command == "load":
+            import os
+            new_file = os.path.join(self._current_directory, args[0])
+            if not os.path.exists(new_file):
+                yield "No such file."
+                return
+
+            kernel.load(new_file)
+            yield "loading..."
+        elif command == "language":
+            if len(args) > 0:
+                yield "Changing language to: %s" % args[0]
+                m = self.device.device_root.translate_active(args[0])
+                yield "language is now: %s" % str(m)
+            else:
+                yield "Acceptable Languages:"
+                for x in self.device.device_root.translate_list():
+                    yield x
         elif command == 'shutdown':
             active_device.stop()
             return

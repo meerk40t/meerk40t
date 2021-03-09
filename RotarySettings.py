@@ -50,6 +50,10 @@ class RotarySettings(wx.Frame, Module):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
+
     def on_close(self, event):
         if self.state == 5:
             event.Veto()
@@ -71,8 +75,6 @@ class RotarySettings(wx.Frame, Module):
         self.on_check_rotary(None)
 
     def finalize(self, channel=None):
-        self.device.scale_x = self.text_rotary_scalex.GetValue()
-        self.device.scale_y = self.text_rotary_scaley.GetValue()
         try:
             self.Close()
         except RuntimeError:
@@ -177,13 +179,13 @@ class RotarySettings(wx.Frame, Module):
         event.Skip()
 
     def on_spin_rotary_roller_circumference(self, event):  # wxGlade: RotarySettings.<event_handler>
-        if self.device is None: # TODO: 0.6.20
+        if self.device is None: # TODO: 0.6.21
             return
         print("Event handler 'on_spin_rotary_roller_circumference' not implemented!")
         event.Skip()
 
     def on_spin_rotary_object_circumference(self, event):  # wxGlade: RotarySettings.<event_handler>
-        if self.device is None: # TODO: 0.6.20
+        if self.device is None: # TODO: 0.6.21
             return
         print("Event handler 'on_spin_rotary_object_circumference' not implemented!")
         event.Skip()

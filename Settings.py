@@ -40,6 +40,7 @@ class Settings(wx.Frame, Module):
                         (_("MouseWheel Pan"), "mouse_wheel_pan", False),
                         (_("Invert MouseWheel Pan"), 'mouse_pan_invert', False),
                         (_("Invert MouseWheel Zoom"), 'mouse_zoom_invert', False),
+                        (_("Default Operations"), "default_operations", False),
                         ]
         self.checklist_options = wx.CheckListBox(self, wx.ID_ANY, choices=[c[0] for c in self.choices])
 
@@ -59,6 +60,10 @@ class Settings(wx.Frame, Module):
 
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def on_close(self, event):
         if self.state == 5:

@@ -74,6 +74,10 @@ class OperationProperty(wx.Frame, Module):
         self.raster_lines = None
         self.travel_lines = None
 
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
+
     def on_close(self, event):
         if self.state == 5:
             event.Veto()

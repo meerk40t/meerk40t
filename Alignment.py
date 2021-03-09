@@ -58,6 +58,9 @@ class Alignment(wx.Frame, Module):
         self.Bind(wx.EVT_COMMAND_SCROLL_CHANGED, self.on_slider_square_power_change, self.slider_square_power)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
 
     def on_close(self, event):
         if self.state == 5:

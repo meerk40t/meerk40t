@@ -29,6 +29,10 @@ class Keymap(wx.Frame, Module):
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.SetFocus()
 
+        # OSX Window close
+        if parent is not None:
+            parent.accelerator_table(self)
+
     def on_close(self, event):
         if self.state == 5:
             event.Veto()
