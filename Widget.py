@@ -889,11 +889,11 @@ class RectSelectWidget(Widget):
             self.start_location = space_pos
             self.end_location = space_pos
             return RESPONSE_CONSUME
-        elif event_type == 'leftup' or event_type == "leftclick":
-            if self.start_location is None:
-                self.start_location = space_pos
-            if self.end_location is None:
-                self.end_location = space_pos
+        elif event_type == 'leftup': # or event_type == "leftclick":
+            # if self.start_location is None:
+            #     self.start_location = space_pos
+            # if self.end_location is None:
+            #     self.end_location = space_pos
             elements.validate_bounds()
             for obj in elements.elems():
                 sx = self.start_location[0]
