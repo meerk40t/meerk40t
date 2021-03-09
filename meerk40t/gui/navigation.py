@@ -579,7 +579,8 @@ class Navigation(wx.Frame, Module):
         self.update_matrix_text()
 
     def update_matrix_text(self):
-        v = self.elements.has_emphasis()
+        f = self.elements.first_element(emphasized=True)
+        v = f is not None
         self.text_a.Enable(v)
         self.text_b.Enable(v)
         self.text_c.Enable(v)
@@ -587,7 +588,7 @@ class Navigation(wx.Frame, Module):
         self.text_e.Enable(v)
         self.text_f.Enable(v)
         if v:
-            matrix = self.elements.first_element(emphasized=True).transform
+            matrix = f.transform
             self.text_a.SetValue(str(matrix.a))
             self.text_b.SetValue(str(matrix.b))
             self.text_c.SetValue(str(matrix.c))
