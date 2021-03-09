@@ -909,40 +909,69 @@ class MeerK40t(wx.Frame, Module):
         self.SetSizer(main_sizer)
         self.Layout()
 
+    def load_or_open(self, filename):
+        """
+        Loads recent file name given. If the filename cannot be opened attempts open dialog at last known location.
+        """
+        if os.path.exists(filename):
+            try:
+                self.load(filename)
+            except PermissionError:
+                self.tryopen(filename)
+        else:
+            self.tryopen(filename)
+
+    def tryopen(self, filename):
+        """
+        Loads an open dialog at given filename to load data.
+        """
+        files = self.device.load_types()
+        defaultFile = os.path.basename(filename)
+        defaultDir = os.path.dirname(filename)
+
+        with wx.FileDialog(
+                self, _("Open"), defaultDir=defaultDir, defaultFile=defaultFile, wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+        ) as fileDialog:
+            fileDialog.SetFilename(defaultFile)
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            self.load(pathname)
+
     def populate_recent_menu(self):
         for i in range(self.recent_file_menu.MenuItemCount):
             self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
         device = self.device
         if device.file0 is not None and len(device.file0):
             self.recent_file_menu.Append(ID_MENU_FILE0, device.file0, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file0), id=ID_MENU_FILE0)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file0), id=ID_MENU_FILE0)
         if device.file1 is not None and len(device.file1):
             self.recent_file_menu.Append(ID_MENU_FILE1, device.file1, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file1), id=ID_MENU_FILE1)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file1), id=ID_MENU_FILE1)
         if device.file2 is not None and len(device.file2):
             self.recent_file_menu.Append(ID_MENU_FILE2, device.file2, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file2), id=ID_MENU_FILE2)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file2), id=ID_MENU_FILE2)
         if device.file3 is not None and len(device.file3):
             self.recent_file_menu.Append(ID_MENU_FILE3, device.file3, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file3), id=ID_MENU_FILE3)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file3), id=ID_MENU_FILE3)
         if device.file4 is not None and len(device.file4):
             self.recent_file_menu.Append(ID_MENU_FILE4, device.file4, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file4), id=ID_MENU_FILE4)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file4), id=ID_MENU_FILE4)
         if device.file5 is not None and len(device.file5):
             self.recent_file_menu.Append(ID_MENU_FILE5, device.file5, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file5), id=ID_MENU_FILE5)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file5), id=ID_MENU_FILE5)
         if device.file6 is not None and len(device.file6):
             self.recent_file_menu.Append(ID_MENU_FILE6, device.file6, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file6), id=ID_MENU_FILE6)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file6), id=ID_MENU_FILE6)
         if device.file7 is not None and len(device.file7):
             self.recent_file_menu.Append(ID_MENU_FILE7, device.file7, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file7), id=ID_MENU_FILE7)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file7), id=ID_MENU_FILE7)
         if device.file8 is not None and len(device.file8):
             self.recent_file_menu.Append(ID_MENU_FILE8, device.file8, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file8), id=ID_MENU_FILE8)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file8), id=ID_MENU_FILE8)
         if device.file9 is not None and len(device.file9):
             self.recent_file_menu.Append(ID_MENU_FILE9, device.file9, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file9), id=ID_MENU_FILE9)
+            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(device.file9), id=ID_MENU_FILE9)
         if self.recent_file_menu.MenuItemCount != 0:
             self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
             self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
