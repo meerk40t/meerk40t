@@ -913,6 +913,7 @@ class Elemental(Modifier):
 
         self.note = None
         self._emphasized_bounds = None
+        self._emphasized_bounds_dirty = True
         self._tree = None
 
     def tree_operations_for_node(self, node):
@@ -3262,7 +3263,12 @@ class Elemental(Modifier):
         self.add_ops([o for o in ops if o is not None])
 
     def emphasized(self, *args):
-        self.validate_selected_area()
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+
+    def modified(self, *args):
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
 
     def listen(self, listener):
         self._tree.listen(listener)
@@ -3543,6 +3549,8 @@ class Elemental(Modifier):
                     e.remove_node()
 
     def selected_area(self):
+        if self._emphasized_bounds_dirty:
+            self.validate_selected_area()
         return self._emphasized_bounds
 
     def validate_selected_area(self):
@@ -3568,7 +3576,7 @@ class Elemental(Modifier):
             xmax = max([e[0] for e in boundary_points])
             ymax = max([e[1] for e in boundary_points])
             new_bounds = [xmin, ymin, xmax, ymax]
-
+        self._emphasized_bounds_dirty = False
         if self._emphasized_bounds != new_bounds:
             self._emphasized_bounds = new_bounds
             self.context.signal("selected_bounds", self._emphasized_bounds)
