@@ -562,7 +562,7 @@ class ElementsWidget(Widget):
         if zoom_scale < 1:
             zoom_scale = 1
         self.renderer.render(
-            context.elements.elems(),
+            context.elements.elems_nodes(),
             gc,
             self.renderer.context.draw_mode,
             zoomscale=zoom_scale,

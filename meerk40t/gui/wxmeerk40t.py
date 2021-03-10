@@ -2712,7 +2712,7 @@ class ShadowTree:
                 tree.SetItemImage(item, image=image_id)
             elif isinstance(data_object, (Path, SVGText)):
                 image = self.renderer.make_raster(
-                    data_object, data_object.bbox(), width=20, height=20, bitmap=True
+                    node, data_object.bbox(), width=20, height=20, bitmap=True
                 )
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)

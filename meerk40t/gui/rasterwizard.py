@@ -502,6 +502,7 @@ class RasterWizard(wx.Frame, Module):
             self.svg_image.image_width, self.svg_image.image_height = self.pil_image.size
             self.svg_image.lock = True
             try:
+                self.svg_image.node.object = self.svg_image
                 self.svg_image.node.altered()
             except AttributeError:
                 pass

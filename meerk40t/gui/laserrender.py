@@ -45,12 +45,11 @@ def swizzlecolor(c):
 class LaserRender:
     def __init__(self, context):
         self.context = context
-        self.cache = None
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
 
-    def render(self, elements, gc, draw_mode=None, zoomscale=1.0):
+    def render(self, nodes, gc, draw_mode=None, zoomscale=1.0):
         """
         Render scene information.
 
@@ -69,27 +68,31 @@ class LaserRender:
                 types.append(SVGImage)
             if draw_mode & DRAW_MODE_TEXT == 0:
                 types.append(SVGText)
-            elements = [e for e in elements if type(e) in types]
+            nodes = [e for e in nodes if type(e.object) in types]
 
-        for element in elements:
+        for node in nodes:
             try:
-                element.draw(element, gc, draw_mode, zoomscale=zoomscale)
+                node.draw(node, gc, draw_mode, zoomscale=zoomscale)
             except AttributeError:
-                if isinstance(element, Path):
-                    element.draw = self.draw_path
-                elif isinstance(element, Shape):
-                    element.draw = self.draw_shape
-                elif isinstance(element, SVGImage):
-                    element.draw = self.draw_image
-                elif isinstance(element, SVGText):
-                    element.draw = self.draw_text
-                elif isinstance(element, Group):
-                    element.draw = self.draw_group
+                obj_type = type(node.object)
+                if obj_type == Path:
+                    node.draw = self.draw_path_node
+                elif obj_type == Shape:
+                    node.draw = self.draw_shape_node
+                elif obj_type == SVGImage:
+                    node.draw = self.draw_image_node
+                elif obj_type == SVGText:
+                    node.draw = self.draw_text_node
+                elif obj_type == Group:
+                    node.draw = self.draw_group_node
                 else:
                     continue
-            element.draw(element, gc, draw_mode, zoomscale=zoomscale)
+            node.draw(node, gc, draw_mode, zoomscale=zoomscale)
 
     def make_path(self, gc, path):
+        """
+        Takes an svgelements.Path and converts it to a GraphicsContext.Graphics Path
+        """
         p = gc.CreatePath()
         first_point = path.first_point
         if first_point is not None:
@@ -161,111 +164,115 @@ class LaserRender:
     def set_element_brush(self, gc, element):
         self.set_brush(gc, element.fill)
 
-    def draw_group(self, element, gc, draw_mode, zoomscale=1.0):
+    def draw_group_node(self, node, gc, draw_mode, zoomscale=1.0):
         pass
 
-    def draw_shape(self, element, gc, draw_mode, zoomscale=1.0):
+    def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0):
         """Default draw routine for the shape element."""
+        shape = node.object
         try:
-            matrix = element.transform
+            matrix = shape.transform
             width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = Matrix()
             width_scale = 1.0
-        if not hasattr(element, "cache") or element.cache is None:
-            cache = self.make_path(gc, Path(element))
-            element.cache = cache
+        if not hasattr(node, "cache") or node.cache is None:
+            cache = self.make_path(gc, Path(shape))
+            node.cache = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, element, zoomscale=zoomscale, width_scale=width_scale)
-        self.set_element_brush(gc, element)
-        if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:
-            gc.FillPath(element.cache)
-        if draw_mode & DRAW_MODE_STROKES == 0 and element.stroke is not None:
-            gc.StrokePath(element.cache)
+        self.set_element_pen(gc, shape, zoomscale=zoomscale, width_scale=width_scale)
+        self.set_element_brush(gc, shape)
+        if draw_mode & DRAW_MODE_FILLS == 0 and shape.fill is not None:
+            gc.FillPath(node.cache)
+        if draw_mode & DRAW_MODE_STROKES == 0 and shape.stroke is not None:
+            gc.StrokePath(node.cache)
         gc.PopState()
 
-    def draw_path(self, element, gc, draw_mode, zoomscale=1.0):
+    def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0):
         """Default draw routine for the laser path element."""
+        path = node.object
         try:
-            matrix = element.transform
+            matrix = path.transform
             width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = Matrix()
             width_scale = 1.0
-        if not hasattr(element, "cache") or element.cache is None:
-            cache = self.make_path(gc, element)
-            element.cache = cache
+        if not hasattr(node, "cache") or node.cache is None:
+            cache = self.make_path(gc, path)
+            node.cache = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, element, zoomscale=zoomscale, width_scale=width_scale)
-        self.set_element_brush(gc, element)
-        if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:
-            gc.FillPath(element.cache)
-        if draw_mode & DRAW_MODE_STROKES == 0 and element.stroke is not None:
-            gc.StrokePath(element.cache)
+        self.set_element_pen(gc, path, zoomscale=zoomscale, width_scale=width_scale)
+        self.set_element_brush(gc, path)
+        if draw_mode & DRAW_MODE_FILLS == 0 and path.fill is not None:
+            gc.FillPath(node.cache)
+        if draw_mode & DRAW_MODE_STROKES == 0 and path.stroke is not None:
+            gc.StrokePath(node.cache)
         gc.PopState()
 
-    def draw_text(self, element, gc, draw_mode, zoomscale=1.0):
+    def draw_text_node(self, node, gc, draw_mode, zoomscale=1.0):
+        text = node.object
         try:
-            matrix = element.transform
+            matrix = text.transform
             width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = Matrix()
             width_scale = 1.0
-        if hasattr(element, "wxfont"):
-            font = element.wxfont
+        if hasattr(node, "wxfont"):
+            font = node.wxfont
         else:
-            if element.font_size < 1:
-                if element.font_size > 0:
-                    element.transform.pre_scale(
-                        element.font_size, element.font_size, element.x, element.y
+            if text.font_size < 1:
+                if text.font_size > 0:
+                    text.transform.pre_scale(
+                        text.font_size, text.font_size, text.x, text.y
                     )
-                element.font_size = 1  # No zero sized fonts.
-            font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+                text.font_size = 1  # No zero sized fonts.
+            font = wx.Font(text.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
             try:
                 f = []
-                if element.font_family is not None:
-                    f.append(str(element.font_family))
-                if element.font_face is not None:
-                    f.append(str(element.font_face))
-                if element.font_weight is not None:
-                    f.append(str(element.font_weight))
-                f.append("%d" % element.font_size)
+                if text.font_family is not None:
+                    f.append(str(text.font_family))
+                if text.font_face is not None:
+                    f.append(str(text.font_face))
+                if text.font_weight is not None:
+                    f.append(str(text.font_weight))
+                f.append("%d" % text.font_size)
                 font.SetNativeFontInfoUserDesc(" ".join(f))
             except:
                 pass
-            element.wxfont = font
+            node.wxfont = font
 
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, element, zoomscale=zoomscale, width_scale=width_scale)
-        self.set_element_brush(gc, element)
+        self.set_element_pen(gc, text, zoomscale=zoomscale, width_scale=width_scale)
+        self.set_element_brush(gc, text)
 
-        if element.fill is None or element.fill == "none":
+        if text.fill is None or text.fill == "none":
             gc.SetFont(font, wx.BLACK)
         else:
-            gc.SetFont(font, wx.Colour(swizzlecolor(element.fill)))
+            gc.SetFont(font, wx.Colour(swizzlecolor(text.fill)))
 
-        text = element.text
-        x = element.x
-        y = element.y
+        text = text.text
+        x = text.x
+        y = text.y
         if text is not None:
-            element.width, element.height = gc.GetTextExtent(element.text)
-            if not hasattr(element, "anchor") or element.anchor == "start":
-                y -= element.height
-            elif element.anchor == "middle":
-                x -= element.width / 2
-                y -= element.height
-            elif element.anchor == "end":
-                x -= element.width
-                y -= element.height
+            text.width, text.height = gc.GetTextExtent(text.text)
+            if not hasattr(text, "anchor") or text.anchor == "start":
+                y -= text.height
+            elif text.anchor == "middle":
+                x -= text.width / 2
+                y -= text.height
+            elif text.anchor == "end":
+                x -= text.width
+                y -= text.height
             gc.DrawText(text, x, y)
         gc.PopState()
 
-    def draw_image(self, node, gc, draw_mode, zoomscale=1.0):
+    def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0):
+        image = node.object
         try:
-            matrix = node.transform
+            matrix = image.transform
         except AttributeError:
             matrix = Matrix()
         gc.PushState()
@@ -281,12 +288,12 @@ class LaserRender:
                     max_allowed = node.max_allowed
                 except AttributeError:
                     max_allowed = 2048
-                node.c_width, node.c_height = node.image.size
-                node.cache = self.make_thumbnail(node.image, maximum=max_allowed)
+                node.c_width, node.c_height = image.image.size
+                node.cache = self.make_thumbnail(image.image, maximum=max_allowed)
             gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
         else:
-            node.c_width, node.c_height = node.image.size
-            cache = self.make_thumbnail(node.image)
+            node.c_width, node.c_height = image.image.size
+            cache = self.make_thumbnail(image.image)
             gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()
 
