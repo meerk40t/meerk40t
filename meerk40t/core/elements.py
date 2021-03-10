@@ -2693,6 +2693,24 @@ class Elemental(Modifier):
         _ = self.context._kernel.translation
 
         @self.tree_operation(
+            _("Ungroup Elements"), node_type=("group", "file"), help=""
+        )
+        def ungroup_elements(node, **kwargs):
+            for n in list(node.children):
+                node.insert_sibling(n)
+            node.remove_node()
+
+        @self.tree_operation(
+            _("Group Elements"), node_type="elem", help=""
+        )
+        def group_elements(node, **kwargs):
+            # group_node = node.parent.add_sibling(node, type="group", name="Group")
+            group_node = node.parent.add(type="group", name="Group")
+            for e in list(self.elems(emphasized=True)):
+                node = e.node
+                group_node.append_child(node)
+
+        @self.tree_operation(
             _("Execute Job"),
             node_type="op",
             help="Execute Job for the particular element.",
@@ -2934,6 +2952,7 @@ class Elemental(Modifier):
             element = node.object
             element.raster_step = i
             self.context.signal("element_property_update", node.object)
+
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_operation(
