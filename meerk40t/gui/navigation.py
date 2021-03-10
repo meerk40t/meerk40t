@@ -891,7 +891,7 @@ class Navigation(wx.Frame, Module):
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>
         try:
             self.context(
-                "matrix %f %f %f %f %s %s"
+                "matrix %f %f %f %f %s %s\n"
                 % (
                     float(self.text_a.GetValue()),
                     float(self.text_b.GetValue()),

@@ -162,6 +162,7 @@ def plugin(kernel, lifecycle):
         kernel.console("window open -p / MeerK40t\n")
         meerk40tgui.MainLoop()
 
+
 ID_MAIN_TOOLBAR = wx.NewId()
 ID_ADD_FILE = wx.NewId()
 ID_OPEN = wx.NewId()
