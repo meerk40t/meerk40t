@@ -253,10 +253,9 @@ class LaserRender:
         else:
             gc.SetFont(font, wx.Colour(swizzlecolor(text.fill)))
 
-        text = text.text
         x = text.x
         y = text.y
-        if text is not None:
+        if text.text is not None:
             text.width, text.height = gc.GetTextExtent(text.text)
             if not hasattr(text, "anchor") or text.anchor == "start":
                 y -= text.height
@@ -266,7 +265,7 @@ class LaserRender:
             elif text.anchor == "end":
                 x -= text.width
                 y -= text.height
-            gc.DrawText(text, x, y)
+            gc.DrawText(text.text, x, y)
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0):
