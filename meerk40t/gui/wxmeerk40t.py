@@ -2500,8 +2500,7 @@ class ShadowTree:
         self.gui = gui
         self.wxtree = gui.wxtree
         self.renderer = gui.renderer
-        self.dragging_node = None
-        self.dragging_parent = None
+        self.dragging_nodes = None
         self.tree_images = None
         self.object = "Project"
         self.name = "Project"
@@ -2619,7 +2618,7 @@ class ShadowTree:
             child, cookie = tree.GetNextChild(node, cookie)
 
     def rebuild_tree(self):
-        self.dragging_node = None
+        self.dragging_nodes = None
         self.wxtree.DeleteAllItems()
 
         self.tree_images = wx.ImageList()
@@ -2796,7 +2795,7 @@ class ShadowTree:
         :param event:
         :return:
         """
-        self.dragging_node = None
+        self.dragging_nodes = None
 
         pt = event.GetPoint()
         drag_item, _ = self.wxtree.HitTest(pt)
@@ -2805,11 +2804,19 @@ class ShadowTree:
             event.Skip()
             return
 
-        node_data = self.wxtree.GetItemData(drag_item)
-        if not node_data.is_movable():
+        self.dragging_nodes = [self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()]
+        if not len(self.dragging_nodes):
             event.Skip()
             return
-        self.dragging_node = node_data
+
+        t = self.dragging_nodes[0].type
+        for n in self.dragging_nodes:
+            if t != n.type:
+                event.Skip()
+                return
+            if not n.is_movable():
+                event.Skip()
+                return
         event.Allow()
 
     def on_drag_end_handler(self, event):
@@ -2819,26 +2826,30 @@ class ShadowTree:
         :param event:
         :return:
         """
-        if self.dragging_node is None:
+        if self.dragging_nodes is None:
             event.Skip()
             return
-
-        drag_node = self.dragging_node
-        self.dragging_node = None
 
         drop_item = event.GetItem()
         if drop_item is None or drop_item.ID is None:
             event.Skip()
             return
-
         drop_node = self.wxtree.GetItemData(drop_item)
-        if drop_node is None or drop_node == drag_node:
+        if drop_node is None:
             event.Skip()
             return
-        if drop_node.drop(drag_node):
+
+        skip = True
+        for drag_node in self.dragging_nodes:
+            if drop_node is drag_node:
+                continue
+            if drop_node.drop(drag_node):
+                skip = False
+        if skip:
+            event.Skip()
+        else:
             event.Allow()
-            return
-        event.Skip()
+        self.dragging_nodes = None
 
     def on_item_right_click(self, event):
         """
