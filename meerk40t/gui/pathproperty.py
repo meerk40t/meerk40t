@@ -9,7 +9,7 @@ _ = wx.GetTranslation
 
 
 class PathProperty(wx.Frame, Module):
-    def __init__(self, context, path, parent, element=None, *args, **kwds):
+    def __init__(self, context, path, parent, node=None, *args, **kwds):
         # begin wxGlade: PathProperty.__init__
         wx.Frame.__init__(
             self,
@@ -19,6 +19,8 @@ class PathProperty(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+        self.element = node.object
+        self.element_node = node
         self.SetSize((288, 303))
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.button_stroke_none = wx.Button(self, wx.ID_ANY, _("None"))
@@ -58,8 +60,8 @@ class PathProperty(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
         try:
-            if element.id is not None:
-                self.text_name.SetValue(str(element.id))
+            if node.object.id is not None:
+                self.text_name.SetValue(str(node.object.id))
         except AttributeError:
             pass
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_name)
@@ -81,7 +83,6 @@ class PathProperty(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
         # end wxGlade
-        self.path_element = element
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         # OSX Window close
         if parent is not None:
@@ -96,7 +97,7 @@ class PathProperty(wx.Frame, Module):
             event.Skip()  # Call destroy as regular.
 
     def restore(self, parent, element=None, *args, **kwargs):
-        self.path_element = element
+        self.element = element
         self.set_widgets()
 
     def initialize(self, *args, **kwargs):
@@ -106,10 +107,10 @@ class PathProperty(wx.Frame, Module):
     def set_widgets(self):
         try:
             if (
-                self.path_element.stroke is not None
-                and self.path_element.stroke != "none"
+                self.element.stroke is not None
+                and self.element.stroke != "none"
             ):
-                color = wx.Colour(swizzlecolor(self.path_element.stroke))
+                color = wx.Colour(swizzlecolor(self.element.stroke))
                 self.text_name.SetBackgroundColour(color)
         except AttributeError:
             pass
@@ -196,9 +197,9 @@ class PathProperty(wx.Frame, Module):
 
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
         try:
-            self.path_element.id = self.text_name.GetValue()
-            self.path_element.values[SVG_ATTR_ID] = self.path_element.id
-            self.context.signal("element_property_update", self.path_element)
+            self.element.id = self.text_name.GetValue()
+            self.element.values[SVG_ATTR_ID] = self.element.id
+            self.context.signal("element_property_update", self.element)
         except AttributeError:
             pass
 
@@ -212,27 +213,27 @@ class PathProperty(wx.Frame, Module):
             color = Color(color, 1.0)
         if "stroke" in button.name:
             if color is not None:
-                self.path_element.stroke = color
-                self.path_element.values[SVG_ATTR_STROKE] = color.hex
-                self.path_element.node.altered()
-                color = wx.Colour(swizzlecolor(self.path_element.stroke))
+                self.element.stroke = color
+                self.element.values[SVG_ATTR_STROKE] = color.hex
+                self.element.node.altered()
+                color = wx.Colour(swizzlecolor(self.element.stroke))
                 self.text_name.SetBackgroundColour(color)
             else:
-                self.path_element.stroke = Color("none")
-                self.path_element.values[SVG_ATTR_STROKE] = "none"
-                self.path_element.node.altered()
+                self.element.stroke = Color("none")
+                self.element.values[SVG_ATTR_STROKE] = "none"
+                self.element.node.altered()
                 self.text_name.SetBackgroundColour(wx.WHITE)
         elif "fill" in button.name:
             if color is not None:
-                self.path_element.fill = color
-                self.path_element.values[SVG_ATTR_FILL] = color.hex
-                self.path_element.node.altered()
+                self.element.fill = color
+                self.element.values[SVG_ATTR_FILL] = color.hex
+                self.element.node.altered()
             else:
-                self.path_element.fill = Color("none")
-                self.path_element.values[SVG_ATTR_FILL] = "none"
-                self.path_element.node.altered()
-        self.path_element.node.emphasized = True
+                self.element.fill = Color("none")
+                self.element.values[SVG_ATTR_FILL] = "none"
+                self.element.node.altered()
+        self.element.node.emphasized = True
         self.Refresh()
         self.context("declassify\nclassify\n")
-        self.context.signal("element_property_update", self.path_element)
+        self.context.signal("element_property_update", self.element)
         self.context.signal("refresh_scene", 0)

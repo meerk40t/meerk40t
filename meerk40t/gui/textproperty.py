@@ -9,7 +9,7 @@ _ = wx.GetTranslation
 
 
 class TextProperty(wx.Frame, Module):
-    def __init__(self, context, path, parent, element, *args, **kwds):
+    def __init__(self, context, path, parent, node, *args, **kwds):
         # begin wxGlade: TextProperty.__init__
         wx.Frame.__init__(
             self,
@@ -21,7 +21,8 @@ class TextProperty(wx.Frame, Module):
         Module.__init__(self, context, path)
         self.SetSize((317, 360))
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.element = element
+        self.element = node.object
+        self.element_node = node
         self.label_fonttest = wx.StaticText(self, wx.ID_ANY, "")
         self.label_fonttest.SetFont(
             wx.Font(
@@ -121,7 +122,7 @@ class TextProperty(wx.Frame, Module):
                 self.text_text.SetValue(self.element.text)
                 self.label_fonttest.SetLabelText(self.element.text)
                 try:
-                    self.label_fonttest.SetFont(self.element.wxfont)
+                    self.label_fonttest.SetFont(self.element_node.wxfont)
                 except AttributeError:
                     pass
                 self.context.signal("refresh_scene", 0)
@@ -214,8 +215,9 @@ class TextProperty(wx.Frame, Module):
 
     def update_label(self):
         element = self.element
+        element_node = self.element_node
         try:
-            self.label_fonttest.SetFont(element.wxfont)
+            self.label_fonttest.SetFont(element_node.wxfont)
         except AttributeError:
             pass
         self.label_fonttest.SetLabelText(element.text)
@@ -237,7 +239,7 @@ class TextProperty(wx.Frame, Module):
     def on_button_choose_font(self, event):  # wxGlade: TextProperty.<event_handler>
         font_data = wx.FontData()
         try:
-            font_data.SetInitialFont(self.element.wxfont)
+            font_data.SetInitialFont(self.element_node.wxfont)
             font_data.SetColour(wx.Colour(swizzlecolor(self.element.fill)))
             dialog = wx.FontDialog(None, font_data)
         except AttributeError:
@@ -249,7 +251,7 @@ class TextProperty(wx.Frame, Module):
             rgb = color.GetRGB()
             color = swizzlecolor(rgb)
             color = Color(color, 1.0)
-            self.element.wxfont = font
+            self.element_node.wxfont = font
             self.element.fill = color
             self.update_label()
             self.refresh()

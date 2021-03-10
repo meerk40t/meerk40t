@@ -7,7 +7,7 @@ _ = wx.GetTranslation
 
 
 class ImageProperty(wx.Frame, Module):
-    def __init__(self, context, path, parent, element, *args, **kwds):
+    def __init__(self, context, path, parent, node, *args, **kwds):
         # begin wxGlade: ImageProperty.__init__
         wx.Frame.__init__(
             self,
@@ -17,6 +17,8 @@ class ImageProperty(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+        self.element_node = node
+        self.element = node.object
         self.SetSize((276, 218))
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
         self.combo_dpi = wx.ComboBox(
@@ -56,7 +58,6 @@ class ImageProperty(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
         # end wxGlade
-        self.image_element = element
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         # OSX Window close
         if parent is not None:
@@ -72,7 +73,7 @@ class ImageProperty(wx.Frame, Module):
             event.Skip()  # Call destroy as regular.
 
     def restore(self, parent, element, *args, **kwds):
-        self.image_element = element
+        self.element = element
         self.set_widgets()
 
     def initialize(self, *args, **kwargs):
@@ -82,7 +83,7 @@ class ImageProperty(wx.Frame, Module):
 
     def set_widgets(self):
         try:
-            self.spin_step_size.SetValue(self.image_element.values["raster_step"])
+            self.spin_step_size.SetValue(self.element.values["raster_step"])
             self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
         except KeyError:
             self.spin_step_size.SetValue(1)  # Default value
@@ -92,7 +93,7 @@ class ImageProperty(wx.Frame, Module):
             self.spin_step_size.Enable(False)
 
         try:
-            bounds = self.image_element.bbox()
+            bounds = self.element.bbox()
             self.text_x.SetValue("%f" % bounds[0])
             self.text_y.SetValue("%f" % bounds[1])
             self.text_width.SetValue("%f" % (bounds[2] - bounds[0]))
@@ -163,17 +164,17 @@ class ImageProperty(wx.Frame, Module):
         # end wxGlade
 
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
-        self.image_element.values["raster_step"] = self.spin_step_size.GetValue()
+        self.element.values["raster_step"] = self.spin_step_size.GetValue()
         self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
         self.update_step_image()
 
     def on_combo_dpi(self, event):  # wxGlade: ImageProperty.<event_handler>
         self.spin_step_size.SetValue(self.combo_dpi.GetSelection() + 1)
-        self.image_element.values["raster_step"] = self.spin_step_size.GetValue()
+        self.element.values["raster_step"] = self.spin_step_size.GetValue()
         self.update_step_image()
 
     def update_step_image(self):
-        element = self.image_element
+        element = self.element
         step_value = self.spin_step_size.GetValue()
         m = element.transform
         tx = m.e

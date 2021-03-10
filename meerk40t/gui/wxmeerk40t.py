@@ -2880,13 +2880,13 @@ class ShadowTree:
         if obj is None:
             return
         elif isinstance(obj, Path):
-            self.context.open("window/PathProperty", self.gui, obj)
+            self.context.open("window/PathProperty", self.gui, node)
         elif isinstance(obj, SVGText):
-            self.context.open("window/TextProperty", self.gui, obj)
+            self.context.open("window/TextProperty", self.gui, node)
         elif isinstance(obj, SVGImage):
-            self.context.open("window/ImageProperty", self.gui, obj)
+            self.context.open("window/ImageProperty", self.gui, node)
         elif isinstance(obj, SVGElement):
-            self.context.open("window/PathProperty", self.gui, obj)
+            self.context.open("window/PathProperty", self.gui, node)
 
     def on_item_selection_changed(self, event):
         """
