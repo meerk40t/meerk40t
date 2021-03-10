@@ -3228,6 +3228,12 @@ class wxMeerK40t(wx.App, Module):
         @kernel.console_argument('window', type=str, help="window to apply subcommand to")
         @kernel.console_command("window", help="wxMeerK40 window information")
         def window(channel, _, subcommand=None, window=None, path=None, args=(), **kwargs):
+            """
+            Opens a MeerK40t window or provides information. This command is restricted to use with the wxMeerK40t gui.
+            This also allows use of a -p flag that sets the context path for this window to operate at. This should
+            often be restricted to where the windows are typically opened since their function and settings usually
+            depend on the context used. The default root path is "/". Eg. "window open -p / Settings"
+            """
             if path is None:
                 path = context.active
             if subcommand is None:
