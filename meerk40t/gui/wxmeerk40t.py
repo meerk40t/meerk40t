@@ -2586,9 +2586,13 @@ class ShadowTree:
         self.wxtree.CollapseAllChildren(item)
 
     def reorder(self, node):
-        # item = node.item
-        # self.wxtree.RemoveAllChildren(item)
         self.rebuild_tree()
+
+    def update(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
+        self.set_icon(node)
 
     def on_element_update(self, *args):
         element = args[0]

@@ -280,6 +280,12 @@ class Node:
                 node = self
             self._root.notify_reorder(node=node, **kwargs)
 
+    def notify_update(self, node=None, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_update(node=node, **kwargs)
+
     def modified(self):
         """
         The matrix transformation was changed.
@@ -491,11 +497,11 @@ class LaserOperation(Node):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.operation = None
+        self._operation = None
         try:
-            self.operation = kwargs["operation"]
+            self._operation = kwargs["operation"]
         except KeyError:
-            self.operation = "Unknown"
+            self._operation = "Unknown"
         self.output = True
         self.show = True
 
@@ -520,7 +526,7 @@ class LaserOperation(Node):
             if isinstance(obj, SVGElement):
                 self.add(obj, type="opnode")
             elif isinstance(obj, LaserOperation):
-                self.operation = obj.operation
+                self._operation = obj.operation
 
                 self.color = Color(obj.color)
                 self.output = obj.output
@@ -550,10 +556,10 @@ class LaserOperation(Node):
                 self.settings.power = 1000.0
 
     def __repr__(self):
-        return "LaserOperation('%s', %s)" % (self.type, str(self.operation))
+        return "LaserOperation('%s', %s)" % (self.type, str(self._operation))
 
     def __str__(self):
-        op = self.operation
+        op = self._operation
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
@@ -561,12 +567,12 @@ class LaserOperation(Node):
             parts.append("%dX" % self.settings.passes)
         if op is None:
             op = "Unknown"
-        if self.operation == "Raster":
+        if self._operation == "Raster":
             op += str(self.settings.raster_step)
         parts.append(op)
 
         parts.append("%gmm/s" % self.settings.speed)
-        if self.operation in ("Raster", "Image"):
+        if self._operation in ("Raster", "Image"):
             if self.settings.raster_swing:
                 raster_dir = "-"
             else:
@@ -585,7 +591,7 @@ class LaserOperation(Node):
                 raster_dir += "%d" % self.settings.raster_direction
             parts.append(raster_dir)
         parts.append("%gppi" % self.settings.power)
-        if self.operation in ("Raster", "Image"):
+        if self._operation in ("Raster", "Image"):
             if isinstance(self.settings.overscan, str):
                 parts.append("±%s" % self.settings.overscan)
             else:
@@ -601,8 +607,17 @@ class LaserOperation(Node):
     def __copy__(self):
         return LaserOperation(self)
 
+    @property
+    def operation(self):
+        return self._operation
+
+    @operation.setter
+    def operation(self, v):
+        self._operation = v
+        self.notify_update()
+
     def time_estimate(self):
-        if self.operation in ("Cut", "Engrave"):
+        if self._operation in ("Cut", "Engrave"):
             estimate = 0
             for e in self.children:
                 e = e.object
@@ -622,7 +637,7 @@ class LaserOperation(Node):
                 str(int(minutes)).zfill(2),
                 str(int(seconds)).zfill(2),
             )
-        elif self.operation in ("Raster", "Image"):
+        elif self._operation in ("Raster", "Image"):
             estimate = 0
             for e in self.children:
                 e = e.object
@@ -649,7 +664,7 @@ class LaserOperation(Node):
     def as_blob(self):
         c = CutCode()
         settings = self.settings
-        if self.operation in ("Cut", "Engrave"):
+        if self._operation in ("Cut", "Engrave"):
             for object_path in self.children:
                 object_path = object_path.object
                 if isinstance(object_path, SVGImage):
@@ -693,11 +708,11 @@ class LaserOperation(Node):
                     elif isinstance(seg, Arc):
                         arc = ArcCut(seg, settings=settings)
                         c.append(arc)
-        elif self.operation == "Raster":
+        elif self._operation == "Raster":
             direction = settings.raster_direction
             settings.crosshatch = False
             if direction == 4:
-                cross_settings = LaserSettings(self.operation.settings)
+                cross_settings = LaserSettings(settings)
                 cross_settings.crosshatch = True
                 for object_image in self.children:
                     object_image = object_image.object
@@ -707,7 +722,7 @@ class LaserOperation(Node):
                 for object_image in self.children:
                     object_image = object_image.object
                     c.append(RasterCut(object_image, settings))
-        elif self.operation == "Image":
+        elif self._operation == "Image":
                 for object_image in self.children:
                     object_image = object_image.object
                     settings = LaserSettings(self.settings)
@@ -862,14 +877,21 @@ class RootNode(Node):
         if node is None:
             node = self
         for listen in self.listeners:
-            if hasattr(listen, "expand"):
+            if hasattr(listen, "collapse"):
                 listen.collapse(node, **kwargs)
 
     def notify_reorder(self, node=None, **kwargs):
         if node is None:
             node = self
         for listen in self.listeners:
-            if hasattr(listen, "expand"):
+            if hasattr(listen, "reorder"):
+                listen.reorder(node, **kwargs)
+
+    def notify_update(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "update"):
                 listen.reorder(node, **kwargs)
 
 
