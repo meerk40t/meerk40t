@@ -2501,19 +2501,22 @@ class RootNode(list):
             pass
         elif t == NODE_OPERATION:
             operation_convert_submenu = wx.Menu()
-            for name in ("Raster", "Engrave", "Cut"):
+            for name in ("Raster", "Engrave", "Cut", "Image"):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
             menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
+
             gui.Bind(wx.EVT_MENU, self.menu_duplicate_operation(node),
                      menu.Append(wx.ID_ANY, _("Duplicate Operation"), "", wx.ITEM_NORMAL))
-            duplicate_menu = wx.Menu()
-            gui.Bind(wx.EVT_MENU, self.menu_passes(node, 1),
-                     duplicate_menu.Append(wx.ID_ANY, _("Add 1 pass."), "", wx.ITEM_NORMAL))
-            for i in range(2, 10):
-                gui.Bind(wx.EVT_MENU, self.menu_passes(node, i),
-                         duplicate_menu.Append(wx.ID_ANY, _("Add %d passes.") % i, "", wx.ITEM_NORMAL))
-            menu.AppendSubMenu(duplicate_menu, _("Passes"))
+            if node.object.operation in ("Image", "Engrave", "Cut"):
+                duplicate_menu = wx.Menu()
+                gui.Bind(wx.EVT_MENU, self.menu_passes(node, 1),
+                         duplicate_menu.Append(wx.ID_ANY, _("Add 1 pass."), "", wx.ITEM_NORMAL))
+                for i in range(2, 10):
+                    gui.Bind(wx.EVT_MENU, self.menu_passes(node, i),
+                             duplicate_menu.Append(wx.ID_ANY, _("Add %d passes.") % i, "", wx.ITEM_NORMAL))
+                menu.AppendSubMenu(duplicate_menu, _("Passes"))
+
             if node.object.operation in ("Raster", "Image"):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
