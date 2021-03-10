@@ -61,10 +61,12 @@ class SVGWriter:
         elements = context.elements
         for operation in elements.ops():
             subelement = SubElement(root, "operation")
-            c = getattr(operation, "color")
-            if c is not None:
-                if isinstance(c, int):
-                    c = Color(c)
+
+            if hasattr(operation, "color"):
+                c = getattr(operation, "color")
+                if c is not None:
+                    if isinstance(c, int):
+                        c = Color(c)
                 subelement.set("color", str(c))
             for key in dir(operation):
                 if key.startswith("_") or key.startswith("implicit"):
@@ -73,13 +75,14 @@ class SVGWriter:
                 if type(value) not in (int, float, str, bool):
                     continue
                 subelement.set(key, str(value))
-            for key in dir(operation.settings):
-                if key.startswith("_") or key.startswith("implicit"):
-                    continue
-                value = getattr(operation.settings, key)
-                if type(value) not in (int, float, str, bool):
-                    continue
-                subelement.set(key, str(value))
+            if hasattr(operation, "settings"):
+                for key in dir(operation.settings):
+                    if key.startswith("_") or key.startswith("implicit"):
+                        continue
+                    value = getattr(operation.settings, key)
+                    if type(value) not in (int, float, str, bool):
+                        continue
+                    subelement.set(key, str(value))
 
         if elements.note is not None:
             subelement = SubElement(root, "note")

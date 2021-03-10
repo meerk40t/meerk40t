@@ -2853,6 +2853,8 @@ class Elemental(Modifier):
             for e in node.children:
                 op.add(e.object, type="opnode")
 
+        @self.tree_conditional(lambda node: node.count_children() > 1)
+        @self.tree_conditional(lambda node: node.operation in ("Image", "Engrave", "Cut"))
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 1, 10)
         @self.tree_operation(_("Add {copies} pass(es)."), node_type="op", help="")
@@ -2872,6 +2874,8 @@ class Elemental(Modifier):
             node.add_all(add_elements, type="opnode")
             self.context.signal("rebuild_tree", 0)
 
+        @self.tree_conditional(lambda node: node.count_children() > 1)
+        @self.tree_conditional(lambda node: node.operation in ("Image", "Engrave", "Cut"))
         @self.tree_submenu(_("Duplicate"))
         @self.tree_iterate("copies", 1, 10)
         @self.tree_operation(
