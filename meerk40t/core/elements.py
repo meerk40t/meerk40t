@@ -554,11 +554,17 @@ class LaserOperation(Node):
 
     def __str__(self):
         op = self.operation
+        parts = list()
+        if not self.output:
+            parts.append("(Disabled)")
+        if self.settings.passes_custom:
+            parts.append("%dX" % self.settings.passes)
         if op is None:
             op = "Unknown"
         if self.operation == "Raster":
             op += str(self.settings.raster_step)
-        parts = list()
+        parts.append(op)
+
         parts.append("%gmm/s" % self.settings.speed)
         if self.operation in ("Raster", "Image"):
             if self.settings.raster_swing:
@@ -588,13 +594,9 @@ class LaserOperation(Node):
             parts.append("d:%g" % self.settings.dratio)
         if self.settings.acceleration_custom:
             parts.append("a:%d" % self.settings.acceleration)
-        if self.settings.passes_custom:
-            parts.append("** %d" % self.settings.passes)
         if self.settings.dot_length_custom:
             parts.append("dot: %d" % self.settings.dot_length)
-        if not self.output:
-            op = "(Disabled) " + op
-        return "%s %s" % (op, " ".join(parts))
+        return " ".join(parts)
 
     def __copy__(self):
         return LaserOperation(self)
