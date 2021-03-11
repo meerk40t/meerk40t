@@ -5180,6 +5180,8 @@ class Arc(Curve):
         """Find the bounding box of a arc.
         Code from: https://github.com/mathandy/svgpathtools
         """
+        if self.sweep == 0:
+            return self.start.x, self.start.y, self.end.x, self.end.y
         phi = self.get_rotation().as_radians
         if cos(phi) == 0:
             atan_x = tau / 4.0
