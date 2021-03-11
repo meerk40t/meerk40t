@@ -167,10 +167,10 @@ class LhystudiosDevice(Modifier):
             spooler = kernel.active_device.spooler
             if x is not None and y is not None:
                 x = x.value(
-                    ppi=1000.0, relative_length=self.context.get_context('/').bed_width * 39.3701
+                    ppi=1000.0, relative_length=self.bed_dim.bed_width * 39.3701
                 )
                 y = y.value(
-                    ppi=1000.0, relative_length=self.context.get_context('/').bed_height * 39.3701
+                    ppi=1000.0, relative_length=self.bed_dim.bed_height * 39.3701
                 )
                 spooler.job(COMMAND_HOME, int(x), int(y))
                 return

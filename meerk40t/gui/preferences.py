@@ -26,6 +26,10 @@ class Preferences(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+        self.bed_dim = self.context.get_context('/')
+        self.bed_dim.setting(int, "bed_width", 280)
+        self.bed_dim.setting(int, "bed_height", 200)
+
         self.SetSize((395, 424))
         self.combobox_board = wx.ComboBox(
             self,
@@ -146,9 +150,6 @@ class Preferences(wx.Frame, Module):
         self.context.setting(bool, "mock", False)
         self.context.setting(bool, "autolock", True)
         self.context.setting(str, "board", "M2")
-        self.bed_dim = self.context.get_context('/')
-        self.bed_dim.setting(int, "bed_width", 280)
-        self.bed_dim.setting(int, "bed_height", 200)
         self.context.setting(int, "units_index", 0)
         self.context.setting(int, "usb_index", -1)
         self.context.setting(int, "usb_bus", -1)
@@ -323,9 +324,9 @@ class Preferences(wx.Frame, Module):
         x = 0
         y = 0
         if self.context.home_right:
-            x = int(self.context.get_context('/').bed_width * 39.3701)
+            x = int(self.bed_dim.bed_width * 39.3701)
         if self.context.home_bottom:
-            y = int(self.context.get_context('/').bed_height * 39.3701)
+            y = int(self.bed_dim.bed_height * 39.3701)
         return x, y
 
     def on_combobox_boardtype(self, event):  # wxGlade: Preferences.<event_handler>
