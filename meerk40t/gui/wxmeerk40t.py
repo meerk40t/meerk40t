@@ -874,22 +874,22 @@ class MeerK40t(wx.Frame, Module, Job):
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("scene align left\n"),
+            lambda e: self.context.console("align left\n"),
             id=ID_ALIGN_LEFT,
         )
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("scene align right\n"),
+            lambda e: self.context.console("align right\n"),
             id=ID_ALIGN_RIGHT,
         )
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("scene align top\n"),
+            lambda e: self.context.console("align top\n"),
             id=ID_ALIGN_TOP,
         )
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("scene align bottom\n"),
+            lambda e: self.context.console("align bottom\n"),
             id=ID_ALIGN_BOTTOM,
         )
         flip.Bind(

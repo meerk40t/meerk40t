@@ -1458,6 +1458,53 @@ class Elemental(Modifier):
                 elems.append(qnode)
             return "elements", elems
 
+        @context.console_argument("align", type=str, help="Alignment position")
+        @context.console_command(
+            "align",
+            help="align elements",
+            input_type=("elements", None),
+            output_type="elements",
+        )
+        def align(command, channel, _, data=None, align=None, args=tuple(), **kwargs):
+            if data is None:
+                data = list(self.flat(self.get(type="branch elems"), types=("elems", "file", "group"), cascade=False, depth=1))
+            boundary_points = []
+            for d in data:
+                boundary_points.append(d.bounds)
+            gleft = min([e[0] for e in boundary_points])
+            gtop = min([e[1] for e in boundary_points])
+            gright = max([e[2] for e in boundary_points])
+            gbottom = max([e[3] for e in boundary_points])
+            for e in data:
+                subbox = e.bounds
+                left = subbox[0] - gleft
+                top = subbox[1] - gtop
+                right = subbox[2] - gright
+                bottom = subbox[3] - gbottom
+
+                if align == 'top':
+                    if top != 0:
+                        for q in self.flat(e, types="elem"):
+                            q.object *= "translate(0, %f)" % -top
+                            q.modified()
+                elif align == 'bottom':
+                    if bottom != 0:
+                        for q in self.flat(e, types="elem"):
+                            q.object *= "translate(0, %f)" % -bottom
+                            q.modified()
+                elif align == 'left':
+                    if left != 0:
+                        for q in self.flat(e, types="elem"):
+                            q.object *= "translate(%f, 0)" % -left
+                            q.modified()
+                elif align == 'right':
+                    if right != 0:
+                        for q in self.flat(e, types="elem"):
+                            q.object *= "translate(%f, 0)" % -right
+                            q.modified()
+
+            return "elements", data
+
         @context.console_argument("c", type=int, help="number of columns")
         @context.console_argument("r", type=int, help="number of rows")
         @context.console_argument("x", type=Length, help="x distance")
