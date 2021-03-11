@@ -85,7 +85,7 @@ from .icons import (
     icons8_group_objects_20, icons8_flip_horizontal_50, icons8_flip_vertical_50, icons8_group_objects_50,
     icons8_ungroup_objects_50, icons8_place_marker_50, icons8_oval_50, icons8_circle_50, icons8_polygon_50,
     icons8_polyline_50, icons8_rectangular_50, icons8_type_50, icons8_align_left_50, icons8_align_right_50,
-    icons8_align_top_50, icons8_align_bottom_50,
+    icons8_align_top_50, icons8_align_bottom_50, icons_centerize, icons_evenspace_vert, icons_evenspace_horiz,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -251,6 +251,10 @@ ID_ALIGN_LEFT = wx.NewId()
 ID_ALIGN_RIGHT = wx.NewId()
 ID_ALIGN_TOP = wx.NewId()
 ID_ALIGN_BOTTOM = wx.NewId()
+ID_ALIGN_CENTER = wx.NewId()
+
+ID_ALIGN_SPACE_V = wx.NewId()
+ID_ALIGN_SPACE_H = wx.NewId()
 
 ID_FLIP_HORIZONTAL = wx.NewId()
 ID_FLIP_VERTICAL = wx.NewId()
@@ -685,6 +689,9 @@ class MeerK40t(wx.Frame, Module, Job):
         align.AddButton(ID_ALIGN_RIGHT, _("Align Right"), icons8_align_right_50.GetBitmap(), "")
         align.AddButton(ID_ALIGN_TOP, _("Align Top"), icons8_align_top_50.GetBitmap(), "")
         align.AddButton(ID_ALIGN_BOTTOM, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), "")
+        align.AddButton(ID_ALIGN_CENTER, _("Align Center"), icons_centerize.GetBitmap(), "")
+        align.AddButton(ID_ALIGN_SPACE_V, _("Space Vertical"), icons_evenspace_vert.GetBitmap(), "")
+        align.AddButton(ID_ALIGN_SPACE_H, _("Space Horizontal"), icons_evenspace_horiz.GetBitmap(), "")
 
         flip_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Flip"), icons8_opened_folder_50.GetBitmap(),
                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
@@ -891,6 +898,21 @@ class MeerK40t(wx.Frame, Module, Job):
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda e: self.context.console("align bottom\n"),
             id=ID_ALIGN_BOTTOM,
+        )
+        align.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("align center\n"),
+            id=ID_ALIGN_CENTER,
+        )
+        align.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("align spacev\n"),
+            id=ID_ALIGN_SPACE_V,
+        )
+        align.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda e: self.context.console("align spaceh\n"),
+            id=ID_ALIGN_SPACE_H,
         )
         flip.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,

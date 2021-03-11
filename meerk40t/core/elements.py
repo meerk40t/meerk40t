@@ -1470,39 +1470,90 @@ class Elemental(Modifier):
                 data = list(self.flat(self.get(type="branch elems"), types=("elems", "file", "group"), cascade=False, depth=1))
             boundary_points = []
             for d in data:
+                # d._bounds_dirty = True
                 boundary_points.append(d.bounds)
-            gleft = min([e[0] for e in boundary_points])
-            gtop = min([e[1] for e in boundary_points])
-            gright = max([e[2] for e in boundary_points])
-            gbottom = max([e[3] for e in boundary_points])
-            for e in data:
-                subbox = e.bounds
-                left = subbox[0] - gleft
-                top = subbox[1] - gtop
-                right = subbox[2] - gright
-                bottom = subbox[3] - gbottom
-
-                if align == 'top':
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            if align == 'top':
+                for e in data:
+                    subbox = e.bounds
+                    top = subbox[1] - top_edge
                     if top != 0:
                         for q in self.flat(e, types="elem"):
                             q.object *= "translate(0, %f)" % -top
                             q.modified()
-                elif align == 'bottom':
+            elif align == 'bottom':
+                for e in data:
+                    subbox = e.bounds
+                    bottom = subbox[3] - bottom_edge
                     if bottom != 0:
                         for q in self.flat(e, types="elem"):
                             q.object *= "translate(0, %f)" % -bottom
                             q.modified()
-                elif align == 'left':
+            elif align == 'left':
+                for e in data:
+                    subbox = e.bounds
+                    left = subbox[0] - left_edge
                     if left != 0:
                         for q in self.flat(e, types="elem"):
                             q.object *= "translate(%f, 0)" % -left
                             q.modified()
-                elif align == 'right':
+            elif align == 'right':
+                for e in data:
+                    subbox = e.bounds
+                    right = subbox[2] - right_edge
                     if right != 0:
                         for q in self.flat(e, types="elem"):
                             q.object *= "translate(%f, 0)" % -right
                             q.modified()
-
+            elif align == 'center':
+                for e in data:
+                    subbox = e.bounds
+                    dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
+                    dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
+                    for q in self.flat(e, types="elem"):
+                        q.object *= "translate(%f, %f)" % (-dx, -dy)
+                        q.modified()
+            elif align == 'centerv':
+                for e in data:
+                    subbox = e.bounds
+                    dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
+                    for q in self.flat(e, types="elem"):
+                        q.object *= "translate(%f, 0)" % -dx
+                        q.modified()
+            elif align == 'centerh':
+                for e in data:
+                    subbox = e.bounds
+                    dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
+                    for q in self.flat(e, types="elem"):
+                        q.object *= "translate(0, %f)" % -dy
+                        q.modified()
+            elif align == 'spaceh':
+                distance = right_edge - left_edge
+                step = distance / (len(data) - 1)
+                for e in data:
+                    subbox = e.bounds
+                    left = subbox[0] - left_edge
+                    left_edge += step
+                    if left != 0:
+                        for q in self.flat(e, types="elem"):
+                            q.object *= "translate(%f, 0)" % -left
+                            q.modified()
+            elif align == 'spacev':
+                distance = bottom_edge - top_edge
+                step = distance / (len(data) - 1)
+                for e in data:
+                    subbox = e.bounds
+                    top = subbox[1] - top_edge
+                    top_edge += step
+                    if top != 0:
+                        for q in self.flat(e, types="elem"):
+                            q.object *= "translate(0, %f)" % -top
+                            q.modified()
             return "elements", data
 
         @context.console_argument("c", type=int, help="number of columns")
