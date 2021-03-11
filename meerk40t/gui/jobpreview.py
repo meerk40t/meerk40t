@@ -531,6 +531,9 @@ class JobPreview(wx.Frame, Module):
             self.context("plan%s copy\n" % self.plan_name)
         # elif self.stage == 1:
             self.context("plan%s preprocess\n" % self.plan_name)
+            operations, commands = self.context.default_plan()
+            if len(commands) == 0:
+                self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 2:
             self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 3:
