@@ -852,10 +852,13 @@ class LhymicroInterpreter(Interpreter, Modifier):
     def calc_home_position(self):
         x = 0
         y = 0
+        bed_dim = self.context.get_context('/')
+        bed_dim.setting(int, "bed_width", 310)
+        bed_dim.setting(int, "bed_height", 210)
         if self.context.home_right:
-            x = int(self.context.bed_width * 39.3701)
+            x = int(bed_dim.bed_width * 39.3701)
         if self.context.home_bottom:
-            y = int(self.context.bed_height * 39.3701)
+            y = int(bed_dim.bed_height * 39.3701)
         return x, y
 
     def home(self, *values):

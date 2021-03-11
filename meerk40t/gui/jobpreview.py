@@ -427,10 +427,13 @@ class JobPreview(wx.Frame, Module):
             "",
         )
         dlg.SetValue("")
+        bed_dim = self.context.get_context('/')
+        bed_dim.setting(int, "bed_width", 310)
+        bed_dim.setting(int, "bed_height", 210)
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 x_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=self.device.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                 )
             except ValueError:
                 dlg.Destroy()
@@ -453,7 +456,7 @@ class JobPreview(wx.Frame, Module):
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 y_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=self.device.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                 )
             except ValueError:
                 dlg.Destroy()

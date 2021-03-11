@@ -141,8 +141,9 @@ class CameraInterface(wx.Frame, Module, Job):
 
         self.context.setting(bool, "mouse_zoom_invert", False)
         self.context.setting(int, "draw_mode", 0)
-        self.context.setting(int, "bed_width", 310)  # Default Value
-        self.context.setting(int, "bed_height", 210)  # Default Value
+        bed_dim = self.context.get_context('/')
+        bed_dim.setting(int, "bed_width", 310)  # Default Value
+        bed_dim.setting(int, "bed_height", 210)  # Default Value
 
         try:
             self.camera = self.setting.activate("modifier/Camera")
@@ -247,6 +248,9 @@ class CameraInterface(wx.Frame, Module, Job):
         self.Show()
         self.context("camera%d start\n" % self.index)
         self.context.schedule(self)
+        self.bed_dim = self.context.get_context('/')
+        self.bed_dim.setting(int, "bed_width", 310)
+        self.bed_dim.setting(int, "bed_height", 210)
 
     def finalize(self, *args, **kwargs):
         self.setting.window_width, self.setting.window_height = self.GetSize()
@@ -294,8 +298,8 @@ class CameraInterface(wx.Frame, Module, Job):
         else:
             if self.frame_bitmap is None:
                 wx.CallAfter(self.on_size, None)
-        bed_width = self.context.bed_width * 2
-        bed_height = self.context.bed_height * 2
+        bed_width = self.bed_dim.bed_width * 2
+        bed_height = self.bed_dim.bed_height * 2
 
         self.image_height, self.image_width = frame.shape[:2]
         self.frame_bitmap = wx.Bitmap.FromBuffer(

@@ -49,6 +49,7 @@ class Planner(Modifier):
         _ = kernel.translation
         elements = context.elements
         rotary_context = self.context.get_context('rotary/1')
+        bed_dim = self.context.get_context('/')
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)
@@ -135,7 +136,7 @@ class Planner(Modifier):
                 angle = None
             if len(args) >= 2:
                 distance = Length(args[1]).value(
-                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
                 )
             else:
                 distance = 16

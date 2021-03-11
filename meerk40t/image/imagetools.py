@@ -24,6 +24,7 @@ def plugin(kernel, lifecycle=None):
     kernel.register("raster_script/Simple", RasterScripts.raster_script_simple())
     kernel.register("load/ImageLoader", ImageLoader)
     context = kernel.get_context("/")
+    bed_dim = context.get_context('/')
 
     @context.console_command("image", help="image <operation>")
     def image(command, channel, _, args=tuple(), **kwargs):
@@ -242,25 +243,25 @@ def plugin(kernel, lifecycle=None):
                         left = int(
                             Length(args[1]).value(
                                 ppi=1000.0,
-                                relative_length=context.bed_width * 39.3701,
+                                relative_length=bed_dim.bed_width * 39.3701,
                             )
                         )
                         upper = int(
                             Length(args[2]).value(
                                 ppi=1000.0,
-                                relative_length=context.bed_height * 39.3701,
+                                relative_length=bed_dim.bed_height * 39.3701,
                             )
                         )
                         right = int(
                             Length(args[3]).value(
                                 ppi=1000.0,
-                                relative_length=context.bed_width * 39.3701,
+                                relative_length=bed_dim.bed_width * 39.3701,
                             )
                         )
                         lower = int(
                             Length(args[4]).value(
                                 ppi=1000.0,
-                                relative_length=context.bed_height * 39.3701,
+                                relative_length=bed_dim.bed_height * 39.3701,
                             )
                         )
                         element.image = img.crop((left, upper, right, lower))

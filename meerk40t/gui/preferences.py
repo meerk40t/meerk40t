@@ -146,8 +146,9 @@ class Preferences(wx.Frame, Module):
         self.context.setting(bool, "mock", False)
         self.context.setting(bool, "autolock", True)
         self.context.setting(str, "board", "M2")
-        self.context.setting(int, "bed_width", 280)
-        self.context.setting(int, "bed_height", 200)
+        self.bed_dim = self.context.get_context('/')
+        self.bed_dim.setting(int, "bed_width", 280)
+        self.bed_dim.setting(int, "bed_height", 200)
         self.context.setting(int, "units_index", 0)
         self.context.setting(int, "usb_index", -1)
         self.context.setting(int, "usb_bus", -1)
@@ -162,8 +163,8 @@ class Preferences(wx.Frame, Module):
         self.checkbox_mock_usb.SetValue(self.context.mock)
         self.checkbox_autolock.SetValue(self.context.autolock)
         self.combobox_board.SetValue(self.context.board)
-        self.spin_bedwidth.SetValue(self.context.bed_width)
-        self.spin_bedheight.SetValue(self.context.bed_height)
+        self.spin_bedwidth.SetValue(self.bed_dim.bed_width)
+        self.spin_bedheight.SetValue(self.bed_dim.bed_height)
         self.spin_device_index.SetValue(self.context.usb_index)
         self.spin_device_bus.SetValue(self.context.usb_bus)
         self.spin_device_address.SetValue(self.context.usb_address)
@@ -322,9 +323,9 @@ class Preferences(wx.Frame, Module):
         x = 0
         y = 0
         if self.context.home_right:
-            x = int(self.context.bed_width * 39.3701)
+            x = int(self.context.get_context('/').bed_width * 39.3701)
         if self.context.home_bottom:
-            y = int(self.context.bed_height * 39.3701)
+            y = int(self.context.get_context('/').bed_height * 39.3701)
         return x, y
 
     def on_combobox_boardtype(self, event):  # wxGlade: Preferences.<event_handler>
@@ -364,17 +365,17 @@ class Preferences(wx.Frame, Module):
         self.spin_home_y.SetValue(self.context.home_adjust_y)
 
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
-        self.context.bed_width = int(self.spin_bedwidth.GetValue())
-        self.context.bed_height = int(self.spin_bedheight.GetValue())
+        self.bed_dim.bed_width = int(self.spin_bedwidth.GetValue())
+        self.bed_dim.bed_height = int(self.spin_bedheight.GetValue())
         self.context.signal(
-            "bed_size", (self.context.bed_width, self.context.bed_height)
+            "bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height)
         )
 
     def spin_on_bedheight(self, event):  # wxGlade: Preferences.<event_handler>
-        self.context.bed_width = int(self.spin_bedwidth.GetValue())
-        self.context.bed_height = int(self.spin_bedheight.GetValue())
+        self.bed_dim.bed_width = int(self.spin_bedwidth.GetValue())
+        self.bed_dim.bed_height = int(self.spin_bedheight.GetValue())
         self.context.signal(
-            "bed_size", (self.context.bed_width, self.context.bed_height)
+            "bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height)
         )
 
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>

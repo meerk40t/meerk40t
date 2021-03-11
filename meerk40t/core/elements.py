@@ -1050,6 +1050,9 @@ class Elemental(Modifier):
         context.load_types = self.load_types
         context = self.context
         self._tree = RootNode(context)
+        bed_dim = context.get_context('/')
+        bed_dim.setting(int, "bed_width", 310)
+        bed_dim.setting(int, "bed_height", 210)
 
         # Element Select
         @context.console_command(
@@ -1675,13 +1678,13 @@ class Elemental(Modifier):
                     dx = 0
                 else:
                     dx = dx.value(
-                        ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                        ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                     )
                 if dy is None:
                     dy = 0
                 else:
                     dy = dy.value(
-                        ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                        ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
                     )
                 m = Matrix("translate(%s, %s)" % (dx, dy))
                 for e in pasted:
@@ -1753,8 +1756,8 @@ class Elemental(Modifier):
             circ = Circle(cx=x_pos, cy=y_pos, r=r_pos)
             circ.render(
                 ppi=1000.0,
-                width="%fmm" % self.context.bed_width,
-                height="%fmm" % self.context.bed_height,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
             )
             self.add_element(circ)
             if data is None:
@@ -1781,8 +1784,8 @@ class Elemental(Modifier):
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
             ellip.render(
                 ppi=1000.0,
-                width="%fmm" % self.context.bed_width,
-                height="%fmm" % self.context.bed_height,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
             )
             self.add_element(ellip)
             if data is None:
@@ -1827,12 +1830,10 @@ class Elemental(Modifier):
             if x_pos is None:
                 raise SyntaxError
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
-            self.context.setting(int, "bed_width", 310)  # Default Value
-            self.context.setting(int, "bed_height", 210)  # Default Value
             rect.render(
                 ppi=1000.0,
-                width="%fmm" % self.context.bed_width,
-                height="%fmm" % self.context.bed_height,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
             )
             # rect = Path(rect)
             self.add_element(rect)
@@ -1859,12 +1860,10 @@ class Elemental(Modifier):
             if y1 is None:
                 raise SyntaxError
             simple_line = SimpleLine(x0, y0, x1, y1)
-            self.context.setting(int, "bed_width", 310)  # Default Value
-            self.context.setting(int, "bed_height", 210)  # Default Value
             simple_line.render(
                 ppi=1000.0,
-                width="%fmm" % self.context.bed_width,
-                height="%fmm" % self.context.bed_height,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
             )
             self.add_element(simple_line)
             if data is None:
@@ -1890,12 +1889,10 @@ class Elemental(Modifier):
             if y1 is None:
                 raise SyntaxError
             line = SimpleLine(x0, y0, x1, y1)
-            self.context.setting(int, "bed_width", 310)  # Default Value
-            self.context.setting(int, "bed_height", 210)  # Default Value
             line.render(
                 ppi=1000.0,
-                width="%fmm" % self.context.bed_width,
-                height="%fmm" % self.context.bed_height,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
             )
             self.add_element(line)
             if data is None:
@@ -1975,7 +1972,7 @@ class Elemental(Modifier):
                 channel(_("No selected elements."))
                 return
             stroke_width = stroke_width.value(
-                ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
             )
             if isinstance(stroke_width, Length):
                 raise SyntaxError
@@ -2097,8 +2094,6 @@ class Elemental(Modifier):
             """
             if x_offset is None:
                 raise SyntaxError
-            self.context.setting(int, "bed_width", 310)  # Default Value
-            self.context.setting(int, "bed_height", 210)  # Default Value
             bounds = self.selected_area()
             if bounds is None:
                 yield "Nothing Selected"
@@ -2188,13 +2183,13 @@ class Elemental(Modifier):
 
             if cx is not None:
                 cx = cx.value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                 )
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
                 cy = cy.value(
-                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
                 )
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
@@ -2284,13 +2279,13 @@ class Elemental(Modifier):
                 scale_y = scale_x
             if px is not None:
                 center_x = px.value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                 )
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if py is not None:
                 center_y = py.value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
                 )
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
@@ -2384,13 +2379,13 @@ class Elemental(Modifier):
                 return
             if tx is not None:
                 tx = tx.value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                 )
             else:
                 tx = 0
             if ty is not None:
                 ty = ty.value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
                 )
             else:
                 ty = 0
@@ -2435,16 +2430,16 @@ class Elemental(Modifier):
                 raise SyntaxError
             try:
                 x_pos = x_pos.value(
-                    ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                 )
                 y_pos = y_pos.value(
-                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
                 )
                 width = width.value(
-                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                 )
                 height = height.value(
-                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
                 )
                 x, y, x1, y1 = self.selected_area()
                 w, h = x1 - x, y1 - y
@@ -2521,10 +2516,10 @@ class Elemental(Modifier):
                     sy,
                     ky,
                     tx.value(
-                        ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                        ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                     ),
                     ty.value(
-                        ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                        ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
                     ),
                 )
                 for e in data:
@@ -2670,7 +2665,7 @@ class Elemental(Modifier):
             if overscan is not None:
                 op.settings.overscan = int(
                     overscan.value(
-                        ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+                        ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
                     )
                 )
             if command == "cut":

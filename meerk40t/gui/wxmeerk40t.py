@@ -519,8 +519,9 @@ class MeerK40t(wx.Frame, Module, Job):
         context.listen("refresh_tree", self.request_refresh)
         context.listen("refresh_scene", self.on_refresh_scene)
         context.listen("element_property_update", self.on_element_update)
-        context.setting(int, "bed_width", 310)  # Default Value
-        context.setting(int, "bed_height", 210)  # Default Value
+        bed_dim = context.get_context('/')
+        bed_dim.setting(int, "bed_width", 310)  # Default Value
+        bed_dim.setting(int, "bed_height", 210)  # Default Value
 
         context.listen("active", self.on_active_change)
 
@@ -595,9 +596,10 @@ class MeerK40t(wx.Frame, Module, Job):
         context.setting(str, "file9", None)
         self.populate_recent_menu()
 
-        bedwidth = context.bed_width
-        bedheight = context.bed_height
-        bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
+        bed_dim = context.get_context('/')
+        bed_dim.setting(int, "bed_width", 310)
+        bed_dim.setting(int, "bed_height", 210)
+        bbox = (0, 0, bed_dim.bed_width * MILS_IN_MM, bed_dim.bed_height * MILS_IN_MM)
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.scene.ClientSize, 0.1
         )
@@ -2198,9 +2200,8 @@ class MeerK40t(wx.Frame, Module, Job):
         elements = self.context.elements
         bbox = elements.selected_area()
         if bbox is None:
-            bedwidth = self.context.bed_width
-            bedheight = self.context.bed_height
-            bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
+            bed_dim = self.context.get_context('/')
+            bbox = (0, 0, bed_dim.bed_width * MILS_IN_MM, bed_dim.bed_height * MILS_IN_MM)
         self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize)
 
     def toggle_draw_mode(self, bits):
@@ -2254,13 +2255,14 @@ class MeerK40t(wx.Frame, Module, Job):
 
         if dlg.ShowModal() == wx.ID_OK:
             p = self.context
-            context_root = self.context.get_context("/")
+            root_context = self.context.get_context('/')
+            bed_dim = self.context.get_context("/")
             m = str(dlg.GetValue())
             m = m.replace("$x", str(p.current_x))
             m = m.replace("$y", str(p.current_y))
             mx = Matrix(m)
-            wmils = p.bed_width * 39.37
-            hmils = p.bed_height * 39.37
+            wmils = bed_dim.bed_width * 39.37
+            hmils = bed_dim.bed_height * 39.37
             mx.render(ppi=1000, width=wmils, height=hmils)
             if mx.is_identity():
                 dlg.Destroy()
@@ -2273,7 +2275,7 @@ class MeerK40t(wx.Frame, Module, Job):
                 result = dlg.ShowModal()
                 dlg.Destroy()
             else:
-                for element in context_root.elements.elems():
+                for element in root_context.elements.elems():
                     try:
                         element *= mx
                         element.node.modified()
@@ -2332,13 +2334,15 @@ class MeerK40t(wx.Frame, Module, Job):
         dlg.SetValue("")
         if dlg.ShowModal() == wx.ID_OK:
             p = self.context
+            root_context = p.get_context('/')
+            bed_dim = root_context
             context = p
-            wmils = p.bed_width * MILS_IN_MM
-            hmils = p.bed_height * MILS_IN_MM
+            wmils = bed_dim.bed_width * MILS_IN_MM
+            hmils = bed_dim.bed_height * MILS_IN_MM
             length = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=wmils)
             mx = Matrix()
             mx.post_scale(-1.0, 1, length / 2.0, 0)
-            for element in context.elements.elems(emphasized=True):
+            for element in root_context.elements.elems(emphasized=True):
                 try:
                     element *= mx
                     element.node.modified()
@@ -3464,7 +3468,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :return:
     """
     error_log = "MeerK40t crash log. Version: %s on %s\n" % (
-        "0.7.0 Beta-14",
+        "0.7.0 Beta-15",
         sys.platform,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))

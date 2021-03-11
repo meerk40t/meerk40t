@@ -30,8 +30,9 @@ class DxfLoader:
 
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
-        kernel.setting(int, "bed_width", 310)
-        kernel.setting(int, "bed_height", 210)
+        bed_dim = kernel.get_context('/')
+        bed_dim.setting(int, "bed_width", 310)
+        bed_dim.setting(int, "bed_height", 210)
 
         dxf = ezdxf.readfile(pathname)
         elements = []
@@ -45,7 +46,7 @@ class DxfLoader:
 
         for entity in dxf.entities:
             DxfLoader.entity_to_svg(
-                elements, dxf, entity, scale, kernel.bed_height * MILS_PER_MM
+                elements, dxf, entity, scale, bed_dim.bed_height * MILS_PER_MM
             )
 
         kernel.setting(bool, "dxf_center", True)
@@ -54,8 +55,8 @@ class DxfLoader:
             g.extend(elements)
             bbox = g.bbox()
             if bbox is not None:
-                bw = kernel.bed_width * MILS_PER_MM
-                bh = kernel.bed_height * MILS_PER_MM
+                bw = bed_dim.bed_width * MILS_PER_MM
+                bh = bed_dim.bed_height * MILS_PER_MM
                 bx = 0
                 by = 0
                 x = bbox[0]

@@ -46,10 +46,11 @@ class SVGWriter:
         mils_per_mm = 39.3701
         mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        context.setting(int, "bed_width", 310)
-        context.setting(int, "bed_height", 210)
-        mm_width = context.bed_width
-        mm_height = context.bed_height
+        bed_dim = context.get_context('/')
+        bed_dim.setting(int, "bed_width", 310)
+        bed_dim.setting(int, "bed_height", 210)
+        mm_width = bed_dim.bed_width
+        mm_height = bed_dim.bed_height
         root.set(SVG_ATTR_WIDTH, "%fmm" % mm_width)
         root.set(SVG_ATTR_HEIGHT, "%fmm" % mm_height)
         px_width = mm_width * mils_per_mm * px_per_mils
@@ -228,8 +229,9 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
-        context.setting(int, "bed_width", 310)
-        context.setting(int, "bed_height", 210)
+        bed_dim = context.get_context('/')
+        bed_dim.setting(int, "bed_width", 310)
+        bed_dim.setting(int, "bed_height", 210)
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
         else:
@@ -240,8 +242,8 @@ class SVGLoader:
         svg = SVG.parse(
             source=pathname,
             reify=False,
-            width="%fmm" % (context.bed_width),
-            height="%fmm" % (context.bed_height),
+            width="%fmm" % (bed_dim.bed_width),
+            height="%fmm" % (bed_dim.bed_height),
             ppi=ppi,
             color="none",
             transform="scale(%f)" % scale_factor,
