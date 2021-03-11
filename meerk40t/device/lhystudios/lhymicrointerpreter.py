@@ -102,6 +102,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
     def __init__(self, context, job_name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, job_name, channel)
         Interpreter.__init__(self, context=context)
+
         self.CODE_RIGHT = b"B"
         self.CODE_LEFT = b"T"
         self.CODE_TOP = b"L"
@@ -249,6 +250,21 @@ class LhymicroInterpreter(Interpreter, Modifier):
         def pipe_abort(command, channel, _, args=tuple(), **kwargs):
             self.reset()
             channel("Lhystudios Channel Aborted.")
+
+        @self.context.console_argument("rapid_x", type=float, help="limit x speed for rapid.")
+        @self.context.console_argument("rapid_y", type=float, help="limit y speed for rapid.")
+        @self.context.console_command("rapid_override", help="limit speed of typical rapid moves.")
+        def pipe_abort(command, channel, _, rapid_x=None, rapid_y=None, **kwargs):
+            if rapid_x is not None:
+                if rapid_y is None:
+                    rapid_y = rapid_x
+                self.rapid_override = True
+                self.rapid_override_speed_x = rapid_x
+                self.rapid_override_speed_y = rapid_y
+                channel(_("Rapid Limit: %f, %f") % (self.rapid_override_speed_x,self.rapid_override_speed_y))
+            else:
+                self.rapid_override = False
+                channel(_("Rapid Limit Off"))
 
         context.interpreter = self
 
@@ -585,14 +601,30 @@ class LhymicroInterpreter(Interpreter, Modifier):
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == INTERPRETER_STATE_RAPID:
-            self.pipe(b"I")
-            if dx != 0:
-                self.goto_x(dx)
-            if dy != 0:
-                self.goto_y(dy)
-            self.pipe(b"S1P\n")
-            if not self.context.autolock:
-                self.pipe(b"IS2P\n")
+            if self.rapid_override and (dx != 0 or dy != 0):
+                self.set_acceleration(None)
+                self.set_step(0)
+                if dx != 0:
+                    self.ensure_rapid_mode()
+                    self.set_speed(self.rapid_override_speed_x)
+                    self.ensure_program_mode()
+                    self.goto_octent(dx, 0, cut)
+                if dy != 0:
+                    if self.rapid_override_speed_x != self.rapid_override_speed_y:
+                        self.ensure_rapid_mode()
+                        self.set_speed(self.rapid_override_speed_y)
+                        self.ensure_program_mode()
+                    self.goto_octent(0, dy, cut)
+                self.ensure_rapid_mode()
+            else:
+                self.pipe(b"I")
+                if dx != 0:
+                    self.goto_x(dx)
+                if dy != 0:
+                    self.goto_y(dy)
+                self.pipe(b"S1P\n")
+                if not self.context.autolock:
+                    self.pipe(b"IS2P\n")
         elif self.state == INTERPRETER_STATE_PROGRAM:
             mx = 0
             my = 0

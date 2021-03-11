@@ -263,6 +263,9 @@ class Interpreter:
         context.current_y = 0
         self.rapid = self.context.opt_rapid_between
         self.jog = self.context.opt_jog_mode
+        self.rapid_override = False
+        self.rapid_override_speed_x = 50.0
+        self.rapid_override_speed_y = 50.0
         self._thread = None
         self._shutdown = False
 
