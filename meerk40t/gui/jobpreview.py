@@ -529,15 +529,15 @@ class JobPreview(wx.Frame, Module):
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
             self.context("plan%s copy\n" % self.plan_name)
-        elif self.stage == 1:
+        # elif self.stage == 1:
             self.context("plan%s preprocess\n" % self.plan_name)
         elif self.stage == 2:
             self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 3:
             self.context("plan%s blob\n" % self.plan_name)
-        elif self.stage == 4:
+        # elif self.stage == 4:
             self.context("plan%s preopt\n" % self.plan_name)
-        elif self.stage == 5:
+        # elif self.stage == 5:
             self.context("plan%s optimize\n" % self.plan_name)
         elif self.stage == 6:
             self.context("plan%s spool\n" % self.plan_name)
