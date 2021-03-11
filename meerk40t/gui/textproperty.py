@@ -247,12 +247,15 @@ class TextProperty(wx.Frame, Module):
         if dialog.ShowModal() == wx.ID_OK:
             data = dialog.GetFontData()
             font = data.GetChosenFont()
-            color = data.GetColour()
-            rgb = color.GetRGB()
-            color = swizzlecolor(rgb)
-            color = Color(color, 1.0)
+            try:
+                color = data.GetColour()
+                rgb = color.GetRGB()
+                color = swizzlecolor(rgb)
+                color = Color(color, 1.0)
+                self.element.fill = color
+            except:  # rgb get failed.
+                pass
             self.element_node.wxfont = font
-            self.element.fill = color
             self.update_label()
             self.refresh()
         dialog.Destroy()
