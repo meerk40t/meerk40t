@@ -35,7 +35,11 @@ class Navigation(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((598, 429))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 598)
+        self.window_context.setting(int, "height", 429)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.spin_jog_mils = wx.SpinCtrlDouble(
             self, wx.ID_ANY, "394.0", min=0.0, max=10000.0
         )
@@ -566,6 +570,7 @@ class Navigation(wx.Frame, Module):
         self.SetFocus()
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         context_root = self.context.get_context("/")
         context_root.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("interpreter;position", self.on_position_update)

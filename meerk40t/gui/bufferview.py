@@ -17,7 +17,10 @@ class BufferView(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((697, 584))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 697)
+        self.window_context.setting(int, "height", 584)
+        self.SetSize((self.window_context.width, self.window_context.height))
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_buffer_info = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_CHARWRAP | wx.TE_MULTILINE
@@ -66,6 +69,7 @@ class BufferView(wx.Frame, Module):
         self.text_buffer_info = self.text_buffer_info.SetValue(buffer)
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

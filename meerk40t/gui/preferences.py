@@ -26,11 +26,15 @@ class Preferences(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 395)
+        self.window_context.setting(int, "height", 424)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.bed_dim = self.context.get_context('/')
         self.bed_dim.setting(int, "bed_width", 280)
         self.bed_dim.setting(int, "bed_height", 200)
 
-        self.SetSize((395, 424))
         self.combobox_board = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -174,6 +178,7 @@ class Preferences(wx.Frame, Module):
         self.spin_home_y.SetValue(self.context.home_adjust_y)
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

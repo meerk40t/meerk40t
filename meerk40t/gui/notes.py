@@ -17,7 +17,11 @@ class Notes(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((730, 621))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 730)
+        self.window_context.setting(int, "height", 621)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.check_auto_open_notes = wx.CheckBox(
             self, wx.ID_ANY, _("Automatically Open Notes")
         )
@@ -57,6 +61,7 @@ class Notes(wx.Frame, Module):
         self.Show()
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

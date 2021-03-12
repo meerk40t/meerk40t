@@ -19,9 +19,13 @@ class PathProperty(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 288)
+        self.window_context.setting(int, "height", 303)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.element = node.object
         self.element_node = node
-        self.SetSize((288, 303))
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.button_stroke_none = wx.Button(self, wx.ID_ANY, _("None"))
         self.button_stroke_none.name = "stroke none"
@@ -117,6 +121,7 @@ class PathProperty(wx.Frame, Module):
         self.Refresh()
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

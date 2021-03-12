@@ -29,7 +29,10 @@ class DeviceManager(wx.Frame, Module):
                 | wx.TAB_TRAVERSAL,
             )
         Module.__init__(self, context, path)
-        self.SetSize((707, 337))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 707)
+        self.window_context.setting(int, "height", 337)
+        self.SetSize((self.window_context.width, self.window_context.height))
         self.devices_list = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
@@ -84,6 +87,7 @@ class DeviceManager(wx.Frame, Module):
             event.Skip()  # Call destroy as regular.
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

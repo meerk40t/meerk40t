@@ -244,6 +244,7 @@ ID_MENU_CAMERA = wx.NewId()
 ID_MENU_TERMINAL = wx.NewId()
 ID_MENU_USB = wx.NewId()
 ID_MENU_SPOOLER = wx.NewId()
+ID_MENU_WINDOW_RESET = wx.NewId()
 ID_MENU_JOB = wx.NewId()
 ID_MENU_TREE = wx.NewId()
 
@@ -298,6 +299,11 @@ class MeerK40t(wx.Frame, Module, Job):
         wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
         Module.__init__(self, context, path)
         Job.__init__(self, job_name="refresh_scene", process=self.refresh_scene)
+
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 1200)
+        self.window_context.setting(int, "height", 600)
+        self.SetSize((self.window_context.width, self.window_context.height))
         self.DragAcceptFiles(True)
         self._mgr = aui.AuiManager()
 
@@ -495,8 +501,6 @@ class MeerK40t(wx.Frame, Module, Job):
         context._reticle_x = 0
         context._reticle_y = 0
         context.setting(int, "draw_mode", 0)
-        context.setting(int, "window_width", 1200)
-        context.setting(int, "window_height", 600)
         context.setting(float, "units_convert", MILS_IN_MM)
         context.setting(str, "units_name", "mm")
         context.setting(int, "units_marks", 10)
@@ -506,10 +510,10 @@ class MeerK40t(wx.Frame, Module, Job):
         context.setting(int, "fps", 40)
         if context.fps <= 0:
             context.fps = 60
-        if context.window_width < 300:
-            context.window_width = 300
-        if context.window_height < 300:
-            context.window_height = 300
+        if self.window_context.width < 300:
+            self.window_context.width = 300
+        if self.window_context.height < 300:
+            self.window_context.height = 300
 
         context.listen("units", self.space_changed)
 
@@ -580,7 +584,6 @@ class MeerK40t(wx.Frame, Module, Job):
         def toggle_rotary_view(*args, **kwargs):
             self.apply_rotary_scale()
 
-        self.SetSize((context.window_width, context.window_height))
         self.interval = 1.0 / float(context.fps)
         self.process()
 
@@ -1120,6 +1123,10 @@ class MeerK40t(wx.Frame, Module, Job):
         self.main_menubar.jobpreview = wxglade_tmp_menu.Append(
             ID_MENU_JOB, _("Execute Job"), ""
         )
+        wxglade_tmp_menu.AppendSeparator()
+        self.main_menubar.windowreset = wxglade_tmp_menu.Append(
+            ID_MENU_WINDOW_RESET, _("Reset Window Sizes"), ""
+        )
 
         self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
 
@@ -1290,6 +1297,11 @@ class MeerK40t(wx.Frame, Module, Job):
             id=ID_MENU_SPOOLER,
         )
         self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context.console("window reset *\n"),
+            id=ID_MENU_WINDOW_RESET,
+        )
+        self.Bind(
             wx.EVT_MENU, lambda e: self.context.console("webhelp help\n"), id=wx.ID_HELP
         )
         self.Bind(
@@ -1337,6 +1349,9 @@ class MeerK40t(wx.Frame, Module, Job):
         m.Check(self.context.draw_mode & DRAW_MODE_FLIPXY != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_INVERT)
         m.Check(self.context.draw_mode & DRAW_MODE_INVERT != 0)
+
+        # TODO: Implement reset and enable this.
+        self.main_menubar.Enable(ID_MENU_WINDOW_RESET, False)
 
     def add_language_menu(self):
         tl = wx.FileTranslationsLoader()
@@ -1741,7 +1756,7 @@ class MeerK40t(wx.Frame, Module, Job):
         if self.context is None:
             return
         self.Layout()
-        self.context.window_width, self.context.window_height = self.Size
+        self.window_context.width, self.window_context.height = self.Size
         self.widget_scene.signal("guide")
         self.request_refresh()
 

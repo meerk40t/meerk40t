@@ -23,6 +23,11 @@ class RotarySettings(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 222)
+        self.window_context.setting(int, "height", 347)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.SetSize((222, 347))
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Rotary"))
         self.text_rotary_scaley = wx.TextCtrl(self, wx.ID_ANY, "1.0")
@@ -73,6 +78,7 @@ class RotarySettings(wx.Frame, Module):
         self.on_check_rotary(None)
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

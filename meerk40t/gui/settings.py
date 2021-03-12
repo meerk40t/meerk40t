@@ -26,7 +26,10 @@ class Settings(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((490, 280))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 490)
+        self.window_context.setting(int, "height", 280)
+        self.SetSize((self.window_context.width, self.window_context.height))
         self.radio_units = wx.RadioBox(
             self,
             wx.ID_ANY,
@@ -121,6 +124,7 @@ class Settings(wx.Frame, Module):
         self.combo_language.SetSelection(self.context.language)
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

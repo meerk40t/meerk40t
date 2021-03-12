@@ -17,9 +17,13 @@ class ImageProperty(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 276)
+        self.window_context.setting(int, "height", 218)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.element_node = node
         self.element = node.object
-        self.SetSize((276, 218))
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
         self.combo_dpi = wx.ComboBox(
             self,
@@ -102,6 +106,7 @@ class ImageProperty(wx.Frame, Module):
             pass
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

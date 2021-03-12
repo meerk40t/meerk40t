@@ -17,7 +17,10 @@ class About(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((699, 442))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 699)
+        self.window_context.setting(int, "height", 442)
+        self.SetSize((self.window_context.width, self.window_context.height))
         self.bitmap_button_1 = wx.BitmapButton(
             self, wx.ID_ANY, icon_meerk40t.GetBitmap()
         )
@@ -46,6 +49,7 @@ class About(wx.Frame, Module):
             event.Skip()  # Call destroy as regular.
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

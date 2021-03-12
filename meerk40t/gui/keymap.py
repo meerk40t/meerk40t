@@ -17,7 +17,11 @@ class Keymap(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((500, 530))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 500)
+        self.window_context.setting(int, "height", 530)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.list_keymap = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
@@ -54,6 +58,7 @@ class Keymap(wx.Frame, Module):
         self.reload_keymap()
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

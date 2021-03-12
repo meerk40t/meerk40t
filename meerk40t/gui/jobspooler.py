@@ -17,7 +17,11 @@ class JobSpooler(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((673, 456))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 673)
+        self.window_context.setting(int, "height", 456)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.connected_device = self.context.active
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=[str(self.connected_device)], style=wx.CB_DROPDOWN
@@ -149,6 +153,7 @@ class JobSpooler(wx.Frame, Module):
         self.refresh_spooler_list()
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         self.connected_device.unlisten("spooler;queue", self.on_spooler_update)
         try:
             self.Close()

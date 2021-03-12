@@ -22,7 +22,11 @@ class OperationProperty(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((_simple_width, 500))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width_simple", _simple_width)
+        self.window_context.setting(int, "width_advanced", _advanced_width)
+        self.window_context.setting(int, "height", 500)
+        self.SetSize((self.window_context.width_simple, self.window_context.height))
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
         self.button_add_layer = wx.BitmapButton(
@@ -269,6 +273,7 @@ class OperationProperty(wx.Frame, Module):
         self.on_combo_operation()
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

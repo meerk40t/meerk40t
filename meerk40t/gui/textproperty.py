@@ -19,7 +19,11 @@ class TextProperty(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((317, 360))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 317)
+        self.window_context.setting(int, "height", 360)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.element = node.object
         self.element_node = node
@@ -130,6 +134,7 @@ class TextProperty(wx.Frame, Module):
             pass
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         try:
             self.Close()
         except RuntimeError:

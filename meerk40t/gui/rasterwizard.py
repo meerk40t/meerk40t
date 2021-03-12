@@ -29,6 +29,11 @@ class RasterWizard(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 605)
+        self.window_context.setting(int, "height", 636)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self._preview_panel_buffer = None
         if len(args) >= 1:
             script = args[0]
@@ -51,8 +56,6 @@ class RasterWizard(wx.Frame, Module):
         self.wizard_thread = None
         self.needs_centering = True
         self.needs_update = True
-
-        self.SetSize((605, 636))
 
         self.sizer_operation_panels = None
 
@@ -141,6 +144,7 @@ class RasterWizard(wx.Frame, Module):
         self.context.signal("RasterWizard-Image")
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         context_root = self.context.get_context("/")
         context_root.unlisten("emphasized", self.on_emphasis_change)
         self.context.unlisten(

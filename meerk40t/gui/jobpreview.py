@@ -19,7 +19,10 @@ class JobPreview(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((496, 573))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 496)
+        self.window_context.setting(int, "height", 573)
+        self.SetSize((self.window_context.width, self.window_context.height))
 
         # Menu Bar
         self.preview_menu = wx.MenuBar()
@@ -603,6 +606,7 @@ class JobPreview(wx.Frame, Module):
         self.update_gui()
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         self.context.unlisten(
             "element_property_update", self.on_element_property_update
         )

@@ -17,7 +17,11 @@ class Terminal(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((581, 410))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 581)
+        self.window_context.setting(int, "height", 410)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.text_main = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY
         )
@@ -62,6 +66,7 @@ class Terminal(wx.Frame, Module):
         self.text_entry.SetFocus()
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         self.context.channel("console").unwatch(self.update_text)
         try:
             self.Close()

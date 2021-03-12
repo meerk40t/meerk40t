@@ -28,7 +28,10 @@ class Controller(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((499, 505))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 499)
+        self.window_context.setting(int, "height", 505)
+        self.SetSize((self.window_context.width, self.window_context.height))
         self.button_controller_control = wx.Button(
             self, wx.ID_ANY, _("Start Controller")
         )
@@ -131,6 +134,7 @@ class Controller(wx.Frame, Module):
         self.text_location.SetValue(self.context.device_location)
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;packet_text", self.update_packet_text)
         self.context.unlisten("pipe;buffer", self.on_buffer_update)

@@ -17,7 +17,11 @@ class UsbConnect(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
-        self.SetSize((915, 424))
+        self.window_context = context.get_context(path)
+        self.window_context.setting(int, "width", 915)
+        self.window_context.setting(int, "height", 424)
+        self.SetSize((self.window_context.width, self.window_context.height))
+
         self.text_main = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY
         )
@@ -50,6 +54,7 @@ class UsbConnect(wx.Frame, Module):
         self.context.active.channel("pipe/usb").watch(self.update_text)
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
         if self.context.active is not None:
             self.context.active.channel("pipe/usb").unwatch(self.update_text)
         try:
