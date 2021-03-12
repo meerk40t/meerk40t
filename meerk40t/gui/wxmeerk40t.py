@@ -695,6 +695,15 @@ class MeerK40t(wx.Frame, Module, Job):
         align.AddButton(ID_ALIGN_SPACE_V, _("Space Vertical"), icons_evenspace_vert.GetBitmap(), "")
         align.AddButton(ID_ALIGN_SPACE_H, _("Space Horizontal"), icons_evenspace_horiz.GetBitmap(), "")
 
+        # TODO: Fix and reenable.
+        align.EnableButton(ID_ALIGN_LEFT, False)
+        align.EnableButton(ID_ALIGN_RIGHT, False)
+        align.EnableButton(ID_ALIGN_TOP, False)
+        align.EnableButton(ID_ALIGN_BOTTOM, False)
+        align.EnableButton(ID_ALIGN_CENTER, False)
+        align.EnableButton(ID_ALIGN_SPACE_V, False)
+        align.EnableButton(ID_ALIGN_SPACE_H, False)
+
         flip_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Flip"), icons8_opened_folder_50.GetBitmap(),
                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
         flip = RB.RibbonButtonBar(flip_panel)
@@ -709,6 +718,10 @@ class MeerK40t(wx.Frame, Module, Job):
         group.AddButton(ID_GROUP, _("Group"), icons8_group_objects_50.GetBitmap(), "")
         group.AddButton(ID_UNGROUP, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), "")
 
+        #TODO: Fix and Reenable.
+        group.EnableButton(ID_GROUP, False)
+        group.EnableButton(ID_UNGROUP, False)
+
         tool_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(),
                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
         tool = RB.RibbonButtonBar(tool_panel)
@@ -719,6 +732,15 @@ class MeerK40t(wx.Frame, Module, Job):
         tool.AddButton(ID_TOOL_POLYLINE, _("Polyline"), icons8_polyline_50.GetBitmap(), "")
         tool.AddButton(ID_TOOL_RECT, _("Rectangle"), icons8_rectangular_50.GetBitmap(), "")
         tool.AddButton(ID_TOOL_TEXT, _("Text"), icons8_type_50.GetBitmap(), "")
+
+        #TODO: Fix and Reenable
+        tool.EnableButton(ID_TOOL_POSITION, False)
+        tool.EnableButton(ID_TOOL_OVAL, False)
+        tool.EnableButton(ID_TOOL_CIRCLE, False)
+        tool.EnableButton(ID_TOOL_POLYLINE, False)
+        tool.EnableButton(ID_TOOL_POLYGON, False)
+        tool.EnableButton(ID_TOOL_RECT, False)
+        tool.EnableButton(ID_TOOL_TEXT, False)
 
         home = RB.RibbonPage(
             self._ribbon,
