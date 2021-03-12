@@ -3025,11 +3025,20 @@ class ShadowTree:
                 submenus[submenu_name] = submenu
 
             menu_context = submenu if submenu is not None else menu
-            gui.Bind(
-                wx.EVT_MENU,
-                menu_functions(func, node),
-                menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL),
-            )
+            if func.radio_state is not None:
+                item = menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_RADIO)
+                gui.Bind(
+                    wx.EVT_MENU,
+                    menu_functions(func, node),
+                    item,
+                )
+                item.Check(func.radio_state)
+            else:
+                gui.Bind(
+                    wx.EVT_MENU,
+                    menu_functions(func, node),
+                    menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL),
+                )
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()

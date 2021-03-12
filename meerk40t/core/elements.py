@@ -954,9 +954,14 @@ class Elemental(Modifier):
                     key, c = calc
                     value = c(value)
                     func_dict[key] = value
+                if func.radio is not None:
+                    func.radio_state = func.radio(node, **func_dict)
+                else:
+                    func.radio_state = None
                 name = func.name.format_map(func_dict)
                 func.func_dict = func_dict
                 func.real_name = name
+
                 yield func
 
     @staticmethod
@@ -981,6 +986,14 @@ class Elemental(Modifier):
         def decor(func):
             func.value_name = value_name
             func.values = range(start, stop, step)
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_radio(radio_function):
+        def decor(func):
+            func.radio = radio_function
             return func
 
         return decor
@@ -1026,6 +1039,7 @@ class Elemental(Modifier):
             inner.help = help
             inner.node_type = ins
             inner.name = name
+            inner.radio = None
             inner.submenu = None
             inner.conditionals = list()
             inner.try_conditionals = list()
@@ -1363,36 +1377,6 @@ class Elemental(Modifier):
                 return "tree", data.children[pos]
             except IndexError:
                 raise SyntaxError
-
-        @context.console_argument("dest", type=self._tree.get, help="destination node")
-        @context.console_option(
-            "pos", "p", type=int, help="position within destination node"
-        )
-        @context.console_command(
-            "move",
-            help="<node> move <destination>, eg ... move 1:0",
-            input_type="tree",
-            output_type="tree",
-        )
-        def move(
-            # TODO: CORRECT
-            command,
-            channel,
-            _,
-            data=None,
-            data_type=None,
-            dest=None,
-            pos=None,
-            args=tuple(),
-            **kwargs
-        ):
-            if data is None:
-                channel(_("No source node selected."))
-                return
-            if dest is None:
-                channel(_("No source node selected."))
-                return
-            data.move(dest, pos)
 
         @context.console_command(
             "copy",
@@ -2619,18 +2603,22 @@ class Elemental(Modifier):
             self.remove_elements_from_operations(data)
             return "elements", data
 
-        @context.console_argument("note", type=str, help="message to set as note")
+        @context.console_option("append", "a", type=bool, action="store_true", default=False)
         @context.console_command("note", help="note <note>")
-        def note(command, channel, _, note, args=tuple(), **kwargs):
+        def note(command, channel, _, append=False, remainder=None, **kwargs):
+            note = remainder
             if note is None:
                 if self.note is None:
                     channel(_("No Note."))
                 else:
                     channel(str(self.note))
             else:
-                # TODO: Note should take nargs.
-                self.note = note + " " + " ".join(args)
+                if append:
+                    self.note += "\n" + note
+                else:
+                    self.note = note
                 channel(_("Note Set."))
+                channel(str(self.note))
 
         @context.console_option("speed", "s", type=float)
         @context.console_option("power", "p", type=float)
@@ -3028,7 +3016,11 @@ class Elemental(Modifier):
             node.add_all(add_elements, type="opnode")
             self.context.signal("rebuild_tree", 0)
 
+        def radio_match(node, passvalue=1, **kwargs):
+            return node.settings.passes == passvalue
+
         @self.tree_submenu(_("Set Operation Passes"))
+        @self.tree_radio(radio_match)
         @self.tree_iterate("passvalue", 1, 10)
         @self.tree_operation(_("Passes={passvalue}"), node_type="op", help="")
         def set_n_passes(node, passvalue=1, **kwargs):
@@ -3190,20 +3182,23 @@ class Elemental(Modifier):
         def break_subpath_elem(node, **kwargs):
             self.context("element subpath\n")
 
+        def radio_match(node, i=0, **kwargs):
+            if "raster_step" in node.object.values:
+                step = float(node.object.values["raster_step"])
+            else:
+                step = 1.0
+            if i == step:
+                m = node.object.transform
+                if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
+                    return True
+            return False
+
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Step"))
+        @self.tree_radio(radio_match)
         @self.tree_iterate("i", 1, 10)
         @self.tree_operation(_("Step {i}"), node_type="elem", help="")
         def set_step_n_elem(node, i=1, **kwargs):
-            # TODO: WAS A RADIOBUTTON
-            # if "raster_step" in node.object.values:
-            #     step = float(node.object.values["raster_step"])
-            # else:
-            #     step = 1.0
-            # if i == step:
-            #     m = node.object.transform
-            #     if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
-            #         menu_item.Check(True)
             step_value = i
             element = node.object
             element.values["raster_step"] = str(step_value)
