@@ -3508,6 +3508,14 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
         self.classify(list(self.elems()))
 
+    @property
+    def op_branch(self):
+        return self._tree.get(type="branch elems")
+
+    @property
+    def elem_branch(self):
+        return self._tree.get(type="branch elems")
+
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
         for item in operations.flat(types=("op",), depth=1, **kwargs):
