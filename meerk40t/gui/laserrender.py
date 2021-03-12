@@ -239,7 +239,7 @@ class LaserRender:
                     f.append(str(text.font_weight))
                 f.append("%d" % text.font_size)
                 font.SetNativeFontInfoUserDesc(" ".join(f))
-            except:
+            except Exception:
                 pass
             node.wxfont = font
 

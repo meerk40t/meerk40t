@@ -360,7 +360,7 @@ class Node:
             node_class = Node
             try:
                 node_class = self._root.bootstrap[type]
-            except:
+            except Exception:
                 pass
             node = node_class(data_object)
             node.set_name(name)
@@ -931,7 +931,7 @@ class Elemental(Modifier):
                     if not cond(node):
                         reject = True
                         break
-                except:
+                except Exception:
                     continue
             if reject:
                 continue
@@ -1596,7 +1596,7 @@ class Elemental(Modifier):
                     bounds = self._emphasized_bounds
                     x = bounds[2] - bounds[0]
                     y = bounds[3] - bounds[1]
-                except:
+                except Exception:
                     raise SyntaxError
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError

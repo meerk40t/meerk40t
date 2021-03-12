@@ -1314,7 +1314,7 @@ class SceneSpaceWidget(Widget):
                 return RESPONSE_CONSUME
             try:
                 zoom = float(event_type.split(" ")[1])
-            except:
+            except Exception:
                 return RESPONSE_CONSUME
 
             zoom_change = zoom / self._previous_zoom

@@ -2945,7 +2945,7 @@ class ShadowTree:
                 for n in self.elements.flat(node, types=('opnode',), cascade=False):
                     try:
                         selected.append(n.object.node)
-                    except:
+                    except Exception:
                         pass
 
         self.elements.set_emphasis(selected)
@@ -3196,7 +3196,7 @@ class wxMeerK40t(wx.App, Module):
     def BringWindowToFront(self):
         try:  # it's possible for this event to come when the frame is closed
             self.GetTopWindow().Raise()
-        except:
+        except Exception:
             pass
 
     def OnActivate(self, event):
@@ -3333,13 +3333,13 @@ class wxMeerK40t(wx.App, Module):
         try:  # pyinstaller internal location
             _resource_path = os.path.join(sys._MEIPASS, 'locale')
             wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
-        except:
+        except Exception:
             pass
 
         try:  # Mac py2app resource
             _resource_path = os.path.join(os.environ['RESOURCEPATH'], 'locale')
             wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
-        except:
+        except Exception:
             pass
 
         wx.Locale.AddCatalogLookupPathPrefix('locale')  # Default Locale, prepended. Check this first.
@@ -3468,7 +3468,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :return:
     """
     error_log = "MeerK40t crash log. Version: %s on %s\n" % (
-        "0.7.0 Beta-15",
+        "0.7.0 Beta-16",
         sys.platform,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
@@ -3479,7 +3479,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
             date=datetime.datetime.now()
         )
-    except:  # I already crashed once, if there's another here just ignore it.
+    except Exception:  # I already crashed once, if there's another here just ignore it.
         filename = "MeerK40t-Crash.txt"
 
     try:
@@ -3487,7 +3487,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             # Crash logs are not translated.
             file.write(error_log)
             print(file)
-    except:  # I already crashed once, if there's another here just ignore it.
+    except Exception:  # I already crashed once, if there's another here just ignore it.
         pass
 
     # Ask to send file.

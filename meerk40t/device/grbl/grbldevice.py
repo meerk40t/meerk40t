@@ -694,7 +694,9 @@ class GRBLEmulator(Module):
 
 
 class GcodeBlob:
-    def __init__(self, name, b=[]):
+    def __init__(self, name, b=None):
+        if b is None:
+            b = list()
         self.name = name
         self.data = b
         self.output = True

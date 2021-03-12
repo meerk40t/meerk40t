@@ -451,7 +451,7 @@ class Interpreter:
 
                         for x in range(5):
                             winsound.Beep(2000, 100)
-                    except:
+                    except Exception:
                         pass
                 if os.name == "posix":
                     # Mac or linux.

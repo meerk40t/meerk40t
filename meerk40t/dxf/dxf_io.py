@@ -324,7 +324,7 @@ class DxfLoader:
                     )  # Color 7 is black on light backgrounds, light on black.
                 else:
                     color = Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
-            except:
+            except Exception:
                 color = Color("black")
             element.stroke = color
         element.transform.post_scale(scale, -scale)

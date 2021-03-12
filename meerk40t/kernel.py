@@ -1031,7 +1031,7 @@ class Kernel:
         try:
             if short.startswith('-'):
                 short = short[1:]
-        except:
+        except Exception:
             pass
 
         def decor(func):
@@ -1406,7 +1406,7 @@ class Kernel:
                 channel(_("Thread: %s, Start" % thread_name))
                 func_result = func()
                 channel(_("Thread: %s, End " % thread_name))
-            except:
+            except Exception:
                 channel(_("Thread: %s, Exception-End" % thread_name))
                 import sys
 
@@ -1500,7 +1500,7 @@ class Kernel:
                             job.process(*job.args)
                         else:
                             job.process(job.args)
-                    except:
+                    except Exception:
                         import sys
 
                         sys.excepthook(*sys.exc_info())

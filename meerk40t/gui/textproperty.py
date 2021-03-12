@@ -253,7 +253,7 @@ class TextProperty(wx.Frame, Module):
                 color = swizzlecolor(rgb)
                 color = Color(color, 1.0)
                 self.element.fill = color
-            except:  # rgb get failed.
+            except Exception:  # rgb get failed.
                 pass
             self.element_node.wxfont = font
             self.update_label()
