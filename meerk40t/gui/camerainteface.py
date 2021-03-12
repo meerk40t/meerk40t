@@ -34,6 +34,7 @@ class CameraInterface(wx.Frame, Module, Job):
 
         self.camera_setting = self.context.get_context("camera")
         self.setting = self.camera_setting.derive(str(self.index))
+        self.window_context = self.setting
 
         self.button_update = wx.BitmapButton(
             self, wx.ID_ANY, icons8_camera_50.GetBitmap()
@@ -70,7 +71,7 @@ class CameraInterface(wx.Frame, Module, Job):
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context.active.open("window/CameraURI", self, self.index),
+            lambda e: self.context.active.open("window/CameraURI", self, index=self.index),
             id=item.GetId(),
         )
 
@@ -91,6 +92,10 @@ class CameraInterface(wx.Frame, Module, Job):
 
         self.__set_properties()
         self.__do_layout()
+
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
 
         self.image_width = -1
         self.image_height = -1
@@ -130,13 +135,17 @@ class CameraInterface(wx.Frame, Module, Job):
         )  # Focus follows mouse.
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+        self.window_context.setting(int, "width", 640)
+        self.window_context.setting(int, "height", 480)
+
         self.setting.setting(bool, "aspect", False)
         self.setting.setting(str, "preserve_aspect", "xMinYMin meet")
-        self.setting.setting(int, "window_width", 640)
-        self.setting.setting(int, "window_height", 480)
+        self.SetSize((self.window_context.width, self.window_context.height))
+        self.SetPosition((self.window_context.x, self.window_context.y))
 
         self.Bind(wx.EVT_SIZE, self.on_size, self)
-        self.SetSize(self.setting.window_width, self.setting.window_height)
+        self.on_size()
+
         self.on_update_buffer()
 
         self.context.setting(bool, "mouse_zoom_invert", False)
@@ -250,7 +259,8 @@ class CameraInterface(wx.Frame, Module, Job):
         self.context.schedule(self)
 
     def finalize(self, *args, **kwargs):
-        self.setting.window_width, self.setting.window_height = self.GetSize()
+        self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         try:
             self.Close()
             self.context("camera%d stop\n" % self.index)
@@ -258,7 +268,7 @@ class CameraInterface(wx.Frame, Module, Job):
             pass
         self.context.unschedule(self)
 
-    def on_size(self, event):
+    def on_size(self, event=None):
         self.Layout()
         width, height = self.ClientSize
         if width <= 0:
@@ -812,7 +822,7 @@ class CameraURI(wx.Frame, Module):
     def on_list_activated(self, event):  # wxGlade: CameraURI.<event_handler>
         index = event.GetIndex()
         new_uri = self.uri_list[index]
-        self.context.console("camera --uri %s stop start\n" % new_uri)
+        self.context.console("camera%d --uri %s stop start\n" % (self.index, new_uri))
         self.Close()
 
     def on_list_right_clicked(self, event):  # wxGlade: CameraURI.<event_handler>
