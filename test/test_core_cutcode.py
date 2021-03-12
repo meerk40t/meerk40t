@@ -37,7 +37,7 @@ class TestCutcode(unittest.TestCase):
         path = Path(initial)
         laserop = LaserOperation()
         laserop.operation = "Cut"
-        laserop.append(path)
+        laserop.add(path, type="opnode")
         cutcode = laserop.as_blob()
         path = Path(*cutcode.as_elements())
         self.assertEqual(path, initial)
@@ -52,7 +52,7 @@ class TestCutcode(unittest.TestCase):
         path = Path(initial)
         laserop = LaserOperation()
         laserop.operation = "Engrave"
-        laserop.append(path)
+        laserop.add(path, type="opnode")
         cutcode = laserop.as_blob()
         path = Path(*cutcode.as_elements())
         self.assertEqual(path, initial)
@@ -67,7 +67,7 @@ class TestCutcode(unittest.TestCase):
         path = Path(initial)
         laserop = LaserOperation()
         # Operation type is unset.
-        laserop.append(path)
+        laserop.add(path, type="opnode")
         cutcode = laserop.as_blob()
         self.assertEqual(cutcode, None)
 
@@ -81,5 +81,5 @@ class TestCutcode(unittest.TestCase):
         path = Path(initial)
         laserop = LaserOperation()
         laserop.operation = "Raster"
-        laserop.append(path)
+        laserop.add(path, type="opnode")
         # There is no method of turning the path into a raster image without a renderer.

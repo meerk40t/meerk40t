@@ -2,8 +2,7 @@ from __future__ import print_function
 
 import unittest
 
-from meerk40t.bootstrap import bootstrap
-from meerk40t.kernel import Kernel
+from test import bootstrap
 
 
 class TestKernel(unittest.TestCase):
@@ -13,13 +12,7 @@ class TestKernel(unittest.TestCase):
 
         :return:
         """
-        kernel = Kernel()
-        bootstrap(kernel)
-        kernel_root = kernel.get_context("/")
-        kernel_root.activate("modifier/Elemental")
-        kernel_root.activate("modifier/Planner")
-        kernel_root.activate("modifier/ImageTools")
-        kernel_root.activate("modifier/BindAlias")
+        kernel = bootstrap.bootstrap()
 
         for command in kernel.match("command/.*"):
             cmd = kernel.registered[command]

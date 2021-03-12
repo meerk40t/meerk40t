@@ -1907,8 +1907,11 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def text(command, channel, _, data=None, args=tuple(), **kwargs):
-            text = " ".join(args)
+        def text(command, channel, _, data=None, remainder=None, **kwargs):
+            if remainder is None:
+                channel(_("No text specified"))
+                return
+            text = remainder
             svg_text = SVGText(text)
             self.add_element(svg_text)
             if data is None:
@@ -2096,7 +2099,7 @@ class Elemental(Modifier):
                 raise SyntaxError
             bounds = self.selected_area()
             if bounds is None:
-                yield "Nothing Selected"
+                channel(_("Nothing Selected"))
                 return
             x_pos = bounds[0]
             y_pos = bounds[1]

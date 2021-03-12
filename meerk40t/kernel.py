@@ -1923,22 +1923,23 @@ class Kernel:
             return
 
         @self.console_command("control", help="control [<executive>]")
-        def control(command, channel, _, args=tuple(), **kwargs):
+        def control(command, channel, _, args=tuple(), remainder=None, **kwargs):
             active_device = self.active_device
-            if len(args) == 0:
-                for control_name in active_device.match("control"):
-                    channel(control_name)
-                for control_name in active_device.match("\d+/control"):
-                    channel(control_name)
+            if remainder is None:
+                if active_device is not None:
+                    for control_name in active_device.match("control", suffix=True):
+                        channel(control_name)
+                    for control_name in self.get_context('/').match("\d+/control", suffix=True):
+                        channel(control_name)
             else:
-                control_name = " ".join(args)
+                control_name = remainder
                 controls = list(
-                    active_device.match("%s/control/.*" % active_device._path, True)
+                    active_device.match("%s/control/.*" % active_device._path, suffix=True)
                 )
                 if active_device is not None and control_name in controls:
                     active_device.execute(control_name)
                     channel(_("Executed '%s'") % control_name)
-                elif control_name in list(active_device.match("control/.*", True)):
+                elif control_name in list(active_device.match("control/.*", suffix=True)):
                     self.get_context("/").execute(control_name)
                     channel(_("Executed '%s'") % control_name)
                 else:
@@ -1994,16 +1995,17 @@ class Kernel:
                 for i, name in enumerate(self.match("modifier")):
                     channel("%d: %s" % (i + 1, name))
                 channel(_("----------"))
-                channel(_("Loaded Modifiers in Context %s:") % str(active_device._path))
-                for i, name in enumerate(active_device.attached):
-                    modifier = active_device.attached[name]
-                    channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
-                channel(_("----------"))
-                channel(_("Loaded Modifiers in Device %s:") % str(active_device._path))
-                for i, name in enumerate(active_device.attached):
-                    modifier = active_device.attached[name]
-                    channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
-                channel(_("----------"))
+                if active_device is not None:
+                    channel(_("Loaded Modifiers in Context %s:") % str(active_device._path))
+                    for i, name in enumerate(active_device.attached):
+                        modifier = active_device.attached[name]
+                        channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
+                    channel(_("----------"))
+                    channel(_("Loaded Modifiers in Device %s:") % str(active_device._path))
+                    for i, name in enumerate(active_device.attached):
+                        modifier = active_device.attached[name]
+                        channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
+                    channel(_("----------"))
             else:
                 value = args[0]
                 if value == "open":
@@ -2186,10 +2188,13 @@ class Kernel:
             relevant_context = None
             if path is not None:
                 relevant_context = self.get_context(path)
-            if relevant_context is None:
+            if relevant_context is None and self.active_device is not None:
                 relevant_context = self.active_device
-            relevant_context.flush()
-            channel(_("Persistent settings force saved."))
+            if relevant_context is not None:
+                relevant_context.flush()
+                channel(_("Persistent settings force saved."))
+            else:
+                channel(_("No relevant context found."))
 
         @self.console_command(
             ("quit", "shutdown"), help="quits meerk40t shutting down all processes"
@@ -2226,6 +2231,9 @@ class Kernel:
                 else:
                     channel(_("No internal directory."))
                     return
+            if directory is None:
+                channel(os.path.abspath(self._current_directory))
+                return
             new_dir = os.path.join(self._current_directory, directory)
             if not os.path.exists(new_dir):
                 channel(_("No such directory."))
@@ -2239,6 +2247,9 @@ class Kernel:
         )
         def load(command, channel, _, filename=None, args=tuple(), remainder=None, **kwargs):
             import os
+            if filename is None:
+                channel(_("No file specified."))
+                return
             new_file = os.path.join(self._current_directory, filename)
             if not os.path.exists(new_file):
                 channel(_("No such file."))
