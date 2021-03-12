@@ -462,15 +462,16 @@ class Planner(Modifier):
                     if op.operation == "Raster":
                         if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
                             continue
-                        child_objects = Group()
-                        child_objects.extend(op.objects_of_children(SVGElement))
-                        bounds = child_objects.bbox()
-                        # bounds = CutPlanner.bounding_box(op.children)
+
+                        subitems = list(op.flat(types=("elem", "opnode")))
+                        make_raster = self.context.registered.get("render-op/make_raster")
+                        bounds = Group.union_bbox([s.object for s in subitems])
+
                         if bounds is None:
                             continue
                         xmin, ymin, xmax, ymax = bounds
 
-                        image = make_raster(child_objects, bounds, step=op.settings.raster_step)
+                        image = make_raster(subitems, bounds, step=op.settings.raster_step)
                         image_element = SVGImage(image=image)
                         image_element.transform.post_translate(xmin, ymin)
                         op.children.clear()

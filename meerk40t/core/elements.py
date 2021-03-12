@@ -393,6 +393,78 @@ class Node:
         else:
             self.name = name
 
+    def _flatten(self, node):
+        """
+        Yield this node and all descendants in a flat generation.
+
+        :param node: starting node
+        :return:
+        """
+        yield node
+        for c in self._flatten_children(node):
+            yield c
+
+    def _flatten_children(self, node):
+        """
+        Yield all descendants in a flat generation.
+
+        :param node: starting node
+        :return:
+        """
+        for child in node.children:
+            yield child
+            for c in self._flatten_children(child):
+                yield c
+
+    def flat(
+        self,
+        types=None,
+        cascade=True,
+        depth=None,
+        emphasized=None,
+        targeted=None,
+        highlighted=None,
+    ):
+        """
+        Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
+        of the given type, even if those descendants are beyond the depth limit. The sub-elements do not need to match
+        the criteria with respect to either the depth or the emphases.
+
+        :param types: types of nodes permitted to be returned
+        :param cascade: cascade all subitems if a group matches the criteria.
+        :param depth: depth to search within the tree.
+        :param emphasized: match only emphasized nodes.
+        :param targeted: match only targeted nodes
+        :param highlighted: match only highlighted nodes
+        :return:
+        """
+        node = self
+        if (
+            (targeted is None or targeted == node.targeted)
+            and (emphasized is None or emphasized == node.emphasized)
+            and (highlighted is None or highlighted != node.highlighted)
+        ):
+            # Matches the emphases.
+            if cascade:
+                # Give every type-matched descendant.
+                for c in self._flatten(node):
+                    if types is None or c.type in types:
+                        yield c
+                # Do not recurse further. This node is end node.
+                return
+            else:
+                if types is None or node.type in types:
+                    yield node
+        if depth is not None:
+            if depth <= 0:
+                # Depth limit reached. Do not evaluate children.
+                return
+            depth -= 1
+        # Check all children.
+        for c in node.children:
+            for q in c.flat(types, cascade, depth, emphasized, targeted, highlighted):
+                yield q
+
     def count_children(self):
         return len(self._children)
 
@@ -1454,7 +1526,8 @@ class Elemental(Modifier):
         )
         def align(command, channel, _, data=None, align=None, args=tuple(), **kwargs):
             if data is None:
-                data = list(self.flat(self.get(type="branch elems"), types=("elems", "file", "group"), cascade=False, depth=1))
+                elem_branch = self.get(type="branch elems")
+                data = list(elem_branch.flat(types=("elems", "file", "group"), cascade=False, depth=1))
             boundary_points = []
             for d in data:
                 # d._bounds_dirty = True
@@ -1470,7 +1543,7 @@ class Elemental(Modifier):
                     subbox = e.bounds
                     top = subbox[1] - top_edge
                     if top != 0:
-                        for q in self.flat(e, types="elem"):
+                        for q in e.flat(types="elem"):
                             q.object *= "translate(0, %f)" % -top
                             q.modified()
             elif align == 'bottom':
@@ -1478,7 +1551,7 @@ class Elemental(Modifier):
                     subbox = e.bounds
                     bottom = subbox[3] - bottom_edge
                     if bottom != 0:
-                        for q in self.flat(e, types="elem"):
+                        for q in e.flat(types="elem"):
                             q.object *= "translate(0, %f)" % -bottom
                             q.modified()
             elif align == 'left':
@@ -1486,7 +1559,7 @@ class Elemental(Modifier):
                     subbox = e.bounds
                     left = subbox[0] - left_edge
                     if left != 0:
-                        for q in self.flat(e, types="elem"):
+                        for q in e.flat(types="elem"):
                             q.object *= "translate(%f, 0)" % -left
                             q.modified()
             elif align == 'right':
@@ -1494,7 +1567,7 @@ class Elemental(Modifier):
                     subbox = e.bounds
                     right = subbox[2] - right_edge
                     if right != 0:
-                        for q in self.flat(e, types="elem"):
+                        for q in e.flat(types="elem"):
                             q.object *= "translate(%f, 0)" % -right
                             q.modified()
             elif align == 'center':
@@ -1502,21 +1575,21 @@ class Elemental(Modifier):
                     subbox = e.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                    for q in self.flat(e, types="elem"):
+                    for q in e.flat(types="elem"):
                         q.object *= "translate(%f, %f)" % (-dx, -dy)
                         q.modified()
             elif align == 'centerv':
                 for e in data:
                     subbox = e.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                    for q in self.flat(e, types="elem"):
+                    for q in e.flat(types="elem"):
                         q.object *= "translate(%f, 0)" % -dx
                         q.modified()
             elif align == 'centerh':
                 for e in data:
                     subbox = e.bounds
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                    for q in self.flat(e, types="elem"):
+                    for q in e.flat(types="elem"):
                         q.object *= "translate(0, %f)" % -dy
                         q.modified()
             elif align == 'spaceh':
@@ -1527,7 +1600,7 @@ class Elemental(Modifier):
                     left = subbox[0] - left_edge
                     left_edge += step
                     if left != 0:
-                        for q in self.flat(e, types="elem"):
+                        for q in e.flat(types="elem"):
                             q.object *= "translate(%f, 0)" % -left
                             q.modified()
             elif align == 'spacev':
@@ -1538,7 +1611,7 @@ class Elemental(Modifier):
                     top = subbox[1] - top_edge
                     top_edge += step
                     if top != 0:
-                        for q in self.flat(e, types="elem"):
+                        for q in e.flat(types="elem"):
                             q.object *= "translate(0, %f)" % -top
                             q.modified()
             return "elements", data
@@ -3051,10 +3124,9 @@ class Elemental(Modifier):
         def make_raster_image(node, **kwargs):
             context = self.context
             elements = context.elements
+            subitems = list(node.flat(types=("elem", "opnode")))
             make_raster = self.context.registered.get("render-op/make_raster")
-            child_objects = Group()
-            child_objects.extend(node.objects_of_children(SVGElement))
-            bounds = child_objects.bbox()
+            bounds = Group.union_bbox([s.object for s in subitems])
             if bounds is None:
                 return
             step = float(node.settings.raster_step)
@@ -3063,7 +3135,7 @@ class Elemental(Modifier):
             xmin, ymin, xmax, ymax = bounds
 
             image = make_raster(
-                child_objects,
+                subitems,
                 bounds,
                 width=(xmax - xmin),
                 height=(ymax - ymin),
@@ -3436,94 +3508,19 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
         self.classify(list(self.elems()))
 
-    def _flatten(self, node):
-        """
-        Yield this node and all descendants in a flat generation.
-
-        :param node: starting node
-        :return:
-        """
-        yield node
-        for c in self._flatten_children(node):
-            yield c
-
-    def _flatten_children(self, node):
-        """
-        Yield all descendants in a flat generation.
-
-        :param node: starting node
-        :return:
-        """
-        for child in node.children:
-            yield child
-            for c in self._flatten_children(child):
-                yield c
-
-    def flat(
-        self,
-        node,
-        types=None,
-        cascade=True,
-        depth=None,
-        emphasized=None,
-        targeted=None,
-        highlighted=None,
-    ):
-        """
-        Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
-        of the given type, even if those descendants are beyond the depth limit. The sub-elements do not need to match
-        the criteria with respect to either the depth or the emphases.
-
-        :param node: root node to start search.
-        :param types: types of nodes permitted to be returned
-        :param cascade: cascade all subitems if a group matches the criteria.
-        :param depth: depth to search within the tree.
-        :param emphasized: match only emphasized nodes.
-        :param targeted: match only targeted nodes
-        :param highlighted: match only highlighted nodes
-        :return:
-        """
-        if (
-            (targeted is None or targeted == node.targeted)
-            and (emphasized is None or emphasized == node.emphasized)
-            and (highlighted is None or highlighted != node.highlighted)
-        ):
-            # Matches the emphases.
-            if cascade:
-                # Give every type-matched descendant.
-                for c in self._flatten(node):
-                    if types is None or c.type in types:
-                        yield c
-                # Do not recurse further. This node is end node.
-                return
-            else:
-                if types is None or node.type in types:
-                    yield node
-        if depth is not None:
-            if depth <= 0:
-                # Depth limit reached. Do not evaluate children.
-                return
-            depth -= 1
-        # Check all children.
-        for c in node.children:
-            for q in self.flat(c, types, cascade, depth, emphasized, targeted, highlighted):
-                yield q
-
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in self.flat(operations, ("op",), depth=1, **kwargs):
+        for item in operations.flat(types=("op",), depth=1, **kwargs):
             yield item
 
     def elems(self, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self.flat(elements, ("elem",), **kwargs):
+        for item in elements.flat(types=("elem",), **kwargs):
             yield item.object
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in self.flat(
-            elements, ("elem", "file", "group"), depth=depth, **kwargs
-        ):
+        for item in elements.flat(types=("elem", "file", "group"), depth=depth, **kwargs):
             yield item
 
     def first_element(self, **kwargs):
@@ -3599,7 +3596,7 @@ class Elemental(Modifier):
 
     def clear_operations(self):
         operations = self._tree.get(type="branch ops")
-        for op in reversed(list(self.flat(operations, ("op", "opnode")))):
+        for op in reversed(list(operations.flat(types=("op", "opnode")))):
             if op is not None:
                 op.remove_node()
 
@@ -3722,7 +3719,7 @@ class Elemental(Modifier):
         If any element is emphasized, all copies are highlighted.
         If any element is emphasized, all operations containing that element are targeted.
         """
-        for s in self.flat(self._tree):
+        for s in self._tree.flat():
             if s.highlighted:
                 s.highlighted = False
             if s.targeted:

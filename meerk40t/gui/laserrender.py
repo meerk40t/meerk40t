@@ -74,16 +74,16 @@ class LaserRender:
             try:
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale)
             except AttributeError:
-                obj_type = type(node.object)
-                if obj_type == Path:
+                element = node.object
+                if isinstance(element, Path):
                     node.draw = self.draw_path_node
-                elif isinstance(node.object, Shape):
+                elif isinstance(element, Shape):
                     node.draw = self.draw_shape_node
-                elif obj_type == SVGImage:
+                elif isinstance(element, SVGImage):
                     node.draw = self.draw_image_node
-                elif obj_type == SVGText:
+                elif isinstance(element, SVGText):
                     node.draw = self.draw_text_node
-                elif obj_type == Group:
+                elif isinstance(element, Group):
                     node.draw = self.draw_group_node
                 else:
                     continue

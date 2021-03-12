@@ -2987,7 +2987,7 @@ class ShadowTree:
             if node.type == "opnode":
                 selected[i] = node.object.node
             elif node.type == "op":
-                for n in self.elements.flat(node, types=('opnode',), cascade=False):
+                for n in node.flat(types=('opnode',), cascade=False):
                     try:
                         selected.append(n.object.node)
                     except Exception:

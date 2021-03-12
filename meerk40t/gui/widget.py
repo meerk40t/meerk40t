@@ -74,8 +74,7 @@ class Scene(Module):
         self.context.setting(bool, "mouse_wheel_pan", False)
 
     def finalize(self, *args, **kwargs):
-        elements = self.context.elements
-        for e in elements.flat(elements._tree):
+        for e in self.context.elements._tree.flat():
             e.unregister()
 
     def rotary_stretch(self):
@@ -879,11 +878,11 @@ class SelectionWidget(Widget):
     def tool_translate(self, position, dx, dy):
         elements = self.scene.context.elements
         b = elements.selected_area()
-        for e in elements.flat(elements._tree, types=("elem",), emphasized=True):
+        for e in elements._tree.flat(types=("elem",), emphasized=True):
             obj = e.object
             obj.transform.post_translate(dx, dy)
             obj.node.modified()
-        for e in elements.flat(elements._tree, types=("group", "file", "op element"), emphasized=True):
+        for e in elements._tree.flat(types=("group", "file", "op element"), emphasized=True):
             e._bounds_dirty = True
         self.translate(dx, dy)
         elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
