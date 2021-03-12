@@ -81,7 +81,7 @@ class LaserRender:
                     element.draw = self.draw_group
                 else:
                     continue
-            element.draw(element, gc, draw_mode, zoomscale=zoomscale)
+                element.draw(element, gc, draw_mode, zoomscale=zoomscale)
 
     def make_path(self, gc, path):
         p = gc.CreatePath()
@@ -286,6 +286,8 @@ class LaserRender:
         bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
 
         matrix = Matrix()
         matrix.post_translate(-xmin, -ymin)
@@ -294,13 +296,17 @@ class LaserRender:
         scale = min(scale_x, scale_y)
         matrix.post_scale(scale)
         gc = wx.GraphicsContext.Create(dc)
+        gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if not isinstance(elements, (list,tuple)):
-            elements = [elements]
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
+
+        if not isinstance(elements, (list, tuple)):
+            elements = [elements]
+
         self.render(elements, gc, draw_mode=DRAW_MODE_CACHE)
+        gc.PopState()
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer("RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1)
