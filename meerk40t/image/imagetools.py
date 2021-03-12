@@ -79,13 +79,14 @@ def plugin(kernel, lifecycle=None):
     @context.console_argument("script", help="script to apply", type=str)
     @context.console_command("wizard", help="apply image wizard", input_type="image", output_type="elements")
     def image(command, channel, _, data, script, args=tuple(), **kwargs):
-        if script is not None:
+        if script is None:
             try:
                 for script_name in context.match("raster_script", True):
                     channel(_("Raster Script: %s") % script_name)
             except KeyError:
                 channel(_("No Raster Scripts Found."))
             return
+
         try:
             script = context.registered["raster_script/%s" % script]
         except KeyError:
