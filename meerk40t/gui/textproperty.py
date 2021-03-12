@@ -78,6 +78,11 @@ class TextProperty(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_text)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_text)
         self.Bind(wx.EVT_BUTTON, self.on_button_choose_font, self.button_choose_font)
@@ -135,6 +140,7 @@ class TextProperty(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         try:
             self.Close()
         except RuntimeError:

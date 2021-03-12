@@ -166,6 +166,11 @@ class Navigation(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_jog_distance, self.spin_jog_mils)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_jog_distance, self.spin_jog_mils)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_jog_distance, self.spin_jog_mm)
@@ -571,6 +576,7 @@ class Navigation(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         context_root = self.context.get_context("/")
         context_root.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("interpreter;position", self.on_position_update)

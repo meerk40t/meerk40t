@@ -63,6 +63,12 @@ class PathProperty(wx.Frame, Module):
 
         self.__set_properties()
         self.__do_layout()
+
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         try:
             if node.object.id is not None:
                 self.text_name.SetValue(str(node.object.id))
@@ -122,6 +128,7 @@ class PathProperty(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         try:
             self.Close()
         except RuntimeError:

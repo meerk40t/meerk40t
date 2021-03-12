@@ -413,6 +413,8 @@ class MeerK40t(wx.Frame, Module, Job):
         self.previous_position = None
         self.__set_properties()
         self.__do_layout()
+
+
         self.__scene_binds()
 
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -470,8 +472,12 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self._rotary_view = False
 
-        self.CenterOnScreen()
         self.accelerator_table(self)
+
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
 
     @property
     def is_dark(self):
@@ -1437,6 +1443,9 @@ class MeerK40t(wx.Frame, Module, Job):
             self.window_button_bar.EnableButton(ID_USB, False)
 
     def finalize(self, *args, **kwargs):
+        self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
+
         context = self.context
 
         if context.print_shutdown:
@@ -1756,7 +1765,6 @@ class MeerK40t(wx.Frame, Module, Job):
         if self.context is None:
             return
         self.Layout()
-        self.window_context.width, self.window_context.height = self.Size
         self.widget_scene.signal("guide")
         self.request_refresh()
 

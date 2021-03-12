@@ -32,6 +32,11 @@ class Notes(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_auto_note_open, self.check_auto_open_notes
         )
@@ -62,6 +67,7 @@ class Notes(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         try:
             self.Close()
         except RuntimeError:

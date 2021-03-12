@@ -213,6 +213,11 @@ class JobPreview(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LISTBOX, self.on_listbox_operation_click, self.list_operations)
         self.Bind(
@@ -607,6 +612,7 @@ class JobPreview(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         self.context.unlisten(
             "element_property_update", self.on_element_property_update
         )

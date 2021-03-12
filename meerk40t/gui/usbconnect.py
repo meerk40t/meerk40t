@@ -32,6 +32,11 @@ class UsbConnect(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
@@ -55,6 +60,7 @@ class UsbConnect(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         if self.context.active is not None:
             self.context.active.channel("pipe/usb").unwatch(self.update_text)
         try:

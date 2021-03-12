@@ -36,6 +36,12 @@ class Terminal(wx.Frame, Module):
 
         self.__set_properties()
         self.__do_layout()
+
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         # self.Bind(wx.EVT_TEXT, self.on_key_down, self.text_entry))
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_entry)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
@@ -67,6 +73,7 @@ class Terminal(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         self.context.channel("console").unwatch(self.update_text)
         try:
             self.Close()

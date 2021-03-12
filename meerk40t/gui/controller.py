@@ -71,6 +71,11 @@ class Controller(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         self.Bind(wx.EVT_BUTTON, self.on_button_connect, self.button_device_connect)
         self.Bind(
             wx.EVT_CHECKBOX,
@@ -135,6 +140,7 @@ class Controller(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;packet_text", self.update_packet_text)
         self.context.unlisten("pipe;buffer", self.on_buffer_update)

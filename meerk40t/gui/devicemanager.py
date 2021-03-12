@@ -49,6 +49,11 @@ class DeviceManager(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.devices_list)
         self.Bind(
             wx.EVT_LIST_ITEM_ACTIVATED, self.on_list_item_activated, self.devices_list
@@ -88,6 +93,7 @@ class DeviceManager(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         try:
             self.Close()
         except RuntimeError:

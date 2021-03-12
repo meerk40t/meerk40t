@@ -72,6 +72,11 @@ class RasterWizard(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         self.Bind(wx.EVT_LISTBOX, self.on_list_operation, self.list_operation)
         self.Bind(wx.EVT_BUTTON, self.on_buttons_operations, self.button_operations)
         # end wxGlade
@@ -145,6 +150,7 @@ class RasterWizard(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
         context_root = self.context.get_context("/")
         context_root.unlisten("emphasized", self.on_emphasis_change)
         self.context.unlisten(

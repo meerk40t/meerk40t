@@ -21,12 +21,20 @@ class About(wx.Frame, Module):
         self.window_context.setting(int, "width", 699)
         self.window_context.setting(int, "height", 442)
         self.SetSize((self.window_context.width, self.window_context.height))
+
+
         self.bitmap_button_1 = wx.BitmapButton(
             self, wx.ID_ANY, icon_meerk40t.GetBitmap()
         )
 
         self.__set_properties()
         self.__do_layout()
+
+        x, y = self.GetPosition()
+        self.window_context.setting(int, "x", x)
+        self.window_context.setting(int, "y", y)
+        self.SetPosition((self.window_context.x, self.window_context.y))
+
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
@@ -50,6 +58,8 @@ class About(wx.Frame, Module):
 
     def finalize(self, *args, **kwargs):
         self.window_context.width, self.window_context.height = self.Size
+        self.window_context.x, self.window_context.y = self.GetPosition()
+        print(self.GetPosition())
         try:
             self.Close()
         except RuntimeError:
