@@ -77,7 +77,7 @@ class LaserRender:
                 obj_type = type(node.object)
                 if obj_type == Path:
                     node.draw = self.draw_path_node
-                elif obj_type == Shape:
+                elif isinstance(node.object, Shape):
                     node.draw = self.draw_shape_node
                 elif obj_type == SVGImage:
                     node.draw = self.draw_image_node
