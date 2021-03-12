@@ -1929,7 +1929,7 @@ class Kernel:
                 if active_device is not None:
                     for control_name in active_device.match("control", suffix=True):
                         channel(control_name)
-                    for control_name in self.get_context('/').match("\d+/control", suffix=True):
+                    for control_name in self.get_context('/').match("[0-9]+/control", suffix=True):
                         channel(control_name)
             else:
                 control_name = remainder
