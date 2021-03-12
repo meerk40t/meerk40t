@@ -369,8 +369,12 @@ class RasterScripts:
         image = svg_image.image
         matrix = Matrix(svg_image.transform)
         step = None
-        mask = None
         from PIL import Image, ImageOps, ImageFilter, ImageEnhance
+        try:
+            alpha_mask = image.getchannel('A')
+        except ValueError:
+            alpha_mask = None
+        empty_mask = None
         for op in operations:
             name = op['name']
             if name == 'crop':
@@ -384,14 +388,18 @@ class RasterScripts:
                         image = image.crop((left, upper, right, lower))
                 except KeyError:
                     pass
-            if name == 'resample':
+            elif name == 'resample':
                 try:
                     if op['enable']:
                         image, matrix = RasterScripts.actualize(image, matrix, step_level=op['step'])
                         step = op['step']
+                        if alpha_mask is not None:
+                            alpha_mask = image.getchannel('A')
+                            # Get the resized alpha mask.
+                        empty_mask = None
                 except KeyError:
                     pass
-            if name == 'grayscale':
+            elif name == 'grayscale':
                 try:
                     if op['enable']:
                         try:
@@ -407,36 +415,20 @@ class RasterScripts:
                                 b = b / c
                             except ZeroDivisionError:
                                 pass
-                            m = [r, g, b, 1.0]
                             if image.mode != "L":
-                                if image.mode in ("P", "1", "CMYK", "LAB"):
-                                    image = image.convert('RGBA')
-                                if op['invert']:
-                                    color = 0, 0, 0
-                                    c8 = 0
-                                else:
-                                    color = 255, 255, 255
-                                    c8 = 255
-                                if image.mode == 'RGBA':
-                                    background = Image.new('RGB', image.size, color)
-                                    background.paste(image, mask=image.getchannel('A'))
-                                    image = background
-                                image = image.convert("L", matrix=m)
-
-                                def mask_filter(e):
-                                    if e == c8:
-                                        return 0
-                                    else:
-                                        return 255
-                                mask = image.point(mask_filter)  # Makes a mask out of Alpha or pure mask color.
+                                image = image.convert('RGB')
+                                image = image.convert("L", matrix=[r, g, b, 1.0])
                             if op['invert']:
+                                empty_mask = image.point(lambda e: 0 if e == 0 else 255)
                                 image = ImageOps.invert(image)
+                            else:
+                                empty_mask = image.point(lambda e: 0 if e == 255 else 255)
                         except (KeyError, OSError):
                             pass
 
                 except KeyError:
                     pass
-            if name == 'edge_enhance':
+            elif name == 'edge_enhance':
                 try:
                     if op['enable']:
                         if image.mode == 'P':
@@ -444,7 +436,7 @@ class RasterScripts:
                         image = image.filter(filter=ImageFilter.EDGE_ENHANCE)
                 except KeyError:
                     pass
-            if name == 'auto_contrast':
+            elif name == 'auto_contrast':
                 try:
                     if op['enable']:
                         if image.mode != 'P':
@@ -452,7 +444,7 @@ class RasterScripts:
                         image = ImageOps.autocontrast(image, cutoff=op['cutoff'])
                 except KeyError:
                     pass
-            if name == 'tone':
+            elif name == 'tone':
                 try:
                     if op['enable'] and op['values'] is not None:
                         if image.mode == 'L':
@@ -472,7 +464,7 @@ class RasterScripts:
                                 image = image.convert('L')
                 except KeyError:
                     pass
-            if name == 'contrast':
+            elif name == 'contrast':
                 try:
                     if op['enable']:
                         if op['contrast'] is not None and op['brightness'] is not None:
@@ -485,7 +477,7 @@ class RasterScripts:
                             image = brightness.enhance(b)
                 except KeyError:
                     pass
-            if name == 'gamma':
+            elif name == 'gamma':
                 try:
                     if op['enable'] and op['factor'] is not None:
                         if image.mode == 'L':
@@ -508,7 +500,7 @@ class RasterScripts:
                                 image = image.convert('L')
                 except KeyError:
                     pass
-            if name == 'unsharp_mask':
+            elif name == 'unsharp_mask':
                 try:
                     if op['enable'] and \
                             op['percent'] is not None and \
@@ -519,13 +511,19 @@ class RasterScripts:
                         image = image.filter(unsharp)
                 except (KeyError, ValueError):  # Value error if wrong type of image.
                     pass
-            if name == 'dither':
+            elif name == 'dither':
                 try:
+                    if alpha_mask is not None:
+                        background = Image.new(image.mode, image.size, 'white')
+                        background.paste(image, mask=alpha_mask)
+                        image = background  # Mask exists use it to remove any pixels that were pure reject.
+                        alpha_mask = None
+                    if empty_mask is not None:
+                        background = Image.new(image.mode, image.size, 'white')
+                        background.paste(image, mask=empty_mask)
+                        image = background  # Mask exists use it to remove any pixels that were pure reject.
+                        empty_mask = None
                     if op['enable'] and op['type'] is not None:
-                        if mask is not None:
-                            background = Image.new(image.mode, image.size, 'white')
-                            background.paste(image, mask=mask)
-                            image = background  # Mask exists use it to remove any pixels that were pure reject.
                         if image.mode == 'RGBA':
                             pixel_data = image.load()
                             width, height = image.size
@@ -536,7 +534,7 @@ class RasterScripts:
                         image = image.convert("1")
                 except KeyError:
                     pass
-            if name == 'halftone':
+            elif name == 'halftone':
                 try:
                     if op['enable']:
                         image = RasterScripts.halftone(image,
@@ -546,7 +544,14 @@ class RasterScripts:
                                                        black=op['black'])
                 except KeyError:
                     pass
-
+        if alpha_mask is not None:
+            background = Image.new(image.mode, image.size, 'white')
+            background.paste(image, mask=alpha_mask)
+            image = background  # Mask exists use it to remove any pixels that were pure reject.
+        if empty_mask is not None:
+            background = Image.new(image.mode, image.size, 'white')
+            background.paste(image, mask=empty_mask)
+            image = background  # Mask exists use it to remove any pixels that were pure reject.
         return image, matrix, step
 
     @staticmethod
