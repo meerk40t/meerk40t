@@ -1006,15 +1006,18 @@ class RasterScripts:
         image = svg_image.image
         matrix = Matrix(svg_image.transform)
         step = None
-        mask = None
-        from PIL import Image, ImageEnhance, ImageFilter, ImageOps
-
+        from PIL import Image, ImageOps, ImageFilter, ImageEnhance
+        try:
+            alpha_mask = image.getchannel('A')
+        except ValueError:
+            alpha_mask = None
+        empty_mask = None
         for op in operations:
-            name = op["name"]
-            if name == "crop":
+            name = op['name']
+            if name == 'crop':
                 try:
-                    if op["enable"] and op["bounds"] is not None:
-                        crop = op["bounds"]
+                    if op['enable'] and op['bounds'] is not None:
+                        crop = op['bounds']
                         left = int(crop[0])
                         upper = int(crop[1])
                         right = int(crop[2])
@@ -1022,23 +1025,25 @@ class RasterScripts:
                         image = image.crop((left, upper, right, lower))
                 except KeyError:
                     pass
-            if name == "resample":
+            elif name == 'resample':
                 try:
-                    if op["enable"]:
-                        image, matrix = RasterScripts.actualize(
-                            image, matrix, step_level=op["step"]
-                        )
-                        step = op["step"]
+                    if op['enable']:
+                        image, matrix = RasterScripts.actualize(image, matrix, step_level=op['step'])
+                        step = op['step']
+                        if alpha_mask is not None:
+                            alpha_mask = image.getchannel('A')
+                            # Get the resized alpha mask.
+                        empty_mask = None
                 except KeyError:
                     pass
-            if name == "grayscale":
+            elif name == 'grayscale':
                 try:
-                    if op["enable"]:
+                    if op['enable']:
                         try:
-                            r = op["red"] * 0.299
-                            g = op["green"] * 0.587
-                            b = op["blue"] * 0.114
-                            v = op["lightness"]
+                            r = op['red'] * 0.299
+                            g = op['green'] * 0.587
+                            b = op['blue'] * 0.114
+                            v = op['lightness']
                             c = r + g + b
                             try:
                                 c /= v
@@ -1047,61 +1052,42 @@ class RasterScripts:
                                 b = b / c
                             except ZeroDivisionError:
                                 pass
-                            m = [r, g, b, 1.0]
                             if image.mode != "L":
-                                if image.mode in ("P", "1", "CMYK", "LAB", "YCbCr", "HSV"):
-                                    image = image.convert("RGBA")
-                                if op["invert"]:
-                                    color = 0, 0, 0
-                                    c8 = 0
-                                else:
-                                    color = 255, 255, 255
-                                    c8 = 255
-                                if image.mode == "RGBA":
-                                    background = Image.new("RGB", image.size, color)
-                                    background.paste(image, mask=image.getchannel("A"))
-                                    image = background
-                                image = image.convert("L", matrix=m)
-
-                                def mask_filter(e):
-                                    if e == c8:
-                                        return 0
-                                    else:
-                                        return 255
-
-                                mask = image.point(
-                                    mask_filter
-                                )  # Makes a mask out of Alpha or pure mask color.
-                            if op["invert"]:
+                                image = image.convert('RGB')
+                                image = image.convert("L", matrix=[r, g, b, 1.0])
+                            if op['invert']:
+                                empty_mask = image.point(lambda e: 0 if e == 0 else 255)
                                 image = ImageOps.invert(image)
+                            else:
+                                empty_mask = image.point(lambda e: 0 if e == 255 else 255)
                         except (KeyError, OSError):
                             pass
 
                 except KeyError:
                     pass
-            if name == "edge_enhance":
+            elif name == 'edge_enhance':
                 try:
-                    if op["enable"]:
-                        if image.mode == "P":
-                            image = image.convert("L")
+                    if op['enable']:
+                        if image.mode == 'P':
+                            image = image.convert('L')
                         image = image.filter(filter=ImageFilter.EDGE_ENHANCE)
                 except KeyError:
                     pass
-            if name == "auto_contrast":
+            elif name == 'auto_contrast':
                 try:
-                    if op["enable"]:
-                        if image.mode != "P":
-                            image = image.convert("L")
-                        image = ImageOps.autocontrast(image, cutoff=op["cutoff"])
+                    if op['enable']:
+                        if image.mode != 'P':
+                            image = image.convert('L')
+                        image = ImageOps.autocontrast(image, cutoff=op['cutoff'])
                 except KeyError:
                     pass
-            if name == "tone":
+            elif name == 'tone':
                 try:
-                    if op["enable"] and op["values"] is not None:
-                        if image.mode == "L":
-                            image = image.convert("P")
-                            tone_values = op["values"]
-                            if op["type"] == "spline":
+                    if op['enable'] and op['values'] is not None:
+                        if image.mode == 'L':
+                            image = image.convert('P')
+                            tone_values = op['values']
+                            if op['type'] == 'spline':
                                 spline = RasterScripts.spline(tone_values)
                             else:
                                 tone_values = [q for q in tone_values if q is not None]
@@ -1111,28 +1097,28 @@ class RasterScripts:
                             if len(spline) > 256:
                                 spline = spline[:256]
                             image = image.point(spline)
-                            if image.mode != "L":
-                                image = image.convert("L")
+                            if image.mode != 'L':
+                                image = image.convert('L')
                 except KeyError:
                     pass
-            if name == "contrast":
+            elif name == 'contrast':
                 try:
-                    if op["enable"]:
-                        if op["contrast"] is not None and op["brightness"] is not None:
+                    if op['enable']:
+                        if op['contrast'] is not None and op['brightness'] is not None:
                             contrast = ImageEnhance.Contrast(image)
-                            c = (op["contrast"] + 128.0) / 128.0
+                            c = (op['contrast'] + 128.0) / 128.0
                             image = contrast.enhance(c)
 
                             brightness = ImageEnhance.Brightness(image)
-                            b = (op["brightness"] + 128.0) / 128.0
+                            b = (op['brightness'] + 128.0) / 128.0
                             image = brightness.enhance(b)
                 except KeyError:
                     pass
-            if name == "gamma":
+            elif name == 'gamma':
                 try:
-                    if op["enable"] and op["factor"] is not None:
-                        if image.mode == "L":
-                            gamma_factor = float(op["factor"])
+                    if op['enable'] and op['factor'] is not None:
+                        if image.mode == 'L':
+                            gamma_factor = float(op['factor'])
 
                             def crimp(px):
                                 px = int(round(px))
@@ -1145,39 +1131,37 @@ class RasterScripts:
                             if gamma_factor == 0:
                                 gamma_lut = [0] * 256
                             else:
-                                gamma_lut = [
-                                    crimp(pow(i / 255, (1.0 / gamma_factor)) * 255)
-                                    for i in range(256)
-                                ]
+                                gamma_lut = [crimp(pow(i / 255, (1.0 / gamma_factor)) * 255) for i in range(256)]
                             image = image.point(gamma_lut)
-                            if image.mode != "L":
-                                image = image.convert("L")
+                            if image.mode != 'L':
+                                image = image.convert('L')
                 except KeyError:
                     pass
-            if name == "unsharp_mask":
+            elif name == 'unsharp_mask':
                 try:
-                    if (
-                        op["enable"]
-                        and op["percent"] is not None
-                        and op["radius"] is not None
-                        and op["threshold"] is not None
-                    ):
-                        unsharp = ImageFilter.UnsharpMask(
-                            radius=op["radius"],
-                            percent=op["percent"],
-                            threshold=op["threshold"],
-                        )
+                    if op['enable'] and \
+                            op['percent'] is not None and \
+                            op['radius'] is not None and \
+                            op['threshold'] is not None:
+                        unsharp = ImageFilter.UnsharpMask(radius=op['radius'], percent=op['percent'],
+                                                          threshold=op['threshold'])
                         image = image.filter(unsharp)
                 except (KeyError, ValueError):  # Value error if wrong type of image.
                     pass
-            if name == "dither":
+            elif name == 'dither':
                 try:
-                    if op["enable"] and op["type"] is not None:
-                        if mask is not None:
-                            background = Image.new(image.mode, image.size, "white")
-                            background.paste(image, mask=mask)
-                            image = background  # Mask exists use it to remove any pixels that were pure reject.
-                        if image.mode == "RGBA":
+                    if alpha_mask is not None:
+                        background = Image.new(image.mode, image.size, 'white')
+                        background.paste(image, mask=alpha_mask)
+                        image = background  # Mask exists use it to remove any pixels that were pure reject.
+                        alpha_mask = None
+                    if empty_mask is not None:
+                        background = Image.new(image.mode, image.size, 'white')
+                        background.paste(image, mask=empty_mask)
+                        image = background  # Mask exists use it to remove any pixels that were pure reject.
+                        empty_mask = None
+                    if op['enable'] and op['type'] is not None:
+                        if image.mode == 'RGBA':
                             pixel_data = image.load()
                             width, height = image.size
                             for y in range(height):
@@ -1187,19 +1171,24 @@ class RasterScripts:
                         image = image.convert("1")
                 except KeyError:
                     pass
-            if name == "halftone":
+            elif name == 'halftone':
                 try:
-                    if op["enable"]:
-                        image = RasterScripts.halftone(
-                            image,
-                            sample=op["sample"],
-                            angle=op["angle"],
-                            oversample=op["oversample"],
-                            black=op["black"],
-                        )
+                    if op['enable']:
+                        image = RasterScripts.halftone(image,
+                                                       sample=op['sample'],
+                                                       angle=op['angle'],
+                                                       oversample=op['oversample'],
+                                                       black=op['black'])
                 except KeyError:
                     pass
-
+        if alpha_mask is not None:
+            background = Image.new(image.mode, image.size, 'white')
+            background.paste(image, mask=alpha_mask)
+            image = background  # Mask exists use it to remove any pixels that were pure reject.
+        if empty_mask is not None:
+            background = Image.new(image.mode, image.size, 'white')
+            background.paste(image, mask=empty_mask)
+            image = background  # Mask exists use it to remove any pixels that were pure reject.
         return image, matrix, step
 
     @staticmethod
