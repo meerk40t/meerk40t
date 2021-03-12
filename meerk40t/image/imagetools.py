@@ -4,7 +4,7 @@ from math import ceil
 from os import path as ospath
 
 from ..core.cutplanner import Planner
-from ..svgelements import Color, Group, Length, Matrix, Path, SVGImage
+from ..svgelements import Color, Group, Length, Matrix, Path, SVGImage, Angle
 
 
 def plugin(kernel, lifecycle=None):
@@ -26,7 +26,7 @@ def plugin(kernel, lifecycle=None):
     context = kernel.get_context("/")
     bed_dim = context.get_context('/')
 
-    @context.console_command("image", help="image <operation>")
+    @context.console_command("image", help="image <operation>*", output_type="image")
     def image(command, channel, _, args=tuple(), **kwargs):
         elements = context.elements
         if len(args) == 0:
@@ -55,557 +55,581 @@ def plugin(kernel, lifecycle=None):
         if not elements.has_emphasis():
             channel(_("No selected images."))
             return
-        elif args[0] == "path":
-            for element in list(elements.elems(emphasized=True)):
-                bounds = element.bbox()
-                p = Path()
-                p.move(
-                    (bounds[0], bounds[1]),
-                    (bounds[0], bounds[3]),
-                    (bounds[2], bounds[3]),
-                    (bounds[2], bounds[1]),
-                )
-                p.closed()
-                elements.add_element(p)
-            return
-        elif args[0] == "wizard":
-            if len(args) == 1:
-                try:
-                    for script_name in context.match("raster_script", True):
-                        channel(_("Raster Script: %s") % script_name)
-                except KeyError:
-                    channel(_("No Raster Scripts Found."))
-                return
+        images = [e for e in elements.elems(emphasized=True) if type(e) == SVGImage]
+        return "image", images
+
+    @context.console_command("path", help="return paths around image", input_type="image", output_type="elements")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        elements = context.elements
+        paths = []
+        for element in data:
+            bounds = element.bbox()
+            p = Path()
+            p.move(
+                (bounds[0], bounds[1]),
+                (bounds[0], bounds[3]),
+                (bounds[2], bounds[3]),
+                (bounds[2], bounds[1]),
+            )
+            p.closed()
+            paths.append(p)
+        elements.add_elements(paths)
+        return "elements", paths
+
+    @context.console_argument("script", help="script to apply", type=str)
+    @context.console_command("wizard", help="apply image wizard", input_type="image", output_type="elements")
+    def image(command, channel, _, data, script, args=tuple(), **kwargs):
+        if script is not None:
             try:
-                script = context.registered["raster_script/%s" % args[1]]
+                for script_name in context.match("raster_script", True):
+                    channel(_("Raster Script: %s") % script_name)
             except KeyError:
-                channel(_("Raster Script %s is not registered.") % args[1])
-                return
-
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    (
-                        element.image,
-                        element.transform,
-                        step,
-                    ) = RasterScripts.wizard_image(element, script)
-                    if step is not None:
-                        element.values["raster_step"] = step
-                    element.image_width, element.image_height = element.image.size
-                    element.lock = True
-                    element.node.altered()
+                channel(_("No Raster Scripts Found."))
             return
-        elif args[0] == "unlock":
-            channel(_("Unlocking Elements..."))
-            for element in elements.elems(emphasized=True):
-                try:
-                    if element.lock:
-                        channel("Unlocked: %s" % str(element))
-                        element.lock = False
-                    else:
-                        channel(_("Element was not locked: %s") % str(element))
-                except AttributeError:
+        try:
+            script = context.registered["raster_script/%s" % script]
+        except KeyError:
+            channel(_("Raster Script %s is not registered.") % script)
+            return
+
+        for element in data:
+            (
+                element.image,
+                element.transform,
+                step,
+            ) = RasterScripts.wizard_image(element, script)
+            if step is not None:
+                element.values["raster_step"] = step
+            element.image_width, element.image_height = element.image.size
+            element.lock = True
+            element.node.altered()
+        return "image", data
+
+    @context.console_command("unlock", help="unlock manipulations", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        channel(_("Unlocking Elements..."))
+        for element in data:
+            try:
+                if element.lock:
+                    channel("Unlocked: %s" % str(element))
+                    element.lock = False
+                else:
                     channel(_("Element was not locked: %s") % str(element))
+            except AttributeError:
+                channel(_("Element was not locked: %s") % str(element))
+        return "image", data
+
+    @context.console_command("threshold", help="", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        try:
+            threshold_min = float(args[1])
+            threshold_max = float(args[2])
+        except (ValueError, IndexError):
+            channel(_("Threshold values improper."))
             return
-        elif args[0] == "threshold":
+        divide = (threshold_max - threshold_min) / 255.0
+        for element in data:
+            image_element = copy(element)
+            image_element.image = image_element.image.copy()
             try:
-                threshold_min = float(args[1])
-                threshold_max = float(args[2])
-            except (ValueError, IndexError):
-                channel(_("Threshold values improper."))
+                from .cutplanner import OperationPreprocessor
+            except ImportError:
+                channel("No Render Engine Installed.")
                 return
-            divide = (threshold_max - threshold_min) / 255.0
-            for element in elements.elems(emphasized=True):
-                if not isinstance(element, SVGImage):
-                    continue
-                image_element = copy(element)
-                image_element.image = image_element.image.copy()
-                try:
-                    from .cutplanner import OperationPreprocessor
-                except ImportError:
-                    channel("No Render Engine Installed.")
-                    return
-                if OperationPreprocessor.needs_actualization(image_element):
-                    OperationPreprocessor.make_actual(image_element)
-                img = image_element.image
-                img = img.convert("L")
+            if OperationPreprocessor.needs_actualization(image_element):
+                OperationPreprocessor.make_actual(image_element)
+            img = image_element.image
+            img = img.convert("L")
 
-                def thresh(g):
-                    if threshold_min >= g:
-                        return 0
-                    elif threshold_max < g:
-                        return 255
-                    else:  # threshold_min <= grey < threshold_max
-                        value = g - threshold_min
-                        value *= divide
-                        return int(round(value))
+            def thresh(g):
+                if threshold_min >= g:
+                    return 0
+                elif threshold_max < g:
+                    return 255
+                else:  # threshold_min <= grey < threshold_max
+                    value = g - threshold_min
+                    value *= divide
+                    return int(round(value))
 
-                lut = [thresh(g) for g in range(256)]
-                img = img.point(lut)
-                image_element.image = img
-                elements.add_elem(image_element)
-        elif args[0] == "resample":
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    Planner.make_actual(element)
-                    element.node.altered()
-            return
-        elif args[0] == "dither":
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    if img.mode == "RGBA":
-                        pixel_data = img.load()
-                        width, height = img.size
-                        for y in range(height):
-                            for x in range(width):
-                                if pixel_data[x, y][3] == 0:
-                                    pixel_data[x, y] = (255, 255, 255, 255)
-                    element.image = img.convert("1")
-                    element.node.altered()
-        elif args[0] == "remove":
-            if len(args) == 1:
-                channel(_("Must specify a color, and optionally a distance."))
-                return
-            distance = 50.0
-            color = "White"
-            if len(args) >= 2:
-                color = args[1]
-            try:
-                color = Color(color)
-            except ValueError:
-                channel(_("Color Invalid."))
-                return
-            if len(args) >= 3:
-                try:
-                    distance = float(args[2])
-                except ValueError:
-                    channel(_("Color distance is invalid."))
-                    return
-            distance_sq = distance * distance
+            lut = [thresh(g) for g in range(256)]
+            img = img.point(lut)
+            image_element.image = img
+            context.elements.add_elem(image_element)
+        return "image", data
 
-            def dist(pixel):
-                r = color.red - pixel[0]
-                g = color.green - pixel[1]
-                b = color.blue - pixel[2]
-                return r * r + g * g + b * b <= distance_sq
+    @context.console_command("resample", help="Resample image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        for element in data:
+            Planner.make_actual(element)
+            element.node.altered()
+        return "image", data
 
-            for element in elements.elems(emphasized=True):
-                if not isinstance(element, SVGImage):
-                    continue
-                img = element.image
-                if img.mode != "RGBA":
-                    img = img.convert("RGBA")
-                new_data = img.load()
+    @context.console_command("dither", help="Dither to 1-bit", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        for element in data:
+            img = element.image
+            if img.mode == "RGBA":
+                pixel_data = img.load()
                 width, height = img.size
                 for y in range(height):
                     for x in range(width):
-                        pixel = new_data[x, y]
-                        if dist(pixel):
-                            new_data[x, y] = (255, 255, 255, 0)
-                            continue
-                element.image = img
-                element.node.altered()
-        elif args[0] == "add":
-            if len(args) == 1:
-                channel(_("Must specify a color, to add."))
-                return
-            color = "White"
-            if len(args) >= 2:
-                color = args[1]
+                        if pixel_data[x, y][3] == 0:
+                            pixel_data[x, y] = (255, 255, 255, 255)
+            element.image = img.convert("1")
+            element.node.altered()
+        return "image", data
+
+    @context.console_option("distance", "d", type=float, help="Distance from color to be removed.", default=50.0)
+    @context.console_argument("color", type=Color, help="Color to be removed", default=Color("White"))
+    @context.console_command("remove", help="Remove color from image", input_type="image", output_type="image")
+    def image(command, channel, _, data, color, distance, args=tuple(), **kwargs):
+        if color is None:
+            channel(_("Must specify a color"))
+            raise SyntaxError
+        distance_sq = distance * distance
+
+        def dist(pixel):
+            r = color.red - pixel[0]
+            g = color.green - pixel[1]
+            b = color.blue - pixel[2]
+            return r * r + g * g + b * b <= distance_sq
+
+        for element in data:
+            img = element.image
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
+            new_data = img.load()
+            width, height = img.size
+            for y in range(height):
+                for x in range(width):
+                    pixel = new_data[x, y]
+                    if dist(pixel):
+                        new_data[x, y] = (255, 255, 255, 0)
+                        continue
+            element.image = img
+            element.node.altered()
+        return "image", data
+
+    @context.console_argument("color", type=Color, help="Color to be added")
+    @context.console_command("add", help="", input_type="image", output_type="image")
+    def image(command, channel, _, data, color, args=tuple(), **kwargs):
+        if color is None:
+            channel(_("Must specify a color, to add."))
+            return
+        pix = (color.red, color.green, color.blue, color.alpha)
+        for element in data:
+            img = element.image
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
+            new_data = img.load()
+            width, height = img.size
+            for y in range(height):
+                for x in range(width):
+                    pixel = new_data[x, y]
+                    if pixel[3] == 0:
+                        new_data[x, y] = pix
+                        continue
+            element.image = img
+            element.node.altered()
+        return "image", data
+
+    @context.console_argument("left", help="left side of crop", type=Length)
+    @context.console_argument("upper", help="upper side of crop", type=Length)
+    @context.console_argument("right", help="right side of crop", type=Length)
+    @context.console_argument("lower", help="lower side of crop", type=Length)
+    @context.console_command("crop", help="Crop image", input_type="image", output_type="image")
+    def image(command, channel, _, data, left, upper, right, lower, args=tuple(), **kwargs):
+        for element in data:
+            img = element.image
             try:
-                color = Color(color)
-            except ValueError:
-                channel(_("Color Invalid."))
-                return
-            pix = (color.red, color.green, color.blue, color.alpha)
-            for element in elements.elems(emphasized=True):
-                if not isinstance(element, SVGImage):
-                    continue
-                img = element.image
-                if img.mode != "RGBA":
-                    img = img.convert("RGBA")
-                new_data = img.load()
-                width, height = img.size
-                for y in range(height):
-                    for x in range(width):
-                        pixel = new_data[x, y]
-                        if pixel[3] == 0:
-                            new_data[x, y] = pix
-                            continue
-                element.image = img
+                left = int(
+                    left.value(
+                        ppi=1000.0,
+                        relative_length=bed_dim.bed_width * 39.3701,
+                    )
+                )
+                upper = int(
+                    upper.value(
+                        ppi=1000.0,
+                        relative_length=bed_dim.bed_height * 39.3701,
+                    )
+                )
+                right = int(
+                    right.value(
+                        ppi=1000.0,
+                        relative_length=bed_dim.bed_width * 39.3701,
+                    )
+                )
+                lower = int(
+                    lower.value(
+                        ppi=1000.0,
+                        relative_length=bed_dim.bed_height * 39.3701,
+                    )
+                )
+                element.image = img.crop((left, upper, right, lower))
+                element.image_width = right - left
+                element.image_height = lower - upper
                 element.node.altered()
-        elif args[0] == "crop":
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    try:
-                        left = int(
-                            Length(args[1]).value(
-                                ppi=1000.0,
-                                relative_length=bed_dim.bed_width * 39.3701,
-                            )
-                        )
-                        upper = int(
-                            Length(args[2]).value(
-                                ppi=1000.0,
-                                relative_length=bed_dim.bed_height * 39.3701,
-                            )
-                        )
-                        right = int(
-                            Length(args[3]).value(
-                                ppi=1000.0,
-                                relative_length=bed_dim.bed_width * 39.3701,
-                            )
-                        )
-                        lower = int(
-                            Length(args[4]).value(
-                                ppi=1000.0,
-                                relative_length=bed_dim.bed_height * 39.3701,
-                            )
-                        )
-                        element.image = img.crop((left, upper, right, lower))
-                        element.image_width = right - left
-                        element.image_height = lower - upper
-                        element.node.altered()
-                    except (KeyError, ValueError):
-                        channel(_("image crop <left> <upper> <right> <lower>"))
-            return
-        elif args[0] == "contrast":
-            for element in elements.elems(emphasized=True):
-                from PIL import ImageEnhance
+            except (KeyError, ValueError):
+                raise SyntaxError
+        return "image", data
 
-                if isinstance(element, SVGImage):
-                    try:
+    @context.console_argument("factor", type=float, help="contrast factor", default=10.0)
+    @context.console_command("contrast", help="increase image contrast", input_type="image", output_type="image")
+    def image(command, channel, _, data, factor, args=tuple(), **kwargs):
+        from PIL import ImageEnhance
+        for element in data:
+            try:
+                img = element.image
+                enhancer = ImageEnhance.Contrast(img)
+                element.image = enhancer.enhance(factor)
+                element.node.altered()
+                channel(_("Image Contrast Factor: %f") % factor)
+            except (IndexError, ValueError):
+                channel(_("image contrast <factor>"))
+        return "image", data
 
-                        factor = float(args[1])
-                        img = element.image
-                        enhancer = ImageEnhance.Contrast(img)
-                        element.image = enhancer.enhance(factor)
-                        element.node.altered()
-                        channel(_("Image Contrast Factor: %f") % factor)
-                    except (IndexError, ValueError):
-                        channel(_("image contrast <factor>"))
-            return
-        elif args[0] == "brightness":
-            for element in elements.elems(emphasized=True):
-                from PIL import ImageEnhance
+    @context.console_argument("factor", type=float, help="contrast factor", default=2.5)
+    @context.console_command("brightness", help="brighten image", input_type="image", output_type="image")
+    def image(command, channel, _, data, factor, args=tuple(), **kwargs):
+        from PIL import ImageEnhance
+        for element in data:
+            try:
+                factor = float(args[1])
+                img = element.image
+                enhancer = ImageEnhance.Brightness(img)
+                element.image = enhancer.enhance(factor)
+                element.node.altered()
+                channel(_("Image Brightness Factor: %f") % factor)
+            except (IndexError, ValueError):
+                channel(_("image brightness <factor>"))
+        return "image", data
 
-                if isinstance(element, SVGImage):
-                    try:
-                        factor = float(args[1])
-                        img = element.image
-                        enhancer = ImageEnhance.Brightness(img)
-                        element.image = enhancer.enhance(factor)
-                        element.node.altered()
-                        channel(_("Image Brightness Factor: %f") % factor)
-                    except (IndexError, ValueError):
-                        channel(_("image brightness <factor>"))
-            return
-        elif args[0] == "color":
-            for element in elements.elems(emphasized=True):
-                from PIL import ImageEnhance
+    @context.console_argument("factor", type=float, help="color factor", default=10.0)
+    @context.console_command("color", help="color enhance", input_type="image", output_type="image")
+    def image(command, channel, _, data, factor, args=tuple(), **kwargs):
+        from PIL import ImageEnhance
+        for element in data:
+            try:
+                img = element.image
+                enhancer = ImageEnhance.Color(img)
+                element.image = enhancer.enhance(factor)
+                element.node.altered()
+                channel(_("Image Color Factor: %f") % factor)
+            except (IndexError, ValueError):
+                channel(_("image color <factor>"))
+        return "image", data
 
-                if isinstance(element, SVGImage):
-                    try:
-                        factor = float(args[1])
-                        img = element.image
-                        enhancer = ImageEnhance.Color(img)
-                        element.image = enhancer.enhance(factor)
-                        element.node.altered()
-                        channel(_("Image Color Factor: %f") % factor)
-                    except (IndexError, ValueError):
-                        channel(_("image color <factor>"))
-            return
-        elif args[0] == "sharpness":
-            for element in elements.elems(emphasized=True):
-                from PIL import ImageEnhance
+    @context.console_argument("factor", type=float, help="sharpness factor", default=10.0)
+    @context.console_command("sharpness", help="shapen image", input_type="image", output_type="image")
+    def image(command, channel, _, data, factor, args=tuple(), **kwargs):
+        from PIL import ImageEnhance
+        for element in data:
+            try:
+                img = element.image
+                enhancer = ImageEnhance.Sharpness(img)
+                element.image = enhancer.enhance(factor)
+                element.node.altered()
+                channel(_("Image Sharpness Factor: %f") % factor)
+            except (IndexError, ValueError):
+                channel(_("image sharpness <factor>"))
+        return "image", data
 
-                if isinstance(element, SVGImage):
-                    try:
-                        factor = float(args[1])
-                        img = element.image
-                        enhancer = ImageEnhance.Sharpness(img)
-                        element.image = enhancer.enhance(factor)
-                        element.node.altered()
-                        channel(_("Image Sharpness Factor: %f") % factor)
-                    except (IndexError, ValueError):
-                        channel(_("image sharpness <factor>"))
-            return
-        elif args[0] == "blur":
-            from PIL import ImageFilter
+    @context.console_command("blur", help="blur image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageFilter
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.filter(filter=ImageFilter.BLUR)
-                    element.node.altered()
-                    channel(_("Image Blurred."))
-            return
-        elif args[0] == "sharpen":
-            from PIL import ImageFilter
+        for element in data:
+            img = element.image
+            element.image = img.filter(filter=ImageFilter.BLUR)
+            element.node.altered()
+            channel(_("Image Blurred."))
+        return "image", data
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.filter(filter=ImageFilter.SHARPEN)
-                    element.node.altered()
-                    channel(_("Image Sharpened."))
-            return
-        elif args[0] == "edge_enhance":
-            from PIL import ImageFilter
+    @context.console_command("sharpen", help="sharpen image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageFilter
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
-                    element.node.altered()
-                    channel(_("Image Edges Enhanced."))
-            return
-        elif args[0] == "find_edges":
-            from PIL import ImageFilter
+        for element in data:
+            img = element.image
+            element.image = img.filter(filter=ImageFilter.SHARPEN)
+            element.node.altered()
+            channel(_("Image Sharpened."))
+        return "image", data
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.filter(filter=ImageFilter.FIND_EDGES)
-                    element.node.altered()
-                    channel(_("Image Edges Found."))
-            return
-        elif args[0] == "emboss":
-            from PIL import ImageFilter
+    @context.console_command("edge_enhance", help="enhance edges", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageFilter
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.filter(filter=ImageFilter.EMBOSS)
-                    element.node.altered()
-                    channel(_("Image Embossed."))
-            return
-        elif args[0] == "smooth":
-            from PIL import ImageFilter
+        for element in data:
+            img = element.image
+            element.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
+            element.node.altered()
+            channel(_("Image Edges Enhanced."))
+        return "image", data
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.filter(filter=ImageFilter.SMOOTH)
-                    element.node.altered()
-                    channel(_("Image Smoothed."))
-            return
-        elif args[0] == "contour":
-            from PIL import ImageFilter
+    @context.console_command("find_edges", help="find edges", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageFilter
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.filter(filter=ImageFilter.CONTOUR)
-                    element.node.altered()
-                    channel(_("Image Contoured."))
-            return
-        elif args[0] == "detail":
-            from PIL import ImageFilter
+        for element in data:
+            img = element.image
+            element.image = img.filter(filter=ImageFilter.FIND_EDGES)
+            element.node.altered()
+            channel(_("Image Edges Found."))
+        return "image", data
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.filter(filter=ImageFilter.DETAIL)
-                    element.node.altered()
-                    channel(_("Image Detailed."))
-            return
-        elif args[0] == "quantize":
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    try:
-                        colors = int(args[1])
-                        img = element.image
-                        element.image = img.quantize(colors=colors)
-                        element.node.altered()
-                        channel(_("Image Quantized to %d colors.") % colors)
-                    except (IndexError, ValueError):
-                        channel(_("image quantize <colors>"))
-            return
-        elif args[0] == "solarize":
-            from PIL import ImageOps
+    @context.console_command("emboss", help="emboss image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageFilter
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    try:
-                        threshold = int(args[1])
-                        img = element.image
-                        element.image = ImageOps.solarize(img, threshold=threshold)
-                        element.node.altered()
-                        channel(_("Image Solarized at %d gray.") % threshold)
-                    except (IndexError, ValueError):
-                        channel(_("image solarize <threshold>"))
-            return
-        elif args[0] == "invert":
-            from PIL import ImageOps
+        for element in data:
+            img = element.image
+            element.image = img.filter(filter=ImageFilter.EMBOSS)
+            element.node.altered()
+            channel(_("Image Embossed."))
+        return "image", data
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    original_mode = img.mode
-                    if img.mode == "P" or img.mode == "RGBA" or img.mode == "1":
-                        img = img.convert("RGB")
-                    try:
-                        element.image = ImageOps.invert(img)
-                        if original_mode == "1":
-                            element.image = element.image.convert("1")
-                        element.node.altered()
-                        channel(_("Image Inverted."))
-                    except OSError:
-                        channel(_("Image type cannot be converted. %s") % img.mode)
-            return
-        elif args[0] == "flip":
-            from PIL import ImageOps
+    @context.console_command("smooth", help="smooth image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageFilter
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = ImageOps.flip(img)
-                    element.node.altered()
-                    channel(_("Image Flipped."))
-            return
-        elif args[0] == "mirror":
-            from PIL import ImageOps
+        for element in data:
+            img = element.image
+            element.image = img.filter(filter=ImageFilter.SMOOTH)
+            element.node.altered()
+            channel(_("Image Smoothed."))
+        return "image", data
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = ImageOps.mirror(img)
-                    element.node.altered()
-                    channel(_("Image Mirrored."))
-            return
-        elif args[0] == "ccw":
+    @context.console_command("contour", help="contour image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageFilter
+
+        for element in data:
+            img = element.image
+            element.image = img.filter(filter=ImageFilter.CONTOUR)
+            element.node.altered()
+            channel(_("Image Contoured."))
+        return "image", data
+
+    @context.console_command("detail", help="detail image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageFilter
+
+        for element in data:
+            img = element.image
+            element.image = img.filter(filter=ImageFilter.DETAIL)
+            element.node.altered()
+            channel(_("Image Detailed."))
+        return "image", data
+
+    @context.console_argument("colors", type=int, help="colors to quantize into", default=10)
+    @context.console_command("quantize", help="image quantize <colors>", input_type="image", output_type="image")
+    def image(command, channel, _, data, colors, args=tuple(), **kwargs):
+        for element in data:
+            try:
+                img = element.image
+                element.image = img.quantize(colors=colors)
+                element.node.altered()
+                channel(_("Image Quantized to %d colors.") % colors)
+            except (IndexError, ValueError):
+                channel(_(""))
+        return "image", data
+
+    @context.console_argument("threshold", type=float, help="threshold for solorize", default=250.0)
+    @context.console_command("solorize", help="", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageOps
+
+        for element in data:
+            try:
+                threshold = int(args[1])
+                img = element.image
+                element.image = ImageOps.solarize(img, threshold=threshold)
+                element.node.altered()
+                channel(_("Image Solarized at %d gray.") % threshold)
+            except (IndexError, ValueError):
+                channel(_("image solarize <threshold>"))
+        return "image", data
+
+    @context.console_command("invert", help="invert the image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageOps
+
+        for element in data:
+            img = element.image
+            original_mode = img.mode
+            if img.mode in ("P", "RGBA", "1"):
+                img = img.convert("RGB")
+            try:
+                element.image = ImageOps.invert(img)
+                if original_mode == "1":
+                    element.image = element.image.convert("1")
+                element.node.altered()
+                channel(_("Image Inverted."))
+            except OSError:
+                channel(_("Image type cannot be converted. %s") % img.mode)
+        return "image", data
+
+    @context.console_command("flip", help="flip image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageOps
+
+        for element in data:
+            img = element.image
+            element.image = ImageOps.flip(img)
+            element.node.altered()
+            channel(_("Image Flipped."))
+        return "image", data
+
+    @context.console_command("mirror", help="mirror image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageOps
+
+        for element in data:
+            img = element.image
+            element.image = ImageOps.mirror(img)
+            element.node.altered()
+            channel(_("Image Mirrored."))
+        return "image", data
+
+    @context.console_command("ccw", help="rotate image ccw", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import Image
+
+        for element in data:
+            img = element.image
+            element.image = img.transpose(Image.ROTATE_90)
+            element.image_height, element.image_width = (
+                element.image_width,
+                element.image_height,
+            )
+            element.node.altered()
+            channel(_("Rotated image counterclockwise."))
+        return "image", data
+
+    @context.console_command("cw", help="rotate image cw", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import Image
+
+        for element in data:
+            img = element.image
+            element.image = img.transpose(Image.ROTATE_270)
+            element.image_height, element.image_width = (
+                element.image_width,
+                element.image_height,
+            )
+            element.node.altered()
+            channel(_("Rotated image clockwise."))
+        return "image", data
+
+    @context.console_argument("cutoff", type=float, help="cutoff limit for autocontrast", default=128.0)
+    @context.console_command("autocontrast", help="autocontrast image", input_type="image", output_type="image")
+    def image(command, channel, _, data, cutoff, args=tuple(), **kwargs):
+        from PIL import ImageOps
+
+        for element in data:
+            try:
+                img = element.image
+                if img.mode == "RGBA":
+                    img = img.convert("RGB")
+                element.image = ImageOps.autocontrast(img, cutoff=cutoff)
+                element.node.altered()
+                channel(_("Image Auto-Contrasted."))
+            except (IndexError, ValueError):
+                channel(_("image autocontrast <cutoff-percent>"))
+        return "image", data
+
+    @context.console_command(("grayscale","grayscale"), help="convert image to grayscale", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageOps
+
+        for element in data:
+            img = element.image
+            element.image = ImageOps.grayscale(img)
+            element.node.altered()
+            channel(_("Image Grayscale."))
+        return "image", data
+
+    @context.console_command("equalize", help="equalize image", input_type="image", output_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        from PIL import ImageOps
+
+        for element in data:
+            img = element.image
+            element.image = ImageOps.equalize(img)
+            element.node.altered()
+            channel(_("Image Equalized."))
+        return "image", data
+
+    @context.console_argument("filename", type=str, help="filename", default="output.png")
+    @context.console_command("save", help="save image to disk", input_type="image", output_type="image")
+    def image(command, channel, _, data, filename, args=tuple(), **kwargs):
+        for element in data:
+            try:
+                img = element.image
+                img.save(filename)
+                channel(_("Saved: %s") % filename)
+            except IndexError:
+                channel(_("No file given."))
+            except OSError:
+                channel(_("File could not be written / created."))
+            except ValueError:
+                channel(_("Could not determine expected format."))
+        return "image", data
+
+    @context.console_command("flatrotary", help="apply flatrotary bilinear mesh", input_type="image")
+    def image(command, channel, _, data, args=tuple(), **kwargs):
+        """
+        Flat rotary stretches an image according to the rotary settings. Providing a series of points it applies a
+        bilinear mesh to stretch the image across the x axis creating an image that can be interpreted as flat on a
+        curved surface. Values are between 0 and 1. The number of values given mark equidistant points however if the
+        values given are not themselves equidistant the resulting image is stretched accordingly.
+
+        eg flatrotary 0 .2 .7 1
+        """
+        for element in data:
+            points = len(args) - 1
+            im = element.image
+            w, h = im.size
             from PIL import Image
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.transpose(Image.ROTATE_90)
-                    element.image_height, element.image_width = (
-                        element.image_width,
-                        element.image_height,
-                    )
-                    element.node.altered()
-                    channel(_("Rotated image counterclockwise."))
-            return
-        elif args[0] == "cw":
-            from PIL import Image
+            def t(i):
+                return int(i * w / (points - 1))
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = img.transpose(Image.ROTATE_270)
-                    element.image_height, element.image_width = (
-                        element.image_width,
-                        element.image_height,
-                    )
-                    element.node.altered()
-                    channel(_("Rotated image clockwise."))
-            return
-        elif args[0] == "autocontrast":
-            from PIL import ImageOps
+            def x(i):
+                return int(w * float(args[i + 1]))
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    try:
-                        cutoff = int(args[1])
-                        img = element.image
-                        if img.mode == "RGBA":
-                            img = img.convert("RGB")
-                        element.image = ImageOps.autocontrast(img, cutoff=cutoff)
-                        element.node.altered()
-                        channel(_("Image Auto-Contrasted."))
-                    except (IndexError, ValueError):
-                        channel(_("image autocontrast <cutoff-percent>"))
-            return
-        elif args[0] == "grayscale" or args[0] == "greyscale":
-            from PIL import ImageOps
+            boxes = list((t(i), 0, t(i + 1), h) for i in range(points - 1))
+            quads = list(
+                (x(i), 0, x(i), h, x(i + 1), h, x(i + 1), 0)
+                for i in range(points - 1)
+            )
+            mesh = list(zip(boxes, quads))
+            element.image = im.transform(
+                im.size, Image.MESH, mesh, Image.BILINEAR
+            )
+            element.node.altered()
+        return "image", data
 
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = ImageOps.grayscale(img)
-                    element.node.altered()
-                    channel(_("Image Grayscale."))
-            return
-        elif args[0] == "equalize":
-            from PIL import ImageOps
-
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    img = element.image
-                    element.image = ImageOps.equalize(img)
-                    element.node.altered()
-                    channel(_("Image Equalized."))
-            return
-        elif args[0] == "save":
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    try:
-                        img = element.image
-                        img.save(args[1])
-                        channel(_("Saved: %s") % (args[1]))
-                    except IndexError:
-                        channel(_("No file given."))
-                    except OSError:
-                        channel(_("File could not be written / created."))
-                    except ValueError:
-                        channel(_("Could not determine expected format."))
-
-            return
-        elif args[0] == "flatrotary":
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    points = len(args) - 1
-                    im = element.image
-                    w, h = im.size
-                    from PIL import Image
-
-                    def t(i):
-                        return int(i * w / (points - 1))
-
-                    def x(i):
-                        return int(w * float(args[i + 1]))
-
-                    boxes = list((t(i), 0, t(i + 1), h) for i in range(points - 1))
-                    quads = list(
-                        (x(i), 0, x(i), h, x(i + 1), h, x(i + 1), 0)
-                        for i in range(points - 1)
-                    )
-                    mesh = list(zip(boxes, quads))
-                    element.image = im.transform(
-                        im.size, Image.MESH, mesh, Image.BILINEAR
-                    )
-                    element.node.altered()
-        elif args[0] == "halftone":
-            #  https://stackoverflow.com/questions/10572274/halftone-images-in-python/10575940#10575940
-            pass
-        else:
-            channel(_("Image command unrecognized."))
-            return
-
-    @context.console_command(
-        "halftone", help="image halftone <diameter> <scale> <angle>"
-    )
-    def halftone(command, channel, _, args=tuple(), **kwargs):
+    @context.console_option("scale", "s", type=int, help="process scaling", default=1)
+    @context.console_argument("oversample", type=int, help="pixel oversample amount", default=2)
+    @context.console_argument("sample", type=int, help="pixel sample size", default=10)
+    @context.console_argument("angle", type=Angle.parse, help="half-tone angle", default=Angle.parse("22"))
+    @context.console_command("halftone", help="image halftone <oversample> <sample> <angle>", input_type="image", output_type="image")
+    def halftone(command, channel, _, data, oversample, sample=10, scale=1, angle=22, args=tuple(), **kwargs):
         """
         Returns half-tone image for image.
 
         The maximum output dot diameter is given by sample * scale (which is also the number of possible dot sizes).
-        So sample=1 will presevere the original image resolution, but scale must be >1 to allow variation in dot size.
+        So sample=1 will preserve the original image resolution, but scale must be >1 to allow variation in dot size.
         """
+        if angle is None:
+            raise SyntaxError
         from PIL import Image, ImageDraw, ImageStat
+        angle = angle.as_degrees
 
-        elements = context.elements
-        oversample = 2
-        sample = 10
-        scale = 1
-        angle = 22
-        for element in elements.elems(emphasized=True):
-            if not isinstance(element, SVGImage):
-                continue
+        for element in data:
             image = element.image
             im = image
             image = image.convert("L")
@@ -640,6 +664,7 @@ def plugin(kernel, lifecycle=None):
             )
             element.image = half_tone
             element.node.altered()
+        return "image", data
 
 
 class RasterScripts:
