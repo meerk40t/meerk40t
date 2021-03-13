@@ -26,6 +26,11 @@ class Settings(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+
+        self.root_context = context.get_context('/')
+        self.root_context.setting(bool, "windows_save", True)
+        self.window_save = self.root_context.windows_save
+
         self.window_context = context.get_context(path)
         self.window_context.setting(int, "width", 490)
         self.window_context.setting(int, "height", 280)
@@ -52,6 +57,7 @@ class Settings(wx.Frame, Module):
         # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
         self.choices = [
+            (_("Save Window Positions"), "windows_save", True),
             (_("Print Shutdown"), "print_shutdown", False),
             (_("SVG Uniform Save"), "uniform_svg", False),
             (_("Image DPI Scaling"), "image_dpi", True),

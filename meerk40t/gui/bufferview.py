@@ -1,26 +1,16 @@
 import wx
 
+from .mwindow import MWindow
 from ..kernel import Module
 from .icons import icons8_comments_50
 
 _ = wx.GetTranslation
 
 
-class BufferView(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: BufferView.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 697)
-        self.window_context.setting(int, "height", 584)
-        self.SetSize((self.window_context.width, self.window_context.height))
+class BufferView(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(697, 586, *args, **kwds)
+
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_buffer_info = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_CHARWRAP | wx.TE_MULTILINE
@@ -40,26 +30,7 @@ class BufferView(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-        # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-            return
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
-
+    def window_open(self):
         pipe = self.context.open("pipe")
         buffer = None
         if pipe is not None:
@@ -72,14 +43,6 @@ class BufferView(wx.Frame, Module):
 
         self.text_buffer_length = self.text_buffer_length.SetValue(str(len(buffer)))
         self.text_buffer_info = self.text_buffer_info.SetValue(buffer)
-
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def __set_properties(self):
         _icon = wx.NullIcon

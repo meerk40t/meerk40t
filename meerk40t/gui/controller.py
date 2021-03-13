@@ -5,10 +5,11 @@
 
 import wx
 
+from .mwindow import MWindow
 from ..device.lasercommandconstants import REALTIME_RESET
 from ..kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
                       STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
-                      STATE_WAIT, Module)
+                      STATE_WAIT)
 from .icons import (icons8_comments_50, icons8_connected_50,
                     icons8_disconnected_50, icons8_emergency_stop_button_50,
                     icons8_laser_beam_hazard_50, icons8_pause_50,
@@ -17,21 +18,10 @@ from .icons import (icons8_comments_50, icons8_connected_50,
 _ = wx.GetTranslation
 
 
-class Controller(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: Controller.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 499)
-        self.window_context.setting(int, "height", 505)
-        self.SetSize((self.window_context.width, self.window_context.height))
+class Controller(MWindow):
+
+    def __init__(self, *args, **kwds):
+        super().__init__(499, 505, *args, **kwds)
         self.button_controller_control = wx.Button(
             self, wx.ID_ANY, _("Start Controller")
         )
@@ -71,11 +61,6 @@ class Controller(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_BUTTON, self.on_button_connect, self.button_device_connect)
         self.Bind(
             wx.EVT_CHECKBOX,
@@ -106,9 +91,6 @@ class Controller(wx.Frame, Module):
         self.buffer_max = 1
         self.last_control_state = None
         self.gui_update = True
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
     def on_close(self, event):
         self.gui_update = False
@@ -119,10 +101,7 @@ class Controller(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
-
+    def window_open(self):
         self.context.setting(int, "buffer_max", 1500)
         self.context.setting(bool, "buffer_limit", True)
         self.context.setting(str, "device_location", "Unknown")
@@ -138,19 +117,13 @@ class Controller(wx.Frame, Module):
         self.text_device.SetValue(self.context.device_name)
         self.text_location.SetValue(self.context.device_location)
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
+    def window_close(self):
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;packet_text", self.update_packet_text)
         self.context.unlisten("pipe;buffer", self.on_buffer_update)
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)
         self.context.unlisten("pipe;thread", self.on_control_state)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def device_execute(self, control_name):
         def menu_element(event):

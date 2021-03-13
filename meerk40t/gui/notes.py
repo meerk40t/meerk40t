@@ -1,26 +1,15 @@
 import wx
 
+from .mwindow import MWindow
 from ..kernel import Module
 from .icons import icons8_comments_50
 
 _ = wx.GetTranslation
 
 
-class Notes(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: Notes.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 730)
-        self.window_context.setting(int, "height", 621)
-        self.SetSize((self.window_context.width, self.window_context.height))
+class Notes(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(730, 621, *args, **kwds)
 
         self.check_auto_open_notes = wx.CheckBox(
             self, wx.ID_ANY, _("Automatically Open Notes")
@@ -32,46 +21,22 @@ class Notes(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_auto_note_open, self.check_auto_open_notes
         )
         self.Bind(wx.EVT_TEXT, self.on_text_notes, self.text_notes)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_notes, self.text_notes)
-        # end wxGlade
 
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
-
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
+    def window_open(self):
         self.context.setting(bool, "auto_note", True)
         self.context.close(self.name)
         self.check_auto_open_notes.SetValue(self.context.auto_note)
         if self.context.elements.note is not None:
             self.text_notes.SetValue(self.context.elements.note)
-        self.Show()
 
-    def finalize(self, *args, **kwargs):
+    def window_close(self):
         self.window_context.width, self.window_context.height = self.Size
         self.window_context.x, self.window_context.y = self.GetPosition()
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def __set_properties(self):
         _icon = wx.NullIcon

@@ -241,6 +241,7 @@ class Interpreter:
 
     def __init__(self, context):
         self.context = context
+        self.root_context = context.get_context('/')
         self.settings = LaserSettings()
 
         self.process_item = None
@@ -254,15 +255,15 @@ class Interpreter:
         self.laser = False
         context.setting(int, "current_x", 0)
         context.setting(int, "current_y", 0)
-        context.setting(bool, "opt_rapid_between", True)
-        context.setting(int, "opt_jog_mode", 0)
-        context.setting(int, "opt_jog_minimum", 127)
+        self.root_context.setting(bool, "opt_rapid_between", True)
+        self.root_context.setting(int, "opt_jog_mode", 0)
+        self.root_context.setting(int, "opt_jog_minimum", 127)
         context._quit = False
 
         context.current_x = 0
         context.current_y = 0
-        self.rapid = self.context.opt_rapid_between
-        self.jog = self.context.opt_jog_mode
+        self.rapid = self.root_context.opt_rapid_between
+        self.jog = self.root_context.opt_jog_mode
         self.rapid_override = False
         self.rapid_override_speed_x = 50.0
         self.rapid_override_speed_y = 50.0
@@ -355,8 +356,8 @@ class Interpreter:
         elif isinstance(element, tuple):
             self.spooled_item = element
         else:
-            self.rapid = self.context.opt_rapid_between
-            self.jog = self.context.opt_jog_mode
+            self.rapid = self.root_context.opt_rapid_between
+            self.jog = self.root_context.opt_jog_mode
             try:
                 self.spooled_item = element.generate()
             except AttributeError:

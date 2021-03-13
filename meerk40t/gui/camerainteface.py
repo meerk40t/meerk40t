@@ -34,6 +34,11 @@ class CameraInterface(wx.Frame, Module, Job):
 
         self.camera_setting = self.context.get_context("camera")
         self.setting = self.camera_setting.derive(str(self.index))
+
+        self.root_context = context.get_context('/')
+        self.root_context.setting(bool, "windows_save", True)
+        self.window_save = self.root_context.windows_save
+
         self.window_context = self.setting
 
         self.button_update = wx.BitmapButton(

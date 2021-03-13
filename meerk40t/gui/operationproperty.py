@@ -22,6 +22,11 @@ class OperationProperty(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+
+        self.root_context = context.get_context('/')
+        self.root_context.setting(bool, "windows_save", True)
+        self.window_save = self.root_context.windows_save
+
         self.window_context = context.get_context(path)
         self.window_context.setting(int, "width_simple", _simple_width)
         self.window_context.setting(int, "width_advanced", _advanced_width)
@@ -272,8 +277,8 @@ class OperationProperty(wx.Frame, Module):
             self.text_passes.SetValue(str(self.operation.settings.passes))
         if self.operation.output is not None:
             self.checkbox_output.SetValue(self.operation.output)
-        if self.operation.show is not None:
-            self.checkbox_show.SetValue(self.operation.show)
+        if self.operation.window_open is not None:
+            self.checkbox_show.SetValue(self.operation.window_open)
         self.on_check_advanced()
         self.on_combo_operation()
 
@@ -639,7 +644,7 @@ class OperationProperty(wx.Frame, Module):
         self.context.signal("element_property_update", self.operation)
 
     def on_check_show(self, event):
-        self.operation.show = bool(self.checkbox_show.GetValue())
+        self.operation.window_open = bool(self.checkbox_show.GetValue())
         self.context.signal("element_property_update", self.operation)
 
     def on_text_speed(self, event):  # wxGlade: OperationProperty.<event_handler>

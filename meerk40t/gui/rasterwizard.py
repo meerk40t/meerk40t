@@ -29,6 +29,11 @@ class RasterWizard(wx.Frame, Module):
             style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
         )
         Module.__init__(self, context, path)
+
+        self.root_context = context.get_context('/')
+        self.root_context.setting(bool, "windows_save", True)
+        self.window_save = self.root_context.windows_save
+
         self.window_context = context.get_context(path)
         self.window_context.setting(int, "width", 605)
         self.window_context.setting(int, "height", 636)

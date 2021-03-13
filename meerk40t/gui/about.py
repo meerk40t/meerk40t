@@ -1,27 +1,14 @@
 import wx
 
-from ..kernel import Module
+from .mwindow import MWindow
 from .icons import icon_meerk40t, icons8_about_50
 
 _ = wx.GetTranslation
 
 
-class About(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: About.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 699)
-        self.window_context.setting(int, "height", 442)
-        self.SetSize((self.window_context.width, self.window_context.height))
-
+class About(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(699, 442, *args, **kwds)
 
         self.bitmap_button_1 = wx.BitmapButton(
             self, wx.ID_ANY, icon_meerk40t.GetBitmap()
@@ -30,40 +17,10 @@ class About(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
-        # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
-        context.close(self.name)
-        name = context.device_name
-        version = context.device_version
+        name = self.context.device_name
+        version = self.context.device_version
         self.SetTitle(_("About %s v%s" % (name, version)))
         self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
-        self.Show()
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
-
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
-        print(self.GetPosition())
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -128,5 +85,4 @@ class About(wx.Frame, Module):
         sizer_1.Add(meerk40t_about_text, 2, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()
-        self.Centre()
         # end wxGlade

@@ -300,6 +300,10 @@ class MeerK40t(wx.Frame, Module, Job):
         Module.__init__(self, context, path)
         Job.__init__(self, job_name="refresh_scene", process=self.refresh_scene)
 
+        self.root_context = context.get_context('/')
+        self.root_context.setting(bool, "windows_save", True)
+        self.window_save = self.root_context.windows_save
+
         self.window_context = context.get_context(path)
         self.window_context.setting(int, "width", 1200)
         self.window_context.setting(int, "height", 600)
@@ -413,7 +417,6 @@ class MeerK40t(wx.Frame, Module, Job):
         self.previous_position = None
         self.__set_properties()
         self.__do_layout()
-
 
         self.__scene_binds()
 

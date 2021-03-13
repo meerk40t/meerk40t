@@ -37,6 +37,7 @@ class MoshiInterpreter(Interpreter, Modifier):
 
     def attach(self, *a, **kwargs):
         context = self.context
+        root_context = context.get_context('/')
         kernel = context._kernel
         _ = kernel.translation
 
@@ -48,9 +49,9 @@ class MoshiInterpreter(Interpreter, Modifier):
         context.setting(bool, "home_bottom", False)
         context.setting(int, "current_x", 0)
         context.setting(int, "current_y", 0)
-        context.setting(bool, "opt_rapid_between", True)
-        context.setting(int, "opt_jog_mode", 0)
-        context.setting(int, "opt_jog_minimum", 127)
+        root_context.setting(bool, "opt_rapid_between", True)
+        root_context.setting(int, "opt_jog_mode", 0)
+        root_context.setting(int, "opt_jog_minimum", 127)
 
         context.get_context("/").listen("lifecycle;ready", self.on_interpreter_ready)
 

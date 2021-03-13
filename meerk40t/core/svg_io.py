@@ -268,21 +268,30 @@ class SVGLoader:
             except AttributeError:
                 pass
             if isinstance(element, SVGText):
-                if element.text is not None:
-                    context_node.add(element, type="elem")
-                    elements_modifier.classify([element])
+                if element.text is None:
+                    continue
+                context_node.add(element, type="elem")
+                elements_modifier.classify([element])
             elif isinstance(element, Path):
-                if len(element) != 0:
-                    element.approximate_arcs_with_cubics()
-                    context_node.add(element, type="elem")
-                    elements_modifier.classify([element])
+                if len(element) == 0:
+                    continue
+                element.approximate_arcs_with_cubics()
+                context_node.add(element, type="elem")
+                elements_modifier.classify([element])
             elif isinstance(element, Shape):
-                e = Path(element)
-                e.reify()  # In some cases the shape could not have reified, the path must.
-                if len(e) != 0:
-                    e.approximate_arcs_with_cubics()
-                    context_node.add(element, type="elem")
-                    elements_modifier.classify([element])
+                if not element.transform.is_identity():
+                    # Shape Reification failed.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                    if len(element) == 0:
+                        continue  # Degenerate.
+                else:
+                    e = Path(element)
+                    if len(e) == 0:
+                        continue  # Degenerate.
+                context_node.add(element, type="elem")
+                elements_modifier.classify([element])
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))

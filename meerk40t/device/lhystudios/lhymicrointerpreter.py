@@ -142,6 +142,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
         context = self.context
         kernel = context._kernel
         _ = kernel.translation
+        root_context = context.get_context('/')
 
         @context.console_command(
             "pulse", help="pulse <time>: Pulse the laser in place."
@@ -254,7 +255,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
         @self.context.console_argument("rapid_x", type=float, help="limit x speed for rapid.")
         @self.context.console_argument("rapid_y", type=float, help="limit y speed for rapid.")
         @self.context.console_command("rapid_override", help="limit speed of typical rapid moves.")
-        def pipe_abort(command, channel, _, rapid_x=None, rapid_y=None, **kwargs):
+        def rapid_override(command, channel, _, rapid_x=None, rapid_y=None, **kwargs):
             if rapid_x is not None:
                 if rapid_y is None:
                     rapid_y = rapid_x
@@ -280,9 +281,9 @@ class LhymicroInterpreter(Interpreter, Modifier):
         context.setting(bool, "buffer_limit", True)
         context.setting(int, "current_x", 0)
         context.setting(int, "current_y", 0)
-        context.setting(bool, "opt_rapid_between", True)
-        context.setting(int, "opt_jog_mode", 0)
-        context.setting(int, "opt_jog_minimum", 127)
+        root_context.setting(bool, "opt_rapid_between", True)
+        root_context.setting(int, "opt_jog_mode", 0)
+        root_context.setting(int, "opt_jog_minimum", 127)
 
         self.update_codes()
 

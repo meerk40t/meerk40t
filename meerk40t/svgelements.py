@@ -4966,7 +4966,7 @@ class Arc(Curve):
         self.pry.matrix_transform(rotate_matrix)
         self.sweep = Angle.degrees(delta).as_radians
 
-    def as_quad_curves(self, arc_required):
+    def as_quad_curves(self, arc_required=None):
         if arc_required is None:
             sweep_limit = tau / 12.0
             arc_required = int(ceil(abs(self.sweep) / sweep_limit))

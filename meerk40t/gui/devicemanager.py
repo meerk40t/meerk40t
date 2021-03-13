@@ -29,6 +29,11 @@ class DeviceManager(wx.Frame, Module):
                 | wx.TAB_TRAVERSAL,
             )
         Module.__init__(self, context, path)
+
+        self.root_context = context.get_context('/')
+        self.root_context.setting(bool, "windows_save", True)
+        self.window_save = self.root_context.windows_save
+
         self.window_context = context.get_context(path)
         self.window_context.setting(int, "width", 707)
         self.window_context.setting(int, "height", 337)

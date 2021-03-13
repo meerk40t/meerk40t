@@ -1278,7 +1278,7 @@ class Elemental(Modifier):
             channel("----------")
 
         @context.console_command(
-            r"element(\d+,?)+",
+            r"element([0-9]+,?)+",
             help="element0,3,4,5: elements 0, 3, 4, 5",
             regex=True,
             output_type="elements",
@@ -3173,6 +3173,15 @@ class Elemental(Modifier):
         )
         def reset_user_changes(node, copies=1, **kwargs):
             self.context("reset\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, Shape) and not isinstance(node.object, Path))
+        @self.tree_operation(
+            _("Convert To Path"), node_type=("elem",), help=""
+        )
+        def reset_user_changes(node, copies=1, **kwargs):
+            node.object = abs(Path(node.object))
+            node.object.node = node
+            node.altered()
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
