@@ -155,17 +155,17 @@ class LaserRender:
             matrix = element.transform
         except AttributeError:
             matrix = Matrix()
-        if not hasattr(element, 'cache') or element.wx_bitmap_image is None:
+        if not hasattr(element, 'cache') or element.cache is None:
             cache = self.make_path(gc, element)
-            element.wx_bitmap_image = cache
+            element.cache = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, element,  zoomscale=zoomscale)
         self.set_element_brush(gc, element)
         if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:
-            gc.FillPath(element.wx_bitmap_image)
+            gc.FillPath(element.cache)
         if draw_mode & DRAW_MODE_STROKES == 0 and element.stroke is not None:
-            gc.StrokePath(element.wx_bitmap_image)
+            gc.StrokePath(element.cache)
         gc.PopState()
 
     def draw_text(self, element, gc, draw_mode, zoomscale=1.0):
@@ -238,7 +238,7 @@ class LaserRender:
         if draw_mode & DRAW_MODE_CACHE == 0:
             cache = None
             try:
-                cache = node.wx_bitmap_image
+                cache = node.cache
             except AttributeError:
                 pass
             if cache is None:
@@ -247,8 +247,8 @@ class LaserRender:
                 except AttributeError:
                     max_allowed = 2048
                 node.c_width, node.c_height = node.image.size
-                node.wx_bitmap_image = self.make_thumbnail(node.image, maximum=max_allowed)
-            gc.DrawBitmap(node.wx_bitmap_image, 0, 0, node.c_width, node.c_height)
+                node.cache = self.make_thumbnail(node.image, maximum=max_allowed)
+            gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
         else:
             node.c_width, node.c_height = node.image.size
             cache = self.make_thumbnail(node.image)

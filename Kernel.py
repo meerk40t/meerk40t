@@ -801,7 +801,7 @@ class Elemental(Module):
         Module.attach(self, device, name)
 
     def register(self, obj):
-        obj.wx_bitmap_image = None
+        obj.cache = None
         obj.icon = None
         obj.bounds = None
         obj.last_transform = None
@@ -849,15 +849,15 @@ class Elemental(Module):
             The data structure was changed.
             """
             try:
-                obj.wx_bitmap_image.UnGetNativePath(obj.wx_bitmap_image.NativePath)
+                obj.cache.UnGetNativePath(obj.cache.NativePath)
             except AttributeError:
                 pass
             try:
-                del obj.wx_bitmap_image
+                del obj.cache
                 del obj.icon
             except AttributeError:
                 pass
-            obj.wx_bitmap_image = None
+            obj.cache = None
             obj.icon = None
             obj.bounds = None
             self._bounds = None
@@ -875,11 +875,11 @@ class Elemental(Module):
 
     def unregister(self, e):
         try:
-            e.wx_bitmap_image.UngetNativePath(e.wx_bitmap_image.NativePath)
+            e.cache.UngetNativePath(e.cache.NativePath)
         except AttributeError:
             pass
         try:
-            del e.wx_bitmap_image
+            del e.cache
         except AttributeError:
             pass
         try:
