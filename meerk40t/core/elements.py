@@ -3510,7 +3510,7 @@ class Elemental(Modifier):
 
     @property
     def op_branch(self):
-        return self._tree.get(type="branch elems")
+        return self._tree.get(type="branch ops")
 
     @property
     def elem_branch(self):
