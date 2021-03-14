@@ -1310,6 +1310,9 @@ class Kernel:
             return
         key = self.abs_path(key)
         if isinstance(value, str):
+            if '/' in value:
+                print("WARNING: THIS IS DISALLOWED! WAAAAAA. %s %s" % (key, value))
+                return
             self._config.Write(key, value)
         elif isinstance(value, int):
             self._config.WriteInt(key, value)
