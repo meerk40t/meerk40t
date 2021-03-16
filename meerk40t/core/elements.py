@@ -964,7 +964,7 @@ class RootNode(Node):
             node = self
         for listen in self.listeners:
             if hasattr(listen, "update"):
-                listen.reorder(node, **kwargs)
+                listen.update(node, **kwargs)
 
 
 class Elemental(Modifier):
