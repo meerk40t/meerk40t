@@ -1137,7 +1137,12 @@ class MeerK40t(wx.Frame, Module, Job):
             ID_MENU_WINDOW_RESET, _("Reset Window Sizes"), ""
         )
 
-        self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
+        self.main_menubar.Append(wxglade_tmp_menu, _("Tools"))
+        
+        from sys import platform
+        if platform == "darwin":
+            wxglade_tmp_menu = wx.Menu()
+            self.main_menubar.Append(wxglade_tmp_menu, "Window")
 
         wxglade_tmp_menu = wx.Menu()
         wxglade_tmp_menu.Append(wx.ID_HELP, _("Help"), "")
