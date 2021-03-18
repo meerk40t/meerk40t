@@ -26,8 +26,8 @@ def plugin(kernel, lifecycle=None):
     context = kernel.get_context("/")
     bed_dim = context.get_context('/')
 
-    @context.console_command("image", help="image <operation>*", output_type="image")
-    def image(command, channel, _, args=tuple(), **kwargs):
+    @context.console_command("image", help="image <operation>*", input_type=(None, "image-array"), output_type="image")
+    def image(command, channel, _, data_type=None, data=None, args=tuple(), **kwargs):
         elements = context.elements
         if len(args) == 0:
             channel(_("----------"))
@@ -52,10 +52,22 @@ def plugin(kernel, lifecycle=None):
                 i += 1
             channel(_("----------"))
             return
-        if not elements.has_emphasis():
-            channel(_("No selected images."))
-            return
-        images = [e for e in elements.elems(emphasized=True) if type(e) == SVGImage]
+        if data_type is None:
+            if not elements.has_emphasis():
+                channel(_("No selected images."))
+                return
+            images = [e for e in elements.elems(emphasized=True) if type(e) == SVGImage]
+        elif data_type == "image-array":
+            from PIL import Image
+            width, height, frame = data
+            img = Image.fromarray(frame)
+            obj = SVGImage()
+            obj.image = img
+            obj.image_width = width
+            obj.image_height = height
+            images = [obj]
+        else:
+            raise SyntaxError
         return "image", images
 
     @context.console_command("path", help="return paths around image", input_type="image", output_type="elements")
