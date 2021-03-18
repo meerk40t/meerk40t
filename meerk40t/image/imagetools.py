@@ -115,7 +115,8 @@ def plugin(kernel, lifecycle=None):
                 element.values["raster_step"] = step
             element.image_width, element.image_height = element.image.size
             element.lock = True
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
         return "image", data
 
     @context.console_command("unlock", help="unlock manipulations", input_type="image", output_type="image")
@@ -174,7 +175,8 @@ def plugin(kernel, lifecycle=None):
     def image(command, channel, _, data, args=tuple(), **kwargs):
         for element in data:
             Planner.make_actual(element)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
         return "image", data
 
     @context.console_command("dither", help="Dither to 1-bit", input_type="image", output_type="image")
@@ -189,7 +191,8 @@ def plugin(kernel, lifecycle=None):
                         if pixel_data[x, y][3] == 0:
                             pixel_data[x, y] = (255, 255, 255, 255)
             element.image = img.convert("1")
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
         return "image", data
 
     @context.console_option("distance", "d", type=float, help="Distance from color to be removed.", default=50.0)
@@ -220,7 +223,8 @@ def plugin(kernel, lifecycle=None):
                         new_data[x, y] = (255, 255, 255, 0)
                         continue
             element.image = img
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
         return "image", data
 
     @context.console_argument("color", type=Color, help="Color to be added")
@@ -243,7 +247,8 @@ def plugin(kernel, lifecycle=None):
                         new_data[x, y] = pix
                         continue
             element.image = img
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
         return "image", data
 
     @context.console_argument("left", help="left side of crop", type=Length)
@@ -282,7 +287,8 @@ def plugin(kernel, lifecycle=None):
                 element.image = img.crop((left, upper, right, lower))
                 element.image_width = right - left
                 element.image_height = lower - upper
-                element.node.altered()
+                if hasattr(element, 'node'):
+                    element.node.altered()
             except (KeyError, ValueError):
                 raise SyntaxError
         return "image", data
@@ -296,7 +302,8 @@ def plugin(kernel, lifecycle=None):
                 img = element.image
                 enhancer = ImageEnhance.Contrast(img)
                 element.image = enhancer.enhance(factor)
-                element.node.altered()
+                if hasattr(element, 'node'):
+                    element.node.altered()
                 channel(_("Image Contrast Factor: %f") % factor)
             except (IndexError, ValueError):
                 channel(_("image contrast <factor>"))
@@ -312,7 +319,8 @@ def plugin(kernel, lifecycle=None):
                 img = element.image
                 enhancer = ImageEnhance.Brightness(img)
                 element.image = enhancer.enhance(factor)
-                element.node.altered()
+                if hasattr(element, 'node'):
+                    element.node.altered()
                 channel(_("Image Brightness Factor: %f") % factor)
             except (IndexError, ValueError):
                 channel(_("image brightness <factor>"))
@@ -327,7 +335,8 @@ def plugin(kernel, lifecycle=None):
                 img = element.image
                 enhancer = ImageEnhance.Color(img)
                 element.image = enhancer.enhance(factor)
-                element.node.altered()
+                if hasattr(element, 'node'):
+                    element.node.altered()
                 channel(_("Image Color Factor: %f") % factor)
             except (IndexError, ValueError):
                 channel(_("image color <factor>"))
@@ -342,7 +351,8 @@ def plugin(kernel, lifecycle=None):
                 img = element.image
                 enhancer = ImageEnhance.Sharpness(img)
                 element.image = enhancer.enhance(factor)
-                element.node.altered()
+                if hasattr(element, 'node'):
+                    element.node.altered()
                 channel(_("Image Sharpness Factor: %f") % factor)
             except (IndexError, ValueError):
                 channel(_("image sharpness <factor>"))
@@ -355,7 +365,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = img.filter(filter=ImageFilter.BLUR)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Blurred."))
         return "image", data
 
@@ -366,7 +377,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = img.filter(filter=ImageFilter.SHARPEN)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Sharpened."))
         return "image", data
 
@@ -377,7 +389,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Edges Enhanced."))
         return "image", data
 
@@ -388,7 +401,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = img.filter(filter=ImageFilter.FIND_EDGES)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Edges Found."))
         return "image", data
 
@@ -399,7 +413,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = img.filter(filter=ImageFilter.EMBOSS)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Embossed."))
         return "image", data
 
@@ -410,7 +425,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = img.filter(filter=ImageFilter.SMOOTH)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Smoothed."))
         return "image", data
 
@@ -421,7 +437,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = img.filter(filter=ImageFilter.CONTOUR)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Contoured."))
         return "image", data
 
@@ -432,7 +449,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = img.filter(filter=ImageFilter.DETAIL)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Detailed."))
         return "image", data
 
@@ -443,7 +461,8 @@ def plugin(kernel, lifecycle=None):
             try:
                 img = element.image
                 element.image = img.quantize(colors=colors)
-                element.node.altered()
+                if hasattr(element, 'node'):
+                    element.node.altered()
                 channel(_("Image Quantized to %d colors.") % colors)
             except (IndexError, ValueError):
                 channel(_(""))
@@ -459,7 +478,8 @@ def plugin(kernel, lifecycle=None):
                 threshold = int(args[1])
                 img = element.image
                 element.image = ImageOps.solarize(img, threshold=threshold)
-                element.node.altered()
+                if hasattr(element, 'node'):
+                    element.node.altered()
                 channel(_("Image Solarized at %d gray.") % threshold)
             except (IndexError, ValueError):
                 channel(_("image solarize <threshold>"))
@@ -478,7 +498,8 @@ def plugin(kernel, lifecycle=None):
                 element.image = ImageOps.invert(img)
                 if original_mode == "1":
                     element.image = element.image.convert("1")
-                element.node.altered()
+                if hasattr(element, 'node'):
+                    element.node.altered()
                 channel(_("Image Inverted."))
             except OSError:
                 channel(_("Image type cannot be converted. %s") % img.mode)
@@ -491,7 +512,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = ImageOps.flip(img)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Flipped."))
         return "image", data
 
@@ -502,7 +524,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = ImageOps.mirror(img)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Mirrored."))
         return "image", data
 
@@ -517,7 +540,8 @@ def plugin(kernel, lifecycle=None):
                 element.image_width,
                 element.image_height,
             )
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Rotated image counterclockwise."))
         return "image", data
 
@@ -532,7 +556,8 @@ def plugin(kernel, lifecycle=None):
                 element.image_width,
                 element.image_height,
             )
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Rotated image clockwise."))
         return "image", data
 
@@ -547,7 +572,8 @@ def plugin(kernel, lifecycle=None):
                 if img.mode == "RGBA":
                     img = img.convert("RGB")
                 element.image = ImageOps.autocontrast(img, cutoff=cutoff)
-                element.node.altered()
+                if hasattr(element, 'node'):
+                    element.node.altered()
                 channel(_("Image Auto-Contrasted."))
             except (IndexError, ValueError):
                 channel(_("image autocontrast <cutoff-percent>"))
@@ -560,7 +586,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = ImageOps.grayscale(img)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Grayscale."))
         return "image", data
 
@@ -571,7 +598,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             element.image = ImageOps.equalize(img)
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
             channel(_("Image Equalized."))
         return "image", data
 
@@ -622,7 +650,8 @@ def plugin(kernel, lifecycle=None):
             element.image = im.transform(
                 im.size, Image.MESH, mesh, Image.BILINEAR
             )
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
         return "image", data
 
     @context.console_option("scale", "s", type=int, help="process scaling", default=1)
@@ -676,7 +705,8 @@ def plugin(kernel, lifecycle=None):
                 (xx, yy, xx + im.size[0] * scale, yy + im.size[1] * scale)
             )
             element.image = half_tone
-            element.node.altered()
+            if hasattr(element, 'node'):
+                element.node.altered()
         return "image", data
 
 
