@@ -2038,7 +2038,8 @@ class Elemental(Modifier):
                 raise SyntaxError
             for e in data:
                 e.stroke_width = stroke_width
-                e.node.altered()
+                if hasattr(e, 'node'):
+                     e.node.altered()
             context.signal("refresh_scene")
             return "elements", data
 
@@ -2079,11 +2080,13 @@ class Elemental(Modifier):
             if color == "none":
                 for e in data:
                     e.stroke = None
-                    e.node.altered()
+                    if hasattr(e, 'node'):
+                         e.node.altered()
             else:
                 for e in data:
                     e.stroke = Color(color)
-                    e.node.altered()
+                    if hasattr(e, 'node'):
+                         e.node.altered()
             context.signal("refresh_scene")
             return "elements", data
 
@@ -2120,11 +2123,13 @@ class Elemental(Modifier):
             if color == "none":
                 for e in data:
                     e.fill = None
-                    e.node.altered()
+                    if hasattr(e, 'node'):
+                         e.node.altered()
             else:
                 for e in data:
                     e.fill = Color(color)
-                    e.node.altered()
+                    if hasattr(e, 'node'):
+                         e.node.altered()
             context.signal("refresh_scene")
             return
 
@@ -2264,7 +2269,8 @@ class Elemental(Modifier):
                             pass
 
                         element *= matrix
-                        element.node.modified()
+                        if hasattr(element, 'node'):
+                            element.node.modified()
                 else:
                     for element in self.elems(emphasized=True):
                         start_angle = element.rotation
@@ -2273,7 +2279,8 @@ class Elemental(Modifier):
                             "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
                         )
                         element *= matrix
-                        element.node.modified()
+                        if hasattr(element, 'node'):
+                            element.node.modified()
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
@@ -2363,7 +2370,8 @@ class Elemental(Modifier):
                             pass
 
                         e *= m
-                        e.node.modified()
+                        if hasattr(e, 'node'):
+                             e.node.modified()
                 else:
                     for e in data:
                         try:
@@ -2380,7 +2388,8 @@ class Elemental(Modifier):
                             "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_y)
                         )
                         e *= m
-                        e.node.modified()
+                        if hasattr(e, 'node'):
+                             e.node.modified()
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
@@ -2454,7 +2463,8 @@ class Elemental(Modifier):
                 if not absolute:
                     for e in data:
                         e *= m
-                        e.node.modified()
+                        if hasattr(e, 'node'):
+                             e.node.modified()
                 else:
                     for e in data:
                         otx = e.transform.value_trans_x()
@@ -2463,7 +2473,8 @@ class Elemental(Modifier):
                         nty = ty - oty
                         m = Matrix("translate(%f,%f)" % (ntx, nty))
                         e *= m
-                        e.node.modified()
+                        if hasattr(e, 'node'):
+                             e.node.modified()
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
@@ -2518,7 +2529,8 @@ class Elemental(Modifier):
                     except AttributeError:
                         pass
                     e *= m
-                    e.node.modified()
+                    if hasattr(e, 'node'):
+                         e.node.modified()
                 context.signal("refresh_scene")
                 return "elements", data
             except (ValueError, ZeroDivisionError):
@@ -2590,7 +2602,8 @@ class Elemental(Modifier):
                         pass
 
                     e.transform = Matrix(m)
-                    e.node.modified()
+                    if hasattr(e, 'node'):
+                         e.node.modified()
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
@@ -2617,7 +2630,8 @@ class Elemental(Modifier):
                     name = name[:50] + "..."
                 channel(_("reset - %s") % name)
                 e.transform.reset()
-                e.node.modified()
+                if hasattr(e, 'node'):
+                     e.node.modified()
             context.signal("refresh_scene")
             return "elements", data
 
@@ -2642,7 +2656,8 @@ class Elemental(Modifier):
                     name = name[:50] + "..."
                 channel(_("reified - %s") % name)
                 e.reify()
-                e.node.altered()
+                if hasattr(e, 'node'):
+                     e.node.altered()
             context.signal("refresh_scene")
             return "elements", data
 
@@ -2782,7 +2797,8 @@ class Elemental(Modifier):
                 ty = m.f
                 element.transform = Matrix.scale(float(step_size), float(step_size))
                 element.transform.post_translate(tx, ty)
-                element.node.modified()
+                if hasattr(element, 'node'):
+                     element.node.modified()
                 self.context.signal("element_property_update", element)
                 self.context.signal("refresh_scene")
             return
@@ -3288,7 +3304,8 @@ class Elemental(Modifier):
             ty = m.f
             element.transform = Matrix.scale(float(step_value), float(step_value))
             element.transform.post_translate(tx, ty)
-            element.node.modified()
+            if hasattr(element, 'node'):
+                     element.node.modified()
             self.context.signal("element_property_update", node.object)
             self.context.gui.request_refresh()
 
