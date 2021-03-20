@@ -409,7 +409,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
                         self.move_absolute(x, y)
                         continue
                     # Jog is performable and requested. # We have not flagged our direction or state.
-                    self.jog_absolute(x, y, mode=self.context.opt_jog_mode)
+                    self.jog_absolute(x, y, mode=self.root_context.opt_jog_mode)
                     continue
                 else:
                     self.ensure_program_mode()
