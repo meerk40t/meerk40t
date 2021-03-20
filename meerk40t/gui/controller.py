@@ -108,6 +108,7 @@ class Controller(MWindow):
         self.text_location.SetValue(self.context.device_location)
 
     def window_close(self):
+        self.gui_update = False
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;packet_text", self.update_packet_text)
         self.context.unlisten("pipe;buffer", self.on_buffer_update)
