@@ -477,10 +477,11 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.accelerator_table(self)
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
+        self.CenterOnScreen()
+        # x, y = self.GetPosition()
+        # self.window_context.setting(int, "x", x)
+        # self.window_context.setting(int, "y", y)
+        # self.SetPosition((self.window_context.x, self.window_context.y))
 
     @property
     def is_dark(self):
