@@ -3332,6 +3332,7 @@ class wxMeerK40t(wx.App, Module):
             often be restricted to where the windows are typically opened since their function and settings usually
             depend on the context used. The default root path is "/". Eg. "window open -p / Settings"
             """
+            context = kernel.get_context('/')
             if path is None:
                 path = context.active
             if subcommand is None:
@@ -3384,9 +3385,10 @@ class wxMeerK40t(wx.App, Module):
                     raise SyntaxError
             elif subcommand == "reset":
                 if kernel._config is not None:
-                    kernel._config.DeleteAll()
-                    kernel._config = None
-                    kernel.shutdown()
+                    for context in list(kernel.contexts):
+                        if context.startswith('window'):
+                            del kernel.contexts[context]
+                    kernel._config.DeleteGroup('window')
             else:
                 raise SyntaxError
 
