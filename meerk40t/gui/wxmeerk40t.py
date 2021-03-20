@@ -1135,7 +1135,7 @@ class MeerK40t(wx.Frame, Module, Job):
         )
         wxglade_tmp_menu.AppendSeparator()
         self.main_menubar.windowreset = wxglade_tmp_menu.Append(
-            ID_MENU_WINDOW_RESET, _("Reset Window Sizes"), ""
+            ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
         )
 
         self.main_menubar.Append(wxglade_tmp_menu, _("Tools"))
@@ -1364,9 +1364,6 @@ class MeerK40t(wx.Frame, Module, Job):
         m.Check(self.context.draw_mode & DRAW_MODE_FLIPXY != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_INVERT)
         m.Check(self.context.draw_mode & DRAW_MODE_INVERT != 0)
-
-        # TODO: Implement reset and enable this.
-        self.main_menubar.Enable(ID_MENU_WINDOW_RESET, False)
 
     def add_language_menu(self):
         tl = wx.FileTranslationsLoader()
@@ -3361,7 +3358,7 @@ class wxMeerK40t(wx.App, Module):
                 for i, name in enumerate(context.match("window")):
                     channel("%d: %s" % (i + 1, name))
                 return
-            if subcommand == "open":
+            elif subcommand == "open":
                 try:
                     parent = context.gui
                 except AttributeError:
@@ -3369,6 +3366,18 @@ class wxMeerK40t(wx.App, Module):
                 try:
                     path.open("window/%s" % window, parent, *args)
                     channel(_("Window Opened."))
+                except (KeyError, ValueError):
+                    channel(_("No such window as %s" % window))
+                except IndexError:
+                    raise SyntaxError
+            elif subcommand == "close":
+                try:
+                    parent = context.gui
+                except AttributeError:
+                    parent = None
+                try:
+                    path.close("window/%s" % window, parent, *args)
+                    channel(_("Window closed."))
                 except (KeyError, ValueError):
                     channel(_("No such window as %s" % window))
                 except IndexError:
