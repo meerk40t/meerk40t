@@ -86,20 +86,10 @@ class Controller(MWindow):
         self.Bind(wx.EVT_BUTTON, self.on_button_pause_resume, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_emergency_stop, self.button_stop)
         # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
         self.buffer_max = 1
         self.last_control_state = None
         self.gui_update = True
-
-    def on_close(self, event):
-        self.gui_update = False
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
 
     def window_open(self):
         self.context.setting(int, "buffer_max", 1500)
