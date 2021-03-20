@@ -3382,6 +3382,11 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("No such window as %s" % window))
                 except IndexError:
                     raise SyntaxError
+            elif subcommand == "reset":
+                if kernel._config is not None:
+                    kernel._config.DeleteAll()
+                    kernel._config = None
+                    kernel.shutdown()
             else:
                 raise SyntaxError
 
