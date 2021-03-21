@@ -1,5 +1,6 @@
 import wx
 
+from .mwindow import MWindow
 from ..kernel import Job, Module
 from ..svgelements import Matrix, Point, Viewbox
 from .icons import (
@@ -13,33 +14,20 @@ _ = wx.GetTranslation
 CORNER_SIZE = 25
 
 
-class CameraInterface(wx.Frame, Module, Job):
-    def __init__(self, context, path, parent, *args, **kwds):
-
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-        self.camera = None
-        if len(args) > 0 and args[0] >= 1:
-            self.index = args[0]
-        else:
-            self.index = 0
+class CameraInterface(MWindow, Job):
+    def __init__(self, *args, index=None, **kwds):
+        super().__init__(640, 480, *args, **kwds)
+        if index is None:
+            index = 0
+        self.index = index
         Job.__init__(self, job_name="Camera%d" % self.index)
+        self.camera = None
         self.last_frame_index = -1
 
         self.camera_setting = self.context.get_context("camera")
         self.setting = self.camera_setting.derive(str(self.index))
 
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = self.setting
+        self.root_context = self.context.get_context('/')
 
         self.button_update = wx.BitmapButton(
             self, wx.ID_ANY, icons8_camera_50.GetBitmap()
@@ -98,10 +86,6 @@ class CameraInterface(wx.Frame, Module, Job):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-
         self.image_width = -1
         self.image_height = -1
         self._Buffer = None
@@ -138,15 +122,9 @@ class CameraInterface(wx.Frame, Module, Job):
         self.display_camera.Bind(
             wx.EVT_ENTER_WINDOW, lambda event: self.display_camera.SetFocus()
         )  # Focus follows mouse.
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
-        self.window_context.setting(int, "width", 640)
-        self.window_context.setting(int, "height", 480)
 
         self.setting.setting(bool, "aspect", False)
         self.setting.setting(str, "preserve_aspect", "xMinYMin meet")
-        self.SetSize((self.window_context.width, self.window_context.height))
-        self.SetPosition((self.window_context.x, self.window_context.y))
 
         self.Bind(wx.EVT_SIZE, self.on_size, self)
         self.on_size()
@@ -155,6 +133,7 @@ class CameraInterface(wx.Frame, Module, Job):
 
         self.context.setting(bool, "mouse_zoom_invert", False)
         self.context.setting(int, "draw_mode", 0)
+
         self.bed_dim = self.context.get_context('/')
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
@@ -171,6 +150,7 @@ class CameraInterface(wx.Frame, Module, Job):
         self.setting.setting(str, "fisheye", "")
         self.setting.setting(str, "perspective", "")
         self.setting.setting(str, "uri", "0")
+
         self.check_fisheye.SetValue(self.setting.correction_fisheye)
         self.check_perspective.SetValue(self.setting.correction_perspective)
         if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
@@ -180,9 +160,6 @@ class CameraInterface(wx.Frame, Module, Job):
         self.slider_fps.SetValue(self.setting.fps)
         self.on_slider_fps()
         self.process = self.update_view
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
     def swap_camera(self, uri):
         def swap(event=None):
@@ -190,7 +167,6 @@ class CameraInterface(wx.Frame, Module, Job):
                 "camera%d --uri %s stop start\n" % (self.index, str(uri))
             )
             self.frame_bitmap = None
-
         return swap
 
     def __do_layout(self):
@@ -244,7 +220,7 @@ class CameraInterface(wx.Frame, Module, Job):
                 parent = None
             try:
                 context.open_as(
-                    "window/CameraInterface", "camera%d" % index, parent, index
+                    "window/CameraInterface", "camera%d" % index, parent, index=index
                 )
             except KeyError:
                 pass
@@ -257,20 +233,12 @@ class CameraInterface(wx.Frame, Module, Job):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         self.context("camera%d start\n" % self.index)
         self.context.schedule(self)
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
-        try:
-            self.Close()
-            self.context("camera%d stop\n" % self.index)
-        except RuntimeError:
-            pass
+    def window_close(self):
+        self.context("camera%d stop\n" % self.index)
         self.context.unschedule(self)
 
     def on_size(self, event=None):
@@ -710,24 +678,13 @@ class CameraInterface(wx.Frame, Module, Job):
         self.context.console("camera%d fisheye detect\n" % self.index)
 
 
-class CameraURI(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, index=0, **kwds):
-        # begin wxGlade: CameraURI.__init__
+class CameraURI(MWindow):
+    def __init__(self, *args, index=None, **kwds):
+        super().__init__(437, 530, *args, **kwds)
+        if index is None:
+            index = 0
         self.index = index
-        if parent is None:
-            wx.Frame.__init__(self, parent)
-        else:
-            wx.Frame.__init__(
-                self,
-                parent,
-                -1,
-                "",
-                style=wx.DEFAULT_FRAME_STYLE
-                | wx.FRAME_FLOAT_ON_PARENT
-                | wx.TAB_TRAVERSAL,
-            )
-        Module.__init__(self, context, path)
-        self.SetSize((437, 530))
+
         self.list_uri = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
@@ -744,7 +701,6 @@ class CameraURI(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_add_uri, self.button_add)
         self.Bind(wx.EVT_TEXT, self.on_text_uri, self.text_uri)
         # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.camera_setting = None
         self.uri_list = dict()
         self.changed = False
@@ -773,17 +729,7 @@ class CameraURI(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         self.camera_setting = self.context.get_context("camera")
         keylist = self.camera_setting._kernel.load_persistent_string_dict(
             self.camera_setting._path, suffix=True
@@ -794,12 +740,8 @@ class CameraURI(wx.Frame, Module):
             self.uri_list = [keylist[k] for k in keys]
             self.on_list_refresh()
 
-    def finalize(self, *args, **kwargs):
+    def window_close(self):
         self.commit()
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def commit(self):
         if not self.changed:
