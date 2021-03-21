@@ -35,8 +35,7 @@ class Notes(MWindow):
             self.text_notes.SetValue(self.context.elements.note)
 
     def window_close(self):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
+        pass
 
     def __set_properties(self):
         _icon = wx.NullIcon

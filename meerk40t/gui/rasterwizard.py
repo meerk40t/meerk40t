@@ -9,6 +9,7 @@ from math import ceil
 
 import wx
 
+from .mwindow import MWindow
 from ..image.imagetools import RasterScripts
 from ..kernel import Module
 from ..svgelements import Matrix, SVGImage
@@ -19,31 +20,14 @@ from .zmatrix import ZMatrix
 _ = wx.GetTranslation
 
 
-class RasterWizard(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 605)
-        self.window_context.setting(int, "height", 636)
-        self.SetSize((self.window_context.width, self.window_context.height))
+class RasterWizard(MWindow):
+    def __init__(self, *args, script=None, **kwds):
+        super().__init__(605, 636, *args, **kwds)
+        if script is None:
+            script = "Gravy"
 
         self._preview_panel_buffer = None
-        if len(args) >= 1:
-            script = args[0]
-        else:
-            script = "Gold"
+
         self.matrix = Matrix()
         self.previous_window_position = None
         self.previous_scene_position = None
@@ -77,11 +61,6 @@ class RasterWizard(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_LISTBOX, self.on_list_operation, self.list_operation)
         self.Bind(wx.EVT_BUTTON, self.on_buttons_operations, self.button_operations)
         # end wxGlade
@@ -99,13 +78,10 @@ class RasterWizard(wx.Frame, Module):
         self.panel_preview.Bind(
             wx.EVT_ENTER_WINDOW, lambda event: self.panel_preview.SetFocus()
         )  # Focus follows mouse.
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
         self.thread_update_lock = threading.Lock()
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
     def set_wizard_script(self, name=None, ops=None):
         if name is None:
@@ -127,23 +103,14 @@ class RasterWizard(wx.Frame, Module):
         self.Refresh()
         self.on_size()
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
+    def restore(self, *args, script=None, **kwargs):
+        if script is not None:
+            self.script = script
+            self.set_wizard_script(script)
 
-    def restore(self, *args, **kwargs):
-        if len(args) >= 2:
-            self.set_wizard_script(args[1])
-
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
+    def window_open(self):
         if self.script is not None:
             self.set_wizard_script(self.script)
-        self.Show()
 
         context_root = self.context.get_context("/")
         context_root.listen("emphasized", self.on_emphasis_change)
@@ -153,19 +120,13 @@ class RasterWizard(wx.Frame, Module):
         self.context.listen("RasterWizard-Image", self.on_raster_wizard_image_signal)
         self.context.signal("RasterWizard-Image")
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
+    def window_close(self):
         context_root = self.context.get_context("/")
         context_root.unlisten("emphasized", self.on_emphasis_change)
         self.context.unlisten(
             "RasterWizard-Refresh", self.on_raster_wizard_refresh_signal
         )
         self.context.unlisten("RasterWizard-Image", self.on_raster_wizard_image_signal)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def __set_properties(self):
         _icon = wx.NullIcon

@@ -8,6 +8,8 @@ import sys
 import threading
 import traceback
 
+from .mwindow import MWindow
+
 try:
     from math import tau
 except ImportError:
@@ -289,25 +291,18 @@ def resource_path(relative_path):
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
 
-class MeerK40t(wx.Frame, Module, Job):
+class MeerK40t(MWindow, Job):
     """
     MeerK40t main window
     """
 
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: MeerK40t.__init__
-        wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
-        Module.__init__(self, context, path)
+    def __init__(self, *args, **kwds):
+        super().__init__(1200, 600, *args, **kwds)
         Job.__init__(self, job_name="refresh_scene", process=self.refresh_scene)
 
+        context = self.context
         self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
 
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 1200)
-        self.window_context.setting(int, "height", 600)
-        self.SetSize((self.window_context.width, self.window_context.height))
         self.DragAcceptFiles(True)
         self._mgr = aui.AuiManager()
 
@@ -439,7 +434,6 @@ class MeerK40t(wx.Frame, Module, Job):
             # Not WX 4.1
             pass
 
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.scene.SetFocus()
         self.widget_scene = None
         self.pipe_state = None
@@ -470,18 +464,11 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
-        self.Show()
         self.context.schedule(self)
 
         self._rotary_view = False
-
-        self.accelerator_table(self)
-
         self.CenterOnScreen()
-        # x, y = self.GetPosition()
-        # self.window_context.setting(int, "x", x)
-        # self.window_context.setting(int, "y", y)
-        # self.SetPosition((self.window_context.x, self.window_context.y))
+
 
     @property
     def is_dark(self):
@@ -520,10 +507,6 @@ class MeerK40t(wx.Frame, Module, Job):
         context.setting(int, "fps", 40)
         if context.fps <= 0:
             context.fps = 60
-        if self.window_context.width < 300:
-            self.window_context.width = 300
-        if self.window_context.height < 300:
-            self.window_context.height = 300
 
         context.listen("units", self.space_changed)
 
@@ -1387,28 +1370,6 @@ class MeerK40t(wx.Frame, Module, Job):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self._mgr.UnInit()
-            self.state = 5
-            self.context.console("quit\n")
-            # self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def accelerator_table(self, window):
-        def close_window(e=None):
-            try:
-                window.Close(False)
-            except RuntimeError:
-                pass
-
-        keyid = wx.NewId()
-        accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('W'), keyid)])
-        window.Bind(wx.EVT_MENU, close_window, id=keyid)
-        window.SetAcceleratorTable(accel_tbl)
-
     def on_active_change(self, old_active, context_active):
         if old_active is not None:
             old_active.unlisten("pipe;error", self.on_usb_error)
@@ -1448,9 +1409,8 @@ class MeerK40t(wx.Frame, Module, Job):
             self.window_button_bar.EnableButton(ID_SPOOLER, False)
             self.window_button_bar.EnableButton(ID_USB, False)
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
+    def window_close(self):
+        self._mgr.UnInit()
 
         context = self.context
 
@@ -1470,10 +1430,8 @@ class MeerK40t(wx.Frame, Module, Job):
         context.unlisten("element_property_update", self.on_element_update)
 
         context.unlisten("active", self.on_active_change)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
+
+        self.context.console("quit\n")
 
     def set_fps(self, fps):
         if fps == 0:
@@ -2960,7 +2918,7 @@ class ShadowTree:
 
     def activated_node(self, node):
         if isinstance(node, LaserOperation):
-            self.context.open("window/OperationProperty", self.gui, node)
+            self.context.open("window/OperationProperty", self.gui, node=node)
             return
         if node is None:
             return
@@ -2968,13 +2926,13 @@ class ShadowTree:
         if obj is None:
             return
         elif isinstance(obj, Path):
-            self.context.open("window/PathProperty", self.gui, node)
+            self.context.open("window/PathProperty", self.gui, node=node)
         elif isinstance(obj, SVGText):
-            self.context.open("window/TextProperty", self.gui, node)
+            self.context.open("window/TextProperty", self.gui, node=node)
         elif isinstance(obj, SVGImage):
-            self.context.open("window/ImageProperty", self.gui, node)
+            self.context.open("window/ImageProperty", self.gui, node=node)
         elif isinstance(obj, SVGElement):
-            self.context.open("window/PathProperty", self.gui, node)
+            self.context.open("window/PathProperty", self.gui, node=node)
 
     def on_item_selection_changed(self, event):
         """

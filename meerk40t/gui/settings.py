@@ -5,6 +5,7 @@
 
 import wx
 
+from .mwindow import MWindow
 from ..kernel import Module
 from .icons import icons8_administrative_tools_50
 
@@ -15,26 +16,10 @@ _ = wx.GetTranslation
 # end wxGlade
 
 
-class Settings(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: Settings.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
+class Settings(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(490, 280, *args, **kwds)
 
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 490)
-        self.window_context.setting(int, "height", 280)
-        self.SetSize((self.window_context.width, self.window_context.height))
         self.radio_units = wx.RadioBox(
             self,
             wx.ID_ANY,
@@ -86,11 +71,6 @@ class Settings(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_units, self.radio_units)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_language, self.combo_language)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_svg_ppi, self.combo_svg_ppi)
@@ -100,20 +80,7 @@ class Settings(wx.Frame, Module):
             wx.EVT_CHECKLISTBOX, self.on_checklist_settings, self.checklist_options
         )
 
-        # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         context_root = self.context.get_context("/")
 
         context_root.setting(float, "svg_ppi", 96.0)
@@ -134,13 +101,8 @@ class Settings(wx.Frame, Module):
         self.radio_units.SetSelection(self.context.units_index)
         self.combo_language.SetSelection(self.context.language)
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
+    def window_close(self):
+        pass
 
     def __set_properties(self):
         _icon = wx.NullIcon

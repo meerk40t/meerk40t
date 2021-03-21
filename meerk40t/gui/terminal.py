@@ -1,31 +1,15 @@
 import wx
 
+from .mwindow import MWindow
 from ..kernel import Module
 from .icons import icons8_console_50
 
 _ = wx.GetTranslation
 
 
-class Terminal(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: Terminal.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 581)
-        self.window_context.setting(int, "height", 410)
-        self.SetSize((self.window_context.width, self.window_context.height))
+class Terminal(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(581, 410, *args, **kwds)
 
         self.text_main = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY
@@ -42,48 +26,23 @@ class Terminal(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         # self.Bind(wx.EVT_TEXT, self.on_key_down, self.text_entry))
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_entry)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down_main, self.text_main)
         # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.command_log = []
         self.command_position = 0
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
     def on_middle_click(self, event):
         self.text_main.SetValue("")
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         self.context.channel("console").watch(self.update_text)
         self.text_entry.SetFocus()
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
+    def window_close(self):
         self.context.channel("console").unwatch(self.update_text)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def update_text(self, text):
         if not wx.IsMainThread():

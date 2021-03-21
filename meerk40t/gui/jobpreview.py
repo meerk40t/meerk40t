@@ -1,33 +1,17 @@
 import wx
 
+from .mwindow import MWindow
 from ..core.elements import LaserOperation
-from ..kernel import Module
 from ..svgelements import Length
 from .icons import icons8_laser_beam_52
 
 _ = wx.GetTranslation
 
 
-class JobPreview(wx.Frame, Module):
-    def __init__(self, context, path, parent, plan_name, *args, **kwds):
-        # begin wxGlade: Preview.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
+class JobPreview(MWindow):
 
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 496)
-        self.window_context.setting(int, "height", 573)
-        self.SetSize((self.window_context.width, self.window_context.height))
+    def __init__(self, *args, plan_name=None, **kwds):
+        super().__init__(496, 573, *args, **kwds)
 
         # Menu Bar
         self.preview_menu = wx.MenuBar()
@@ -218,11 +202,6 @@ class JobPreview(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LISTBOX, self.on_listbox_operation_click, self.list_operations)
         self.Bind(
@@ -256,12 +235,8 @@ class JobPreview(wx.Frame, Module):
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.stage = 0
         self.plan_name = plan_name
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
     def __set_properties(self):
         # begin wxGlade: Preview.__set_properties
@@ -560,18 +535,7 @@ class JobPreview(wx.Frame, Module):
             self.Close()
         self.update_gui()
 
-    def on_close(self, event):
-        self.context("plan%s clear\n" % self.plan_name)
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         rotary_context = self.context.get_context('rotary/1')
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
@@ -615,17 +579,13 @@ class JobPreview(wx.Frame, Module):
 
         self.update_gui()
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
+    def window_close(self):
+        self.context("plan%s clear\n" % self.plan_name)
+
         self.context.unlisten(
             "element_property_update", self.on_element_property_update
         )
         self.context.unlisten("plan", self.plan_update)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def plan_update(self, *message):
         plan_name, stage = message[0], message[1]

@@ -1,32 +1,14 @@
 import wx
 
-from ..kernel import Module
+from .mwindow import MWindow
 from ..svgelements import Matrix
 
 _ = wx.GetTranslation
 
 
-class ImageProperty(wx.Frame, Module):
-    def __init__(self, context, path, parent, node, *args, **kwds):
-        # begin wxGlade: ImageProperty.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 276)
-        self.window_context.setting(int, "height", 218)
-        self.SetSize((self.window_context.width, self.window_context.height))
-
+class ImageProperty(MWindow):
+    def __init__(self, *args, node=None, **kwds):
+        super().__init__(276, 218, *args, **kwds)
         self.element_node = node
         self.element = node.object
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
@@ -55,11 +37,6 @@ class ImageProperty(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_step, self.spin_step_size)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_step, self.spin_step_size)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_dpi, self.combo_dpi)
@@ -71,28 +48,13 @@ class ImageProperty(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_width, self.text_width)
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
-        # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-            return
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def restore(self, parent, element, *args, **kwds):
-        self.element = element
+    def restore(self, *args, node=None, **kwds):
+        self.element_node = node
+        self.element = node.object
         self.set_widgets()
 
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         self.set_widgets()
 
     def set_widgets(self):
@@ -113,14 +75,6 @@ class ImageProperty(wx.Frame, Module):
             self.text_width.SetValue("%f" % (bounds[2] - bounds[0]))
             self.text_height.SetValue("%f" % (bounds[3] - bounds[1]))
         except AttributeError:
-            pass
-
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
-        try:
-            self.Close()
-        except RuntimeError:
             pass
 
     def __set_properties(self):

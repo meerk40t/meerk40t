@@ -6,6 +6,7 @@
 
 import wx
 
+from .mwindow import MWindow
 from ..kernel import STATE_UNKNOWN, Module
 from .icons import (icons8_administrative_tools_50, icons8_manager_50,
                     icons8_plus_50, icons8_trash_50)
@@ -13,31 +14,10 @@ from .icons import (icons8_administrative_tools_50, icons8_manager_50,
 _ = wx.GetTranslation
 
 
-class DeviceManager(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: DeviceManager.__init__
-        if parent is None:
-            wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
-        else:
-            wx.Frame.__init__(
-                self,
-                parent,
-                -1,
-                "",
-                style=wx.DEFAULT_FRAME_STYLE
-                | wx.FRAME_FLOAT_ON_PARENT
-                | wx.TAB_TRAVERSAL,
-            )
-        Module.__init__(self, context, path)
+class DeviceManager(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(707, 337, *args, **kwds)
 
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 707)
-        self.window_context.setting(int, "height", 337)
-        self.SetSize((self.window_context.width, self.window_context.height))
         self.devices_list = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
@@ -54,11 +34,6 @@ class DeviceManager(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.devices_list)
         self.Bind(
             wx.EVT_LIST_ITEM_ACTIVATED, self.on_list_item_activated, self.devices_list
@@ -71,38 +46,16 @@ class DeviceManager(wx.Frame, Module):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_properties, self.device_properties_button
         )
-        # end wxGlade
 
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         self.context.setting(str, "list_devices", "")
         self.refresh_device_list()
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
-    def on_close(self, event):
+    def window_close(self):
         item = self.devices_list.GetFirstSelected()
         if item != -1:
             uid = self.devices_list.GetItem(item).Text
             self.context.device_primary = uid
-
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def __set_properties(self):
         _icon = wx.NullIcon

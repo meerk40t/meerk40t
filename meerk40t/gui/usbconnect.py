@@ -1,31 +1,14 @@
 import wx
 
-from ..kernel import Module
+from .mwindow import MWindow
 from .icons import icons8_usb_connector_50
 
 _ = wx.GetTranslation
 
 
-class UsbConnect(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: Terminal.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 915)
-        self.window_context.setting(int, "height", 424)
-        self.SetSize((self.window_context.width, self.window_context.height))
+class UsbConnect(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(915, 424, *args, **kwds)
 
         self.text_main = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY
@@ -37,41 +20,16 @@ class UsbConnect(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
         # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.pipe = None
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         self.context.active.channel("pipe/usb").watch(self.update_text)
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
+    def window_close(self):
         if self.context.active is not None:
             self.context.active.channel("pipe/usb").unwatch(self.update_text)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def update_text(self, text):
         if not wx.IsMainThread():
@@ -103,7 +61,7 @@ class UsbConnect(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
-    def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
+    def on_entry(self, event):
         if self.pipe is not None:
             self.pipe.write(self.text_entry.GetValue() + "\n")
             self.text_entry.SetValue("")

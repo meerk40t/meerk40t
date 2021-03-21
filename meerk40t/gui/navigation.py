@@ -5,6 +5,7 @@
 
 import wx
 
+from .mwindow import MWindow
 from ..kernel import Module
 from .icons import (icon_corner1, icon_corner2, icon_corner3, icon_corner4,
                     icons8_center_of_gravity_50, icons8_compress_50,
@@ -24,26 +25,9 @@ _ = wx.GetTranslation
 MILS_IN_MM = 39.3701
 
 
-class Navigation(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: Navigation.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 598)
-        self.window_context.setting(int, "height", 429)
-        self.SetSize((self.window_context.width, self.window_context.height))
+class Navigation(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(598, 429, *args, **kwds)
 
         self.spin_jog_mils = wx.SpinCtrlDouble(
             self, wx.ID_ANY, "394.0", min=0.0, max=10000.0
@@ -171,11 +155,6 @@ class Navigation(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_jog_distance, self.spin_jog_mils)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_jog_distance, self.spin_jog_mils)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_jog_distance, self.spin_jog_mm)
@@ -285,15 +264,11 @@ class Navigation(wx.Frame, Module):
             wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to
         )
         # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.elements = None
         self.console = None
         self.design_locked = False
         self.drag_ready(False)
         self.select_ready(False)
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -553,19 +528,9 @@ class Navigation(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
+    def window_open(self):
         context = self.context
         context_root = self.context.get_context("/")
-        context.close(self.name)
-        self.Show()
 
         self.elements = context_root.elements
         context.setting(float, "navigate_jog", float(self.spin_jog_mils.GetValue()))
@@ -579,16 +544,10 @@ class Navigation(wx.Frame, Module):
         self.update_matrix_text()
         self.SetFocus()
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
+    def window_close(self):
         context_root = self.context.get_context("/")
         context_root.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("interpreter;position", self.on_position_update)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def on_emphasized_elements_changed(self, elements):
         self.select_ready(self.elements.has_emphasis())

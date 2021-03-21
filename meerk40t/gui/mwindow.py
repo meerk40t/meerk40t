@@ -17,13 +17,16 @@ class MWindow(wx.Frame, Module):
     """
     def __init__(self, width, height, context, path, parent, *args, **kwds):
         # begin wxGlade: Notes.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
+        if parent is None:
+            wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
+        else:
+            wx.Frame.__init__(
+                self,
+                parent,
+                -1,
+                "",
+                style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+            )
         Module.__init__(self, context, path)
 
         self.root_context = context.get_context('/')
@@ -34,14 +37,27 @@ class MWindow(wx.Frame, Module):
         if self.window_save:
             self.window_context.setting(int, "width", width)
             self.window_context.setting(int, "height", height)
+            if self.window_context.width < 100:
+                self.window_context.width = 100
+            if self.window_context.height < 100:
+                self.window_context.height = 100
             self.SetSize((self.window_context.width, self.window_context.height))
         else:
             self.SetSize(width, height)
-
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
+        self.accelerator_table(self)
+
+    def accelerator_table(self, window):
+        def close_window(e=None):
+            try:
+                window.Close(False)
+            except RuntimeError:
+                pass
+
+        keyid = wx.NewId()
+        accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('W'), keyid)])
+        window.Bind(wx.EVT_MENU, close_window, id=keyid)
+        window.SetAcceleratorTable(accel_tbl)
 
     def on_close(self, event):
         if self.state == 5:

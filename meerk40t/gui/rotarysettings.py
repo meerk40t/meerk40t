@@ -6,34 +6,17 @@
 
 import wx
 
+from .mwindow import MWindow
 from ..kernel import Module
 from .icons import icons8_roll_50
 
 _ = wx.GetTranslation
 
 
-class RotarySettings(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: RotarySettings.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
+class RotarySettings(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(222, 347, *args, **kwds)
 
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 222)
-        self.window_context.setting(int, "height", 347)
-        self.SetSize((self.window_context.width, self.window_context.height))
-
-        self.SetSize((222, 347))
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Rotary"))
         self.text_rotary_scaley = wx.TextCtrl(self, wx.ID_ANY, "1.0")
         self.text_rotary_scalex = wx.TextCtrl(self, wx.ID_ANY, "1.0")
@@ -46,11 +29,6 @@ class RotarySettings(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary, self.checkbox_rotary)
         self.Bind(wx.EVT_TEXT, self.on_text_rotary_scale_y, self.text_rotary_scaley)
         self.Bind(wx.EVT_TEXT, self.on_text_rotary_scale_x, self.text_rotary_scalex)
@@ -61,24 +39,8 @@ class RotarySettings(wx.Frame, Module):
         )
         self.Bind(wx.EVT_TEXT, self.on_text_rotary_roller_circumference, self.text_rotary_roller_circumference)
         self.Bind(wx.EVT_TEXT, self.on_text_rotary_object_circumference, self.text_rotary_object_circumference)
-        # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
-
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         self.context.setting(bool, "rotary", False)
         self.context.setting(float, "scale_x", 1.0)
         self.context.setting(float, "scale_y", 1.0)
@@ -87,13 +49,8 @@ class RotarySettings(wx.Frame, Module):
         self.checkbox_rotary.SetValue(self.context.rotary)
         self.on_check_rotary(None)
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
+    def window_close(self):
+        pass
 
     def __set_properties(self):
         _icon = wx.NullIcon

@@ -1,6 +1,6 @@
 import wx
 
-from ..kernel import Module
+from .mwindow import MWindow
 from ..svgelements import Color
 from .icons import icons8_delete_50, icons8_laser_beam_52, icons8_plus_50
 from .laserrender import swizzlecolor
@@ -11,27 +11,10 @@ _simple_width = 350
 _advanced_width = 612
 
 
-class OperationProperty(wx.Frame, Module):
-    def __init__(self, context, path, parent, operation, *args, **kwds):
-        # begin wxGlade: OperationProperty.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width_simple", _simple_width)
-        self.window_context.setting(int, "width_advanced", _advanced_width)
-        self.window_context.setting(int, "height", 500)
-        self.SetSize((self.window_context.width_simple, self.window_context.height))
+class OperationProperty(MWindow):
+    def __init__(self, *args, node=None, **kwds):
+        super().__init__(_simple_width, 500, *args, **kwds)
+        # self.set_alt_size(_advanced_width, 500)
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
         self.button_add_layer = wx.BitmapButton(
@@ -116,14 +99,8 @@ class OperationProperty(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.combo_type.SetFocus()
-        self.operation = operation
+        self.operation = node
 
         self.raster_pen = wx.Pen()
         self.raster_pen.SetColour(wx.BLACK)
@@ -135,26 +112,16 @@ class OperationProperty(wx.Frame, Module):
 
         self.raster_lines = None
         self.travel_lines = None
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def restore(self, parent, operation, *args, **kwargs):
-        self.operation = operation
+    def restore(self, *args, node=None, **kwds):
+        self.operation = node
         self.set_widgets()
         self.on_size()
 
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_close(self):
+        pass
+
+    def window_open(self):
         self.set_widgets()
         self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
         self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
@@ -281,14 +248,6 @@ class OperationProperty(wx.Frame, Module):
             self.checkbox_show.SetValue(self.operation.show)
         self.on_check_advanced()
         self.on_combo_operation()
-
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
 
     def __set_properties(self):
         # begin wxGlade: OperationProperty.__set_properties

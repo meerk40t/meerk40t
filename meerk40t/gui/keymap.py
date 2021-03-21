@@ -1,31 +1,14 @@
 import wx
 
-from ..kernel import Module
-from .icons import icons8_keyboard_50, icons8_underline_50
+from .mwindow import MWindow
+from .icons import icons8_keyboard_50
 
 _ = wx.GetTranslation
 
 
-class Keymap(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
-        # begin wxGlade: Keymap.__init__
-        wx.Frame.__init__(
-            self,
-            parent,
-            -1,
-            "",
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
-        )
-        Module.__init__(self, context, path)
-
-        self.root_context = context.get_context('/')
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
-
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "width", 500)
-        self.window_context.setting(int, "height", 530)
-        self.SetSize((self.window_context.width, self.window_context.height))
+class Keymap(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(500, 530, *args, **kwds)
 
         self.list_keymap = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
@@ -37,43 +20,19 @@ class Keymap(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        x, y = self.GetPosition()
-        self.window_context.setting(int, "x", x)
-        self.window_context.setting(int, "y", y)
-        self.SetPosition((self.window_context.x, self.window_context.y))
-
         self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
         # end wxGlade
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_keymap
         )
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated, self.list_keymap)
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
-        # OSX Window close
-        if parent is not None:
-            parent.accelerator_table(self)
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, *args, **kwargs):
-        self.context.close(self.name)
-        self.Show()
+    def window_open(self):
         self.reload_keymap()
 
-    def finalize(self, *args, **kwargs):
-        self.window_context.width, self.window_context.height = self.Size
-        self.window_context.x, self.window_context.y = self.GetPosition()
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
+    def window_close(self):
+        pass
 
     def __set_properties(self):
         _icon = wx.NullIcon
