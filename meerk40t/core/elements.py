@@ -635,7 +635,7 @@ class LaserOperation(Node):
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
-        if self.settings.passes_custom:
+        if self.settings.passes_custom and self.settings.passes != 1:
             parts.append("%dX" % self.settings.passes)
         if op is None:
             op = "Unknown"
