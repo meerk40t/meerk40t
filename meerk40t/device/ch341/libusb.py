@@ -117,14 +117,14 @@ class Handler(CH341Handler):
             match_bus = self.driver.devices[val].bus
             if bus != match_bus:
                 # Rejected.
-                self.channel(_("K40 devices were found but they were rejected due to usb bus location."))
+                self.channel(_("K40 devices were found but they were rejected due to usb bus."))
                 connection.close()
                 return None
         if address != -1:
             match_address = self.driver.devices[val].bus
             if address != match_address:
                 # Rejected
-                self.channel(_("K40 devices were found but they were rejected due to usb address location."))
+                self.channel(_("K40 devices were found but they were rejected due to usb address."))
                 connection.close()
                 return None
         return connection

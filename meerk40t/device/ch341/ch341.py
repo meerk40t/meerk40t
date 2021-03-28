@@ -5,6 +5,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("module/ch341", CH341)
 
+
 class Connection:
     def __init__(self, channel, state):
         self.channel = channel
