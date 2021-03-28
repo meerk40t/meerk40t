@@ -73,7 +73,7 @@ class SVGWriter:
         )
         # Native unit is mils, these must convert to mm and to px
         mils_per_mm = 39.3701
-        mils_per_px = 1000.0 / 96.0
+        # mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
         bed_dim = context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)

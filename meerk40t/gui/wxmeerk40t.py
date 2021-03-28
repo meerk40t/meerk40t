@@ -22,9 +22,8 @@ import wx.aui as aui
 import wx.ribbon as RB
 
 from ..core.cutplanner import CutPlanner
-from ..core.elements import CommandOperation, LaserOperation
+from ..core.elements import LaserOperation
 from ..device.lasercommandconstants import (
-    COMMAND_BEEP,
     COMMAND_FUNCTION,
     COMMAND_HOME,
     COMMAND_JOG,
@@ -40,12 +39,10 @@ from ..device.lasercommandconstants import (
     COMMAND_SET_SPEED,
     COMMAND_WAIT,
     COMMAND_WAIT_FINISH,
-    REALTIME_RESET,
 )
 from ..kernel import STATE_BUSY, Job, Module
 from ..svgelements import (
     SVG_ATTR_STROKE,
-    Angle,
     Color,
     Length,
     Matrix,
@@ -588,7 +585,7 @@ class MeerK40t(MWindow, Job):
             self.toggle_rotary_view()
 
         @context.console_command("rotaryscale", help="Rotary Scale selected elements")
-        def toggle_rotary_view(*args, **kwargs):
+        def apply_rotary_scale(*args, **kwargs):
             self.apply_rotary_scale()
 
         self.interval = 1.0 / float(context.fps)
@@ -1615,7 +1612,6 @@ class MeerK40t(MWindow, Job):
         self.request_refresh()
 
     def __set_titlebar(self):
-        device_text = ""
         device_name = ""
         device_version = ""
         if self.context is not None:

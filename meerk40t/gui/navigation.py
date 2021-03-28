@@ -5,7 +5,6 @@
 
 import wx
 
-from ..kernel import Module
 from .icons import (
     icon_corner1,
     icon_corner2,

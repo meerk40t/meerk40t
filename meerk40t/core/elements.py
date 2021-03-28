@@ -1716,7 +1716,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
+        def clipboard_copy(command, channel, _, data=None, args=tuple(), **kwargs):
             destination = self._clipboard_default
             self._clipboard[destination] = [copy(e) for e in data]
             return "elements", self._clipboard[destination]
@@ -1729,7 +1729,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard(
+        def clipboard_paste(
             command, channel, _, data=None, dx=None, dy=None, args=tuple(), **kwargs
         ):
             destination = self._clipboard_default
@@ -1763,7 +1763,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
+        def clipboard_cut(command, channel, _, data=None, args=tuple(), **kwargs):
             destination = self._clipboard_default
             self._clipboard[destination] = [copy(e) for e in data]
             self.remove_elements(data)
@@ -1775,7 +1775,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
+        def clipboard_clear(command, channel, _, data=None, args=tuple(), **kwargs):
             destination = self._clipboard_default
             old = self._clipboard[destination]
             self._clipboard[destination] = None
@@ -1787,7 +1787,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
+        def clipboard_contents(command, channel, _, data=None, args=tuple(), **kwargs):
             destination = self._clipboard_default
             return "elements", self._clipboard[destination]
 
@@ -1796,7 +1796,7 @@ class Elemental(Modifier):
             help="clipboard list",
             input_type="clipboard",
         )
-        def clipboard(command, channel, _, data=None, args=tuple(), **kwargs):
+        def clipboard_list(command, channel, _, data=None, args=tuple(), **kwargs):
             for v in self._clipboard:
                 k = self._clipboard[v]
                 channel("%s: %s" % (str(v).ljust(5), str(k)))
@@ -2899,21 +2899,21 @@ class Elemental(Modifier):
             self.context("element* delete\n")
 
         @self.tree_operation(_("Remove: {name}"), node_type="op", help="")
-        def remove_types(node, **kwargs):
+        def remove_type_op(node, **kwargs):
             # self.context("operation delete\n")
             node.remove_node()
             # self.remove_orphaned_opnodes()
             self.set_emphasis(None)
 
         @self.tree_operation(_("Remove: {name}"), node_type="elem", help="")
-        def remove_types(node, **kwargs):
+        def remove_type_elem(node, **kwargs):
             # self.context("element delete\n")
             node.remove_node()
             self.remove_orphaned_opnodes()
             self.set_emphasis(None)
 
         @self.tree_operation(_("Remove: {name}"), node_type="file", help="")
-        def remove_types(node, **kwargs):
+        def remove_type_file(node, **kwargs):
             node.remove_all_children()
             node.remove_node()
             self.remove_orphaned_opnodes()
@@ -3186,7 +3186,7 @@ class Elemental(Modifier):
             and not isinstance(node.object, Path)
         )
         @self.tree_operation(_("Convert To Path"), node_type=("elem",), help="")
-        def reset_user_changes(node, copies=1, **kwargs):
+        def convert_to_path(node, copies=1, **kwargs):
             node.object = abs(Path(node.object))
             node.object.node = node
             node.altered()

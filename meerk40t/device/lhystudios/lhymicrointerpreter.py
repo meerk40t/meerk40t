@@ -883,8 +883,8 @@ class LhymicroInterpreter(Interpreter, Modifier):
         x, y = self.calc_home_position()
         self.ensure_rapid_mode()
         self.pipe(b"IPP\n")
-        old_x = self.context.current_x
-        old_y = self.context.current_y
+        # old_x = self.context.current_x
+        # old_y = self.context.current_y
         self.context.current_x = x
         self.context.current_y = y
         self.reset_modes()

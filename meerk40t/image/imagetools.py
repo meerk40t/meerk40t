@@ -4,7 +4,7 @@ from math import ceil
 from os import path as ospath
 
 from ..core.cutplanner import Planner
-from ..svgelements import Angle, Color, Group, Length, Matrix, Path, SVGImage
+from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 
 
 def plugin(kernel, lifecycle=None):

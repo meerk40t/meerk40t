@@ -10,7 +10,6 @@ from math import ceil
 import wx
 
 from ..image.imagetools import RasterScripts
-from ..kernel import Module
 from ..svgelements import Matrix, SVGImage
 from .icons import icons8_fantasy_50
 from .laserrender import LaserRender
@@ -333,8 +332,8 @@ class RasterWizard(MWindow):
         scene_position = self.convert_window_to_scene(
             [window_position[0], window_position[1]]
         )
-        sdx = scene_position[0] - self.previous_scene_position[0]
-        sdy = scene_position[1] - self.previous_scene_position[1]
+        # sdx = scene_position[0] - self.previous_scene_position[0]
+        # sdy = scene_position[1] - self.previous_scene_position[1]
         wdx = window_position[0] - self.previous_window_position[0]
         wdy = window_position[1] - self.previous_window_position[1]
         self.scene_post_pan(wdx, wdy)

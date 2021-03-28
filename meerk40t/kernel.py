@@ -236,13 +236,13 @@ class Context:
         """
         Commit any and all values currently stored as attr for this object to persistent storage.
         """
+        from .svgelements import Color
         for attr in dir(self):
             if attr.startswith("_"):
                 continue
             value = getattr(self, attr)
             if value is None:
                 continue
-            from .svgelements import Color
 
             if isinstance(value, (int, bool, str, float, Color)):
                 self._kernel.write_persistent(self.abs_path(attr), value)
@@ -477,12 +477,13 @@ class Context:
         :param obj:
         :return:
         """
+
+        from .svgelements import Color
         for attr in dir(obj):
             if attr.startswith("_"):
                 continue
             obj_value = getattr(obj, attr)
 
-            from .svgelements import Color
 
             if not isinstance(obj_value, (int, float, str, bool, Color)):
                 continue
@@ -2294,7 +2295,7 @@ class Kernel:
         while "\n" in self._console_buffer:
             pos = self._console_buffer.find("\n")
             command = self._console_buffer[0:pos].strip("\r")
-            self._console_buffer = self._console_buffer[pos + 1 :]
+            self._console_buffer = self._console_buffer[pos + 1:]
             self._console_parse(command, channel=self._console_channel)
 
     def _console_job_tick(self):

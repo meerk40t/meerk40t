@@ -220,7 +220,7 @@ class CutObject:
         self._start, self._end = self._end, self._start
 
     def generator(self):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class LineCut(CutObject):

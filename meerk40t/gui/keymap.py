@@ -115,7 +115,7 @@ class Keymap(MWindow):
                 _("No Keystroke for binding."),
                 wx.OK | wx.ICON_WARNING,
             )
-            result = dlg.ShowModal()
+            dlg.ShowModal()
             dlg.Destroy()
             self.text_key_name.SetFocus()
             return
@@ -126,7 +126,7 @@ class Keymap(MWindow):
                 _("No Command for binding."),
                 wx.OK | wx.ICON_WARNING,
             )
-            result = dlg.ShowModal()
+            dlg.ShowModal()
             dlg.Destroy()
             self.text_command_name.SetFocus()
             return
