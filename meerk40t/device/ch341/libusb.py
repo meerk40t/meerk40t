@@ -1,5 +1,6 @@
-from .ch341connection import CH341Connection
-from .ch341handler import CH341Handler
+
+from .ch341 import Connection as CH341Connection
+from .ch341 import Handler as CH341Handler
 from .ch341libusbdriver import Ch341LibusbDriver
 
 

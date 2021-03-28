@@ -1,8 +1,9 @@
 from ctypes import c_byte, windll
 
 # MIT License.
-from meerk40t.device.ch341.ch341connection import CH341Connection
-from meerk40t.device.ch341.ch341handler import CH341Handler
+
+from .ch341 import Connection as CH341Connection
+from .ch341 import Handler as CH341Handler
 
 
 class CH341Driver(CH341Connection):
