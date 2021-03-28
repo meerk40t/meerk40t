@@ -181,15 +181,14 @@ class MoshiController(Module):
     def open(self):
         self.pipe_channel("open()")
         if self.connection is None:
-            self.connection = self.ch341.connect(self.context.mock)
+            self.connection = self.ch341.connect(
+                driver_index=self.context.usb_index,
+                chipv=self.context.usb_version,
+                bus=self.context.usb_bus,
+                address=self.context.usb_address,
+                mock=self.context.mock,
+            )
         else:
-            # Update criteria
-            # TODO: RESTORE CRITERIA
-            self.connection.index = self.context.usb_index
-            self.connection.bus = self.context.usb_bus
-            self.connection.address = self.context.usb_address
-            self.connection.serial = self.context.usb_serial
-            self.connection.chipv = self.context.usb_version
             self.connection.open()
         if self.connection is None:
             raise ConnectionRefusedError

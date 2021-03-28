@@ -18,7 +18,7 @@ class CH341Driver(CH341Connection):
         CH341Connection.__init__(self, channel, state)
         self.channel = channel if channel is not None else lambda code: None
         self.state = state
-
+        self.driver_name = "WinDll"
         self.driver_value = None
 
     def validate(self):

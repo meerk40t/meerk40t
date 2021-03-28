@@ -12,7 +12,7 @@ class CH341Driver(CH341Connection):
         channel=None,
         state=None,
     ):
-
+        self.driver_name = "LibUsb"
         self.driver = driver
         self.driver_index = driver_index
 

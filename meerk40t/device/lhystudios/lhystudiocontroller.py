@@ -1,9 +1,18 @@
 import threading
 import time
 
-from ...kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
-                       STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
-                       STATE_UNKNOWN, STATE_WAIT, Module)
+from ...kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+    Module,
+)
 
 
 def convert_to_list_bytes(data):
@@ -332,15 +341,14 @@ class LhystudioController(Module):
     def open(self):
         self.pipe_channel("open()")
         if self.connection is None:
-            self.connection = self.ch341.connect(self.context.mock)
+            self.connection = self.ch341.connect(
+                driver_index=self.context.usb_index,
+                chipv=self.context.usb_version,
+                bus=self.context.usb_bus,
+                address=self.context.usb_address,
+                mock=self.context.mock,
+            )
         else:
-            # TODO: RESTORE CRITERIA.
-            # Update criteria
-            self.connection.index = self.context.usb_index
-            self.connection.bus = self.context.usb_bus
-            self.connection.address = self.context.usb_address
-            self.connection.serial = self.context.usb_serial
-            self.connection.chipv = self.context.usb_version
             self.connection.open()
 
         if self.connection is None:

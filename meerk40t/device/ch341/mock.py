@@ -20,7 +20,7 @@ class CH341Driver(CH341Connection):
         self.channel = channel if channel is not None else lambda code: None
         self.usb_log = self.channel
         self.state = state
-
+        self.driver_name = "Mock"
         self.driver_value = None
 
         self.mock_status = 206
