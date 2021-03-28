@@ -17,65 +17,6 @@ class CH341(Module):
         Module.__init__(self, *args, **kwargs)
         self.usb_log = self.context.channel("pipe/usb")
 
-    def state_change(self, state_value):
-        self.context.signal("pipe;state", state_value)
-
-    def connect_attempt(self, handler, driver_index=-1, chipv=-1, bus=-1, address=-1):
-        _ = self.usb_log._
-        connection = handler.connect(driver_index=driver_index, chipv=chipv, bus=bus, address=address)
-        chip_version = connection.get_chip_version()
-        self.usb_log(_("CH341 Chip Version: %d") % chip_version)
-        self.context.signal("pipe;chipv", chip_version)
-        self.usb_log(_("Driver Detected: %s") % (connection.driver_name))
-        self.state_change("STATE_CONNECTED")
-        self.usb_log(_("Device Connected.\n"))
-        return connection
-
-    def _connect_mock(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
-        from .mock import Handler
-        driver_handler = Handler(channel=self.usb_log, state=self.state_change)
-        if driver_index != -1:
-            try:
-                return self.connect_attempt(driver_handler, driver_index, chipv, bus, address)
-            except ConnectionRefusedError:
-                pass
-        else:
-            for i in range(16):
-                try:
-                    return self.connect_attempt(driver_handler, i, chipv, bus, address)
-                except ConnectionRefusedError:
-                    pass
-
-    def _connect_libusb(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
-        from .libusb import Handler
-        driver_handler = Handler(channel=self.usb_log, state=self.state_change)
-        if driver_index != -1:
-            try:
-                return self.connect_attempt(driver_handler, driver_index, chipv, bus, address)
-            except ConnectionRefusedError:
-                pass
-        else:
-            for i in range(16):
-                try:
-                    return self.connect_attempt(driver_handler, i, chipv, bus, address)
-                except ConnectionRefusedError:
-                    pass
-
-    def _connect_windll(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
-        from .windll import Handler
-        driver_handler = Handler(channel=self.usb_log, state=self.state_change)
-        if driver_index != -1:
-            try:
-                return self.connect_attempt(driver_handler, driver_index, chipv, bus, address)
-            except ConnectionRefusedError:
-                pass
-        else:
-            for i in range(16):
-                try:
-                    return self.connect_attempt(driver_handler, i, chipv, bus, address)
-                except ConnectionRefusedError:
-                    pass
-
     def connect(self, driver_index=-1, chipv=-1, bus=-1, address=-1, mock=False):
         """
         Requests and returns an available connection. The connection object itself has open() and close() functions and
@@ -95,6 +36,65 @@ class CH341(Module):
             return self._connect_windll(driver_index, chipv, bus, address)
         except ImportError:
             self.usb_log(_("No Windll interfacing. Skipping."))
+
+    def _state_change(self, state_value):
+        self.context.signal("pipe;state", state_value)
+
+    def _connect_attempt(self, handler, driver_index=-1, chipv=-1, bus=-1, address=-1):
+        _ = self.usb_log._
+        connection = handler.connect(driver_index=driver_index, chipv=chipv, bus=bus, address=address)
+        chip_version = connection.get_chip_version()
+        self.usb_log(_("CH341 Chip Version: %d") % chip_version)
+        self.context.signal("pipe;chipv", chip_version)
+        self.usb_log(_("Driver Detected: %s") % (connection.driver_name))
+        self._state_change("STATE_CONNECTED")
+        self.usb_log(_("Device Connected.\n"))
+        return connection
+
+    def _connect_mock(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
+        from .mock import Handler
+        driver_handler = Handler(channel=self.usb_log, state=self._state_change)
+        if driver_index != -1:
+            try:
+                return self._connect_attempt(driver_handler, driver_index, chipv, bus, address)
+            except ConnectionRefusedError:
+                pass
+        else:
+            for i in range(16):
+                try:
+                    return self._connect_attempt(driver_handler, i, chipv, bus, address)
+                except ConnectionRefusedError:
+                    pass
+
+    def _connect_libusb(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
+        from .libusb import Handler
+        driver_handler = Handler(channel=self.usb_log, state=self._state_change)
+        if driver_index != -1:
+            try:
+                return self._connect_attempt(driver_handler, driver_index, chipv, bus, address)
+            except ConnectionRefusedError:
+                pass
+        else:
+            for i in range(16):
+                try:
+                    return self._connect_attempt(driver_handler, i, chipv, bus, address)
+                except ConnectionRefusedError:
+                    pass
+
+    def _connect_windll(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
+        from .windll import Handler
+        driver_handler = Handler(channel=self.usb_log, state=self._state_change)
+        if driver_index != -1:
+            try:
+                return self._connect_attempt(driver_handler, driver_index, chipv, bus, address)
+            except ConnectionRefusedError:
+                pass
+        else:
+            for i in range(16):
+                try:
+                    return self._connect_attempt(driver_handler, i, chipv, bus, address)
+                except ConnectionRefusedError:
+                    pass
 
 
 class Connection:
