@@ -63,13 +63,14 @@ class Ch341LibusbDriver:
         self.channel(_("Using LibUSB to connect."))
         self.channel(_("Finding devices."))
         try:
-            devices = usb.core.find(
-                idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True
+            devices = list(
+                usb.core.find(
+                    idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True
+                )
             )
         except usb.core.USBError as e:
             self.channel(str(e))
             raise ConnectionRefusedError
-        devices = [d for d in devices]
         if len(devices) == 0:
             self.channel(_("Devices Not Found."))
             raise ConnectionRefusedError
@@ -343,4 +344,3 @@ class Ch341LibusbDriver:
         self, index, buffer=None, length=0
     ):  # WR=0, DS=1, AS=0, D0-D7 out
         self.CH341EppWrite(index, buffer, length, 1)
-

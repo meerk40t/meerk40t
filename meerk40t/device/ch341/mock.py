@@ -3,35 +3,32 @@
 
 import time
 
+from meerk40t.device.ch341.ch341connection import CH341Connection
+from meerk40t.device.ch341.ch341handler import CH341Handler
 
-class CH341Driver:
+
+class CH341Driver(CH341Connection):
     """
     This is basic interface code for a mock CH341.
     """
 
-    def __init__(self, index=-1, bus=-1, address=-1, serial=-1, chipv=-1, channel=None, state=None):
-        self.channel = channel if channel is not None else lambda code: None
-        self.state = state
-        self.driver = "mock"
+    def __init__(self, driver, driver_index=0, channel=None, state=None):
+        self.driver = driver
+        self.driver_index = driver_index
 
-        self.driver_index = 0
-        self.index = index
-        self.bus = bus
-        self.address = address
-        self.serial = serial
-        self.chipv = chipv
+        CH341Connection.__init__(self, channel, state)
+        self.channel = channel if channel is not None else lambda code: None
+        self.usb_log = self.channel
+        self.state = state
+
         self.driver_value = None
+
         self.mock_status = 206
         self.mock_error = 207
         self.mock_finish = 236
 
-    def try_open(self, i):
-        """
-        Tries to open device at index, with given criteria
-        However, since this is a mock device we always find it.
-        """
-        self.driver_index = i
-        self.driver_value = i  # MOCK
+    def validate(self):
+        pass
 
     def open(self):
         """
@@ -44,13 +41,7 @@ class CH341Driver:
             self.channel(_("Using Mock Driver to connect."))
             self.channel(_("Attempting connection to USB."))
             self.state('STATE_USB_CONNECTING')
-
-            if self.index == -1:
-                for i in range(0, 16):
-                    if self.try_open(i) == 0:
-                        break  # We have our driver.
-            else:
-                self.try_open(self.index)
+            self.driver_value = 0  # Would connect here.
             self.state('STATE_USB_CONNECTED')
             self.channel(_("USB Connected."))
             self.channel(_("Sending CH341 mode change to EPP1.9."))
@@ -146,3 +137,27 @@ class CH341Driver:
         if self.driver_value == -1:
             raise ConnectionRefusedError
         return 9999  # MOCK.
+
+
+class Handler(CH341Handler):
+    def __init__(self, channel, state):
+        CH341Handler.__init__(self, channel=channel, state=state)
+        self.channel = channel
+        self.state = state
+        self.driver = "mock"
+
+    def connect(self, driver_index=0, chipv=-1, bus=-1, address=-1):
+        """Tries to open device at index, with given criteria"""
+        connection = CH341Driver(self.driver, driver_index, channel=self.channel, state=self.state)
+        _ = self.channel._
+        connection.validate()
+
+        if chipv != -1:
+            match_chipv = connection.get_chip_version()
+            if chipv != match_chipv:
+                # Rejected.
+                self.channel(_("K40 devices were found but they were rejected due to chip version."))
+                connection.close()
+                return -1
+        # No methods to match bus or address
+        return connection

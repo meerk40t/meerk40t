@@ -141,6 +141,7 @@ class LhystudioController(Module):
         self._usb_state = -1
 
         self.ch341 = self.context.open("module/ch341")
+        self.connection = None
         self.max_attempts = 5
         self.refuse_counts = 0
         self.connection_errors = 0
@@ -251,7 +252,7 @@ class LhystudioController(Module):
 
         @self.context.console_command("usb_disconnect", help="Disconnect USB")
         def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
-            if self.ch341.driver is not None:
+            if self.connection is not None:
                 self.close()
             else:
                 channel("Usb is not connected.")
@@ -322,23 +323,25 @@ class LhystudioController(Module):
 
     def open(self):
         self.pipe_channel("open()")
-        if self.ch341.driver is None:
-            self.ch341.detect_driver_and_open()
+        if self.connection is None:
+            self.connection = self.ch341.connect(self.context.mock)
         else:
+            # TODO: RESTORE CRITERIA.
             # Update criteria
-            self.ch341.index = self.context.usb_index
-            self.ch341.bus = self.context.usb_bus
-            self.ch341.address = self.context.usb_address
-            self.ch341.serial = self.context.usb_serial
-            self.ch341.chipv = self.context.usb_version
-            self.ch341.open()
-        if self.ch341.driver is None:
+            self.connection.index = self.context.usb_index
+            self.connection.bus = self.context.usb_bus
+            self.connection.address = self.context.usb_address
+            self.connection.serial = self.context.usb_serial
+            self.connection.chipv = self.context.usb_version
+            self.connection.open()
+
+        if self.connection is None:
             raise ConnectionRefusedError
 
     def close(self):
         self.pipe_channel("close()")
-        if self.ch341.driver is not None:
-            self.ch341.close()
+        if self.connection is not None:
+            self.connection.close()
 
     def write(self, bytes_to_write):
         """
@@ -690,12 +693,12 @@ class LhystudioController(Module):
 
     def send_packet(self, packet):
         packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
-        self.ch341.write(packet)
+        self.connection.write(packet)
         self.update_packet(packet)
         self.pre_ok = False
 
     def update_status(self):
-        self._status = self.ch341.get_status()
+        self._status = self.connection.get_status()
         if self.context is not None:
             self.context.signal(
                 "pipe;status", self._status, get_code_string_from_code(self._status[1])
