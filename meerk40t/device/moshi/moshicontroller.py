@@ -176,10 +176,7 @@ class MoshiController(Module):
         self.realtime_pipe(swizzle_table[1][0])
 
     def realtime_pipe(self, data):
-        if self.context.mock:
-            pass
-        else:
-            self.ch341.write_addr(data)
+        self.ch341.write_addr(data)
 
     def open(self):
         self.pipe_channel("open()")
@@ -411,11 +408,7 @@ class MoshiController(Module):
             stage = 0
             while self.state != STATE_END and self.state != STATE_TERMINATE:
                 try:
-                    if self.context.mock:
-                        _ = self.usb_log._
-                        self.usb_log(_("Using Mock Driver."))
-                    else:
-                        self.open()
+                    self.open()
                     if self.state == STATE_INITIALIZE:
                         # If we are initialized. Change that to active since we're running.
                         self.update_state(STATE_ACTIVE)
@@ -476,18 +469,11 @@ class MoshiController(Module):
         return True  # A packet was prepped and sent correctly.
 
     def send_packet(self, packet):
-        if self.context.mock:
-            pass
-        else:
-            self.ch341.write(packet)
+        self.ch341.write(packet)
         self.update_packet(packet)
 
     def update_status(self):
-        if self.context.mock:
-            self._status = [255, STATUS_OK, 0, 0, 0, 1]
-            time.sleep(0.01)
-        else:
-            self._status = self.ch341.get_status()
+        self._status = self.ch341.get_status()
         if self.context is not None:
             self.context.signal(
                 "pipe;status",
