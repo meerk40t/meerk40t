@@ -2393,6 +2393,9 @@ class Channel:
         else:
             self.buffer = list()
 
+    def __repr__(self):
+        return "Channel(%s, buffer_size=%d, line_end=%s)" % (repr(self.name), self.buffer_size, repr(self.line_end))
+
     def __call__(self, message, *args, **kwargs):
         if self.line_end is not None:
             message = message + self.line_end

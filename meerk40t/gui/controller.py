@@ -325,7 +325,7 @@ class Controller(MWindow):
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
         try:
-            self.context.interpreter.realtime_command(REALTIME_RESET)
+            self.context("estop\n")
         except AttributeError:
             pass
 
@@ -389,7 +389,7 @@ class Controller(MWindow):
             self.button_device_connect.Disable()
 
     def on_button_connect(self, event):  # wxGlade: Controller.<event_handler>
-        state = self.context.last_signal("pipe;usb_state")
+        state = self.context.active.last_signal("pipe;state")
         if state is not None and isinstance(state, tuple):
             state = state[0]
         if state in (
@@ -400,7 +400,7 @@ class Controller(MWindow):
             None,
         ):
             try:
-                self.context.execute("Connect_USB")
+                self.context("usb_connect\n")
             except ConnectionRefusedError:
                 dlg = wx.MessageDialog(
                     None,
@@ -411,7 +411,7 @@ class Controller(MWindow):
                 result = dlg.ShowModal()
                 dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
-            self.context.execute("Disconnect_USB")
+            self.context("usb_disconnect\n")
 
     def on_buffer_update(self, value, *args):
         if self.gui_update:

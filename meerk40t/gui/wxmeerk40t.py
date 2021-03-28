@@ -344,7 +344,7 @@ class MeerK40t(MWindow, Job):
 
         def on_stop_button(e=None):
             try:
-                self.context.active.interpreter.realtime_command(REALTIME_RESET)
+                self.context("estop\n")
             except AttributeError:
                 pass
 
