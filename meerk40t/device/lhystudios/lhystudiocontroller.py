@@ -275,11 +275,19 @@ class LhystudioController(Module):
             self.start()
             channel("Lhystudios Channel Resumed.")
 
+        @self.context.console_command("usb_connect", help="Connects USB")
+        def usb_connect(command, channel, _, args=tuple(), **kwargs):
+            self.open()
+            channel("CH341 Opened.")
+
+        @self.context.console_command("usb_disconnect", help="Disconnects USB")
+        def usb_connect(command, channel, _, args=tuple(), **kwargs):
+            self.close()
+            channel("CH341 Opened.")
+
         context.setting(int, "packet_count", 0)
         context.setting(int, "rejected_count", 0)
 
-        context.register("control/Connect_USB", self.open)
-        context.register("control/Disconnect_USB", self.close)
         context.register("control/Status Update", self.update_status)
         self.reset()
 

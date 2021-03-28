@@ -61,16 +61,24 @@ class CH341Driver(CH341Connection):
                 self.driver.CH341CloseDevice(self.driver_index)
                 raise ConnectionRefusedError
             self.channel(_("Device Connected.\n"))
-        chip_version = self.get_chip_version()
-        self.channel(_("CH341 Chip Version: %d") % chip_version)
-        self.context.signal("pipe;chipv", chip_version)
-        self.channel(_("Driver Detected: LibUsb"))
-        self.state("STATE_CONNECTED")
-        self.channel(_("Device Connected.\n"))
+            chip_version = self.get_chip_version()
+            self.channel(_("CH341 Chip Version: %d") % chip_version)
+            # self.context.signal("pipe;chipv", chip_version)
+            self.channel(_("Driver Detected: LibUsb"))
+            self.state("STATE_CONNECTED")
+            self.channel(_("Device Connected.\n"))
 
     def close(self):
-        self.driver.CH341CloseDevice(self.driver_index)
+        _ = self.channel._
         self.driver_value = None
+        self.state("STATE_USB_SET_DISCONNECTING")
+        self.channel(_("Attempting disconnection from USB."))
+        if self.driver_value == -1:
+            self.channel(_("USB connection did not exist."))
+            raise ConnectionError
+        self.driver.CH341CloseDevice(self.driver_index)
+        self.state("STATE_USB_DISCONNECTED")
+        self.channel(_("USB Disconnection Successful.\n"))
 
     def write(self, packet):
         self.driver.CH341EppWriteData(self.driver_index, packet, len(packet))

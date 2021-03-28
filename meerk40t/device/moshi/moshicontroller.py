@@ -67,8 +67,6 @@ class MoshiController(Module):
         context.setting(int, "packet_count", 0)
         context.setting(int, "rejected_count", 0)
 
-        context.register("control/Connect_USB", self.open)
-        context.register("control/Disconnect_USB", self.close)
         context.register("control/Status Update", self.update_status)
         self.reset()
 

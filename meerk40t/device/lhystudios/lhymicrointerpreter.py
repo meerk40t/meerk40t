@@ -247,7 +247,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
             else:
                 self.pause()
 
-        @self.context.console_command("abort", help="Abort Job")
+        @self.context.console_command(("estop", "abort"), help="Abort Job")
         def pipe_abort(command, channel, _, args=tuple(), **kwargs):
             self.reset()
             channel("Lhystudios Channel Aborted.")
