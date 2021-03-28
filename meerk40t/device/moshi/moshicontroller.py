@@ -79,7 +79,7 @@ class MoshiController(Module):
 
         @self.context.console_command("usb_disconnect", help="Disconnect USB")
         def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
-            if self.ch341 is not None:
+            if self.ch341.driver is not None:
                 self.close()
             else:
                 channel("Usb is not connected.")
@@ -180,8 +180,8 @@ class MoshiController(Module):
 
     def open(self):
         self.pipe_channel("open()")
-        if self.ch341 is None:
-            self.detect_driver_and_open()
+        if self.ch341.driver is None:
+            self.ch341.detect_driver_and_open()
         else:
             # Update criteria
             self.ch341.index = self.context.usb_index
@@ -195,7 +195,7 @@ class MoshiController(Module):
 
     def close(self):
         self.pipe_channel("close()")
-        if self.ch341 is not None:
+        if self.ch341.driver is not None:
             self.ch341.close()
 
     def control(self, command):
@@ -274,67 +274,6 @@ class MoshiController(Module):
     def stop(self):
         self.abort()
         self._thread.join()  # Wait until stop completes before continuing.
-
-    def detect_driver_and_open(self):
-        index = self.context.usb_index
-        bus = self.context.usb_bus
-        address = self.context.usb_address
-        serial = self.context.usb_serial
-        chipv = self.context.usb_version
-        _ = self.usb_log._
-
-        def state(state_value):
-            self.context.signal("pipe;state", state_value)
-
-        try:
-            from meerk40t.device.ch341.libusb import CH341Driver
-
-            self.ch341 = driver = CH341Driver(
-                index=index,
-                bus=bus,
-                address=address,
-                serial=serial,
-                chipv=chipv,
-                channel=self.usb_log,
-                state=state,
-            )
-            driver.open()
-            chip_version = driver.get_chip_version()
-            self.usb_log(_("CH341 Chip Version: %d") % chip_version)
-            self.context.signal("pipe;chipv", chip_version)
-            self.usb_log(_("Driver Detected: LibUsb"))
-            state("STATE_CONNECTED")
-            self.usb_log(_("Device Connected.\n"))
-            return
-        except ConnectionRefusedError:
-            self.ch341 = None
-        except ImportError:
-            self.usb_log(_("PyUsb is not installed. Skipping."))
-
-        try:
-            from meerk40t.device.ch341 import CH341Driver
-
-            self.ch341 = driver = CH341Driver(
-                index=index,
-                bus=bus,
-                address=address,
-                serial=serial,
-                chipv=chipv,
-                channel=self.usb_log,
-                state=state,
-            )
-            driver.open()
-            chip_version = driver.get_chip_version()
-            self.usb_log(_("CH341 Chip Version: %d") % chip_version)
-            self.context.signal("pipe;chipv", chip_version)
-            self.usb_log(_("Driver Detected: CH341"))
-            state("STATE_CONNECTED")
-            self.usb_log(_("Device Connected.\n"))
-            return
-        except ConnectionRefusedError:
-            self.ch341 = None
-        except ImportError:
-            self.usb_log(_("No Windll interfacing. Skipping."))
 
     def update_state(self, state):
         if state == self.state:
