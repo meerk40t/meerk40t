@@ -148,10 +148,8 @@ class CH341Driver(CH341Connection):
 
 
 class Handler(CH341Handler):
-    def __init__(self, channel, state):
-        CH341Handler.__init__(self, channel=channel, state=state)
-        self.channel = channel
-        self.state = state
+    def __init__(self, channel, status):
+        CH341Handler.__init__(self, channel=channel, status=status)
         try:
             self.driver = windll.LoadLibrary("CH341DLL.dll")
         except (NameError, OSError) as e:
@@ -160,7 +158,7 @@ class Handler(CH341Handler):
 
     def connect(self, driver_index=0, chipv=-1, bus=-1, address=-1):
         """Tries to open device at index, with given criteria"""
-        connection = CH341Driver(self.driver, driver_index, channel=self.channel, state=self.state)
+        connection = CH341Driver(self.driver, driver_index, channel=self.channel, state=self.status)
         _ = self.channel._
         connection.validate()  # TODO: Replace with Open quietly.
 

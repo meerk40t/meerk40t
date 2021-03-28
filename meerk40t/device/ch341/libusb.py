@@ -96,15 +96,13 @@ class CH341Driver(CH341Connection):
 
 
 class Handler(CH341Handler):
-    def __init__(self, channel, state):
-        CH341Handler.__init__(self, channel=channel, state=state)
-        self.channel = channel
-        self.state = state
+    def __init__(self, channel, status):
+        CH341Handler.__init__(self, channel=channel, status=status)
         self.driver = Ch341LibusbDriver(channel=channel)
 
     def connect(self, driver_index=0, chipv=-1, bus=-1, address=-1):
         """Tries to open device at index, with given criteria"""
-        connection = CH341Driver(self.driver, driver_index, channel=self.channel, state=self.state)
+        connection = CH341Driver(self.driver, driver_index, channel=self.channel, state=self.status)
         _ = self.channel._
         val = connection.validate()
 
