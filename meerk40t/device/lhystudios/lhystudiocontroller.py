@@ -252,20 +252,6 @@ class LhystudioController(Module):
             else:
                 self.write(bytes(args[0].replace("$", "\n"), "utf8"))
 
-        @self.context.console_command("usb_connect", help="Connect USB")
-        def usb_connect(command, channel, _, args=tuple(), **kwargs):
-            try:
-                self.open()
-            except ConnectionRefusedError:
-                channel("Connection Refused.")
-
-        @self.context.console_command("usb_disconnect", help="Disconnect USB")
-        def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
-            if self.connection is not None:
-                self.close()
-            else:
-                channel("Usb is not connected.")
-
         @self.context.console_command("start", help="Start Pipe to Controller")
         def pipe_start(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_ACTIVE)
