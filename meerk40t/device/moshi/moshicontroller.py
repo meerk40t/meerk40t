@@ -290,7 +290,7 @@ class MoshiController(Module):
             self.context.signal("pipe;state", state_value)
 
         try:
-            from ..ch341libusbdriver import CH341Driver
+            from meerk40t.ch341.libusb import CH341Driver
 
             self.driver = driver = CH341Driver(
                 index=index,
@@ -315,7 +315,7 @@ class MoshiController(Module):
             self.usb_log(_("PyUsb is not installed. Skipping."))
 
         try:
-            from ..ch341windlldriver import CH341Driver
+            from meerk40t.ch341.windll import CH341Driver
 
             self.driver = driver = CH341Driver(
                 index=index,
