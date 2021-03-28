@@ -140,7 +140,7 @@ class LhystudioController(Module):
         self._status = [0] * 6
         self._usb_state = -1
 
-        self.driver = None
+        self.ch341 = self.context.open("module/ch341")
         self.max_attempts = 5
         self.refuse_counts = 0
         self.connection_errors = 0
@@ -251,7 +251,7 @@ class LhystudioController(Module):
 
         @self.context.console_command("usb_disconnect", help="Disconnect USB")
         def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
-            if self.driver is not None:
+            if self.ch341 is not None:
                 self.close()
             else:
                 channel("Usb is not connected.")
@@ -322,23 +322,23 @@ class LhystudioController(Module):
 
     def open(self):
         self.pipe_channel("open()")
-        if self.driver is None:
+        if self.ch341 is None:
             self.detect_driver_and_open()
         else:
             # Update criteria
-            self.driver.index = self.context.usb_index
-            self.driver.bus = self.context.usb_bus
-            self.driver.address = self.context.usb_address
-            self.driver.serial = self.context.usb_serial
-            self.driver.chipv = self.context.usb_version
-            self.driver.open()
-        if self.driver is None:
+            self.ch341.index = self.context.usb_index
+            self.ch341.bus = self.context.usb_bus
+            self.ch341.address = self.context.usb_address
+            self.ch341.serial = self.context.usb_serial
+            self.ch341.chipv = self.context.usb_version
+            self.ch341.open()
+        if self.ch341 is None:
             raise ConnectionRefusedError
 
     def close(self):
         self.pipe_channel("close()")
-        if self.driver is not None:
-            self.driver.close()
+        if self.ch341 is not None:
+            self.ch341.close()
 
     def write(self, bytes_to_write):
         """
@@ -449,9 +449,9 @@ class LhystudioController(Module):
             self.context.signal("pipe;state", state_value)
 
         try:
-            from meerk40t.ch341.libusb import CH341Driver
+            from meerk40t.device.ch341.libusb import CH341Driver
 
-            self.driver = driver = CH341Driver(
+            self.ch341 = driver = CH341Driver(
                 index=index,
                 bus=bus,
                 address=address,
@@ -469,14 +469,14 @@ class LhystudioController(Module):
             self.usb_log(_("Device Connected.\n"))
             return
         except ConnectionRefusedError:
-            self.driver = None
+            self.ch341 = None
         except ImportError:
             self.usb_log(_("PyUsb is not installed. Skipping."))
 
         try:
-            from meerk40t.ch341.windll import CH341Driver
+            from meerk40t.device.ch341 import CH341Driver
 
-            self.driver = driver = CH341Driver(
+            self.ch341 = driver = CH341Driver(
                 index=index,
                 bus=bus,
                 address=address,
@@ -494,7 +494,7 @@ class LhystudioController(Module):
             self.usb_log(_("Device Connected.\n"))
             return
         except ConnectionRefusedError:
-            self.driver = None
+            self.ch341 = None
         except ImportError:
             self.usb_log(_("No Windll interfacing. Skipping."))
 
@@ -758,7 +758,7 @@ class LhystudioController(Module):
         if self.context.mock:
             time.sleep(0.04)
         else:
-            self.driver.write(packet)
+            self.ch341.write(packet)
         self.update_packet(packet)
         self.pre_ok = False
 
@@ -772,7 +772,7 @@ class LhystudioController(Module):
                 self._status = [255, STATUS_OK, 0, 0, 0, 1]
             time.sleep(0.01)
         else:
-            self._status = self.driver.get_status()
+            self._status = self.ch341.get_status()
         if self.context is not None:
             self.context.signal(
                 "pipe;status", self._status, get_code_string_from_code(self._status[1])
