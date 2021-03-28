@@ -1,4 +1,4 @@
-from meerk40t.kernel import Module
+from ...kernel import Module
 
 
 def plugin(kernel, lifecycle=None):
