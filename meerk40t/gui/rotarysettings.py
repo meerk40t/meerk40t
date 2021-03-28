@@ -6,9 +6,9 @@
 
 import wx
 
-from .mwindow import MWindow
 from ..kernel import Module
 from .icons import icons8_roll_50
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
@@ -37,8 +37,16 @@ class RotarySettings(MWindow):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_rotary_roller, self.checkbox_rotary_roller
         )
-        self.Bind(wx.EVT_TEXT, self.on_text_rotary_roller_circumference, self.text_rotary_roller_circumference)
-        self.Bind(wx.EVT_TEXT, self.on_text_rotary_object_circumference, self.text_rotary_object_circumference)
+        self.Bind(
+            wx.EVT_TEXT,
+            self.on_text_rotary_roller_circumference,
+            self.text_rotary_roller_circumference,
+        )
+        self.Bind(
+            wx.EVT_TEXT,
+            self.on_text_rotary_object_circumference,
+            self.text_rotary_object_circumference,
+        )
 
     def window_open(self):
         self.context.setting(bool, "rotary", False)

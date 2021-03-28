@@ -6,10 +6,14 @@
 
 import wx
 
-from .mwindow import MWindow
 from ..kernel import STATE_UNKNOWN, Module
-from .icons import (icons8_administrative_tools_50, icons8_manager_50,
-                    icons8_plus_50, icons8_trash_50)
+from .icons import (
+    icons8_administrative_tools_50,
+    icons8_manager_50,
+    icons8_plus_50,
+    icons8_trash_50,
+)
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 

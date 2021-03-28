@@ -2,8 +2,16 @@ from copy import copy
 
 from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 from ..svgelements import Color, Path, Point
-from .rasterplotter import (BOTTOM, LEFT, RIGHT, TOP, UNIDIRECTIONAL, X_AXIS,
-                            Y_AXIS, RasterPlotter)
+from .rasterplotter import (
+    BOTTOM,
+    LEFT,
+    RIGHT,
+    TOP,
+    UNIDIRECTIONAL,
+    X_AXIS,
+    Y_AXIS,
+    RasterPlotter,
+)
 from .zinglplotter import ZinglPlotter
 
 """

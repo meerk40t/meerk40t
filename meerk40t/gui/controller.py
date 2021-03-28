@@ -5,21 +5,32 @@
 
 import wx
 
-from .mwindow import MWindow
 from ..device.lasercommandconstants import REALTIME_RESET
-from ..kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
-                      STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
-                      STATE_WAIT)
-from .icons import (icons8_comments_50, icons8_connected_50,
-                    icons8_disconnected_50, icons8_emergency_stop_button_50,
-                    icons8_laser_beam_hazard_50, icons8_pause_50,
-                    icons8_play_50)
+from ..kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_WAIT,
+)
+from .icons import (
+    icons8_comments_50,
+    icons8_connected_50,
+    icons8_disconnected_50,
+    icons8_emergency_stop_button_50,
+    icons8_laser_beam_hazard_50,
+    icons8_pause_50,
+    icons8_play_50,
+)
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
 
 class Controller(MWindow):
-
     def __init__(self, *args, **kwds):
         super().__init__(499, 505, *args, **kwds)
         self.button_controller_control = wx.Button(

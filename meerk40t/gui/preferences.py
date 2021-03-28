@@ -2,8 +2,8 @@
 
 import wx
 
-from .mwindow import MWindow
 from .icons import icons8_administrative_tools_50
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
@@ -12,7 +12,7 @@ class Preferences(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(395, 424, *args, **kwds)
 
-        self.bed_dim = self.context.get_context('/')
+        self.bed_dim = self.context.get_context("/")
         self.bed_dim.setting(int, "bed_width", 280)
         self.bed_dim.setting(int, "bed_height", 200)
 

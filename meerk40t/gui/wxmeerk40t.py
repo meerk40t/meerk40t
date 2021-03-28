@@ -62,7 +62,12 @@ from .devicemanager import DeviceManager
 from .icons import (
     icon_meerk40t,
     icons8_administrative_tools_50,
+    icons8_align_bottom_50,
+    icons8_align_left_50,
+    icons8_align_right_50,
+    icons8_align_top_50,
     icons8_camera_50,
+    icons8_circle_50,
     icons8_comments_50,
     icons8_connected_50,
     icons8_console_50,
@@ -70,6 +75,10 @@ from .icons import (
     icons8_emergency_stop_button_50,
     icons8_fantasy_50,
     icons8_file_20,
+    icons8_flip_horizontal_50,
+    icons8_flip_vertical_50,
+    icons8_group_objects_20,
+    icons8_group_objects_50,
     icons8_keyboard_50,
     icons8_laser_beam_20,
     icons8_laser_beam_52,
@@ -77,17 +86,23 @@ from .icons import (
     icons8_manager_50,
     icons8_move_50,
     icons8_opened_folder_50,
+    icons8_oval_50,
     icons8_padlock_50,
     icons8_pause_50,
+    icons8_place_marker_50,
+    icons8_polygon_50,
+    icons8_polyline_50,
+    icons8_rectangular_50,
     icons8_roll_50,
     icons8_route_50,
     icons8_save_50,
+    icons8_type_50,
+    icons8_ungroup_objects_50,
     icons8_usb_connector_50,
     icons8_vector_20,
-    icons8_group_objects_20, icons8_flip_horizontal_50, icons8_flip_vertical_50, icons8_group_objects_50,
-    icons8_ungroup_objects_50, icons8_place_marker_50, icons8_oval_50, icons8_circle_50, icons8_polygon_50,
-    icons8_polyline_50, icons8_rectangular_50, icons8_type_50, icons8_align_left_50, icons8_align_right_50,
-    icons8_align_top_50, icons8_align_bottom_50, icons_centerize, icons_evenspace_vert, icons_evenspace_horiz,
+    icons_centerize,
+    icons_evenspace_horiz,
+    icons_evenspace_vert,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -301,7 +316,7 @@ class MeerK40t(MWindow, Job):
         Job.__init__(self, job_name="refresh_scene", process=self.refresh_scene)
 
         context = self.context
-        self.root_context = context.get_context('/')
+        self.root_context = context.get_context("/")
 
         self.DragAcceptFiles(True)
         self._mgr = aui.AuiManager()
@@ -469,7 +484,6 @@ class MeerK40t(MWindow, Job):
         self._rotary_view = False
         self.CenterOnScreen()
 
-
     @property
     def is_dark(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
@@ -516,7 +530,7 @@ class MeerK40t(MWindow, Job):
         context.listen("refresh_tree", self.request_refresh)
         context.listen("refresh_scene", self.on_refresh_scene)
         context.listen("element_property_update", self.on_element_update)
-        bed_dim = context.get_context('/')
+        bed_dim = context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)  # Default Value
         bed_dim.setting(int, "bed_height", 210)  # Default Value
 
@@ -592,7 +606,7 @@ class MeerK40t(MWindow, Job):
         context.setting(str, "file9", None)
         self.populate_recent_menu()
 
-        bed_dim = context.get_context('/')
+        bed_dim = context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         bbox = (0, 0, bed_dim.bed_width * MILS_IN_MM, bed_dim.bed_height * MILS_IN_MM)
@@ -678,18 +692,45 @@ class MeerK40t(MWindow, Job):
         windows.AddButton(
             ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
         )
-        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(), )
+        home = RB.RibbonPage(
+            self._ribbon,
+            wx.ID_ANY,
+            _("Tools"),
+            icons8_opened_folder_50.GetBitmap(),
+        )
 
-        align_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Align"), icons8_opened_folder_50.GetBitmap(),
-                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        align_panel = RB.RibbonPanel(
+            home,
+            wx.ID_ANY,
+            _("Align"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
         align = RB.RibbonButtonBar(align_panel)
-        align.AddButton(ID_ALIGN_LEFT, _("Align Left"), icons8_align_left_50.GetBitmap(), "")
-        align.AddButton(ID_ALIGN_RIGHT, _("Align Right"), icons8_align_right_50.GetBitmap(), "")
-        align.AddButton(ID_ALIGN_TOP, _("Align Top"), icons8_align_top_50.GetBitmap(), "")
-        align.AddButton(ID_ALIGN_BOTTOM, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), "")
-        align.AddButton(ID_ALIGN_CENTER, _("Align Center"), icons_centerize.GetBitmap(), "")
-        align.AddButton(ID_ALIGN_SPACE_V, _("Space Vertical"), icons_evenspace_vert.GetBitmap(), "")
-        align.AddButton(ID_ALIGN_SPACE_H, _("Space Horizontal"), icons_evenspace_horiz.GetBitmap(), "")
+        align.AddButton(
+            ID_ALIGN_LEFT, _("Align Left"), icons8_align_left_50.GetBitmap(), ""
+        )
+        align.AddButton(
+            ID_ALIGN_RIGHT, _("Align Right"), icons8_align_right_50.GetBitmap(), ""
+        )
+        align.AddButton(
+            ID_ALIGN_TOP, _("Align Top"), icons8_align_top_50.GetBitmap(), ""
+        )
+        align.AddButton(
+            ID_ALIGN_BOTTOM, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), ""
+        )
+        align.AddButton(
+            ID_ALIGN_CENTER, _("Align Center"), icons_centerize.GetBitmap(), ""
+        )
+        align.AddButton(
+            ID_ALIGN_SPACE_V, _("Space Vertical"), icons_evenspace_vert.GetBitmap(), ""
+        )
+        align.AddButton(
+            ID_ALIGN_SPACE_H,
+            _("Space Horizontal"),
+            icons_evenspace_horiz.GetBitmap(),
+            "",
+        )
 
         # TODO: Fix and reenable.
         align.EnableButton(ID_ALIGN_LEFT, False)
@@ -700,36 +741,69 @@ class MeerK40t(MWindow, Job):
         align.EnableButton(ID_ALIGN_SPACE_V, False)
         align.EnableButton(ID_ALIGN_SPACE_H, False)
 
-        flip_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Flip"), icons8_opened_folder_50.GetBitmap(),
-                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        flip_panel = RB.RibbonPanel(
+            home,
+            wx.ID_ANY,
+            _("Flip"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
         flip = RB.RibbonButtonBar(flip_panel)
 
-        flip.AddButton(ID_FLIP_HORIZONTAL, _("Flip Horizontal"), icons8_flip_horizontal_50.GetBitmap(), "")
-        flip.AddButton(ID_FLIP_VERTICAL, _("Flip Vertical"), icons8_flip_vertical_50.GetBitmap(), "")
+        flip.AddButton(
+            ID_FLIP_HORIZONTAL,
+            _("Flip Horizontal"),
+            icons8_flip_horizontal_50.GetBitmap(),
+            "",
+        )
+        flip.AddButton(
+            ID_FLIP_VERTICAL,
+            _("Flip Vertical"),
+            icons8_flip_vertical_50.GetBitmap(),
+            "",
+        )
 
-        group_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Group"), icons8_opened_folder_50.GetBitmap(),
-                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        group_panel = RB.RibbonPanel(
+            home,
+            wx.ID_ANY,
+            _("Group"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
 
         group = RB.RibbonButtonBar(group_panel)
         group.AddButton(ID_GROUP, _("Group"), icons8_group_objects_50.GetBitmap(), "")
-        group.AddButton(ID_UNGROUP, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), "")
+        group.AddButton(
+            ID_UNGROUP, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), ""
+        )
 
-        #TODO: Fix and Reenable.
+        # TODO: Fix and Reenable.
         group.EnableButton(ID_GROUP, False)
         group.EnableButton(ID_UNGROUP, False)
 
-        tool_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(),
-                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        tool_panel = RB.RibbonPanel(
+            home,
+            wx.ID_ANY,
+            _("Tools"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
         tool = RB.RibbonButtonBar(tool_panel)
-        tool.AddButton(ID_TOOL_POSITION, _("Set Position"), icons8_place_marker_50.GetBitmap(), "")
+        tool.AddButton(
+            ID_TOOL_POSITION, _("Set Position"), icons8_place_marker_50.GetBitmap(), ""
+        )
         tool.AddButton(ID_TOOL_OVAL, _("Oval"), icons8_oval_50.GetBitmap(), "")
         tool.AddButton(ID_TOOL_CIRCLE, _("Circle"), icons8_circle_50.GetBitmap(), "")
         tool.AddButton(ID_TOOL_POLYGON, _("Polygon"), icons8_polygon_50.GetBitmap(), "")
-        tool.AddButton(ID_TOOL_POLYLINE, _("Polyline"), icons8_polyline_50.GetBitmap(), "")
-        tool.AddButton(ID_TOOL_RECT, _("Rectangle"), icons8_rectangular_50.GetBitmap(), "")
+        tool.AddButton(
+            ID_TOOL_POLYLINE, _("Polyline"), icons8_polyline_50.GetBitmap(), ""
+        )
+        tool.AddButton(
+            ID_TOOL_RECT, _("Rectangle"), icons8_rectangular_50.GetBitmap(), ""
+        )
         tool.AddButton(ID_TOOL_TEXT, _("Text"), icons8_type_50.GetBitmap(), "")
 
-        #TODO: Fix and Reenable
+        # TODO: Fix and Reenable
         tool.EnableButton(ID_TOOL_POSITION, False)
         tool.EnableButton(ID_TOOL_OVAL, False)
         tool.EnableButton(ID_TOOL_CIRCLE, False)
@@ -1122,8 +1196,9 @@ class MeerK40t(MWindow, Job):
         )
 
         self.main_menubar.Append(wxglade_tmp_menu, _("Tools"))
-        
+
         from sys import platform
+
         if platform == "darwin":
             wxglade_tmp_menu = wx.Menu()
             self.main_menubar.Append(wxglade_tmp_menu, "Window")
@@ -1593,7 +1668,12 @@ class MeerK40t(MWindow, Job):
         defaultDir = os.path.dirname(filename)
 
         with wx.FileDialog(
-                self, _("Open"), defaultDir=defaultDir, defaultFile=defaultFile, wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+            self,
+            _("Open"),
+            defaultDir=defaultDir,
+            defaultFile=defaultFile,
+            wildcard=files,
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
         ) as fileDialog:
             fileDialog.SetFilename(defaultFile)
             if fileDialog.ShowModal() == wx.ID_CANCEL:
@@ -1607,34 +1687,74 @@ class MeerK40t(MWindow, Job):
         context = self.context
         if context.file0 is not None and len(context.file0):
             self.recent_file_menu.Append(ID_MENU_FILE0, context.file0, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file0), id=ID_MENU_FILE0)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file0),
+                id=ID_MENU_FILE0,
+            )
         if context.file1 is not None and len(context.file1):
             self.recent_file_menu.Append(ID_MENU_FILE1, context.file1, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file1), id=ID_MENU_FILE1)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file1),
+                id=ID_MENU_FILE1,
+            )
         if context.file2 is not None and len(context.file2):
             self.recent_file_menu.Append(ID_MENU_FILE2, context.file2, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file2), id=ID_MENU_FILE2)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file2),
+                id=ID_MENU_FILE2,
+            )
         if context.file3 is not None and len(context.file3):
             self.recent_file_menu.Append(ID_MENU_FILE3, context.file3, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file3), id=ID_MENU_FILE3)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file3),
+                id=ID_MENU_FILE3,
+            )
         if context.file4 is not None and len(context.file4):
             self.recent_file_menu.Append(ID_MENU_FILE4, context.file4, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file4), id=ID_MENU_FILE4)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file4),
+                id=ID_MENU_FILE4,
+            )
         if context.file5 is not None and len(context.file5):
             self.recent_file_menu.Append(ID_MENU_FILE5, context.file5, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file5), id=ID_MENU_FILE5)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file5),
+                id=ID_MENU_FILE5,
+            )
         if context.file6 is not None and len(context.file6):
             self.recent_file_menu.Append(ID_MENU_FILE6, context.file6, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file6), id=ID_MENU_FILE6)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file6),
+                id=ID_MENU_FILE6,
+            )
         if context.file7 is not None and len(context.file7):
             self.recent_file_menu.Append(ID_MENU_FILE7, context.file7, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file7), id=ID_MENU_FILE7)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file7),
+                id=ID_MENU_FILE7,
+            )
         if context.file8 is not None and len(context.file8):
             self.recent_file_menu.Append(ID_MENU_FILE8, context.file8, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file8), id=ID_MENU_FILE8)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file8),
+                id=ID_MENU_FILE8,
+            )
         if context.file9 is not None and len(context.file9):
             self.recent_file_menu.Append(ID_MENU_FILE9, context.file9, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load_or_open(context.file9), id=ID_MENU_FILE9)
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.load_or_open(context.file9),
+                id=ID_MENU_FILE9,
+            )
         if self.recent_file_menu.MenuItemCount != 0:
             self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
             self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
@@ -1907,11 +2027,11 @@ class MeerK40t(MWindow, Job):
     def on_right_mouse_down(self, event):
         self.scene.SetFocus()
         if event.AltDown():
-            self.widget_scene.event(event.GetPosition(), 'rightdown+alt')
+            self.widget_scene.event(event.GetPosition(), "rightdown+alt")
         elif event.ControlDown():
-            self.widget_scene.event(event.GetPosition(), 'rightdown+control')
+            self.widget_scene.event(event.GetPosition(), "rightdown+control")
         else:
-            self.widget_scene.event(event.GetPosition(), 'rightdown')
+            self.widget_scene.event(event.GetPosition(), "rightdown")
 
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), "rightup")
@@ -2209,8 +2329,13 @@ class MeerK40t(MWindow, Job):
         elements = self.context.elements
         bbox = elements.selected_area()
         if bbox is None:
-            bed_dim = self.context.get_context('/')
-            bbox = (0, 0, bed_dim.bed_width * MILS_IN_MM, bed_dim.bed_height * MILS_IN_MM)
+            bed_dim = self.context.get_context("/")
+            bbox = (
+                0,
+                0,
+                bed_dim.bed_width * MILS_IN_MM,
+                bed_dim.bed_height * MILS_IN_MM,
+            )
         self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize)
 
     def toggle_draw_mode(self, bits):
@@ -2264,7 +2389,7 @@ class MeerK40t(MWindow, Job):
 
         if dlg.ShowModal() == wx.ID_OK:
             p = self.context
-            root_context = self.context.get_context('/')
+            root_context = self.context.get_context("/")
             bed_dim = self.context.get_context("/")
             m = str(dlg.GetValue())
             m = m.replace("$x", str(p.current_x))
@@ -2343,7 +2468,7 @@ class MeerK40t(MWindow, Job):
         dlg.SetValue("")
         if dlg.ShowModal() == wx.ID_OK:
             p = self.context
-            root_context = p.get_context('/')
+            root_context = p.get_context("/")
             bed_dim = root_context
             context = p
             wmils = bed_dim.bed_width * MILS_IN_MM
@@ -2406,13 +2531,15 @@ class MeerK40t(MWindow, Job):
             return
 
     def apply_rotary_scale(self):
-        r = self.context.get_context('rotary/1')
+        r = self.context.get_context("rotary/1")
         sx = r.scale_x
         sy = r.scale_y
         a = self.context.active
 
-        mx = Matrix("scale(%f, %f, %f, %f)" % (r.scale_x, r.scale_y, a.current_x, a.current_y))
-        for element in self.context.get_context('/').elements.elems():
+        mx = Matrix(
+            "scale(%f, %f, %f, %f)" % (r.scale_x, r.scale_y, a.current_x, a.current_y)
+        )
+        for element in self.context.get_context("/").elements.elems():
             try:
                 element *= mx
                 element.node.modified()
@@ -2839,7 +2966,9 @@ class ShadowTree:
             event.Skip()
             return
 
-        self.dragging_nodes = [self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()]
+        self.dragging_nodes = [
+            self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
+        ]
         if not len(self.dragging_nodes):
             event.Skip()
             return
@@ -2951,7 +3080,7 @@ class ShadowTree:
             if node.type == "opnode":
                 selected[i] = node.object.node
             elif node.type == "op":
-                for n in node.flat(types=('opnode',), cascade=False):
+                for n in node.flat(types=("opnode",), cascade=False):
                     try:
                         selected.append(n.object.node)
                     except Exception:
@@ -3277,20 +3406,30 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/RasterWizard", RasterWizard)
 
-        context = kernel.get_context('/')
+        context = kernel.get_context("/")
 
-        @kernel.console_option('path', 'p', type=context.get_context, default=context.active, help="Context Path at which to open the window")
-        @kernel.console_argument('subcommand',  type=str, help="open <window>")
-        @kernel.console_argument('window', type=str, help="window to apply subcommand to")
+        @kernel.console_option(
+            "path",
+            "p",
+            type=context.get_context,
+            default=context.active,
+            help="Context Path at which to open the window",
+        )
+        @kernel.console_argument("subcommand", type=str, help="open <window>")
+        @kernel.console_argument(
+            "window", type=str, help="window to apply subcommand to"
+        )
         @kernel.console_command("window", help="wxMeerK40 window information")
-        def window(channel, _, subcommand=None, window=None, path=None, args=(), **kwargs):
+        def window(
+            channel, _, subcommand=None, window=None, path=None, args=(), **kwargs
+        ):
             """
             Opens a MeerK40t window or provides information. This command is restricted to use with the wxMeerK40t gui.
             This also allows use of a -p flag that sets the context path for this window to operate at. This should
             often be restricted to where the windows are typically opened since their function and settings usually
             depend on the context used. The default root path is "/". Eg. "window open -p / Settings"
             """
-            context = kernel.get_context('/')
+            context = kernel.get_context("/")
             if path is None:
                 path = context.active
             if subcommand is None:
@@ -3311,7 +3450,7 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
                 channel(_("----------"))
                 return
-            if window is None or subcommand == 'list':
+            if window is None or subcommand == "list":
                 channel(_("----------"))
                 channel(_("Windows Registered:"))
                 for i, name in enumerate(context.match("window")):
@@ -3344,9 +3483,9 @@ class wxMeerK40t(wx.App, Module):
             elif subcommand == "reset":
                 if kernel._config is not None:
                     for context in list(kernel.contexts):
-                        if context.startswith('window'):
+                        if context.startswith("window"):
                             del kernel.contexts[context]
-                    kernel._config.DeleteGroup('window')
+                    kernel._config.DeleteGroup("window")
             else:
                 raise SyntaxError
 
@@ -3368,18 +3507,20 @@ class wxMeerK40t(wx.App, Module):
         kernel = context._kernel
 
         try:  # pyinstaller internal location
-            _resource_path = os.path.join(sys._MEIPASS, 'locale')
+            _resource_path = os.path.join(sys._MEIPASS, "locale")
             wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
         except Exception:
             pass
 
         try:  # Mac py2app resource
-            _resource_path = os.path.join(os.environ['RESOURCEPATH'], 'locale')
+            _resource_path = os.path.join(os.environ["RESOURCEPATH"], "locale")
             wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
         except Exception:
             pass
 
-        wx.Locale.AddCatalogLookupPathPrefix('locale')  # Default Locale, prepended. Check this first.
+        wx.Locale.AddCatalogLookupPathPrefix(
+            "locale"
+        )  # Default Locale, prepended. Check this first.
 
         kernel.run_later = self.run_later
         kernel.translation = wx.GetTranslation

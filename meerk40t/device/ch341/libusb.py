@@ -1,4 +1,3 @@
-
 from .ch341 import Connection as CH341Connection
 from .ch341 import Handler as CH341Handler
 from .ch341libusbdriver import Ch341LibusbDriver
@@ -102,7 +101,9 @@ class Handler(CH341Handler):
 
     def connect(self, driver_index=0, chipv=-1, bus=-1, address=-1):
         """Tries to open device at index, with given criteria"""
-        connection = CH341Driver(self.driver, driver_index, channel=self.channel, state=self.status)
+        connection = CH341Driver(
+            self.driver, driver_index, channel=self.channel, state=self.status
+        )
         _ = self.channel._
         val = connection.validate()
 
@@ -110,21 +111,31 @@ class Handler(CH341Handler):
             match_chipv = connection.get_chip_version()
             if chipv != match_chipv:
                 # Rejected.
-                self.channel(_("K40 devices were found but they were rejected due to chip version."))
+                self.channel(
+                    _(
+                        "K40 devices were found but they were rejected due to chip version."
+                    )
+                )
                 connection.close()
                 return -1
         if bus != -1:
             match_bus = self.driver.devices[val].bus
             if bus != match_bus:
                 # Rejected.
-                self.channel(_("K40 devices were found but they were rejected due to usb bus."))
+                self.channel(
+                    _("K40 devices were found but they were rejected due to usb bus.")
+                )
                 connection.close()
                 return None
         if address != -1:
             match_address = self.driver.devices[val].bus
             if address != match_address:
                 # Rejected
-                self.channel(_("K40 devices were found but they were rejected due to usb address."))
+                self.channel(
+                    _(
+                        "K40 devices were found but they were rejected due to usb address."
+                    )
+                )
                 connection.close()
                 return None
         return connection

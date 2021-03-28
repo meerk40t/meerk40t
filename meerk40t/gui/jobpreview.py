@@ -1,15 +1,14 @@
 import wx
 
-from .mwindow import MWindow
 from ..core.elements import LaserOperation
 from ..svgelements import Length
 from .icons import icons8_laser_beam_52
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
 
 class JobPreview(MWindow):
-
     def __init__(self, *args, plan_name=None, **kwds):
         super().__init__(496, 573, *args, **kwds)
 
@@ -415,7 +414,7 @@ class JobPreview(MWindow):
             "",
         )
         dlg.SetValue("")
-        bed_dim = self.context.get_context('/')
+        bed_dim = self.context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if dlg.ShowModal() == wx.ID_OK:
@@ -517,7 +516,7 @@ class JobPreview(MWindow):
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
             self.context("plan%s copy\n" % self.plan_name)
-        # elif self.stage == 1:
+            # elif self.stage == 1:
             self.context("plan%s preprocess\n" % self.plan_name)
             operations, commands = self.context.default_plan()
             if len(commands) == 0:
@@ -526,9 +525,9 @@ class JobPreview(MWindow):
             self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 3:
             self.context("plan%s blob\n" % self.plan_name)
-        # elif self.stage == 4:
+            # elif self.stage == 4:
             self.context("plan%s preopt\n" % self.plan_name)
-        # elif self.stage == 5:
+            # elif self.stage == 5:
             self.context("plan%s optimize\n" % self.plan_name)
         elif self.stage == 6:
             self.context("plan%s spool\n" % self.plan_name)
@@ -536,7 +535,7 @@ class JobPreview(MWindow):
         self.update_gui()
 
     def window_open(self):
-        rotary_context = self.context.get_context('rotary/1')
+        rotary_context = self.context.get_context("rotary/1")
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)

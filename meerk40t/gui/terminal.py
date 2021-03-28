@@ -1,8 +1,8 @@
 import wx
 
-from .mwindow import MWindow
 from ..kernel import Module
 from .icons import icons8_console_50
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 

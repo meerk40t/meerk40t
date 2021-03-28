@@ -1708,14 +1708,15 @@ icons8_emergency_stop_button_50 = PyEmbeddedImage(
     b"LnecNilgtDIIP4bWUEMNNdwb/A9jBMuJwvmIngAAAABJRU5ErkJggg=="
 )
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_group_objects_20 = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA'
-    b'0ElEQVQ4jcWUIRLCMBBFHwwOzxmKJRo8shrNAdBYqvHV9dwhvrVgexNEN9MtkzZNp8CfyXRn'
-    b'tvvz/24S+BIKoJSVRtSlqq4AWEliC+wkvgDHkYSJqkMTaljgEaFw35ewwE12HYtEaiyeVuWA'
-    b'kVj3VC/fZkZqAb9l6PZUYx2SvAz9EIs+hUNw9mogm4PwLN/KR/gzyyf8A3hOJXypOKe1GcRf'
-    b'plzTDOATg/Znu3oLSZS0NyMj7nG4SlwBxmf5AGwiFHbgCHU/7pEK3fEKHqlJeAOCaiebx3Kk'
-    b'lAAAAABJRU5ErkJggg==')
+    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
+    b"0ElEQVQ4jcWUIRLCMBBFHwwOzxmKJRo8shrNAdBYqvHV9dwhvrVgexNEN9MtkzZNp8CfyXRn"
+    b"tvvz/24S+BIKoJSVRtSlqq4AWEliC+wkvgDHkYSJqkMTaljgEaFw35ewwE12HYtEaiyeVuWA"
+    b"kVj3VC/fZkZqAb9l6PZUYx2SvAz9EIs+hUNw9mogm4PwLN/KR/gzyyf8A3hOJXypOKe1GcRf"
+    b"plzTDOATg/Znu3oLSZS0NyMj7nG4SlwBxmf5AGwiFHbgCHU/7pEK3fEKHqlJeAOCaiebx3Kk"
+    b"lAAAAABJRU5ErkJggg=="
+)
 
 
 icons8_group_objects_50 = PyEmbeddedImage(
@@ -1735,21 +1736,22 @@ icons8_ungroup_objects_50 = PyEmbeddedImage(
 )
 
 icons_centerize = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAd0lEQVRo3u3a0QmAMAwFwETc'
-    b'f+U4gSBSbRsuA5QeSXn5aEZERZPqAKmjSzdAQEBA9qpzk6zJUZBHh80MbG8EBAQEZOlA/DI0'
-    b'czXIm0uV0QIBAQEBAQGxNP6/O82EpNECAQEBEYgrht1ISBotEBAQEJCbfGjx8ewCQdYKbRHZ'
-    b'jdYAAAAASUVORK5CYII=')
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAd0lEQVRo3u3a0QmAMAwFwETc"
+    b"f+U4gSBSbRsuA5QeSXn5aEZERZPqAKmjSzdAQEBA9qpzk6zJUZBHh80MbG8EBAQEZOlA/DI0"
+    b"czXIm0uV0QIBAQEBAQGxNP6/O82EpNECAQEBEYgrht1ISBotEBAQEJCbfGjx8ewCQdYKbRHZ"
+    b"jdYAAAAASUVORK5CYII="
+)
 
 
 icons_evenspace_horiz = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAeElEQVRo3u3aQQqAMAwEwI34'
-    b'/y/rWVBREY0yey902BZSaHI8U67nrbXfS62o6yN7X+y5NqqrnWqrGSJJMvzlaIGAgICAgICA'
-    b'NMz48HBXGrmhkXJHQEBAQEBAQEAMjV1z6gmgkYMpdwQEBAQEBAQEBKRNfvOpJtIsM9/aDGBS'
-    b'7NmKAAAAAElFTkSuQmCC')
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAeElEQVRo3u3aQQqAMAwEwI34"
+    b"/y/rWVBREY0yey902BZSaHI8U67nrbXfS62o6yN7X+y5NqqrnWqrGSJJMvzlaIGAgICAgICA"
+    b"NMz48HBXGrmhkXJHQEBAQEBAQEAMjV1z6gmgkYMpdwQEBAQEBAQEBKRNfvOpJtIsM9/aDGBS"
+    b"7NmKAAAAAElFTkSuQmCC"
+)
 
 icons_evenspace_vert = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAaElEQVRo3u3aMQrAIAwFUOP9'
-    b'75zOUnCSqul7k5MkYPQPRhtlu0u8Fhc2MfTQWxFlGokqMwKFz1iuqN/1e5jsRgQA4PiMkrtr'
-    b'EePFeDEeAPhvjM/F+0m/YrwYD59cv9vq96nGO2JG5vU/iNoMJLKY0+4AAAAASUVORK5CYII=')
-
-
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAaElEQVRo3u3aMQrAIAwFUOP9"
+    b"75zOUnCSqul7k5MkYPQPRhtlu0u8Fhc2MfTQWxFlGokqMwKFz1iuqN/1e5jsRgQA4PiMkrtr"
+    b"EePFeDEeAPhvjM/F+0m/YrwYD59cv9vq96nGO2JG5vU/iNoMJLKY0+4AAAAASUVORK5CYII="
+)

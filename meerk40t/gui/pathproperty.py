@@ -84,10 +84,7 @@ class PathProperty(wx.Frame, Module):
 
     def set_widgets(self):
         try:
-            if (
-                self.element.stroke is not None
-                and self.element.stroke != "none"
-            ):
+            if self.element.stroke is not None and self.element.stroke != "none":
                 color = wx.Colour(swizzlecolor(self.element.stroke))
                 self.text_name.SetBackgroundColour(color)
         except AttributeError:

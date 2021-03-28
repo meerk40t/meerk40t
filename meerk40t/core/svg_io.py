@@ -4,14 +4,43 @@ from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 from ..svgelements import (
-    SVG, SVG_ATTR_DATA, SVG_ATTR_FILL, SVG_ATTR_FILL_OPACITY, SVG_ATTR_HEIGHT,
-    SVG_ATTR_ID, SVG_ATTR_STROKE, SVG_ATTR_STROKE_OPACITY,
-    SVG_ATTR_STROKE_WIDTH, SVG_ATTR_TAG, SVG_ATTR_TRANSFORM, SVG_ATTR_VERSION,
-    SVG_ATTR_VIEWBOX, SVG_ATTR_WIDTH, SVG_ATTR_X, SVG_ATTR_XMLNS,
-    SVG_ATTR_XMLNS_EV, SVG_ATTR_XMLNS_LINK, SVG_ATTR_Y, SVG_NAME_TAG,
-    SVG_TAG_IMAGE, SVG_TAG_PATH, SVG_TAG_TEXT, SVG_VALUE_NONE,
-    SVG_VALUE_VERSION, SVG_VALUE_XLINK, SVG_VALUE_XMLNS, SVG_VALUE_XMLNS_EV,
-    Color, Group, Matrix, Path, Shape, SVGElement, SVGImage, SVGText)
+    SVG,
+    SVG_ATTR_DATA,
+    SVG_ATTR_FILL,
+    SVG_ATTR_FILL_OPACITY,
+    SVG_ATTR_HEIGHT,
+    SVG_ATTR_ID,
+    SVG_ATTR_STROKE,
+    SVG_ATTR_STROKE_OPACITY,
+    SVG_ATTR_STROKE_WIDTH,
+    SVG_ATTR_TAG,
+    SVG_ATTR_TRANSFORM,
+    SVG_ATTR_VERSION,
+    SVG_ATTR_VIEWBOX,
+    SVG_ATTR_WIDTH,
+    SVG_ATTR_X,
+    SVG_ATTR_XMLNS,
+    SVG_ATTR_XMLNS_EV,
+    SVG_ATTR_XMLNS_LINK,
+    SVG_ATTR_Y,
+    SVG_NAME_TAG,
+    SVG_TAG_IMAGE,
+    SVG_TAG_PATH,
+    SVG_TAG_TEXT,
+    SVG_VALUE_NONE,
+    SVG_VALUE_VERSION,
+    SVG_VALUE_XLINK,
+    SVG_VALUE_XMLNS,
+    SVG_VALUE_XMLNS_EV,
+    Color,
+    Group,
+    Matrix,
+    Path,
+    Shape,
+    SVGElement,
+    SVGImage,
+    SVGText,
+)
 from .elements import LaserOperation
 
 MILS_PER_MM = 39.3701
@@ -46,7 +75,7 @@ class SVGWriter:
         mils_per_mm = 39.3701
         mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        bed_dim = context.get_context('/')
+        bed_dim = context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         mm_width = bed_dim.bed_width
@@ -229,7 +258,7 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
-        bed_dim = context.get_context('/')
+        bed_dim = context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if "svg_ppi" in kwargs:

@@ -1,8 +1,11 @@
 import argparse
 import sys
 
-from .device.lasercommandconstants import (COMMAND_MODE_RAPID, COMMAND_MOVE,
-                                           COMMAND_SET_ABSOLUTE)
+from .device.lasercommandconstants import (
+    COMMAND_MODE_RAPID,
+    COMMAND_MOVE,
+    COMMAND_SET_ABSOLUTE,
+)
 from .kernel import Kernel
 
 try:
@@ -197,14 +200,12 @@ def run():
     except ImportError:
         pass
 
-
     try:
         from .core import vectrace
 
         kernel.add_plugin(vectrace.plugin)
     except ImportError:
         pass
-
 
     try:
         from camera import camera

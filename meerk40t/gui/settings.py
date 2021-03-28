@@ -5,9 +5,9 @@
 
 import wx
 
-from .mwindow import MWindow
 from ..kernel import Module
 from .icons import icons8_administrative_tools_50
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 

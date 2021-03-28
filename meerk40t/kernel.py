@@ -7,7 +7,6 @@ from threading import Lock, Thread
 
 from .svgelements import Color
 
-
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
 STATE_IDLE = 1
@@ -611,7 +610,9 @@ class Context:
 
         The result function will be called with any returned result func.
         """
-        return self._kernel.threaded(func, thread_name=thread_name, result=result, daemon=daemon)
+        return self._kernel.threaded(
+            func, thread_name=thread_name, result=result, daemon=daemon
+        )
 
 
 class Kernel:
@@ -1029,7 +1030,7 @@ class Kernel:
     @staticmethod
     def console_option(name, short=None, **kwargs):
         try:
-            if short.startswith('-'):
+            if short.startswith("-"):
                 short = short[1:]
         except Exception:
             pass
@@ -1929,17 +1930,23 @@ class Kernel:
                 if active_device is not None:
                     for control_name in active_device.match("control", suffix=True):
                         channel(control_name)
-                    for control_name in self.get_context('/').match("[0-9]+/control", suffix=True):
+                    for control_name in self.get_context("/").match(
+                        "[0-9]+/control", suffix=True
+                    ):
                         channel(control_name)
             else:
                 control_name = remainder
                 controls = list(
-                    active_device.match("%s/control/.*" % active_device._path, suffix=True)
+                    active_device.match(
+                        "%s/control/.*" % active_device._path, suffix=True
+                    )
                 )
                 if active_device is not None and control_name in controls:
                     active_device.execute(control_name)
                     channel(_("Executed '%s'") % control_name)
-                elif control_name in list(active_device.match("control/.*", suffix=True)):
+                elif control_name in list(
+                    active_device.match("control/.*", suffix=True)
+                ):
                     self.get_context("/").execute(control_name)
                     channel(_("Executed '%s'") % control_name)
                 else:
@@ -1996,15 +2003,23 @@ class Kernel:
                     channel("%d: %s" % (i + 1, name))
                 channel(_("----------"))
                 if active_device is not None:
-                    channel(_("Loaded Modifiers in Context %s:") % str(active_device._path))
+                    channel(
+                        _("Loaded Modifiers in Context %s:") % str(active_device._path)
+                    )
                     for i, name in enumerate(active_device.attached):
                         modifier = active_device.attached[name]
-                        channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
+                        channel(
+                            _("%d: %s as type of %s") % (i + 1, name, type(modifier))
+                        )
                     channel(_("----------"))
-                    channel(_("Loaded Modifiers in Device %s:") % str(active_device._path))
+                    channel(
+                        _("Loaded Modifiers in Device %s:") % str(active_device._path)
+                    )
                     for i, name in enumerate(active_device.attached):
                         modifier = active_device.attached[name]
-                        channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
+                        channel(
+                            _("%d: %s as type of %s") % (i + 1, name, type(modifier))
+                        )
                     channel(_("----------"))
             else:
                 value = args[0]
@@ -2182,7 +2197,9 @@ class Kernel:
                         break
             return
 
-        @self.console_option("path", "p", type=str, help="Path that should be flushed to disk.")
+        @self.console_option(
+            "path", "p", type=str, help="Path that should be flushed to disk."
+        )
         @self.console_command("flush", help="flush")
         def flush(command, channel, _, path=None, args=tuple(), **kwargs):
             relevant_context = None
@@ -2204,26 +2221,25 @@ class Kernel:
                 self.shutdown()
             return
 
-        @self.console_command(
-            ("ls", "dir"), help="list directory"
-        )
+        @self.console_command(("ls", "dir"), help="list directory")
         def ls(command, channel, _, args=tuple(), **kwargs):
             import os
+
             for f in os.listdir(self._current_directory):
                 channel(str(f))
 
         @self.console_argument("directory")
-        @self.console_command(
-            "cd", help="change directory"
-        )
+        @self.console_command("cd", help="change directory")
         def cd(command, channel, _, directory=None, args=tuple(), **kwargs):
             import os
+
             if directory == "~":
                 self._current_directory = "."
                 channel(_("Working directory"))
                 return
             if directory == "@":
                 import sys
+
                 if hasattr(sys, "_MEIPASS"):
                     self._current_directory = sys._MEIPASS
                     channel(_("Internal Directory"))
@@ -2245,8 +2261,11 @@ class Kernel:
         @self.console_command(
             "load", help="load file", input_type=None, output_type="file"
         )
-        def load(command, channel, _, filename=None, args=tuple(), remainder=None, **kwargs):
+        def load(
+            command, channel, _, filename=None, args=tuple(), remainder=None, **kwargs
+        ):
             import os
+
             if filename is None:
                 channel(_("No file specified."))
                 return
@@ -2394,7 +2413,11 @@ class Channel:
             self.buffer = list()
 
     def __repr__(self):
-        return "Channel(%s, buffer_size=%d, line_end=%s)" % (repr(self.name), self.buffer_size, repr(self.line_end))
+        return "Channel(%s, buffer_size=%d, line_end=%s)" % (
+            repr(self.name),
+            self.buffer_size,
+            repr(self.line_end),
+        )
 
     def __call__(self, message, *args, **kwargs):
         if self.line_end is not None:

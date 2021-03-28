@@ -5,10 +5,25 @@ from ezdxf import units
 from ezdxf.tools.rgb import DXF_DEFAULT_COLORS, int2rgb
 from ezdxf.units import decode
 
-from ..svgelements import (SVG_ATTR_VECTOR_EFFECT,
-                           SVG_VALUE_NON_SCALING_STROKE, Angle, Arc, Circle,
-                           Color, Ellipse, Group, Matrix, Move, Path, Polygon,
-                           Polyline, SimpleLine, SVGImage, SVGText, Viewbox)
+from ..svgelements import (
+    SVG_ATTR_VECTOR_EFFECT,
+    SVG_VALUE_NON_SCALING_STROKE,
+    Angle,
+    Arc,
+    Circle,
+    Color,
+    Ellipse,
+    Group,
+    Matrix,
+    Move,
+    Path,
+    Polygon,
+    Polyline,
+    SimpleLine,
+    SVGImage,
+    SVGText,
+    Viewbox,
+)
 
 MILS_PER_MM = 39.3701
 
@@ -30,7 +45,7 @@ class DxfLoader:
 
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
-        bed_dim = kernel.get_context('/')
+        bed_dim = kernel.get_context("/")
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
 

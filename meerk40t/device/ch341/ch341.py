@@ -56,17 +56,17 @@ class Connection:
         send data, and ERR which means the data sent was faulty. And PEMP which means the
         buffer is empty.
 
-        StateBitERR		0x00000100
-        StateBitPEMP	0x00000200
-        StateBitINT		0x00000400
-        StateBitSLCT	0x00000800
-        StateBitWAIT	0x00002000
-        StateBitDATAS	0x00004000
-        StateBitADDRS	0x00008000
-        StateBitRESET	0x00010000
-        StateBitWRITE	0x00020000
-        StateBitSCL	    0x00400000
-        StateBitSDA		0x00800000
+        StateBitERR          0x00000100
+        StateBitPEMP     0x00000200
+        StateBitINT          0x00000400
+        StateBitSLCT     0x00000800
+        StateBitWAIT     0x00002000
+        StateBitDATAS     0x00004000
+        StateBitADDRS     0x00008000
+        StateBitRESET     0x00010000
+        StateBitWRITE     0x00020000
+        StateBitSCL         0x00400000
+        StateBitSDA          0x00800000
         :return:
         """
         raise NotImplementedError
@@ -95,6 +95,7 @@ class CH341(Module, Handler):
     be valid and acceptable for any CH341 interactions. CH341 chip interfacing is required for Lhystudios Controllers,
     Moshiboard Controllers, and other interactions such as a plugin that uses addition CH341 devices.
     """
+
     def __init__(self, *args, **kwargs):
         Module.__init__(self, *args, **kwargs)
         Handler.__init__(self, self.context.channel("pipe/usb"), self._state_change)
@@ -124,7 +125,9 @@ class CH341(Module, Handler):
 
     def _connect_attempt(self, handler, driver_index=-1, chipv=-1, bus=-1, address=-1):
         _ = self.channel._
-        connection = handler.connect(driver_index=driver_index, chipv=chipv, bus=bus, address=address)
+        connection = handler.connect(
+            driver_index=driver_index, chipv=chipv, bus=bus, address=address
+        )
         chip_version = connection.get_chip_version()
         self.channel(_("CH341 Chip Version: %d") % chip_version)
         self.context.signal("pipe;chipv", chip_version)
@@ -135,10 +138,13 @@ class CH341(Module, Handler):
 
     def _connect_mock(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
         from .mock import Handler
+
         driver_handler = Handler(channel=self.channel, status=self.status)
         if driver_index != -1:
             try:
-                return self._connect_attempt(driver_handler, driver_index, chipv, bus, address)
+                return self._connect_attempt(
+                    driver_handler, driver_index, chipv, bus, address
+                )
             except ConnectionRefusedError:
                 pass
         else:
@@ -150,10 +156,13 @@ class CH341(Module, Handler):
 
     def _connect_libusb(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
         from .libusb import Handler
+
         driver_handler = Handler(channel=self.channel, status=self.status)
         if driver_index != -1:
             try:
-                return self._connect_attempt(driver_handler, driver_index, chipv, bus, address)
+                return self._connect_attempt(
+                    driver_handler, driver_index, chipv, bus, address
+                )
             except ConnectionRefusedError:
                 pass
         else:
@@ -165,10 +174,13 @@ class CH341(Module, Handler):
 
     def _connect_windll(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
         from .windll import Handler
+
         driver_handler = Handler(channel=self.channel, status=self.status)
         if driver_index != -1:
             try:
-                return self._connect_attempt(driver_handler, driver_index, chipv, bus, address)
+                return self._connect_attempt(
+                    driver_handler, driver_index, chipv, bus, address
+                )
             except ConnectionRefusedError:
                 pass
         else:
@@ -177,4 +189,3 @@ class CH341(Module, Handler):
                     return self._connect_attempt(driver_handler, i, chipv, bus, address)
                 except ConnectionRefusedError:
                     pass
-

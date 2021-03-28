@@ -1,9 +1,9 @@
 import wx
 
-from .mwindow import MWindow
 from ..svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Color
 from .icons import icons8_choose_font_50, icons8_text_50
 from .laserrender import swizzlecolor
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 

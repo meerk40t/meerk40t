@@ -1,7 +1,7 @@
 import wx
 
-from .mwindow import MWindow
 from .icons import icons8_keyboard_50
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 

@@ -11,9 +11,14 @@ import wx
 
 from ..kernel import Module
 from ..svgelements import Color, Matrix, Point
-from .laserrender import (DRAW_MODE_BACKGROUND, DRAW_MODE_GRID,
-                          DRAW_MODE_GUIDES, DRAW_MODE_LASERPATH,
-                          DRAW_MODE_RETICLE, DRAW_MODE_SELECTION)
+from .laserrender import (
+    DRAW_MODE_BACKGROUND,
+    DRAW_MODE_GRID,
+    DRAW_MODE_GUIDES,
+    DRAW_MODE_LASERPATH,
+    DRAW_MODE_RETICLE,
+    DRAW_MODE_SELECTION,
+)
 from .zmatrix import ZMatrix
 
 MILS_IN_MM = 39.3701
@@ -78,18 +83,18 @@ class Scene(Module):
             e.unregister()
 
     def rotary_stretch(self):
-        r = self.context.get_context('rotary/1')
+        r = self.context.get_context("rotary/1")
         scale_x = r.scale_x
         scale_y = r.scale_y
         self.widget_root.scene_widget.matrix.post_scale(scale_x, scale_y)
-        self.context.signal('refresh_scene', 0)
+        self.context.signal("refresh_scene", 0)
 
     def rotary_unstretch(self):
-        r = self.context.get_context('rotary/1')
+        r = self.context.get_context("rotary/1")
         scale_x = r.scale_x
         scale_y = r.scale_y
         self.widget_root.scene_widget.matrix.post_scale(1.0 / scale_x, 1.0 / scale_y)
-        self.context.signal('refresh_scene', 0)
+        self.context.signal("refresh_scene", 0)
 
     def signal(self, *args, **kwargs):
         self._signal_widget(self.widget_root, *args, **kwargs)
@@ -741,7 +746,9 @@ class SelectionWidget(Widget):
                 pass
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.node.modified()
-        elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
+        elements.update_bounds(
+            [b[0], b[1], b[0] + self.save_width, b[1] + self.save_height]
+        )
         self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalexy_nw(self, position, dx, dy):
@@ -763,7 +770,9 @@ class SelectionWidget(Widget):
                 pass
             obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
             obj.node.modified()
-        elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
+        elements.update_bounds(
+            [b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]]
+        )
         self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalexy_ne(self, position, dx, dy):
@@ -785,7 +794,9 @@ class SelectionWidget(Widget):
                 pass
             obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
             obj.node.modified()
-        elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
+        elements.update_bounds(
+            [b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]]
+        )
         self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalexy_sw(self, position, dx, dy):
@@ -807,7 +818,9 @@ class SelectionWidget(Widget):
                 pass
             obj.transform.post_scale(scalex, scaley, self.right, self.top)
             obj.node.modified()
-        elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
+        elements.update_bounds(
+            [b[2] - self.save_width, b[1], b[2], b[1] + self.save_height]
+        )
         self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalex_e(self, position, dx, dy):
@@ -882,7 +895,9 @@ class SelectionWidget(Widget):
             obj = e.object
             obj.transform.post_translate(dx, dy)
             obj.node.modified()
-        for e in elements._tree.flat(types=("group", "file", "op element"), emphasized=True):
+        for e in elements._tree.flat(
+            types=("group", "file", "op element"), emphasized=True
+        ):
             e._bounds_dirty = True
         self.translate(dx, dy)
         elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
@@ -1068,7 +1083,7 @@ class GridWidget(Widget):
     def calculate_grid(self):
         if self.scene.context is not None:
             context = self.scene.context
-            bed_dim = context.get_context('/')
+            bed_dim = context.get_context("/")
             wmils = bed_dim.bed_width * MILS_IN_MM
             hmils = bed_dim.bed_height * MILS_IN_MM
         else:
@@ -1100,7 +1115,7 @@ class GridWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             if context is not None:
-                root = context.get_context('/')
+                root = context.get_context("/")
                 wmils = root.bed_width * MILS_IN_MM
                 hmils = root.bed_height * MILS_IN_MM
             else:
@@ -1253,17 +1268,17 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
-        elif event_type == 'rightdown+alt':
+        elif event_type == "rightdown+alt":
             self._previous_zoom = 1.0
             self._placement_event = space_pos
             self._placement_event_type = "zoom"
             return RESPONSE_CONSUME
-        elif event_type == 'rightdown+control':
+        elif event_type == "rightdown+control":
             self._previous_zoom = 1.0
             self._placement_event = space_pos
             self._placement_event_type = "pan"
             return RESPONSE_CONSUME
-        elif event_type == 'rightup':
+        elif event_type == "rightup":
             self._previous_zoom = None
             self._placement_event = None
             self._placement_event_type = None
@@ -1328,21 +1343,32 @@ class SceneSpaceWidget(Widget):
         # Movement
         if self._placement_event_type is None:
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
-            self.scene.context.signal('refresh_scene', 0)
-        elif self._placement_event_type == 'zoom':
+            self.scene.context.signal("refresh_scene", 0)
+        elif self._placement_event_type == "zoom":
             from math import e
-            p = space_pos[0] - self._placement_event[0] + space_pos[1] - self._placement_event[1]
+
+            p = (
+                space_pos[0]
+                - self._placement_event[0]
+                + space_pos[1]
+                - self._placement_event[1]
+            )
             p /= 250.0
-            zoom_factor = e**p
+            zoom_factor = e ** p
             zoom_change = zoom_factor / self._previous_zoom
             self._previous_zoom = zoom_factor
-            self.scene_widget.matrix.post_scale(zoom_change, zoom_change,  self._placement_event[0], self._placement_event[1])
-            self.scene.context.signal('refresh_scene', 0)
-        elif self._placement_event_type == 'pan':
+            self.scene_widget.matrix.post_scale(
+                zoom_change,
+                zoom_change,
+                self._placement_event[0],
+                self._placement_event[1],
+            )
+            self.scene.context.signal("refresh_scene", 0)
+        elif self._placement_event_type == "pan":
             pan_factor_x = -(space_pos[0] - self._placement_event[0]) / 10
             pan_factor_y = -(space_pos[1] - self._placement_event[1]) / 10
             self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
-            self.scene.context.signal('refresh_scene', 0)
+            self.scene.context.signal("refresh_scene", 0)
         return RESPONSE_CONSUME
 
     def focus_position_scene(self, scene_point, scene_size):

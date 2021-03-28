@@ -1,4 +1,3 @@
-
 # MIT License.
 
 import time
@@ -40,9 +39,9 @@ class CH341Driver(CH341Connection):
         if self.driver_value is None:
             self.channel(_("Using Mock Driver to connect."))
             self.channel(_("Attempting connection to USB."))
-            self.state('STATE_USB_CONNECTING')
+            self.state("STATE_USB_CONNECTING")
             self.driver_value = 0  # Would connect here.
-            self.state('STATE_USB_CONNECTED')
+            self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
             self.channel(_("Sending CH341 mode change to EPP1.9."))
             try:
@@ -61,13 +60,13 @@ class CH341Driver(CH341Connection):
         """
         _ = self.channel._
         self.driver_value = None
-        self.state('STATE_USB_SET_DISCONNECTING')
+        self.state("STATE_USB_SET_DISCONNECTING")
         self.channel(_("Attempting disconnection from USB."))
         if self.driver_value == -1:
             self.channel(_("USB connection did not exist."))
             raise ConnectionError
         # self.driver.CH341CloseDevice(self.driver_index)
-        self.state('STATE_USB_DISCONNECTED')
+        self.state("STATE_USB_DISCONNECTED")
         self.channel(_("USB Disconnection Successful.\n"))
 
     def write(self, packet):
@@ -102,17 +101,17 @@ class CH341Driver(CH341Connection):
         send data, and ERR which means the data sent was faulty. And PEMP which means the
         buffer is empty.
 
-        StateBitERR		0x00000100
-        StateBitPEMP	0x00000200
-        StateBitINT		0x00000400
-        StateBitSLCT	0x00000800
-        StateBitWAIT	0x00002000
-        StateBitDATAS	0x00004000
-        StateBitADDRS	0x00008000
-        StateBitRESET	0x00010000
-        StateBitWRITE	0x00020000
-        StateBitSCL	    0x00400000
-        StateBitSDA		0x00800000
+        StateBitERR      0x00000100
+        StateBitPEMP   0x00000200
+        StateBitINT      0x00000400
+        StateBitSLCT   0x00000800
+        StateBitWAIT   0x00002000
+        StateBitDATAS   0x00004000
+        StateBitADDRS   0x00008000
+        StateBitRESET   0x00010000
+        StateBitWRITE   0x00020000
+        StateBitSCL       0x00400000
+        StateBitSDA      0x00800000
         :return:
         """
         if self.driver_value == -1:
@@ -146,7 +145,9 @@ class Handler(CH341Handler):
 
     def connect(self, driver_index=0, chipv=-1, bus=-1, address=-1):
         """Tries to open device at index, with given criteria"""
-        connection = CH341Driver(self.driver, driver_index, channel=self.channel, state=self.status)
+        connection = CH341Driver(
+            self.driver, driver_index, channel=self.channel, state=self.status
+        )
         _ = self.channel._
         connection.validate()
 
@@ -154,7 +155,11 @@ class Handler(CH341Handler):
             match_chipv = connection.get_chip_version()
             if chipv != match_chipv:
                 # Rejected.
-                self.channel(_("K40 devices were found but they were rejected due to chip version."))
+                self.channel(
+                    _(
+                        "K40 devices were found but they were rejected due to chip version."
+                    )
+                )
                 connection.close()
                 return -1
         # No methods to match bus or address

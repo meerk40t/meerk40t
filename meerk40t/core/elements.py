@@ -549,7 +549,11 @@ class ElemNode(Node):
         data_object.node = self
 
     def __repr__(self):
-        return "ElemNode('%s', %s, %s)" % (self.type, str(self.object), str(self._parent))
+        return "ElemNode('%s', %s, %s)" % (
+            self.type,
+            str(self.object),
+            str(self._parent),
+        )
 
     def drop(self, drag_node):
         drop_node = self
@@ -795,22 +799,22 @@ class LaserOperation(Node):
                     object_image = object_image.object
                     c.append(RasterCut(object_image, settings))
         elif self._operation == "Image":
-                for object_image in self.children:
-                    object_image = object_image.object
-                    settings = LaserSettings(self.settings)
-                    try:
-                        settings.raster_step = int(object_image.values["raster_step"])
-                    except KeyError:
-                        settings.raster_step = 1
-                    direction = settings.raster_direction
-                    settings.crosshatch = False
-                    if direction == 4:
-                        cross_settings = LaserSettings(settings)
-                        cross_settings.crosshatch = True
-                        c.append(RasterCut(object_image, settings))
-                        c.append(RasterCut(object_image, cross_settings))
-                    else:
-                        c.append(RasterCut(object_image, settings))
+            for object_image in self.children:
+                object_image = object_image.object
+                settings = LaserSettings(self.settings)
+                try:
+                    settings.raster_step = int(object_image.values["raster_step"])
+                except KeyError:
+                    settings.raster_step = 1
+                direction = settings.raster_direction
+                settings.crosshatch = False
+                if direction == 4:
+                    cross_settings = LaserSettings(settings)
+                    cross_settings.crosshatch = True
+                    c.append(RasterCut(object_image, settings))
+                    c.append(RasterCut(object_image, cross_settings))
+                else:
+                    c.append(RasterCut(object_image, settings))
 
         if settings.passes_custom:
             c *= settings.passes
@@ -1136,7 +1140,7 @@ class Elemental(Modifier):
         context.load_types = self.load_types
         context = self.context
         self._tree = RootNode(context)
-        bed_dim = context.get_context('/')
+        bed_dim = context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
 
@@ -1527,7 +1531,11 @@ class Elemental(Modifier):
         def align(command, channel, _, data=None, align=None, args=tuple(), **kwargs):
             if data is None:
                 elem_branch = self.get(type="branch elems")
-                data = list(elem_branch.flat(types=("elems", "file", "group"), cascade=False, depth=1))
+                data = list(
+                    elem_branch.flat(
+                        types=("elems", "file", "group"), cascade=False, depth=1
+                    )
+                )
             boundary_points = []
             for d in data:
                 # d._bounds_dirty = True
@@ -1538,7 +1546,7 @@ class Elemental(Modifier):
             top_edge = min([e[1] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
-            if align == 'top':
+            if align == "top":
                 for e in data:
                     subbox = e.bounds
                     top = subbox[1] - top_edge
@@ -1546,7 +1554,7 @@ class Elemental(Modifier):
                         for q in e.flat(types="elem"):
                             q.object *= "translate(0, %f)" % -top
                             q.modified()
-            elif align == 'bottom':
+            elif align == "bottom":
                 for e in data:
                     subbox = e.bounds
                     bottom = subbox[3] - bottom_edge
@@ -1554,7 +1562,7 @@ class Elemental(Modifier):
                         for q in e.flat(types="elem"):
                             q.object *= "translate(0, %f)" % -bottom
                             q.modified()
-            elif align == 'left':
+            elif align == "left":
                 for e in data:
                     subbox = e.bounds
                     left = subbox[0] - left_edge
@@ -1562,7 +1570,7 @@ class Elemental(Modifier):
                         for q in e.flat(types="elem"):
                             q.object *= "translate(%f, 0)" % -left
                             q.modified()
-            elif align == 'right':
+            elif align == "right":
                 for e in data:
                     subbox = e.bounds
                     right = subbox[2] - right_edge
@@ -1570,7 +1578,7 @@ class Elemental(Modifier):
                         for q in e.flat(types="elem"):
                             q.object *= "translate(%f, 0)" % -right
                             q.modified()
-            elif align == 'center':
+            elif align == "center":
                 for e in data:
                     subbox = e.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
@@ -1578,21 +1586,21 @@ class Elemental(Modifier):
                     for q in e.flat(types="elem"):
                         q.object *= "translate(%f, %f)" % (-dx, -dy)
                         q.modified()
-            elif align == 'centerv':
+            elif align == "centerv":
                 for e in data:
                     subbox = e.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                     for q in e.flat(types="elem"):
                         q.object *= "translate(%f, 0)" % -dx
                         q.modified()
-            elif align == 'centerh':
+            elif align == "centerh":
                 for e in data:
                     subbox = e.bounds
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
                     for q in e.flat(types="elem"):
                         q.object *= "translate(0, %f)" % -dy
                         q.modified()
-            elif align == 'spaceh':
+            elif align == "spaceh":
                 distance = right_edge - left_edge
                 step = distance / (len(data) - 1)
                 for e in data:
@@ -1603,7 +1611,7 @@ class Elemental(Modifier):
                         for q in e.flat(types="elem"):
                             q.object *= "translate(%f, 0)" % -left
                             q.modified()
-            elif align == 'spacev':
+            elif align == "spacev":
                 distance = bottom_edge - top_edge
                 step = distance / (len(data) - 1)
                 for e in data:
@@ -2038,8 +2046,8 @@ class Elemental(Modifier):
                 raise SyntaxError
             for e in data:
                 e.stroke_width = stroke_width
-                if hasattr(e, 'node'):
-                     e.node.altered()
+                if hasattr(e, "node"):
+                    e.node.altered()
             context.signal("refresh_scene")
             return "elements", data
 
@@ -2080,13 +2088,13 @@ class Elemental(Modifier):
             if color == "none":
                 for e in data:
                     e.stroke = None
-                    if hasattr(e, 'node'):
-                         e.node.altered()
+                    if hasattr(e, "node"):
+                        e.node.altered()
             else:
                 for e in data:
                     e.stroke = Color(color)
-                    if hasattr(e, 'node'):
-                         e.node.altered()
+                    if hasattr(e, "node"):
+                        e.node.altered()
             context.signal("refresh_scene")
             return "elements", data
 
@@ -2123,13 +2131,13 @@ class Elemental(Modifier):
             if color == "none":
                 for e in data:
                     e.fill = None
-                    if hasattr(e, 'node'):
-                         e.node.altered()
+                    if hasattr(e, "node"):
+                        e.node.altered()
             else:
                 for e in data:
                     e.fill = Color(color)
-                    if hasattr(e, 'node'):
-                         e.node.altered()
+                    if hasattr(e, "node"):
+                        e.node.altered()
             context.signal("refresh_scene")
             return
 
@@ -2247,15 +2255,11 @@ class Elemental(Modifier):
             rot = angle.as_degrees
 
             if cx is not None:
-                cx = cx.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
-                )
+                cx = cx.value(ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701)
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
-                cy = cy.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
-                )
+                cy = cy.value(ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701)
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
@@ -2269,7 +2273,7 @@ class Elemental(Modifier):
                             pass
 
                         element *= matrix
-                        if hasattr(element, 'node'):
+                        if hasattr(element, "node"):
                             element.node.modified()
                 else:
                     for element in self.elems(emphasized=True):
@@ -2279,7 +2283,7 @@ class Elemental(Modifier):
                             "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
                         )
                         element *= matrix
-                        if hasattr(element, 'node'):
+                        if hasattr(element, "node"):
                             element.node.modified()
             except ValueError:
                 raise SyntaxError
@@ -2370,8 +2374,8 @@ class Elemental(Modifier):
                             pass
 
                         e *= m
-                        if hasattr(e, 'node'):
-                             e.node.modified()
+                        if hasattr(e, "node"):
+                            e.node.modified()
                 else:
                     for e in data:
                         try:
@@ -2388,8 +2392,8 @@ class Elemental(Modifier):
                             "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_y)
                         )
                         e *= m
-                        if hasattr(e, 'node'):
-                             e.node.modified()
+                        if hasattr(e, "node"):
+                            e.node.modified()
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
@@ -2447,15 +2451,11 @@ class Elemental(Modifier):
                 channel(_("No selected elements."))
                 return
             if tx is not None:
-                tx = tx.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
-                )
+                tx = tx.value(ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701)
             else:
                 tx = 0
             if ty is not None:
-                ty = ty.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
-                )
+                ty = ty.value(ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701)
             else:
                 ty = 0
             m = Matrix("translate(%f,%f)" % (tx, ty))
@@ -2463,8 +2463,8 @@ class Elemental(Modifier):
                 if not absolute:
                     for e in data:
                         e *= m
-                        if hasattr(e, 'node'):
-                             e.node.modified()
+                        if hasattr(e, "node"):
+                            e.node.modified()
                 else:
                     for e in data:
                         otx = e.transform.value_trans_x()
@@ -2473,8 +2473,8 @@ class Elemental(Modifier):
                         nty = ty - oty
                         m = Matrix("translate(%f,%f)" % (ntx, nty))
                         e *= m
-                        if hasattr(e, 'node'):
-                             e.node.modified()
+                        if hasattr(e, "node"):
+                            e.node.modified()
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
@@ -2529,8 +2529,8 @@ class Elemental(Modifier):
                     except AttributeError:
                         pass
                     e *= m
-                    if hasattr(e, 'node'):
-                         e.node.modified()
+                    if hasattr(e, "node"):
+                        e.node.modified()
                 context.signal("refresh_scene")
                 return "elements", data
             except (ValueError, ZeroDivisionError):
@@ -2587,12 +2587,8 @@ class Elemental(Modifier):
                     kx,
                     sy,
                     ky,
-                    tx.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
-                    ),
-                    ty.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
-                    ),
+                    tx.value(ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701),
+                    ty.value(ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701),
                 )
                 for e in data:
                     try:
@@ -2602,8 +2598,8 @@ class Elemental(Modifier):
                         pass
 
                     e.transform = Matrix(m)
-                    if hasattr(e, 'node'):
-                         e.node.modified()
+                    if hasattr(e, "node"):
+                        e.node.modified()
             except ValueError:
                 raise SyntaxError
             context.signal("refresh_scene")
@@ -2630,8 +2626,8 @@ class Elemental(Modifier):
                     name = name[:50] + "..."
                 channel(_("reset - %s") % name)
                 e.transform.reset()
-                if hasattr(e, 'node'):
-                     e.node.modified()
+                if hasattr(e, "node"):
+                    e.node.modified()
             context.signal("refresh_scene")
             return "elements", data
 
@@ -2656,8 +2652,8 @@ class Elemental(Modifier):
                     name = name[:50] + "..."
                 channel(_("reified - %s") % name)
                 e.reify()
-                if hasattr(e, 'node'):
-                     e.node.altered()
+                if hasattr(e, "node"):
+                    e.node.altered()
             context.signal("refresh_scene")
             return "elements", data
 
@@ -2691,7 +2687,9 @@ class Elemental(Modifier):
             self.remove_elements_from_operations(data)
             return "elements", data
 
-        @context.console_option("append", "a", type=bool, action="store_true", default=False)
+        @context.console_option(
+            "append", "a", type=bool, action="store_true", default=False
+        )
         @context.console_command("note", help="note <note>")
         def note(command, channel, _, append=False, remainder=None, **kwargs):
             note = remainder
@@ -2797,8 +2795,8 @@ class Elemental(Modifier):
                 ty = m.f
                 element.transform = Matrix.scale(float(step_size), float(step_size))
                 element.transform.post_translate(tx, ty)
-                if hasattr(element, 'node'):
-                     element.node.modified()
+                if hasattr(element, "node"):
+                    element.node.modified()
                 self.context.signal("element_property_update", element)
                 self.context.signal("refresh_scene")
             return
@@ -2873,9 +2871,7 @@ class Elemental(Modifier):
                 node.insert_sibling(n)
             node.remove_node()
 
-        @self.tree_operation(
-            _("Group Elements"), node_type="elem", help=""
-        )
+        @self.tree_operation(_("Group Elements"), node_type="elem", help="")
         def group_elements(node, **kwargs):
             # group_node = node.parent.add_sibling(node, type="group", name="Group")
             group_node = node.parent.add(type="group", name="Group")
@@ -2902,36 +2898,28 @@ class Elemental(Modifier):
         def clear_all_ops(node, **kwargs):
             self.context("element* delete\n")
 
-        @self.tree_operation(
-            _("Remove: {name}"), node_type="op", help=""
-        )
+        @self.tree_operation(_("Remove: {name}"), node_type="op", help="")
         def remove_types(node, **kwargs):
             # self.context("operation delete\n")
             node.remove_node()
             # self.remove_orphaned_opnodes()
             self.set_emphasis(None)
 
-        @self.tree_operation(
-            _("Remove: {name}"), node_type="elem", help=""
-        )
+        @self.tree_operation(_("Remove: {name}"), node_type="elem", help="")
         def remove_types(node, **kwargs):
             # self.context("element delete\n")
             node.remove_node()
             self.remove_orphaned_opnodes()
             self.set_emphasis(None)
 
-        @self.tree_operation(
-            _("Remove: {name}"), node_type="file", help=""
-        )
+        @self.tree_operation(_("Remove: {name}"), node_type="file", help="")
         def remove_types(node, **kwargs):
             node.remove_all_children()
             node.remove_node()
             self.remove_orphaned_opnodes()
             self.set_emphasis(None)
 
-        @self.tree_operation(
-            _("Remove: {name}"), node_type="opnode", help=""
-        )
+        @self.tree_operation(_("Remove: {name}"), node_type="opnode", help="")
         def remove_types(node, **kwargs):
             node.remove_node()
             self.set_emphasis(None)
@@ -3070,7 +3058,9 @@ class Elemental(Modifier):
                 op.add(e.object, type="opnode")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(lambda node: node.operation in ("Image", "Engrave", "Cut"))
+        @self.tree_conditional(
+            lambda node: node.operation in ("Image", "Engrave", "Cut")
+        )
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 1, 10)
         @self.tree_operation(_("Add {copies} pass(es)."), node_type="op", help="")
@@ -3091,7 +3081,9 @@ class Elemental(Modifier):
             self.context.signal("rebuild_tree", 0)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(lambda node: node.operation in ("Image", "Engrave", "Cut"))
+        @self.tree_conditional(
+            lambda node: node.operation in ("Image", "Engrave", "Cut")
+        )
         @self.tree_submenu(_("Duplicate"))
         @self.tree_iterate("copies", 1, 10)
         @self.tree_operation(
@@ -3129,7 +3121,6 @@ class Elemental(Modifier):
             element = node.object
             element.raster_step = i
             self.context.signal("element_property_update", node.object)
-
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_operation(
@@ -3190,10 +3181,11 @@ class Elemental(Modifier):
         def reset_user_changes(node, copies=1, **kwargs):
             self.context("reset\n")
 
-        @self.tree_conditional(lambda node: isinstance(node.object, Shape) and not isinstance(node.object, Path))
-        @self.tree_operation(
-            _("Convert To Path"), node_type=("elem",), help=""
+        @self.tree_conditional(
+            lambda node: isinstance(node.object, Shape)
+            and not isinstance(node.object, Path)
         )
+        @self.tree_operation(_("Convert To Path"), node_type=("elem",), help="")
         def reset_user_changes(node, copies=1, **kwargs):
             node.object = abs(Path(node.object))
             node.object.node = node
@@ -3216,9 +3208,7 @@ class Elemental(Modifier):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context(
-                "scale %f %f %f %f\n" % (scale, scale, center_x, center_y)
-            )
+            self.context("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -3304,8 +3294,8 @@ class Elemental(Modifier):
             ty = m.f
             element.transform = Matrix.scale(float(step_value), float(step_value))
             element.transform.post_translate(tx, ty)
-            if hasattr(element, 'node'):
-                     element.node.modified()
+            if hasattr(element, "node"):
+                element.node.modified()
             self.context.signal("element_property_update", node.object)
             self.context.gui.request_refresh()
 
@@ -3331,9 +3321,7 @@ class Elemental(Modifier):
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-                self.context(
-                    "image threshold %f %f\n" % (threshold_min, threshold_max)
-                )
+                self.context("image threshold %f %f\n" % (threshold_min, threshold_max))
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: node.object.lock)
@@ -3393,14 +3381,18 @@ class Elemental(Modifier):
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("RasterWizard"))
-        @self.tree_values("script", values=self.context.match("raster_script", suffix=True))
+        @self.tree_values(
+            "script", values=self.context.match("raster_script", suffix=True)
+        )
         @self.tree_operation(_("RasterWizard: {script}"), node_type="elem", help="")
         def image_rasterwizard_open(node, script=None, **kwargs):
             self.context("window open -p / RasterWizard %s\n" % script)
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply Raster Script"))
-        @self.tree_values("script", values=self.context.match("raster_script", suffix=True))
+        @self.tree_values(
+            "script", values=self.context.match("raster_script", suffix=True)
+        )
         @self.tree_operation(_("Apply: {script}"), node_type="elem", help="")
         def image_rasterwizard_apply(node, script=None, **kwargs):
             self.context("image wizard %s\n" % script)
@@ -3554,7 +3546,9 @@ class Elemental(Modifier):
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in elements.flat(types=("elem", "file", "group"), depth=depth, **kwargs):
+        for item in elements.flat(
+            types=("elem", "file", "group"), depth=depth, **kwargs
+        ):
             yield item
 
     def first_element(self, **kwargs):

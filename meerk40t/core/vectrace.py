@@ -1,18 +1,24 @@
-from meerk40t.svgelements import Polygon, Path
+from meerk40t.svgelements import Path, Polygon
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        @kernel.console_command("vectrace", help="return paths around image", input_type="image", output_type="elements")
+
+        @kernel.console_command(
+            "vectrace",
+            help="return paths around image",
+            input_type="image",
+            output_type="elements",
+        )
         def vectrace(command, channel, _, data, args=tuple(), **kwargs):
-            elements = kernel.get_context('/').elements
+            elements = kernel.get_context("/").elements
             path = Path(fill="black", stroke="blue")
             paths = []
             for element in data:
                 image = element.image
                 width, height = element.image.size
-                if image.mode != 'L':
-                    image = image.convert('L')
+                if image.mode != "L":
+                    image = image.convert("L")
                 image = image.point(lambda e: int(e > 127) * 255)
                 for points in _vectrace(image.load(), width, height):
                     path += Polygon(*points)
@@ -50,14 +56,14 @@ def _trace(pixels, x, y, width, height):
 
     def px(x, y):
         if 0 <= x < width and 0 <= y < height:
-            return pixels[x,y]
+            return pixels[x, y]
         else:
             return 255
 
     while True:
-        nw = px(x-1, y-1)
+        nw = px(x - 1, y - 1)
         ne = px(x, y - 1)
-        sw = px(x-1, y)
+        sw = px(x - 1, y)
         se = px(x, y)
         if direction == _EAST:
             pixel_right = se

@@ -1,7 +1,7 @@
 import wx
 
-from .mwindow import MWindow
 from .icons import icon_meerk40t, icons8_about_50
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 

@@ -15,6 +15,7 @@ class MWindow(wx.Frame, Module):
     hooks from the kernel. We register the acceleration table of the main window and handle the window/module open and
     close events.
     """
+
     def __init__(self, width, height, context, path, parent, *args, **kwds):
         # begin wxGlade: Notes.__init__
         if parent is None:
@@ -25,11 +26,13 @@ class MWindow(wx.Frame, Module):
                 parent,
                 -1,
                 "",
-                style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+                style=wx.DEFAULT_FRAME_STYLE
+                | wx.FRAME_FLOAT_ON_PARENT
+                | wx.TAB_TRAVERSAL,
             )
         Module.__init__(self, context, path)
 
-        self.root_context = context.get_context('/')
+        self.root_context = context.get_context("/")
         self.window_context = context.get_context(path)
 
         self.root_context.setting(bool, "windows_save", True)
@@ -55,7 +58,7 @@ class MWindow(wx.Frame, Module):
                 pass
 
         keyid = wx.NewId()
-        accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('W'), keyid)])
+        accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord("W"), keyid)])
         window.Bind(wx.EVT_MENU, close_window, id=keyid)
         window.SetAcceleratorTable(accel_tbl)
 

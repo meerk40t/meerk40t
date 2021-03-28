@@ -1,9 +1,9 @@
 from ctypes import c_byte, windll
 
-# MIT License.
-
 from .ch341 import Connection as CH341Connection
 from .ch341 import Handler as CH341Handler
+
+# MIT License.
 
 
 class CH341Driver(CH341Connection):
@@ -158,7 +158,9 @@ class Handler(CH341Handler):
 
     def connect(self, driver_index=0, chipv=-1, bus=-1, address=-1):
         """Tries to open device at index, with given criteria"""
-        connection = CH341Driver(self.driver, driver_index, channel=self.channel, state=self.status)
+        connection = CH341Driver(
+            self.driver, driver_index, channel=self.channel, state=self.status
+        )
         _ = self.channel._
         connection.validate()  # TODO: Replace with Open quietly.
 
@@ -166,7 +168,11 @@ class Handler(CH341Handler):
             match_chipv = connection.get_chip_version()
             if chipv != match_chipv:
                 # Rejected.
-                self.channel(_("K40 devices were found but they were rejected due to chip version."))
+                self.channel(
+                    _(
+                        "K40 devices were found but they were rejected due to chip version."
+                    )
+                )
                 connection.close()  # TODO: Close more quietly.
                 return None
         # No methods to match bus or address

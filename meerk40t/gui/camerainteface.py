@@ -1,12 +1,15 @@
 import wx
 
-from .mwindow import MWindow
 from ..kernel import Job, Module
 from ..svgelements import Matrix, Point, Viewbox
 from .icons import (
-    icons8_camera_50, icons8_connected_50, icons8_detective_50,
-    icons8_picture_in_picture_alternative_50)
+    icons8_camera_50,
+    icons8_connected_50,
+    icons8_detective_50,
+    icons8_picture_in_picture_alternative_50,
+)
 from .laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
+from .mwindow import MWindow
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -27,7 +30,7 @@ class CameraInterface(MWindow, Job):
         self.camera_setting = self.context.get_context("camera")
         self.setting = self.camera_setting.derive(str(self.index))
 
-        self.root_context = self.context.get_context('/')
+        self.root_context = self.context.get_context("/")
 
         self.button_update = wx.BitmapButton(
             self, wx.ID_ANY, icons8_camera_50.GetBitmap()
@@ -64,7 +67,9 @@ class CameraInterface(MWindow, Job):
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context.active.open("window/CameraURI", self, index=self.index),
+            lambda e: self.context.active.open(
+                "window/CameraURI", self, index=self.index
+            ),
             id=item.GetId(),
         )
 
@@ -134,7 +139,7 @@ class CameraInterface(MWindow, Job):
         self.context.setting(bool, "mouse_zoom_invert", False)
         self.context.setting(int, "draw_mode", 0)
 
-        self.bed_dim = self.context.get_context('/')
+        self.bed_dim = self.context.get_context("/")
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
 
@@ -163,10 +168,9 @@ class CameraInterface(MWindow, Job):
 
     def swap_camera(self, uri):
         def swap(event=None):
-            self.context(
-                "camera%d --uri %s stop start\n" % (self.index, str(uri))
-            )
+            self.context("camera%d --uri %s stop start\n" % (self.index, str(uri)))
             self.frame_bitmap = None
+
         return swap
 
     def __do_layout(self):

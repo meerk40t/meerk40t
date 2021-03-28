@@ -30,7 +30,7 @@ class MoshiDevice(Modifier):
         self.state = STATE_UNKNOWN
         self.dx = 0
         self.dy = 0
-        self.bed_dim = context.get_context('/')
+        self.bed_dim = context.get_context("/")
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
 
@@ -75,7 +75,7 @@ class MoshiDevice(Modifier):
 
     def attach(self, *a, **kwargs):
         context = self.context
-        root_context = context.get_context('/')
+        root_context = context.get_context("/")
         kernel = context._kernel
 
         @context.console_argument(
@@ -173,7 +173,7 @@ class MoshiDevice(Modifier):
         context.setting(str, "board", "M2")
 
         context.setting(bool, "fix_speeds", False)
-        bed_dim = context.get_context('/')
+        bed_dim = context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
 

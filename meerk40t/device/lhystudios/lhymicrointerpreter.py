@@ -1,11 +1,19 @@
 from ...core.plotplanner import PlotPlanner
 from ...core.zinglplotter import ZinglPlotter
 from ...kernel import Modifier
-from ..basedevice import (INTERPRETER_STATE_FINISH,
-                          INTERPRETER_STATE_MODECHANGE,
-                          INTERPRETER_STATE_PROGRAM, INTERPRETER_STATE_RAPID,
-                          PLOT_AXIS, PLOT_DIRECTION, PLOT_FINISH, PLOT_JOG,
-                          PLOT_RAPID, PLOT_SETTING, Interpreter)
+from ..basedevice import (
+    INTERPRETER_STATE_FINISH,
+    INTERPRETER_STATE_MODECHANGE,
+    INTERPRETER_STATE_PROGRAM,
+    INTERPRETER_STATE_RAPID,
+    PLOT_AXIS,
+    PLOT_DIRECTION,
+    PLOT_FINISH,
+    PLOT_JOG,
+    PLOT_RAPID,
+    PLOT_SETTING,
+    Interpreter,
+)
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
 
@@ -142,7 +150,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
         context = self.context
         kernel = context._kernel
         _ = kernel.translation
-        root_context = context.get_context('/')
+        root_context = context.get_context("/")
 
         @context.console_command(
             "pulse", help="pulse <time>: Pulse the laser in place."
@@ -252,9 +260,15 @@ class LhymicroInterpreter(Interpreter, Modifier):
             self.reset()
             channel("Lhystudios Channel Aborted.")
 
-        @self.context.console_argument("rapid_x", type=float, help="limit x speed for rapid.")
-        @self.context.console_argument("rapid_y", type=float, help="limit y speed for rapid.")
-        @self.context.console_command("rapid_override", help="limit speed of typical rapid moves.")
+        @self.context.console_argument(
+            "rapid_x", type=float, help="limit x speed for rapid."
+        )
+        @self.context.console_argument(
+            "rapid_y", type=float, help="limit y speed for rapid."
+        )
+        @self.context.console_command(
+            "rapid_override", help="limit speed of typical rapid moves."
+        )
         def rapid_override(command, channel, _, rapid_x=None, rapid_y=None, **kwargs):
             if rapid_x is not None:
                 if rapid_y is None:
@@ -262,7 +276,10 @@ class LhymicroInterpreter(Interpreter, Modifier):
                 self.rapid_override = True
                 self.rapid_override_speed_x = rapid_x
                 self.rapid_override_speed_y = rapid_y
-                channel(_("Rapid Limit: %f, %f") % (self.rapid_override_speed_x,self.rapid_override_speed_y))
+                channel(
+                    _("Rapid Limit: %f, %f")
+                    % (self.rapid_override_speed_x, self.rapid_override_speed_y)
+                )
             else:
                 self.rapid_override = False
                 channel(_("Rapid Limit Off"))
@@ -853,7 +870,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
     def calc_home_position(self):
         x = 0
         y = 0
-        bed_dim = self.context.get_context('/')
+        bed_dim = self.context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if self.context.home_right:

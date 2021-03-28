@@ -1,7 +1,7 @@
 import wx
 
-from .mwindow import MWindow
 from ..svgelements import Matrix
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 

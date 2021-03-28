@@ -1,9 +1,9 @@
 import wx
 
-from .mwindow import MWindow
 from ..svgelements import Color
 from .icons import icons8_delete_50, icons8_laser_beam_52, icons8_plus_50
 from .laserrender import swizzlecolor
+from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
@@ -163,9 +163,7 @@ class OperationProperty(MWindow):
         self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_shift_enabled)
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes
-        )
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes)
         self.Bind(wx.EVT_TEXT, self.on_text_passes, self.text_passes)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_passes, self.text_passes)
         self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)

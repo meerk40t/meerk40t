@@ -9,12 +9,12 @@ from math import ceil
 
 import wx
 
-from .mwindow import MWindow
 from ..image.imagetools import RasterScripts
 from ..kernel import Module
 from ..svgelements import Matrix, SVGImage
 from .icons import icons8_fantasy_50
 from .laserrender import LaserRender
+from .mwindow import MWindow
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -475,7 +475,10 @@ class RasterWizard(MWindow):
             self.svg_image.image = self.pil_image
             self.svg_image.values["raster_step"] = self.step_image
             self.svg_image.transform = self.matrix_image
-            self.svg_image.image_width, self.svg_image.image_height = self.pil_image.size
+            (
+                self.svg_image.image_width,
+                self.svg_image.image_height,
+            ) = self.pil_image.size
             self.svg_image.lock = True
             try:
                 self.svg_image.node.object = self.svg_image

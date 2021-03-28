@@ -241,7 +241,7 @@ class Interpreter:
 
     def __init__(self, context):
         self.context = context
-        self.root_context = context.get_context('/')
+        self.root_context = context.get_context("/")
         self.settings = LaserSettings()
 
         self.process_item = None

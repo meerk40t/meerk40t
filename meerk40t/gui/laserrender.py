@@ -4,8 +4,20 @@ import wx
 from PIL import Image
 
 from ..svgelements import (
-    Arc, Close, Color, CubicBezier, Group, Line, Matrix, Move, Path,
-    QuadraticBezier, Shape, SVGImage, SVGText)
+    Arc,
+    Close,
+    Color,
+    CubicBezier,
+    Group,
+    Line,
+    Matrix,
+    Move,
+    Path,
+    QuadraticBezier,
+    Shape,
+    SVGImage,
+    SVGText,
+)
 from .zmatrix import ZMatrix
 
 """

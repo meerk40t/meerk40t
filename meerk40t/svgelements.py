@@ -6201,7 +6201,7 @@ class Rect(Shape):
         scale_x = self.transform.value_scale_x()
         scale_y = self.transform.value_scale_y()
         if scale_x * scale_y < 0:
-            return self # No reification of negative values, gives negative dims.
+            return self  # No reification of negative values, gives negative dims.
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if (
