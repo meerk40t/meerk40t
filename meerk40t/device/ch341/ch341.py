@@ -14,7 +14,7 @@ class CH341(Module):
     Moshiboard Controllers, and other interactions such as a plugin that uses addition CH341 devices.
     """
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        Module.__init__(self, *args, **kwargs)
         self.usb_context = self.context.get_context("usb")
         self.usb_log = self.context.channel("usb")
         self.driver = None
@@ -31,7 +31,7 @@ class CH341(Module):
 
         if self.context.mock:
             try:
-                from src.device.ch341.mock import CH341Driver
+                from .mock import CH341Driver
                 self.driver = driver = CH341Driver(
                     index=index,
                     bus=bus,
@@ -53,7 +53,7 @@ class CH341(Module):
                 self.driver = None
 
         try:
-            from src.device.ch341.libusb import CH341Driver
+            from .libusb import CH341Driver
 
             self.driver = driver = CH341Driver(
                 index=index,
@@ -78,7 +78,7 @@ class CH341(Module):
             self.usb_log(_("PyUsb is not installed. Skipping."))
 
         try:
-            from src.device.ch341.windll import CH341Driver
+            from .windll import CH341Driver
 
             self.driver = driver = CH341Driver(
                 index=index,

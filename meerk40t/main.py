@@ -114,6 +114,13 @@ def run():
         pass
 
     try:
+        from .device.ch341 import ch341
+
+        kernel.add_plugin(ch341.plugin)
+    except ImportError:
+        pass
+
+    try:
         from .device import basedevice
 
         kernel.add_plugin(basedevice.plugin)
