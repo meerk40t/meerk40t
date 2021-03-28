@@ -350,6 +350,7 @@ class LhystudioController(Module):
         self.pipe_channel("close()")
         if self.connection is not None:
             self.connection.close()
+            self.connection = None
 
     def write(self, bytes_to_write):
         """

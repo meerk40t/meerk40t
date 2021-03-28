@@ -198,6 +198,7 @@ class MoshiController(Module):
         self.pipe_channel("close()")
         if self.connection is not None:
             self.connection.close()
+            self.connection = None
 
     def control(self, command):
         if command == "execute\n":
