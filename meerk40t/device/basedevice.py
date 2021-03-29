@@ -23,50 +23,161 @@ PLOT_DIRECTION = 32
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/Spooler", Spooler)
-        # kernel.register("modifier/Devices", Devices)
-        # kernel.register("modifier/Device", Device)
-    # if lifecycle == "boot":
-    #     kernel_root = kernel.get_context("/")
-    # kernel_root.activate('modifier/Devices')
+        context = kernel.get_context('/')
+
+        # @context.console_command("device2", help="device2 [<value>]")
+        # def device(command, channel, _, args=tuple(), **kwargs):
+        #     active_device = self.active_device
+        #     if active_device is None:
+        #         return
+        #     if len(args) == 0:
+        #         channel(_("----------"))
+        #         channel(_("Backends permitted:"))
+        #         for i, name in enumerate(self.match("device/")):
+        #             channel("%d: %s" % (i + 1, name))
+        #         channel(_("----------"))
+        #         channel(_("Existing Device:"))
+        #
+        #         for device in list(active_device.derivable()):
+        #             try:
+        #                 d = int(device)
+        #             except ValueError:
+        #                 continue
+        #             try:
+        #                 settings = active_device.derive(device)
+        #                 device_name = settings.setting(str, "device_name", "Lhystudios")
+        #                 autoboot = settings.setting(bool, "autoboot", True)
+        #                 channel(
+        #                     _('Device %d. "%s" -- Boots: %s')
+        #                     % (d, device_name, autoboot)
+        #                 )
+        #             except ValueError:
+        #                 break
+        #             except AttributeError:
+        #                 break
+        #         channel(_("----------"))
+        #         channel(_("Devices Instances:"))
+        #         try:
+        #             device_name = active_device.device_name
+        #         except AttributeError:
+        #             device_name = "Unknown"
+        #
+        #         try:
+        #             device_location = active_device.device_location
+        #         except AttributeError:
+        #             device_location = "Unknown"
+        #         for i, name in enumerate(self.devices):
+        #             device = self.devices[name]
+        #             try:
+        #                 device_name = device.device_name
+        #             except AttributeError:
+        #                 device_name = "Unknown"
+        #
+        #             try:
+        #                 device_location = device.device_location
+        #             except AttributeError:
+        #                 device_location = "Unknown"
+        #             channel(_("%d: %s on %s") % (i + 1, device_name, device_location))
+        #         channel(_("----------"))
+        #     else:
+        #         value = args[0]
+        #         try:
+        #             value = int(value)
+        #         except ValueError:
+        #             value = None
+        #         for i, name in enumerate(self.devices):
+        #             if i + 1 == value:
+        #                 active_device = self.devices[name]
+        #                 self.active_device = active_device
+        #                 active_device.setting(str, "device_location", "Unknown")
+        #                 channel(
+        #                     _("Device set: %s on %s")
+        #                     % (active_device.device_name, active_device.device_location)
+        #                 )
+        #                 break
+        #     return
+
+        @context.console_option("path", "p", type=str, help="Path to Device")
+        @context.console_command(
+            "device",
+            help="device",
+            output_type="device"
+        )
+        def device(channel, _, path=None, **kwargs):
+            if path is None:
+                path = "/"
+            device_context = context.get_context(path)
+            if not hasattr(device_context, "spooler"):
+                device_context.activate("modifier/Spooler")
+            return "device", device_context
+
+        @context.console_command(
+            "list",
+            help="list devices",
+            input_type="device",
+            output_type="device",
+        )
+        def list(channel, _, data, **kwargs):
+            channel(_("----------"))
+            channel(_("Devices:"))
+            for i, ctx in enumerate(kernel.contexts):
+                if hasattr(ctx, "spooler"):
+                    channel("%d: %s" % (i, ctx._path))
+            channel("----------")
+            return "device", data
+
+        @context.console_command(
+            "type",
+            help="list device types",
+            input_type="device",
+            output_type="device",
+        )
+        def list_type(channel, _, data, **kwargs):
+            channel(_("----------"))
+            channel(_("Backends permitted:"))
+            for i, name in enumerate(context.match("device/", suffix=True)):
+                channel("%d: %s" % (i + 1, name))
+            channel(_("----------"))
+            return "device", data
+
+        @context.console_command(
+            "activate",
+            help="activate device",
+            input_type="device",
+            output_type="device",
+        )
+        def activate(channel, _, data, **kwargs):
+            context._kernel.set_active_device(data)
+            channel(_("Device at context '%s' activated" % data._path))
+            return "device", data
+
+        @context.console_argument("device", help="Device to initialize...")
+        @context.console_command(
+            "init",
+            help="init <device>, eg. init Lhystudios",
+            input_type="device",
+            output_type="device",
+        )
+        def init(channel, _, data, device=None, **kwargs):
+            if device is None:
+                raise SyntaxError
+            try:
+                data.activate("device/%s" % device)
+            except KeyError:
+                channel(_("Device %s is not valid type. 'device type' for a list of valid types."))
+                return
+            channel(_("Device %s, initialized at %s" % (device, data._path)))
+            return "device", data
 
 
 class Devices(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
-        self._interpreters = dict()
-        self._pipes = dict()
-        self._devices = dict()
 
     def attach(self, *a, **kwargs):
         context = self.context
-        context.devices = self._devices
-        context.interpreters = self._interpreters
-        context.pipes = self._pipes
 
-        @context.console_argument("name", type=str, help="Spooler name.")
-        @context.console_command(
-            "device.*",
-            help="device+ (name), device- (name), devices",
-            regex=True,
-            output_type="device",
-        )
-        def device(command, channel, _, name, args=tuple(), **kwargs):
-            arg = command[7:]
-            if arg == "s":
-                channel(_("----------"))
-                channel(_("Devices:"))
-                for i, s in enumerate(self._devices):
-                    name = str(s)
-                    channel("%d: %s" % (i, name))
-                channel("----------")
-                return
-            if arg == "+":
-                if name in self._devices:
-                    channel(_("Device already exists, cannot create."))
-                    return
-                self.context.get_context("/device/%s" % name)
-                self.context.activate("modifier/Device")
-            return "device", self._devices[name]
+        # device -p 1 init M2 start
 
         @context.console_option("itype", "t", type=str, help="Interpreter type")
         @context.console_argument("name", type=str, help="Interpreter name.")
