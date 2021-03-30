@@ -85,9 +85,10 @@ def plugin(kernel, lifecycle=None):
         def list(channel, _, data, **kwargs):
             channel(_("----------"))
             channel(_("Devices:"))
-            for i, ctx in enumerate(kernel.contexts):
+            for i, ctx_name in enumerate(kernel.contexts):
+                ctx = kernel.contexts[ctx_name]
                 if hasattr(ctx, "spooler"):
-                    channel("%d: %s" % (i, ctx._path))
+                    channel("Device: %s, %s" % (ctx._path, str(ctx)))
             channel("----------")
             return "device", data
 
