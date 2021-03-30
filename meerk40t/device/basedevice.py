@@ -2,6 +2,8 @@ import os
 import time
 from threading import Lock
 
+from meerk40t.svgelements import Length
+
 from ..core.cutcode import LaserSettings
 from ..kernel import Modifier
 from .lasercommandconstants import *
@@ -23,185 +25,255 @@ PLOT_DIRECTION = 32
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/Spooler", Spooler)
-        # kernel.register("modifier/Devices", Devices)
-        # kernel.register("modifier/Device", Device)
-    # if lifecycle == "boot":
-    #     kernel_root = kernel.get_context("/")
-    # kernel_root.activate('modifier/Devices')
+        context = kernel.get_context('/')
+        bed_dim = kernel.get_context('/')
 
-
-class Devices(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
-        self._interpreters = dict()
-        self._pipes = dict()
-        self._devices = dict()
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.devices = self._devices
-        context.interpreters = self._interpreters
-        context.pipes = self._pipes
-
-        @context.console_argument("name", type=str, help="Spooler name.")
-        @context.console_command(
-            "device.*",
-            help="device+ (name), device- (name), devices",
-            regex=True,
-            output_type="device",
-        )
-        def device(command, channel, _, name, args=tuple(), **kwargs):
-            arg = command[7:]
-            if arg == "s":
-                channel(_("----------"))
-                channel(_("Devices:"))
-                for i, s in enumerate(self._devices):
-                    name = str(s)
-                    channel("%d: %s" % (i, name))
-                channel("----------")
-                return
-            if arg == "+":
-                if name in self._devices:
-                    channel(_("Device already exists, cannot create."))
-                    return
-                self.context.get_context("/device/%s" % name)
-                self.context.activate("modifier/Device")
-            return "device", self._devices[name]
-
-        @context.console_option("itype", "t", type=str, help="Interpreter type")
-        @context.console_argument("name", type=str, help="Interpreter name.")
-        @context.console_command(
-            "interpreter.*",
-            help="interpreter+ (name)",
-            regex=True,
-            input_type="device",
-            output_type="device",
-        )
-        def interpreter(
-            command,
-            channel,
-            _,
-            name,
-            itype=None,
-            data=None,
-            data_type=None,
-            args=tuple(),
-            **kwargs
-        ):
-            arg = command[7:]
-            if arg == "s":
-                channel(_("----------"))
-                channel(_("Interpreter:"))
-                for i, s in enumerate(self._interpreters):
-                    name = str(s)
-                    channel("%d: %s" % (i, name))
-                channel("----------")
-                channel(_("Interpreter Types:"))
-                for i, s in enumerate(self.context.match("interpreter/.*")):
-                    name = str(s)
-                    channel("%d: %s" % (i, name))
-                return
-            if arg == "+":
-                if name in self._interpreters:
-                    channel(_("Interpreter already exists, cannot create."))
-                    return
-                if itype is None:
-                    channel(_("Interpreter requires a type."))
-                    return
-                interp = self.context.registered.get("interpreter/%s" % itype)
-                if interp is None:
-                    channel(_("Interpreter type is unrecognized"))
-                    return
-                self._interpreters[name] = interp()
-            if data is not None:
-                inst = self._interpreters[name]
-                inst = data
-            return "interpreter", self._interpreters[name]
-
-        @context.console_option("dest", "d", type=str, help="Destination of the Pipe.")
-        @context.console_option("ptype", "t", type=str, help="Pipe type")
-        @context.console_argument("name", type=str, help="Pipe name.")
-        @context.console_command(
-            "pipe.*",
-            help="pipe+ (name)",
-            regex=True,
-            input_type="device",
-            output_type="device",
-        )
-        def pipe(
-            command,
-            channel,
-            _,
-            name,
-            ptype=None,
-            data=None,
-            data_type=None,
-            args=tuple(),
-            **kwargs
-        ):
-            arg = command[4:]
-            if arg == "s":
-                channel(_("----------"))
-                channel(_("Pipe:"))
-                for i, s in enumerate(self._pipes):
-                    name = str(s)
-                    channel("%d: %s" % (i, name))
-                channel("----------")
-                channel(_("Pipe Types:"))
-                for i, s in enumerate(self.context.match("pipe/.*")):
-                    name = str(s)
-                    channel("%d: %s" % (i, name))
-                return
-            if arg == "+":
-                if name in self._pipes:
-                    channel(_("Pipe already exists, cannot create."))
-                    return
-                if ptype is None:
-                    channel(_("Pipe requires a type."))
-                    return
-                pipe_type = self.context.registered.get("interpreter/%s" % ptype)
-                if pipe_type is None:
-                    channel(_("Pipe type is unrecognized"))
-                    return
-                self._pipes[name] = pipe_type()
-            if data is not None:
-                inst = self._pipes[name]
-                data.pipe = inst
-            return "device", self._interpreters[name]
-
-    def detach(self, *a, **kwargs):
-        context = self.context
-        settings = context.derive("device")
-        settings.clear_persistent()
-
-        for i, dev in enumerate(self._devices):
-            for key in dir(dev):
-                if key.startswith("_"):
-                    continue
-                value = getattr(dev, key)
-                if value is None:
-                    continue
-                self.context.write_persistent(key, value)
-
-    def boot(self, *a, **kwargs):
-        settings = self.context.derive("device")
-        subitems = list(settings.derivable())
-        devs = [None] * len(subitems)
-        for i, v in enumerate(subitems):
-            dev_context = settings.derive(v)
-            dev_context.setting(str, "interpreter_path", None)
-            if dev_context.interpreter_path is not None:
-                dev_context.interpreter = dev_context.activate(
-                    settings.interpreter_path
-                )
-            dev = settings.activate(
-                "modifier/Device", interpreter=dev_context.interpreter
+        def execute_absolute_position(position_x, position_y):
+            x_pos = Length(position_x).value(
+                ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
             )
+            y_pos = Length(position_y).value(
+                ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
+            )
+
+            def move():
+                yield COMMAND_SET_ABSOLUTE
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_MOVE, int(x_pos), int(y_pos)
+
+            return move
+
+        def execute_relative_position(position_x, position_y):
+            x_pos = Length(position_x).value(
+                ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
+            )
+            y_pos = Length(position_y).value(
+                ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
+            )
+
+            def move():
+                yield COMMAND_SET_INCREMENTAL
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_MOVE, int(x_pos), int(y_pos)
+                yield COMMAND_SET_ABSOLUTE
+
+            return move
+
+        @context.console_option("path", "p", type=str, help="Path to Device")
+        @context.console_command(
+            "device",
+            help="device",
+            output_type="device"
+        )
+        def device(channel, _, path=None, **kwargs):
+            if path is None:
+                device_context = context.active
+                if device_context is None:
+                    device_context = context.get_context('1')
+            else:
+                device_context = context.get_context(path)
+            if not hasattr(device_context, "spooler"):
+                device_context.activate("modifier/Spooler")
+            return "device", device_context
+
+        @context.console_command(
+            "list",
+            help="list devices",
+            input_type="device",
+            output_type="device",
+        )
+        def list(channel, _, data, **kwargs):
+            channel(_("----------"))
+            channel(_("Devices:"))
+            for i, ctx_name in enumerate(kernel.contexts):
+                ctx = kernel.contexts[ctx_name]
+                if hasattr(ctx, "spooler"):
+                    channel("Device: %s, %s" % (ctx._path, str(ctx)))
+            channel("----------")
+            return "device", data
+
+        @context.console_command(
+            "type",
+            help="list device types",
+            input_type="device",
+            output_type="device",
+        )
+        def list_type(channel, _, data, **kwargs):
+            channel(_("----------"))
+            channel(_("Backends permitted:"))
+            for i, name in enumerate(context.match("device/", suffix=True)):
+                channel("%d: %s" % (i + 1, name))
+            channel(_("----------"))
+            return "device", data
+
+        @context.console_command(
+            "activate",
+            help="activate device",
+            input_type="device",
+            output_type="device",
+        )
+        def activate(channel, _, data, **kwargs):
+            context._kernel.set_active_device(data)
+            channel(_("Device at context '%s' activated" % data._path))
+            return "device", data
+
+        @context.console_argument("device", help="Device to initialize...")
+        @context.console_command(
+            "init",
+            help="init <device>, eg. init Lhystudios",
+            input_type="device",
+            output_type="device",
+        )
+        def init(channel, _, data, device=None, **kwargs):
+            if device is None:
+                raise SyntaxError
             try:
-                devs[i] = dev
-            except (ValueError, IndexError):
-                devs.append(dev)
-        self._devices = devs
+                data.activate("device/%s" % device)
+            except KeyError:
+                channel(_("Device %s is not valid type. 'device type' for a list of valid types."))
+                return
+            channel(_("Device %s, initialized at %s" % (device, data._path)))
+            return "device", data
+
+        @context.console_argument("type", type=str, help="type of pipe to use")
+        @context.console_command(
+            "pipe",
+            help="pipe to utilize on this device",
+            input_type="device",
+            output_type="device",
+        )
+        def pipe(data=None, **kwargs):
+            # TODO: MAKE THIS WORK.
+            if data is None:
+                data = context.active
+            data.pipe = None
+            return 'device', data
+
+        @context.console_command("+laser", hidden=True, input_type=("device", None), output_type='device', help="turn laser on in place")
+        def plus_laser(data, **kwargs):
+            if data is None:
+                data = context.active
+            spooler = data.spooler
+            spooler.job(COMMAND_LASER_ON)
+            return 'device', data
+
+        @context.console_command("-laser", hidden=True, input_type=("device", None), output_type='device', help="turn laser off in place")
+        def minus_laser(data, **kwargs):
+            if data is None:
+                data = context.active
+            spooler = data.spooler
+            spooler.job(COMMAND_LASER_ON)
+            return 'device', data
+
+        @context.console_argument(
+            "amount", type=Length, help="amount to move in the set direction."
+        )
+        @context.console_command(("left", "right", "up", "down"), input_type=("device", None), output_type='device', help="cmd <amount>")
+        def direction(command, channel, _, data=None, amount=None, **kwargs):
+            if data is None:
+                data = context.active
+            spooler = data.spooler
+
+            if spooler is None:
+                channel(_("Device has no spooler."))
+                return
+            if amount is None:
+                amount = Length("1mm")
+            max_bed_height = bed_dim.bed_height * 39.3701
+            max_bed_width = bed_dim.bed_width * 39.3701
+            if command.endswith("right"):
+                data.dx += amount.value(ppi=1000.0, relative_length=max_bed_width)
+            elif command.endswith("left"):
+                data.dx -= amount.value(ppi=1000.0, relative_length=max_bed_width)
+            elif command.endswith("up"):
+                data.dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
+            elif command.endswith("down"):
+                data.dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
+            kernel._console_queue("device -p %s jog" % data._path)
+            #TODO: Try replacing with trigger: .trigger 1 0 device -p %s jog
+            return 'device', data
+
+        @context.console_command(
+            "jog", hidden=True, input_type="device", output_type='device', help="executes outstanding jog buffer"
+        )
+        def jog(command, channel, _, data, **kwargs):
+            if data is None:
+                data = context.active
+            spooler = data.spooler
+            idx = int(data.dx)
+            idy = int(data.dy)
+            if idx == 0 and idy == 0:
+                return
+            if spooler.job_if_idle(execute_relative_position(idx, idy)):
+                channel(_("Position moved: %d %d") % (idx, idy))
+                data.dx -= idx
+                data.dy -= idy
+            else:
+                channel(_("Busy Error"))
+            return 'device', data
+
+        @context.console_argument("x", type=Length, help="change in x")
+        @context.console_argument("y", type=Length, help="change in y")
+        @context.console_command(
+            ("move", "move_absolute"), input_type=("device", None), output_type='device', help="move <x> <y>: move to position."
+        )
+        def move(channel, _, x, y, data=None, **kwargs):
+            if data is None:
+                data = context.active
+            spooler = data.spooler
+            if y is None:
+                raise SyntaxError
+            if not spooler.job_if_idle(execute_absolute_position(x, y)):
+                channel(_("Busy Error"))
+            return 'device', data
+
+        @context.console_argument("dx", type=Length, help="change in x")
+        @context.console_argument("dy", type=Length, help="change in y")
+        @context.console_command("move_relative", input_type=("device", None), output_type='device', help="move_relative <dx> <dy>")
+        def move_relative(channel, _, dx, dy, data=None, **kwargs):
+            if data is None:
+                data = context.active
+            spooler = data.spooler
+            if dy is None:
+                raise SyntaxError
+            if not spooler.job_if_idle(execute_relative_position(dx, dy)):
+                channel(_("Busy Error"))
+            return 'device', data
+
+        @context.console_argument("x", type=Length, help="x offset")
+        @context.console_argument("y", type=Length, help="y offset")
+        @context.console_command("home", input_type=("device", None), output_type='device', help="home the laser")
+        def home(x=None, y=None, data=None,  **kwargs):
+            if data is None:
+                data = context.active
+            spooler = data.spooler
+            if x is not None and y is not None:
+                x = x.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
+                )
+                y = y.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
+                )
+                spooler.job(COMMAND_HOME, int(x), int(y))
+                return 'device', data
+            spooler.job(COMMAND_HOME)
+            return 'device', data
+
+        @context.console_command("unlock", input_type=("device", None), output_type='device', help="unlock the rail")
+        def unlock(data=None, **kwargs):
+            if data is None:
+                data = context.active
+            spooler = data.spooler
+            spooler.job(COMMAND_UNLOCK)
+            return 'device', data
+
+        @context.console_command("lock", input_type=("device", None), output_type='device', help="lock the rail")
+        def lock(data, **kwargs):
+            if data is None:
+                data = context.active
+            spooler = data.spooler
+            spooler.job(COMMAND_LOCK)
+            return 'device', data
 
 
 class Device(Modifier):
