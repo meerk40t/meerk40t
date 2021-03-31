@@ -149,6 +149,7 @@ class SVGLoader:
         svg = SVG.parse(source=pathname,
                         width='%fmm' % (kernel.bed_width),
                         height='%fmm' % (kernel.bed_height),
+                        reify=False,
                         ppi=ppi,
                         color='none',
                         transform='scale(%f)' % scale_factor)
@@ -167,6 +168,7 @@ class SVGLoader:
                     elements.append(element)
             elif isinstance(element, Path):
                 if len(element) != 0:
+                    element.reify()
                     elements.append(element)
             elif isinstance(element, Shape):
                 e = Path(element)

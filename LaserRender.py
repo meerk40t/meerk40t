@@ -81,7 +81,7 @@ class LaserRender:
                     element.draw = self.draw_group
                 else:
                     continue
-            element.draw(element, gc, draw_mode, zoomscale=zoomscale)
+                element.draw(element, gc, draw_mode, zoomscale=zoomscale)
 
     def make_path(self, gc, path):
         p = gc.CreatePath()
@@ -155,17 +155,17 @@ class LaserRender:
             matrix = element.transform
         except AttributeError:
             matrix = Matrix()
-        if not hasattr(element, 'cache') or element.wx_bitmap_image is None:
+        if not hasattr(element, 'cache') or element.cache is None:
             cache = self.make_path(gc, element)
-            element.wx_bitmap_image = cache
+            element.cache = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, element,  zoomscale=zoomscale)
         self.set_element_brush(gc, element)
         if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:
-            gc.FillPath(element.wx_bitmap_image)
+            gc.FillPath(element.cache)
         if draw_mode & DRAW_MODE_STROKES == 0 and element.stroke is not None:
-            gc.StrokePath(element.wx_bitmap_image)
+            gc.StrokePath(element.cache)
         gc.PopState()
 
     def draw_text(self, element, gc, draw_mode, zoomscale=1.0):
@@ -238,7 +238,7 @@ class LaserRender:
         if draw_mode & DRAW_MODE_CACHE == 0:
             cache = None
             try:
-                cache = node.wx_bitmap_image
+                cache = node.cache
             except AttributeError:
                 pass
             if cache is None:
@@ -247,8 +247,8 @@ class LaserRender:
                 except AttributeError:
                     max_allowed = 2048
                 node.c_width, node.c_height = node.image.size
-                node.wx_bitmap_image = self.make_thumbnail(node.image, maximum=max_allowed)
-            gc.DrawBitmap(node.wx_bitmap_image, 0, 0, node.c_width, node.c_height)
+                node.cache = self.make_thumbnail(node.image, maximum=max_allowed)
+            gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
         else:
             node.c_width, node.c_height = node.image.size
             cache = self.make_thumbnail(node.image)
@@ -286,6 +286,8 @@ class LaserRender:
         bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
 
         matrix = Matrix()
         matrix.post_translate(-xmin, -ymin)
@@ -294,13 +296,17 @@ class LaserRender:
         scale = min(scale_x, scale_y)
         matrix.post_scale(scale)
         gc = wx.GraphicsContext.Create(dc)
+        gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if not isinstance(elements, (list,tuple)):
-            elements = [elements]
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
+
+        if not isinstance(elements, (list, tuple)):
+            elements = [elements]
+
         self.render(elements, gc, draw_mode=DRAW_MODE_CACHE)
+        gc.PopState()
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer("RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1)
