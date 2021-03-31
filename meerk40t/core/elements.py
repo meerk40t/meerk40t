@@ -3628,10 +3628,19 @@ class Elemental(Modifier):
             if op is not None:
                 op.remove_node()
 
+    # def clear_elements(self):
+    #     for e in reversed(list(self.elems_nodes())):
+    #         if e is not None:
+    #             e.remove_node()
+
     def clear_elements(self):
-        for e in reversed(list(self.elems_nodes())):
-            if e is not None:
-                e.remove_node()
+        elements = self._tree.get(type="branch elems")
+        self._clear_elements_helper(elements)
+
+    def _clear_elements_helper(self, nodes=None):
+        for e in nodes.children:
+            self._clear_elements_helper(e)
+            e.remove_node()
 
     def clear_files(self):
         pass
