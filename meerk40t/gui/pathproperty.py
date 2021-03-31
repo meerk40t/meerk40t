@@ -1,6 +1,6 @@
 import wx
 
-from ..kernel import Module
+from .mwindow import MWindow
 from ..svgelements import SVG_ATTR_FILL, SVG_ATTR_ID, SVG_ATTR_STROKE, Color
 from .icons import icons8_vector_50
 from .laserrender import swizzlecolor
@@ -8,7 +8,7 @@ from .laserrender import swizzlecolor
 _ = wx.GetTranslation
 
 
-class PathProperty(wx.Frame, Module):
+class PathProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(288, 303, *args, **kwds)
 

@@ -155,14 +155,14 @@ class JobPreview(MWindow):
         self.preview_menu.Append(wxglade_tmp_menu, "Add")
 
         wxglade_tmp_menu = wx.Menu()
-        self.preview_menu.menu_jobchange_step_repeat = wxglade_tmp_menu.Append(
-            wx.ID_ANY, "Step and Repeat", "Perform Step and Repeat"
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.jobchange_step_repeat,
-            id=self.preview_menu.menu_jobchange_step_repeat.GetId(),
-        )
+        # self.preview_menu.menu_jobchange_step_repeat = wxglade_tmp_menu.Append(
+        #     wx.ID_ANY, "Step and Repeat", "Perform Step and Repeat"
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     self.jobchange_step_repeat,
+        #     id=self.preview_menu.menu_jobchange_step_repeat.GetId(),
+        # )
         self.preview_menu.Append(wxglade_tmp_menu, _("Tools"))
 
         self.SetMenuBar(self.preview_menu)
@@ -456,11 +456,11 @@ class JobPreview(MWindow):
             return
         dlg.Destroy()
         self.context(
-            "plan%s step_repeat %s %s %s %s" % self.plan_name,
+            "plan%s step_repeat %s %s %s %s" % (self.plan_name,
             cols,
             rows,
             x_distance,
-            y_distance,
+            y_distance)
         )
 
     def jobadd_physicalhome(self, event=None):
