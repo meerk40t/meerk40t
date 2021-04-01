@@ -109,16 +109,33 @@ class CH341(Module, Handler):
         _ = self.channel._
         if mock:
             return self._connect_mock(driver_index, chipv, bus, address)
-
+        handlers = []
         try:
-            return self._connect_libusb(driver_index, chipv, bus, address)
+            from .libusb import Handler as LibUsbHandler
+            handlers.append(LibUsbHandler(channel=self.channel, status=self.status))
         except ImportError:
             self.channel(_("PyUsb is not installed. Skipping."))
-
         try:
-            return self._connect_windll(driver_index, chipv, bus, address)
+            from .windll import Handler as WinHandler
+            handlers.append(WinHandler(channel=self.channel, status=self.status))
         except ImportError:
             self.channel(_("No Windll interfacing. Skipping."))
+
+        if driver_index != -1:
+            for driver_handler in handlers:
+                try:
+                    return self._connect_attempt(
+                        driver_handler, driver_index, chipv, bus, address
+                    )
+                except ConnectionRefusedError:
+                    pass
+        else:
+            for i in range(16):
+                for driver_handler in handlers:
+                    try:
+                        return self._connect_attempt(driver_handler, i, chipv, bus, address)
+                    except ConnectionRefusedError:
+                        pass
 
     def _state_change(self, state_value):
         self.context.signal("pipe;state", state_value)
@@ -154,38 +171,3 @@ class CH341(Module, Handler):
                 except ConnectionRefusedError:
                     pass
 
-    def _connect_libusb(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
-        from .libusb import Handler
-
-        driver_handler = Handler(channel=self.channel, status=self.status)
-        if driver_index != -1:
-            try:
-                return self._connect_attempt(
-                    driver_handler, driver_index, chipv, bus, address
-                )
-            except ConnectionRefusedError:
-                pass
-        else:
-            for i in range(16):
-                try:
-                    return self._connect_attempt(driver_handler, i, chipv, bus, address)
-                except ConnectionRefusedError:
-                    pass
-
-    def _connect_windll(self, driver_index=-1, chipv=-1, bus=-1, address=-1):
-        from .windll import Handler
-
-        driver_handler = Handler(channel=self.channel, status=self.status)
-        if driver_index != -1:
-            try:
-                return self._connect_attempt(
-                    driver_handler, driver_index, chipv, bus, address
-                )
-            except ConnectionRefusedError:
-                pass
-        else:
-            for i in range(16):
-                try:
-                    return self._connect_attempt(driver_handler, i, chipv, bus, address)
-                except ConnectionRefusedError:
-                    pass

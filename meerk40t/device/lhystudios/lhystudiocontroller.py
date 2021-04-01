@@ -278,7 +278,7 @@ class LhystudioController(Module):
         @self.context.console_command("usb_disconnect", help="Disconnects USB")
         def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
             self.close()
-            channel("CH341 Opened.")
+            channel("CH341 Closed.")
 
         context.setting(int, "packet_count", 0)
         context.setting(int, "rejected_count", 0)
