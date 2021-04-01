@@ -21,20 +21,6 @@ class CH341Driver(CH341Connection):
         self.driver_name = "WinDll"
         self.driver_value = None
 
-    def validate(self):
-        _ = self.channel._
-        val = self.driver.CH341OpenDevice(self.driver_index)
-        self.driver_value = val
-        if val == -2:
-            self.state("STATE_DRIVER_NO_BACKEND")
-            raise ConnectionRefusedError
-        if val == -1:
-            self.driver_value = None
-            self.channel(_("Connection to USB failed.\n"))
-            self.state("STATE_CONNECTION_FAILED")
-            raise ConnectionRefusedError  # No more devices.
-        # There is a device.
-
     def open(self):
         """
         Opens the driver for unknown criteria.
@@ -45,6 +31,14 @@ class CH341Driver(CH341Connection):
             self.channel(_("Attempting connection to USB."))
             self.state("STATE_USB_CONNECTING")
             self.driver_value = self.driver.CH341OpenDevice(self.driver_index)
+            if self.driver_value == -2:
+                self.state("STATE_DRIVER_NO_BACKEND")
+                raise ConnectionRefusedError
+            if self.driver_value == -1:
+                self.driver_value = None
+                self.channel(_("Connection to USB failed.\n"))
+                self.state("STATE_CONNECTION_FAILED")
+                raise ConnectionRefusedError  # No more devices.
             self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
             self.channel(_("Sending CH341 mode change to EPP1.9."))
@@ -162,7 +156,7 @@ class Handler(CH341Handler):
             self.driver, driver_index, channel=self.channel, state=self.status
         )
         _ = self.channel._
-        connection.validate()  # TODO: Replace with Open quietly.
+        connection.open()
 
         if chipv != -1:
             match_chipv = connection.get_chip_version()
