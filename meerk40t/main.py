@@ -25,7 +25,7 @@ for full details.
 
 """
 
-MEERK40T_VERSION = "0.7.0 Beta-18"
+MEERK40T_VERSION = "0.7.0 Beta-19"
 
 
 def pair(value):
@@ -201,11 +201,20 @@ def run():
         pass
 
     try:
-        from .core import vectrace
+        from .extra import vectrace
 
         kernel.add_plugin(vectrace.plugin)
     except ImportError:
         pass
+
+
+    try:
+        from .extra import inkscape
+
+        kernel.add_plugin(inkscape.plugin)
+    except ImportError:
+        pass
+
 
     try:
         from camera import camera
