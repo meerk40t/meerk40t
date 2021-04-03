@@ -21,6 +21,7 @@ STATE_TERMINATE = 10
 _cmd_parse = [
     ("OPT", r"-([a-zA-Z]+)"),
     ("LONG", r"--([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
+    ("QPARAM", r"\"(.*?)\""),
     ("PARAM", r"([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
     ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
 ]
@@ -1066,9 +1067,12 @@ class Kernel:
             pos = match.end()
             if kind == "SKIP":
                 continue
-            if kind == "PARAM":
+            elif kind == "PARAM":
                 value = match.group()
                 yield kind, value, start, pos
+            elif kind == "QPARAM":
+                value = match.group()
+                yield "PARAM", value[1:-1], start, pos
             elif kind == "LONG":
                 value = match.group()
                 yield kind, value[2:], start, pos
