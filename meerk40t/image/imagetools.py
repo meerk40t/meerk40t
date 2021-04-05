@@ -29,10 +29,20 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "image",
         help="image <operation>*",
-        input_type=(None, "image-array"),
+        input_type=(None, "image-array", "inkscape"),
         output_type="image",
     )
     def image(command, channel, _, data_type=None, data=None, args=tuple(), **kwargs):
+        if data_type == "inkscape":
+            inkscape_path, filename = data
+            if filename.endswith("png"):
+                from PIL import Image
+                img = Image.open(filename)
+
+                svg_image = SVGImage()
+                svg_image.image = img
+                return "image", [svg_image]
+
         elements = context.elements
         if len(args) == 0:
             channel(_("----------"))
