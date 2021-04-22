@@ -43,7 +43,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.4.10"
+SVGELEMENTS_VERSION = "1.4.11"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -3332,6 +3332,9 @@ class GraphicObject:
         except AttributeError:
             return self.stroke_width
 
+    def is_degenerate(self):
+        return False
+
 
 class Shape(SVGElement, GraphicObject, Transformable):
     """
@@ -3557,27 +3560,14 @@ class Shape(SVGElement, GraphicObject, Transformable):
         """
         bbs = [
             seg.bbox()
-            for seg in self.segments(transformed=False)
+            for seg in self.segments(transformed=transformed)
             if not isinstance(Close, Move)
         ]
         try:
             xmins, ymins, xmaxs, ymaxs = list(zip(*bbs))
         except ValueError:
             return None  # No bounding box items existed. So no bounding box.
-        xmin = min(xmins)
-        xmax = max(xmaxs)
-        ymin = min(ymins)
-        ymax = max(ymaxs)
-        if transformed:
-            p0 = self.transform.transform_point([xmin, ymin])
-            p1 = self.transform.transform_point([xmin, ymax])
-            p2 = self.transform.transform_point([xmax, ymin])
-            p3 = self.transform.transform_point([xmax, ymax])
-            xmin = min(p0[0], p1[0], p2[0], p3[0])
-            ymin = min(p0[1], p1[1], p2[1], p3[1])
-            xmax = max(p0[0], p1[0], p2[0], p3[0])
-            ymax = max(p0[1], p1[1], p2[1], p3[1])
-        return xmin, ymin, xmax, ymax
+        return min(xmins), min(ymins), max(xmaxs), max(ymaxs)
 
     def _init_shape(self, *args):
         """
@@ -6154,7 +6144,7 @@ class Rect(Shape):
         y = self.y
         width = self.width
         height = self.height
-        if width == 0 or height == 0:
+        if self.is_degenerate():
             return ()  # a computed value of zero for either dimension disables rendering.
         rx = self.rx
         ry = self.ry
@@ -6201,7 +6191,7 @@ class Rect(Shape):
         scale_x = self.transform.value_scale_x()
         scale_y = self.transform.value_scale_y()
         if scale_x * scale_y < 0:
-            return self  # No reification of negative values, gives negative dims.
+            return self # No reification of negative values, gives negative dims.
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if (
@@ -6245,6 +6235,9 @@ class Rect(Shape):
         if isinstance(self.ry, Length):
             self.ry = self.ry.value(relative_length=height, **kwargs)
         return self
+
+    def is_degenerate(self):
+        return self.width == 0 or self.height == 0
 
 
 class _RoundShape(Shape):
@@ -6374,7 +6367,7 @@ class _RoundShape(Shape):
         # zero for either dimension, or a computed value of auto for both dimensions, disables rendering of the element.
         rx = self.implicit_rx
         ry = self.implicit_ry
-        if rx == 0 or ry == 0:
+        if self.is_degenerate():
             return ()
         center = self.implicit_center
         path.move((self.point_at_t(0)))
@@ -6441,6 +6434,11 @@ class _RoundShape(Shape):
         if isinstance(self.ry, Length):
             self.ry = self.ry.value(relative_length=height, **kwargs)
         return self
+
+    def is_degenerate(self):
+        rx = self.implicit_rx
+        ry = self.implicit_ry
+        return rx == 0 or ry == 0
 
     def unit_matrix(self):
         """
@@ -6849,7 +6847,7 @@ class _Polyshape(Shape):
             points = self.points
         else:
             points = list(map(self.transform.point_in_matrix_space, self.points))
-        if len(points) == 0:
+        if self.is_degenerate():
             return []
         segments = [Move(None, points[0])]
         last = points[0]
@@ -6875,6 +6873,8 @@ class _Polyshape(Shape):
         matrix.reset()
         return self
 
+    def is_degenerate(self):
+        return len(self.points) == 0
 
 class Polyline(_Polyshape):
     """
@@ -7553,21 +7553,18 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
         )  # Dataurl requires this be processed first.
 
         if self.url is not None:
-            try:
-                if self.url.startswith("data:image/"):
-                    # Data URL
-                    from base64 import b64decode
+            if self.url.startswith("data:image/"):
+                # Data URL
+                from base64 import b64decode
 
-                    if self.url.startswith("data:image/png;base64,"):
-                        self.data = b64decode(self.url[22:])
-                    elif self.url.startswith("data:image/jpg;base64,"):
-                        self.data = b64decode(self.url[22:])
-                    elif self.url.startswith("data:image/jpeg;base64,"):
-                        self.data = b64decode(self.url[23:])
-                    elif self.url.startswith("data:image/svg+xml;base64,"):
-                        self.data = b64decode(self.url[26:])
-            except AttributeError:
-                pass
+                if self.url.startswith("data:image/png;base64,"):
+                    self.data = b64decode(self.url[22:])
+                elif self.url.startswith("data:image/jpg;base64,"):
+                    self.data = b64decode(self.url[22:])
+                elif self.url.startswith("data:image/jpeg;base64,"):
+                    self.data = b64decode(self.url[23:])
+                elif self.url.startswith("data:image/svg+xml;base64,"):
+                    self.data = b64decode(self.url[26:])
 
     def property_by_object(self, s):
         SVGElement.property_by_object(self, s)
@@ -8189,6 +8186,8 @@ class SVG(Group):
                     s.render(ppi=ppi, width=width, height=height)
                     if reify:
                         s.reify()
+                    if s.is_degenerate():
+                        continue
                     context.append(s)
                 elif tag in (
                     SVG_TAG_STYLE,
@@ -8218,7 +8217,7 @@ class SVG(Group):
                             s.clip_rule = clip_rule
                     except AttributeError:
                         pass
-                if SVG_ATTR_ID in values and root is not None:
+                if SVG_ATTR_ID in attributes and root is not None:
                     root.objects[attributes[SVG_ATTR_ID]] = s
             elif event == "end":  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
@@ -8250,8 +8249,14 @@ class SVG(Group):
                     for key, value in assignments:
                         key = key.strip()
                         value = value.strip()
-                        for selector in key.split(","):  # Can comma select subitems.
-                            styles[selector.strip()] = value
+                        for selector in key.split(","): # Can comma select subitems.
+                            sel = selector.strip()
+                            if sel not in styles:
+                                styles[sel] = value
+                            else:
+                                if not styles[sel].endswith(';'):
+                                    styles[sel] += ';'
+                                styles[sel] += value
                 elif SVG_TAG_CLIPPATH == tag:
                     clip -= 1
                 if s is not None:
