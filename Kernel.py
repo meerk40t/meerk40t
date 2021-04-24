@@ -98,7 +98,7 @@ class Module:
         :return:
         """
         self.finalize(channel=channel)
-        self.device = None  # TODO: 0.6.22
+        self.device = None  # TODO: 0.6.23
         self.state = STATE_END
 
     def initialize(self, channel=None):
@@ -2283,7 +2283,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = '0.6.22'
+        self.device_version = '0.6.23'
         self.device_root = self
 
         # Persistent storage if it exists.
