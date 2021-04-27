@@ -35,6 +35,7 @@ class Settings(wx.Frame, Module):
                         (_("SVG Uniform Save"), "uniform_svg", False),
                         (_("Image DPI Scaling"), 'image_dpi', True),
                         (_("DXF Centering"), 'dxf_center', True),
+                        (_("DXF Scale Warn"), 'dxf_scale_warn', True),
                         (_("Show Negative Guide"), "show_negative_guide", True),
                         (_("Launch Spooler JobStart"), "auto_spooler", True),
                         (_("MouseWheel Pan"), "mouse_wheel_pan", False),

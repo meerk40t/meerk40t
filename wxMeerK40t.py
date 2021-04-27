@@ -622,6 +622,7 @@ class MeerK40t(wx.Frame, Module):
         kernel.listen('emphasized', self.on_emphasized_elements_changed)
         kernel.listen('modified', self.on_element_modified)
         kernel.listen('altered', self.on_element_alteration)
+        kernel.listen('dxf;warning', self.on_dxf_error)
 
         device.listen('background', self.on_background_signal)
         device.listen('rebuild_tree', self.on_rebuild_tree_signal)
@@ -771,6 +772,7 @@ class MeerK40t(wx.Frame, Module):
         kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
         kernel.unlisten('modified', self.on_element_modified)
         kernel.unlisten('altered', self.on_element_alteration)
+        kernel.unlisten('dxf;warning', self.on_dxf_error)
 
         device.unlisten('background', self.on_background_signal)
         device.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
@@ -844,6 +846,12 @@ class MeerK40t(wx.Frame, Module):
         :return:
         """
         self.request_refresh()
+
+    def on_dxf_error(self, text):
+        dlg = wx.MessageDialog(None, _("Warning: DXF Centering scaled the DXF to fit the bed."),
+                               _("Dxf Rescaled."), wx.OK | wx.ICON_WARNING)
+        dlg.ShowModal()
+        dlg.Destroy()
 
     def on_usb_error(self, value):
         dlg = wx.MessageDialog(None, _("All attempts to connect to USB have failed."),

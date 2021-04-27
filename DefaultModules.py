@@ -283,6 +283,7 @@ class DxfLoader:
             DxfLoader.entity_to_svg(elements, dxf, entity, scale, kernel.bed_height * MILS_PER_MM)
 
         kernel.setting(bool, "dxf_center", True)
+        kernel.setting(bool, "dxf_scale_warn", True)
         if kernel.dxf_center:
             g = Group()
             g.extend(elements)
@@ -304,6 +305,8 @@ class DxfLoader:
                     matrix = bb.transform(vb)
                     for e in elements:
                         e *= matrix
+                    if kernel.dxf_scale_warn:
+                        kernel.signal("dxf;warning", 1)
                 elif x < bx or y < by or x + w > bw or y + h > bh:
                     # Is outside the bed but sized correctly, center
                     bcx = bw / 2.0
