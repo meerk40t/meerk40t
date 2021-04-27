@@ -468,13 +468,14 @@ class RasterScripts:
                 try:
                     if op['enable']:
                         if op['contrast'] is not None and op['brightness'] is not None:
-                            contrast = ImageEnhance.Contrast(image)
-                            c = (op['contrast'] + 128.0) / 128.0
-                            image = contrast.enhance(c)
+                            if image.mode != '1':  # Cannot contrast a 1 bit image.
+                                contrast = ImageEnhance.Contrast(image)
+                                c = (op['contrast'] + 128.0) / 128.0
+                                image = contrast.enhance(c)
 
-                            brightness = ImageEnhance.Brightness(image)
-                            b = (op['brightness'] + 128.0) / 128.0
-                            image = brightness.enhance(b)
+                                brightness = ImageEnhance.Brightness(image)
+                                b = (op['brightness'] + 128.0) / 128.0
+                                image = brightness.enhance(b)
                 except KeyError:
                     pass
             elif name == 'gamma':
