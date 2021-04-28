@@ -1,4 +1,3 @@
-from Kernel import Module
 from math import ceil
 
 from svgelements import Matrix
@@ -468,7 +467,7 @@ class RasterScripts:
                 try:
                     if op['enable']:
                         if op['contrast'] is not None and op['brightness'] is not None:
-                            if image.mode != '1':  # Cannot contrast a 1 bit image.
+                            if image.mode not in ('1', 'P'):  # Cannot contrast a 1 bit image.
                                 contrast = ImageEnhance.Contrast(image)
                                 c = (op['contrast'] + 128.0) / 128.0
                                 image = contrast.enhance(c)
