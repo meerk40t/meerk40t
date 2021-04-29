@@ -7,6 +7,7 @@ import sys
 import threading
 import traceback
 
+import wx
 import wx.ribbon as RB
 
 from About import About
@@ -35,6 +36,7 @@ from Settings import Settings
 from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
+from UsbRetry import UsbRetry
 from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
     LaserPathWidget, RectSelectWidget
 from icons import *
@@ -2455,9 +2457,26 @@ class RootNode(list):
                     yield itemv
 
         selections = [s for s in combined(*selections) if s.type == t]
+
         if t == NODE_OPERATION:
+            gui.Bind(wx.EVT_MENU, lambda e: self.activated_node(node),
+                     menu.Append(wx.ID_ANY, _("Operation Properties"), "", wx.ITEM_NORMAL))
+            menu.AppendSeparator()
             gui.Bind(wx.EVT_MENU, self.menu_execute(node),
                      menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
+        if t == NODE_ELEMENT:
+            if isinstance(node.object, Path):
+                gui.Bind(wx.EVT_MENU, lambda e: self.activated_node(node),
+                         menu.Append(wx.ID_ANY, _("Path Properties"), "", wx.ITEM_NORMAL))
+                menu.AppendSeparator()
+            elif isinstance(node.object, SVGImage):
+                gui.Bind(wx.EVT_MENU, lambda e: self.activated_node(node),
+                         menu.Append(wx.ID_ANY, _("Image Properties"), "", wx.ITEM_NORMAL))
+                menu.AppendSeparator()
+            elif isinstance(node.object, SVGText):
+                gui.Bind(wx.EVT_MENU, lambda e: self.activated_node(node),
+                         menu.Append(wx.ID_ANY, _("Text Properties"), "", wx.ITEM_NORMAL))
+                menu.AppendSeparator()
         if t == NODE_OPERATION_BRANCH:
             gui.Bind(wx.EVT_MENU, self.menu_console("operation * delete"),
                      menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
@@ -3221,6 +3240,7 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', "BufferView", BufferView)
         device.register('window', "Adjustments", Adjustments)
         device.register('window', "RasterWizard", RasterWizard)
+        device.register('window', 'UsbRetry', UsbRetry)
 
     def run_later(self, command, *args):
         if wx.IsMainThread():
