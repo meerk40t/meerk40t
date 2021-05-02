@@ -3109,8 +3109,12 @@ class Elemental(Modifier):
             node.settings.passes_custom = passvalue != 1
             self.context.signal("element_property_update", node)
 
+        def radio_match(node, i=1, **kwargs):
+            return node.settings.raster_step == i
+
         @self.tree_conditional(lambda node: node.operation == "Raster")
         @self.tree_submenu(_("Step"))
+        @self.tree_radio(radio_match)
         @self.tree_iterate("i", 1, 10)
         @self.tree_operation(
             _("Step {i}"),
