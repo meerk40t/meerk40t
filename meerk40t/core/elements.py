@@ -3109,18 +3109,18 @@ class Elemental(Modifier):
             node.settings.passes_custom = passvalue != 1
             self.context.signal("element_property_update", node)
 
-        @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
+        @self.tree_conditional(lambda node: node.operation == "Raster")
         @self.tree_submenu(_("Step"))
         @self.tree_iterate("i", 1, 10)
         @self.tree_operation(
-            _("Step {iterator}"),
+            _("Step {i}"),
             node_type="op",
             help="Change raster step values of operation",
         )
         def set_step_n(node, i=1, **kwargs):
-            element = node.object
-            element.raster_step = i
-            self.context.signal("element_property_update", node.object)
+            settings = node.settings
+            settings.raster_step = i
+            self.context.signal("element_property_update", node)
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_operation(
