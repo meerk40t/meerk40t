@@ -1114,7 +1114,7 @@ class Kernel:
                             try:
                                 value = k["type"](value)
                             except ValueError:
-                                raise SyntaxError
+                                raise SyntaxError("'%s' does not cast to %s" % (str(value), str(k["type"])))
                         key = k["name"]
                         current = kwargs.get(key, True)
                         if current is True:
@@ -2101,7 +2101,7 @@ class Kernel:
                     channel("%s%d: %s" % (is_watched, i + 1, name))
                 return
             if channel_name is None:
-                raise SyntaxError
+                raise SyntaxError(_("channel_name is not specified."))
             if subcommand == "open":
                 if channel_name == "console":
                     channel(_("Infinite Loop Error."))
@@ -2278,14 +2278,14 @@ class Kernel:
         """
         Console parse takes single line console commands.
         """
-        # Silence Echo.
+        # Silence echo if started with '.'
         if text.startswith("."):
             text = text[1:]
         else:
             channel(text)
 
         data = None  # Initial data is null
-        input_type = None
+        input_type = None  # Initial type is None
 
         while len(text) > 0:
             # Divide command from remainder.
@@ -2299,7 +2299,7 @@ class Kernel:
 
             _ = self.translation
             command = command.lower()
-
+            command_executed = False
             # Process command matches.
             for command_name in self.match("command/%s/.*" % str(input_type)):
                 command_funct = self.registered[command_name]
@@ -2321,15 +2321,28 @@ class Kernel:
                         data_type=input_type,
                         _=_,
                     )
-                except SyntaxError:
-                    channel(_("Syntax Error: %s") % command_funct.help)
-                except ValueError as e:
-                    if not command_funct.regex:
-                        raise ValueError(e)
-                    continue  # command match rejected.
-                break
-            text = remainder
+                    command_executed = True
+                    break
+                except SyntaxError as e:
+                    # If command function raises a syntax error, we abort the rest of the command.
+                    message = command_funct.help
+                    if e.msg:
+                        message = e.msg
+                    channel(_("Syntax Error (%s): %s") % (command, message))
+                    return None
+                except CommandMatchRejected:
+                    continue
+            if command_executed:
+                text = remainder
+            else:
+                channel(_("%s is not a console command.") % command)
+                return None
         return data
+
+
+class CommandMatchRejected(BaseException):
+    def __init__(self, *args):
+        super().__init__(*args)
 
 
 class Channel:

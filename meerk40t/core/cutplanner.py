@@ -245,7 +245,7 @@ class Planner(Modifier):
                 return
             elif subcommand == "command":
                 if op is None:
-                    raise SyntaxError
+                    raise SyntaxError("'plan command' requires a '--op' argument.")
                 try:
                     for command_name in self.context.match("plan/%s" % op):
                         plan_command = self.context.registered[command_name]

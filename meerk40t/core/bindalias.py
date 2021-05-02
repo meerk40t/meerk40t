@@ -1,4 +1,4 @@
-from ..kernel import Modifier
+from ..kernel import Modifier, CommandMatchRejected
 
 
 def plugin(kernel, lifecycle=None):
@@ -104,7 +104,7 @@ class BindAlias(Modifier):
                 for cmd in aliased_command.split(";"):
                     context("%s\n" % cmd)
             else:
-                raise ValueError  # This is not an alias.
+                raise CommandMatchRejected("This is not an alias.")
 
         @self.context.console_command(
             "consoleserver", help="starts a console_server on port 23 (telnet)"

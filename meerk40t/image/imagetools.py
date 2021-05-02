@@ -244,8 +244,7 @@ def plugin(kernel, lifecycle=None):
     )
     def image(command, channel, _, data, color, distance, args=tuple(), **kwargs):
         if color is None:
-            channel(_("Must specify a color"))
-            raise SyntaxError
+            raise SyntaxError(_("Must specify a color"))
         distance_sq = distance * distance
 
         def dist(pixel):

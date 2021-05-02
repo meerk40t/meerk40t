@@ -1433,27 +1433,6 @@ class Elemental(Modifier):
             channel(_("----------"))
             return "tree", data
 
-        @context.console_argument("pos", type=int, help="subtree position")
-        @context.console_command(
-            "sub", help="sub <#>. Tree Context", input_type="tree", output_type="tree"
-        )
-        def sub(
-            command,
-            channel,
-            _,
-            data=None,
-            data_type=None,
-            pos=None,
-            args=tuple(),
-            **kwargs
-        ):
-            if pos is None:
-                raise SyntaxError
-            try:
-                return "tree", data.children[pos]
-            except IndexError:
-                raise SyntaxError
-
         @context.console_command(
             "copy",
             help="duplicate elements",
@@ -2713,7 +2692,7 @@ class Elemental(Modifier):
         @context.console_option("color", "c", type=Color)
         @context.console_command(
             ("cut", "engrave", "raster", "imageop"),
-            help="group current elements into operation type",
+            help="<cut/engrave/raster/imageop> - group the elements into this operation",
             input_type=(None, "elements"),
             output_type="ops",
         )
