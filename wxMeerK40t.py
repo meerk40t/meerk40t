@@ -2614,6 +2614,21 @@ class RootNode(list):
                         if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
                             menu_item.Check(True)
                 menu.AppendSubMenu(raster_step_menu, _("Step"))
+
+                raster_dpi_menu = wx.Menu()
+                for i in range(1, 10):
+                    menu_item = raster_dpi_menu.Append(wx.ID_ANY, _("DPI %d") % int(1000.0 / i), "", wx.ITEM_RADIO)
+                    gui.Bind(wx.EVT_MENU, self.menu_raster_dpi_image(node, i), menu_item)
+                    if 'raster_step' in node.object.values:
+                        step = float(node.object.values['raster_step'])
+                    else:
+                        step = 1.0
+                    if i == step:
+                        m = node.object.transform
+                        if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
+                            menu_item.Check(True)
+                menu.AppendSubMenu(raster_dpi_menu, _("DPI"))
+
                 gui.Bind(wx.EVT_MENU, self.menu_console('image resample'),
                          menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
                 raster_zdepth_menu = wx.Menu()
@@ -2702,6 +2717,21 @@ class RootNode(list):
             element = node.object
             element.raster_step = step_value
             self.device.signal('element_property_update', node.object)
+
+        return specific
+
+    def menu_raster_dpi_image(self, node, step_value):
+        """
+        Change raster dpi values of subelements.
+
+        :param node:
+        :param step_value:
+        :return:
+        """
+
+        def specific(event):
+            element = node.object
+            element.values["raster_step"] = str(step_value)
 
         return specific
 
