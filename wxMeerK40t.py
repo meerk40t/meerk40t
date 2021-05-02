@@ -2544,7 +2544,7 @@ class RootNode(list):
                              duplicate_menu.Append(wx.ID_ANY, _("Add %d passes.") % i, "", wx.ITEM_NORMAL))
                 menu.AppendSubMenu(duplicate_menu, _("Passes"))
 
-            if node.object.operation in ("Raster", "Image"):
+            if node.object.operation == "Raster":
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
                     menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
