@@ -1833,9 +1833,9 @@ class Elemental(Modifier):
             )
             self.add_element(ellip)
             if data is None:
-                return "elements", [element]
+                return "elements", [ellip]
             else:
-                data.append(element)
+                data.append(ellip)
                 return "elements", data
 
         @context.console_argument(
