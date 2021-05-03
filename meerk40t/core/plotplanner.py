@@ -240,7 +240,7 @@ class PlotPlanner:
         for event in plot:
             if event is None:
                 yield None
-                return
+                continue
             x, y, on = event
             self.ppi_total += self.settings.power * on
             if on and self.dot_left > 0:
