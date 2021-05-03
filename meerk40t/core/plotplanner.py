@@ -159,8 +159,8 @@ class PlotPlanner:
         :return: generator to produce plottable elements.
         """
         plot = self.single(plot)
-        if self.settings.ppi_enabled:
-            plot = self.apply_ppi(plot)
+        # if self.settings.ppi_enabled:
+        plot = self.apply_ppi(plot)
         if self.settings.shift_enabled:
             plot = self.shift(plot)
         if self.group_enabled:
