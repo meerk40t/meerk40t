@@ -3119,6 +3119,11 @@ class ShadowTree:
         return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
     def create_menu_for_node(self, gui, node) -> wx.Menu:
+        """
+        Create menu for a particular node. Does not invoke the menu.
+        
+        Processes submenus, references, radio_state as needed.
+        """
         menu = wx.Menu()
         submenus = {}
 
