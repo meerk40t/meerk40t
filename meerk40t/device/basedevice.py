@@ -146,6 +146,8 @@ def plugin(kernel, lifecycle=None):
             # TODO: MAKE THIS WORK.
             if data is None:
                 data = context.active
+            if data is None:
+                return # We don't have a device.
             data.pipe = None
             return 'device', data
 
@@ -153,6 +155,8 @@ def plugin(kernel, lifecycle=None):
         def plus_laser(data, **kwargs):
             if data is None:
                 data = context.active
+            if data is None:
+                return # We don't have a device.
             spooler = data.spooler
             spooler.job(COMMAND_LASER_ON)
             return 'device', data
@@ -161,6 +165,8 @@ def plugin(kernel, lifecycle=None):
         def minus_laser(data, **kwargs):
             if data is None:
                 data = context.active
+            if data is None:
+                return  # We don't have a device.
             spooler = data.spooler
             spooler.job(COMMAND_LASER_ON)
             return 'device', data
@@ -172,6 +178,8 @@ def plugin(kernel, lifecycle=None):
         def direction(command, channel, _, data=None, amount=None, **kwargs):
             if data is None:
                 data = context.active
+            if data is None:
+                return # We don't have a device.
             spooler = data.spooler
 
             if spooler is None:
@@ -202,6 +210,8 @@ def plugin(kernel, lifecycle=None):
         def jog(command, channel, _, data, **kwargs):
             if data is None:
                 data = context.active
+            if data is None:
+                return  # We don't have a device.
             spooler = data.spooler
             idx = int(data._dx)
             idy = int(data._dy)
@@ -223,6 +233,8 @@ def plugin(kernel, lifecycle=None):
         def move(channel, _, x, y, data=None, **kwargs):
             if data is None:
                 data = context.active
+            if data is None:
+                return  # We don't have a device.
             spooler = data.spooler
             if y is None:
                 raise SyntaxError
@@ -236,6 +248,8 @@ def plugin(kernel, lifecycle=None):
         def move_relative(channel, _, dx, dy, data=None, **kwargs):
             if data is None:
                 data = context.active
+            if data is None:
+                return  # We don't have a device.
             spooler = data.spooler
             if dy is None:
                 raise SyntaxError
@@ -249,6 +263,8 @@ def plugin(kernel, lifecycle=None):
         def home(x=None, y=None, data=None,  **kwargs):
             if data is None:
                 data = context.active
+            if data is None:
+                return # We don't have a device.
             spooler = data.spooler
             if x is not None and y is not None:
                 x = x.value(
@@ -266,6 +282,8 @@ def plugin(kernel, lifecycle=None):
         def unlock(data=None, **kwargs):
             if data is None:
                 data = context.active
+            if data is None:
+                return  # We don't have a device.
             spooler = data.spooler
             spooler.job(COMMAND_UNLOCK)
             return 'device', data
@@ -274,6 +292,8 @@ def plugin(kernel, lifecycle=None):
         def lock(data, **kwargs):
             if data is None:
                 data = context.active
+            if data is None:
+                return  # We don't have a device.
             spooler = data.spooler
             spooler.job(COMMAND_LOCK)
             return 'device', data
