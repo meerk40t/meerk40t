@@ -504,7 +504,7 @@ class JobPreview(MWindow):
         operations, commands = self.context.default_plan()
         obj = operations[node_index]
         if isinstance(obj, LaserOperation):
-            self.context.open("window/OperationProperty", self, obj)
+            self.context.open("window/OperationProperty", self, node=obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

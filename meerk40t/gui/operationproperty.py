@@ -172,8 +172,8 @@ class OperationProperty(MWindow):
         self.on_size()
 
     def set_widgets(self):
-        if self.operation.operation is not None:
-            op = self.operation.operation
+        if self.operation is not None:
+            op = self.operation
             if op == "Engrave":
                 self.combo_type.SetSelection(0)
             elif op == "Cut":
