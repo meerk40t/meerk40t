@@ -2750,6 +2750,7 @@ class Elemental(Modifier):
         @context.console_option("step", "S", type=int)
         @context.console_option("overscan", "o", type=Length)
         @context.console_option("color", "c", type=Color)
+        @context.console_option("passes", "x", type=int)
         @context.console_command(
             ("cut", "engrave", "raster", "imageop"),
             help="<cut/engrave/raster/imageop> - group the elements into this operation",
@@ -2766,6 +2767,7 @@ class Elemental(Modifier):
             power=None,
             step=None,
             overscan=None,
+            passes=None,
             args=tuple(),
             **kwargs
         ):
@@ -2776,6 +2778,9 @@ class Elemental(Modifier):
                 op.settings.speed = speed
             if power is not None:
                 op.settings.power = power
+            if passes is not None:
+                op.settings.passes_custom = True
+                op.settings.passes = passes
             if step is not None:
                 op.settings.raster_step = step
             if overscan is not None:
