@@ -3456,6 +3456,8 @@ class wxMeerK40t(wx.App, Module):
             context = kernel.get_context("/")
             if path is None:
                 path = context.active
+            if path is None:
+                path = context
             if subcommand is None:
                 channel(_("----------"))
                 channel(_("Loaded Windows in Context %s:") % str(context._path))
