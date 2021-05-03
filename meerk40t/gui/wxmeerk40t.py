@@ -3118,20 +3118,8 @@ class ShadowTree:
             x = x[0]
         return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
-    def create_menu(self, gui, node):
-        """
-        Create menu items. This is used for both the scene and the tree to create menu items.
-
-        :param gui: Gui used to create menu items.
-        :param node: The Node clicked on for the generated menu.
-        :return:
-        """
-        if node is None:
-            return
-        if hasattr(node, "node"):
-            node = node.node
+    def create_menu_for_node(self, gui, node) -> wx.Menu:
         menu = wx.Menu()
-
         submenus = {}
 
         def menu_functions(f, node):
@@ -3153,6 +3141,9 @@ class ShadowTree:
                 submenus[submenu_name] = submenu
 
             menu_context = submenu if submenu is not None else menu
+            if func.reference is not None:
+                menu_context.AppendSubMenu(self.create_menu_for_node(gui, func.reference(node)), func.real_name)
+                continue
             if func.radio_state is not None:
                 item = menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_RADIO)
                 gui.Bind(
@@ -3167,6 +3158,22 @@ class ShadowTree:
                     menu_functions(func, node),
                     menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL),
                 )
+
+        return menu
+
+    def create_menu(self, gui, node):
+        """
+        Create menu items. This is used for both the scene and the tree to create menu items.
+
+        :param gui: Gui used to create menu items.
+        :param node: The Node clicked on for the generated menu.
+        :return:
+        """
+        if node is None:
+            return
+        if hasattr(node, "node"):
+            node = node.node
+        menu = self.create_menu_for_node(gui, node)
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()

@@ -3454,10 +3454,10 @@ class Elemental(Modifier):
         def expand_all_children(node, **kwargs):
             node.notify_expand()
 
-        # @self.tree_reference()
-        # @self.tree_operation(_("Reference Element"), node_type="opnode", help="")
-        # def remove_types(node, **kwargs):
-        #     pass
+        @self.tree_reference(lambda node: node.object.node)
+        @self.tree_operation(_("Reference"), node_type="opnode", help="")
+        def reference_opnode(node, **kwargs):
+            pass
 
         self.listen(self)
 
