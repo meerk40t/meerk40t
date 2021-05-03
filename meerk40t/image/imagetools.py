@@ -689,18 +689,37 @@ def plugin(kernel, lifecycle=None):
                 channel(_("image autocontrast <cutoff-percent>"))
         return "image", data
 
+    @context.console_option("method", "m", type=str, help="Method of grayscale conversion: red, green, blue, alpha")
     @context.console_command(
         ("grayscale", "grayscale"),
         help="convert image to grayscale",
         input_type="image",
         output_type="image",
     )
-    def image(command, channel, _, data, args=tuple(), **kwargs):
+    def image(command, channel, _, data, method=None, args=tuple(), **kwargs):
         from PIL import ImageOps
 
         for element in data:
             img = element.image
-            element.image = ImageOps.grayscale(img)
+            if method is not None:
+                if method == "red":
+                    if element.image.mode not in ("RGB", "RGBA"):
+                        element.image = element.image.convert("RGBA")
+                    element.image = element.image.getchannel("R")
+                elif method == "green":
+                    if element.image.mode not in ("RGB", "RGBA"):
+                        element.image = element.image.convert("RGBA")
+                    element.image = element.image.getchannel("G")
+                elif method == "blue":
+                    if element.image.mode not in ("RGB", "RGBA"):
+                        element.image = element.image.convert("RGBA")
+                    element.image = element.image.getchannel("B")
+                elif method == "alpha":
+                    if element.image.mode not in ("LA", "RGBA"):
+                        element.image = element.image.convert("RGBA")
+                    element.image = element.image.getchannel("A")
+            else:
+                element.image = ImageOps.grayscale(img)
             if hasattr(element, "node"):
                 element.node.altered()
             channel(_("Image Grayscale."))

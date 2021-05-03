@@ -2335,7 +2335,7 @@ class Kernel:
             if command_executed:
                 text = remainder
             else:
-                channel(_("%s is not a console command.") % command)
+                channel(_("%s is not a registered command in this context: %s") % (command, str(input_type)))
                 return None
         return data
 
