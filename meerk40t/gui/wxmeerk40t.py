@@ -2667,16 +2667,19 @@ class ShadowTree:
         self.elements.listen(self)
         self.do_not_select = False
 
-    def node_removed(self, node):
-        item = node.item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
-        self.wxtree.Delete(node.item)
-        for i in self.wxtree.GetSelections():
-            self.wxtree.SelectItem(i, False)
+    def node_created(self, node, **kwargs):
+        pass
 
-    def node_added(self, node, **kwargs):
+    def node_destroyed(self, node, **kwargs):
+        pass
+
+    def node_detached(self, node, **kwargs):
+        self.unregister_children(node)
+        self.node_unregister(node, **kwargs)
+
+    def node_attached(self, node, **kwargs):
         self.node_register(node, **kwargs)
+        self.register_children(node)
 
     def node_changed(self, node):
         item = node.item
@@ -2790,7 +2793,7 @@ class ShadowTree:
         self.set_icon(
             self.element_root, icon_meerk40t.GetBitmap(False, resize=(20, 20))
         )
-        self.build_tree(self.element_root)
+        self.register_children(self.element_root)
 
         node_operations = self.element_root.get(type="branch ops")
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
@@ -2803,10 +2806,23 @@ class ShadowTree:
 
         self.wxtree.ExpandAll()
 
-    def build_tree(self, parent_node):
-        for node in parent_node._children:
-            self.node_register(node)
-            self.build_tree(node)
+    def register_children(self, node):
+        for child in node.children:
+            self.node_register(child)
+            self.register_children(child)
+
+    def unregister_children(self, node):
+        for child in node.children:
+            self.unregister_children(child)
+            self.node_unregister(child)
+
+    def node_unregister(self, node, **kwargs):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
+        self.wxtree.Delete(node.item)
+        for i in self.wxtree.GetSelections():
+            self.wxtree.SelectItem(i, False)
 
     def node_register(self, node, pos=None, **kwargs):
         parent = node.parent

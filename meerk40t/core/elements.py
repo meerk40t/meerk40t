@@ -214,17 +214,29 @@ class Node:
             self._bounds_dirty = False
         return self._bounds
 
-    def notify_added(self, node=None, **kwargs):
+    def notify_created(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_added(node=node, **kwargs)
+            self._root.notify_created(node=node, **kwargs)
 
-    def notify_removed(self, node=None, **kwargs):
+    def notify_destroyed(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
                 node = self
-            self._root.notify_removed(node=node, **kwargs)
+            self._root.notify_destroyed(node=node, **kwargs)
+
+    def notify_attached(self, node=None, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_attached(node=node, **kwargs)
+
+    def notify_detached(self, node=None, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_detached(node=node, **kwargs)
 
     def notify_changed(self, node, **kwargs):
         if self._root is not None:
@@ -364,6 +376,7 @@ class Node:
                 pass
             node = node_class(data_object)
             node.set_name(name)
+            self.root.notify_created(node)
         node.type = type
 
         node._parent = self
@@ -372,7 +385,7 @@ class Node:
             self._children.append(node)
         else:
             self._children.insert(pos, node)
-        node.notify_added(node, pos=pos)
+        node.notify_attached(node, pos=pos)
         return node
 
     def set_name(self, name):
@@ -476,51 +489,72 @@ class Node:
                 yield o
 
     def append_child(self, new_child):
+        """
+        Add the new_child node as the last child of the current node.
+        """
         new_parent = self
-        drag_siblings = new_child.parent.children
-        drop_siblings = new_parent.children
+        source_siblings = new_child.parent.children
+        destination_siblings = new_parent.children
 
-        drag_siblings.remove(new_child)
-        new_child.notify_removed(new_child)
+        source_siblings.remove(new_child)  # Remove child
+        new_child.notify_detached(new_child)
 
-        drop_siblings.append(new_child)
+        destination_siblings.append(new_child)  # Add child.
         new_child._parent = new_parent
-        new_child.notify_added(new_child)
+        new_child.notify_attached(new_child)
 
     def insert_sibling(self, new_sibling):
-        destination_sibling = self
-        drag_siblings = new_sibling.parent.children
-        drop_siblings = destination_sibling.parent.children
+        """
+        Add the new_sibling node next to the current node.
+        """
+        reference_sibling = self
+        source_siblings = new_sibling.parent.children
+        destination_siblings = reference_sibling.parent.children
 
-        drop_pos = drop_siblings.index(destination_sibling)
+        reference_position = destination_siblings.index(reference_sibling)
 
-        drag_siblings.remove(new_sibling)
-        new_sibling.notify_removed(new_sibling)
+        source_siblings.remove(new_sibling)
 
-        drop_siblings.insert(drop_pos, new_sibling)
-        new_sibling._parent = destination_sibling._parent
-        new_sibling.notify_added(new_sibling, pos=drop_pos)
+        new_sibling.notify_detached(new_sibling)
+        destination_siblings.insert(reference_position, new_sibling)
+        new_sibling._parent = reference_sibling._parent
+        new_sibling.notify_attached(new_sibling, pos=reference_position)
 
     def replace_node(self, *args, **kwargs):
+        """
+        Replace this current node with a bootstrapped replacement node.
+        """
         parent = self._parent
         index = parent._children.index(self)
         parent._children.remove(self)
-        self.notify_removed(self)
+        self.notify_detached(self)
         node = parent.add(*args, **kwargs, pos=index)
+        self.notify_destroyed()
+        self.item = None
         self._parent = None
         self._root = None
         self.type = None
         return node
 
     def remove_node(self):
+        """
+        Remove the current node from the tree.
+
+        This function must iterate down and first remove all children from the bottom.
+        """
+        self.remove_all_children()
         self._parent._children.remove(self)
-        self.notify_removed(self)
+        self.notify_detached(self)
+        self.notify_destroyed(self)
         self.item = None
         self._parent = None
         self._root = None
         self.type = None
 
     def remove_all_children(self):
+        """
+        Removes all children of the current node.
+        """
         for child in list(self.children):
             child.remove_all_children()
             child.remove_node()
@@ -857,6 +891,8 @@ class CommandOperation(Node):
 class RootNode(Node):
     """
     RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
+
+    The notifications are shallow. They refer *only* to the node in question, not to any children or parents.
     """
 
     def __init__(self, context):
@@ -885,19 +921,33 @@ class RootNode(Node):
     def unlisten(self, listener):
         self.listeners.remove(listener)
 
-    def notify_added(self, node=None, **kwargs):
+    def notify_created(self, node=None, **kwargs):
         if node is None:
             node = self
         for listen in self.listeners:
-            if hasattr(listen, "node_added"):
-                listen.node_added(node, **kwargs)
+            if hasattr(listen, "node_created"):
+                listen.node_created(node, **kwargs)
 
-    def notify_removed(self, node=None, **kwargs):
+    def notify_destroyed(self, node=None, **kwargs):
         if node is None:
             node = self
         for listen in self.listeners:
-            if hasattr(listen, "node_removed"):
-                listen.node_removed(node, **kwargs)
+            if hasattr(listen, "node_destroyed"):
+                listen.node_destroyed(node, **kwargs)
+
+    def notify_attached(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "node_attached"):
+                listen.node_attached(node, **kwargs)
+
+    def notify_detached(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "node_detached"):
+                listen.node_detached(node, **kwargs)
 
     def notify_changed(self, node=None, **kwargs):
         if node is None:
@@ -2848,7 +2898,7 @@ class Elemental(Modifier):
         def ungroup_elements(node, **kwargs):
             for n in list(node.children):
                 node.insert_sibling(n)
-            node.remove_node()
+            node.remove_node() # Removing group/file node.
 
         @self.tree_operation(_("Group Elements"), node_type="elem", help="")
         def group_elements(node, **kwargs):
@@ -2879,21 +2929,17 @@ class Elemental(Modifier):
 
         @self.tree_operation(_("Remove: {name}"), node_type="op", help="")
         def remove_type_op(node, **kwargs):
-            # self.context("operation delete\n")
             node.remove_node()
-            # self.remove_orphaned_opnodes()
             self.set_emphasis(None)
 
         @self.tree_operation(_("Remove: {name}"), node_type="elem", help="")
         def remove_type_elem(node, **kwargs):
-            # self.context("element delete\n")
             node.remove_node()
             self.remove_orphaned_opnodes()
             self.set_emphasis(None)
 
         @self.tree_operation(_("Remove: {name}"), node_type="file", help="")
         def remove_type_file(node, **kwargs):
-            node.remove_all_children()
             node.remove_node()
             self.remove_orphaned_opnodes()
             self.set_emphasis(None)
@@ -3607,23 +3653,11 @@ class Elemental(Modifier):
 
     def clear_operations(self):
         operations = self._tree.get(type="branch ops")
-        for op in reversed(list(operations.flat(types=("op", "opnode")))):
-            if op is not None:
-                op.remove_node()
-
-    # def clear_elements(self):
-    #     for e in reversed(list(self.elems_nodes())):
-    #         if e is not None:
-    #             e.remove_node()
+        operations.remove_all_children()
 
     def clear_elements(self):
         elements = self._tree.get(type="branch elems")
-        self._clear_elements_helper(elements)
-
-    def _clear_elements_helper(self, nodes=None):
-        for e in nodes.children:
-            self._clear_elements_helper(e)
-            e.remove_node()
+        elements.remove_all_children()
 
     def clear_files(self):
         pass
