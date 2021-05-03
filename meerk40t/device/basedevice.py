@@ -181,16 +181,19 @@ def plugin(kernel, lifecycle=None):
                 amount = Length("1mm")
             max_bed_height = bed_dim.bed_height * 39.3701
             max_bed_width = bed_dim.bed_width * 39.3701
+            if not hasattr(data, "_dx"):
+                data._dx = 0
+            if not hasattr(data, "_dy"):
+                data._dy = 0
             if command.endswith("right"):
-                data.dx += amount.value(ppi=1000.0, relative_length=max_bed_width)
+                data._dx += amount.value(ppi=1000.0, relative_length=max_bed_width)
             elif command.endswith("left"):
-                data.dx -= amount.value(ppi=1000.0, relative_length=max_bed_width)
+                data._dx -= amount.value(ppi=1000.0, relative_length=max_bed_width)
             elif command.endswith("up"):
-                data.dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
+                data._dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
             elif command.endswith("down"):
-                data.dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
-            kernel._console_queue("device -p %s jog" % data._path)
-            #TODO: Try replacing with trigger: .trigger 1 0 device -p %s jog
+                data._dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
+            context(".timer 1 0 device -p %s jog\n" % data._path)
             return 'device', data
 
         @context.console_command(
@@ -200,14 +203,14 @@ def plugin(kernel, lifecycle=None):
             if data is None:
                 data = context.active
             spooler = data.spooler
-            idx = int(data.dx)
-            idy = int(data.dy)
+            idx = int(data._dx)
+            idy = int(data._dy)
             if idx == 0 and idy == 0:
                 return
             if spooler.job_if_idle(execute_relative_position(idx, idy)):
                 channel(_("Position moved: %d %d") % (idx, idy))
-                data.dx -= idx
-                data.dy -= idy
+                data._dx -= idx
+                data._dy -= idy
             else:
                 channel(_("Busy Error"))
             return 'device', data
