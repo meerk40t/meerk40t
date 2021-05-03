@@ -5,7 +5,6 @@
 
 import wx
 
-from ..device.lasercommandconstants import REALTIME_RESET
 from ..kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -342,7 +341,7 @@ class Controller(MWindow):
 
     def on_button_pause_resume(self, event):  # wxGlade: Controller.<event_handler>
         try:
-            self.context.execute("Realtime Pause_Resume")
+            self.context("pause\n")
         except AttributeError:
             pass
 
