@@ -376,7 +376,8 @@ class Node:
                 pass
             node = node_class(data_object)
             node.set_name(name)
-            self.root.notify_created(node)
+            if self.root is not None:
+                self.root.notify_created(node)
         node.type = type
 
         node._parent = self
@@ -1148,6 +1149,14 @@ class Elemental(Modifier):
 
         return decor
 
+    @staticmethod
+    def tree_reference(node):
+        def decor(func):
+            func.reference = node
+            return func
+
+        return decor
+
     def tree_operation(self, name, node_type=None, help=None, **kwargs):
         def decorator(func):
             @functools.wraps(func)
@@ -1167,6 +1176,7 @@ class Elemental(Modifier):
             inner.name = name
             inner.radio = None
             inner.submenu = None
+            inner.reference = None
             inner.conditionals = list()
             inner.try_conditionals = list()
             inner.calcs = list()
@@ -3443,6 +3453,11 @@ class Elemental(Modifier):
         )
         def expand_all_children(node, **kwargs):
             node.notify_expand()
+
+        # @self.tree_reference()
+        # @self.tree_operation(_("Reference Element"), node_type="opnode", help="")
+        # def remove_types(node, **kwargs):
+        #     pass
 
         self.listen(self)
 
