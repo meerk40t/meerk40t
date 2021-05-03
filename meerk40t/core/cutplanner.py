@@ -90,6 +90,7 @@ class Planner(Modifier):
         self.context.setting(int, "opt_jog_minimum", 127)
         self.context.setting(int, "opt_jog_mode", 0)
 
+        kernel.register("plan/physicalhome", self.physicalhome)
         kernel.register("plan/home", self.home)
         kernel.register("plan/origin", self.origin)
         kernel.register("plan/unlock", self.unlock)
