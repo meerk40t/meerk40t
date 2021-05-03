@@ -193,6 +193,8 @@ class DeviceManager(MWindow):
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
+        if item == -1:
+            return
         uid = self.devices_list.GetItem(item).Text
         settings = self.context.derive(str(uid))
         settings._kernel.clear_persistent(settings._path)
