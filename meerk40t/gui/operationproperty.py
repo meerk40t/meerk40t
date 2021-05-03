@@ -173,7 +173,7 @@ class OperationProperty(MWindow):
 
     def set_widgets(self):
         if self.operation is not None:
-            op = self.operation
+            op = self.operation.operation
             if op == "Engrave":
                 self.combo_type.SetSelection(0)
             elif op == "Cut":
@@ -259,7 +259,6 @@ class OperationProperty(MWindow):
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
         self.button_layer_color.SetToolTip(_("Change/View color of this layer"))
         self.combo_type.SetToolTip(_("Default Operation Mode Type"))
-        self.combo_type.SetSelection(0)
         self.checkbox_output.SetToolTip(_("Output This Layer"))
         self.checkbox_output.SetValue(1)
         self.checkbox_show.SetToolTip(_("Show This Layer"))
