@@ -174,7 +174,7 @@ class Planner(Modifier):
                     element *= Matrix.rotate(-angle)
                 element.node.altered()
 
-        @self.context.console_argument("alias", type="str", help="plan command name to alias")
+        @self.context.console_argument("alias", type=str, help="plan command name to alias")
         @self.context.console_command(
             "plan-alias",
             help="Define a spoolable console command",
@@ -298,7 +298,7 @@ class Planner(Modifier):
             self.context.signal("plan", self._default_plan, 1)
             return data_type, data
 
-        @self.context.console_option("index", "i", type=int, help="insert index (or closest thereto)")
+        @self.context.console_option("index", "i", type=int, help="insert index")
         @self.context.console_option("op", "o", type=str, help="unlock, origin, home, etc.")
         @self.context.console_command(
             "command",
