@@ -280,14 +280,14 @@ class RasterWizard(MWindow):
             pass
 
     def on_update_buffer(self, event=None):
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._preview_panel_buffer)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        gc.SetBrush(wx.WHITE_BRUSH)
+        w, h = self._preview_panel_buffer.GetSize()
+        gc.DrawRectangle(0, 0, w, h)
         if self.context is None or self.svg_image is None or self.pil_image is None:
-            dc = wx.MemoryDC()
-            dc.SelectObject(self._preview_panel_buffer)
-            dc.Clear()
-            gc = wx.GraphicsContext.Create(dc)
-            gc.SetBrush(wx.WHITE_BRUSH)
-            w, h = self._preview_panel_buffer.GetSize()
-            gc.DrawRectangle(0, 0, w, h)
             font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, wx.BLACK)
             if self.wizard_thread is not None and self.wizard_thread.is_alive():
@@ -296,10 +296,6 @@ class RasterWizard(MWindow):
                 gc.DrawText(_("No image..."), 0, 0)
             gc.Destroy()
             return
-        dc = wx.MemoryDC()
-        dc.SelectObject(self._preview_panel_buffer)
-        dc.Clear()
-        gc = wx.GraphicsContext.Create(dc)
         gc.PushState()
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         wx_bitmap = self.wx_bitmap_image
