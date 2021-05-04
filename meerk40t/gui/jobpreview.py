@@ -144,14 +144,14 @@ class JobPreview(MWindow):
             self.jobadd_interrupt,
             id=self.preview_menu.menu_jobadd_interrupt.GetId(),
         )
-        self.preview_menu.menu_jobadd_command = wxglade_tmp_menu.Append(
-            wx.ID_ANY, "Command", "Add a command"
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.jobadd_command,
-            id=self.preview_menu.menu_jobadd_command.GetId(),
-        )
+        # self.preview_menu.menu_jobadd_command = wxglade_tmp_menu.Append(
+        #     wx.ID_ANY, "Command", "Add a command"
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     self.jobadd_command,
+        #     id=self.preview_menu.menu_jobadd_command.GetId(),
+        # )
         self.preview_menu.Append(wxglade_tmp_menu, "Add")
 
         wxglade_tmp_menu = wx.Menu()
@@ -464,27 +464,27 @@ class JobPreview(MWindow):
         )
 
     def jobadd_physicalhome(self, event=None):
-        self.context("plan%s command physicalhome\n" % self.plan_name)
+        self.context("plan%s command -o physicalhome\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_home(self, event=None):
-        self.context("plan%s command home\n" % self.plan_name)
+        self.context("plan%s command -o home\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_origin(self, event=None):
-        self.context("plan%s command origin\n" % self.plan_name)
+        self.context("plan%s command -o origin\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_wait(self, event=None):
-        self.context("plan%s command wait\n" % self.plan_name)
+        self.context("plan%s command -o wait\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_beep(self, event=None):
-        self.context("plan%s command beep\n" % self.plan_name)
+        self.context("plan%s command -o beep\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_interrupt(self, event=None):
-        self.context("plan%s command interrupt\n" % self.plan_name)
+        self.context("plan%s command -o interrupt\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_command(self, event=None):  # wxGlade: Preview.<event_handler>
