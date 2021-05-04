@@ -3201,7 +3201,8 @@ class Elemental(Modifier):
         @self.tree_operation(_("Reload {name}"), node_type="file", help="")
         def reload_file(node, **kwargs):
             filepath = node.filepath
-            self.clear_elements_and_operations()
+            self.clear_elements()
+            self.remove_orphaned_opnodes()
             self.load(filepath)
 
         @self.tree_submenu(_("Duplicate"))
