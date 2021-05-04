@@ -784,6 +784,10 @@ class CameraURI(MWindow):
             wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
         )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(index), convert)
+        convert = menu.Append(
+            wx.ID_ANY, _("Edit"), "", wx.ITEM_NORMAL
+        )
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_edit(index), convert)
         convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(index), convert)
         self.PopupMenu(menu)
@@ -799,6 +803,22 @@ class CameraURI(MWindow):
             self.on_list_refresh()
 
         return delete
+
+    def on_tree_popup_edit(self, index):
+        def edit(event):
+            dlg = wx.TextEntryDialog(
+                self,
+                _("Edit"),
+                _("Camera URI"),
+                "",
+            )
+            dlg.SetValue(self.uri_list[index])
+            if dlg.ShowModal() == wx.ID_OK:
+                self.uri_list[index] = dlg.GetValue()
+                self.changed = True
+                self.on_list_refresh()
+
+        return edit
 
     def on_tree_popup_clear(self, index):
         def delete(event):
