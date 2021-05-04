@@ -174,14 +174,23 @@ class Planner(Modifier):
                     element *= Matrix.rotate(-angle)
                 element.node.altered()
 
-        @self.context.console_argument("alias", help="plan command name to alias")
+        @self.context.console_argument("alias", type="str", help="plan command name to alias")
         @self.context.console_command(
             "plan-alias",
-            help="plan-alias <console command>",
+            help="Define a spoolable console command",
             input_type=None,
             output_type=None,
         )
         def plan_alias(command, channel, _, alias=None, remainder=None, **kwargs):
+            """
+            Plan alias allows the user to define a spoolable console command.
+            eg. plan-alias export egv_export myfile.egv
+
+            This creates a plan command called "export" that executes "egv_export myfile.egv".
+            This can then be placed into the spooler during the planning stages.
+            When the spooler reaches the command it will execute the console command.
+            This would then run: "egv_export myfile.egv" which would save the current buffer.
+            """
             if alias is None:
                 raise SyntaxError
             plan_command = "plan/%s" % alias
