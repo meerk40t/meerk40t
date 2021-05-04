@@ -784,9 +784,9 @@ class CameraURI(MWindow):
             wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
         )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(index), convert)
-        convert = menu.Append(
-            wx.ID_ANY, _("Edit"), "", wx.ITEM_NORMAL
-        )
+        convert = menu.Append(wx.ID_ANY, _("Duplicate"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_duplicate(index), convert)
+        convert = menu.Append(wx.ID_ANY, _("Edit"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_edit(index), convert)
         convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(index), convert)
@@ -803,6 +803,15 @@ class CameraURI(MWindow):
             self.on_list_refresh()
 
         return delete
+
+    def on_tree_popup_duplicate(self, index):
+        def duplicate(event):
+            self.uri_list.insert(index,self.uri_list[index])
+            self.changed = True
+            self.on_list_refresh()
+
+        return duplicate
+
 
     def on_tree_popup_edit(self, index):
         def edit(event):
