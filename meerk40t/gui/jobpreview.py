@@ -9,8 +9,13 @@ _ = wx.GetTranslation
 
 
 class JobPreview(MWindow):
-    def __init__(self, *args, plan_name=None, **kwds):
+    def __init__(self, *args, **kwds):
         super().__init__(496, 573, *args, **kwds)
+        if len(args) >= 4:
+            plan_name = args[3]
+        else:
+            plan_name = 0
+        self.plan_name = plan_name
 
         # Menu Bar
         self.preview_menu = wx.MenuBar()
@@ -235,7 +240,6 @@ class JobPreview(MWindow):
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         # end wxGlade
         self.stage = 0
-        self.plan_name = plan_name
 
     def __set_properties(self):
         # begin wxGlade: Preview.__set_properties
@@ -488,7 +492,7 @@ class JobPreview(MWindow):
         self.update_gui()
 
     def jobadd_command(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context("plan%s command console\n" % self.plan_name)
+        self.context("plan%s command -o console\n" % self.plan_name)
         self.update_gui()
 
     def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>

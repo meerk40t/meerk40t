@@ -174,12 +174,26 @@ class Planner(Modifier):
                     element *= Matrix.rotate(-angle)
                 element.node.altered()
 
-        @self.context.console_option("op", "o", type=str, help="unlock, origin, home")
-        @self.context.console_argument(
-            "subcommand",
-            type=str,
-            help="classify/copy/validate/blob/optimize/clear/list/spool",
+        @self.context.console_argument("alias", help="plan command name to alias")
+        @self.context.console_command(
+            "plan-alias",
+            help="plan-alias <console command>",
+            input_type=None,
+            output_type=None,
         )
+        def plan_alias(command, channel, _, alias=None, remainder=None, **kwargs):
+            if alias is None:
+                raise SyntaxError
+            plan_command = "plan/%s" % alias
+            if plan_command in self.context.registered:
+                raise SyntaxError("You may not overwrite an already used alias.")
+
+            def user_defined_alias():
+                for s in remainder.split(';'):
+                    self.context(s + '\n')
+            user_defined_alias.__name__ = remainder
+            self.context.registered[plan_command] = user_defined_alias
+
         @self.context.console_command(
             "plan",
             help="plan<?> <command>",
@@ -187,7 +201,7 @@ class Planner(Modifier):
             input_type=(None, "ops"),
             output_type="plan",
         )
-        def plan(command, channel, _, subcommand, op=None, args=tuple(), **kwargs):
+        def plan(command, channel, _, op=None, args=tuple(), **kwargs):
             if len(command) > 4:
                 self._default_plan = command[4:]
                 self.context.signal("plan", self._default_plan, None)
@@ -198,194 +212,375 @@ class Planner(Modifier):
                 plan = list()
                 commands = list()
                 self._plan[self._default_plan] = plan, commands
+            return "plan", (plan, commands)
 
-            if subcommand is None:
-                channel(_("----------"))
-                channel(_("Plan:"))
-                for i, plan_name in enumerate(self._plan):
-                    channel("%d: %s" % (i, plan_name))
-                channel(_("----------"))
-                channel(_("Plan %s:" % self._default_plan))
-                for i, op_name in enumerate(plan):
-                    channel("%d: %s" % (i, op_name))
-                channel(_("Commands %s:" % self._default_plan))
-                for i, cmd_name in enumerate(commands):
-                    channel("%d: %s" % (i, cmd_name))
-                channel(_("----------"))
-                return
+        @self.context.console_command(
+            "list",
+            help="plan<?> list",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            channel(_("----------"))
+            channel(_("Plan:"))
+            for i, plan_name in enumerate(self._plan):
+                channel("%d: %s" % (i, plan_name))
+            channel(_("----------"))
+            channel(_("Plan %s:" % plan))
+            for i, op_name in enumerate(plan):
+                channel("%d: %s" % (i, op_name))
+            channel(_("Commands %s:" % plan))
+            for i, cmd_name in enumerate(commands):
+                channel("%d: %s" % (i, cmd_name))
+            channel(_("----------"))
+            return data_type, data
 
-            if subcommand == "classify":
-                elements.classify(
-                    list(elements.elems(emphasized=True)), plan, plan.append
-                )
-                return
-            elif subcommand == "copy-selected":
-                for c in elements.ops(emphasized=True):
-                    if not c.output:
-                        continue
-                    try:
-                        if len(c) == 0:
-                            continue
-                    except TypeError:
-                        pass
-                    plan.append(copy(c))
-                channel(_("Copied Operations."))
-                self.context.signal("plan", self._default_plan, 1)
-            elif subcommand == "copy":
-                for c in elements.ops():
-                    if not c.output:
-                        continue
-                    try:
-                        if len(c) == 0:
-                            continue
-                    except TypeError:
-                        pass
-                    plan.append(copy(c))
-                channel(_("Copied Operations."))
-                self.context.signal("plan", self._default_plan, 1)
-                return
-            elif subcommand == "command":
-                if op is None:
-                    raise SyntaxError("'plan command' requires a '--op' argument.")
+        @self.context.console_command(
+            "classify",
+            help="plan<?> classify",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            elements.classify(list(elements.elems(emphasized=True)), plan, plan.append)
+            return data_type, data
+
+        @self.context.console_command(
+            "copy-selected",
+            help="plan<?> copy-selected",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            for c in elements.ops(emphasized=True):
+                if not c.output:
+                    continue
                 try:
-                    for command_name in self.context.match("plan/%s" % op):
-                        plan_command = self.context.registered[command_name]
+                    if len(c) == 0:
+                        continue
+                except TypeError:
+                    pass
+                plan.append(copy(c))
+            channel(_("Copied Operations."))
+            self.context.signal("plan", self._default_plan, 1)
+            return data_type, data
+
+        @self.context.console_command(
+            "copy",
+            help="plan<?> copy",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            for c in elements.ops():
+                if not c.output:
+                    continue
+                try:
+                    if len(c) == 0:
+                        continue
+                except TypeError:
+                    pass
+                plan.append(copy(c))
+            channel(_("Copied Operations."))
+            self.context.signal("plan", self._default_plan, 1)
+            return data_type, data
+
+        @self.context.console_option("index", "i", type=int, help="insert index (or closest thereto)")
+        @self.context.console_option("op", "o", type=str, help="unlock, origin, home, etc.")
+        @self.context.console_command(
+            "command",
+            help="plan<?> command",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, op=None, index=None, data=None, **kwargs):
+            plan, commands = data
+            if op is None:
+                channel(_("Plan Commands:"))
+                for command_name in self.context.match("plan/.*", suffix=True):
+                    channel(command_name)
+                return
+            try:
+                for command_name in self.context.match("plan/%s" % op):
+                    plan_command = self.context.registered[command_name]
+                    if index is None:
                         plan.append(plan_command)
-                        break
-                    self.context.signal("plan", self._default_plan, None)
-                except (KeyError, IndexError):
-                    channel(_("No plan command found."))
-                return
-            elif subcommand == "preprocess":
-                rotary_context = self.context.get_context("rotary/1")
-                if self.context.prephysicalhome:
-                    if not rotary_context.rotary:
-                        plan.insert(0, self.context.registered["plan/physicalhome"])
                     else:
-                        plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
-                if self.context.prehome:
-                    if not rotary_context.rotary:
-                        plan.insert(0, self.context.registered["plan/home"])
-                    else:
-                        plan.insert(0, _("Home Before: Disabled (Rotary On)"))
-                if self.context.autobeep:
-                    plan.append(self.context.registered["plan/beep"])
-                if self.context.autohome:
-                    if not rotary_context.rotary:
-                        plan.append(self.context.registered["plan/home"])
-                    else:
-                        plan.append(_("Home After: Disabled (Rotary On)"))
-                if self.context.autophysicalhome:
-                    if not rotary_context.rotary:
-                        plan.append(self.context.registered["plan/physicalhome"])
-                    else:
-                        plan.append(_("Physical Home After: Disabled (Rotary On)"))
-                if self.context.autoorigin:
-                    plan.append(self.context.registered["plan/origin"])
-                if self.context.postunlock:
-                    plan.append(self.context.registered["plan/unlock"])
-                # divide
-                self.conditional_jobadd_strip_text()
-                if rotary_context.rotary:
-                    self.conditional_jobadd_scale_rotary()
-                self.conditional_jobadd_actualize_image()
-                self.conditional_jobadd_make_raster()
-                self.context.signal("plan", self._default_plan, 2)
-                return
-            elif subcommand == "validate":
-                self.execute()
-                self.context.signal("plan", self._default_plan, 3)
-                return
-            elif subcommand == "blob":
-                blob = CutCode()
-                first_index = None
-                for i, c in enumerate(plan):
-                    # try:
-                    try:
-                        c.settings.jog_distance = self.context.opt_jog_minimum
-                        c.settings.jog_enable = self.context.opt_rapid_between
-                        b = c.as_blob()
-                        if b is not None:
-                            blob.extend(b)
-                            if first_index is None:
-                                first_index = i
-                        plan[i] = None
-                    except AttributeError:
-                        pass
-                if first_index is not None:
-                    plan.insert(first_index, blob)
-                for i in range(len(plan) - 1, -1, -1):
-                    c = plan[i]
-                    if c is None:
-                        del plan[i]
-                self.context.signal("plan", self._default_plan, 4)
-                return
-            elif subcommand == "preopt":
-                if self.context.opt_reduce_travel:
-                    self.conditional_jobadd_optimize_travel()
-                if self.context.opt_inner_first:
-                    self.conditional_jobadd_optimize_cuts()
-                if self.context.opt_reduce_directions:
+                        try:
+                            plan.insert(index, plan_command)
+                        except ValueError:
+                            channel(_("Invalid index for command insert."))
+                    break
+                self.context.signal("plan", self._default_plan, None)
+            except (KeyError, IndexError):
+                channel(_("No plan command found."))
+            return data_type, data
+
+        @self.context.console_argument("op", type=str, help="unlock, origin, home, etc")
+        @self.context.console_command(
+            "append",
+            help="plan<?> append <op>",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, op=None, data=None, **kwargs):
+            plan, commands = data
+            if op is None:
+                raise SyntaxError
+            try:
+                for command_name in self.context.match("plan/%s" % op):
+                    plan_command = self.context.registered[command_name]
+                    plan.append(plan_command)
+                    break
+                self.context.signal("plan", self._default_plan, None)
+            except (KeyError, IndexError):
+                channel(_("No plan command found."))
+            return data_type, data
+
+        @self.context.console_argument("op", type=str, help="unlock, origin, home, etc")
+        @self.context.console_command(
+            "prepend",
+            help="plan<?> prepend <op>",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, op=None, data=None, **kwargs):
+            plan, commands = data
+            if op is None:
+                raise SyntaxError
+            try:
+                for command_name in self.context.match("plan/%s" % op):
+                    plan_command = self.context.registered[command_name]
+                    plan.insert(0, plan_command)
+                    break
+                self.context.signal("plan", self._default_plan, None)
+            except (KeyError, IndexError):
+                channel(_("No plan command found."))
+            return data_type, data
+
+        @self.context.console_command(
+            "preprocess",
+            help="plan<?> preprocess",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            rotary_context = self.context.get_context("rotary/1")
+            if self.context.prephysicalhome:
+                if not rotary_context.rotary:
+                    plan.insert(0, self.context.registered["plan/physicalhome"])
+                else:
+                    plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
+            if self.context.prehome:
+                if not rotary_context.rotary:
+                    plan.insert(0, self.context.registered["plan/home"])
+                else:
+                    plan.insert(0, _("Home Before: Disabled (Rotary On)"))
+            if self.context.autobeep:
+                plan.append(self.context.registered["plan/beep"])
+            if self.context.autohome:
+                if not rotary_context.rotary:
+                    plan.append(self.context.registered["plan/home"])
+                else:
+                    plan.append(_("Home After: Disabled (Rotary On)"))
+            if self.context.autophysicalhome:
+                if not rotary_context.rotary:
+                    plan.append(self.context.registered["plan/physicalhome"])
+                else:
+                    plan.append(_("Physical Home After: Disabled (Rotary On)"))
+            if self.context.autoorigin:
+                plan.append(self.context.registered["plan/origin"])
+            if self.context.postunlock:
+                plan.append(self.context.registered["plan/unlock"])
+            # divide
+            self.conditional_jobadd_strip_text()
+            if rotary_context.rotary:
+                self.conditional_jobadd_scale_rotary()
+            self.conditional_jobadd_actualize_image()
+            self.conditional_jobadd_make_raster()
+            self.context.signal("plan", plan, 2)
+            return data_type, data
+
+        @self.context.console_command(
+            "validate",
+            help="plan<?> validate",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            self.execute()
+            self.context.signal("plan", self._default_plan, 3)
+            return data_type, data
+
+        @self.context.console_command(
+            "blob",
+            help="plan<?> blob",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+
+            blob = CutCode()
+            first_index = None
+            for i, c in enumerate(plan):
+                # try:
+                try:
+                    c.settings.jog_distance = self.context.opt_jog_minimum
+                    c.settings.jog_enable = self.context.opt_rapid_between
+                    b = c.as_blob()
+                    if b is not None:
+                        blob.extend(b)
+                        if first_index is None:
+                            first_index = i
+                    plan[i] = None
+                except AttributeError:
                     pass
-                if self.context.opt_remove_overlap:
-                    pass
-                self.context.signal("plan", self._default_plan, 5)
+            if first_index is not None:
+                plan.insert(first_index, blob)
+            for i in range(len(plan) - 1, -1, -1):
+                c = plan[i]
+                if c is None:
+                    del plan[i]
+            self.context.signal("plan", self._default_plan, 4)
+            return data_type, data
+
+        @self.context.console_command(
+            "preopt",
+            help="plan<?> preopt",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            if self.context.opt_reduce_travel:
+                self.conditional_jobadd_optimize_travel()
+            if self.context.opt_inner_first:
+                self.conditional_jobadd_optimize_cuts()
+            if self.context.opt_reduce_directions:
+                pass
+            if self.context.opt_remove_overlap:
+                pass
+            self.context.signal("plan", self._default_plan, 5)
+            return data_type, data
+
+        @self.context.console_command(
+            "optimize",
+            help="plan<?> optimize",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            self.execute()
+            self.context.signal("plan", self._default_plan, 6)
+            return data_type, data
+
+        @self.context.console_command(
+            "clear",
+            help="plan<?> clear",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            plan.clear()
+            commands.clear()
+            self.context.signal("plan", self._default_plan, 0)
+            return data_type, data
+
+        @self.context.console_command(
+            "spool",
+            help="plan<?> spool",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+            plan, commands = data
+            active = context.active
+            if active is None:
                 return
-            elif subcommand == "optimize":
-                self.execute()
-                self.context.signal("plan", self._default_plan, 6)
-                return
-            elif subcommand == "clear":
-                plan.clear()
-                commands.clear()
-                self.context.signal("plan", self._default_plan, 0)
-                return
-            elif subcommand == "scale_speed":
-                return
-            elif subcommand == "spool":
-                active = context.active
-                if active is None:
-                    return
-                context.active.spooler.jobs(plan)
-                channel(_("Spooled Plan."))
-                self.context.signal("plan", self._default_plan, 6)
-                return "plan", plan
-            elif subcommand == "step_repeat":
-                cols = args[1]
-                rows = args[2]
-                x_distance = args[3]
-                y_distance = args[4]
-                # TODO: IMPLEMENT!
-                # TODO: Implement the 0.6.19 switch changes.
-                self.operations.clear()
-                self.preprocessor.commands = list()
-                x_distance = int(x_distance)
-                y_distance = int(y_distance)
-                x_last = 0
-                y_last = 0
-                y_pos = 0
+            context.active.spooler.jobs(plan)
+            channel(_("Spooled Plan."))
+            self.context.signal("plan", self._default_plan, 6)
+            return data_type, data
+
+        @self.context.console_option("op", "o", type=str, help="unlock, origin, home")
+        @self.context.console_argument("cols", type=int, help="columns for the grid")
+        @self.context.console_argument("rows", type=int, help="rows for the grid")
+        @self.context.console_argument(
+            "x_distance", type=Length, help="x_distance each column step"
+        )
+        @self.context.console_argument(
+            "y_distance", type=Length, help="y_distance each row step"
+        )
+        @self.context.console_command(
+            "step_repeat",
+            help="plan<?> step_repeat",
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan(
+            command,
+            channel,
+            _,
+            cols=0,
+            rows=0,
+            x_distance=None,
+            y_distance=None,
+            data_type=None,
+            data=None,
+            **kwargs
+        ):
+            plan, commands = data
+            if y_distance is None:
+                raise SyntaxError
+            # TODO: IMPLEMENT!
+            # TODO: Implement the 0.6.19 switch changes.
+            self.operations.clear()
+            self.preprocessor.commands = list()
+            x_distance = int(x_distance)
+            y_distance = int(y_distance)
+            x_last = 0
+            y_last = 0
+            y_pos = 0
+            x_pos = 0
+            for j in range(rows):
                 x_pos = 0
-                for j in range(rows):
-                    x_pos = 0
-                    for k in range(cols):
-                        x_offset = x_pos - x_last
-                        y_offset = y_pos - y_last
-                        self.operations.append(OperationPreprocessor.origin)
-                        if x_offset != 0 or y_offset != 0:
-                            self.operations.append(
-                                OperationPreprocessor.offset(x_offset, y_offset)
-                            )
-                        self.operations.extend(list(self._original_ops))
-                        x_last = x_pos
-                        y_last = y_pos
-                        x_pos += x_distance
-                    y_pos += y_distance
-                if x_pos != 0 or y_pos != 0:
-                    self.operations.append(OperationPreprocessor.offset(-x_pos, -y_pos))
-                self.refresh_lists()
-                self.update_gui()
-            else:
-                channel(_("Unrecognized command."))
+                for k in range(cols):
+                    x_offset = x_pos - x_last
+                    y_offset = y_pos - y_last
+                    self.operations.append(OperationPreprocessor.origin)
+                    if x_offset != 0 or y_offset != 0:
+                        self.operations.append(
+                            OperationPreprocessor.offset(x_offset, y_offset)
+                        )
+                    self.operations.extend(list(self._original_ops))
+                    x_last = x_pos
+                    y_last = y_pos
+                    x_pos += x_distance
+                y_pos += y_distance
+            if x_pos != 0 or y_pos != 0:
+                self.operations.append(OperationPreprocessor.offset(-x_pos, -y_pos))
+            self.refresh_lists()
+            self.update_gui()
+            return data_type, data
+
+        # @self.context.console_command(
+        #     "scale_speed",
+        #     help="plan<?> scale_speed",
+        #     input_type="plan",
+        #     output_type="plan",
+        # )
+        # def plan(command, channel, _, data_type=None, data=None, **kwargs):
+        #     plan, commands = data
+        #     return data_type, data
 
     def plan(self, **kwargs):
         for item in self._plan:
