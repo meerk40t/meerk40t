@@ -355,7 +355,9 @@ class CameraInterface(MWindow, Job):
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         w, h = self._Buffer.GetSize()
-        dc.SetBackground(wx.WHITE_BRUSH)
+        # dc.SetBackground(wx.WHITE_BRUSH)
+        gc.SetBrush(wx.WHITE_BRUSH)
+        gc.DrawRectangle(0, 0, w, h)
         if self.frame_bitmap is None:
             font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, wx.BLACK)
