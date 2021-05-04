@@ -618,12 +618,12 @@ class SelectionWidget(Widget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.elements
         if event_type == "hover_start":
-            # self.cursor = wx.CURSOR_SIZING
-            # self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
+            self.cursor = wx.CURSOR_SIZING
+            self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         if event_type == "hover_end":
-            # self.cursor = wx.CURSOR_ARROW
-            # self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
+            self.cursor = wx.CURSOR_ARROW
+            self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         if event_type == "hover":
             matrix = self.parent.matrix
