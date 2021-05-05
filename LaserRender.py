@@ -37,7 +37,7 @@ def swizzlecolor(c):
         c = Color(argb=c)
     try:
         return c.blue << 16 | c.green << 8 | c.red
-    except ValueError:
+    except (ValueError, TypeError):
         return None
 
 

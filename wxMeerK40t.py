@@ -1930,7 +1930,7 @@ class Node(list):
             pass
         try:
             color = self.object.color
-            c = wx.Colour(swizzlecolor(Color(color)))
+            c = wx.Colour(swizzlecolor(Color(color).argb))
             self.root.tree.SetItemTextColour(self.item, c)
         except AttributeError:
             pass
