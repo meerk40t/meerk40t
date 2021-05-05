@@ -215,6 +215,19 @@ def run():
     except ImportError:
         pass
 
+    try:
+        from .extra import embroider
+
+        kernel.add_plugin(embroider.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .extra import pathoptimize
+
+        kernel.add_plugin(pathoptimize.plugin)
+    except ImportError:
+        pass
 
     try:
         from camera import camera

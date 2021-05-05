@@ -21,7 +21,6 @@ import wx
 import wx.aui as aui
 import wx.ribbon as RB
 
-from ..core.cutplanner import CutPlanner
 from ..core.elements import LaserOperation
 from ..device.lasercommandconstants import (
     COMMAND_FUNCTION,
@@ -49,7 +48,7 @@ from ..svgelements import (
     Path,
     SVGElement,
     SVGImage,
-    SVGText,
+    SVGText, Group,
 )
 from .about import About
 from .bufferview import BufferView
@@ -2960,7 +2959,7 @@ class ShadowTree:
         tree.SetItemTextColour(item, color)
 
     def bbox(self, node):
-        return CutPlanner.bounding_box(self.object)
+        return Group.union_bbox([self.object])
 
     def on_drag_begin_handler(self, event):
         """

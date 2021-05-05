@@ -505,7 +505,7 @@ class JobPreview(MWindow):
         node_index = self.list_operations.GetSelection()
         if node_index == -1:
             return
-        operations, commands = self.context.default_plan()
+        operations, original, commands = self.context.default_plan()
         obj = operations[node_index]
         if isinstance(obj, LaserOperation):
             self.context.open("window/OperationProperty", self, node=obj)
@@ -522,7 +522,7 @@ class JobPreview(MWindow):
             self.context("plan%s copy\n" % self.plan_name)
             # elif self.stage == 1:
             self.context("plan%s preprocess\n" % self.plan_name)
-            operations, commands = self.context.default_plan()
+            operations, original, commands = self.context.default_plan()
             if len(commands) == 0:
                 self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 2:
@@ -609,7 +609,7 @@ class JobPreview(MWindow):
 
         self.list_operations.Clear()
         self.list_command.Clear()
-        operations, commands = self.context.default_plan()
+        operations, original, commands = self.context.default_plan()
         if operations is not None and len(operations) != 0:
             self.list_operations.InsertItems([name_str(e) for e in operations], 0)
         if commands is not None and len(commands) != 0:
