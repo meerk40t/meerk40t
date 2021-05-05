@@ -1547,6 +1547,7 @@ class Elemental(Modifier):
                 superelement += abs(e)
             self.remove_elements(data)
             self.add_elem(superelement).emphasized = True
+            self.classify([superelement])
             return "elements", [superelement]
 
         @context.console_command(
