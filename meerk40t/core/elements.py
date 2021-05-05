@@ -1558,16 +1558,20 @@ class Elemental(Modifier):
         def subpath(command, channel, _, data=None, args=tuple(), **kwargs):
             if not isinstance(data, list):
                 data = list(data)
-            elems = []
+            elements_nodes = []
+            elements = []
             for e in data:
                 node = e.node
-                qnode = node.replace_node(type="group", name=node.name)
+                group_node = node.replace_node(type="group", name=node.name)
                 p = abs(e)
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
-                    qnode.add(subelement, type="elem")
-                elems.append(qnode)
-            return "elements", elems
+                    elements.append(subelement)
+                    group_node.add(subelement, type="elem")
+                elements_nodes.append(group_node)
+                self.remove_orphaned_opnodes()
+                self.classify(elements)
+            return "elements", elements_nodes
 
         @context.console_argument("align", type=str, help="Alignment position")
         @context.console_command(
