@@ -1681,11 +1681,13 @@ class MeerK40t(wx.Frame, Module):
 
         if dlg.ShowModal() == wx.ID_OK:
             kernel = self.device.device_root
-            path = Path(dlg.GetValue())
-            path.stroke = 'blue'
-            p = abs(path)
-            kernel.elements.add_elem(p)
-            self.device.classify(p)
+            try:
+                path = Path(dlg.GetValue(), stroke='blue')
+                p = abs(path)
+                kernel.elements.add_elem(p)
+                self.device.classify([p])
+            except ValueError:
+                pass
         dlg.Destroy()
 
     def egv_import(self):
