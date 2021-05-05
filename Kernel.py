@@ -933,7 +933,7 @@ class Elemental(Module):
                 if value is None:
                     continue
                 if isinstance(value, Color):
-                    value = value.value
+                    value = value.argb
                 op_set.write_persistent(key, value)
 
     def boot(self):
@@ -1555,7 +1555,7 @@ class Preferences:
         elif isinstance(value, bool):
             self._config.WriteBool(key, value)
         elif isinstance(value, Color):
-            self._config.WriteInt(key, value)
+            self._config.WriteInt(key, value.argb)
 
     def clear_persistent(self):
         if self._config is None:

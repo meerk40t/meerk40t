@@ -1896,7 +1896,7 @@ class Node(list):
         tree.SetItemData(self.item, self)
         try:
             stroke = data_object.values[SVG_ATTR_STROKE]
-            color = wx.Colour(swizzlecolor(Color(stroke).value))
+            color = wx.Colour(swizzlecolor(Color(stroke).argb))
             tree.SetItemTextColour(item, color)
         except AttributeError:
             pass
@@ -1924,7 +1924,7 @@ class Node(list):
         self.root.tree.SetItemText(self.item, self.name)
         try:
             stroke = self.object.values[SVG_ATTR_STROKE]
-            color = wx.Colour(swizzlecolor(Color(stroke).value))
+            color = wx.Colour(swizzlecolor(Color(stroke).argb))
             self.root.tree.SetItemTextColour(self.item, color)
         except AttributeError:
             pass
