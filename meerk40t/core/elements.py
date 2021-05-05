@@ -346,7 +346,6 @@ class Node:
             self.targeted = False
             self.emphasized = False
             self.highlighted = False
-            self.modified()
         except AttributeError:
             pass
 
@@ -553,6 +552,7 @@ class Node:
         self._parent = None
         self._root = None
         self.type = None
+        self.unregister()
         return node
 
     def remove_node(self):
@@ -571,6 +571,7 @@ class Node:
         self._parent = None
         self._root = None
         self.type = None
+        self.unregister()
 
     def remove_all_children(self):
         """

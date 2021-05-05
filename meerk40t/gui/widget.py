@@ -187,7 +187,7 @@ class Scene(Module):
             "rightdown",
             "wheeldown",
             "wheelup",
-            "hover",
+            "hover"
         ):
             self.time = time.time()
             self.rebuild_hittable_chain()
@@ -617,6 +617,7 @@ class SelectionWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.elements
+        print(event_type)
         if event_type == "hover_start":
             self.cursor = wx.CURSOR_SIZING
             self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
@@ -640,6 +641,7 @@ class SelectionWidget(Widget):
             try:
                 if first.lock:
                     if self.cursor != cursor:
+                        self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
                         self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
                     return RESPONSE_CHAIN
             except (ValueError, AttributeError):

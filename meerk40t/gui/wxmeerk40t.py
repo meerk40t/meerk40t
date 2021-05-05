@@ -2819,6 +2819,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
+        node.unregister_object()
         self.wxtree.Delete(node.item)
         for i in self.wxtree.GetSelections():
             self.wxtree.SelectItem(i, False)
