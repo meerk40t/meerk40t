@@ -3162,7 +3162,8 @@ class ShadowTree:
                     menu_functions(func, node),
                     menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL),
                 )
-
+            if func.separate:
+                menu_context.AppendSeparator()
         return menu
 
     def create_menu(self, gui, node):

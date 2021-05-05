@@ -1157,6 +1157,14 @@ class Elemental(Modifier):
 
         return decor
 
+    @staticmethod
+    def tree_separator_after():
+        def decor(func):
+            func.separate = True
+            return func
+
+        return decor
+
     def tree_operation(self, name, node_type=None, help=None, **kwargs):
         def decorator(func):
             @functools.wraps(func)
@@ -1177,6 +1185,7 @@ class Elemental(Modifier):
             inner.radio = None
             inner.submenu = None
             inner.reference = None
+            inner.separate = False
             inner.conditionals = list()
             inner.try_conditionals = list()
             inner.calcs = list()
@@ -2005,17 +2014,17 @@ class Elemental(Modifier):
                 data.append(line)
                 return "elements", data
 
+        @context.console_argument("text", type=str, help="quoted string of text")
         @context.console_command(
             "text",
             help="text <text>",
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def text(command, channel, _, data=None, remainder=None, **kwargs):
-            if remainder is None:
+        def text(command, channel, _, data=None, text=None, **kwargs):
+            if text is None:
                 channel(_("No text specified"))
                 return
-            text = remainder
             svg_text = SVGText(text)
             self.add_element(svg_text)
             if data is None:
@@ -2907,13 +2916,36 @@ class Elemental(Modifier):
 
         _ = self.context._kernel.translation
 
+        @self.tree_separator_after()
+        @self.tree_operation(_("Operation Properties"), node_type="op", help="")
+        def operation_property(node, **kwargs):
+            self.context.open("window/OperationProperty", self.context.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: isinstance(node.object, Path))
+        @self.tree_operation(_("Path Properties"), node_type="elem", help="")
+        def path_property(node, **kwargs):
+            self.context.open("window/PathProperty", self.context.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGText))
+        @self.tree_operation(_("Text Properties"), node_type="elem", help="")
+        def text_property(node, **kwargs):
+            self.context.open("window/TextProperty", self.context.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_operation(_("Image Properties"), node_type="elem", help="")
+        def image_property(node, **kwargs):
+            self.context.open("window/ImageProperty", self.context.gui, node=node)
+
         @self.tree_operation(
             _("Ungroup Elements"), node_type=("group", "file"), help=""
         )
         def ungroup_elements(node, **kwargs):
             for n in list(node.children):
                 node.insert_sibling(n)
-            node.remove_node() # Removing group/file node.
+            node.remove_node()  # Removing group/file node.
 
         @self.tree_operation(_("Group Elements"), node_type="elem", help="")
         def group_elements(node, **kwargs):
@@ -3258,35 +3290,7 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Rotate"))
-        @self.tree_values(
-            "i",
-            values=(
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                10,
-                11,
-                12,
-                13,
-                -2,
-                -3,
-                -4,
-                -5,
-                -6,
-                -7,
-                -8,
-                -9,
-                -10,
-                -11,
-                -12,
-                -13,
-            ),
-        )
+        @self.tree_values("i", values=tuple([i for i in range(2,-14,-1) if i != 0]))
         @self.tree_calc(
             "angle", lambda i: "%0.f" % Angle.turns(1.0 / float(i)).as_degrees
         )
