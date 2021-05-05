@@ -326,7 +326,7 @@ class Node:
         self._bounds_dirty = True
         self.notify_altered(self)
 
-    def unregister(self):
+    def unregister_object(self):
         try:
             self.cache.UngetNativePath(self.cache.NativePath)
         except AttributeError:
@@ -339,6 +339,9 @@ class Node:
             del self.icon
         except AttributeError:
             pass
+
+    def unregister(self):
+        self.unregister_object()
         try:
             self.targeted = False
             self.emphasized = False
@@ -531,6 +534,7 @@ class Node:
             ref.object = new_object
             ref.altered()
         new_object.node = self
+        self.unregister_object()
         self.object = new_object
 
     def replace_node(self, *args, **kwargs):
@@ -1234,6 +1238,8 @@ class Elemental(Modifier):
 
             for _in in ins:
                 p = "tree/%s/%s" % (_in, registered_name)
+                if p in kernel.registered:
+                    raise NameError("A function of this name was already registered.")
                 kernel.register(p, inner)
             return inner
 
@@ -3344,9 +3350,9 @@ class Elemental(Modifier):
             self.context("element subpath\n")
 
         @self.tree_operation(
-            _("Merge Subpaths"), node_type="group", help=""
+            _("Merge Items"), node_type="group", help="Merge this node's children into 1 path."
         )
-        def ungroup_elements(node, **kwargs):
+        def merge_elements(node, **kwargs):
             self.context("element merge\n")
 
         def radio_match(node, i=0, **kwargs):
