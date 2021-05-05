@@ -90,6 +90,7 @@ class Node:
         self._children = list()
         self._root = None
         self._parent = None
+        self._references = list()
 
         self.object = data_object
         self.type = type
@@ -531,6 +532,8 @@ class Node:
         self.notify_detached(self)
         node = parent.add(*args, **kwargs, pos=index)
         self.notify_destroyed()
+        for ref in list(self._references):
+            ref.remove_node()
         self.item = None
         self._parent = None
         self._root = None
@@ -547,6 +550,8 @@ class Node:
         self._parent._children.remove(self)
         self.notify_detached(self)
         self.notify_destroyed(self)
+        for ref in self._references:
+            ref.remove_node()
         self.item = None
         self._parent = None
         self._root = None
@@ -571,6 +576,29 @@ class Node:
     def move(self, dest, pos=None):
         self._parent.remove(self)
         dest.insert_node(self, pos=pos)
+
+
+class OpNode(Node):
+    """
+    OpNode is the bootstrapped node type for the opnode type.
+
+    OpNodes track referenced copies of vector element data.
+    """
+
+    def __init__(self, data_object):
+        super(OpNode, self).__init__(data_object)
+        data_object.node._references.append(self)
+
+    def __repr__(self):
+        return "OpNode('%s', %s, %s)" % (
+            self.type,
+            str(self.object),
+            str(self._parent),
+        )
+
+    def notify_destroyed(self, node=None, **kwargs):
+        self.object.node._references.remove(self)
+        super(OpNode, self).notify_destroyed()
 
 
 class ElemNode(Node):
@@ -909,6 +937,7 @@ class RootNode(Node):
             "op": LaserOperation,
             "cmdop": CommandOperation,
             "elem": ElemNode,
+            "opnode": OpNode,
         }
         self.add(type="branch ops", name="Operations")
         self.add(type="branch elems", name="Elements")
@@ -1570,7 +1599,6 @@ class Elemental(Modifier):
                     elements.append(subelement)
                     group_node.add(subelement, type="elem")
                 elements_nodes.append(group_node)
-                self.remove_orphaned_opnodes()
                 self.classify(elements)
             return "elements", elements_nodes
 
@@ -2979,25 +3007,8 @@ class Elemental(Modifier):
         def clear_all_ops(node, **kwargs):
             self.context("element* delete\n")
 
-        @self.tree_operation(_("Remove: {name}"), node_type="op", help="")
+        @self.tree_operation(_("Remove: {name}"), node_type=("op", "elem", "file", "group", "opnode"), help="")
         def remove_type_op(node, **kwargs):
-            node.remove_node()
-            self.set_emphasis(None)
-
-        @self.tree_operation(_("Remove: {name}"), node_type="elem", help="")
-        def remove_type_elem(node, **kwargs):
-            node.remove_node()
-            self.remove_orphaned_opnodes()
-            self.set_emphasis(None)
-
-        @self.tree_operation(_("Remove: {name}"), node_type="file", help="")
-        def remove_type_file(node, **kwargs):
-            node.remove_node()
-            self.remove_orphaned_opnodes()
-            self.set_emphasis(None)
-
-        @self.tree_operation(_("Remove: {name}"), node_type="opnode", help="")
-        def remove_types(node, **kwargs):
             node.remove_node()
             self.set_emphasis(None)
 
@@ -3239,7 +3250,6 @@ class Elemental(Modifier):
         def reload_file(node, **kwargs):
             filepath = node.filepath
             node.remove_node()
-            self.remove_orphaned_opnodes()
             self.load(filepath)
 
         @self.tree_submenu(_("Duplicate"))
@@ -3269,7 +3279,7 @@ class Elemental(Modifier):
         )
         @self.tree_operation(_("Convert To Path"), node_type=("elem",), help="")
         def convert_to_path(node, copies=1, **kwargs):
-            node.object = abs(Path(node.object))
+            node.replace_node(data_object=abs(Path(node.object)), type="elem")
             node.object.node = node
             node.altered()
 
@@ -3322,6 +3332,12 @@ class Elemental(Modifier):
         @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
         def break_subpath_elem(node, **kwargs):
             self.context("element subpath\n")
+
+        @self.tree_operation(
+            _("Merge Subpaths"), node_type="group", help=""
+        )
+        def ungroup_elements(node, **kwargs):
+            self.context("element merge\n")
 
         def radio_match(node, i=0, **kwargs):
             if "raster_step" in node.object.values:
@@ -3725,18 +3741,6 @@ class Elemental(Modifier):
         for i, op in enumerate(self.ops()):
             for e in list(op.children):
                 if e.object in elements_list:
-                    e.remove_node()
-
-    def remove_orphaned_opnodes(self):
-        """
-        Remove any opnodes whose objects do not appear in the elem list.
-
-        :return:
-        """
-        elements_list = list(self.elems())
-        for i, op in enumerate(self.ops()):
-            for e in list(op.children):
-                if e.object not in elements_list:
                     e.remove_node()
 
     def selected_area(self):
