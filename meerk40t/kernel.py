@@ -2333,7 +2333,7 @@ class Kernel:
                 except CommandMatchRejected:
                     continue
             if command_executed:
-                text = remainder
+                text = remainder.strip()
             else:
                 channel(_("%s is not a registered command in this context: %s") % (command, str(input_type)))
                 return None
