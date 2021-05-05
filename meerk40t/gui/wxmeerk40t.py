@@ -2835,7 +2835,7 @@ class ShadowTree:
         self.update_name(node)
         try:
             stroke = node.object.values[SVG_ATTR_STROKE]
-            color = wx.Colour(swizzlecolor(Color(stroke).value))
+            color = wx.Colour(swizzlecolor(Color(stroke).argb))
             tree.SetItemTextColour(node.item, color)
         except AttributeError:
             pass
@@ -2931,7 +2931,7 @@ class ShadowTree:
         self.wxtree.SetItemText(node.item, node.name)
         try:
             stroke = node.object.stroke
-            color = wx.Colour(swizzlecolor(Color(stroke)))
+            color = wx.Colour(swizzlecolor(Color(stroke).argb))
             self.wxtree.SetItemTextColour(node.item, color)
         except AttributeError:
             pass

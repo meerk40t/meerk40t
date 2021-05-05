@@ -1324,7 +1324,7 @@ class Kernel:
         elif isinstance(value, bool):
             self._config.WriteBool(key, value)
         elif isinstance(value, Color):
-            self._config.WriteInt(key, value)
+            self._config.WriteInt(key, value.argb)
 
     def clear_persistent(self, path):
         if self._config is None:

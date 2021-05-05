@@ -5,17 +5,25 @@ from meerk40t.svgelements import Path, Polyline, Matrix, Point, Angle, Length, S
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
-        context = kernel.get_context('/')
+        context = kernel.get_context("/")
 
-        @context.console_option("angle", "a", type=Angle.parse, default=0, help="Angle of the fill")
-        @context.console_option("distance", "d", type=Length, default=16, help="Length between rungs")
+        @context.console_option(
+            "angle", "a", type=Angle.parse, default=0, help="Angle of the fill"
+        )
+        @context.console_option(
+            "distance", "d", type=Length, default=16, help="Length between rungs"
+        )
         @context.console_command("embroider", help="embroider <angle> <distance>")
-        def embroider(command, channel, _, angle=None, distance=None, args=tuple(), **kwargs):
+        def embroider(
+            command, channel, _, angle=None, distance=None, args=tuple(), **kwargs
+        ):
             bed_dim = context.get_context("/")
             elements = context.elements
             channel(_("Embroidery Filling"))
             if distance is not None:
-                distance = distance.value(ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701)
+                distance = distance.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
+                )
             else:
                 distance = 16
 
@@ -42,10 +50,10 @@ def split(points):
     pos = 0
     for i, pts in enumerate(points):
         if pts is None:
-            yield points[pos:i-1]
+            yield points[pos : i - 1]
             pos = i + 1
     if pos != len(points):
-        yield points[pos:len(points)]
+        yield points[pos : len(points)]
 
 
 class GraphNode(Point):
@@ -737,7 +745,9 @@ class VectorMontonizer:
     given rungs, and connected to intercept points.
     """
 
-    def __init__(self, low_value=-float("inf"), high_value=float("inf"), start=-float("inf")):
+    def __init__(
+        self, low_value=-float("inf"), high_value=float("inf"), start=-float("inf")
+    ):
         self.clusters = []
         self.dirty_cluster_sort = True
 

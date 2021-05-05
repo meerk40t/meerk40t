@@ -3487,7 +3487,7 @@ class Elemental(Modifier):
                     if value is None:
                         continue
                     if isinstance(value, Color):
-                        value = value.value
+                        value = value.argb
                     op_set.write_persistent(key, value)
         settings.close_subpaths()
         self.unlisten(self)

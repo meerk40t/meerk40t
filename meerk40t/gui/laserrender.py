@@ -50,10 +50,11 @@ def swizzlecolor(c):
     if c is None:
         return None
     if isinstance(c, int):
-        c = Color(c)
-    if c.value is None:
+        c = Color(argb=c)
+    try:
+        return c.blue << 16 | c.green << 8 | c.red
+    except (ValueError, TypeError):
         return None
-    return c.blue << 16 | c.green << 8 | c.red
 
 
 class LaserRender:
