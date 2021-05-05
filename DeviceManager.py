@@ -16,6 +16,7 @@ _ = wx.GetTranslation
 class DeviceManager(wx.Frame, Module):
     def __init__(self, parent, *args, **kwds):
         # begin wxGlade: DeviceManager.__init__
+        self.parent = parent
         if parent is None:
             wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
         else:
@@ -26,7 +27,7 @@ class DeviceManager(wx.Frame, Module):
         self.devices_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.new_device_button = wx.BitmapButton(self, wx.ID_ANY, icons8_plus_50.GetBitmap())
         self.remove_device_button = wx.BitmapButton(self, wx.ID_ANY, icons8_trash_50.GetBitmap())
-        self.device_properties_button = wx.BitmapButton(self, wx.ID_ANY, icons8_administrative_tools_50.GetBitmap())
+        # self.device_properties_button = wx.BitmapButton(self, wx.ID_ANY, icons8_administrative_tools_50.GetBitmap())
         # self.move_item_up_button = wx.BitmapButton(self, wx.ID_ANY, icons8up.GetBitmap())
         # self.move_item_down_button = wx.BitmapButton(self, wx.ID_ANY, icons8_down.GetBitmap())
 
@@ -38,7 +39,7 @@ class DeviceManager(wx.Frame, Module):
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_list_right_click, self.devices_list)
         self.Bind(wx.EVT_BUTTON, self.on_button_new, self.new_device_button)
         self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.remove_device_button)
-        self.Bind(wx.EVT_BUTTON, self.on_button_properties, self.device_properties_button)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_properties, self.device_properties_button)
         # self.Bind(wx.EVT_BUTTON, self.on_button_up, self.move_item_up_button)
         # self.Bind(wx.EVT_BUTTON, self.on_button_down, self.move_item_down_button)
         # end wxGlade
@@ -96,8 +97,8 @@ class DeviceManager(wx.Frame, Module):
         self.new_device_button.SetSize(self.new_device_button.GetBestSize())
         self.remove_device_button.SetToolTip(_("Remove selected device"))
         self.remove_device_button.SetSize(self.remove_device_button.GetBestSize())
-        self.device_properties_button.SetToolTip(_("View Device Properties"))
-        self.device_properties_button.SetSize(self.device_properties_button.GetBestSize())
+        # self.device_properties_button.SetToolTip(_("View Device Properties"))
+        # self.device_properties_button.SetSize(self.device_properties_button.GetBestSize())
         # self.move_item_up_button.SetToolTip(_("Move device up"))
         # self.move_item_up_button.SetSize(self.move_item_up_button.GetBestSize())
         # self.move_item_down_button.SetToolTip(_("Move device down"))
@@ -111,7 +112,7 @@ class DeviceManager(wx.Frame, Module):
         main_sizer.Add(self.devices_list, 1, wx.EXPAND, 0)
         button_sizer.Add(self.new_device_button, 0, 0, 0)
         button_sizer.Add(self.remove_device_button, 0, 0, 0)
-        button_sizer.Add(self.device_properties_button, 0, 0, 0)
+        # button_sizer.Add(self.device_properties_button, 0, 0, 0)
         # button_sizer.Add(self.move_item_up_button, 0, 0, 0)
         # button_sizer.Add(self.move_item_down_button, 0, 0, 0)
         main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
@@ -212,6 +213,8 @@ class DeviceManager(wx.Frame, Module):
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
+        if item == -1:
+            return
         uid = self.devices_list.GetItem(item).Text
         settings = self.device.derive(str(uid))
         settings.clear_persistent()
@@ -224,14 +227,16 @@ class DeviceManager(wx.Frame, Module):
 
         self.refresh_device_list()
 
-    def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
-        item = self.devices_list.GetFirstSelected()
-        uid = self.devices_list.GetItem(item).Text
-        try:
-            dev = self.device.device_root.instances['device'][uid]
-        except KeyError:
-            return
-        dev.open('window', "Preferences", self)
+    # def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
+    #     item = self.devices_list.GetFirstSelected()
+    #     if item == -1:
+    #         return
+    #     uid = self.devices_list.GetItem(item).Text
+    #     try:
+    #         dev = self.device.device_root.instances['device'][uid]
+    #     except KeyError:
+    #         return
+    #     dev.open('window', "Preferences", self.parent)
 
     # def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>
     #     print("Event handler 'on_button_up' not implemented!")
