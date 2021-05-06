@@ -1,6 +1,7 @@
 from copy import copy
 from math import ceil, isinf, isnan
 
+from .optimizer import Optimizer
 from ..core.cutcode import CutCode
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
@@ -16,15 +17,10 @@ from ..device.lasercommandconstants import (
 )
 from ..kernel import Modifier
 from ..svgelements import (
-    Angle,
     Group,
     Length,
-    Matrix,
-    Move,
     Path,
-    Point,
     Polygon,
-    Polyline,
     SVGElement,
     SVGImage,
     SVGText,
@@ -641,7 +637,10 @@ class Planner(Modifier):
 
     def jobadd_optimize_travel(self):
         def optimize_travel():
-            pass
+            for c in plan:
+                if isinstance(c, CutCode):
+                    opt = Optimizer(c)
+                    opt.optimize()
 
         plan, original, commands = self.default_plan()
         commands.append(optimize_travel)

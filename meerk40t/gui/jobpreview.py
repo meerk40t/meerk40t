@@ -264,7 +264,7 @@ class JobPreview(MWindow):
         self.check_reduce_travel_time.SetToolTip(
             "Reduce the travel time by optimizing the order of the elements"
         )
-        self.check_reduce_travel_time.Enable(False)
+        # self.check_reduce_travel_time.Enable(False)
         self.check_cut_inner_first.SetToolTip(
             "Reorder elements to cut the inner elements first"
         )
@@ -531,7 +531,7 @@ class JobPreview(MWindow):
             self.context("plan%s blob\n" % self.plan_name)
             # elif self.stage == 4:
             self.context("plan%s preopt\n" % self.plan_name)
-            # elif self.stage == 5:
+        elif self.stage == 5:
             self.context("plan%s optimize\n" % self.plan_name)
         elif self.stage == 6:
             self.context("plan%s spool\n" % self.plan_name)
