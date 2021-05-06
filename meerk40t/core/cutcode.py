@@ -2,7 +2,7 @@ from copy import copy
 
 from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 from ..svgelements import Color, Path, Point
-from .rasterplotter import (
+from meerk40t.tools.rasterplotter import (
     BOTTOM,
     LEFT,
     RIGHT,
