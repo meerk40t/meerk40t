@@ -3949,7 +3949,10 @@ class Elemental(Modifier):
                     elif isinstance(element, SVGImage):
                         op.add(element, type="opnode")
                         was_classified = True
-                    elif element.fill is not None and element.fill.value is not None:
+                    elif isinstance(element, SVGText):
+                        op.add(element)
+                        was_classified = True
+                    elif element.fill is not None and element.fill.argb is not None:
                         op.add(element, type="opnode")
                         was_classified = True
                 elif (
@@ -3963,9 +3966,6 @@ class Elemental(Modifier):
                     op.add(element, type="opnode")
                     was_classified = True
                     image_added = True
-                elif isinstance(element, SVGText):
-                    op.add(element)
-                    was_classified = True
             if not was_classified:
                 if element.stroke is not None and element.stroke.value is not None:
                     op = LaserOperation(
