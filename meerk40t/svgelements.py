@@ -6919,6 +6919,7 @@ class _Polyshape(Shape):
     def is_degenerate(self):
         return len(self.points) == 0
 
+
 class Polyline(_Polyshape):
     """
     SVG Polyline shapes are defined in SVG2 10.6
@@ -7430,6 +7431,7 @@ class SVGText(SVGElement, GraphicObject, Transformable):
         return "Text(%s)" % (", ".join(parts))
 
     def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
         Transformable.property_by_object(self, s)
         GraphicObject.property_by_object(self, s)
         self.text = s.text
