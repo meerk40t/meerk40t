@@ -186,13 +186,13 @@ class CutObject:
         self.settings = settings
         self._start = start
         self._end = end
-        self.reversed = False
+        self.normal = True # Normal or Reversed.
 
     def start(self):
-        return self._start if not self.reversed else self._end
+        return self._start if self.normal else self._end
 
     def end(self):
-        return self._end if not self.reversed else self._start
+        return self._end if self.normal else self._start
 
     def major_axis(self):
         start = self.start()
@@ -219,7 +219,7 @@ class CutObject:
             return -1
 
     def reverse(self):
-        self.reversed = not self.reversed
+        self.normal = not self.normal
 
     def generator(self):
         raise NotImplementedError
@@ -269,10 +269,10 @@ class CubicCut(CutObject):
         self._control2 = control2
 
     def c1(self):
-        return self._control1 if not self.reversed else self._control2
+        return self._control1 if self.normal else self._control2
 
     def c2(self):
-        return self._control2 if not self.reversed else self._control1
+        return self._control2 if self.normal else self._control1
 
     def generator(self):
         start = self.start()
