@@ -1443,6 +1443,7 @@ class MeerK40t(MWindow, Job):
 
     def on_active_change(self, old_active, context_active):
         if old_active is not None:
+            old_active.unlisten("device;noactive", self.on_device_noactive)
             old_active.unlisten("pipe;error", self.on_usb_error)
             old_active.unlisten("pipe;usb_status", self.on_usb_state_text)
             old_active.unlisten("pipe;thread", self.on_pipe_state)
@@ -1451,6 +1452,7 @@ class MeerK40t(MWindow, Job):
             old_active.unlisten("interpreter;mode", self.on_interpreter_mode)
             old_active.unlisten("bed_size", self.bed_changed)
         if context_active is not None:
+            context_active.listen("device;noactive", self.on_device_noactive)
             context_active.listen("pipe;error", self.on_usb_error)
             context_active.listen("pipe;usb_status", self.on_usb_state_text)
             context_active.listen("pipe;thread", self.on_pipe_state)
@@ -1556,6 +1558,16 @@ class MeerK40t(MWindow, Job):
         :return:
         """
         self.request_refresh()
+
+    def on_device_noactive(self, value):
+        dlg = wx.MessageDialog(
+            None,
+            _("No active device existed. Add a primary device."),
+            _("Active Device"),
+            wx.OK | wx.ICON_WARNING,
+        )
+        dlg.ShowModal()
+        dlg.Destroy()
 
     def on_usb_error(self, value):
         dlg = wx.MessageDialog(
