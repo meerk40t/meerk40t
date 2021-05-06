@@ -272,7 +272,7 @@ class CubicCut(CutObject):
         return self._control1 if not self.reversed else self._control2
 
     def c2(self):
-        return self._control1 if not self.reversed else self._control2
+        return self._control2 if not self.reversed else self._control1
 
     def generator(self):
         start = self.start()
