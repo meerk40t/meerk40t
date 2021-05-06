@@ -185,12 +185,13 @@ class CutObject:
         self.settings = settings
         self._start = start
         self._end = end
+        self.reversed = False
 
     def start(self):
-        return self._start
+        return self._start if not self.reversed else self._end
 
     def end(self):
-        return self._end
+        return self._end if not self.reversed else self._start
 
     def major_axis(self):
         start = self.start()
@@ -217,7 +218,7 @@ class CutObject:
             return -1
 
     def reverse(self):
-        self._start, self._end = self._end, self._start
+        self.reversed = not self.reversed
 
     def generator(self):
         raise NotImplementedError
@@ -229,8 +230,10 @@ class LineCut(CutObject):
         settings.raster_step = 0
 
     def generator(self):
+        start = self.start()
+        end = self.end()
         return ZinglPlotter.plot_line(
-            self._start[0], self._start[1], self._end[0], self._end[1]
+            start[0], start[1], end[0], end[1]
         )
 
 
@@ -238,16 +241,22 @@ class QuadCut(CutObject):
     def __init__(self, start_point, control_point, end_point, settings=None):
         CutObject.__init__(self, start_point, end_point, settings=settings)
         settings.raster_step = 0
-        self.control = control_point
+        self._control = control_point
+
+    def c(self):
+        return self._control
 
     def generator(self):
+        start = self.start()
+        c = self.c()
+        end = self.end()
         return ZinglPlotter.plot_quad_bezier(
-            self._start[0],
-            self._start[1],
-            self.control[0],
-            self.control[1],
-            self._end[0],
-            self._end[1],
+            start[0],
+            start[1],
+            c[0],
+            c[1],
+            end[0],
+            end[1],
         )
 
 
@@ -255,23 +264,29 @@ class CubicCut(CutObject):
     def __init__(self, start_point, control1, control2, end_point, settings=None):
         CutObject.__init__(self, start_point, end_point, settings=settings)
         settings.raster_step = 0
-        self.control1 = control1
-        self.control2 = control2
+        self._control1 = control1
+        self._control2 = control2
 
-    def reverse(self):
-        self.control1, self.control2 = self.control2, self.control1
-        CutObject.reverse(self)
+    def c1(self):
+        return self._control1 if not self.reversed else self._control2
+
+    def c2(self):
+        return self._control1 if not self.reversed else self._control2
 
     def generator(self):
+        start = self.start()
+        c1 = self.c1()
+        c2 = self.c2()
+        end = self.end()
         return ZinglPlotter.plot_cubic_bezier(
-            self._start[0],
-            self._start[1],
-            self.control1[0],
-            self.control1[1],
-            self.control2[0],
-            self.control2[1],
-            self._end[0],
-            self._end[1],
+            start[0],
+            start[1],
+            c1[0],
+            c1[1],
+            c2[0],
+            c2[1],
+            end[0],
+            end[1],
         )
 
 

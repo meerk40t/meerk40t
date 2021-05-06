@@ -354,10 +354,9 @@ class Planner(Modifier):
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
             plan, original, commands = data
 
-            blob = CutCode()
-            first_index = None
             for i, c in enumerate(plan):
-                # try:
+                first_index = None
+                blob = CutCode()
                 try:
                     c.settings.jog_distance = self.context.opt_jog_minimum
                     c.settings.jog_enable = self.context.opt_rapid_between
@@ -369,8 +368,8 @@ class Planner(Modifier):
                     plan[i] = None
                 except AttributeError:
                     pass
-            if first_index is not None:
-                plan.insert(first_index, blob)
+                if first_index is not None:
+                    plan.insert(first_index, blob)
             for i in range(len(plan) - 1, -1, -1):
                 c = plan[i]
                 if c is None:
