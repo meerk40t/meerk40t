@@ -3017,6 +3017,14 @@ class Elemental(Modifier):
             self.context("plan0 copy-selected\n")
             self.context("window -p / open JobPreview 0\n")
 
+        @self.tree_operation(
+            _("Enable/Disable Ops"), node_type="op", help=""
+        )
+        def toggle_n_operations(node, **kwargs):
+            for n in self.ops(emphasized=True):
+                n.output = not n.output
+                n.notify_update()
+
         @self.tree_operation(_("Clear All"), node_type="branch ops", help="")
         def clear_all(node, **kwargs):
             self.context("operation* delete\n")
@@ -3506,15 +3514,6 @@ class Elemental(Modifier):
         @self.tree_operation(_("Reference"), node_type="opnode", help="")
         def reference_opnode(node, **kwargs):
             pass
-
-
-        @self.tree_operation(
-            _("Enable/Disable Ops"), node_type="op", help=""
-        )
-        def toggle_n_operations(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.output = not n.output
-                n.notify_update()
 
         self.listen(self)
 
