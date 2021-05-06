@@ -1793,11 +1793,22 @@ class MeerK40t(MWindow, Job):
         self.context.setting(float, "svg_ppi", 96.0)
         with wx.BusyInfo(_("Loading File...")):
             n = self.context.elements.note
-            results = self.context.load(
-                pathname,
-                channel=self.context.channel("load"),
-                svg_ppi=self.context.svg_ppi,
-            )
+            try:
+                results = self.context.load(
+                    pathname,
+                    channel=self.context.channel("load"),
+                    svg_ppi=self.context.svg_ppi,
+                )
+            except SyntaxError as e:
+                dlg = wx.MessageDialog(
+                    None,
+                    str(e.msg),
+                    _("File is Malformed."),
+                    wx.OK | wx.ICON_WARNING,
+                )
+                dlg.ShowModal()
+                dlg.Destroy()
+                return False
             if results:
                 self.save_recent(pathname)
                 if n != self.context.elements.note and self.context.auto_note:
