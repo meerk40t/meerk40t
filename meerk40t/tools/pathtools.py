@@ -1,66 +1,9 @@
 from math import isnan, isinf
 
-from meerk40t.svgelements import Path, Polyline, Matrix, Point, Angle, Length, Shape
-
-
-def plugin(kernel, lifecycle):
-    if lifecycle == "register":
-        context = kernel.get_context("/")
-
-        @context.console_option(
-            "angle", "a", type=Angle.parse, default=0, help="Angle of the fill"
-        )
-        @context.console_option(
-            "distance", "d", type=Length, default=16, help="Length between rungs"
-        )
-        @context.console_command("embroider", help="embroider <angle> <distance>")
-        def embroider(
-            command, channel, _, angle=None, distance=None, args=tuple(), **kwargs
-        ):
-            bed_dim = context.get_context("/")
-            elements = context.elements
-            channel(_("Embroidery Filling"))
-            if distance is not None:
-                distance = distance.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
-                )
-            else:
-                distance = 16
-
-            efill = EulerianFill(distance)
-            for element in elements.elems(emphasized=True):
-                if not isinstance(element, Shape):
-                    continue
-                e = Path(element)
-                if angle is not None:
-                    e *= Matrix.rotate(angle)
-                pts = [abs(e).point(i / 100.0, error=1e-4) for i in range(101)]
-                efill += pts
-
-            points = efill.get_fill()
-
-            for s in split(points):
-                result = Path(Polyline(s, stroke="black"))
-                if angle is not None:
-                    result *= Matrix.rotate(-angle)
-                elements.add_elem(result)
-
-
-def split(points):
-    pos = 0
-    for i, pts in enumerate(points):
-        if pts is None:
-            yield points[pos : i - 1]
-            pos = i + 1
-    if pos != len(points):
-        yield points[pos : len(points)]
+from meerk40t.svgelements import Point
 
 
 class GraphNode(Point):
-    """
-    GraphNodes are nodes within the graph that store a list of connections between points.
-    """
-
     def __init__(self, x, y=None):
         Point.__init__(self, x, y)
         self.connections = []
@@ -68,12 +11,6 @@ class GraphNode(Point):
 
 
 class Segment:
-    """
-    Graphing segments are connections between nodes on the graph that store, their start and end nodes, active state
-    for use within the monotonic vector filling. The type of segment it is. The index of the segment around the closed
-    shape. A list of bisectors (to calculate the rung attachments).
-    """
-
     def __init__(self, a, b, index=0):
         self.visited = 0
         self.a = a
@@ -87,14 +24,6 @@ class Segment:
     def __len__(self):
         # [False, i, p0, p1, high, low, m, b, path]
         return 9
-
-    def __str__(self):
-        return "Segment(%s,%s,%s,type='%s')" % (
-            str(self.a),
-            str(self.b),
-            str(self.index),
-            self.value,
-        )
 
     def __getitem__(self, item):
         if item == 0:
@@ -166,11 +95,15 @@ class Segment:
 
 class Graph:
     """
-    A graph is a set of nodes and their connections. The nodes are points within 2d space and any number of segments
-    can connect any number of points. There is no order established by the graph. And for our uses here all graphs will
-    end up not only being Eulerian but Euloopian. All nodes should have even numbers of connecting segments so that any
-    walk will always return back to the end location.
+    If the graph is fully Eulerian then there should be an even number of input nodes.
 
+    These nodes are treated such that even nodes are input and odd nodes are output nodes.
+
+    If partially Eulerian and odd, then the final node is the start or end node.
+
+    If setup as a circuit then each node should link input to output effectively.
+
+    If a graph is outline, it will be in order, from a to b for each edge, and looped.
     """
 
     def __init__(self):
@@ -178,9 +111,6 @@ class Graph:
         self.links = []
 
     def add_shape(self, series, close=True):
-        """
-        Adds a closed shape point series to the graph in a single connected vertex path.
-        """
         first_node = None
         last_node = None
         for i in range(len(series)):
@@ -200,15 +130,6 @@ class Graph:
 
     @staticmethod
     def monotone_fill(graph, outlines, min, max, distance):
-        """
-        Find all line segments that intersect with the graph segments in the shape outlines. Add the links from right to
-        left side of the intersected paths. Add the bisectors to the segments that are bisected.
-
-        Sort all the bisectors and create a graph of monotone rungs and the edges that connect those rungs. Use this
-        graph rather than original outline graph used to find the intersections.
-
-        Adds into graph, a graph of all monotone rungs, and the path of edge nodes that connected those intersections.
-        """
         crawler = VectorMontonizer(low_value=min, high_value=max, start=min)
         for outline in outlines:
             crawler.add_segments(outline.links)
@@ -217,6 +138,7 @@ class Graph:
             crawler.next_intercept(distance)
             crawler.sort_actives()
             y = crawler.current
+
             for i in range(1, len(crawler.actives), 2):
                 left_segment = crawler.actives[i - 1]
                 right_segment = crawler.actives[i]
@@ -232,8 +154,8 @@ class Graph:
             itr += 1
         for outline in outlines:
             itr = 0
+            current = None
             previous = None
-            first = None
             for i in range(len(outline.links)):
                 s = outline.links[i]
                 if len(s.bisectors) == 0:
@@ -246,42 +168,30 @@ class Graph:
                         segment.index = itr
                         itr += 1
                     else:
-                        first = bi
+                        current = bi
                     previous = bi
                 s.bisectors.clear()
-            if previous is not None and first is not None:
-                segment = graph.link(previous, first)
+            if current is not None and previous is not None:
+                segment = graph.link(previous, current)
                 segment.value = "EDGE"
                 segment.index = itr
 
     def new_node(self, point):
-        """
-        Create and add a new node to the graph at the given point.
-        """
         g = GraphNode(point)
         self.nodes.append(g)
         return g
 
     def new_edge(self, a, b):
-        """
-        Create an edge connection between a and b.
-        """
         s = Segment(a, b)
         self.links.append(s)
         return s
 
     def detach(self, segment):
-        """
-        Remove the segment and links from the graph.
-        """
         self.links.remove(segment)
         segment.a.connections.remove(segment)
         segment.b.connections.remove(segment)
 
     def link(self, a, b):
-        """
-        Creates a new edge linking the points a and be and adds the newly created link to the graph.
-        """
         segment = self.new_edge(a, b)
         segment.a.connections.append(segment)
         segment.b.connections.append(segment)
@@ -290,8 +200,6 @@ class Graph:
     def double(self):
         """
         Makes any graph Eulerian. Any graph that is doubled is by definition Eulerian.
-
-        This is not used by the algorithm.
         :return:
         """
         for i in range(len(self.links)):
@@ -305,10 +213,7 @@ class Graph:
 
     def double_odd_edge(self):
         """
-        Makes any outline path a Eularian path, by doubling every other edge. As each node connects with 1 rung, and
-        two edges this will double 1 of those edges in every instance, giving a total of 4 connections. This is makes
-        the graph Eulerian.
-
+        Makes any outline path a Eularian path.
         :return:
         """
         for i in range(len(self.links)):
@@ -319,13 +224,6 @@ class Graph:
                 second_copy.index = None
 
     def walk(self, points):
-        """
-        We have a Eulerian graph we must walk through the graph in any direction. This results in a point series that
-        will cross every segment once.
-
-        Some segments are marked scaffolding or classes of edge that are not necessary. These are removed for parsimony.
-
-        """
         if len(self.nodes) == 0:
             return
         walker = GraphWalker(self)
@@ -355,7 +253,7 @@ class GraphWalker:
     """
     Graph Walker takes a graph object and finds walks within it.
 
-    If the graph is discontinuous it will find no segment between these elements and add a None segment between them.
+    If the graph is discontinuous it will find no segment between these elements and add a blank segment between them.
     """
 
     def __init__(self, graph):
@@ -365,9 +263,6 @@ class GraphWalker:
         self.flip_end = None
 
     def other_node_for_segment(self, current_node, next_segment):
-        """
-        Segments have two nodes, this finds the other side of the given segment.
-        """
         if current_node is next_segment.a:
             return next_segment.b
         else:
@@ -380,10 +275,6 @@ class GraphWalker:
             e.visited = 0
 
     def make_walk(self):
-        """
-        Create the walk out of the current graph. Picks any start point and begins. Note if there
-        are odd node elements anywhere
-        """
         itr = 0
         for g in self.graph.nodes:
             if not g.visited:
@@ -403,6 +294,7 @@ class GraphWalker:
         """
         start = len(self.walk)
         self.walk.append(g)
+        g.visited += 1
         self.add_loop(start, g)
 
         i = start
@@ -412,12 +304,12 @@ class GraphWalker:
             if unused is None:
                 i += 2
                 continue
-            self.add_loop(i, node)
-            # i += 2
+            i += self.add_loop(i, node)
+            i += 2
 
     def add_loop(self, index, node):
         """
-        Adds a loop from the current graph node, without revisiting any nodes.
+        Adds a loop from the current graphnode, without revisiting any nodes.
         Returns the altered index caused by adding that loop.
 
         Travels along unused connections until no more travel is possible. If properly Eulerian,
@@ -430,13 +322,13 @@ class GraphWalker:
         index += 1
         i = index
         while True:
-            node.visited += 1
             unused = self.find_unused_connection(node)
             if unused is None:
                 break
             segment = node.connections[unused]
             self.walk.insert(i, segment)
             i += 1
+            node.visited += 1
             segment.visited += 1
             node = self.other_node_for_segment(node, segment)
             self.walk.insert(i, node)
@@ -463,12 +355,14 @@ class GraphWalker:
         """
         Adds nodes within the walk to the points given to it.
 
+        If there is an unconnected section, it will simply create a link across where no link exists.
         :param points:
         :return:
         """
         for i in range(0, len(self.walk), 2):
-            if self.walk[i - 1] is None:
-                points.append(None)
+            if i + 1 != len(self.walk):
+                if self.walk[i + 1] is None:
+                    points.append(None)
             points.append(self.walk[i])
 
     def remove_loop(self, from_pos, to_pos):
@@ -586,9 +480,6 @@ class GraphWalker:
             index -= 2
 
     def two_opt(self):
-        """
-        Unused
-        """
         v = self.get_value()
         while True:
             new_value = self.two_opt_cycle(v)
@@ -596,9 +487,6 @@ class GraphWalker:
                 break
 
     def two_opt_cycle(self, value):
-        """
-        Unused
-        """
         if len(self.walk) == 0:
             return 0
         swap_start = 0
@@ -629,9 +517,6 @@ class GraphWalker:
         return value
 
     def get_segment(self, index):
-        """
-        Unused
-        """
         if (
             self.flip_start is not None
             and self.flip_end is not None
@@ -641,9 +526,6 @@ class GraphWalker:
         return self.walk[index]
 
     def get_node(self, index):
-        """
-        Unused
-        """
         if (
             self.flip_start is not None
             and self.flip_end is not None
@@ -706,14 +588,6 @@ class GraphWalker:
 
 
 class VectorMontonizer:
-    """
-    Sorts all segments according to their highest y values. Steps through the values in order
-    each step activates and deactivates the segments that are encountered such that it always has a list
-    of active segments. Sorting the active segments according to their x-intercepts gives a list of all
-    points that a ray would strike passing through that shape. Every other such area is filled. These are
-    given rungs, and connected to intercept points.
-    """
-
     def __init__(
         self, low_value=-float("inf"), high_value=float("inf"), start=-float("inf")
     ):
@@ -882,36 +756,3 @@ class VectorMontonizer:
                 self.actives.append(c)
 
         self.current = scan
-
-
-class EulerianFill:
-    """Eulerian fill given some outline shapes, creates a fill."""
-
-    def __init__(self, distance):
-        self.distance = distance
-        self.outlines = []
-
-    def __iadd__(self, other):
-        self.outlines.append(other)
-        return self
-
-    def get_fill(self):
-        min_y = float("inf")
-        max_y = -float("inf")
-        outline_graphs = list()
-        for outline in self.outlines:
-            outline_graph = Graph()
-            outline_graph.add_shape(outline, True)
-            o_min_y = min([p[1] for p in outline])
-            o_max_y = max([p[1] for p in outline])
-            min_y = min(min_y, o_min_y)
-            max_y = max(max_y, o_max_y)
-            outline_graphs.append(outline_graph)
-        graph = Graph()
-        Graph.monotone_fill(graph, outline_graphs, min_y, max_y, self.distance)
-        graph.double_odd_edge()
-        walk = list()
-        graph.walk(walk)
-        return walk
-
-
