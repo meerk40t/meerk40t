@@ -264,7 +264,6 @@ class JobPreview(MWindow):
         self.check_reduce_travel_time.SetToolTip(
             "Reduce the travel time by optimizing the order of the elements"
         )
-        # self.check_reduce_travel_time.Enable(False)
         self.check_cut_inner_first.SetToolTip(
             "Reorder elements to cut the inner elements first"
         )

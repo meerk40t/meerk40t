@@ -6,7 +6,23 @@ class Optimizer:
         self.cutcode = cutcode
 
     def optimize(self):
+        old_len = self.length_travel()
         self.optimize_travel()
+        new_len = self.length_travel()
+        red = new_len-old_len
+        try:
+            print("%f -> %f reduced %f (%f%%)" % (old_len, new_len, red, 100 * (red/old_len)))
+        except ZeroDivisionError:
+            pass
+
+    def length_travel(self):
+        subpaths = self.cutcode
+        distance = 0.0
+        for i in range(1, len(subpaths)):
+            prev = subpaths[i-1]
+            curr = subpaths[i]
+            distance += Point.distance(prev.end(), curr.start())
+        return distance
 
     def delta_distance(self, j, k):
         subpaths = self.cutcode
