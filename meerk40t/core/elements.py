@@ -3007,6 +3007,64 @@ class Elemental(Modifier):
                 group_node.append_child(node)
 
         @self.tree_operation(
+            _("Enable/Disable Ops"), node_type="op", help=""
+        )
+        def toggle_n_operations(node, **kwargs):
+            for n in self.ops(emphasized=True):
+                n.output = not n.output
+                n.notify_update()
+
+        @self.tree_submenu(_("Convert Operation"))
+        @self.tree_operation(_("Convert Raster"), node_type="op", help="")
+        def convert_operation_raster(node, **kwargs):
+            node.operation = "Raster"
+
+        @self.tree_submenu(_("Convert Operation"))
+        @self.tree_operation(_("Convert Engrave"), node_type="op", help="")
+        def convert_operation_engrave(node, **kwargs):
+            node.operation = "Engrave"
+
+        @self.tree_submenu(_("Convert Operation"))
+        @self.tree_operation(_("Convert Cut"), node_type="op", help="")
+        def convert_operation_cut(node, **kwargs):
+            node.operation = "Cut"
+
+        @self.tree_submenu(_("Convert Operation"))
+        @self.tree_operation(_("Convert Image"), node_type="op", help="")
+        def convert_operation_image(node, **kwargs):
+            node.operation = "Image"
+
+        def radio_match(node, i=1, **kwargs):
+            return node.settings.raster_step == i
+
+        @self.tree_conditional(lambda node: node.operation == "Raster")
+        @self.tree_submenu(_("Step"))
+        @self.tree_radio(radio_match)
+        @self.tree_iterate("i", 1, 10)
+        @self.tree_operation(
+            _("Step {i}"),
+            node_type="op",
+            help="Change raster step values of operation",
+        )
+        def set_step_n(node, i=1, **kwargs):
+            settings = node.settings
+            settings.raster_step = i
+            self.context.signal("element_property_update", node)
+
+        def radio_match(node, passvalue=1, **kwargs):
+            return node.settings.passes == passvalue
+
+        @self.tree_submenu(_("Set Operation Passes"))
+        @self.tree_radio(radio_match)
+        @self.tree_iterate("passvalue", 1, 10)
+        @self.tree_operation(_("Passes={passvalue}"), node_type="op", help="")
+        def set_n_passes(node, passvalue=1, **kwargs):
+            node.settings.passes = passvalue
+            node.settings.passes_custom = passvalue != 1
+            self.context.signal("element_property_update", node)
+
+        @self.tree_separator_after()
+        @self.tree_operation(
             _("Execute Job"),
             node_type="op",
             help="Execute Job for the particular element.",
@@ -3016,14 +3074,6 @@ class Elemental(Modifier):
             node.emphasized = True
             self.context("plan0 copy-selected\n")
             self.context("window -p / open JobPreview 0\n")
-
-        @self.tree_operation(
-            _("Enable/Disable Ops"), node_type="op", help=""
-        )
-        def toggle_n_operations(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.output = not n.output
-                n.notify_update()
 
         @self.tree_operation(_("Clear All"), node_type="branch ops", help="")
         def clear_all(node, **kwargs):
@@ -3140,26 +3190,6 @@ class Elemental(Modifier):
             elements.classify(list(elements.elems()))
             self.context.signal("rebuild_tree", 0)
 
-        @self.tree_submenu(_("Convert Operation"))
-        @self.tree_operation(_("Convert Raster"), node_type="op", help="")
-        def convert_operation_raster(node, **kwargs):
-            node.operation = "Raster"
-
-        @self.tree_submenu(_("Convert Operation"))
-        @self.tree_operation(_("Convert Engrave"), node_type="op", help="")
-        def convert_operation_engrave(node, **kwargs):
-            node.operation = "Engrave"
-
-        @self.tree_submenu(_("Convert Operation"))
-        @self.tree_operation(_("Convert Cut"), node_type="op", help="")
-        def convert_operation_cut(node, **kwargs):
-            node.operation = "Cut"
-
-        @self.tree_submenu(_("Convert Operation"))
-        @self.tree_operation(_("Convert Image"), node_type="op", help="")
-        def convert_operation_image(node, **kwargs):
-            node.operation = "Image"
-
         @self.tree_operation(
             _("Duplicate Operation"),
             node_type="op",
@@ -3210,35 +3240,6 @@ class Elemental(Modifier):
             add_elements *= copies
             node.add_all(add_elements, type="opnode")
             self.context.signal("rebuild_tree", 0)
-
-        def radio_match(node, passvalue=1, **kwargs):
-            return node.settings.passes == passvalue
-
-        @self.tree_submenu(_("Set Operation Passes"))
-        @self.tree_radio(radio_match)
-        @self.tree_iterate("passvalue", 1, 10)
-        @self.tree_operation(_("Passes={passvalue}"), node_type="op", help="")
-        def set_n_passes(node, passvalue=1, **kwargs):
-            node.settings.passes = passvalue
-            node.settings.passes_custom = passvalue != 1
-            self.context.signal("element_property_update", node)
-
-        def radio_match(node, i=1, **kwargs):
-            return node.settings.raster_step == i
-
-        @self.tree_conditional(lambda node: node.operation == "Raster")
-        @self.tree_submenu(_("Step"))
-        @self.tree_radio(radio_match)
-        @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(
-            _("Step {i}"),
-            node_type="op",
-            help="Change raster step values of operation",
-        )
-        def set_step_n(node, i=1, **kwargs):
-            settings = node.settings
-            settings.raster_step = i
-            self.context.signal("element_property_update", node)
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_operation(
