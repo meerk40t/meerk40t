@@ -119,6 +119,7 @@ class CutCode(list):
         list.__init__(self)
         self.output = True
         self.operation = "CutCode"
+        self.start = None
 
     def __str__(self):
         parts = list()

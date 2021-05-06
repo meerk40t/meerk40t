@@ -3507,6 +3507,15 @@ class Elemental(Modifier):
         def reference_opnode(node, **kwargs):
             pass
 
+
+        @self.tree_operation(
+            _("Enable/Disable Operations"), node_type="op", help=""
+        )
+        def toggle_n_operations(node, **kwargs):
+            for n in self.ops(emphasized=True):
+                n.output = not n.output
+                n.notify_update()
+
         self.listen(self)
 
     def detach(self, *a, **kwargs):

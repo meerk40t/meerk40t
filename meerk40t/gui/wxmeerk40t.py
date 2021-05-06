@@ -2753,6 +2753,7 @@ class ShadowTree:
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.set_icon(node)
+        self.on_element_update(node)
 
     def on_element_update(self, *args):
         element = args[0]
