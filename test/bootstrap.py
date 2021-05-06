@@ -40,9 +40,9 @@ def bootstrap():
         pass
 
     try:
-        from meerk40t.core import cutplanner
+        from meerk40t.core import planner
 
-        kernel.add_plugin(cutplanner.plugin)
+        kernel.add_plugin(planner.plugin)
     except ImportError:
         pass
 

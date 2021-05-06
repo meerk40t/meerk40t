@@ -152,9 +152,9 @@ def run():
         pass
 
     try:
-        from .core import cutplanner
+        from .core import planner
 
-        kernel.add_plugin(cutplanner.plugin)
+        kernel.add_plugin(planner.plugin)
     except ImportError:
         pass
 
