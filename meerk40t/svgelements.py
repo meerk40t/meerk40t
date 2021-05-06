@@ -43,7 +43,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.5.1"
+SVGELEMENTS_VERSION = "1.5.2"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -7200,9 +7200,11 @@ class Group(SVGElement, Transformable, list):
 
     def property_by_object(self, s):
         Transformable.property_by_object(self, s)
+        SVGElement.property_by_object(self, s)
 
     def property_by_values(self, values):
         Transformable.property_by_values(self, values)
+        SVGElement.property_by_values(self, values)
 
     def select(self, conditional=None):
         """
@@ -7431,9 +7433,9 @@ class SVGText(SVGElement, GraphicObject, Transformable):
         return "Text(%s)" % (", ".join(parts))
 
     def property_by_object(self, s):
-        SVGElement.property_by_object(self, s)
         Transformable.property_by_object(self, s)
         GraphicObject.property_by_object(self, s)
+        SVGElement.property_by_object(self, s)
         self.text = s.text
         self.x = s.x
         self.y = s.y
