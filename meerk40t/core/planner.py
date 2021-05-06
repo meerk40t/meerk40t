@@ -330,7 +330,7 @@ class Planner(Modifier):
                 self.conditional_jobadd_scale_rotary()
             self.conditional_jobadd_actualize_image()
             self.conditional_jobadd_make_raster()
-            self.context.signal("plan", plan, 2)
+            self.context.signal("plan", self._default_plan, 2)
             return data_type, data
 
         @self.context.console_command(
