@@ -1,4 +1,5 @@
 from meerk40t.svgelements import Point, Group, Polygon
+from meerk40t.tools.pathtools import VectorMontonizer
 
 
 class Optimizer:
