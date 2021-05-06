@@ -3985,6 +3985,8 @@ class Elemental(Modifier):
                         results = loader.load(self.context, self, pathname, **kwargs)
                     except FileNotFoundError:
                         return False
+                    except OSError:
+                        return False
                     if not results:
                         continue
                     return True

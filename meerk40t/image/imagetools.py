@@ -1524,6 +1524,7 @@ class ImageLoader:
         image.load()
         if image.image is None:
             return False
+        image.image.copy()  # Throws error for .eps without ghostscript
         try:
             context.setting(bool, "image_dpi", True)
             if context.image_dpi:
