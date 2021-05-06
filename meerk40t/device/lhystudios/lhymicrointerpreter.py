@@ -1,5 +1,5 @@
 from ...core.plotplanner import PlotPlanner
-from ...core.zinglplotter import ZinglPlotter
+from meerk40t.tools.zinglplotter import ZinglPlotter
 from ...kernel import Modifier
 from ..basedevice import (
     INTERPRETER_STATE_FINISH,

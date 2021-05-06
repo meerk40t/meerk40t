@@ -12,7 +12,7 @@ from .rasterplotter import (
     Y_AXIS,
     RasterPlotter,
 )
-from .zinglplotter import ZinglPlotter
+from meerk40t.tools.zinglplotter import ZinglPlotter
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be

@@ -6,7 +6,7 @@ from ..device.basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
 )
-from .zinglplotter import ZinglPlotter
+from meerk40t.tools.zinglplotter import ZinglPlotter
 
 """
 
