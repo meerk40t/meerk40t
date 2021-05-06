@@ -617,7 +617,6 @@ class SelectionWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.elements
-        print(event_type)
         if event_type == "hover_start":
             self.cursor = wx.CURSOR_SIZING
             self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
