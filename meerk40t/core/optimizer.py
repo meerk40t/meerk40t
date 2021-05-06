@@ -19,7 +19,7 @@ class Optimizer:
     def optimize_travel(self):
         cutcode = self.cutcode
         improved = True
-        passes = 25
+        passes = 5
         while improved:
             passes -= 1
             improved = False
@@ -31,6 +31,7 @@ class Optimizer:
                         improved = True
             if passes <= 0:
                 break
+            print(passes)
 
     def optimize_cut_inside(self):
         subpaths = self.cutcode

@@ -3509,7 +3509,7 @@ class Elemental(Modifier):
 
 
         @self.tree_operation(
-            _("Enable/Disable Operations"), node_type="op", help=""
+            _("Enable/Disable Ops"), node_type="op", help=""
         )
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):

@@ -354,8 +354,8 @@ class Planner(Modifier):
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
             plan, original, commands = data
 
-            first_index = None
             for i, c in enumerate(plan):
+                first_index = None
                 blob = CutCode()
                 try:
                     c.settings.jog_distance = self.context.opt_jog_minimum
@@ -372,7 +372,7 @@ class Planner(Modifier):
                     plan.insert(first_index, blob)
             for i in range(len(plan) - 1, -1, -1):
                 c = plan[i]
-                if c is None or len(c):
+                if c is None:
                     del plan[i]
             self.context.signal("plan", self._default_plan, 4)
             return data_type, data
