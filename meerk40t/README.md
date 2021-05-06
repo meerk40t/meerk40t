@@ -14,6 +14,16 @@ Core modules are largely tools and classes that define Meerk40t specific ecosyst
 
 Device modules are specific to laser cutting and the lower level interactions with laser cutter drivers.
 
+
+# DXF
+
+DXF modules deal with Digital Exchange Format files.
+
+
+# Extra
+
+Extra modules are less plugin-like functions.
+
 # Gui
 
 The Gui modules all require wxPython and deal with the graphical interactions between the user and the software.
@@ -22,7 +32,7 @@ The Gui modules all require wxPython and deal with the graphical interactions be
 
 Image modules are tools dealing with Pillow (Python Image Library).
 
-# DXF
+# Tools
 
-DXF modules deal with Digital Exchange Format files.
+Tools are simple stand-alone datastructure/algorithms that perform non-kernel operations which may be considerably useful to many different modules, or which simply do not require any ecosystem functionality. 
 
