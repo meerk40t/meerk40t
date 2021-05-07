@@ -5,6 +5,9 @@ from meerk40t.tools.pathtools import VectorMontonizer
 class Optimizer:
     def __init__(self, cutcode):
         self.cutcode = cutcode
+        self.two_opt = True
+        self.two_opt_passes = 3
+        self.travel = True
 
     def optimize(self):
         old_len = self.length_travel()
@@ -16,14 +19,22 @@ class Optimizer:
         except ZeroDivisionError:
             pass
 
+    def delta_distance(self, j, k):
+        cutcode = self.cutcode
+        a1 = cutcode[j].start()
+        a0 = cutcode[j - 1].end()
+        b0 = cutcode[k-1].end()
+        b1 = cutcode[k].start()
+        return Point.distance(a0, b0) + Point.distance(a1, b1) - Point.distance(a0, a1) - Point.distance(b0, b1)
+
     def optimize_travel(self):
         cutcode = self.cutcode
         improved = True
-        passes = 3
+        passes = self.two_opt_passes
         while improved:
             passes -= 1
             improved = False
-            for j in range(len(cutcode)):
+            for j in range(1,len(cutcode)-1):
                 for k in range(j + 1, len(cutcode)):
                     new_cut = self.delta_distance(j, k)
                     if new_cut < 0:
@@ -85,26 +96,6 @@ class Optimizer:
             prev = cutcode[i-1]
             curr = cutcode[i]
             distance += Point.distance(prev.end(), curr.start())
-        return distance
-
-    def delta_distance(self, j, k):
-        cutcode = self.cutcode
-        distance = 0.0
-        k -= 1
-        a1 = cutcode[j].start()
-        b0 = cutcode[k].end()
-        if k < len(cutcode) - 1:
-            b1 = cutcode[k + 1].start()
-            d = Point.distance(b0, b1)
-            distance -= d
-            d = Point.distance(a1, b1)
-            distance += d
-        if j > 0:
-            a0 = cutcode[j - 1].end()
-            d = Point.distance(a0, a1)
-            distance -= d
-            d = Point.distance(a0, b0)
-            distance += d
         return distance
 
     def cross(self, j, k):
