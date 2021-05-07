@@ -620,7 +620,7 @@ class SeekArea(Area):
                         if v & MASK_HEADER == TYPE_POINT:
                             length = self.heapInsert(v, returnVals, length, x, y)
                             lowestInStack = returnVals[0]
-                            if length == returnVals.length:
+                            if length == len(returnVals):
                                 findingDistanceMaxSq = self.distSq(
                                     self.context.getXref(lowestInStack),
                                     self.context.getYref(lowestInStack),
@@ -651,7 +651,7 @@ class SeekArea(Area):
                         if v & MASK_HEADER == TYPE_POINT:
                             length = self.heapInsert(v, returnVals, length, x, y)
                             lowestInStack = returnVals[0]
-                            if length == returnVals.length:
+                            if length == len(returnVals):
                                 findingDistanceMaxSq = self.distSq(
                                     self.context.getXref(lowestInStack),
                                     self.context.getYref(lowestInStack),
@@ -682,7 +682,7 @@ class SeekArea(Area):
                         if v & MASK_HEADER == TYPE_POINT:
                             length = self.heapInsert(v, returnVals, length, x, y)
                             lowestInStack = returnVals[0]
-                            if length == returnVals.length:
+                            if length == len(returnVals):
                                 findingDistanceMaxSq = self.distSq(
                                     self.context.getXref(lowestInStack),
                                     self.context.getYref(lowestInStack),
@@ -713,7 +713,7 @@ class SeekArea(Area):
                         if v & MASK_HEADER == TYPE_POINT:
                             length = self.heapInsert(v, returnVals, length, x, y)
                             lowestInStack = returnVals[0]
-                            if length == returnVals.length:
+                            if length == len(returnVals):
                                 findingDistanceMaxSq = self.distSq(
                                     self.context.getXref(lowestInStack),
                                     self.context.getYref(lowestInStack),
