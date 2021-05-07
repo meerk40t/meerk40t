@@ -1,22 +1,8 @@
 from copy import copy
+from typing import Optional, Any
 
 from meerk40t.svgelements import Point
 
-"""
-
-/**
- * An area context stores datapoints and direct references to a list of Points instances in single integers.
- * The masking is such that it permits 1024 different layers and 256k points within those layers.
- * The encoded data can reference a specific point, segment or area or a combination of those. For segments,
- * these can be furthered qualified as the high end or the low end.
- * 
- * The getXref and getYref takes in a reference integer and provides the data it encodes for.
- *
- * The class ultimately provides a very cheap shorthand for referencing data.
- *
- * Since areas are defined by their AABB rather than specific points with Points objects, they are store separately.
- */
-"""
 
 TYPE_POINT = 0b00000000_00000000_00000000_00000000
 TYPE_SEGMENT = 0b11000000_00000000_00000000_00000000
@@ -414,6 +400,7 @@ class Area:
 
 class SeekArea(Area):
     def __init__(self, context):
+        super().__init__(context)
         self.area = context
         self._seek_x = -float("inf")
         self._seek_y = -float("inf")
@@ -801,6 +788,20 @@ class SeekArea(Area):
 
 
 class AreaContext:
+    """
+     * An area context stores datapoints and direct references to a list of Points instances in single integers.
+     * The masking is such that it permits 1024 different layers and 256k points within those layers.
+     * The encoded data can reference a specific point, segment or area or a combination of those. For segments,
+     * these can be furthered qualified as the high end or the low end.
+     *
+     * The getXref and getYref takes in a reference integer and provides the data it encodes for.
+     *
+     * The class ultimately provides a very cheap shorthand for referencing data.
+     *
+     * Since areas are defined by their AABB rather than specific points with Points objects, they are stored
+     separately.
+    """
+
     def __init__(self):
         self.areas = []
         self.points = []
@@ -808,7 +809,7 @@ class AreaContext:
     def add(self, _list):
         self.points.extend(_list)
 
-    def getPoint(self, ref: int) -> Point:
+    def getPoint(self, ref: int) -> Optional[Any]:
         if ref & MASK_HEADER == TYPE_POINT:
             return self.points[ref >> OFFSET_POINT_LAYER].getPoint(
                 ref & MASK_POINT_INDEX
@@ -816,7 +817,7 @@ class AreaContext:
         else:
             return None
 
-    def getArea(self, ref: int) -> Area:
+    def getArea(self, ref: int) -> Optional[Any]:
         if ref & MASK_HEADER == TYPE_AREA:
             return self.areas[ref & MASK_BODY]
         else:
