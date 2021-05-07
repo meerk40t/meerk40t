@@ -2857,9 +2857,10 @@ class Elemental(Modifier):
                 op.operation = "Raster"
             elif command == "imageop":
                 op.operation = "Image"
-            if data is not None:
-                op.children.extend(data)
             self.add_op(op)
+            if data is not None:
+                for item in data:
+                    op.add(item, type="opnode")
             return "ops", [op]
 
         @context.console_argument("step_size", type=int, help="raster step size")

@@ -1,5 +1,5 @@
 from copy import copy
-from math import ceil, isinf, isnan
+from math import ceil
 
 from .optimizer import Optimizer
 from ..core.cutcode import CutCode
