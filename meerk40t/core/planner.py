@@ -538,28 +538,17 @@ class Planner(Modifier):
         plan, original, commands = self.default_plan()
 
         def strip_text():
-            stripped = False
-            for k, op in enumerate(plan):
+            for k in range(len(plan)-1,-1,-1):
+                op = plan[k]
                 try:
                     if op.operation in ("Cut", "Engrave"):
-                        changed = False
-                        for i, e in enumerate(op.children):
-                            if isinstance(e, SVGText):
-                                op[i] = None
-                                changed = True
-                        if changed:
-                            p = [q for q in op if q is not None]
-                            op.clear()
-                            op.extend(p)
-                            if len(op) == 0:
-                                plan[k] = None
-                                stripped = True
+                        for i, e in enumerate(list(op.children)):
+                            if isinstance(e.object, SVGText):
+                                e.remove_node()
+                        if len(op.children) == 0:
+                            del plan[k]
                 except AttributeError:
                     pass
-            if stripped:
-                p = [q for q in plan if q is not None]
-                plan.clear()
-                plan.extend(p)
 
         commands.append(strip_text)
 
@@ -586,8 +575,8 @@ class Planner(Modifier):
             stripped = False
             for k, op in enumerate(plan):
                 try:
-                    if op.operation in ("Raster"):
-                        if len(op) == 1 and isinstance(op[0], SVGImage):
+                    if op.operation == "Raster":
+                        if len(op.children) == 1 and isinstance(op[0], SVGImage):
                             continue
                         plan[k] = None
                         stripped = True
