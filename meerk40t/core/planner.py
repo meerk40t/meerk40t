@@ -526,7 +526,7 @@ class Planner(Modifier):
             try:
                 if op.operation in ("Cut", "Engrave"):
                     for e in op.children:
-                        if not isinstance(e, SVGText):
+                        if not isinstance(e.object, SVGText):
                             continue  # make raster not needed since its a single real raster.
                         self.jobadd_strip_text()
                         return True
