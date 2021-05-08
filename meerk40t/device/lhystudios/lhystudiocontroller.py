@@ -701,7 +701,11 @@ class LhystudioController(Module):
         self.pre_ok = False
 
     def update_status(self):
-        self._status = self.connection.get_status()
+        try:
+            self._status = self.connection.get_status()
+        except AttributeError:
+            # self.connection was closed by something.
+            raise ConnectionError
         if self.context is not None:
             self.context.signal(
                 "pipe;status", self._status, get_code_string_from_code(self._status[1])
