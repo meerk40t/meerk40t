@@ -90,9 +90,7 @@ parser.add_argument(
 
 
 def run():
-
     argv = sys.argv[1:]
-    # argv = "-P 0".split()
     args = parser.parse_args(argv)
 
     if args.version:
@@ -207,7 +205,6 @@ def run():
     except ImportError:
         pass
 
-
     try:
         from .extra import inkscape
 
@@ -245,15 +242,13 @@ def run():
         # This module cannot be loaded. ezdxf missing.
         pass
 
-    if not args.no_gui:
-        # Must permit this plugin in the gui.
-        # try:
+    try:
         from .gui import wxmeerk40t
 
         kernel.add_plugin(wxmeerk40t.plugin)
-        # except ImportError:
-        #     # This module cannot be loaded. wxPython missing.
-        #     pass
+    except ImportError:
+        # This module cannot be loaded. wxPython missing.
+        args.no_gui = True
 
     if not getattr(sys, "frozen", False):
         """
@@ -267,6 +262,11 @@ def run():
                 kernel.add_plugin(plugin)
             except pkg_resources.DistributionNotFound:
                 pass
+
+    if args.no_gui:
+        kernel.bootstrap("console")
+    else:
+        kernel.bootstrap("gui")
 
     kernel_root = kernel.get_context("/")
     kernel_root.device_version = MEERK40T_VERSION
@@ -348,6 +348,8 @@ def run():
 
         device.spooler.job(origin)
 
+    kernel.bootstrap("ready")
+
     if args.output is not None:
         import os
 
@@ -368,8 +370,6 @@ def run():
                 device(line.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
-    kernel.bootstrap("ready")
-
     if args.console:
 
         def thread_text_console():
@@ -386,5 +386,5 @@ def run():
         if args.no_gui:
             thread_text_console()
         else:
-            kernel.threaded(thread_text_console, thread_name="text_console")
+            kernel.threaded(thread_text_console, thread_name="text_console", daemon=True)
     kernel.bootstrap("mainloop")

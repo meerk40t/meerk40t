@@ -162,18 +162,36 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 MILS_IN_MM = 39.3701
 
+GUI_START = [True]
+
 
 def plugin(kernel, lifecycle):
+    if lifecycle == "console":
+        GUI_START[0] = False
+
+        @kernel.console_command("gui", help="starts the gui")
+        def gui_start(**kwargs):
+            del kernel.registered["command/None/gui"]
+            kernel_root = kernel.get_context("/")
+            meerk40tgui = kernel_root.open("module/wxMeerK40t")
+            kernel.console("window open -p / MeerK40t\n")
+            meerk40tgui.MainLoop()
+
     if lifecycle == "register":
         kernel.register("module/wxMeerK40t", wxMeerK40t)
     if lifecycle == "configure":
         kernel_root = kernel.get_context("/")
         kernel_root.open("module/wxMeerK40t")
-    elif lifecycle == "mainloop":
-        kernel_root = kernel.get_context("/")
-        meerk40tgui = kernel_root.open("module/wxMeerK40t")
-        kernel.console("window open -p / MeerK40t\n")
-        meerk40tgui.MainLoop()
+
+        context = kernel.get_context('/')
+        renderer = LaserRender(context)
+        context.register("render-op/make_raster", renderer.make_raster)
+    if GUI_START[0]:
+        if lifecycle == "mainloop":
+            kernel_root = kernel.get_context("/")
+            meerk40tgui = kernel_root.open("module/wxMeerK40t")
+            kernel.console("window open -p / MeerK40t\n")
+            meerk40tgui.MainLoop()
 
 
 ID_MAIN_TOOLBAR = wx.NewId()
@@ -313,6 +331,7 @@ class MeerK40t(MWindow, Job):
 
         context = self.context
         self.root_context = context.get_context("/")
+        context._kernel.run_later = self.run_later
 
         self.DragAcceptFiles(True)
         self._mgr = aui.AuiManager()
@@ -628,6 +647,8 @@ class MeerK40t(MWindow, Job):
 
         # Registers the render-op make_raster. This is used to do cut planning.
         context.register("render-op/make_raster", self.renderer.make_raster)
+
+        # After main window is launched run_later actually works.
 
     def __set_ribbonbar(self):
         home = RB.RibbonPage(
@@ -1062,6 +1083,12 @@ class MeerK40t(MWindow, Job):
         self.context.setting(int, "units_index", 0)
         self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
+
+    def run_later(self, command, *args):
+        if wx.IsMainThread():
+            command(*args)
+        else:
+            wx.CallAfter(command, *args)
 
     def on_camera_dropdown(self, event):
         menu = wx.Menu()
@@ -3547,12 +3574,6 @@ class wxMeerK40t(wx.App, Module):
             channel(_("Refreshed."))
             return
 
-    def run_later(self, command, *args):
-        if wx.IsMainThread():
-            command(*args)
-        else:
-            wx.CallAfter(command, *args)
-
     def initialize(self, *args, **kwargs):
         context = self.context
         kernel = context._kernel
@@ -3573,7 +3594,6 @@ class wxMeerK40t(wx.App, Module):
             "locale"
         )  # Default Locale, prepended. Check this first.
 
-        kernel.run_later = self.run_later
         kernel.translation = wx.GetTranslation
         kernel.set_config(wx.Config(kernel.profile))
         context.app = self  # Registers self as kernel.app

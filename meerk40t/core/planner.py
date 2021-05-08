@@ -601,6 +601,23 @@ class Planner(Modifier):
                 plan.clear()
                 plan.extend(p)
 
+        def make_image_for_op(op):
+            subitems = list(op.flat(types=("elem", "opnode")))
+            make_raster = self.context.registered.get(
+                "render-op/make_raster"
+            )
+            objs = [s.object for s in subitems]
+            bounds = Group.union_bbox(objs)
+            if bounds is None:
+                return None
+            xmin, ymin, xmax, ymax = bounds
+            image = make_raster(
+                subitems, bounds, step=op.settings.raster_step
+            )
+            image_element = SVGImage(image=image)
+            image_element.transform.post_translate(xmin, ymin)
+            return image_element
+
         def make_image():
             for op in plan:
                 try:
@@ -609,22 +626,14 @@ class Planner(Modifier):
                             op.children[0], SVGImage
                         ):
                             continue
-
-                        subitems = list(op.flat(types=("elem", "opnode")))
-                        make_raster = self.context.registered.get(
-                            "render-op/make_raster"
-                        )
-                        bounds = Group.union_bbox([s.object for s in subitems])
-
-                        if bounds is None:
+                        image_element = make_image_for_op(op)
+                        if image_element is None:
                             continue
-                        xmin, ymin, xmax, ymax = bounds
-
-                        image = make_raster(
-                            subitems, bounds, step=op.settings.raster_step
-                        )
-                        image_element = SVGImage(image=image)
-                        image_element.transform.post_translate(xmin, ymin)
+                        if image_element.image_width == 1 and image_element.image_height == 1:
+                            # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
+                            #  time around because the renderer is what sets the size of the text. If the size hasn't
+                            #  already been set, the initial bounds are wrong.
+                            image_element = make_image_for_op(op)
                         op.children.clear()
                         op.add(image_element, type="opnode")
                 except AttributeError:

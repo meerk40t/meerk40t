@@ -949,9 +949,12 @@ class Kernel:
                 thread.stop()
             except AttributeError:
                 pass
-            channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
-            thread.join()
-            channel(_("Thread %s has finished. %s") % (thread_name, str(thread)))
+            if not thread.daemon:
+                channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
+                thread.join()
+                channel(_("Thread %s has finished. %s") % (thread_name, str(thread)))
+            else:
+                channel(_("Thread %s is daemon. It will die automatically: %s") % (thread_name, str(thread)))
         if thread_count == 0:
             channel(_("No threads required halting."))
 

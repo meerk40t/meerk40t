@@ -22,9 +22,6 @@ from ..svgelements import (
 )
 from .zmatrix import ZMatrix
 
-"""
-Laser Render provides GUI relevant methods of displaying the given project.
-"""
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -58,6 +55,9 @@ def swizzlecolor(c):
 
 
 class LaserRender:
+    """
+    Laser Render provides GUI relevant methods of displaying the given elements.
+    """
     def __init__(self, context):
         self.context = context
         self.pen = wx.Pen()
