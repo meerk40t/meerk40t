@@ -135,10 +135,26 @@ class Planner(Modifier):
             input_type=(None, "ops"),
             output_type="plan",
         )
-        def plan(command, channel, _, op=None, args=tuple(), **kwargs):
+        def plan(command, channel, _, data=None, args=tuple(), **kwargs):
             if len(command) > 4:
                 self._default_plan = command[4:]
                 self.context.signal("plan", self._default_plan, None)
+
+            if data is not None:
+                # If ops data is in data, then we copy that and move on to next step.
+                plan, original, commands = self.get_or_make_plan(self._default_plan)
+                for c in data:
+                    if not c.output:
+                        continue
+                    try:
+                        if len(c.children) == 0:
+                            continue
+                    except TypeError:
+                        pass
+                    plan.append(copy(c))
+                self.context.signal("plan", self._default_plan, 1)
+                return "plan", (plan, original, commands)
+
             return "plan", self.get_or_make_plan(self._default_plan)
 
         @self.context.console_command(
@@ -183,12 +199,10 @@ class Planner(Modifier):
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
             plan, original, commands = data
             for c in elements.ops(emphasized=True):
-                if not c.output:
-                    continue
                 try:
-                    if len(c) == 0:
+                    if not c.output:
                         continue
-                except TypeError:
+                except AttributeError:
                     pass
                 plan.append(copy(c))
             channel(_("Copied Operations."))

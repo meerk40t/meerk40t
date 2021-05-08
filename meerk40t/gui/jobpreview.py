@@ -518,8 +518,11 @@ class JobPreview(MWindow):
 
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
-            self.context("plan%s copy\n" % self.plan_name)
-            # elif self.stage == 1:
+            self.context("plan%s copy preprocess\n" % self.plan_name)
+            operations, original, commands = self.context.default_plan()
+            if len(commands) == 0:
+                self.context("plan%s validate\n" % self.plan_name)
+        elif self.stage == 1:
             self.context("plan%s preprocess\n" % self.plan_name)
             operations, original, commands = self.context.default_plan()
             if len(commands) == 0:
@@ -527,8 +530,8 @@ class JobPreview(MWindow):
         elif self.stage == 2:
             self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 3:
-            self.context("plan%s blob\n" % self.plan_name)
-            # elif self.stage == 4:
+            self.context("plan%s blob preopt\n" % self.plan_name)
+        elif self.stage == 4:
             self.context("plan%s preopt\n" % self.plan_name)
         elif self.stage == 5:
             self.context("plan%s optimize\n" % self.plan_name)
