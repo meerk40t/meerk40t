@@ -238,6 +238,7 @@ class Context:
         Commit any and all values currently stored as attr for this object to persistent storage.
         """
         from .svgelements import Color
+
         for attr in dir(self):
             if attr.startswith("_"):
                 continue
@@ -480,11 +481,11 @@ class Context:
         """
 
         from .svgelements import Color
+
         for attr in dir(obj):
             if attr.startswith("_"):
                 continue
             obj_value = getattr(obj, attr)
-
 
             if not isinstance(obj_value, (int, float, str, bool, Color)):
                 continue
@@ -1114,7 +1115,10 @@ class Kernel:
                             try:
                                 value = k["type"](value)
                             except ValueError:
-                                raise SyntaxError("'%s' does not cast to %s" % (str(value), str(k["type"])))
+                                raise SyntaxError(
+                                    "'%s' does not cast to %s"
+                                    % (str(value), str(k["type"]))
+                                )
                         key = k["name"]
                         current = kwargs.get(key, True)
                         if current is True:
@@ -2081,15 +2085,13 @@ class Kernel:
             channel(_("----------"))
             return
 
-        @self.console_argument("subcommand", help="open/close/save/print")
-        @self.console_argument("channel_name", help="channel name")
         @self.console_command(
-            "channel", help="channel [(open|close|save) <channel_name>]"
+            "channel",
+            help="channel (open|close|save|list|print) <channel_name>",
+            output_type="channel",
         )
-        def channel(
-            command, channel, _, subcommand, channel_name, args=tuple(), **kwargs
-        ):
-            if subcommand is None:
+        def channel(channel, _, remainder=None, **kwargs):
+            if remainder is None:
                 channel(_("----------"))
                 channel(_("Channels Active:"))
                 for i, name in enumerate(self.channels):
@@ -2099,36 +2101,102 @@ class Kernel:
                     else:
                         is_watched = "  "
                     channel("%s%d: %s" % (is_watched, i + 1, name))
-                return
+            return "channel", 0
+
+        @self.console_command(
+            "list", help="list the channels open in the kernel", input_type="channel", output_type="channel"
+        )
+        def channel_list(channel, _, **kwargs):
+            channel(_("----------"))
+            channel(_("Channels Active:"))
+            for i, name in enumerate(self.channels):
+                channel_name = self.channels[name]
+                if self._console_channel in channel_name.watchers:
+                    is_watched = "* "
+                else:
+                    is_watched = "  "
+                channel("%s%d: %s" % (is_watched, i + 1, name))
+            return "channel", 0
+
+        @self.console_argument("channel_name", help="name of the channel")
+        @self.console_command(
+            "open",
+            help="watch this channel in the console",
+            input_type="channel", output_type="channel"
+        )
+        def channel(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
-            if subcommand == "open":
-                if channel_name == "console":
-                    channel(_("Infinite Loop Error."))
-                else:
-                    self.channel(channel_name).watch(self._console_channel)
-                    channel(_("Watching Channel: %s") % channel_name)
-            elif subcommand == "close":
-                try:
-                    self.channel(channel_name).unwatch(self._console_channel)
-                    channel(_("No Longer Watching Channel: %s") % channel_name)
-                except (KeyError, ValueError):
-                    channel(_("Channel %s is not opened.") % channel_name)
-            elif subcommand == "print":
-                channel(_("Printing Channel: %s") % channel_name)
-                self.channel(channel_name).watch(print)
-            elif subcommand == "save":
-                from datetime import datetime
 
-                if self.console_channel_file is None:
-                    filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-                        date=datetime.now()
-                    )
-                    channel(_("Opening file: %s") % filename)
-                    self.console_channel_file = open(filename, "a")
-                channel(_("Recording Channel: %s") % channel_name)
-                self.channel(channel_name).watch(self._console_file_write)
-            return
+            if channel_name == "console":
+                channel(_("Infinite Loop Error."))
+            else:
+                self.channel(channel_name).watch(self._console_channel)
+                channel(_("Watching Channel: %s") % channel_name)
+            return "channel", channel_name
+
+        @self.console_argument("channel_name", help="channel name")
+        @self.console_command(
+            "close",
+            help="stop watching this channel in the console",
+            input_type="channel", output_type="channel"
+        )
+        def channel(channel, _, channel_name, **kwargs):
+            if channel_name is None:
+                raise SyntaxError(_("channel_name is not specified."))
+
+            try:
+                self.channel(channel_name).unwatch(self._console_channel)
+                channel(_("No Longer Watching Channel: %s") % channel_name)
+            except (KeyError, ValueError):
+                channel(_("Channel %s is not opened.") % channel_name)
+            return "channel", channel_name
+
+        @self.console_argument("channel_name", help="channel name")
+        @self.console_command(
+            "print",
+            help="print this channel to the standard out",
+            input_type="channel", output_type="channel"
+        )
+        def channel(channel, _, channel_name, **kwargs):
+            if channel_name is None:
+                raise SyntaxError(_("channel_name is not specified."))
+
+            channel(_("Printing Channel: %s") % channel_name)
+            self.channel(channel_name).watch(print)
+            return "channel", channel_name
+
+        @self.console_option("filename", "f", help="Use this filename rather than default")
+        @self.console_argument("channel_name", help="channel name (you may comma delimit)")
+        @self.console_command(
+            "save",
+            help="save this channel to disk",
+            input_type="channel", output_type="channel"
+        )
+        def channel(channel, _, channel_name, filename=None, **kwargs):
+            """
+            Save a particular channel to disk. Any data sent to that channel within Meerk40t will write out a log.
+            """
+            if channel_name is None:
+                raise SyntaxError(_("channel_name is not specified."))
+
+            from datetime import datetime
+
+            if filename is None:
+                filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
+                    date=datetime.now()
+                )
+            channel(_("Opening file: %s") % filename)
+            console_channel_file = open(filename, "a")
+            for cn in channel_name.split(","):
+                channel(_("Recording Channel: %s to file %s") % (channel_name, filename))
+
+                def _console_file_write(v):
+                    console_channel_file.write("%s\r\n" % v)
+                    console_channel_file.flush()
+
+                self.channel(channel_name).watch(_console_file_write)
+            return "channel", channel_name
 
         @self.console_option(
             "path", "p", type=str, help="Path that should be flushed to disk."
@@ -2227,7 +2295,7 @@ class Kernel:
         while "\n" in self._console_buffer:
             pos = self._console_buffer.find("\n")
             command = self._console_buffer[0:pos].strip("\r")
-            self._console_buffer = self._console_buffer[pos + 1:]
+            self._console_buffer = self._console_buffer[pos + 1 :]
             self._console_parse(command, channel=self._console_channel)
 
     def _console_job_tick(self):
@@ -2265,11 +2333,6 @@ class Kernel:
         self.commands = [c for c in self.commands if c != command]
         if len(self.commands) == 0:
             self.unschedule(self.console_job)
-
-    def _console_file_write(self, v):
-        if self.console_channel_file is not None:
-            self.console_channel_file.write("%s\r\n" % v)
-            self.console_channel_file.flush()
 
     def _console_interface(self, command):
         pass
@@ -2335,7 +2398,10 @@ class Kernel:
             if command_executed:
                 text = remainder.strip()
             else:
-                channel(_("%s is not a registered command in this context: %s") % (command, str(input_type)))
+                channel(
+                    _("%s is not a registered command in this context: %s")
+                    % (command, str(input_type))
+                )
                 return None
         return data
 
