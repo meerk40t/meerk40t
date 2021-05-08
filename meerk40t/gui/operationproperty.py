@@ -33,7 +33,7 @@ class OperationProperty(MWindow):
             choices=[_("Engrave"), _("Cut"), _("Raster"), _("Image")],
             style=wx.CB_DROPDOWN,
         )
-        self.checkbox_output = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Output"))
+        self.checkbox_output = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Enable"))
         self.checkbox_show = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Show"))
         self.text_speed = wx.TextCtrl(self.main_panel, wx.ID_ANY, "20.0")
         self.text_power = wx.TextCtrl(self.main_panel, wx.ID_ANY, "1000.0")
@@ -259,7 +259,7 @@ class OperationProperty(MWindow):
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
         self.button_layer_color.SetToolTip(_("Change/View color of this layer"))
         self.combo_type.SetToolTip(_("Default Operation Mode Type"))
-        self.checkbox_output.SetToolTip(_("Output This Layer"))
+        self.checkbox_output.SetToolTip(_("Enable output of this layer"))
         self.checkbox_output.SetValue(1)
         self.checkbox_show.SetToolTip(_("Show This Layer"))
         self.checkbox_show.SetValue(1)
