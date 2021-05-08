@@ -144,9 +144,9 @@ class CutCode(list):
             if isinstance(e, LineCut):
                 path.line(end)
             elif isinstance(e, QuadCut):
-                path.quad(e.control, end)
+                path.quad(e.c(), end)
             elif isinstance(e, CubicCut):
-                path.quad(e.control1, e.control2, end)
+                path.quad(e.c1(), e.c2(), end)
             elif isinstance(e, ArcCut):
                 path.append(e.arc)
             if previous_settings is not settings and previous_settings is not None:
