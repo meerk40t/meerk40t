@@ -2126,6 +2126,16 @@ class Elemental(Modifier):
                 raise SyntaxError("Must be a list of spaced delimited floating point numbers values.")
             self.add_element(element)
 
+        @context.console_command("path", help="convert any shapes to paths", input_type="elements")
+        def path(data, **kwargs):
+            for e in data:
+                try:
+                    node = e.node
+                    node.replace_object(abs(Path(node.object)))
+                    node.altered()
+                except AttributeError:
+                    pass
+
         @context.console_argument(
             "stroke_width", type=Length, help="Stroke-width for the given stroke"
         )
