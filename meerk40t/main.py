@@ -295,6 +295,7 @@ def run():
         kernel_root.execute("Debug Device")
 
     if args.input is not None:
+        # Load any input file
         import os
 
         kernel_root.load(os.path.realpath(args.input.name))
@@ -305,9 +306,6 @@ def run():
         # Set the device to mock.
         device.setting(bool, "mock", True)
         device.mock = True
-
-    if args.quit:
-        device._quit = True
 
     if args.set is not None:
         # Set the variables requested here.
@@ -325,37 +323,10 @@ def run():
                 elif isinstance(v, str):
                     setattr(device, attr, str(value))
 
-    if args.auto:
-        elements = kernel_root.elements
-        if args.speed is not None:
-            for o in elements.ops():
-                o.speed = args.speed
-        device("plan copy\n")
-        device("plan preprocess\n")
-        device("plan validate\n")
-        device("plan blob\n")
-        device("plan preopt\n")
-        device("plan optimize\n")
-        device("plan spool\n")
-        device._quit = True
-
-    if args.origin:
-
-        def origin():
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_SET_ABSOLUTE
-            yield COMMAND_MOVE, 0, 0
-
-        device.spooler.job(origin)
-
     kernel.bootstrap("ready")
 
-    if args.output is not None:
-        import os
-
-        kernel_root.save(os.path.realpath(args.output.name))
-
     if args.execute:
+        # Any execute code segments gets executed here.
         kernel_root.channel("console").watch(print)
         for v in args.execute:
             if v is None:
@@ -364,14 +335,38 @@ def run():
         kernel_root.channel("console").unwatch(print)
 
     if args.batch:
+        # If a batch file is specified it gets processed here.
         kernel_root.channel("console").watch(print)
         with args.batch as batch:
             for line in batch:
                 device(line.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
-    if args.console:
+    if args.auto:
+        # Auto start does the planning and spooling of the data.
+        elements = kernel_root.elements
+        if args.speed is not None:
+            for o in elements.ops():
+                o.speed = args.speed
+        device("plan copy preprocess validate blob preopt optimize\n")
+        if args.origin:
+            device("plan append origin\n")
+        if args.quit:
+            device("plan append shutdown\n")
+        device("plan spool\n")
+    else:
+        if args.quit:
+            # Flag quitting on complete.
+            device._quit = True
 
+    if args.output is not None:
+        # output the file you have at this point.
+        import os
+
+        kernel_root.save(os.path.realpath(args.output.name))
+
+    if args.console:
+        # Console command gives the user text access to the console as a whole.
         def thread_text_console():
             kernel_root.channel("console").watch(print)
             while True:
@@ -387,4 +382,7 @@ def run():
             thread_text_console()
         else:
             kernel.threaded(thread_text_console, thread_name="text_console", daemon=True)
-    kernel.bootstrap("mainloop")
+
+    kernel.bootstrap("mainloop")  # This is where the GUI loads and runs.
+
+
