@@ -31,7 +31,27 @@ from ..tools.pathtools import VectorMontonizer
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        kernel_root = kernel.get_context("/")
         kernel.register("modifier/Planner", Planner)
+
+        kernel.register("plan/physicalhome", Planner.physicalhome)
+        kernel.register("plan/home", Planner.home)
+        kernel.register("plan/origin", Planner.origin)
+        kernel.register("plan/unlock", Planner.unlock)
+        kernel.register("plan/wait", Planner.wait)
+        kernel.register("plan/beep", Planner.beep)
+        kernel.register("plan/interrupt", Planner.interrupt)
+
+        def shutdown():
+            yield COMMAND_WAIT_FINISH
+
+            def shutdown_program():
+                kernel_root("quit\n")
+
+            yield COMMAND_FUNCTION, shutdown_program
+
+        kernel.register("plan/shutdown", shutdown)
+
     elif lifecycle == "boot":
         kernel_root = kernel.get_context("/")
         kernel_root.activate("modifier/Planner")
@@ -91,14 +111,6 @@ class Planner(Modifier):
         self.context.setting(int, "opt_jog_minimum", 127)
         self.context.setting(int, "opt_jog_mode", 0)
 
-        kernel.register("plan/physicalhome", self.physicalhome)
-        kernel.register("plan/home", self.home)
-        kernel.register("plan/origin", self.origin)
-        kernel.register("plan/unlock", self.unlock)
-        kernel.register("plan/wait", self.wait)
-        kernel.register("plan/beep", self.beep)
-        kernel.register("plan/interrupt", self.interrupt)
-
         @self.context.console_argument("alias", type=str, help="plan command name to alias")
         @self.context.console_command(
             "plan-alias",
@@ -135,7 +147,7 @@ class Planner(Modifier):
             input_type=(None, "ops"),
             output_type="plan",
         )
-        def plan(command, channel, _, data=None, args=tuple(), **kwargs):
+        def plan(command, channel, _, data=None, remainder=None, **kwargs):
             if len(command) > 4:
                 self._default_plan = command[4:]
                 self.context.signal("plan", self._default_plan, None)
@@ -155,7 +167,23 @@ class Planner(Modifier):
                 self.context.signal("plan", self._default_plan, 1)
                 return "plan", (plan, original, commands)
 
-            return "plan", self.get_or_make_plan(self._default_plan)
+            data = self.get_or_make_plan(self._default_plan)
+            if remainder is None:
+                plan, original, commands = data
+                channel(_("----------"))
+                channel(_("Plan:"))
+                for i, plan_name in enumerate(self._plan):
+                    channel("%d: %s" % (i, plan_name))
+                channel(_("----------"))
+                channel(_("Plan %s:" % self._default_plan))
+                for i, op_name in enumerate(plan):
+                    channel("%d: %s" % (i, op_name))
+                channel(_("Commands %s:" % self._default_plan))
+                for i, cmd_name in enumerate(commands):
+                    channel("%d: %s" % (i, cmd_name))
+                channel(_("----------"))
+
+            return "plan", data
 
         @self.context.console_command(
             "list",
@@ -276,10 +304,11 @@ class Planner(Modifier):
                 for command_name in self.context.match("plan/%s" % op):
                     plan_command = self.context.registered[command_name]
                     plan.append(plan_command)
-                    break
-                self.context.signal("plan", self._default_plan, None)
+                    self.context.signal("plan", self._default_plan, None)
+                    return data_type, data
             except (KeyError, IndexError):
-                channel(_("No plan command found."))
+                pass
+            channel(_("No plan command found."))
             return data_type, data
 
         @self.context.console_argument("op", type=str, help="unlock, origin, home, etc")

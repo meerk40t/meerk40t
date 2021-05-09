@@ -91,8 +91,11 @@ class MWindow(wx.Frame, Module):
     def finalize(self, *args, **kwargs):
         self.window_close()
         if self.window_save:
-            self.window_context.width, self.window_context.height = self.Size
-            self.window_context.x, self.window_context.y = self.GetPosition()
+            try:
+                self.window_context.width, self.window_context.height = self.Size
+                self.window_context.x, self.window_context.y = self.GetPosition()
+            except RuntimeError:
+                pass
         try:
             self.Close()
         except RuntimeError:
