@@ -1,6 +1,5 @@
 import wx
 
-from ..kernel import Module
 from .icons import icons8_route_50
 from .mwindow import MWindow
 

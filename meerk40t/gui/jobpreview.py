@@ -366,16 +366,16 @@ class JobPreview(MWindow):
         self.context.postunlock = self.preview_menu.menu_autounlock.IsChecked()
 
     def on_check_reduce_travel(self, event):  # wxGlade: Preview.<event_handler>
-        self.context.reduce_travel = self.check_reduce_travel_time.IsChecked()
+        self.context.opt_reduce_travel = self.check_reduce_travel_time.IsChecked()
 
     def on_check_inner_first(self, event):  # wxGlade: Preview.<event_handler>
-        self.context.inner_first = self.check_cut_inner_first.IsChecked()
+        self.context.opt_inner_first = self.check_cut_inner_first.IsChecked()
 
     def on_check_reduce_directions(self, event):  # wxGlade: Preview.<event_handler>
-        self.context.reduce_directions = self.check_reduce_direction_changes.IsChecked()
+        self.context.opt_reduce_directions = self.check_reduce_direction_changes.IsChecked()
 
     def on_check_remove_overlap(self, event):  # wxGlade: Preview.<event_handler>
-        self.context.remove_overlap = self.check_remove_overlap_cuts.IsChecked()
+        self.context.opt_remove_overlap = self.check_remove_overlap_cuts.IsChecked()
 
     def on_check_rapid_between(self, event):  # wxGlade: Preview.<event_handler>
         self.context.opt_rapid_between = self.check_rapid_moves_between.IsChecked()
