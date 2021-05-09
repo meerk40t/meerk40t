@@ -2198,7 +2198,7 @@ class Kernel:
                     console_channel_file.write("%s\r\n" % v)
                     console_channel_file.flush()
 
-                self.channel(channel_name).watch(_console_file_write)
+                self.channel(cn).watch(_console_file_write)
             return "channel", channel_name
 
         @self.console_option(

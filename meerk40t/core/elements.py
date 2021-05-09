@@ -1797,14 +1797,13 @@ class Elemental(Modifier):
                     x_pos += x
                 y_pos += y
 
-        @context.console_argument("path_d", help="svg path syntax command.")
+        @context.console_argument("path_d", type=str, help="svg path syntax command (quoted).")
         @context.console_command("path", help="path <svg path>")
-        def path(command, channel, _, path_d, args=tuple(), **kwargs):
-            args = kwargs.get("args", tuple())
-            if len(args) == 0:
-                raise SyntaxError
-            path_d += " ".join(args)
-            self.add_element(Path(path_d))
+        def path(path_d, **kwargs):
+            try:
+                self.add_element(Path(path_d))
+            except ValueError:
+                raise SyntaxError("Not a valid path_d string (try quotes)")
 
         @context.console_option("name", "n", type=str)
         @context.console_command(
@@ -2105,22 +2104,26 @@ class Elemental(Modifier):
                 data.append(svg_text)
                 return "elements", data
 
-        # @context.console_argument("points", type=float, nargs="*", help='x, y of elements')
         @context.console_command(
-            "polygon", help="polygon (<point>, <point>)*", input_type=("elements", None)
+            "polygon", help="polygon (float float)*", input_type=("elements", None)
         )
         def polygon(command, channel, _, data=None, args=tuple(), **kwargs):
-            element = Polygon(list(map(float, args)))
+            try:
+                element = Polygon(list(map(float, args)))
+            except ValueError:
+                raise SyntaxError("Must be a list of spaced delimited floating point numbers values.")
             self.add_element(element)
 
-        # @context.console_argument("points", type=float, nargs="*", help='x, y of elements')
         @context.console_command(
             "polyline",
-            help="polyline (<point>, <point>)*",
+            help="polyline (float float)*",
             input_type=("elements", None),
         )
         def polyline(command, args=tuple(), data=None, **kwargs):
-            element = Polyline(list(map(float, args)))
+            try:
+                element = Polyline(list(map(float, args)))
+            except ValueError:
+                raise SyntaxError("Must be a list of spaced delimited floating point numbers values.")
             self.add_element(element)
 
         @context.console_argument(
