@@ -2401,9 +2401,13 @@ class Kernel:
             if command_executed:
                 text = remainder.strip()
             else:
+                if input_type is None:
+                    ctx_name = "Base"
+                else:
+                    ctx_name = input_type
                 channel(
                     _("%s is not a registered command in this context: %s")
-                    % (command, str(input_type))
+                    % (command, ctx_name)
                 )
                 return None
         return data
