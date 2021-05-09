@@ -182,6 +182,11 @@ class OperationProperty(MWindow):
                 self.combo_type.SetSelection(2)
             elif op == "Image":
                 self.combo_type.SetSelection(3)
+            elif op == "Dots":
+                for m in self.main_panel.Children:
+                    if isinstance(m, wx.Window):
+                        m.Hide()
+                return
         self.button_layer_color.SetBackgroundColour(
             wx.Colour(swizzlecolor(self.operation.color))
         )

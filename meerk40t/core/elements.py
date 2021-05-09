@@ -7,7 +7,7 @@ from ..device.lasercommandconstants import (
     COMMAND_HOME,
     COMMAND_MODE_RAPID,
     COMMAND_MOVE,
-    COMMAND_WAIT_FINISH,
+    COMMAND_WAIT_FINISH, COMMAND_SET_ABSOLUTE, COMMAND_WAIT, COMMAND_LASER_ON, COMMAND_LASER_OFF,
 )
 from ..kernel import Modifier
 from ..svgelements import (
@@ -815,6 +815,25 @@ class LaserOperation(Node):
                 str(int(seconds)).zfill(2),
             )
         return "Unknown"
+
+    def generate(self):
+        if self.operation == "Dots":
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_SET_ABSOLUTE
+            for path_node in self.children:
+                try:
+                    obj = path_node.object
+                    first = obj.first_point
+                except (IndexError, AttributeError):
+                    continue
+                if first is None:
+                    continue
+                yield COMMAND_MOVE, first[0], first[1]
+                yield COMMAND_WAIT, 4.000  # I don't know how long the move will take to finish.
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_ON  # This can't be sent early since these are timed operations.
+                yield COMMAND_WAIT, 0.100
+                yield COMMAND_LASER_OFF
 
     def as_blob(self):
         c = CutCode()
@@ -2812,7 +2831,7 @@ class Elemental(Modifier):
         @context.console_option("color", "c", type=Color)
         @context.console_option("passes", "x", type=int)
         @context.console_command(
-            ("cut", "engrave", "raster", "imageop"),
+            ("cut", "engrave", "raster", "imageop", "dots"),
             help="<cut/engrave/raster/imageop> - group the elements into this operation",
             input_type=(None, "elements"),
             output_type="ops",
@@ -2857,6 +2876,8 @@ class Elemental(Modifier):
                 op.operation = "Raster"
             elif command == "imageop":
                 op.operation = "Image"
+            elif command == "dots":
+                op.operation = "Dots"
             self.add_op(op)
             if data is not None:
                 for item in data:
@@ -3007,9 +3028,7 @@ class Elemental(Modifier):
                 node = e.node
                 group_node.append_child(node)
 
-        @self.tree_operation(
-            _("Enable/Disable Ops"), node_type="op", help=""
-        )
+        @self.tree_operation(_("Enable/Disable Ops"), node_type="op", help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
@@ -3084,7 +3103,11 @@ class Elemental(Modifier):
         def clear_all_ops(node, **kwargs):
             self.context("element* delete\n")
 
-        @self.tree_operation(_("Remove: {name}"), node_type=("op", "elem", "file", "group", "opnode"), help="")
+        @self.tree_operation(
+            _("Remove: {name}"),
+            node_type=("op", "elem", "file", "group", "opnode"),
+            help="",
+        )
         def remove_type_op(node, **kwargs):
             node.remove_node()
             self.set_emphasis(None)
@@ -3332,7 +3355,7 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Rotate"))
-        @self.tree_values("i", values=tuple([i for i in range(2,-14,-1) if i != 0]))
+        @self.tree_values("i", values=tuple([i for i in range(2, -14, -1) if i != 0]))
         @self.tree_calc(
             "angle", lambda i: "%0.f" % Angle.turns(1.0 / float(i)).as_degrees
         )
@@ -3361,7 +3384,9 @@ class Elemental(Modifier):
             self.context("element subpath\n")
 
         @self.tree_operation(
-            _("Merge Items"), node_type="group", help="Merge this node's children into 1 path."
+            _("Merge Items"),
+            node_type="group",
+            help="Merge this node's children into 1 path.",
         )
         def merge_elements(node, **kwargs):
             self.context("element merge\n")
@@ -3934,7 +3959,6 @@ class Elemental(Modifier):
             add_op_function = self.add_op
         for element in elements:
             was_classified = False
-            image_added = False
             if hasattr(element, "operation"):
                 add_op_function(element)
                 continue
@@ -3942,8 +3966,6 @@ class Elemental(Modifier):
                 continue
             for op in operations:
                 if op.operation == "Raster":
-                    if image_added:
-                        continue  # already added to an image operation, is not added here.
                     if element.stroke is not None and op.color == abs(element.stroke):
                         op.add(element, type="opnode")
                         was_classified = True
@@ -3966,7 +3988,17 @@ class Elemental(Modifier):
                 elif op.operation == "Image" and isinstance(element, SVGImage):
                     op.add(element, type="opnode")
                     was_classified = True
-                    image_added = True
+                    break  # May only classify in one image operation.
+                elif (
+                    op.operation == "Dots"
+                    and isinstance(element, Path)
+                    and len(element) == 2
+                    and isinstance(element[0], Move)
+                    and isinstance(element[1], Close)
+                ):
+                    op.add(element, type="opnode")
+                    was_classified = True
+                    break  # May only classify in Dots.
             if not was_classified:
                 if element.stroke is not None and element.stroke.value is not None:
                     op = LaserOperation(

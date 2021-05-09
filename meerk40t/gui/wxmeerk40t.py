@@ -98,7 +98,7 @@ from .icons import (
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
-    icons_evenspace_vert,
+    icons_evenspace_vert, icons8_scatter_plot_20, icons8_system_task_20,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -2950,8 +2950,12 @@ class ShadowTree:
                     op = None
                 if op in ("Raster", "Image"):
                     self.set_icon(node, icons8_direction_20.GetBitmap(True))
-                else:
+                elif op in ("Engrave", "Cut"):
                     self.set_icon(node, icons8_laser_beam_20.GetBitmap(True))
+                elif op == "Dots":
+                    self.set_icon(node, icons8_scatter_plot_20.GetBitmap(True))
+                else:
+                    self.set_icon(node, icons8_system_task_20.GetBitmap(True))
                 try:
                     c = node.color
                     self.set_color(node, c)

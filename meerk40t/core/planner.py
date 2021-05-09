@@ -401,6 +401,8 @@ class Planner(Modifier):
                 first_index = None
                 blob = CutCode()
                 try:
+                    if c.operation == "Dots":
+                        continue
                     c.settings.jog_distance = self.context.opt_jog_minimum
                     c.settings.jog_enable = self.context.opt_rapid_between
                     b = c.as_blob()

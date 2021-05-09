@@ -736,8 +736,7 @@ class Interpreter:
         self.context.current_y = y
 
     def wait(self, t):
-        # TODO: This doesn't work without scheduler.
-        self.next_run = t
+        time.sleep(float(t))
 
     def wait_finish(self, *values):
         """Adds an additional holding requirement if the pipe has any data."""
