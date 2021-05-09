@@ -725,7 +725,9 @@ class LaserOperation(Node):
         if self._operation == "Raster":
             op += str(self.settings.raster_step)
         parts.append(op)
-
+        if op == "Dots":
+            parts.append("%gms dwell" % self.settings.speed)
+            return " ".join(parts)
         parts.append("%gmm/s" % self.settings.speed)
         if self._operation in ("Raster", "Image"):
             if self.settings.raster_swing:
@@ -832,7 +834,7 @@ class LaserOperation(Node):
                 yield COMMAND_WAIT, 4.000  # I don't know how long the move will take to finish.
                 yield COMMAND_WAIT_FINISH
                 yield COMMAND_LASER_ON  # This can't be sent early since these are timed operations.
-                yield COMMAND_WAIT, 0.100
+                yield COMMAND_WAIT, (self.settings.speed / 1000.0)
                 yield COMMAND_LASER_OFF
 
     def as_blob(self):
