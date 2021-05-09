@@ -92,7 +92,7 @@ class CH341(Module, Handler):
 
     def __init__(self, *args, **kwargs):
         Module.__init__(self, *args, **kwargs)
-        Handler.__init__(self, self.context.channel("pipe/usb"), self._state_change)
+        Handler.__init__(self, self.context.channel("pipe/usb", buffer_size=50), self._state_change)
 
     def connect(self, driver_index=-1, chipv=-1, bus=-1, address=-1, mock=False):
         """
