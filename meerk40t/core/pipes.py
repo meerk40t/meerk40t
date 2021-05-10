@@ -80,7 +80,7 @@ class Pipes(Modifier):
 
             pipe_data = self.get_pipe(self._default_pipe)
             if pipe_data is None:
-                raise SyntaxError
+                raise SyntaxError("No Pipe")
 
             pipe, pipe_name = pipe_data
             self.context.signal("pipe", pipe_name, 1)

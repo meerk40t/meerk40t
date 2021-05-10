@@ -492,19 +492,20 @@ class DitherPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.choices = [
+                "Floyd-Steinberg",
+                "Atkinson",
+                "Jarvis-Judice-Ninke",
+                "Stucki",
+                "Burkes",
+                "Sierra3",
+                "Sierra2",
+                "Sierra-2-4a",
+            ]
         self.combo_dither = wx.ComboBox(
             self,
             wx.ID_ANY,
-            choices=[
-                "Floyd-Steinberg",
-                "Jarvis, Judice, Ninke",
-                "Stucki",
-                "Atkinson",
-                "Burkes",
-                "Sierra",
-                "Ordered 4x4",
-                "Ordered 8x8",
-            ],
+            choices=self.choices,
             style=wx.CB_DROPDOWN,
         )
 
@@ -526,7 +527,6 @@ class DitherPanel(wx.Panel):
         self.check_enable_dither.SetValue(1)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
         self.combo_dither.SetSelection(0)
-        self.combo_dither.Enable(False)
         # end wxGlade
 
     def __do_layout(self):
@@ -545,14 +545,14 @@ class DitherPanel(wx.Panel):
         self.context = context
         self.op = op
         self.check_enable_dither.SetValue(op["enable"])
-        self.combo_dither.SetSelection(op["type"])
+        self.combo_dither.SetSelection(self.choices.index(self.op["type"]))
 
     def on_check_enable_dither(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.check_enable_dither.GetValue()
         self.context.signal("RasterWizard-Image")
 
     def on_combo_dither_type(self, event):  # wxGlade: RasterWizard.<event_handler>
-        self.op["type"] = self.combo_dither.GetSelection()
+        self.op["type"] = self.choices[self.combo_dither.GetSelection()]
         self.context.signal("RasterWizard-Image")
 
 

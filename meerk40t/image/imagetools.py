@@ -208,10 +208,11 @@ def plugin(kernel, lifecycle=None):
                 element.node.altered()
         return "image", data
 
+    @context.console_option("method", "m", type=str, default="Floyd-Steinberg")
     @context.console_command(
         "dither", help="Dither to 1-bit", input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, args=tuple(), **kwargs):
+    def image(command, channel, _, data, method=None, **kwargs):
         for element in data:
             img = element.image
             if img.mode == "RGBA":
@@ -221,6 +222,11 @@ def plugin(kernel, lifecycle=None):
                     for x in range(width):
                         if pixel_data[x, y][3] == 0:
                             pixel_data[x, y] = (255, 255, 255, 255)
+            if method != "Floyd-Steinberg":
+                try:
+                    element.image = dither(element.image, method)
+                except NotImplementedError:
+                    raise SyntaxError("Method not recognized.")
             element.image = img.convert("1")
             if hasattr(element, "node"):
                 element.node.altered()
@@ -870,6 +876,111 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
 
+_DIFFUSION_MAPS = {
+    "floyd-steinberg": (
+        (1, 0, 7 / 16),
+        (-1, 1, 3 / 16),
+        (0, 1, 5 / 16),
+        (1, 1, 1 / 16),
+    ),
+    "atkinson": (
+        (1, 0, 1 / 8),
+        (2, 0, 1 / 8),
+        (-1, 1, 1 / 8),
+        (0, 1, 1 / 8),
+        (1, 1, 1 / 8),
+        (0, 2, 1 / 8),
+    ),
+    "jarvis-judice-ninke": (
+        (1, 0, 7 / 48),
+        (2, 0, 5 / 48),
+        (-2, 1, 3 / 48),
+        (-1, 1, 5 / 48),
+        (0, 1, 7 / 48),
+        (1, 1, 5 / 48),
+        (2, 1, 3 / 48),
+        (-2, 2, 1 / 48),
+        (-1, 2, 3 / 48),
+        (0, 2, 5 / 48),
+        (1, 2, 3 / 48),
+        (2, 2, 1 / 48),
+    ),
+    "stucki": (
+        (1, 0, 8 / 42),
+        (2, 0, 4 / 42),
+        (-2, 1, 2 / 42),
+        (-1, 1, 4 / 42),
+        (0, 1, 8 / 42),
+        (1, 1, 4 / 42),
+        (2, 1, 2 / 42),
+        (-2, 2, 1 / 42),
+        (-1, 2, 2 / 42),
+        (0, 2, 4 / 42),
+        (1, 2, 2 / 42),
+        (2, 2, 1 / 42),
+    ),
+    "burkes": (
+        (1, 0, 8 / 32),
+        (2, 0, 4 / 32),
+        (-2, 1, 2 / 32),
+        (-1, 1, 4 / 32),
+        (0, 1, 8 / 32),
+        (1, 1, 4 / 32),
+        (2, 1, 2 / 32),
+    ),
+    "sierra3": (
+        (1, 0, 5 / 32),
+        (2, 0, 3 / 32),
+        (-2, 1, 2 / 32),
+        (-1, 1, 4 / 32),
+        (0, 1, 5 / 32),
+        (1, 1, 4 / 32),
+        (2, 1, 2 / 32),
+        (-1, 2, 2 / 32),
+        (0, 2, 3 / 32),
+        (1, 2, 2 / 32),
+    ),
+    "sierra2": (
+        (1, 0, 4 / 16),
+        (2, 0, 3 / 16),
+        (-2, 1, 1 / 16),
+        (-1, 1, 2 / 16),
+        (0, 1, 3 / 16),
+        (1, 1, 2 / 16),
+        (2, 1, 1 / 16),
+    ),
+    "sierra-2-4a": (
+        (1, 0, 2 / 4),
+        (-1, 1, 1 / 4),
+        (0, 1, 1 / 4),
+    ),
+}
+
+
+def dither(image, method="Floyd-Steinberg"):
+    """
+    This function and the associated _DIFFUSION_MAPS taken from hitherdither. MIT License.
+    :copyright: 2016-2017 by hbldh <henrik.blidh@nedomkull.com>
+    https://github.com/hbldh/hitherdither
+    """
+    diff_map = _DIFFUSION_MAPS.get(method.lower())
+    if diff_map is None:
+        raise NotImplementedError
+    diff = image.convert('F')
+    pix = diff.load()
+    width, height = image.size
+    for y in range(height):
+        for x in range(width):
+            pixel = pix[x, y]
+            pix[x, y] = 0 if pixel <= 127 else 255
+            error = pixel - pix[x, y]
+            for dx, dy, diffusion_coefficient in diff_map:
+                xn, yn = x + dx, y + dy
+                if (0 <= xn < width) and (0 <= yn < height):
+                    pix[xn, yn] += error * diffusion_coefficient
+    return diff
+
+
 class RasterScripts:
     """
     This module serves as the raster scripting routine. It registers raster-scripts and
@@ -928,7 +1039,7 @@ class RasterScripts:
                 "threshold": 0,
             }
         )
-        ops.append({"name": "dither", "enable": True, "type": 0})
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -966,7 +1077,7 @@ class RasterScripts:
                 "threshold": 6,
             }
         )
-        ops.append({"name": "dither", "enable": True, "type": 0})
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1017,7 +1128,7 @@ class RasterScripts:
                 ],
             }
         )
-        ops.append({"name": "dither", "enable": True, "type": 0})
+        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1054,7 +1165,7 @@ class RasterScripts:
                 "threshold": 0,
             }
         )
-        ops.append({"name": "dither", "enable": True, "type": 0})
+        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1092,7 +1203,7 @@ class RasterScripts:
                 "oversample": 2,
             }
         )
-        ops.append({"name": "dither", "enable": True, "type": 0})
+        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1112,7 +1223,7 @@ class RasterScripts:
                 "lightness": 1.0,
             }
         )
-        ops.append({"name": "dither", "enable": True, "type": 0})
+        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1409,7 +1520,9 @@ class RasterScripts:
                                 for x in range(width):
                                     if pixel_data[x, y][3] == 0:
                                         pixel_data[x, y] = (255, 255, 255, 255)
-                        image = image.convert("1")
+                        if op['type'] != "Floyd-Steinberg":
+                            image = dither(image, op["type"])
+                        image = image.convert('1')
                 except KeyError:
                     pass
             elif name == "halftone":
