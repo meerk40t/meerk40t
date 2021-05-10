@@ -1,6 +1,4 @@
 from ...kernel import STATE_UNKNOWN, Modifier
-from ...svgelements import Length
-from ..lasercommandconstants import *
 from .lhymicrointerpreter import LhymicroInterpreter
 from .lhystudiocontroller import LhystudioController
 from .lhystudioemulator import EgvLoader, LhystudioEmulator

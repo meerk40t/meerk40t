@@ -1,3 +1,4 @@
+from ...core.interpreters import Interpreter
 from ...core.plotplanner import PlotPlanner
 from ...kernel import Modifier
 from ..basedevice import (
@@ -12,7 +13,6 @@ from ..basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
-    Interpreter,
 )
 from .moshiconstants import swizzle_table
 

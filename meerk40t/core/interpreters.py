@@ -557,6 +557,18 @@ class Interpreters(Modifier):
             channel(_("----------"))
             return data_type, data
 
+        @context.console_command(
+            "type",
+            help="list interpreter types",
+            input_type="interpret",
+        )
+        def list_type(channel, _, data, **kwargs):
+            channel(_("----------"))
+            channel(_("Interpreter permitted:"))
+            for i, name in enumerate(context.match("interpreter/", suffix=True)):
+                channel("%d: %s" % (i + 1, name))
+            channel(_("----------"))
+
         @self.context.console_command(
             "reset",
             help="interpret<?> reset",

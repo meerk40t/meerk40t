@@ -1,8 +1,9 @@
 import os
 import re
 
+from ...core.interpreters import Interpreter
 from ...kernel import Module
-from ..basedevice import INTERPRETER_STATE_PROGRAM, Interpreter
+from ..basedevice import INTERPRETER_STATE_PROGRAM
 from ..lasercommandconstants import *
 
 MILS_PER_MM = 39.3701
@@ -14,33 +15,7 @@ GRBL device is a stub device. Serving as a placeholder.
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("disabled-device/GRBL", GrblDevice)
-
-
-class GrblDevice:
-    """"""
-
-    def __init__(self, root, uid=""):
-        self.uid = uid
-        self.device_name = "GRBL"
-        self.location_name = "Print"
-
-        # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
-        self._device_log = ""
-        self.current_x = 0
-        self.current_y = 0
-
-        self.hold_condition = lambda e: False
-        self.pipe = None
-        self.interpreter = None
-        self.spooler = None
-
-    def __repr__(self):
-        return "GrblDevice(uid='%s')" % str(self.uid)
-
-    @staticmethod
-    def sub_register(kernel):
-        kernel.register("modifier/GRBLInterpreter", GRBLInterpreter)
+        kernel.register("interpreter/grbl", GRBLInterpreter)
         kernel.register("load/GCodeLoader", GCodeLoader)
         kernel.register("module/GRBLEmulator", GRBLEmulator)
 
@@ -69,6 +44,28 @@ class GrblDevice:
                 channel(_("Server failed on port: %d") % port)
             return
 
+
+class GrblDevice:
+    """"""
+
+    def __init__(self, root, uid=""):
+        self.uid = uid
+        self.device_name = "GRBL"
+        self.location_name = "Print"
+
+        # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
+        self._device_log = ""
+        self.current_x = 0
+        self.current_y = 0
+
+        self.hold_condition = lambda e: False
+        self.pipe = None
+        self.interpreter = None
+        self.spooler = None
+
+    def __repr__(self):
+        return "GrblDevice(uid='%s')" % str(self.uid)
+
     def initialize(self, device, channel=None):
         """
         Device initialize.
@@ -78,7 +75,6 @@ class GrblDevice:
         :return:
         """
         self.write = print
-        device.activate("modifier/Spooler")
         device.activate("modifier/GRBLInterpreter")
 
     def __len__(self):

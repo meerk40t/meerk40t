@@ -1,12 +1,4 @@
-import os
-import time
-from threading import Lock
-
-from meerk40t.svgelements import Length
-
-from ..core.cutcode import LaserSettings
 from ..kernel import Modifier
-from .lasercommandconstants import *
 
 INTERPRETER_STATE_RAPID = 0
 INTERPRETER_STATE_FINISH = 1
@@ -101,22 +93,6 @@ def plugin(kernel, lifecycle=None):
                 return
             channel(_("Device %s, initialized at %s" % (device, data._path)))
             return "device", data
-
-        @context.console_argument("type", type=str, help="type of pipe to use")
-        @context.console_command(
-            "pipe",
-            help="pipe to utilize on this device",
-            input_type="device",
-            output_type="device",
-        )
-        def pipe(data=None, **kwargs):
-            # TODO: MAKE THIS WORK.
-            if data is None:
-                data = context.active
-            if data is None:
-                return # We don't have a device.
-            data.pipe = None
-            return 'device', data
 
 
 class Device(Modifier):

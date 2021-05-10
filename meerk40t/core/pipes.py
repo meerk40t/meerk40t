@@ -9,7 +9,7 @@ def plugin(kernel, lifecycle=None):
 
     elif lifecycle == "boot":
         kernel_root = kernel.get_context("/")
-        kernel_root.activate("modifier/Planner")
+        kernel_root.activate("modifier/Pipes")
 
 
 class FilePipe:
@@ -101,3 +101,15 @@ class Pipes(Modifier):
             channel(_("Pipe %s:" % pipe_name))
             channel(_("----------"))
             return data_type, data
+
+        @context.console_command(
+            "type",
+            help="list pipe types",
+            input_type="pipe"
+        )
+        def list_type(channel, _, **kwargs):
+            channel(_("----------"))
+            channel(_("Pipe types:"))
+            for i, name in enumerate(context.match("pipe/", suffix=True)):
+                channel("%d: %s" % (i + 1, name))
+            channel(_("----------"))

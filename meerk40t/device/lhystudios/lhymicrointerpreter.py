@@ -1,3 +1,4 @@
+from ...core.interpreters import Interpreter
 from ...core.plotplanner import PlotPlanner
 from meerk40t.tools.zinglplotter import ZinglPlotter
 from ...kernel import Modifier
@@ -12,7 +13,6 @@ from ..basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
-    Interpreter,
 )
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed

@@ -12,36 +12,12 @@ STATE_CONCAT = 1
 STATE_COMPACT = 2
 
 """
-Ruida device is a stub-backend. It doesn't work as of yet, but should be able to be configured.
+Ruida device is a stub-backend.
 """
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("disabled-device/Ruida", RuidaDevice)
-
-
-class RuidaDevice:
-    """"""
-
-    def __init__(self, root, uid=""):
-        self.uid = uid
-        self.device_name = "Ruida-STUB"
-        self.location_name = "UDP"
-
-        self.current_x = 0
-        self.current_y = 0
-
-        self.hold_condition = lambda e: False
-        self.pipe = None
-        self.interpreter = None
-        self.spooler = None
-
-    def __repr__(self):
-        return "RuidaDevice(uid='%s')" % str(self.uid)
-
-    @staticmethod
-    def sub_register(kernel):
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("module/RuidaEmulator", RuidaEmulator)
 
@@ -78,12 +54,6 @@ class RuidaDevice:
             except OSError:
                 channel(_("Server failed."))
             return
-
-    def initialize(self, context, channel=None):
-        """
-        Device initialize.
-        """
-        pass
 
 
 class RuidaEmulator(Module):
