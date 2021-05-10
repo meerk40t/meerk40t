@@ -1,7 +1,6 @@
 from ...core.interpreters import Interpreter
 from ...core.plotplanner import PlotPlanner
 from meerk40t.tools.zinglplotter import ZinglPlotter
-from ...kernel import Modifier
 from ..basedevice import (
     INTERPRETER_STATE_FINISH,
     INTERPRETER_STATE_MODECHANGE,
@@ -99,7 +98,7 @@ REQUEST_AXIS = 0b0000001000000000
 REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Requested horizontal major axis.
 
 
-class LhymicroInterpreter(Interpreter, Modifier):
+class LhymicroInterpreter(Interpreter):
     """
     LhymicroInterpreter provides Lhystudio specific coding for elements and sends it to the backend
     to write to the usb.
@@ -107,9 +106,13 @@ class LhymicroInterpreter(Interpreter, Modifier):
     The interpret() ticks to process additional data.
     """
 
-    def __init__(self, context, job_name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, job_name, channel)
+    def __init__(self, context, name, *args, **kwargs):
+        context = context.get_context('lhyinterpreter/%s' % name)
         Interpreter.__init__(self, context=context)
+
+        kernel = context._kernel
+        _ = kernel.translation
+        root_context = context.get_context("/")
 
         self.CODE_RIGHT = b"B"
         self.CODE_LEFT = b"T"
@@ -145,12 +148,6 @@ class LhymicroInterpreter(Interpreter, Modifier):
             return self.context.buffer_limit and buffer > self.context.buffer_max
 
         self.holds.append(primary_hold)
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        kernel = context._kernel
-        _ = kernel.translation
-        root_context = context.get_context("/")
 
         @context.console_command(
             "pulse", help="pulse <time>: Pulse the laser in place."

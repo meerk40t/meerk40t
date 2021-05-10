@@ -504,7 +504,7 @@ class Interpreters(Modifier):
             try:
                 for itype in self.context.match("interpreter/%s" % interpreter_type):
                     interpret_class = self.context.registered[itype]
-                    interpreter = interpret_class(self.context, **kwargs)
+                    interpreter = interpret_class(self.context, interpreter_name, **kwargs)
                     self._interpreters[interpreter_name] = interpreter, interpreter_name
                     return interpreter, interpreter_name
 
