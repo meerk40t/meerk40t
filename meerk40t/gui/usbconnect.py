@@ -25,11 +25,10 @@ class UsbConnect(MWindow):
         self.pipe = None
 
     def window_open(self):
-        self.context.active.channel("pipe/usb", buffer_size=50).watch(self.update_text)
+        self.context.channel("pipe/usb", buffer_size=50).watch(self.update_text)
 
     def window_close(self):
-        if self.context.active is not None:
-            self.context.active.channel("pipe/usb").unwatch(self.update_text)
+        self.context.channel("pipe/usb").unwatch(self.update_text)
 
     def update_text(self, text):
         if not wx.IsMainThread():

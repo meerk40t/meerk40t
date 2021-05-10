@@ -297,20 +297,20 @@ def run():
     kernel.bootstrap("configure")
     kernel.boot()
 
-    devices = list()
-    for dev in kernel_root.derivable():
-        try:
-            devices.append(int(dev))
-        except ValueError:
-            pass
-
-    if len(devices) != 0:
-        device = kernel_root.derive(str(devices[0]))
-        device.setting(str, "device_name", args.device)
-    else:
-        device = kernel_root.derive("1")
-        device.activate("device/%s" % args.device)
-        kernel.set_active_device(device)
+    # TODO: boot a default args.device device if no device started because of .boot()
+    # devices = list()
+    # for dev in kernel_root.derivable():
+    #     try:
+    #         devices.append(int(dev))
+    #     except ValueError:
+    #         pass
+    #
+    # if len(devices) != 0:
+    #     device = kernel_root.derive(str(devices[0]))
+    #     device.setting(str, "device_name", args.device)
+    # else:
+    #     device = kernel_root.derive("1")
+    #     device.activate("device/%s" % args.device)
 
     if args.verbose:
         kernel_root.execute("Debug Device")

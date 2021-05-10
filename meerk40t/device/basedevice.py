@@ -26,9 +26,7 @@ def plugin(kernel, lifecycle=None):
         )
         def device(channel, _, path=None, **kwargs):
             if path is None:
-                device_context = context.active
-                if device_context is None:
-                    device_context = context.get_context('1')
+                return None
             else:
                 device_context = context.get_context(path)
             if not hasattr(device_context, "spooler"):
@@ -64,35 +62,34 @@ def plugin(kernel, lifecycle=None):
                 channel("%d: %s" % (i + 1, name))
             channel(_("----------"))
             return "device", data
-
-        @context.console_command(
-            "activate",
-            help="activate device",
-            input_type="device",
-            output_type="device",
-        )
-        def activate(channel, _, data, **kwargs):
-            context._kernel.set_active_device(data)
-            channel(_("Device at context '%s' activated" % data._path))
-            return "device", data
-
-        @context.console_argument("device", help="Device to initialize...")
-        @context.console_command(
-            "init",
-            help="init <device>, eg. init Lhystudios",
-            input_type="device",
-            output_type="device",
-        )
-        def init(channel, _, data, device=None, **kwargs):
-            if device is None:
-                raise SyntaxError
-            try:
-                data.activate("device/%s" % device)
-            except KeyError:
-                channel(_("Device %s is not valid type. 'device type' for a list of valid types."))
-                return
-            channel(_("Device %s, initialized at %s" % (device, data._path)))
-            return "device", data
+        #
+        # @context.console_command(
+        #     "activate",
+        #     help="activate device",
+        #     input_type="device",
+        #     output_type="device",
+        # )
+        # def activate(channel, _, data, **kwargs):
+        #     channel(_("Device at context '%s' activated" % data._path))
+        #     return "device", data
+        #
+        # @context.console_argument("device", help="Device to initialize...")
+        # @context.console_command(
+        #     "init",
+        #     help="init <device>, eg. init Lhystudios",
+        #     input_type="device",
+        #     output_type="device",
+        # )
+        # def init(channel, _, data, device=None, **kwargs):
+        #     if device is None:
+        #         raise SyntaxError
+        #     try:
+        #         data.activate("device/%s" % device)
+        #     except KeyError:
+        #         channel(_("Device %s is not valid type. 'device type' for a list of valid types."))
+        #         return
+        #     channel(_("Device %s, initialized at %s" % (device, data._path)))
+        #     return "device", data
 
 
 # class Device(Modifier):

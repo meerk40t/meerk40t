@@ -817,26 +817,28 @@ class Navigation(MWindow):
 
     def on_scale_down(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 19.0 / 20.0
+        inter = self.context.default_interpreter()
         self.context(
             "scale %f %f %f %f\n"
             % (
                 scale,
                 scale,
-                self.context.active.current_x,
-                self.context.active.current_y,
+                inter.current_x,
+                inter.current_y,
             )
         )
         self.matrix_updated()
 
     def on_scale_up(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
+        inter = self.context.default_interpreter()
         self.context(
             "scale %f %f %f %f\n"
             % (
                 scale,
                 scale,
-                self.context.active.current_x,
-                self.context.active.current_y,
+                inter.current_x,
+                inter.current_y,
             )
         )
         self.matrix_updated()
@@ -870,16 +872,18 @@ class Navigation(MWindow):
         self.matrix_updated()
 
     def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
+        inter = self.context.default_interpreter()
         self.context(
             "rotate %fdeg %f %f\n"
-            % (-5, self.context.active.current_x, self.context.active.current_y)
+            % (-5, inter.current_x, inter.current_y)
         )
         self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
+        inter = self.context.default_interpreter()
         self.context(
             "rotate %fdeg %f %f\n"
-            % (5, self.context.active.current_x, self.context.active.current_y)
+            % (5, inter.current_x, inter.current_y)
         )
         self.matrix_updated()
 

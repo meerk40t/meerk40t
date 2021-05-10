@@ -762,12 +762,12 @@ class Planner(Modifier):
     def jobadd_scale_rotary(self):
         def scale_for_rotary():
             r = self.context.get_context("rotary/1")
-            a = self.context.active
+            i = self.context.default_interpreter()
             scale_str = "scale(%f,%f,%f,%f)" % (
                 r.scale_x,
                 r.scale_y,
-                a.current_x,
-                a.current_y,
+                i.current_x,
+                i.current_y,
             )
             plan, original, commands, name = self.default_plan()
             for o in plan:

@@ -67,7 +67,7 @@ class CameraInterface(MWindow, Job):
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context.active.open(
+            lambda e: self.context.open(
                 "window/CameraURI", self, index=self.index
             ),
             id=item.GetId(),

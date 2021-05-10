@@ -172,9 +172,9 @@ class JobPreview(MWindow):
 
         self.SetMenuBar(self.preview_menu)
         # Menu Bar end
-        self.connected_device = self.context.active
+        self.available_spoolers = self.context.spoolers._spoolers
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=[str(self.connected_device)], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=[str(self.available_spoolers)], style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(0)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])

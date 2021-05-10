@@ -22,10 +22,11 @@ def plugin(kernel, lifecycle=None):
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("emulator/ruida", RuidaEmulator)
 
+        @kernel.console_option("path", "p", type=str, default='/', help="Path of ruidaserver launch.")
         @kernel.console_option("spool", type=bool, action="store_true")
         @kernel.console_command("ruidaserver", help="activate the ruidaserver.")
-        def ruidaserver(command, channel, _, spool=False, args=tuple(), **kwargs):
-            c = kernel.active_device
+        def ruidaserver(command, channel, _, spool=False, path=None, args=tuple(), **kwargs):
+            c = kernel.get_context(path if path is not None else '/')
             if c is None:
                 return
             try:

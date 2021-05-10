@@ -399,10 +399,7 @@ class Controller(MWindow):
             self.button_device_connect.Disable()
 
     def on_button_connect(self, event):  # wxGlade: Controller.<event_handler>
-        if self.context.active is None:
-            self.context.signal("device;noactive", 0)
-            return
-        state = self.context.active.last_signal("pipe;state")
+        state = self.context.last_signal("pipe;state")
         if state is not None and isinstance(state, tuple):
             state = state[0]
         if state in (

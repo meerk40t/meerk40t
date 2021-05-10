@@ -10,9 +10,9 @@ class JobSpooler(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(673, 456, *args, **kwds)
 
-        self.connected_device = self.context.active
+        self.available_spoolers = self.context.spoolers._spoolers
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=[str(self.connected_device)], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=[str(self.available_spoolers)], style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(0)
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)

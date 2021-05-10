@@ -19,27 +19,28 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/grbl", GRBLEmulator)
         kernel.register("load/GCodeLoader", GCodeLoader)
 
+        @kernel.console_option("path", "p", type=str, default='/', help="Path of variables to set.")
         @kernel.console_command("grblserver", help="activate the grblserver.")
-        def grblserver(command, channel, _, args=tuple(), **kwargs):
-            active_device = kernel.active_device
-            if active_device is None:
+        def grblserver(command, channel, _, path=None, args=tuple(), **kwargs):
+            path_context = kernel.get_context(path if path is not None else '/')
+            if path_context is None:
                 return
             _ = kernel.translation
             port = 23
             try:
-                active_device.open_as("module/TCPServer", "grbl", port=port)
-                active_device.channel(
+                path_context.open_as("module/TCPServer", "grbl", port=port)
+                path_context.channel(
                     "grbl/send"
                 ).greet = "Grbl 1.1e ['$' for help]\r\n"
                 channel(_("GRBL Mode."))
                 chan = "grbl"
-                active_device.channel(chan).watch(kernel.channel("console"))
+                path_context.channel(chan).watch(kernel.channel("console"))
                 channel(_("Watching Channel: %s") % chan)
                 chan = "server"
-                active_device.channel(chan).watch(kernel.channel("console"))
+                path_context.channel(chan).watch(kernel.channel("console"))
                 channel(_("Watching Channel: %s") % chan)
-                emulator = active_device.open("module/GRBLEmulator")
-                active_device.channel("grbl/recv").watch(emulator.write)
+                emulator = path_context.open("module/GRBLEmulator")
+                path_context.channel("grbl/recv").watch(emulator.write)
             except OSError:
                 channel(_("Server failed on port: %d") % port)
             return
@@ -342,7 +343,7 @@ class GRBLEmulator(Module):
             yield code
 
     def commandline(self, data):
-        spooler = self.context.active.spooler
+        spooler = self.context.default_spooler
         pos = data.find("(")
         commands = {}
         while pos != -1:
@@ -411,7 +412,7 @@ class GRBLEmulator(Module):
         return self.command(commands)
 
     def command(self, gc):
-        spooler = self.context.active.spooler
+        spooler = self.context.default_spooler
         if "m" in gc:
             for v in gc["m"]:
                 if v == 0 or v == 1:

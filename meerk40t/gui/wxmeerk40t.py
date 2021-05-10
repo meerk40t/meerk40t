@@ -2579,10 +2579,10 @@ class MeerK40t(MWindow, Job):
         r = self.context.get_context("rotary/1")
         sx = r.scale_x
         sy = r.scale_y
-        a = self.context.active
+        i = self.context.default_interpreter()
 
         mx = Matrix(
-            "scale(%f, %f, %f, %f)" % (r.scale_x, r.scale_y, a.current_x, a.current_y)
+            "scale(%f, %f, %f, %f)" % (sx, sy, i.current_x, i.current_y)
         )
         for element in self.context.get_context("/").elements.elems():
             try:
@@ -3491,8 +3491,8 @@ class wxMeerK40t(wx.App, Module):
         @kernel.console_option(
             "path",
             "p",
-            type=context.get_context,
-            default=context.active,
+            type=str,
+            default="/",
             help="Context Path at which to open the window",
         )
         @kernel.console_argument("subcommand", type=str, help="open <window>")
@@ -3511,9 +3511,9 @@ class wxMeerK40t(wx.App, Module):
             """
             context = kernel.get_context("/")
             if path is None:
-                path = context.active
-            if path is None:
                 path = context
+            else:
+                path = kernel.get_context(path)
             if subcommand is None:
                 channel(_("----------"))
                 channel(_("Loaded Windows in Context %s:") % str(context._path))
