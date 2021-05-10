@@ -487,6 +487,8 @@ class Interpreters(Modifier):
         Modifier.__init__(self, context, name, channel)
         self._interpreters = dict()
         self._default_interpreter = "0"
+        self.spooler = None
+        self.output = None
 
     def get_interpreter(self, interpreter_name, **kwargs):
         try:
@@ -563,7 +565,6 @@ class Interpreters(Modifier):
         @self.context.console_command(
             "new-interpret",
             help="new-interpret <type>",
-            regex=True,
             input_type=(None, "spooler"),
             output_type="interpret",
         )
@@ -574,13 +575,14 @@ class Interpreters(Modifier):
                 if str(i) in self._interpreters:
                     continue
                 self.default_interpreter = str(i)
+                break
 
             if data is not None:
                 # If ops data is in data, then we copy that and move on to next step.
                 spooler, spooler_name = data
                 interpreter, name = self.make_interpreter(self._default_interpreter, interpret_type)
                 interpreter.spooler = spooler
-                return "interpreter", (interpreter, name)
+                return "interpret", (interpreter, name)
 
             data = self.make_interpreter(self._default_interpreter, interpret_type)
             if remainder is None:
@@ -593,7 +595,7 @@ class Interpreters(Modifier):
                 channel(_("Interpreter %s:" % name))
                 channel(str(interpreter))
                 channel(_("----------"))
-            return "interpreter", data
+            return "interpret", data
 
         @self.context.console_command(
             "list",

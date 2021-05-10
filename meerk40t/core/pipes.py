@@ -12,14 +12,19 @@ def plugin(kernel, lifecycle=None):
         kernel_root.activate("modifier/Pipes")
 
 
-class FilePipe:
+class Pipe:
     def __init__(self):
-        pass
+        self.output = None
 
 
-class TcpPipe:
+class FilePipe(Pipe):
     def __init__(self):
-        pass
+        super().__init__()
+
+
+class TcpPipe(Pipe):
+    def __init__(self):
+        super().__init__()
 
 
 class Pipes(Modifier):
@@ -28,16 +33,22 @@ class Pipes(Modifier):
         Modifier.__init__(self, context, name, channel)
         self._pipes = dict()
         self._default_pipe = "0"
-        self._default_type = "file"
 
-    def get_or_make_pipe(self, pipe_name, pipe_type, **kwargs):
+    def get_pipe(self, pipe_name, **kwargs):
+        try:
+            return self._pipes[pipe_name]
+        except KeyError:
+            pass
+        return None
+
+    def make_pipe(self, pipe_name, pipe_type, **kwargs):
         try:
             return self._pipes[pipe_name]
         except KeyError:
             try:
-                for command_name in self.context.match("pipe/%s" % pipe_type):
-                    pipe_class = self.context.registered[command_name]
-                    pipe = pipe_class(**kwargs)
+                for pname in self.context.match("pipe/%s" % pipe_type):
+                    pipe_class = self.context.registered[pname]
+                    pipe = pipe_class(self.context, pipe_name, **kwargs)
                     self._pipes[pipe_name] = pipe, pipe_name
                     return pipe, pipe_name
             except (KeyError, IndexError):
@@ -45,7 +56,7 @@ class Pipes(Modifier):
         return None
 
     def default_pipe(self):
-        return self.get_or_make_pipe(self._default_pipe, self._default_type)
+        return self.get_pipe(self._default_pipe)
 
     def attach(self, *a, **kwargs):
         context = self.context
@@ -67,7 +78,7 @@ class Pipes(Modifier):
                 self._default_pipe = command[4:]
                 self.context.signal("pipe", self._default_pipe, None)
 
-            pipe_data = self.get_or_make_pipe(self._default_pipe)
+            pipe_data = self.get_pipe(self._default_pipe)
             if pipe_data is None:
                 raise SyntaxError
 
@@ -80,24 +91,33 @@ class Pipes(Modifier):
                 elif data_type == "pipe":
                     dpipe, dname = data
             elif remainder is None:
-                pass  # List pipes., or if pipe_type missing.
+                pipe, pipe_name = pipe_data
+                channel(_("----------"))
+                channel(_("Pipe:"))
+                for i, pname in enumerate(self._pipes):
+                    channel("%d: %s" % (i, pname))
+                channel(_("----------"))
+                channel(_("Pipe %s: %s" % (pipe_name, str(pipe))))
+                channel(_("----------"))
 
             return "pipe", pipe_data
 
-        @context.console_argument("pipe-type")
+        @context.console_argument("type")
         @context.console_command(
             "new-pipe",
-            help="pipe<?> <command>",
-            regex=True,
+            help="pipe <command>",
             input_type=(None, "interpret", "pipe"),
             output_type="pipe",
         )
-        def pipe(command, channel, _, data=None, data_type=None, pipe_type=None, remainder=None, **kwargs):
-            if len(command) > 4:
-                self._default_pipe = command[4:]
-                self.context.signal("pipe", self._default_pipe, None)
-
-            pipe_data = self.get_or_make_pipe(self._default_pipe, pipe_type)
+        def pipe(command, channel, _, data=None, data_type=None, type=None, remainder=None, **kwargs):
+            if type is None:
+                raise SyntaxError("Must specify a valid interpreter type.")
+            for i in range(1000):
+                if str(i) in self._pipes:
+                    continue
+                self.default_pipe = str(i)
+                break
+            pipe_data = self.make_pipe(self._default_pipe, type)
             if pipe_data is None:
                 raise SyntaxError
 
@@ -107,10 +127,19 @@ class Pipes(Modifier):
             if data is not None:
                 if data_type == "interpret":
                     dinter, dname = data
+                    dinter.output = pipe
                 elif data_type == "pipe":
                     dpipe, dname = data
+                    dpipe.output = pipe
             elif remainder is None:
-                pass  # List pipes., or if pipe_type missing.
+                pipe, pipe_name = pipe_data
+                channel(_("----------"))
+                channel(_("Pipe:"))
+                for i, pname in enumerate(self._pipes):
+                    channel("%d: %s" % (i, pname))
+                channel(_("----------"))
+                channel(_("Pipe %s: %s" % (pipe_name, str(pipe))))
+                channel(_("----------"))
 
             return "pipe", pipe_data
 
@@ -127,7 +156,7 @@ class Pipes(Modifier):
             for i, pname in enumerate(self._pipes):
                 channel("%d: %s" % (i, pname))
             channel(_("----------"))
-            channel(_("Pipe %s:" % pipe_name))
+            channel(_("Pipe %s: %s" % (pipe_name, str(pipe))))
             channel(_("----------"))
             return data_type, data
 

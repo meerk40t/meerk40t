@@ -181,7 +181,7 @@ class LhymicroInterpreter(Interpreter, Modifier):
                 yield COMMAND_WAIT, value
                 yield COMMAND_LASER_OFF
 
-            if self.context.spooler.job_if_idle(timed_fire):
+            if self.spooler.job_if_idle(timed_fire):
                 channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
             else:
                 channel(_("Pulse laser failed: Busy"))
