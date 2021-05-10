@@ -143,6 +143,12 @@ def run():
     except ImportError:
         pass
 
+    try:
+        from .core import pipes
+
+        kernel.add_plugin(pipes.plugin)
+    except ImportError:
+        pass
 
     try:
         from .core import elements
