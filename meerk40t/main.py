@@ -41,7 +41,8 @@ parser.add_argument("input", nargs="?", type=argparse.FileType("r"), help="input
 parser.add_argument(
     "-o", "--output", type=argparse.FileType("w"), help="output file name"
 )
-parser.add_argument("-z", "--no_gui", action="store_true", help="run without gui")
+parser.add_argument("-z", "--no-gui", action="store_true", help="run without gui")
+parser.add_argument("-Z", "--gui-suppress", action="store_true", help="completely suppress gui")
 parser.add_argument(
     "-b", "--batch", type=argparse.FileType("r"), help="console batch file"
 )
@@ -125,6 +126,13 @@ def run():
         from .device import basedevice
 
         kernel.add_plugin(basedevice.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .core import spoolers
+
+        kernel.add_plugin(spoolers.plugin)
     except ImportError:
         pass
 
@@ -242,12 +250,16 @@ def run():
         # This module cannot be loaded. ezdxf missing.
         pass
 
-    try:
-        from .gui import wxmeerk40t
+    if not args.gui_suppress:
+        try:
+            from .gui import wxmeerk40t
 
-        kernel.add_plugin(wxmeerk40t.plugin)
-    except ImportError:
-        # This module cannot be loaded. wxPython missing.
+            kernel.add_plugin(wxmeerk40t.plugin)
+        except ImportError:
+            # This module cannot be loaded. wxPython missing.
+            args.no_gui = True
+    else:
+        # Complete Gui Suppress implies no-gui.
         args.no_gui = True
 
     if not getattr(sys, "frozen", False):
