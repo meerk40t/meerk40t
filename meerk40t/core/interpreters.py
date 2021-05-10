@@ -147,11 +147,13 @@ class Interpreter:
 
         :return:
         """
-        element = self.context.spooler.peek()
+        if self.spooler is None:
+            return # Spooler does not exist.
+        element = self.spooler.peek()
         if element is None:
             return  # Spooler is empty.
 
-        self.context.spooler.pop()
+        self.spooler.pop()
         if isinstance(element, int):
             self.spooled_item = (element,)
         elif isinstance(element, tuple):
@@ -449,7 +451,8 @@ class Interpreter:
         self.temp_holds.append(lambda: self.context._buffer_size != 0)
 
     def reset(self):
-        self.context.spooler.clear_queue()
+        if self.spooler is not None:
+            self.spooler.clear_queue()
         self.spooled_item = None
         self.temp_holds.clear()
 
@@ -485,16 +488,31 @@ class Interpreters(Modifier):
         self._interpreters = dict()
         self._default_interpreter = "0"
 
-    def get_or_make_interpreter(self, interpreter_name):
-        # TODO: INTERPRETER TYPE IS REQURIED.
+    def get_interpreter(self, interpreter_name, **kwargs):
         try:
             return self._interpreters[interpreter_name]
         except KeyError:
-            self._interpreters[interpreter_name] = Interpreter(self.context), interpreter_name
+            pass
+        return None
+
+    def make_interpreter(self, interpreter_name, interpreter_type, **kwargs):
+        try:
             return self._interpreters[interpreter_name]
+        except KeyError:
+            try:
+                for itype in self.context.match("interpreter/%s" % interpreter_type):
+                    interpret_class = self.context.registered[itype]
+                    interpreter = interpret_class(self.context, **kwargs)
+                    self._interpreters[interpreter_name] = interpreter, interpreter_name
+                    return interpreter, interpreter_name
+
+                self._interpreters[interpreter_name] = Interpreter(self.context), interpreter_name
+            except (KeyError, IndexError):
+                pass
+        return None
 
     def default_interpreter(self):
-        return self.get_or_make_interpreter(self._default_interpreter)
+        return self.get_interpreter(self._default_interpreter)
 
     def attach(self, *a, **kwargs):
         context = self.context
@@ -519,14 +537,16 @@ class Interpreters(Modifier):
             if data is not None:
                 # If ops data is in data, then we copy that and move on to next step.
                 spooler, spooler_name = data
-                interpreter, name = self.get_or_make_interpreter(self._default_interpreter)
+                interpreter, name = self.get_interpreter(self._default_interpreter)
                 try:
-                    interpreter.set_spooler(spooler)
+                    interpreter.spooler = spooler
                 except AttributeError:
                     pass
-                return "interpreter", interpreter, name
+                return "interpret", (interpreter, name)
 
-            data = self.get_or_make_interpreter(self._default_interpreter)
+            data = self.get_interpreter(self._default_interpreter)
+            if data is None:
+                raise SyntaxError("No Interpreter.")
             if remainder is None:
                 interpreter, name = data
                 channel(_("----------"))
@@ -537,7 +557,43 @@ class Interpreters(Modifier):
                 channel(_("Interpreter %s:" % name))
                 channel(str(interpreter))
                 channel(_("----------"))
-            return "plan", data
+            return "interpret", data
+
+        @context.console_argument("interpret_type")
+        @self.context.console_command(
+            "new-interpret",
+            help="new-interpret <type>",
+            regex=True,
+            input_type=(None, "spooler"),
+            output_type="interpret",
+        )
+        def interpret(command, channel, _, data=None, interpret_type=None, remainder=None, **kwargs):
+            if interpret_type is None:
+                raise SyntaxError("Must specify a valid interpreter type.")
+            for i in range(1000):
+                if str(i) in self._interpreters:
+                    continue
+                self.default_interpreter = str(i)
+
+            if data is not None:
+                # If ops data is in data, then we copy that and move on to next step.
+                spooler, spooler_name = data
+                interpreter, name = self.make_interpreter(self._default_interpreter, interpret_type)
+                interpreter.spooler = spooler
+                return "interpreter", (interpreter, name)
+
+            data = self.make_interpreter(self._default_interpreter, interpret_type)
+            if remainder is None:
+                interpreter, name = data
+                channel(_("----------"))
+                channel(_("Interpreter:"))
+                for i, inter in enumerate(self._interpreters):
+                    channel("%d: %s" % (i, inter))
+                channel(_("----------"))
+                channel(_("Interpreter %s:" % name))
+                channel(str(interpreter))
+                channel(_("----------"))
+            return "interpreter", data
 
         @self.context.console_command(
             "list",

@@ -180,12 +180,12 @@ def run():
     except ImportError:
         pass
 
-    # try:
-    from .device.lhystudios import lhystudiosdevice
+    try:
+        from .device.lhystudios import lhystudiosdevice
 
-    kernel.add_plugin(lhystudiosdevice.plugin)
-    # except ImportError:
-    #     pass
+        kernel.add_plugin(lhystudiosdevice.plugin)
+    except ImportError:
+        pass
 
     try:
         from .device.moshi import moshidevice
@@ -296,6 +296,8 @@ def run():
     kernel.bootstrap("register")
     kernel.bootstrap("configure")
     kernel.boot()
+
+    # kernel_root("spool interpret new lhystudios pipe new lhystudios")
 
     # TODO: boot a default args.device device if no device started because of .boot()
     # devices = list()

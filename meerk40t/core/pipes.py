@@ -55,9 +55,38 @@ class Pipes(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @context.console_argument("pipe_type")
         @context.console_command(
             "pipe",
+            help="pipe<?> <command>",
+            regex=True,
+            input_type=(None, "interpret", "pipe"),
+            output_type="pipe",
+        )
+        def pipe(command, channel, _, data=None, data_type=None, remainder=None, **kwargs):
+            if len(command) > 4:
+                self._default_pipe = command[4:]
+                self.context.signal("pipe", self._default_pipe, None)
+
+            pipe_data = self.get_or_make_pipe(self._default_pipe)
+            if pipe_data is None:
+                raise SyntaxError
+
+            pipe, pipe_name = pipe_data
+            self.context.signal("pipe", pipe_name, 1)
+
+            if data is not None:
+                if data_type == "interpret":
+                    dinter, dname = data
+                elif data_type == "pipe":
+                    dpipe, dname = data
+            elif remainder is None:
+                pass  # List pipes., or if pipe_type missing.
+
+            return "pipe", pipe_data
+
+        @context.console_argument("pipe-type")
+        @context.console_command(
+            "new-pipe",
             help="pipe<?> <command>",
             regex=True,
             input_type=(None, "interpret", "pipe"),
