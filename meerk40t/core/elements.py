@@ -824,7 +824,7 @@ class LaserOperation(Node):
             yield COMMAND_SET_ABSOLUTE
             for path_node in self.children:
                 try:
-                    obj = path_node.object
+                    obj = abs(path_node.object)
                     first = obj.first_point
                 except (IndexError, AttributeError):
                     continue
