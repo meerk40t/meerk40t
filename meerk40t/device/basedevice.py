@@ -95,25 +95,25 @@ def plugin(kernel, lifecycle=None):
             return "device", data
 
 
-class Device(Modifier):
-    def __init__(
-        self, context, interpreter=None, name=None, channel=None, *args, **kwargs
-    ):
-        Modifier.__init__(self, context, name, channel)
-        self.context.activate("modifier/Spooler")
-        self.spooler = self.context.spooler
-        if interpreter is not None:
-            self.context.activate(interpreter)
-        else:
-            self.interpreter = None
-        self.pipes = []
-
-    def __repr__(self):
-        return "Spooler()"
-
-    def attach(self, *a, **kwargs):
-        """Overloaded attach to demand .spooler attribute."""
-        self.context.spooler = self.spooler
-        self.context.pipes = self.pipes
-        self.context.interpreter = self.interpreter
-
+# class Device(Modifier):
+#     def __init__(
+#         self, context, interpreter=None, name=None, channel=None, *args, **kwargs
+#     ):
+#         Modifier.__init__(self, context, name, channel)
+#         self.context.activate("modifier/Spooler")
+#         self.spooler = self.context.spooler
+#         if interpreter is not None:
+#             self.context.activate(interpreter)
+#         else:
+#             self.interpreter = None
+#         self.pipes = []
+#
+#     def __repr__(self):
+#         return "Spooler()"
+#
+#     def attach(self, *a, **kwargs):
+#         """Overloaded attach to demand .spooler attribute."""
+#         self.context.spooler = self.spooler
+#         self.context.pipes = self.pipes
+#         self.context.interpreter = self.interpreter
+#

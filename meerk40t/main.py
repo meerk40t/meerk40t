@@ -180,12 +180,12 @@ def run():
     except ImportError:
         pass
 
-    try:
-        from .device.lhystudios import lhystudiosdevice
+    # try:
+    from .device.lhystudios import lhystudiosdevice
 
-        kernel.add_plugin(lhystudiosdevice.plugin)
-    except ImportError:
-        pass
+    kernel.add_plugin(lhystudiosdevice.plugin)
+    # except ImportError:
+    #     pass
 
     try:
         from .device.moshi import moshidevice

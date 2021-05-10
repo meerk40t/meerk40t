@@ -12,14 +12,15 @@ STATE_CONCAT = 1
 STATE_COMPACT = 2
 
 """
-Ruida device is a stub-backend.
+Ruida device interfacing. We do not send or interpret ruida code, but we can emulator ruidacode into cutcode and read
+ruida files (*.rd) and turn them likewise into cutcode.
 """
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("load/RDLoader", RDLoader)
-        kernel.register("module/RuidaEmulator", RuidaEmulator)
+        kernel.register("emulator/ruida", RuidaEmulator)
 
         @kernel.console_option("spool", type=bool, action="store_true")
         @kernel.console_command("ruidaserver", help="activate the ruidaserver.")
