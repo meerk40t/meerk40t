@@ -137,6 +137,14 @@ def run():
         pass
 
     try:
+        from .core import interpreters
+
+        kernel.add_plugin(interpreters.plugin)
+    except ImportError:
+        pass
+
+
+    try:
         from .core import elements
 
         kernel.add_plugin(elements.plugin)

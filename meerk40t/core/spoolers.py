@@ -120,7 +120,7 @@ class Spoolers(Modifier):
         try:
             return self._spoolers[spooler_name]
         except KeyError:
-            self._spoolers[spooler_name] = Spooler(self.context, spooler_name)
+            self._spoolers[spooler_name] = Spooler(self.context, spooler_name), spooler_name
             return self._spoolers[spooler_name]
 
     def default_spooler(self):
@@ -141,8 +141,8 @@ class Spoolers(Modifier):
             input_type=(None, "plan"),
             output_type="spooler",
         )
-        def spooler(command, channel, _, data=None, remainder=None, **kwargs):
-            if len(command) > 4:
+        def spool(command, channel, _, data=None, remainder=None, **kwargs):
+            if len(command) > 5:
                 self._default_spooler = command[5:]
                 self.context.signal("spooler", self._default_spooler, None)
             spooler = self.get_or_make_spooler(self._default_spooler)
@@ -166,7 +166,7 @@ class Spoolers(Modifier):
                     channel("%d: %s" % (i, op_name))
                 channel(_("----------"))
 
-            return "spooler", spooler
+            return "spooler", spooler, self._default_spooler
 
         @self.context.console_command(
             "list",
@@ -175,13 +175,13 @@ class Spoolers(Modifier):
             output_type="spool",
         )
         def spooler_list(command, channel, _, data_type=None, data=None, **kwargs):
-            spooler = data
+            spooler, spooler_name = data
             channel(_("----------"))
             channel(_("Spoolers:"))
-            for i, spooler_name in enumerate(self._spoolers):
-                channel("%d: %s" % (i, spooler_name))
+            for i, s_name in enumerate(self._spoolers):
+                channel("%d: %s" % (i, s_name))
             channel(_("----------"))
-            channel(_("Spooler %s:" % self._default_spooler))
+            channel(_("Spooler %s:" % spooler_name))
             for i, op_name in enumerate(spooler):
                 channel("%d: %s" % (i, op_name))
             channel(_("----------"))
@@ -195,7 +195,7 @@ class Spoolers(Modifier):
             output_type="spooler",
         )
         def spooler_send(command, channel, _, data_type=None, op=None, data=None, **kwargs):
-            spooler = data
+            spooler, spooler_name = data
             if op is None:
                 raise SyntaxError
             try:
@@ -215,6 +215,6 @@ class Spoolers(Modifier):
             output_type="plan",
         )
         def spooler_clear(command, channel, _, data_type=None, data=None, **kwargs):
-            spooler = data
+            spooler, spooler_name = data
             spooler.clear_queue()
             return data_type, data

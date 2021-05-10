@@ -154,7 +154,7 @@ class Planner(Modifier):
 
             if data is not None:
                 # If ops data is in data, then we copy that and move on to next step.
-                plan, original, commands = self.get_or_make_plan(self._default_plan)
+                plan, original, commands, name = self.get_or_make_plan(self._default_plan)
                 for c in data:
                     if not c.output:
                         continue
@@ -165,7 +165,7 @@ class Planner(Modifier):
                         pass
                     plan.append(copy(c))
                 self.context.signal("plan", self._default_plan, 1)
-                return "plan", (plan, original, commands)
+                return "plan", (plan, original, commands, self._default_plan)
 
             data = self.get_or_make_plan(self._default_plan)
             if remainder is None:
