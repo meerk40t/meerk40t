@@ -12,9 +12,12 @@ class JobSpooler(MWindow):
 
         self.available_spoolers = self.context.spoolers._spoolers
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=[str(self.available_spoolers)], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=[str(i) for i in self.available_spoolers], style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(0)
+        for spool_name in self.available_spoolers:
+            self.connected_spooler, self.connected_name = self.available_spoolers[spool_name]
+            break
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -106,7 +109,7 @@ class JobSpooler(MWindow):
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         index = event.Index
-        spooler = self.connected_device.spooler
+        spooler = self.connected_spooler
         try:
             element = spooler._queue[index]
         except IndexError:
@@ -122,11 +125,11 @@ class JobSpooler(MWindow):
         menu.Destroy()
 
     def window_open(self):
-        self.connected_device.listen("spooler;queue", self.on_spooler_update)
+        self.context.listen("spooler;queue", self.on_spooler_update)
         self.refresh_spooler_list()
 
     def window_close(self):
-        self.connected_device.unlisten("spooler;queue", self.on_spooler_update)
+        self.context.unlisten("spooler;queue", self.on_spooler_update)
 
     def refresh_spooler_list(self):
         if not self.update_spooler:
@@ -143,7 +146,7 @@ class JobSpooler(MWindow):
         except RuntimeError:
             return
 
-        spooler = self.connected_device.spooler
+        spooler = self.connected_spooler
         if len(spooler._queue) > 0:
             # This should actually process and update the queue items.
             for i, e in enumerate(spooler._queue):
@@ -179,7 +182,7 @@ class JobSpooler(MWindow):
 
     def on_tree_popup_clear(self, element):
         def delete(event):
-            spooler = self.connected_device.spooler
+            spooler = self.connected_spooler
             spooler.clear_queue()
             self.refresh_spooler_list()
 
@@ -187,12 +190,12 @@ class JobSpooler(MWindow):
 
     def on_tree_popup_delete(self, element):
         def delete(event):
-            spooler = self.connected_device.spooler
+            spooler = self.connected_spooler
             spooler.remove(element)
             self.refresh_spooler_list()
 
         return delete
 
-    def on_spooler_update(self, value):
+    def on_spooler_update(self, value, *args, **kwargs):
         self.update_spooler = True
         self.refresh_spooler_list()
