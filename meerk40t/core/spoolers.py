@@ -150,8 +150,8 @@ class Spoolers(Modifier):
             if len(command) > 5:
                 self._default_spooler = command[5:]
                 self.context.signal("spooler", self._default_spooler, None)
-            spooler = self.get_or_make_spooler(self._default_spooler)
-
+            spooler_data = self.get_or_make_spooler(self._default_spooler)
+            spooler, spooler_name = spooler_data
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
                 plan, original, commands, plan_name = data
@@ -171,7 +171,7 @@ class Spoolers(Modifier):
                     channel("%d: %s" % (i, op_name))
                 channel(_("----------"))
 
-            return "spooler", spooler, self._default_spooler
+            return "spooler", (spooler, self._default_spooler)
 
         @context.console_command(
             "list",
@@ -298,7 +298,7 @@ class Spoolers(Modifier):
                 spooler._dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
             elif command.endswith("down"):
                 spooler._dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
-            context(".timer 1 0 spooler%s jog\n" % spooler_name)
+            context(".timer 1 0 spool%s jog\n" % spooler_name)
             return 'spooler', data
 
         @context.console_command(
@@ -308,8 +308,11 @@ class Spoolers(Modifier):
             if data is None:
                 data = self.default_spooler()
             spooler, spooler_name = data
-            idx = int(spooler._dx)
-            idy = int(spooler._dy)
+            try:
+                idx = int(spooler._dx)
+                idy = int(spooler._dy)
+            except AttributeError:
+                return
             if idx == 0 and idy == 0:
                 return
             if spooler.job_if_idle(execute_relative_position(idx, idy)):
