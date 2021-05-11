@@ -138,9 +138,6 @@ class LhymicroInterpreter(Interpreter):
         self.is_paused = False
         self.context._buffer_size = 0
 
-        self.pipe = self.context.channel("pipe/send")
-        self.realtime_pipe = self.context.channel("pipe/send_realtime")
-
         def primary_hold():
             buffer = self.context._buffer_size
             if buffer is None:
@@ -295,6 +292,7 @@ class LhymicroInterpreter(Interpreter):
         context.setting(bool, "buffer_limit", True)
         context.setting(int, "current_x", 0)
         context.setting(int, "current_y", 0)
+        context.setting(bool, "autolock", False)
         root_context.setting(bool, "opt_rapid_between", True)
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 127)
@@ -490,11 +488,11 @@ class LhymicroInterpreter(Interpreter):
             self.plot = self.plot_planner.gen()
 
     def pause(self, *values):
-        self.realtime_pipe(b"PN!\n")
+        self.realtime_data_output(b"PN!\n")
         self.is_paused = True
 
     def resume(self, *values):
-        self.realtime_pipe(b"PN&\n")
+        self.realtime_data_output(b"PN&\n")
         self.is_paused = False
 
     def reset(self):
@@ -502,7 +500,7 @@ class LhymicroInterpreter(Interpreter):
         self.context.signal("pipe;buffer", 0)
         self.plot = None
         self.plot_planner.clear()
-        self.realtime_pipe(b"I*\n")
+        self.realtime_data_output(b"I*\n")
         self.laser = False
         self.properties = 0
         self.state = INTERPRETER_STATE_RAPID
@@ -549,20 +547,20 @@ class LhymicroInterpreter(Interpreter):
         self.laser = False
         if self.is_prop(STATE_HORIZONTAL_MAJOR):
             if not self.is_left and dx >= 0:
-                self.pipe(self.CODE_LEFT)
+                self.data_output(self.CODE_LEFT)
             if not self.is_right and dx <= 0:
-                self.pipe(self.CODE_RIGHT)
+                self.data_output(self.CODE_RIGHT)
         else:
             if not self.is_top and dy >= 0:
-                self.pipe(self.CODE_TOP)
+                self.data_output(self.CODE_TOP)
             if not self.is_bottom and dy <= 0:
-                self.pipe(self.CODE_BOTTOM)
-        self.pipe(b"N")
+                self.data_output(self.CODE_BOTTOM)
+        self.data_output(b"N")
         if dy != 0:
             self.goto_y(dy)
         if dx != 0:
             self.goto_x(dx)
-        self.pipe(b"SE")
+        self.data_output(b"SE")
         self.declare_directions()
         self.state = INTERPRETER_STATE_PROGRAM
 
@@ -632,14 +630,14 @@ class LhymicroInterpreter(Interpreter):
                     self.goto_octent(0, dy, cut)
                 self.ensure_rapid_mode()
             else:
-                self.pipe(b"I")
+                self.data_output(b"I")
                 if dx != 0:
                     self.goto_x(dx)
                 if dy != 0:
                     self.goto_y(dy)
-                self.pipe(b"S1P\n")
+                self.data_output(b"S1P\n")
                 if not self.context.autolock:
-                    self.pipe(b"IS2P\n")
+                    self.data_output(b"IS2P\n")
         elif self.state == INTERPRETER_STATE_PROGRAM:
             mx = 0
             my = 0
@@ -652,7 +650,7 @@ class LhymicroInterpreter(Interpreter):
                 self.goto_x(dx)
             if dy != 0:
                 self.goto_y(dy)
-            self.pipe(b"N")
+            self.data_output(b"N")
         elif self.state == INTERPRETER_STATE_MODECHANGE:
             self.fly_switch_speed(dx, dy)
         self.check_bounds()
@@ -719,16 +717,16 @@ class LhymicroInterpreter(Interpreter):
         if not self.laser:
             return False
         if self.state == INTERPRETER_STATE_RAPID:
-            self.pipe(b"I")
-            self.pipe(self.CODE_LASER_OFF)
-            self.pipe(b"S1P\n")
+            self.data_output(b"I")
+            self.data_output(self.CODE_LASER_OFF)
+            self.data_output(b"S1P\n")
             if not self.context.autolock:
-                self.pipe(b"IS2P\n")
+                self.data_output(b"IS2P\n")
         elif self.state == INTERPRETER_STATE_PROGRAM:
-            self.pipe(self.CODE_LASER_OFF)
+            self.data_output(self.CODE_LASER_OFF)
         elif self.state == INTERPRETER_STATE_FINISH:
-            self.pipe(self.CODE_LASER_OFF)
-            self.pipe(b"N")
+            self.data_output(self.CODE_LASER_OFF)
+            self.data_output(b"N")
         self.laser = False
         return True
 
@@ -736,16 +734,16 @@ class LhymicroInterpreter(Interpreter):
         if self.laser:
             return False
         if self.state == INTERPRETER_STATE_RAPID:
-            self.pipe(b"I")
-            self.pipe(self.CODE_LASER_ON)
-            self.pipe(b"S1P\n")
+            self.data_output(b"I")
+            self.data_output(self.CODE_LASER_ON)
+            self.data_output(b"S1P\n")
             if not self.context.autolock:
-                self.pipe(b"IS2P\n")
+                self.data_output(b"IS2P\n")
         elif self.state == INTERPRETER_STATE_PROGRAM:
-            self.pipe(self.CODE_LASER_ON)
+            self.data_output(self.CODE_LASER_ON)
         elif self.state == INTERPRETER_STATE_FINISH:
-            self.pipe(self.CODE_LASER_ON)
-            self.pipe(b"N")
+            self.data_output(self.CODE_LASER_ON)
+            self.data_output(b"N")
         self.laser = True
         return True
 
@@ -753,14 +751,14 @@ class LhymicroInterpreter(Interpreter):
         if self.state == INTERPRETER_STATE_RAPID:
             return
         if self.state == INTERPRETER_STATE_FINISH:
-            self.pipe(b"S1P\n")
+            self.data_output(b"S1P\n")
             if not self.context.autolock:
-                self.pipe(b"IS2P\n")
+                self.data_output(b"IS2P\n")
         elif (
             self.state == INTERPRETER_STATE_PROGRAM
             or self.state == INTERPRETER_STATE_MODECHANGE
         ):
-            self.pipe(b"FNSE-\n")
+            self.data_output(b"FNSE-\n")
             self.laser = False
         self.state = INTERPRETER_STATE_RAPID
         self.context.signal("interpreter;mode", self.state)
@@ -768,7 +766,7 @@ class LhymicroInterpreter(Interpreter):
     def fly_switch_speed(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
-        self.pipe(b"@NSE")
+        self.data_output(b"@NSE")
         self.state = INTERPRETER_STATE_RAPID
         speed_code = LaserSpeed(
             self.context.board,
@@ -785,15 +783,15 @@ class LhymicroInterpreter(Interpreter):
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, "utf8")
-        self.pipe(speed_code)
+        self.data_output(speed_code)
         if dx != 0:
             self.goto_x(dx)
         if dy != 0:
             self.goto_y(dy)
-        self.pipe(b"N")
+        self.data_output(b"N")
         self.set_requested_directions()
-        self.pipe(self.code_declare_directions())
-        self.pipe(b"S1E")
+        self.data_output(self.code_declare_directions())
+        self.data_output(b"S1E")
         self.state = INTERPRETER_STATE_PROGRAM
 
     def ensure_finished_mode(self):
@@ -803,10 +801,10 @@ class LhymicroInterpreter(Interpreter):
             self.state == INTERPRETER_STATE_PROGRAM
             or self.state == INTERPRETER_STATE_MODECHANGE
         ):
-            self.pipe(b"@NSE")
+            self.data_output(b"@NSE")
             self.laser = False
         elif self.state == INTERPRETER_STATE_RAPID:
-            self.pipe(b"I")
+            self.data_output(b"I")
         self.state = INTERPRETER_STATE_FINISH
         self.context.signal("interpreter;mode", self.state)
 
@@ -830,20 +828,20 @@ class LhymicroInterpreter(Interpreter):
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, "utf8")
-        self.pipe(speed_code)
-        self.pipe(b"N")
+        self.data_output(speed_code)
+        self.data_output(b"N")
         self.set_requested_directions()
         self.declare_directions()
-        self.pipe(b"S1E")
+        self.data_output(b"S1E")
         self.state = INTERPRETER_STATE_PROGRAM
         self.context.signal("interpreter;mode", self.state)
 
     def h_switch(self):
         if self.is_prop(STATE_X_FORWARD_LEFT):
-            self.pipe(self.CODE_RIGHT)
+            self.data_output(self.CODE_RIGHT)
             self.unset_prop(STATE_X_FORWARD_LEFT)
         else:
-            self.pipe(self.CODE_LEFT)
+            self.data_output(self.CODE_LEFT)
             self.set_prop(STATE_X_FORWARD_LEFT)
         if self.is_prop(STATE_Y_FORWARD_TOP):
             self.context.current_y -= self.settings.raster_step
@@ -853,10 +851,10 @@ class LhymicroInterpreter(Interpreter):
 
     def v_switch(self):
         if self.is_prop(STATE_Y_FORWARD_TOP):
-            self.pipe(self.CODE_BOTTOM)
+            self.data_output(self.CODE_BOTTOM)
             self.unset_prop(STATE_Y_FORWARD_TOP)
         else:
-            self.pipe(self.CODE_TOP)
+            self.data_output(self.CODE_TOP)
             self.set_prop(STATE_Y_FORWARD_TOP)
         if self.is_prop(STATE_X_FORWARD_LEFT):
             self.context.current_x -= self.settings.raster_step
@@ -879,7 +877,7 @@ class LhymicroInterpreter(Interpreter):
     def home(self, *values):
         x, y = self.calc_home_position()
         self.ensure_rapid_mode()
-        self.pipe(b"IPP\n")
+        self.data_output(b"IPP\n")
         # old_x = self.context.current_x
         # old_y = self.context.current_y
         self.context.current_x = x
@@ -908,14 +906,14 @@ class LhymicroInterpreter(Interpreter):
 
     def lock_rail(self):
         self.ensure_rapid_mode()
-        self.pipe(b"IS1P\n")
+        self.data_output(b"IS1P\n")
 
     def unlock_rail(self, abort=False):
         self.ensure_rapid_mode()
-        self.pipe(b"IS2P\n")
+        self.data_output(b"IS2P\n")
 
     def abort(self):
-        self.pipe(b"I\n")
+        self.data_output(b"I\n")
 
     def check_bounds(self):
         self.min_x = min(self.min_x, self.context.current_x)
@@ -946,24 +944,24 @@ class LhymicroInterpreter(Interpreter):
         self.set_prop(STATE_Y_STEPPER_ENABLE)
         if dx > 0:  # Moving right
             if self.is_prop(STATE_X_FORWARD_LEFT):
-                self.pipe(self.CODE_RIGHT)
+                self.data_output(self.CODE_RIGHT)
                 self.unset_prop(STATE_X_FORWARD_LEFT)
         else:  # Moving left
             if not self.is_prop(STATE_X_FORWARD_LEFT):
-                self.pipe(self.CODE_LEFT)
+                self.data_output(self.CODE_LEFT)
                 self.set_prop(STATE_X_FORWARD_LEFT)
         if dy > 0:  # Moving bottom
             if self.is_prop(STATE_Y_FORWARD_TOP):
-                self.pipe(self.CODE_BOTTOM)
+                self.data_output(self.CODE_BOTTOM)
                 self.unset_prop(STATE_Y_FORWARD_TOP)
         else:  # Moving top
             if not self.is_prop(STATE_Y_FORWARD_TOP):
-                self.pipe(self.CODE_TOP)
+                self.data_output(self.CODE_TOP)
                 self.set_prop(STATE_Y_FORWARD_TOP)
         self.context.current_x += dx
         self.context.current_y += dy
         self.check_bounds()
-        self.pipe(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
+        self.data_output(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
 
     def set_requested_directions(self):
         if self.context.strict:
@@ -993,7 +991,7 @@ class LhymicroInterpreter(Interpreter):
     def declare_directions(self):
         """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
         You cannot declare a diagonal direction."""
-        self.pipe(self.code_declare_directions())
+        self.data_output(self.code_declare_directions())
 
     def code_declare_directions(self):
         x_dir = (
@@ -1070,35 +1068,35 @@ class LhymicroInterpreter(Interpreter):
     def move_right(self, dx=0):
         self.context.current_x += dx
         if not self.is_right or self.state != INTERPRETER_STATE_PROGRAM:
-            self.pipe(self.CODE_RIGHT)
+            self.data_output(self.CODE_RIGHT)
             self.set_right()
         if dx != 0:
-            self.pipe(lhymicro_distance(abs(dx)))
+            self.data_output(lhymicro_distance(abs(dx)))
             self.check_bounds()
 
     def move_left(self, dx=0):
         self.context.current_x -= abs(dx)
         if not self.is_left or self.state != INTERPRETER_STATE_PROGRAM:
-            self.pipe(self.CODE_LEFT)
+            self.data_output(self.CODE_LEFT)
             self.set_left()
         if dx != 0:
-            self.pipe(lhymicro_distance(abs(dx)))
+            self.data_output(lhymicro_distance(abs(dx)))
             self.check_bounds()
 
     def move_bottom(self, dy=0):
         self.context.current_y += dy
         if not self.is_bottom or self.state != INTERPRETER_STATE_PROGRAM:
-            self.pipe(self.CODE_BOTTOM)
+            self.data_output(self.CODE_BOTTOM)
             self.set_bottom()
         if dy != 0:
-            self.pipe(lhymicro_distance(abs(dy)))
+            self.data_output(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
     def move_top(self, dy=0):
         self.context.current_y -= abs(dy)
         if not self.is_top or self.state != INTERPRETER_STATE_PROGRAM:
-            self.pipe(self.CODE_TOP)
+            self.data_output(self.CODE_TOP)
             self.set_top()
         if dy != 0:
-            self.pipe(lhymicro_distance(abs(dy)))
+            self.data_output(lhymicro_distance(abs(dy)))
             self.check_bounds()

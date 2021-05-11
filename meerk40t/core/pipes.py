@@ -5,27 +5,26 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/Pipes", Pipes)
         kernel.register("pipe/file", FilePipe)
-        kernel.register("pipe/tcp", TcpPipe)
 
     elif lifecycle == "boot":
         kernel_root = kernel.get_context("/")
         kernel_root.activate("modifier/Pipes")
 
 
-class Pipe:
-    def __init__(self):
-        self.output = None
-        self.input = None
-
-
-class FilePipe(Pipe):
-    def __init__(self):
+class FilePipe:
+    def __init__(self, filename):
         super().__init__()
+        self.filename = filename
+        self._stream = None
 
+    def writable(self):
+        return True
 
-class TcpPipe(Pipe):
-    def __init__(self):
-        super().__init__()
+    def write(self, data):
+        if self._stream is None:
+            self._stream = open(self.filename, "w")
+        self._stream.write(data)
+        self._stream.flush()
 
 
 class Pipes(Modifier):
@@ -72,8 +71,8 @@ class Pipes(Modifier):
             "pipe",
             help="pipe<?> <command>",
             regex=True,
-            input_type=(None, "interpret", "pipe"),
-            output_type="pipe",
+            input_type=(None, "source"),
+            output_type="pipe"
         )
         def pipe(command, channel, _, data=None, data_type=None, new=None, remainder=None, **kwargs):
             if len(command) > 4:
@@ -98,12 +97,8 @@ class Pipes(Modifier):
             self.context.signal("pipe", pipe_name, 1)
 
             if data is not None:
-                if data_type == "interpret":
-                    dinter, dname = data
-                    dinter.output = pipe
-                elif data_type == "pipe":
-                    dpipe, dname = data
-                    dpipe.output = pipe
+                dsource, dname = data
+                dsource.output = pipe
             elif remainder is None:
                 pipe, pipe_name = pipe_data
                 channel(_("----------"))
@@ -115,6 +110,31 @@ class Pipes(Modifier):
                 channel(_("----------"))
 
             return "pipe", pipe_data
+
+        @context.console_argument("filename")
+        @context.console_command(
+            "outfile",
+            help="outfile filename",
+            input_type=(None, "source"),
+            output_type="pipe"
+        )
+        def outfile(command, channel, _, data=None, data_type=None, filename=None, remainder=None, **kwargs):
+            if filename is None:
+                raise SyntaxError("No file specified.")
+
+            for i in range(1000):
+                if str(i) in self._pipes:
+                    continue
+                self.default_pipe = str(i)
+                break
+            pipe_name = self.default_pipe
+            filepipe = FilePipe(filename)
+            self._pipes[pipe_name] = filepipe, pipe_name
+
+            if data is not None:
+                dsource, dname = data
+                dsource.output = filepipe
+            return "pipe", (filepipe, pipe_name)
 
         @self.context.console_command(
             "list",

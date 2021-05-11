@@ -46,7 +46,8 @@ class Interpreter:
         self.settings = LaserSettings()
 
         self.spooler = None
-        self.pipe = None
+        self.data_output = lambda e: e
+        self.realtime_data_output = lambda e: e
 
         self.process_item = None
         self.spooled_item = None
@@ -612,3 +613,13 @@ class Interpreters(Modifier):
             interpreter, name = data
             interpreter.reset()
             return data_type, data
+
+        @self.context.console_command(
+            "out",
+            help="converts interpreter into source stream for pipes",
+            input_type="interpret",
+            output_type="source",
+        )
+        def interpret_list(data=None, **kwargs):
+            interpreter, name = data
+            return "source", (interpreter, None)

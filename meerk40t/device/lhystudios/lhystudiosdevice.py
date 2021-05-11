@@ -5,7 +5,6 @@ from .lhystudioemulator import EgvLoader, LhystudioEmulator
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        # kernel.register("device/Lhystudios", LhystudiosDevice)
         kernel.register("interpreter/lhystudios", LhymicroInterpreter)
         kernel.register("pipe/lhystudios", LhystudioController)
         kernel.register("emulator/lhystudios", LhystudioEmulator)
