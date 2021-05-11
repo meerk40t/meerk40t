@@ -45,6 +45,9 @@ class Interpreter:
         self.root_context = context.get_context("/")
         self.settings = LaserSettings()
 
+        self.spooler = None
+        self.pipe = None
+
         self.process_item = None
         self.spooled_item = None
         self.holds = []
@@ -148,7 +151,7 @@ class Interpreter:
         :return:
         """
         if self.spooler is None:
-            return # Spooler does not exist.
+            return  # Spooler does not exist.
         element = self.spooler.peek()
         if element is None:
             return  # Spooler is empty.
@@ -416,7 +419,7 @@ class Interpreter:
 
     def set_pwm(self, power=1000.0):
         self.settings.power = power
-        if self.power > 1000.0:
+        if self.settings.power > 1000.0:
             self.settings.power = 1000.0
         if self.settings.power <= 0:
             self.settings.power = 0.0
@@ -487,8 +490,6 @@ class Interpreters(Modifier):
         Modifier.__init__(self, context, name, channel)
         self._interpreters = dict()
         self._default_interpreter = "0"
-        self.spooler = None
-        self.output = None
 
     def get_interpreter(self, interpreter_name, **kwargs):
         try:
@@ -524,6 +525,7 @@ class Interpreters(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
+        @context.console_option("new", "n", type=str, help="new interpreter type")
         @self.context.console_command(
             "interpret",
             help="interpret<?> <command>",
@@ -531,62 +533,35 @@ class Interpreters(Modifier):
             input_type=(None, "spooler"),
             output_type="interpret",
         )
-        def interpret(command, channel, _, data=None, remainder=None, **kwargs):
+        def interpret(command, channel, _, data=None, new=None, remainder=None, **kwargs):
             if len(command) > 9:
                 self._default_interpreter = command[9:]
                 self.context.signal("interpreter", self._default_interpreter, None)
+            if new is not None and self._default_interpreter in self._interpreters:
+                for i in range(1000):
+                    if str(i) in self._interpreters:
+                        continue
+                    self.default_interpreter = str(i)
+                    break
+
+            if new is not None:
+                inter_data = self.make_interpreter(self._default_interpreter, new)
+            else:
+                inter_data = self.get_interpreter(self._default_interpreter)
+            if inter_data is None:
+                raise SyntaxError("No Interpreter.")
+
+            interpreter, name = inter_data
 
             if data is not None:
-                # If ops data is in data, then we copy that and move on to next step.
                 spooler, spooler_name = data
-                interpreter, name = self.get_interpreter(self._default_interpreter)
                 try:
                     interpreter.spooler = spooler
                 except AttributeError:
                     pass
                 return "interpret", (interpreter, name)
 
-            data = self.get_interpreter(self._default_interpreter)
-            if data is None:
-                raise SyntaxError("No Interpreter.")
             if remainder is None:
-                interpreter, name = data
-                channel(_("----------"))
-                channel(_("Interpreter:"))
-                for i, inter in enumerate(self._interpreters):
-                    channel("%d: %s" % (i, inter))
-                channel(_("----------"))
-                channel(_("Interpreter %s:" % name))
-                channel(str(interpreter))
-                channel(_("----------"))
-            return "interpret", data
-
-        @context.console_argument("interpret_type")
-        @self.context.console_command(
-            "new-interpret",
-            help="new-interpret <type>",
-            input_type=(None, "spooler"),
-            output_type="interpret",
-        )
-        def interpret(command, channel, _, data=None, interpret_type=None, remainder=None, **kwargs):
-            if interpret_type is None:
-                raise SyntaxError("Must specify a valid interpreter type.")
-            for i in range(1000):
-                if str(i) in self._interpreters:
-                    continue
-                self.default_interpreter = str(i)
-                break
-
-            if data is not None:
-                # If ops data is in data, then we copy that and move on to next step.
-                spooler, spooler_name = data
-                interpreter, name = self.make_interpreter(self._default_interpreter, interpret_type)
-                interpreter.spooler = spooler
-                return "interpret", (interpreter, name)
-
-            data = self.make_interpreter(self._default_interpreter, interpret_type)
-            if remainder is None:
-                interpreter, name = data
                 channel(_("----------"))
                 channel(_("Interpreter:"))
                 for i, inter in enumerate(self._interpreters):
@@ -620,7 +595,7 @@ class Interpreters(Modifier):
             help="list interpreter types",
             input_type="interpret",
         )
-        def list_type(channel, _, data, **kwargs):
+        def list_type(channel, _, **kwargs):
             channel(_("----------"))
             channel(_("Interpreter permitted:"))
             for i, name in enumerate(context.match("interpreter/", suffix=True)):
@@ -633,7 +608,7 @@ class Interpreters(Modifier):
             input_type="interpret",
             output_type="interpret",
         )
-        def interpreter_reset(command, channel, _, data_type=None, data=None, **kwargs):
+        def interpreter_reset(data_type=None, data=None, **kwargs):
             interpreter, name = data
             interpreter.reset()
             return data_type, data

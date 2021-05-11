@@ -15,6 +15,7 @@ def plugin(kernel, lifecycle=None):
 class Pipe:
     def __init__(self):
         self.output = None
+        self.input = None
 
 
 class FilePipe(Pipe):
@@ -66,6 +67,7 @@ class Pipes(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
+        @context.console_option("new", "n", type=str, help="new pipe type")
         @context.console_command(
             "pipe",
             help="pipe<?> <command>",
@@ -73,53 +75,24 @@ class Pipes(Modifier):
             input_type=(None, "interpret", "pipe"),
             output_type="pipe",
         )
-        def pipe(command, channel, _, data=None, data_type=None, remainder=None, **kwargs):
+        def pipe(command, channel, _, data=None, data_type=None, new=None, remainder=None, **kwargs):
             if len(command) > 4:
                 self._default_pipe = command[4:]
                 self.context.signal("pipe", self._default_pipe, None)
+            if new is not None and self._default_pipe in self._pipes:
+                for i in range(1000):
+                    if str(i) in self._pipes:
+                        continue
+                    self.default_pipe = str(i)
+                    break
 
-            pipe_data = self.get_pipe(self._default_pipe)
+            if new is not None:
+                pipe_data = self.make_pipe(self._default_pipe, new)
+            else:
+                pipe_data = self.get_pipe(self._default_pipe)
+
             if pipe_data is None:
                 raise SyntaxError("No Pipe")
-
-            pipe, pipe_name = pipe_data
-            self.context.signal("pipe", pipe_name, 1)
-
-            if data is not None:
-                if data_type == "interpret":
-                    dinter, dname = data
-                elif data_type == "pipe":
-                    dpipe, dname = data
-            elif remainder is None:
-                pipe, pipe_name = pipe_data
-                channel(_("----------"))
-                channel(_("Pipe:"))
-                for i, pname in enumerate(self._pipes):
-                    channel("%d: %s" % (i, pname))
-                channel(_("----------"))
-                channel(_("Pipe %s: %s" % (pipe_name, str(pipe))))
-                channel(_("----------"))
-
-            return "pipe", pipe_data
-
-        @context.console_argument("type")
-        @context.console_command(
-            "new-pipe",
-            help="pipe <command>",
-            input_type=(None, "interpret", "pipe"),
-            output_type="pipe",
-        )
-        def pipe(command, channel, _, data=None, data_type=None, type=None, remainder=None, **kwargs):
-            if type is None:
-                raise SyntaxError("Must specify a valid interpreter type.")
-            for i in range(1000):
-                if str(i) in self._pipes:
-                    continue
-                self.default_pipe = str(i)
-                break
-            pipe_data = self.make_pipe(self._default_pipe, type)
-            if pipe_data is None:
-                raise SyntaxError
 
             pipe, pipe_name = pipe_data
             self.context.signal("pipe", pipe_name, 1)
@@ -145,7 +118,7 @@ class Pipes(Modifier):
 
         @self.context.console_command(
             "list",
-            help="pipe<?> list",
+            help="pipe<?> list, list current pipes",
             input_type="pipe",
             output_type="pipe",
         )
