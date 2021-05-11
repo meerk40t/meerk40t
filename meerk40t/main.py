@@ -372,38 +372,19 @@ def run():
         kernel_root.save(os.path.realpath(args.output.name))
 
     if args.console:
-        # Console command gives the user text access to the console as a whole.
-        def thread_text_console():
-            kernel_root.channel("console").watch(print)
-            while True:
-                console_command = input(">")
-                if device._kernel.lifecycle == "shutdown":
-                    return
-                device(console_command + "\n")
-                if console_command in ("quit", "shutdown"):
+        kernel_root.channel("console").watch(print)
+
+        async def aio_readline(loop):
+            while kernel.lifecycle != "shutdown":
+                line = await loop.run_in_executor(None, sys.stdin.readline)
+                kernel_root(line + "\n")
+                if line in ("quit", "shutdown"):
                     break
-            kernel_root.channel("console").unwatch(print)
 
-        if args.no_gui:
-            thread_text_console()
-        else:
-            kernel.threaded(thread_text_console, thread_name="text_console", daemon=True)
-
-        # kernel_root.channel("console").watch(print)
-        #
-        # async def aio_readline(loop):
-        #     while True:
-        #         line = await loop.run_in_executor(None, sys.stdin.readline)
-        #         if kernel.lifecycle == "shutdown":
-        #             return
-        #         kernel_root(line + "\n")
-        #         if line in ("quit", "shutdown"):
-        #             break
-        #
-        # loop = asyncio.get_event_loop()
-        # loop.run_until_complete(aio_readline(loop))
-        # loop.close()
-        # kernel_root.channel("console").unwatch(print)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(aio_readline(loop))
+        loop.close()
+        kernel_root.channel("console").unwatch(print)
 
     kernel.bootstrap("mainloop")  # This is where the GUI loads and runs.
 
