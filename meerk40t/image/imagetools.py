@@ -158,27 +158,20 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Element was not locked: %s") % str(element))
         return "image", data
 
+    @context.console_argument("threshold_max", type=float)
+    @context.console_argument("threshold_min", type=float)
     @context.console_command(
         "threshold", help="", input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, args=tuple(), **kwargs):
-        try:
-            threshold_min = float(args[1])
-            threshold_max = float(args[2])
-        except (ValueError, IndexError):
-            channel(_("Threshold values improper."))
-            return
+    def image(command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs):
+        if threshold_min is None:
+            raise SyntaxError
         divide = (threshold_max - threshold_min) / 255.0
         for element in data:
             image_element = copy(element)
             image_element.image = image_element.image.copy()
-            try:
-                from .cutplanner import OperationPreprocessor
-            except ImportError:
-                channel("No Render Engine Installed.")
-                return
-            if OperationPreprocessor.needs_actualization(image_element):
-                OperationPreprocessor.make_actual(image_element)
+            if Planner.needs_actualization(image_element):
+                Planner.make_actual(image_element)
             img = image_element.image
             img = img.convert("L")
 
