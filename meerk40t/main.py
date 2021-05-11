@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import sys
 
 from .device.lasercommandconstants import (
@@ -42,6 +43,7 @@ parser.add_argument(
     "-o", "--output", type=argparse.FileType("w"), help="output file name"
 )
 parser.add_argument("-z", "--no_gui", action="store_true", help="run without gui")
+parser.add_argument("-Z", "--gui-suppress", action="store_true", help="completely suppress gui")
 parser.add_argument(
     "-b", "--batch", type=argparse.FileType("r"), help="console batch file"
 )
@@ -242,12 +244,16 @@ def run():
         # This module cannot be loaded. ezdxf missing.
         pass
 
-    try:
-        from .gui import wxmeerk40t
+    if not args.gui_suppress:
+        try:
+            from .gui import wxmeerk40t
 
-        kernel.add_plugin(wxmeerk40t.plugin)
-    except ImportError:
-        # This module cannot be loaded. wxPython missing.
+            kernel.add_plugin(wxmeerk40t.plugin)
+        except ImportError:
+            # This module cannot be loaded. wxPython missing.
+            args.no_gui = True
+    else:
+        # Complete Gui Suppress implies no-gui.
         args.no_gui = True
 
     if not getattr(sys, "frozen", False):
@@ -382,6 +388,22 @@ def run():
             thread_text_console()
         else:
             kernel.threaded(thread_text_console, thread_name="text_console", daemon=True)
+
+        # kernel_root.channel("console").watch(print)
+        #
+        # async def aio_readline(loop):
+        #     while True:
+        #         line = await loop.run_in_executor(None, sys.stdin.readline)
+        #         if kernel.lifecycle == "shutdown":
+        #             return
+        #         kernel_root(line + "\n")
+        #         if line in ("quit", "shutdown"):
+        #             break
+        #
+        # loop = asyncio.get_event_loop()
+        # loop.run_until_complete(aio_readline(loop))
+        # loop.close()
+        # kernel_root.channel("console").unwatch(print)
 
     kernel.bootstrap("mainloop")  # This is where the GUI loads and runs.
 
