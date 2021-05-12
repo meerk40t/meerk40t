@@ -546,7 +546,7 @@ class Interpreters(Modifier):
                 for i in range(1000):
                     if str(i) in self._interpreters:
                         continue
-                    self.default_interpreter = str(i)
+                    self._default_interpreter = str(i)
                     break
 
             if new is not None:

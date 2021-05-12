@@ -14,9 +14,6 @@ class JobSpooler(MWindow):
         selected_spooler = self.context.spoolers._default_spooler
         spools = [str(i) for i in self.available_spoolers]
         index = spools.index(selected_spooler)
-        self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
-        )
         self.connected_spooler, self.connected_name = None, None
         try:
             self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
@@ -24,6 +21,10 @@ class JobSpooler(MWindow):
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
+        spools = [self.available_spoolers[i][0].as_device() for i in self.available_spoolers]
+        self.combo_device = wx.ComboBox(
+            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
+        )
         self.combo_device.SetSelection(index)
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)

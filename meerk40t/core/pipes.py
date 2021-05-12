@@ -12,12 +12,13 @@ def plugin(kernel, lifecycle=None):
 
 
 class FilePipe:
-    def __init__(self, filename):
+    def __init__(self, filename, name=None):
         super().__init__()
         self.next = None
         self.prev = None
         self.filename = filename
         self._stream = None
+        self.name = name
 
     def writable(self):
         return True
@@ -32,6 +33,8 @@ class FilePipe:
         self._stream.flush()
 
     def __repr__(self):
+        if self.name is not None:
+            return "FilePipe('%s','%s')" % (self.filename, self.name)
         return "FilePipe(%s)" % self.filename
 
     def __len__(self):
@@ -95,7 +98,7 @@ class Pipes(Modifier):
                 for i in range(1000):
                     if str(i) in self._pipes:
                         continue
-                    self.default_pipe = str(i)
+                    self._default_pipe = str(i)
                     break
 
             if new is not None:
@@ -134,7 +137,7 @@ class Pipes(Modifier):
             input_type=(None, "source", "interpret"),
             output_type="pipe"
         )
-        def outfile(command, channel, _, data=None, data_type=None, filename=None, remainder=None, **kwargs):
+        def outfile(command, channel, _, data=None, filename=None, **kwargs):
             if filename is None:
                 raise SyntaxError("No file specified.")
 

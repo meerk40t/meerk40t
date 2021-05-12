@@ -1443,7 +1443,7 @@ class LhystudioController:
             self.write(b"\x18\n")
 
     def __repr__(self):
-        return "LhystudioController()"
+        return "LhystudioController(%s)" % self.name
 
     def __len__(self):
         """Provides the length of the buffer of this device."""
