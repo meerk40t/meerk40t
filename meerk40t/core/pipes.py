@@ -22,7 +22,7 @@ class FilePipe:
 
     def write(self, data):
         if self._stream is None:
-            self._stream = open(self.filename, "w")
+            self._stream = open(self.filename, "wb")
         self._stream.write(data)
         self._stream.flush()
 
@@ -98,7 +98,8 @@ class Pipes(Modifier):
 
             if data is not None:
                 dsource, dname = data
-                dsource.output = pipe
+                dsource.data_output = pipe
+                dsource.data_output_realtime = pipe  # TODO: normalize api.
             elif remainder is None:
                 pipe, pipe_name = pipe_data
                 channel(_("----------"))
@@ -133,7 +134,8 @@ class Pipes(Modifier):
 
             if data is not None:
                 dsource, dname = data
-                dsource.output = filepipe
+                dsource.data_output = filepipe.write
+                dsource.data_output_realtime = filepipe.write
             return "pipe", (filepipe, pipe_name)
 
         @self.context.console_command(

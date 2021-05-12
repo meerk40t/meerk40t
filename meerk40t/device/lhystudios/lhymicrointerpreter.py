@@ -292,7 +292,12 @@ class LhymicroInterpreter(Interpreter):
         context.setting(bool, "buffer_limit", True)
         context.setting(int, "current_x", 0)
         context.setting(int, "current_y", 0)
-        context.setting(bool, "autolock", False)
+
+        context.setting(bool, "autolock", True)
+
+        context.setting(str, "board", "M2")
+        context.setting(bool, "fix_speeds", False)
+
         root_context.setting(bool, "opt_rapid_between", True)
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 127)

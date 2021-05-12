@@ -185,6 +185,14 @@ class LhystudioController(Module):
     def initialize(self, *args, **kwargs):
         context = self.context
 
+        context.setting(int, "usb_index", -1)
+        context.setting(int, "usb_bus", -1)
+        context.setting(int, "usb_address", -1)
+        context.setting(int, "usb_version", -1)
+        context.setting(bool, "mock", False)
+        context.setting(int, "packet_count", 0)
+        context.setting(int, "rejected_count", 0)
+
         @self.context.console_argument("filename", type=str)
         @self.context.console_command(
             "egv_import", help="Lhystudios Engrave Buffer Import. egv_import <egv_file>"
