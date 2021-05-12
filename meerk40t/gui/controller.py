@@ -345,7 +345,7 @@ class Controller(MWindow):
         except AttributeError:
             pass
 
-    def update_status(self, status_data, code_string):
+    def update_status(self, origin, status_data, code_string):
         if status_data is not None:
             if isinstance(status_data, int):
                 self.text_desc.SetValue(str(status_data))
@@ -362,14 +362,14 @@ class Controller(MWindow):
         self.packet_count_text.SetValue(str(self.context.packet_count))
         self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
 
-    def update_packet_text(self, string_data):
+    def update_packet_text(self, origin, string_data):
         if string_data is not None and len(string_data) != 0:
             self.packet_text_text.SetValue(str(string_data))
 
-    def on_connection_status_change(self, status):
+    def on_connection_status_change(self, origin, status):
         self.text_connection_status.SetValue(str(status))
 
-    def on_connection_state_change(self, state):
+    def on_connection_state_change(self, origin, state):
         if state == "STATE_CONNECTION_FAILED" or state == "STATE_DRIVER_NO_BACKEND":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
             self.button_device_connect.SetLabel(
@@ -423,7 +423,7 @@ class Controller(MWindow):
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
             self.context("usb_disconnect\n")
 
-    def on_buffer_update(self, value, *args):
+    def on_buffer_update(self, origin, value, *args):
         if self.gui_update:
             if value > self.buffer_max:
                 self.buffer_max = value
@@ -431,7 +431,7 @@ class Controller(MWindow):
             self.gauge_buffer.SetRange(self.buffer_max)
             self.gauge_buffer.SetValue(min(value, self.gauge_buffer.GetRange()))
 
-    def on_control_state(self, state):
+    def on_control_state(self, origin, state):
         if self.last_control_state == state:
             return
         self.last_control_state = state

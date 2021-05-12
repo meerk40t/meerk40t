@@ -451,7 +451,7 @@ class LhymicroInterpreter(Interpreter):
         )
         self.thread = None
 
-    def on_interpreter_ready(self, *args):
+    def on_interpreter_ready(self, origin, *args):
         self.start_interpreter()
 
     def __repr__(self):
@@ -1412,7 +1412,7 @@ class LhystudioController:
 
         context.register("control/Resume", resume_k40)
 
-        self.context.get_context("/").listen(
+        self.context.root.listen(
             "lifecycle;ready", self.on_controller_ready
         )
 
@@ -1429,7 +1429,7 @@ class LhystudioController:
             buffer_str = buffer
         return buffer_str
 
-    def on_controller_ready(self, *args):
+    def on_controller_ready(self, origin, *args):
         self.start()
 
     def finalize(self, *args, **kwargs):

@@ -1468,7 +1468,7 @@ class MeerK40t(MWindow, Job):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
-    def on_active_change(self, old_active, context_active):
+    def on_active_change(self,  origin,old_active, context_active):
         if old_active is not None:
             old_active.unlisten("device;noactive", self.on_device_noactive)
             old_active.unlisten("pipe;error", self.on_usb_error)
@@ -1539,7 +1539,7 @@ class MeerK40t(MWindow, Job):
         self.context.fps = fps
         self.interval = 1.0 / float(self.context.fps)
 
-    def on_element_update(self, *args):
+    def on_element_update(self,  origin,*args):
         """
         Called by 'element_property_update' when the properties of an element are changed.
 
@@ -1562,7 +1562,7 @@ class MeerK40t(MWindow, Job):
     def on_refresh_tree_signal(self, *args):
         self.request_refresh()
 
-    def on_rebuild_tree_signal(self, *args):
+    def on_rebuild_tree_signal(self,  origin,*args):
         """
         Called by 'rebuild_tree' signal. To refresh tree directly
 
@@ -1577,7 +1577,7 @@ class MeerK40t(MWindow, Job):
         self.shadow_tree.rebuild_tree()
         self.request_refresh()
 
-    def on_refresh_scene(self, *args):
+    def on_refresh_scene(self, origin, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
 
@@ -1586,7 +1586,7 @@ class MeerK40t(MWindow, Job):
         """
         self.request_refresh()
 
-    def on_device_noactive(self, value):
+    def on_device_noactive(self,  origin,value):
         dlg = wx.MessageDialog(
             None,
             _("No active device existed. Add a primary device."),
@@ -1596,7 +1596,7 @@ class MeerK40t(MWindow, Job):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def on_usb_error(self, value):
+    def on_usb_error(self, origin, value):
         dlg = wx.MessageDialog(
             None,
             _("All attempts to connect to USB have failed."),
@@ -1606,10 +1606,10 @@ class MeerK40t(MWindow, Job):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def on_usb_state_text(self, value):
+    def on_usb_state_text(self,  origin,value):
         self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
 
-    def on_pipe_state(self, state):
+    def on_pipe_state(self, origin, state):
         if state == self.pipe_state:
             return
         self.pipe_state = state
@@ -1619,19 +1619,19 @@ class MeerK40t(MWindow, Job):
         )
         self.toolbar_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
 
-    def on_spooler_state(self, value):
+    def on_spooler_state(self, origin, value):
         self.main_statusbar.SetStatusText(
             _("Spooler: %s") % self.context.get_text_thread_state(value), 2
         )
 
-    def on_interpreter_mode(self, state):
+    def on_interpreter_mode(self, origin, state):
         if state == 0:
             self.background_brush = wx.Brush("Grey")
         else:
             self.background_brush = wx.Brush("Red")
         self.request_refresh_for_animation()
 
-    def on_export_signal(self, frame):
+    def on_export_signal(self, origin, frame):
         image_width, image_height, frame = frame
         if frame is not None:
             elements = self.context.elements
@@ -1644,7 +1644,7 @@ class MeerK40t(MWindow, Job):
             obj.image_height = image_height
             elements.add_elem(obj)
 
-    def on_background_signal(self, background):
+    def on_background_signal(self, origin, background):
         background = wx.Bitmap.FromBuffer(*background)
         self.widget_scene.signal("background", background)
         self.request_refresh()
@@ -1897,7 +1897,7 @@ class MeerK40t(MWindow, Job):
         self.widget_scene.signal("guide")
         self.request_refresh()
 
-    def update_position(self, pos):
+    def update_position(self, origin, pos):
         self.laserpath[0][self.laserpath_index][0] = pos[0]
         self.laserpath[0][self.laserpath_index][1] = pos[1]
         self.laserpath[1][self.laserpath_index][0] = pos[2]
@@ -1909,22 +1909,22 @@ class MeerK40t(MWindow, Job):
         # self.request_refresh()
         self.request_refresh_for_animation()
 
-    def space_changed(self, *args):
+    def space_changed(self, origin, *args):
         self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
         self.widget_scene.signal("grid")
         self.widget_scene.signal("guide")
-        self.request_refresh()
+        self.request_refresh(origin)
 
-    def bed_changed(self, *args):
+    def bed_changed(self, origin, *args):
         self.widget_scene.signal("grid")
         # self.widget_scene.signal('guide')
-        self.request_refresh()
+        self.request_refresh(origin)
 
     def on_emphasized_elements_changed(self, *args):
         self.update_ribbon_position()
         self.clear_laserpath()
-        self.request_refresh()
+        self.request_refresh(origin)
 
     def on_element_modified(self, *args):
         self.update_ribbon_position()
@@ -1944,7 +1944,7 @@ class MeerK40t(MWindow, Job):
         except AttributeError:
             pass
 
-    def request_refresh(self):
+    def request_refresh(self, origin=None, *args):
         """Request an update to the scene."""
         try:
             if self.context.draw_mode & DRAW_MODE_REFRESH == 0:

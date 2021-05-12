@@ -61,7 +61,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 127)
 
-        context.get_context("/").listen("lifecycle;ready", self.on_interpreter_ready)
+        context.root.listen("lifecycle;ready", self.on_interpreter_ready)
 
     def detach(self, *args, **kwargs):
         self.context.get_context("/").unlisten(
@@ -69,7 +69,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         )
         self.thread = None
 
-    def on_interpreter_ready(self, *args):
+    def on_interpreter_ready(self, origin, *args):
         self.start_interpreter()
 
     def __repr__(self):

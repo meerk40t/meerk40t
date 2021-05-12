@@ -195,7 +195,7 @@ class RasterWizard(MWindow):
         with self.thread_update_lock:
             self.wizard_thread = None
 
-    def on_emphasis_change(self, *args):
+    def on_emphasis_change(self, origin, *args):
         for e in self.context.elements.elems(emphasized=True):
             if isinstance(e, SVGImage):
                 self.svg_image = e
@@ -445,7 +445,7 @@ class RasterWizard(MWindow):
         self.matrix.post_scale(sx, sy, ax, ay)
         self.context.signal("RasterWizard-Refresh")
 
-    def on_raster_wizard_image_signal(self, *args):
+    def on_raster_wizard_image_signal(self, origin, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
         with self.thread_update_lock:
             self.needs_update = True
@@ -453,7 +453,7 @@ class RasterWizard(MWindow):
                 self.wizard_thread = self.context._kernel.threaded(self.wiz_img)
                 self.context.signal("RasterWizard-Refresh")
 
-    def on_raster_wizard_refresh_signal(self, *args):
+    def on_raster_wizard_refresh_signal(self, origin, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
         if wx.IsMainThread():
             self.update_in_gui_thread()

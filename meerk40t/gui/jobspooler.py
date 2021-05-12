@@ -196,6 +196,6 @@ class JobSpooler(MWindow):
 
         return delete
 
-    def on_spooler_update(self, value, *args, **kwargs):
+    def on_spooler_update(self,  origin, value, *args, **kwargs):
         self.update_spooler = True
         self.refresh_spooler_list()

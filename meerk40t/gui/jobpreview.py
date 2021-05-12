@@ -174,7 +174,10 @@ class JobPreview(MWindow):
         # Menu Bar end
         self.available_spoolers = self.context.spoolers._spoolers
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=[str(self.available_spoolers)], style=wx.CB_DROPDOWN
+            self,
+            wx.ID_ANY,
+            choices=[str(self.available_spoolers)],
+            style=wx.CB_DROPDOWN,
         )
         self.combo_device.SetSelection(0)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
@@ -372,7 +375,9 @@ class JobPreview(MWindow):
         self.context.opt_inner_first = self.check_cut_inner_first.IsChecked()
 
     def on_check_reduce_directions(self, event):  # wxGlade: Preview.<event_handler>
-        self.context.opt_reduce_directions = self.check_reduce_direction_changes.IsChecked()
+        self.context.opt_reduce_directions = (
+            self.check_reduce_direction_changes.IsChecked()
+        )
 
     def on_check_remove_overlap(self, event):  # wxGlade: Preview.<event_handler>
         self.context.opt_remove_overlap = self.check_remove_overlap_cuts.IsChecked()
@@ -459,11 +464,8 @@ class JobPreview(MWindow):
             return
         dlg.Destroy()
         self.context(
-            "plan%s step_repeat %s %s %s %s" % (self.plan_name,
-            cols,
-            rows,
-            x_distance,
-            y_distance)
+            "plan%s step_repeat %s %s %s %s"
+            % (self.plan_name, cols, rows, x_distance, y_distance)
         )
 
     def jobadd_physicalhome(self, event=None):
@@ -592,14 +594,14 @@ class JobPreview(MWindow):
         )
         self.context.unlisten("plan", self.plan_update)
 
-    def plan_update(self, *message):
+    def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]
         if stage is not None:
             self.stage = stage
         self.plan_name = plan_name
         self.update_gui()
 
-    def on_element_property_update(self, *args):
+    def on_element_property_update(self, origin, *args):
         self.update_gui()
 
     def update_gui(self):

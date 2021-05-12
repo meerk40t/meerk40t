@@ -571,7 +571,7 @@ class Navigation(MWindow):
         context_root.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("interpreter;position", self.on_position_update)
 
-    def on_emphasized_elements_changed(self, elements):
+    def on_emphasized_elements_changed(self,  origin,elements):
         self.select_ready(self.elements.has_emphasis())
         self.update_matrix_text()
 
@@ -593,7 +593,7 @@ class Navigation(MWindow):
             self.text_e.SetValue(str(matrix.e))
             self.text_f.SetValue(str(matrix.f))
 
-    def on_position_update(self, *args):
+    def on_position_update(self, origin, *args):
         self.text_position_x.SetValue(str(self.context.current_x))
         self.text_position_y.SetValue(str(self.context.current_y))
 

@@ -856,7 +856,7 @@ class Kernel:
         self.lifecycle = lifecycle
         for plugin in self._plugins:
             plugin(self, lifecycle)
-        self.signal("lifecycle;%s" % lifecycle, True)
+        self.signal("lifecycle;%s" % lifecycle, None, True)
 
     def boot(self) -> None:
         """
@@ -928,7 +928,7 @@ class Kernel:
                 context.deactivate(attached_name, channel=channel)
 
         # Suspend Signals
-        def signal(code, *message):
+        def signal(code, path, *message):
             channel(_("Suspended Signal: %s for %s" % (code, message)))
 
         self.signal = signal  # redefine signal function.
@@ -1577,15 +1577,16 @@ class Kernel:
     # SIGNAL PROCESSING
     # ==========
 
-    def signal(self, code: str, *message) -> None:
+    def signal(self, code: str, path: Optional[str], *message) -> None:
         """
         Signals add the latest message to the message queue.
 
         :param code: Signal code
+        :param path: Path of signal
         :param message: Message to send.
         """
         self.queue_lock.acquire(True)
-        self.message_queue[code] = message
+        self.message_queue[code] = path, message
         self.queue_lock.release()
 
     def delegate_messages(self) -> None:
@@ -1650,7 +1651,8 @@ class Kernel:
                         print("Value error removing: %s  %s" % (str(listeners), signal))
         # Process signals.
         signal_channel = self.channel("signals")
-        for signal, path, message in queue.items():
+        for signal, payload in queue.items():
+            path, message = payload
             if signal in self.listeners:
                 listeners = self.listeners[signal]
                 for listener in listeners:
