@@ -172,14 +172,22 @@ class JobPreview(MWindow):
 
         self.SetMenuBar(self.preview_menu)
         # Menu Bar end
+
         self.available_spoolers = self.context.spoolers._spoolers
+        selected_spooler = self.context.spoolers._default_spooler
+        spools = [str(i) for i in self.available_spoolers]
+        index = spools.index(selected_spooler)
         self.combo_device = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=[str(self.available_spoolers)],
-            style=wx.CB_DROPDOWN,
+            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
-        self.combo_device.SetSelection(0)
+        self.connected_spooler, self.connected_name = None, None
+        try:
+            self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
+        except IndexError:
+            for m in self.Children:
+                if isinstance(m, wx.Window):
+                    m.Disable()
+        self.combo_device.SetSelection(index)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.slider_progress = wx.Slider(self, wx.ID_ANY, 10000, 0, 10000)
@@ -497,7 +505,10 @@ class JobPreview(MWindow):
         self.update_gui()
 
     def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
-        event.Skip()
+        self.available_spoolers = self.context.spoolers._spoolers
+        spools = [str(i) for i in self.available_spoolers]
+        index = self.combo_device.GetSelection()
+        self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
 
     def on_listbox_operation_click(self, event):  # wxGlade: JobInfo.<event_handler>
         event.Skip()
@@ -538,7 +549,7 @@ class JobPreview(MWindow):
         elif self.stage == 5:
             self.context("plan%s optimize\n" % self.plan_name)
         elif self.stage == 6:
-            self.context("plan%s spool\n" % self.plan_name)
+            self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
             self.Close()
         self.update_gui()
 

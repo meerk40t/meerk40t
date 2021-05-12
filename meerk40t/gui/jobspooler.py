@@ -11,13 +11,20 @@ class JobSpooler(MWindow):
         super().__init__(673, 456, *args, **kwds)
 
         self.available_spoolers = self.context.spoolers._spoolers
+        selected_spooler = self.context.spoolers._default_spooler
+        spools = [str(i) for i in self.available_spoolers]
+        index = spools.index(selected_spooler)
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=[str(i) for i in self.available_spoolers], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
-        self.combo_device.SetSelection(0)
-        for spool_name in self.available_spoolers:
-            self.connected_spooler, self.connected_name = self.available_spoolers[spool_name]
-            break
+        self.connected_spooler, self.connected_name = None, None
+        try:
+            self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
+        except IndexError:
+            for m in self.Children:
+                if isinstance(m, wx.Window):
+                    m.Disable()
+        self.combo_device.SetSelection(index)
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -40,7 +47,7 @@ class JobSpooler(MWindow):
         self.dirty = False
         self.update_buffer_size = False
         self.update_spooler_state = False
-        self.update_spooler = False
+        self.update_spooler = True
 
         self.elements_progress = 0
         self.elements_progress_total = 0
@@ -102,7 +109,12 @@ class JobSpooler(MWindow):
         # end wxGlade
 
     def on_combo_device(self, event):  # wxGlade: Spooler.<event_handler>
-        event.Skip()
+        self.available_spoolers = self.context.spoolers._spoolers
+        spools = [str(i) for i in self.available_spoolers]
+        index = self.combo_device.GetSelection()
+        self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
+        self.update_spooler = True
+        self.refresh_spooler_list()
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         event.Skip()
@@ -133,6 +145,8 @@ class JobSpooler(MWindow):
 
     def refresh_spooler_list(self):
         if not self.update_spooler:
+            return
+        if not self.connected_spooler:
             return
 
         def name_str(e):

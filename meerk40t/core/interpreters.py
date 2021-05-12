@@ -46,6 +46,7 @@ class Interpreter:
         self.settings = LaserSettings()
 
         self.spooler = None
+        self.output = None
         self.data_output = lambda e: e
         self.realtime_data_output = lambda e: e
 
@@ -558,6 +559,7 @@ class Interpreters(Modifier):
                 spooler, spooler_name = data
                 try:
                     interpreter.spooler = spooler
+                    spooler.interpreter = interpreter
                 except AttributeError:
                     pass
                 return "interpret", (interpreter, name)

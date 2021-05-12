@@ -33,6 +33,7 @@ class Spooler:
         self.spooler_name = spooler_name
         self.queue_lock = Lock()
         self._queue = []
+        self.interpreter = None
 
     def __repr__(self):
         return "Spooler(%s, %s)" % (repr(self.context), str(self.spooler_name))
@@ -387,3 +388,6 @@ class Spoolers(Modifier):
             spooler, spooler_name = data
             spooler.job(COMMAND_LOCK)
             return 'spooler', data
+
+        for i in range(5):
+            self.get_or_make_spooler(str(i))
