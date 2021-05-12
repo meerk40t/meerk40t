@@ -1,3 +1,6 @@
+import threading
+import time
+
 from .lhystudioemulator import EgvLoader, LhystudioEmulator
 from ...core.interpreters import Interpreter
 from ...core.plotplanner import PlotPlanner
@@ -17,9 +20,17 @@ from ..basedevice import (
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
 
-
-import threading
-import time
+from ...kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+)
 
 
 def plugin(kernel, lifecycle=None):
@@ -28,6 +39,139 @@ def plugin(kernel, lifecycle=None):
         kernel.register("pipe/lhystudios", LhystudioController)
         kernel.register("emulator/lhystudios", LhystudioEmulator)
         kernel.register("load/EgvLoader", EgvLoader)
+        context = kernel.root
+
+        @context.console_command(
+            "pulse", help="pulse <time>: Pulse the laser in place."
+        )
+        def pulse(command, channel, _, args=tuple(), **kwargs):
+            if len(args) == 0:
+                channel(_("Must specify a pulse time in milliseconds."))
+                return
+            try:
+                value = float(args[0]) / 1000.0
+            except ValueError:
+                channel(_('"%s" not a valid pulse time in milliseconds') % (args[0]))
+                return
+            if value > 1.0:
+                channel(
+                    _('"%s" exceeds 1 second limit to fire a standing laser.')
+                    % (args[0])
+                )
+                try:
+                    if args[1] != "idonotlovemyhouse":
+                        return
+                except IndexError:
+                    return
+
+            def timed_fire():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, value
+                yield COMMAND_LASER_OFF
+
+            if self.spooler.job_if_idle(timed_fire):
+                channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
+            else:
+                channel(_("Pulse laser failed: Busy"))
+            return
+
+        @context.console_command("speed", help="Set Speed in Interpreter.")
+        def speed(command, channel, _, args=tuple(), **kwargs):
+            if len(args) == 0:
+                channel(_("Speed set at: %f mm/s") % self.speed)
+                return
+            inc = False
+            percent = False
+            speed = args[0]
+            if speed == "inc":
+                speed = args[1]
+                inc = True
+            if speed.endswith("%"):
+                speed = speed[:-1]
+                percent = True
+            try:
+                s = float(speed)
+            except ValueError:
+                channel(_("Not a valid speed or percent."))
+                return
+            if percent and inc:
+                s = self.speed + self.speed * (s / 100.0)
+            elif inc:
+                s += self.speed
+            elif percent:
+                s = self.speed * (s / 100.0)
+            self.set_speed(s)
+            channel(_("Speed set at: %f mm/s") % self.speed)
+
+        @context.console_command("power", help="Set Interpreter Power")
+        def power(command, channel, _, args=tuple(), **kwargs):
+            if len(args) == 0:
+                channel(_("Power set at: %d pulses per inch") % self.power)
+            else:
+                try:
+                    self.set_power(int(args[0]))
+                except ValueError:
+                    pass
+
+        @context.console_command(
+            "acceleration", help="Set Interpreter Acceleration [1-4]"
+        )
+        def acceleration(command, channel, _, args=tuple(), **kwargs):
+            if len(args) == 0:
+                if self.acceleration is None:
+                    channel(_("Acceleration is set to default."))
+                else:
+                    channel(_("Acceleration: %d") % self.acceleration)
+
+            else:
+                try:
+                    v = int(args[0])
+                    if v not in (1, 2, 3, 4):
+                        self.set_acceleration(None)
+                        channel(_("Acceleration is set to default."))
+                        return
+                    self.set_acceleration(v)
+                    channel(_("Acceleration: %d") % self.acceleration)
+                except ValueError:
+                    channel(_("Invalid Acceleration [1-4]."))
+                    return
+
+        @context.console_command("pause", help="realtime pause/resume of the machine")
+        def realtime_pause(command, channel, _, args=tuple(), **kwargs):
+            if self.is_paused:
+                self.resume()
+            else:
+                self.pause()
+
+        @context.console_command(("estop", "abort"), help="Abort Job")
+        def pipe_abort(command, channel, _, args=tuple(), **kwargs):
+            self.reset()
+            channel("Lhystudios Channel Aborted.")
+
+        @context.console_argument(
+            "rapid_x", type=float, help="limit x speed for rapid."
+        )
+        @context.console_argument(
+            "rapid_y", type=float, help="limit y speed for rapid."
+        )
+        @context.console_command(
+            "rapid_override", help="limit speed of typical rapid moves."
+        )
+        def rapid_override(command, channel, _, rapid_x=None, rapid_y=None, **kwargs):
+            if rapid_x is not None:
+                if rapid_y is None:
+                    rapid_y = rapid_x
+                self.rapid_override = True
+                self.rapid_override_speed_x = rapid_x
+                self.rapid_override_speed_y = rapid_y
+                channel(
+                    _("Rapid Limit: %f, %f")
+                    % (self.rapid_override_speed_x, self.rapid_override_speed_y)
+                )
+            else:
+                self.rapid_override = False
+                channel(_("Rapid Limit Off"))
 
 
 distance_lookup = [
@@ -95,19 +239,6 @@ def lhymicro_distance(v):
     if v >= 52:
         return dist + b"%03d" % v
     return dist + distance_lookup[v]
-
-from ...kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-    Module,
-)
 
 
 def convert_to_list_bytes(data):
@@ -238,6 +369,29 @@ class LhymicroInterpreter(Interpreter):
         kernel = context._kernel
         _ = kernel.translation
         root_context = context.get_context("/")
+        root_context.setting(bool, "opt_rapid_between", True)
+        root_context.setting(int, "opt_jog_mode", 0)
+        root_context.setting(int, "opt_jog_minimum", 127)
+
+        context.interpreter = self
+
+        context.setting(bool, "strict", False)
+        context.setting(bool, "swap_xy", False)
+        context.setting(bool, "flip_x", False)
+        context.setting(bool, "flip_y", False)
+        context.setting(bool, "home_right", False)
+        context.setting(bool, "home_bottom", False)
+        context.setting(int, "home_adjust_x", 0)
+        context.setting(int, "home_adjust_y", 0)
+        context.setting(int, "buffer_max", 900)
+        context.setting(bool, "buffer_limit", True)
+        context.setting(int, "current_x", 0)
+        context.setting(int, "current_y", 0)
+
+        context.setting(bool, "autolock", True)
+
+        context.setting(str, "board", "M2")
+        context.setting(bool, "fix_speeds", False)
 
         self.CODE_RIGHT = b"B"
         self.CODE_LEFT = b"T"
@@ -271,162 +425,6 @@ class LhymicroInterpreter(Interpreter):
 
         self.holds.append(primary_hold)
 
-        @context.console_command(
-            "pulse", help="pulse <time>: Pulse the laser in place."
-        )
-        def pulse(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("Must specify a pulse time in milliseconds."))
-                return
-            try:
-                value = float(args[0]) / 1000.0
-            except ValueError:
-                channel(_('"%s" not a valid pulse time in milliseconds') % (args[0]))
-                return
-            if value > 1.0:
-                channel(
-                    _('"%s" exceeds 1 second limit to fire a standing laser.')
-                    % (args[0])
-                )
-                try:
-                    if args[1] != "idonotlovemyhouse":
-                        return
-                except IndexError:
-                    return
-
-            def timed_fire():
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_LASER_ON
-                yield COMMAND_WAIT, value
-                yield COMMAND_LASER_OFF
-
-            if self.spooler.job_if_idle(timed_fire):
-                channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
-            else:
-                channel(_("Pulse laser failed: Busy"))
-            return
-
-        @context.console_command("speed", help="Set Speed in Interpreter.")
-        def speed(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("Speed set at: %f mm/s") % self.speed)
-                return
-            inc = False
-            percent = False
-            speed = args[0]
-            if speed == "inc":
-                speed = args[1]
-                inc = True
-            if speed.endswith("%"):
-                speed = speed[:-1]
-                percent = True
-            try:
-                s = float(speed)
-            except ValueError:
-                channel(_("Not a valid speed or percent."))
-                return
-            if percent and inc:
-                s = self.speed + self.speed * (s / 100.0)
-            elif inc:
-                s += self.speed
-            elif percent:
-                s = self.speed * (s / 100.0)
-            self.set_speed(s)
-            channel(_("Speed set at: %f mm/s") % self.speed)
-
-        @context.console_command("power", help="Set Interpreter Power")
-        def power(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("Power set at: %d pulses per inch") % self.power)
-            else:
-                try:
-                    self.set_power(int(args[0]))
-                except ValueError:
-                    pass
-
-        @context.console_command(
-            "acceleration", help="Set Interpreter Acceleration [1-4]"
-        )
-        def acceleration(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                if self.acceleration is None:
-                    channel(_("Acceleration is set to default."))
-                else:
-                    channel(_("Acceleration: %d") % self.acceleration)
-
-            else:
-                try:
-                    v = int(args[0])
-                    if v not in (1, 2, 3, 4):
-                        self.set_acceleration(None)
-                        channel(_("Acceleration is set to default."))
-                        return
-                    self.set_acceleration(v)
-                    channel(_("Acceleration: %d") % self.acceleration)
-                except ValueError:
-                    channel(_("Invalid Acceleration [1-4]."))
-                    return
-
-        @context.console_command("pause", help="realtime pause/resume of the machine")
-        def realtime_pause(command, channel, _, args=tuple(), **kwargs):
-            if self.is_paused:
-                self.resume()
-            else:
-                self.pause()
-
-        @self.context.console_command(("estop", "abort"), help="Abort Job")
-        def pipe_abort(command, channel, _, args=tuple(), **kwargs):
-            self.reset()
-            channel("Lhystudios Channel Aborted.")
-
-        @self.context.console_argument(
-            "rapid_x", type=float, help="limit x speed for rapid."
-        )
-        @self.context.console_argument(
-            "rapid_y", type=float, help="limit y speed for rapid."
-        )
-        @self.context.console_command(
-            "rapid_override", help="limit speed of typical rapid moves."
-        )
-        def rapid_override(command, channel, _, rapid_x=None, rapid_y=None, **kwargs):
-            if rapid_x is not None:
-                if rapid_y is None:
-                    rapid_y = rapid_x
-                self.rapid_override = True
-                self.rapid_override_speed_x = rapid_x
-                self.rapid_override_speed_y = rapid_y
-                channel(
-                    _("Rapid Limit: %f, %f")
-                    % (self.rapid_override_speed_x, self.rapid_override_speed_y)
-                )
-            else:
-                self.rapid_override = False
-                channel(_("Rapid Limit Off"))
-
-        context.interpreter = self
-
-        context.setting(bool, "strict", False)
-        context.setting(bool, "swap_xy", False)
-        context.setting(bool, "flip_x", False)
-        context.setting(bool, "flip_y", False)
-        context.setting(bool, "home_right", False)
-        context.setting(bool, "home_bottom", False)
-        context.setting(int, "home_adjust_x", 0)
-        context.setting(int, "home_adjust_y", 0)
-        context.setting(int, "buffer_max", 900)
-        context.setting(bool, "buffer_limit", True)
-        context.setting(int, "current_x", 0)
-        context.setting(int, "current_y", 0)
-
-        context.setting(bool, "autolock", True)
-
-        context.setting(str, "board", "M2")
-        context.setting(bool, "fix_speeds", False)
-
-        root_context.setting(bool, "opt_rapid_between", True)
-        root_context.setting(int, "opt_jog_mode", 0)
-        root_context.setting(int, "opt_jog_minimum", 127)
-
         self.update_codes()
 
         current_x = context.current_x
@@ -445,10 +443,10 @@ class LhymicroInterpreter(Interpreter):
         context.register("control/Realtime Resume", self.resume)
         context.register("control/Update Codes", self.update_codes)
 
-        context.get_context("/").listen("lifecycle;ready", self.on_interpreter_ready)
+        context.root.listen("lifecycle;ready", self.on_interpreter_ready)
 
     def detach(self, *args, **kwargs):
-        self.context.get_context("/").unlisten(
+        self.context.root.unlisten(
             "lifecycle;ready", self.on_interpreter_ready
         )
         self.thread = None

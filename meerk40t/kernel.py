@@ -146,6 +146,10 @@ class Context:
             attached = self.attached[attached_name]
             attached.boot(channel=channel)
 
+    # ==========
+    # PATH INFORMATION
+    # ==========
+
     def abs_path(self, subpath):
         """
         The absolute path function determines the absolute path of the given subpath within the current path of the
@@ -169,7 +173,6 @@ class Context:
         :return:
         """
         return self._kernel.get_context(self.abs_path(path))
-
 
     @property
     def root(self):
@@ -211,6 +214,10 @@ class Context:
         for e in list(self._kernel.contexts):
             if e.startswith(self._path):
                 self._kernel.contexts[e] = None
+
+    # ==========
+    # PERSISTENT SETTINGS.
+    # ==========
 
     def setting(self, setting_type, key, default=None):
         """
@@ -254,6 +261,64 @@ class Context:
             if isinstance(value, (int, bool, str, float, Color)):
                 self._kernel.write_persistent(self.abs_path(attr), value)
 
+    def load_persistent_object(self, obj):
+        """
+        Loads values of the persistent attributes, at this context and assigns them to the provided object.
+
+        The attribute type of the value depends on the provided object value default values.
+
+        :param obj:
+        :return:
+        """
+
+        from .svgelements import Color
+
+        for attr in dir(obj):
+            if attr.startswith("_"):
+                continue
+            obj_value = getattr(obj, attr)
+
+            if not isinstance(obj_value, (int, float, str, bool, Color)):
+                continue
+            load_value = self._kernel.read_persistent(
+                type(obj_value), self.abs_path(attr)
+            )
+            try:
+                setattr(obj, attr, load_value)
+                setattr(self, attr, load_value)
+            except AttributeError:
+                pass
+
+    def clear_persistent(self):
+        """
+        Delegate to Kernel to clear the persistent settings located at this context.
+        """
+        self._kernel.clear_persistent(self._path)
+
+    def write_persistent(self, key, value):
+        """
+        Delegate to Kernel to write the given key at this context to persistent settings. This is typically done during
+        shutdown but there are a variety of reasons to force this call early.
+
+        If the persistence object is not yet established this function cannot succeed.
+        """
+        self._kernel.write_persistent(self.abs_path(key), value)
+
+    def set_attrib_keys(self):
+        """
+        Iterate all the entries keys for the registered persistent settings, adds a None attribute for any key that
+        exists.
+
+        :return:
+        """
+        for k in self._kernel.keylist(self._path):
+            if not hasattr(self, k):
+                setattr(self, k, None)
+
+    # ==========
+    # CONTROL: Deprecated.
+    # ==========
+
     def execute(self, control):
         """
         Execute the given control code relative to the path of this context.
@@ -267,15 +332,15 @@ class Context:
             return
         funct()
 
+    # ==========
+    # DELEGATES
+    # ==========
+
     def register(self, path, obj):
         """
-        Register a object at a relative path to the current location.
-
-        :param path: Path postion within this context to register an object.
-        :param obj: Object to register.
-        :return:
+        Delegate to Kernel
         """
-        self._kernel.register(self.abs_path(path), obj)
+        self._kernel.register(path, obj)
 
     @staticmethod
     def console_argument(*args, **kwargs):
@@ -328,6 +393,45 @@ class Context:
         """
         for m in self._kernel.match(matchtext, suffix):
             yield m
+
+    def console(self, data):
+        """
+        Call the Kernel's Console with the given data.
+
+        Note: '\n' is usually used to execute these functions and this is not added by default.
+        """
+        self._kernel.console(data)
+
+    def schedule(self, job):
+        """
+        Call the Kernel's Scheduler with the given job.
+        """
+        self._kernel.schedule(job)
+
+    def unschedule(self, job):
+        """
+        Unschedule a given job.
+
+        This is often unneeded if the job completes on it's own, it will be removed from the scheduler.
+        """
+        self._kernel.unschedule(job)
+
+    def threaded(self, func, thread_name=None, result=None, daemon=False):
+        """
+        Calls a thread to be registered in the kernel.
+
+        Registered threads must complete before shutdown can be completed. These will told to stop and waited on until
+        completion.
+
+        The result function will be called with any returned result func.
+        """
+        return self._kernel.threaded(
+            func, thread_name=thread_name, result=result, daemon=daemon
+        )
+
+    # ==========
+    # MODULES
+    # ==========
 
     def find(self, path):
         """
@@ -419,6 +523,10 @@ class Context:
             pass
         instance.finalize(*args, **kwargs)
 
+    # ==========
+    # MODIFIERS
+    # ==========
+
     def activate(self, registered_path, *args, **kwargs):
         """
         Activates a modifier at this context. activate() calls and attaches a modifier located at the given path
@@ -465,59 +573,9 @@ class Context:
         instance.detach(self, *args, **kwargs)
         del self.attached[instance_path]
 
-    def load_persistent_object(self, obj):
-        """
-        Loads values of the persistent attributes, at this context and assigns them to the provided object.
-
-        The attribute type of the value depends on the provided object value default values.
-
-        :param obj:
-        :return:
-        """
-
-        from .svgelements import Color
-
-        for attr in dir(obj):
-            if attr.startswith("_"):
-                continue
-            obj_value = getattr(obj, attr)
-
-            if not isinstance(obj_value, (int, float, str, bool, Color)):
-                continue
-            load_value = self._kernel.read_persistent(
-                type(obj_value), self.abs_path(attr)
-            )
-            try:
-                setattr(obj, attr, load_value)
-                setattr(self, attr, load_value)
-            except AttributeError:
-                pass
-
-    def clear_persistent(self):
-        """
-        Delegate to Kernel to clear the persistent settings located at this context.
-        """
-        self._kernel.clear_persistent(self._path)
-
-    def write_persistent(self, key, value):
-        """
-        Delegate to Kernel to write the given key at this context to persistent settings. This is typically done during
-        shutdown but there are a variety of reasons to force this call early.
-
-        If the persistence object is not yet established this function cannot succeed.
-        """
-        self._kernel.write_persistent(self.abs_path(key), value)
-
-    def set_attrib_keys(self):
-        """
-        Iterate all the entries keys for the registered persistent settings, adds a None attribute for any key that
-        exists.
-
-        :return:
-        """
-        for k in self._kernel.keylist(self._path):
-            if not hasattr(self, k):
-                setattr(self, k, None)
+    # ==========
+    # DELEGATES via PATH.
+    # ==========
 
     def signal(self, code, *message):
         """
@@ -527,7 +585,7 @@ class Context:
         :param message: Message to send.
         :return:
         """
-        self._kernel.signal(self.abs_path(code), *message)
+        self._kernel.signal(code, self._path, *message)
 
     def last_signal(self, code):
         """
@@ -536,7 +594,7 @@ class Context:
         :param code: Code to delegate at this given context location.
         :return: message value of the last signal sent for that code.
         """
-        return self._kernel.last_signal(self.abs_path(code))
+        return self._kernel.last_signal(code, self._path)
 
     def listen(self, signal, process):
         """
@@ -546,7 +604,7 @@ class Context:
         :param process: listener to be attached
         :return:
         """
-        self._kernel.listen(self.abs_path(signal), process)
+        self._kernel.listen(signal, self._path, process)
 
     def unlisten(self, signal, process):
         """
@@ -558,7 +616,7 @@ class Context:
         :param process: listener that is to be detached.
         :return:
         """
-        self._kernel.unlisten(self.abs_path(signal), process)
+        self._kernel.unlisten(signal, self._path, process)
 
     def channel(self, channel, *args, **kwargs):
         """
@@ -568,7 +626,7 @@ class Context:
         :param buffer: Buffer to be applied to the given channel and sent to any watcher upon connection.
         :return: Channel object that is opened.
         """
-        return self._kernel.channel(self.abs_path(channel), *args, **kwargs)
+        return self._kernel.channel(channel, self._path, *args, **kwargs)
 
     def console_function(self, data):
         """
@@ -576,41 +634,6 @@ class Context:
         function with the command as the str form.
         """
         return ConsoleFunction(self, data)
-
-    def console(self, data):
-        """
-        Call the Kernel's Console with the given data.
-
-        Note: '\n' is usually used to execute these functions and this is not added by default.
-        """
-        self._kernel.console(data)
-
-    def schedule(self, job):
-        """
-        Call the Kernel's Scheduler with the given job.
-        """
-        self._kernel.schedule(job)
-
-    def unschedule(self, job):
-        """
-        Unschedule a given job.
-
-        This is often unneeded if the job completes on it's own, it will be removed from the scheduler.
-        """
-        self._kernel.unschedule(job)
-
-    def threaded(self, func, thread_name=None, result=None, daemon=False):
-        """
-        Calls a thread to be registered in the kernel.
-
-        Registered threads must complete before shutdown can be completed. These will told to stop and waited on until
-        completion.
-
-        The result function will be called with any returned result func.
-        """
-        return self._kernel.threaded(
-            func, thread_name=thread_name, result=result, daemon=daemon
-        )
 
 
 class Kernel:
