@@ -4,6 +4,7 @@ import re
 import threading
 import time
 from threading import Lock, Thread
+from typing import Callable, Generator, Any, Union, Dict, Tuple, Optional
 
 from .svgelements import Color
 
@@ -38,7 +39,7 @@ class Modifier:
     A modifiers can only be called once at any particular context.
     """
 
-    def __init__(self, context, name=None, channel=None):
+    def __init__(self, context: "Context", name: str = None, channel: "Channel" = None):
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
@@ -86,7 +87,7 @@ class Module:
     expected to modify their contexts.
     """
 
-    def __init__(self, context, name=None, *args, **kwargs):
+    def __init__(self, context: "Context", name: str = None, *args, **kwargs):
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
@@ -122,7 +123,7 @@ class Context:
     Most modules and functions are applied at the root level '/'.
     """
 
-    def __init__(self, kernel, path):
+    def __init__(self, kernel: "Kernel", path: str):
         self._kernel = kernel
         self._path = path
         self._state = STATE_UNKNOWN
@@ -132,10 +133,10 @@ class Context:
     def __str__(self):
         return "Context('%s')" % self._path
 
-    def __call__(self, data, **kwargs):
+    def __call__(self, data: str, **kwargs):
         return self._kernel.console(data)
 
-    def boot(self, channel=None):
+    def boot(self, channel: "Channel" = None):
         """
         Boot calls all attached modifiers with the boot command.
 
@@ -150,7 +151,7 @@ class Context:
     # PATH INFORMATION
     # ==========
 
-    def abs_path(self, subpath):
+    def abs_path(self, subpath: str) -> str:
         """
         The absolute path function determines the absolute path of the given subpath within the current path of the
         context.
@@ -165,7 +166,7 @@ class Context:
             return subpath
         return "%s/%s" % (self._path, subpath)
 
-    def derive(self, path):
+    def derive(self, path: str) -> "Context":
         """
         Derive a subpath context.
 
@@ -175,10 +176,10 @@ class Context:
         return self._kernel.get_context(self.abs_path(path))
 
     @property
-    def root(self):
-        return self.get_context('/')
+    def root(self) -> "Context":
+        return self.get_context("/")
 
-    def get_context(self, path):
+    def get_context(self, path) -> "Context":
         """
         Get a context at a given path location.
 
@@ -187,7 +188,7 @@ class Context:
         """
         return self._kernel.get_context(path)
 
-    def derivable(self):
+    def derivable(self) -> Generator["Context"]:
         """
         Generate all sub derived paths.
 
@@ -196,7 +197,7 @@ class Context:
         for e in self._kernel.derivable(self._path):
             yield e
 
-    def subpaths(self):
+    def subpaths(self) -> Generator["Context"]:
         """
         Generate all subpaths of the current context with their path name and the relevant context.
         """
@@ -204,7 +205,7 @@ class Context:
             if e.startswith(self._path):
                 yield e, self._kernel.contexts[e]
 
-    def close_subpaths(self):
+    def close_subpaths(self) -> None:
         """
         Find all subpaths of the current context and set them to None.
 
@@ -219,7 +220,7 @@ class Context:
     # PERSISTENT SETTINGS.
     # ==========
 
-    def setting(self, setting_type, key, default=None):
+    def setting(self, setting_type, key, default=None) -> Any:
         """
         Registers a setting to be used between modules.
 
@@ -245,7 +246,7 @@ class Context:
         setattr(self, key, load_value)
         return load_value
 
-    def flush(self):
+    def flush(self) -> None:
         """
         Commit any and all values currently stored as attr for this object to persistent storage.
         """
@@ -261,7 +262,7 @@ class Context:
             if isinstance(value, (int, bool, str, float, Color)):
                 self._kernel.write_persistent(self.abs_path(attr), value)
 
-    def load_persistent_object(self, obj):
+    def load_persistent_object(self, obj: Any) -> None:
         """
         Loads values of the persistent attributes, at this context and assigns them to the provided object.
 
@@ -289,13 +290,15 @@ class Context:
             except AttributeError:
                 pass
 
-    def clear_persistent(self):
+    def clear_persistent(self) -> None:
         """
         Delegate to Kernel to clear the persistent settings located at this context.
         """
         self._kernel.clear_persistent(self._path)
 
-    def write_persistent(self, key, value):
+    def write_persistent(
+        self, key: str, value: Union[int, float, str, bool, Color]
+    ) -> None:
         """
         Delegate to Kernel to write the given key at this context to persistent settings. This is typically done during
         shutdown but there are a variety of reasons to force this call early.
@@ -304,7 +307,7 @@ class Context:
         """
         self._kernel.write_persistent(self.abs_path(key), value)
 
-    def set_attrib_keys(self):
+    def set_attrib_keys(self) -> None:
         """
         Iterate all the entries keys for the registered persistent settings, adds a None attribute for any key that
         exists.
@@ -319,7 +322,7 @@ class Context:
     # CONTROL: Deprecated.
     # ==========
 
-    def execute(self, control):
+    def execute(self, control: str) -> None:
         """
         Execute the given control code relative to the path of this context.
 
@@ -336,46 +339,46 @@ class Context:
     # DELEGATES
     # ==========
 
-    def register(self, path, obj):
+    def register(self, path: str, obj: Any) -> None:
         """
         Delegate to Kernel
         """
         self._kernel.register(path, obj)
 
     @staticmethod
-    def console_argument(*args, **kwargs):
+    def console_argument(*args, **kwargs) -> Callable:
         """
         Delegate to Kernel
         """
         return Kernel.console_argument(*args, **kwargs)
 
     @staticmethod
-    def console_option(*args, **kwargs):
+    def console_option(*args, **kwargs) -> Callable:
         """
         Delegate to Kernel
         """
         return Kernel.console_option(*args, **kwargs)
 
-    def console_command(self, *args, **kwargs):
+    def console_command(self, *args, **kwargs) -> Callable:
         """
         Delegate to Kernel
 
         Uses current context to be passed to the console_command being registered.
         """
-        return Kernel.console_command(self, *args, **kwargs)
+        return Kernel.console_command(self._kernel, *args, **kwargs)
 
     @property
-    def registered(self):
+    def registered(self) -> Dict[str, Any]:
         """
         Delegate to Kernel
         """
         return self._kernel.registered
 
     @property
-    def contexts(self):
+    def contexts(self) -> Dict[str, "Context"]:
         return self._kernel.contexts
 
-    def has_feature(self, feature):
+    def has_feature(self, feature: str) -> bool:
         """
         Return whether or not this is a registered feature within the kernel.
 
@@ -384,7 +387,7 @@ class Context:
         """
         return feature in self._kernel.registered
 
-    def match(self, matchtext, suffix=False):
+    def match(self, matchtext: str, suffix: bool = False) -> Generator[str]:
         """
         Delegate of Kernel match.
 
@@ -394,7 +397,7 @@ class Context:
         for m in self._kernel.match(matchtext, suffix):
             yield m
 
-    def console(self, data):
+    def console(self, data: str) -> None:
         """
         Call the Kernel's Console with the given data.
 
@@ -402,13 +405,13 @@ class Context:
         """
         self._kernel.console(data)
 
-    def schedule(self, job):
+    def schedule(self, job: Union["Job", Any]) -> None:
         """
         Call the Kernel's Scheduler with the given job.
         """
         self._kernel.schedule(job)
 
-    def unschedule(self, job):
+    def unschedule(self, job: Union["Job", Any]) -> None:
         """
         Unschedule a given job.
 
@@ -416,7 +419,13 @@ class Context:
         """
         self._kernel.unschedule(job)
 
-    def threaded(self, func, thread_name=None, result=None, daemon=False):
+    def threaded(
+        self,
+        func: Callable,
+        thread_name: str = None,
+        result: Callable = None,
+        daemon: bool = False,
+    ):
         """
         Calls a thread to be registered in the kernel.
 
@@ -433,7 +442,7 @@ class Context:
     # MODULES
     # ==========
 
-    def find(self, path):
+    def find(self, path: str) -> Union["Module", None]:
         """
         Finds a loaded instance. Or returns None if not such instance.
 
@@ -447,7 +456,7 @@ class Context:
         except KeyError:
             return None
 
-    def open(self, registered_path, *args, **kwargs):
+    def open(self, registered_path: str, *args, **kwargs) -> "Module":
         """
         Opens a registered module with the same instance path as the registered path.
 
@@ -461,7 +470,9 @@ class Context:
         """
         return self.open_as(registered_path, registered_path, *args, **kwargs)
 
-    def open_as(self, registered_path, instance_path, *args, **kwargs):
+    def open_as(
+        self, registered_path: str, instance_path: str, *args, **kwargs
+    ) -> "Module":
         """
         Opens a registered module. If that module already exists it returns the already open module.
 
@@ -492,13 +503,13 @@ class Context:
             raise ValueError
 
         instance = open_object(self, instance_path, *args, **kwargs)
-        channel = self._kernel.channel("open")
+        channel = self._kernel.channel("open", self._path)
         instance.initialize(channel=channel)
 
         self.opened[instance_path] = instance
         return instance
 
-    def close(self, instance_path, *args, **kwargs):
+    def close(self, instance_path: str, *args, **kwargs) -> None:
         """
         Closes an opened module instance. Located at the instance_path location.
 
@@ -527,7 +538,7 @@ class Context:
     # MODIFIERS
     # ==========
 
-    def activate(self, registered_path, *args, **kwargs):
+    def activate(self, registered_path: str, *args, **kwargs) -> "Modifier":
         """
         Activates a modifier at this context. activate() calls and attaches a modifier located at the given path
         to be attached to this context.
@@ -559,7 +570,7 @@ class Context:
         instance.attach(self, *args, **kwargs)
         return instance
 
-    def deactivate(self, instance_path, *args, **kwargs):
+    def deactivate(self, instance_path: str, *args, **kwargs) -> None:
         """
         Deactivate a modifier attached to this context.
         The detach() is called on the modifier and modifier is deleted from the list of attached. This should be called
@@ -577,7 +588,7 @@ class Context:
     # DELEGATES via PATH.
     # ==========
 
-    def signal(self, code, *message):
+    def signal(self, code: str, *message) -> None:
         """
         Send Signal to all registered listeners.
 
@@ -587,7 +598,7 @@ class Context:
         """
         self._kernel.signal(code, self._path, *message)
 
-    def last_signal(self, code):
+    def last_signal(self, code: str) -> Tuple:
         """
         Returns the last signal at the given code.
 
@@ -596,7 +607,7 @@ class Context:
         """
         return self._kernel.last_signal(code, self._path)
 
-    def listen(self, signal, process):
+    def listen(self, signal: str, process: Callable) -> None:
         """
         Listen at a particular signal with a given process.
 
@@ -606,7 +617,7 @@ class Context:
         """
         self._kernel.listen(signal, self._path, process)
 
-    def unlisten(self, signal, process):
+    def unlisten(self, signal: str, process: Callable):
         """
         Unlisten to a particular signal with a given process.
 
@@ -618,17 +629,16 @@ class Context:
         """
         self._kernel.unlisten(signal, self._path, process)
 
-    def channel(self, channel, *args, **kwargs):
+    def channel(self, channel: str, *args, **kwargs) -> "Channel":
         """
         Return a channel from the kernel location
 
         :param channel: Channel to be opened.
-        :param buffer: Buffer to be applied to the given channel and sent to any watcher upon connection.
         :return: Channel object that is opened.
         """
-        return self._kernel.channel(channel, self._path, *args, **kwargs)
+        return self._kernel.channel(channel, *args, **kwargs)
 
-    def console_function(self, data):
+    def console_function(self, data: str) -> "ConsoleFunction":
         """
         Returns a function that calls a console command. This serves as a Job to be used in Scheduler or simply a
         function with the command as the str form.
@@ -651,7 +661,9 @@ class Kernel:
 
     """
 
-    def __init__(self, name, version, profile, path="/", config=None):
+    def __init__(
+        self, name: str, version: str, profile: str, path: str = "/", config=None
+    ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessable to all modules.
 
@@ -724,7 +736,7 @@ class Kernel:
     def __str__(self):
         return "Kernel()"
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Union[str, int, bool, float, Color]):
         """
         Kernel value settings. If Config is registered this will be persistent.
 
@@ -735,7 +747,9 @@ class Kernel:
         if isinstance(key, str):
             self.write_persistent(key, value)
 
-    def __getitem__(self, item):
+    def __getitem__(
+        self, item: Union[Tuple, str]
+    ) -> Union[str, int, bool, float, Color]:
         """
         Kernel value get. If Config is set registered this will be persistent.
 
@@ -753,7 +767,7 @@ class Kernel:
                 return self.read_persistent(t, key, default)
         return self.read_item_persistent(item)
 
-    def _start_debugging(self):
+    def _start_debugging(self) -> None:
         """
         Debug function hooks all functions within the device with a debug call that saves the data to the disk and
         prints that information.
@@ -764,13 +778,13 @@ class Kernel:
         import functools
         import types
 
-        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-            date=datetime.datetime.now()
+        filename = "{name}-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
+            name=self.name, date=datetime.datetime.now()
         )
         debug_file = open(filename, "a")
         debug_file.write("\n\n\n")
 
-        def debug(func, obj):
+        def debug(func: Callable, obj: Any) -> Callable:
             @functools.wraps(func)
             def wrapper_debug(*args, **kwargs):
                 args_repr = [repr(a) for a in args]
@@ -813,7 +827,7 @@ class Kernel:
     # PLUGIN API
     # ==========
 
-    def add_plugin(self, plugin):
+    def add_plugin(self, plugin: Callable) -> None:
         """
         Accepts a plugin function. This should accept two arguments: kernel and lifecycle.
 
@@ -830,7 +844,7 @@ class Kernel:
     # LIFECYCLE PROCESSES
     # ==========
 
-    def bootstrap(self, lifecycle):
+    def bootstrap(self, lifecycle: str) -> None:
         """
         Bootstraps all plugins at this particular lifecycle event.
 
@@ -844,7 +858,7 @@ class Kernel:
             plugin(self, lifecycle)
         self.signal("lifecycle;%s" % lifecycle, True)
 
-    def boot(self):
+    def boot(self) -> None:
         """
         Kernel boot sequence. This should be called after all the registered devices are established.
 
@@ -862,15 +876,7 @@ class Kernel:
             context = self.contexts[context_name]
             context.boot()
 
-        # for device in list(self.derivable("/")):
-        #     try:
-        #         d = int(device)
-        #     except ValueError:
-        #         # Devices are marked as integers.
-        #         continue
-        #     self.device_boot(d)
-
-    def shutdown(self, channel=None):
+    def shutdown(self, channel: "Channel" = None):
         """
         Starts full shutdown procedure.
 
@@ -925,7 +931,7 @@ class Kernel:
         def signal(code, *message):
             channel(_("Suspended Signal: %s for %s" % (code, message)))
 
-        self.signal = signal
+        self.signal = signal  # redefine signal function.
         self.process_queue()  # Process last events.
 
         # Context Flush and Shutdown
@@ -946,7 +952,7 @@ class Kernel:
             try:
                 thread = self.threads[thread_name]
             except KeyError:
-                channel(_("Thread %s exited safely") % (thread_name))
+                channel(_("Thread %s exited safely") % thread_name)
                 continue
 
             if not thread.is_alive:
@@ -970,7 +976,10 @@ class Kernel:
                 thread.join()
                 channel(_("Thread %s has finished. %s") % (thread_name, str(thread)))
             else:
-                channel(_("Thread %s is daemon. It will die automatically: %s") % (thread_name, str(thread)))
+                channel(
+                    _("Thread %s is daemon. It will die automatically: %s")
+                    % (thread_name, str(thread))
+                )
         if thread_count == 0:
             channel(_("No threads required halting."))
 
@@ -994,7 +1003,7 @@ class Kernel:
     # REGISTRATION
     # ==========
 
-    def match(self, matchtext, suffix=False):
+    def match(self, matchtext: str, suffix: bool = False) -> Generator[str]:
         """
         Lists all registered paths that regex match the given matchtext
 
@@ -1009,7 +1018,7 @@ class Kernel:
                 else:
                     yield r
 
-    def register(self, path, obj):
+    def register(self, path: str, obj: Any) -> None:
         """
         Register an element at a given subpath. If this Kernel is not root. Then
         it is registered relative to this location.
@@ -1025,7 +1034,7 @@ class Kernel:
             pass
 
     @staticmethod
-    def console_option(name, short=None, **kwargs):
+    def console_option(name: str, short: str = None, **kwargs) -> Callable:
         try:
             if short.startswith("-"):
                 short = short[1:]
@@ -1041,7 +1050,7 @@ class Kernel:
         return decor
 
     @staticmethod
-    def console_argument(name, **kwargs):
+    def console_argument(name: str, **kwargs) -> Callable:
         def decor(func):
             kwargs["name"] = name
             func.arguments.insert(0, kwargs)
@@ -1050,7 +1059,7 @@ class Kernel:
         return decor
 
     @staticmethod
-    def _cmd_parser(text):
+    def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int]]:
         pos = 0
         limit = len(text)
         while pos < limit:
@@ -1079,16 +1088,16 @@ class Kernel:
 
     def console_command(
         self,
-        path=None,
-        regex=False,
-        hidden=False,
-        help=None,
-        input_type=None,
-        output_type=None,
+        path: str = None,
+        regex: bool = False,
+        hidden: bool = False,
+        help: str = None,
+        input_type: Union[str, Tuple[str, ...]] = None,
+        output_type: str = None,
     ):
-        def decorator(func):
+        def decorator(func: Callable):
             @functools.wraps(func)
-            def inner(command, remainder, channel, **ik):
+            def inner(command: str, remainder: str, channel: "Channel", **ik):
                 options = inner.options
                 arguments = inner.arguments
                 stack = list()
@@ -1182,20 +1191,8 @@ class Kernel:
                 return value, remainder, out_type
 
             # Main Decorator
-            try:
-                kernel = self._kernel
-            except AttributeError:
-                kernel = self
-
-            if isinstance(path, tuple):
-                cmds = path
-            else:
-                cmds = (path,)
-
-            if isinstance(input_type, tuple):
-                ins = input_type
-            else:
-                ins = (input_type,)
+            cmds = path if isinstance(path, tuple) else (path,)
+            ins = input_type if isinstance(input_type, tuple) else (input_type,)
 
             inner.long_help = func.__doc__
             inner.help = help
@@ -1209,7 +1206,7 @@ class Kernel:
             for cmd in cmds:
                 for i in ins:
                     p = "command/%s/%s" % (i, cmd)
-                    kernel.register(p, inner)
+                    self.register(p, inner)
             return inner
 
         return decorator
@@ -1218,7 +1215,7 @@ class Kernel:
     # PATH & CONTEXTS
     # ==========
 
-    def abs_path(self, subpath):
+    def abs_path(self, subpath: str) -> str:
         """
         The absolute path function determines the absolute path of the given subpath within the current path.
 
@@ -1231,10 +1228,10 @@ class Kernel:
         return "/%s/%s" % (self._path, subpath)
 
     @property
-    def root(self):
-        return self.get_context('/')
+    def root(self) -> "Context":
+        return self.get_context("/")
 
-    def get_context(self, path):
+    def get_context(self, path: str) -> Context:
         """
         Create a context derived from this kernel, at the given path.
 
@@ -1251,7 +1248,7 @@ class Kernel:
         self.contexts[path] = derive
         return derive
 
-    def derivable(self, path):
+    def derivable(self, path: str) -> Generator[str]:
         """
         Finds all derivable paths within the config from the set path location.
         :param path:
@@ -1267,13 +1264,15 @@ class Kernel:
             more, value, index = self._config.GetNextGroup(index)
         self._config.SetPath("/")
 
-    def read_item_persistent(self, key):
+    def read_item_persistent(self, key: str) -> Optional[str]:
         """Directly read from persistent storage the value of an item."""
         if self._config is None:
             return None
         return self._config.Read(self.abs_path(key))
 
-    def read_persistent(self, t, key, default=None):
+    def read_persistent(
+        self, t: type, key: str, default: Union[str, int, float, bool, Color] = None
+    ) -> Any:
         """
         Directly read from persistent storage the value of an item.
 
@@ -1309,7 +1308,7 @@ class Kernel:
                 return Color(argb=self._config.ReadInt(key))
         return default
 
-    def write_persistent(self, key, value):
+    def write_persistent(self, key: str, value: Union[str, int, float, bool, Color]):
         """
         Directly write the value to persistent storage.
 
@@ -1330,19 +1329,21 @@ class Kernel:
         elif isinstance(value, Color):
             self._config.WriteInt(key, value.argb)
 
-    def clear_persistent(self, path):
+    def clear_persistent(self, path: str):
         if self._config is None:
             return
         path = self.abs_path(path)
         self._config.DeleteGroup(path)
 
-    def delete_persistent(self, key):
+    def delete_persistent(self, key: str):
         if self._config is None:
             return
         key = self.abs_path(key)
         self._config.DeleteEntry(key)
 
-    def load_persistent_string_dict(self, path, dictionary=None, suffix=False):
+    def load_persistent_string_dict(
+        self, path: str, dictionary: Optional[Dict] = None, suffix: bool = False
+    ) -> Dict:
         if dictionary is None:
             dictionary = dict()
         for k in list(self.keylist(path)):
@@ -1352,7 +1353,7 @@ class Kernel:
             dictionary[k] = item
         return dictionary
 
-    def keylist(self, path):
+    def keylist(self, path: str) -> Generator[str]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
 
@@ -1369,7 +1370,7 @@ class Kernel:
             more, value, index = self._config.GetNextEntry(index)
         self._config.SetPath("/")
 
-    def set_config(self, config):
+    def set_config(self, config: Any) -> None:
         """
         Set the config object.
 
@@ -1384,8 +1385,13 @@ class Kernel:
     # THREADS PROCESSING
     # ==========
 
-
-    def threaded(self, func, thread_name=None, result=None, daemon=False):
+    def threaded(
+        self,
+        func: Callable,
+        thread_name: str = None,
+        result: Callable = None,
+        daemon: bool = False,
+    ) -> Thread:
         """
         Register a thread, and run the provided function with the name if needed. When the function finishes this thread
         will exit, and deregister itself. During shutdown any active threads created will be told to stop and the kernel
@@ -1423,7 +1429,7 @@ class Kernel:
                 channel(_("Thread: %s, Exception-End" % thread_name))
                 import sys
 
-                channel(sys.exc_info())
+                channel(str(sys.exc_info()))
                 sys.excepthook(*sys.exc_info())
             channel(_("Thread: %s, Unset" % thread_name))
             del self.threads[thread_name]
@@ -1437,7 +1443,7 @@ class Kernel:
         self.thread_lock.release()
         return thread
 
-    def get_text_thread_state(self, state):
+    def get_text_thread_state(self, state: int) -> str:
         _ = self.translation
         if state == STATE_INITIALIZE:
             return _("Unstarted")
@@ -1462,7 +1468,7 @@ class Kernel:
     # SCHEDULER
     # ==========
 
-    def run(self):
+    def run(self) -> None:
         """
         Scheduler main loop.
 
@@ -1511,18 +1517,25 @@ class Kernel:
                     job._next_run += job._last_run + job.interval
         self.state = STATE_END
 
-    def schedule(self, job):
+    def schedule(self, job: "Job") -> "Job":
         self.jobs[job.job_name] = job
         return job
 
-    def unschedule(self, job):
+    def unschedule(self, job: "Job") -> "Job":
         try:
             del self.jobs[job.job_name]
         except KeyError:
             pass  # No such job.
         return job
 
-    def add_job(self, run, name=None, args=(), interval=1.0, times=None):
+    def add_job(
+        self,
+        run: Callable,
+        name: Optional[str] = None,
+        args: Tuple = (),
+        interval: float = 1.0,
+        times: int = None,
+    ) -> "Job":
         """
         Adds a job to the scheduler.
 
@@ -1535,10 +1548,12 @@ class Kernel:
         job = Job(job_name=name, process=run, args=args, interval=interval, times=times)
         return self.schedule(job)
 
-    def remove_job(self, job):
+    def remove_job(self, job: "Job") -> "Job":
         return self.unschedule(job)
 
-    def set_timer(self, command, name=None, times=1, interval=1.0):
+    def set_timer(
+        self, command: str, name: str = None, times: int = 1, interval: float = 1.0
+    ):
         if name is None or len(name) == 0:
             i = 1
             while "timer%d" % i in self.jobs:
@@ -1562,7 +1577,7 @@ class Kernel:
     # SIGNAL PROCESSING
     # ==========
 
-    def signal(self, code, *message):
+    def signal(self, code: str, *message) -> None:
         """
         Signals add the latest message to the message queue.
 
@@ -1573,7 +1588,7 @@ class Kernel:
         self.message_queue[code] = message
         self.queue_lock.release()
 
-    def delegate_messages(self):
+    def delegate_messages(self) -> None:
         """
         Delegate the process queue to the run_later thread.
         run_later should be a threading instance wherein all signals are delivered.
@@ -1585,7 +1600,7 @@ class Kernel:
         else:
             self.process_queue(None)
 
-    def process_queue(self, *args):
+    def process_queue(self, *args) -> None:
         """
         Performed in the run_later thread. Signal groups. Threadsafe.
 
@@ -1613,64 +1628,67 @@ class Kernel:
             self.removing_listeners = []
         self.message_queue = {}
         self.queue_lock.release()
+        # Process any adding listeners.
         if add is not None:
-            for signal, funct in add:
+            for signal, path, funct in add:
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
                     listeners.append(funct)
                 else:
                     self.listeners[signal] = [funct]
-                if signal in self.last_message:
-                    last_message = self.last_message[signal]
+                if path + signal in self.last_message:
+                    last_message = self.last_message[path + signal]
                     funct(*last_message)
+        # Process any removing listeners.
         if remove is not None:
-            for signal, funct in remove:
+            for signal, path, funct in remove:
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
                     try:
                         listeners.remove(funct)
                     except ValueError:
                         print("Value error removing: %s  %s" % (str(listeners), signal))
-
+        # Process signals.
         signal_channel = self.channel("signals")
-        for code, message in queue.items():
-            if code in self.listeners:
-                listeners = self.listeners[code]
+        for signal, path, message in queue.items():
+            if signal in self.listeners:
+                listeners = self.listeners[signal]
                 for listener in listeners:
-                    listener(*message)
+                    listener(path, *message)
                     signal_channel(
-                        "%s: %s was sent %s" % (code, str(listener), str(message))
+                        "%s %s: %s was sent %s"
+                        % (path, signal, str(listener), str(message))
                     )
-            self.last_message[code] = message
+            self.last_message[signal] = message
         self._is_queue_processing = False
 
-    def last_signal(self, code):
+    def last_signal(self, signal: str, path: str) -> Optional[Tuple[str, Any, ...]]:
         """
         Queries the last signal for a particular code.
-        :param code: code to query.
-        :return: Last signal sent through the kernel for that code.
+        :param signal: signal to query.
+        :param path: path for the given signal to query.
+        :return: Last signal sent through the kernel for that signal and path
         """
         try:
-            return self.last_message[code]
+            return self.last_message[path + signal]
         except KeyError:
             return None
 
-    def listen(self, signal, funct):
+    def listen(self, signal: str, path: str, funct: Callable) -> None:
         self.queue_lock.acquire(True)
-        self.adding_listeners.append((signal, funct))
+        self.adding_listeners.append((signal, path, funct))
         self.queue_lock.release()
 
-    def unlisten(self, signal, funct):
+    def unlisten(self, signal: str, path: str, funct: Callable) -> None:
         self.queue_lock.acquire(True)
-        self.removing_listeners.append((signal, funct))
+        self.removing_listeners.append((signal, path, funct))
         self.queue_lock.release()
 
     # ==========
     # CHANNEL PROCESSING
     # ==========
 
-
-    def channel(self, channel, *args, **kwargs):
+    def channel(self, channel: str, *args, **kwargs) -> "Channel":
         if channel not in self.channels:
             chan = Channel(channel, *args, **kwargs)
             chan._ = self.translation
@@ -1682,7 +1700,7 @@ class Kernel:
     # CONSOLE PROCESSING
     # ==========
 
-    def console(self, data):
+    def console(self, data: str) -> None:
         """
         Console accepts console data information. When a '\n' is seen
         it will execute that in the console_parser. This works like a
@@ -1701,9 +1719,9 @@ class Kernel:
             self._console_buffer = self._console_buffer[pos + 1 :]
             self._console_parse(command, channel=self._console_channel)
 
-    def _console_job_tick(self):
+    def _console_job_tick(self) -> None:
         """
-        Processses the console_job ticks. This executes any outstanding queued commands and any looped commands.
+        Processes the console_job ticks. This executes any outstanding queued commands and any looped commands.
 
         :return:
         """
@@ -1716,7 +1734,7 @@ class Kernel:
         if len(self.commands) == 0 and len(self.queue) == 0:
             self.unschedule(self.console_job)
 
-    def _console_queue(self, command):
+    def _console_queue(self, command: str) -> None:
         self.queue = [
             c for c in self.queue if c != command
         ]  # Only allow 1 copy of any command.
@@ -1724,7 +1742,7 @@ class Kernel:
         if self.console_job not in self.jobs:
             self.add_job(self.console_job)
 
-    def _tick_command(self, command):
+    def _tick_command(self, command: str) -> None:
         self.commands = [
             c for c in self.commands if c != command
         ]  # Only allow 1 copy of any command.
@@ -1732,15 +1750,15 @@ class Kernel:
         if self.console_job not in self.jobs:
             self.schedule(self.console_job)
 
-    def _untick_command(self, command):
+    def _untick_command(self, command: str) -> None:
         self.commands = [c for c in self.commands if c != command]
         if len(self.commands) == 0:
             self.unschedule(self.console_job)
 
-    def _console_interface(self, command):
+    def _console_interface(self, command: str):
         pass
 
-    def _console_parse(self, text, channel=None):
+    def _console_parse(self, text: str, channel: "Channel"):
         """
         Console parse takes single line console commands.
         """
@@ -1816,23 +1834,14 @@ class Kernel:
     # KERNEL CONSOLE COMMANDS
     # ==========
 
-    def command_boot(self):
+    def command_boot(self) -> None:
         _ = self.translation
 
         @self.console_option("output", "o", help="Output type to match", type=str)
         @self.console_option("input", "i", help="Input type to match", type=str)
         @self.console_argument("extended_help", type=str)
         @self.console_command(("help", "?"), hidden=True, help="help <help>")
-        def help(
-            command,
-            channel,
-            _,
-            extended_help,
-            output=None,
-            input=None,
-            args=tuple(),
-            **kwargs
-        ):
+        def help(channel, _, extended_help, output=None, input=None, **kwargs):
             """
             'help' will display the list of accepted commands. Help <command> will provided extended help for
             that topic. Help can be sub-specified by output or input type.
@@ -1922,11 +1931,11 @@ class Kernel:
                     channel(command_name.split("/")[-1])
 
         @self.console_command("loop", help="loop <command>")
-        def loop(command, channel, _, args=tuple(), **kwargs):
+        def loop(args=tuple(), **kwargs):
             self._tick_command(" ".join(args))
 
         @self.console_command("end", help="end <commmand>")
-        def end(command, channel, _, args=tuple(), **kwargs):
+        def end(args=tuple(), **kwargs):
             if len(args) == 0:
                 self.commands.clear()
                 self.schedule(self.console_job)
@@ -2000,7 +2009,7 @@ class Kernel:
             return
 
         @self.console_command("register", help="register")
-        def register(command, channel, _, args=tuple(), **kwargs):
+        def register(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("----------"))
                 channel(_("Objects Registered:"))
@@ -2017,7 +2026,7 @@ class Kernel:
                 channel(_("----------"))
 
         @self.console_command("context", help="context")
-        def context(command, channel, _, args=tuple(), **kwargs):
+        def context(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 for context_name in self.contexts:
                     channel(context_name)
@@ -2025,7 +2034,7 @@ class Kernel:
 
         @self.console_option("path", "p", type=str, help="Path of variables to set.")
         @self.console_command("set", help="set [<key> <value>]")
-        def set(command, channel, _, path=None, args=tuple(), **kwargs):
+        def set(channel, _, path=None, args=tuple(), **kwargs):
             relevant_context = None
             if path is not None:
                 relevant_context = self.get_context(path)
@@ -2063,9 +2072,11 @@ class Kernel:
                     channel(_("Attempt failed. Produced a value error."))
             return
 
-        @self.console_option("path", "p", type=str, default='/', help="Path of variables to set.")
+        @self.console_option(
+            "path", "p", type=str, default="/", help="Path of variables to set."
+        )
         @self.console_command("control", help="control [<executive>]")
-        def control(command, channel, _, path=None, remainder=None, **kwargs):
+        def control(channel, _, path=None, remainder=None, **kwargs):
             if remainder is None:
                 for control_name in self.get_context("/").match(
                     "[0-9]+/control", suffix=True
@@ -2074,20 +2085,18 @@ class Kernel:
                 return
 
             control_name = remainder
-            controls = list(
-                self.match(
-                    "%s/control/.*" % path, suffix=True
-                )
-            )
+            controls = list(self.match("%s/control/.*" % path, suffix=True))
             if control_name in controls:
                 self.get_context(path).execute(control_name)
                 channel(_("Executed '%s'") % control_name)
             else:
                 channel(_("Control '%s' not found.") % control_name)
 
-        @self.console_option("path", "p", type=str, default='/', help="Path of variables to set.")
+        @self.console_option(
+            "path", "p", type=str, default="/", help="Path of variables to set."
+        )
         @self.console_command("module", help="module [(open|close) <module_name>]")
-        def module(command, channel, _, path=None, args=tuple(), **kwargs):
+        def module(channel, _, path=None, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("----------"))
                 channel(_("Modules Registered:"))
@@ -2105,7 +2114,7 @@ class Kernel:
                     channel(_("----------"))
                     return
             if path is None:
-                path = '/'
+                path = "/"
             path_context = self.get_context(path)
             value = args[0]
             if value == "open":
@@ -2128,11 +2137,13 @@ class Kernel:
                     channel(_("Module '%s' not found.") % index)
             return
 
-        @self.console_option("path", "p", type=str, default='/', help="Path of variables to set.")
+        @self.console_option(
+            "path", "p", type=str, default="/", help="Path of variables to set."
+        )
         @self.console_command("modifier", help="modifier [(open|close) <module_name>]")
-        def modifier(command, channel, _, path=None, args=tuple(), **kwargs):
+        def modifier(channel, _, path=None, args=tuple(), **kwargs):
             if path is None:
-                path = '/'
+                path = "/"
             path_context = self.get_context(path)
 
             if len(args) == 0:
@@ -2142,23 +2153,15 @@ class Kernel:
                     channel("%d: %s" % (i + 1, name))
                 channel(_("----------"))
 
-                channel(
-                    _("Loaded Modifiers in Context %s:") % str(path_context._path)
-                )
+                channel(_("Loaded Modifiers in Context %s:") % str(path_context._path))
                 for i, name in enumerate(path_context.attached):
                     modifier = path_context.attached[name]
-                    channel(
-                        _("%d: %s as type of %s") % (i + 1, name, type(modifier))
-                    )
+                    channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
                 channel(_("----------"))
-                channel(
-                    _("Loaded Modifiers in Device %s:") % str(path_context._path)
-                )
+                channel(_("Loaded Modifiers in Device %s:") % str(path_context._path))
                 for i, name in enumerate(path_context.attached):
                     modifier = path_context.attached[name]
-                    channel(
-                        _("%d: %s as type of %s") % (i + 1, name, type(modifier))
-                    )
+                    channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
                 channel(_("----------"))
             else:
                 value = args[0]
@@ -2174,10 +2177,9 @@ class Kernel:
                         path_context.deactivate(index)
                     else:
                         channel(_("Modifier '%s' not found.") % index)
-            return
 
         @self.console_command("schedule", help="show scheduled events")
-        def schedule(command, channel, _, args=tuple(), **kwargs):
+        def schedule(channel, _, **kwargs):
             channel(_("----------"))
             channel(_("Scheduled Processes:"))
             for i, job_name in enumerate(self.jobs):
@@ -2195,10 +2197,9 @@ class Kernel:
                     parts.append(_("each %f seconds") % job.interval)
                 channel(" ".join(parts))
             channel(_("----------"))
-            return
 
         @self.console_command("thread", help="show threads")
-        def thread(command, channel, _, args=tuple(), **kwargs):
+        def thread(channel, _, **kwargs):
             """
             Display the currently registered threads within the Kernel.
             """
@@ -2213,7 +2214,6 @@ class Kernel:
                     parts.append(_("is alive."))
                 channel(" ".join(parts))
             channel(_("----------"))
-            return
 
         @self.console_command(
             "channel",
@@ -2234,7 +2234,10 @@ class Kernel:
             return "channel", 0
 
         @self.console_command(
-            "list", help="list the channels open in the kernel", input_type="channel", output_type="channel"
+            "list",
+            help="list the channels open in the kernel",
+            input_type="channel",
+            output_type="channel",
         )
         def channel_list(channel, _, **kwargs):
             channel(_("----------"))
@@ -2252,7 +2255,8 @@ class Kernel:
         @self.console_command(
             "open",
             help="watch this channel in the console",
-            input_type="channel", output_type="channel"
+            input_type="channel",
+            output_type="channel",
         )
         def channel(channel, _, channel_name, **kwargs):
             if channel_name is None:
@@ -2269,7 +2273,8 @@ class Kernel:
         @self.console_command(
             "close",
             help="stop watching this channel in the console",
-            input_type="channel", output_type="channel"
+            input_type="channel",
+            output_type="channel",
         )
         def channel(channel, _, channel_name, **kwargs):
             if channel_name is None:
@@ -2286,7 +2291,8 @@ class Kernel:
         @self.console_command(
             "print",
             help="print this channel to the standard out",
-            input_type="channel", output_type="channel"
+            input_type="channel",
+            output_type="channel",
         )
         def channel(channel, _, channel_name, **kwargs):
             if channel_name is None:
@@ -2296,12 +2302,17 @@ class Kernel:
             self.channel(channel_name).watch(print)
             return "channel", channel_name
 
-        @self.console_option("filename", "f", help="Use this filename rather than default")
-        @self.console_argument("channel_name", help="channel name (you may comma delimit)")
+        @self.console_option(
+            "filename", "f", help="Use this filename rather than default"
+        )
+        @self.console_argument(
+            "channel_name", help="channel name (you may comma delimit)"
+        )
         @self.console_command(
             "save",
             help="save this channel to disk",
-            input_type="channel", output_type="channel"
+            input_type="channel",
+            output_type="channel",
         )
         def channel(channel, _, channel_name, filename=None, **kwargs):
             """
@@ -2319,7 +2330,9 @@ class Kernel:
             channel(_("Opening file: %s") % filename)
             console_channel_file = open(filename, "a")
             for cn in channel_name.split(","):
-                channel(_("Recording Channel: %s to file %s") % (channel_name, filename))
+                channel(
+                    _("Recording Channel: %s to file %s") % (channel_name, filename)
+                )
 
                 def _console_file_write(v):
                     console_channel_file.write("%s\r\n" % v)
@@ -2329,14 +2342,18 @@ class Kernel:
             return "channel", channel_name
 
         @self.console_option(
-            "path", "p", type=str, default="/", help="Path that should be flushed to disk."
+            "path",
+            "p",
+            type=str,
+            default="/",
+            help="Path that should be flushed to disk.",
         )
         @self.console_command("flush", help="flush")
-        def flush(command, channel, _, path=None, args=tuple(), **kwargs):
+        def flush(channel, _, path=None, **kwargs):
             if path is not None:
                 path_context = self.get_context(path)
             else:
-                path_context = self.get_context('/')
+                path_context = self.get_context("/")
 
             if path_context is not None:
                 path_context.flush()
@@ -2347,13 +2364,12 @@ class Kernel:
         @self.console_command(
             ("quit", "shutdown"), help="quits meerk40t shutting down all processes"
         )
-        def shutdown(command, channel, _, args=tuple(), **kwargs):
+        def shutdown(**kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()
-            return
 
         @self.console_command(("ls", "dir"), help="list directory")
-        def ls(command, channel, _, args=tuple(), **kwargs):
+        def ls(channel, **kwargs):
             import os
 
             for f in os.listdir(self._current_directory):
@@ -2361,7 +2377,7 @@ class Kernel:
 
         @self.console_argument("directory")
         @self.console_command("cd", help="change directory")
-        def cd(command, channel, _, directory=None, args=tuple(), **kwargs):
+        def cd(channel, _, directory=None, **kwargs):
             import os
 
             if directory == "~":
@@ -2392,9 +2408,7 @@ class Kernel:
         @self.console_command(
             "load", help="load file", input_type=None, output_type="file"
         )
-        def load(
-            command, channel, _, filename=None, args=tuple(), remainder=None, **kwargs
-        ):
+        def load(channel, _, filename=None, **kwargs):
             import os
 
             if filename is None:
@@ -2404,10 +2418,14 @@ class Kernel:
             if not os.path.exists(new_file):
                 channel(_("No such file."))
                 return
-
-            self.get_context("/").load(new_file)
+            root_context = self.root
+            try:
+                root_context.load(new_file)
+            except AttributeError:
+                raise SyntaxError("Loading files was not defined")
             channel(_("loading..."))
             return "file", new_file
+
 
 # ==========
 # END KERNEL
@@ -2420,7 +2438,7 @@ class CommandMatchRejected(BaseException):
 
 
 class Channel:
-    def __init__(self, name, buffer_size=0, line_end=None):
+    def __init__(self, name: str, buffer_size: int = 0, line_end: Optional[str] = None):
         self.watchers = []
         self.greet = None
         self.name = name
@@ -2439,7 +2457,7 @@ class Channel:
             repr(self.line_end),
         )
 
-    def __call__(self, message, *args, **kwargs):
+    def __call__(self, message: str, *args, **kwargs):
         if self.line_end is not None:
             message = message + self.line_end
         for w in self.watchers:
@@ -2458,7 +2476,7 @@ class Channel:
     def __isub__(self, other):
         self.unwatch(monitor_function=other)
 
-    def watch(self, monitor_function):
+    def watch(self, monitor_function: Callable):
         for q in self.watchers:
             if q is monitor_function:
                 return  # This is already being watched by that.
@@ -2469,7 +2487,7 @@ class Channel:
             for line in self.buffer:
                 monitor_function(line)
 
-    def unwatch(self, monitor_function):
+    def unwatch(self, monitor_function: Callable):
         self.watchers.remove(monitor_function)
 
 
@@ -2482,7 +2500,14 @@ class Job:
     and times. This is usually extended directly by a module requiring that functionality.
     """
 
-    def __init__(self, process=None, args=(), interval=1.0, times=None, job_name=None):
+    def __init__(
+        self,
+        process: Optional[Callable] = None,
+        args: Optional[Tuple] = (),
+        interval: float = 1.0,
+        times: Optional[int] = None,
+        job_name: Optional[str] = None,
+    ):
         self.job_name = job_name
         self.state = STATE_INITIALIZE
 
@@ -2506,15 +2531,22 @@ class Job:
                 return object.__str__(self)
 
     @property
-    def scheduled(self):
+    def scheduled(self) -> bool:
         return self._next_run is not None and time.time() >= self._next_run
 
-    def cancel(self):
+    def cancel(self) -> None:
         self.times = -1
 
 
 class ConsoleFunction(Job):
-    def __init__(self, context, data, interval=1.0, times=None, job_name=None):
+    def __init__(
+        self,
+        context: Context,
+        data: str,
+        interval: float = 1.0,
+        times: Optional[int] = None,
+        job_name: Optional[str] = None,
+    ):
         Job.__init__(self, self.__call__, None, interval, times, job_name)
         self.context = context
         self.data = data
