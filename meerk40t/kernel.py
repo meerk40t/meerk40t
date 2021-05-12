@@ -188,7 +188,7 @@ class Context:
         """
         return self._kernel.get_context(path)
 
-    def derivable(self) -> Generator["Context"]:
+    def derivable(self) -> Generator["Context", None, None]:
         """
         Generate all sub derived paths.
 
@@ -197,7 +197,7 @@ class Context:
         for e in self._kernel.derivable(self._path):
             yield e
 
-    def subpaths(self) -> Generator["Context"]:
+    def subpaths(self) -> Generator["Context", None, None]:
         """
         Generate all subpaths of the current context with their path name and the relevant context.
         """
@@ -387,7 +387,7 @@ class Context:
         """
         return feature in self._kernel.registered
 
-    def match(self, matchtext: str, suffix: bool = False) -> Generator[str]:
+    def match(self, matchtext: str, suffix: bool = False) -> Generator[str, None, None]:
         """
         Delegate of Kernel match.
 
@@ -1003,7 +1003,7 @@ class Kernel:
     # REGISTRATION
     # ==========
 
-    def match(self, matchtext: str, suffix: bool = False) -> Generator[str]:
+    def match(self, matchtext: str, suffix: bool = False) -> Generator[str, None, None]:
         """
         Lists all registered paths that regex match the given matchtext
 
@@ -1059,7 +1059,7 @@ class Kernel:
         return decor
 
     @staticmethod
-    def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int]]:
+    def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
         pos = 0
         limit = len(text)
         while pos < limit:
@@ -1248,7 +1248,7 @@ class Kernel:
         self.contexts[path] = derive
         return derive
 
-    def derivable(self, path: str) -> Generator[str]:
+    def derivable(self, path: str) -> Generator[str, None, None]:
         """
         Finds all derivable paths within the config from the set path location.
         :param path:
@@ -1353,7 +1353,7 @@ class Kernel:
             dictionary[k] = item
         return dictionary
 
-    def keylist(self, path: str) -> Generator[str]:
+    def keylist(self, path: str) -> Generator[str, None, None]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
 
@@ -1662,7 +1662,7 @@ class Kernel:
             self.last_message[signal] = message
         self._is_queue_processing = False
 
-    def last_signal(self, signal: str, path: str) -> Optional[Tuple[str, Any, ...]]:
+    def last_signal(self, signal: str, path: str) -> Optional[Tuple]:
         """
         Queries the last signal for a particular code.
         :param signal: signal to query.
