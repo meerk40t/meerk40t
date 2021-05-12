@@ -809,7 +809,10 @@ class Kernel:
                     continue
                 setattr(obj, attr, debug(fn, obj))
 
-    # Plugin API
+    # ==========
+    # PLUGIN API
+    # ==========
+
     def add_plugin(self, plugin):
         """
         Accepts a plugin function. This should accept two arguments: kernel and lifecycle.
@@ -823,7 +826,9 @@ class Kernel:
         if plugin not in self._plugins:
             self._plugins.append(plugin)
 
-    # Lifecycle processes.
+    # ==========
+    # LIFECYCLE PROCESSES
+    # ==========
 
     def bootstrap(self, lifecycle):
         """
@@ -984,38 +989,10 @@ class Kernel:
             self.scheduler_thread.join()
         channel(_("Shutdown."))
         self._state = STATE_TERMINATE
-        # import sys
-        # sys.exit(0)
 
-    # Device Lifecycle
-
-    # def device_boot(self, d, device_name=None, autoboot=True):
-    #     """
-    #     Device boot sequence. This is called on individual devices the kernel reads automatically the device_name and
-    #     the autoboot setting. If autoboot is set then the device is activated at the boot location. The context 'd'
-    #     is activated with the correct device name registered in device/<device_name>
-    #
-    #     :param d:
-    #     :param device_name:
-    #     :param autoboot:
-    #     :return:
-    #     """
-    #     device_str = str(d)
-    #     if device_str in self.devices:
-    #         return self.devices[device_str]
-    #     boot_device = self.get_context(device_str)
-    #     boot_device.setting(str, "device_name", device_name)
-    #     boot_device.setting(bool, "autoboot", autoboot)
-    #     if boot_device.autoboot and boot_device.device_name is not None:
-    #         boot_device.activate("device/%s" % boot_device.device_name)
-    #         try:
-    #             boot_device.boot()
-    #         except AttributeError:
-    #             pass
-    #         self.devices[device_str] = boot_device
-    #         self.set_act--deleted(boot_device)
-
-    # Registration
+    # ==========
+    # REGISTRATION
+    # ==========
 
     def match(self, matchtext, suffix=False):
         """
@@ -1237,7 +1214,9 @@ class Kernel:
 
         return decorator
 
-    # Persistent Object processing.
+    # ==========
+    # PATH & CONTEXTS
+    # ==========
 
     def abs_path(self, subpath):
         """
@@ -1401,7 +1380,10 @@ class Kernel:
             return
         self._config = config
 
-    # Threads processing.
+    # ==========
+    # THREADS PROCESSING
+    # ==========
+
 
     def threaded(self, func, thread_name=None, result=None, daemon=False):
         """
@@ -1476,7 +1458,9 @@ class Kernel:
         elif state == STATE_UNKNOWN:
             return _("Unknown")
 
-    # Scheduler processing.
+    # ==========
+    # SCHEDULER
+    # ==========
 
     def run(self):
         """
@@ -1574,7 +1558,9 @@ class Kernel:
             )
         )
 
-    # Signal processing.
+    # ==========
+    # SIGNAL PROCESSING
+    # ==========
 
     def signal(self, code, *message):
         """
@@ -1679,7 +1665,10 @@ class Kernel:
         self.removing_listeners.append((signal, funct))
         self.queue_lock.release()
 
-    # Channel processing.
+    # ==========
+    # CHANNEL PROCESSING
+    # ==========
+
 
     def channel(self, channel, *args, **kwargs):
         if channel not in self.channels:
@@ -1689,7 +1678,143 @@ class Kernel:
 
         return self.channels[channel]
 
-    # Console Processing.
+    # ==========
+    # CONSOLE PROCESSING
+    # ==========
+
+    def console(self, data):
+        """
+        Console accepts console data information. When a '\n' is seen
+        it will execute that in the console_parser. This works like a
+        terminal, where each letter of data can be sent to the console and
+        execution will occur at the carriage return.
+
+        :param data:
+        :return:
+        """
+        if isinstance(data, bytes):
+            data = data.decode()
+        self._console_buffer += data
+        while "\n" in self._console_buffer:
+            pos = self._console_buffer.find("\n")
+            command = self._console_buffer[0:pos].strip("\r")
+            self._console_buffer = self._console_buffer[pos + 1 :]
+            self._console_parse(command, channel=self._console_channel)
+
+    def _console_job_tick(self):
+        """
+        Processses the console_job ticks. This executes any outstanding queued commands and any looped commands.
+
+        :return:
+        """
+        for command in self.commands:
+            self._console_parse(command, channel=self._console_channel)
+        if len(self.queue):
+            for command in self.queue:
+                self._console_parse(command, channel=self._console_channel)
+            self.queue.clear()
+        if len(self.commands) == 0 and len(self.queue) == 0:
+            self.unschedule(self.console_job)
+
+    def _console_queue(self, command):
+        self.queue = [
+            c for c in self.queue if c != command
+        ]  # Only allow 1 copy of any command.
+        self.queue.append(command)
+        if self.console_job not in self.jobs:
+            self.add_job(self.console_job)
+
+    def _tick_command(self, command):
+        self.commands = [
+            c for c in self.commands if c != command
+        ]  # Only allow 1 copy of any command.
+        self.commands.append(command)
+        if self.console_job not in self.jobs:
+            self.schedule(self.console_job)
+
+    def _untick_command(self, command):
+        self.commands = [c for c in self.commands if c != command]
+        if len(self.commands) == 0:
+            self.unschedule(self.console_job)
+
+    def _console_interface(self, command):
+        pass
+
+    def _console_parse(self, text, channel=None):
+        """
+        Console parse takes single line console commands.
+        """
+        # Silence echo if started with '.'
+        if text.startswith("."):
+            text = text[1:]
+        else:
+            channel(text)
+
+        data = None  # Initial data is null
+        input_type = None  # Initial type is None
+
+        while len(text) > 0:
+            # Divide command from remainder.
+            pos = text.find(" ")
+            if pos != -1:
+                remainder = text[pos + 1 :]
+                command = text[0:pos]
+            else:
+                remainder = ""
+                command = text
+
+            _ = self.translation
+            command = command.lower()
+            command_executed = False
+            # Process command matches.
+            for command_name in self.match("command/%s/.*" % str(input_type)):
+                command_funct = self.registered[command_name]
+                cmd_re = command_name.split("/")[-1]
+
+                if command_funct.regex:
+                    match = re.compile(cmd_re)
+                    if not match.match(command):
+                        continue
+                else:
+                    if cmd_re != command:
+                        continue
+                try:
+                    data, remainder, input_type = command_funct(
+                        command,
+                        remainder,
+                        channel,
+                        data=data,
+                        data_type=input_type,
+                        _=_,
+                    )
+                    command_executed = True
+                    break
+                except SyntaxError as e:
+                    # If command function raises a syntax error, we abort the rest of the command.
+                    message = command_funct.help
+                    if e.msg:
+                        message = e.msg
+                    channel(_("Syntax Error (%s): %s") % (command, message))
+                    return None
+                except CommandMatchRejected:
+                    continue
+            if command_executed:
+                text = remainder.strip()
+            else:
+                if input_type is None:
+                    ctx_name = "Base"
+                else:
+                    ctx_name = input_type
+                channel(
+                    _("%s is not a registered command in this context: %s")
+                    % (command, ctx_name)
+                )
+                return None
+        return data
+
+    # ==========
+    # KERNEL CONSOLE COMMANDS
+    # ==========
 
     def command_boot(self):
         _ = self.translation
@@ -2284,135 +2409,9 @@ class Kernel:
             channel(_("loading..."))
             return "file", new_file
 
-    def console(self, data):
-        """
-        Console accepts console data information. When a '\n' is seen
-        it will execute that in the console_parser. This works like a
-        terminal, where each letter of data can be sent to the console and
-        execution will occur at the carriage return.
-
-        :param data:
-        :return:
-        """
-        if isinstance(data, bytes):
-            data = data.decode()
-        self._console_buffer += data
-        while "\n" in self._console_buffer:
-            pos = self._console_buffer.find("\n")
-            command = self._console_buffer[0:pos].strip("\r")
-            self._console_buffer = self._console_buffer[pos + 1 :]
-            self._console_parse(command, channel=self._console_channel)
-
-    def _console_job_tick(self):
-        """
-        Processses the console_job ticks. This executes any outstanding queued commands and any looped commands.
-
-        :return:
-        """
-        for command in self.commands:
-            self._console_parse(command, channel=self._console_channel)
-        if len(self.queue):
-            for command in self.queue:
-                self._console_parse(command, channel=self._console_channel)
-            self.queue.clear()
-        if len(self.commands) == 0 and len(self.queue) == 0:
-            self.unschedule(self.console_job)
-
-    def _console_queue(self, command):
-        self.queue = [
-            c for c in self.queue if c != command
-        ]  # Only allow 1 copy of any command.
-        self.queue.append(command)
-        if self.console_job not in self.jobs:
-            self.add_job(self.console_job)
-
-    def _tick_command(self, command):
-        self.commands = [
-            c for c in self.commands if c != command
-        ]  # Only allow 1 copy of any command.
-        self.commands.append(command)
-        if self.console_job not in self.jobs:
-            self.schedule(self.console_job)
-
-    def _untick_command(self, command):
-        self.commands = [c for c in self.commands if c != command]
-        if len(self.commands) == 0:
-            self.unschedule(self.console_job)
-
-    def _console_interface(self, command):
-        pass
-
-    def _console_parse(self, text, channel=None):
-        """
-        Console parse takes single line console commands.
-        """
-        # Silence echo if started with '.'
-        if text.startswith("."):
-            text = text[1:]
-        else:
-            channel(text)
-
-        data = None  # Initial data is null
-        input_type = None  # Initial type is None
-
-        while len(text) > 0:
-            # Divide command from remainder.
-            pos = text.find(" ")
-            if pos != -1:
-                remainder = text[pos + 1 :]
-                command = text[0:pos]
-            else:
-                remainder = ""
-                command = text
-
-            _ = self.translation
-            command = command.lower()
-            command_executed = False
-            # Process command matches.
-            for command_name in self.match("command/%s/.*" % str(input_type)):
-                command_funct = self.registered[command_name]
-                cmd_re = command_name.split("/")[-1]
-
-                if command_funct.regex:
-                    match = re.compile(cmd_re)
-                    if not match.match(command):
-                        continue
-                else:
-                    if cmd_re != command:
-                        continue
-                try:
-                    data, remainder, input_type = command_funct(
-                        command,
-                        remainder,
-                        channel,
-                        data=data,
-                        data_type=input_type,
-                        _=_,
-                    )
-                    command_executed = True
-                    break
-                except SyntaxError as e:
-                    # If command function raises a syntax error, we abort the rest of the command.
-                    message = command_funct.help
-                    if e.msg:
-                        message = e.msg
-                    channel(_("Syntax Error (%s): %s") % (command, message))
-                    return None
-                except CommandMatchRejected:
-                    continue
-            if command_executed:
-                text = remainder.strip()
-            else:
-                if input_type is None:
-                    ctx_name = "Base"
-                else:
-                    ctx_name = input_type
-                channel(
-                    _("%s is not a registered command in this context: %s")
-                    % (command, ctx_name)
-                )
-                return None
-        return data
+# ==========
+# END KERNEL
+# ==========
 
 
 class CommandMatchRejected(BaseException):
