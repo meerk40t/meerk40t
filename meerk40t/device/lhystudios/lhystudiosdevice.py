@@ -364,7 +364,7 @@ class LhymicroInterpreter(Interpreter):
 
     def __init__(self, context, name, *args, **kwargs):
         context = context.get_context('lhyinterpreter/%s' % name)
-        Interpreter.__init__(self, context=context)
+        Interpreter.__init__(self, context=context, name=name)
 
         kernel = context._kernel
         _ = kernel.translation
@@ -455,7 +455,7 @@ class LhymicroInterpreter(Interpreter):
         self.start_interpreter()
 
     def __repr__(self):
-        return "LhymicroInterpreter()"
+        return "LhymicroInterpreter(%s)" % self.name
 
     def update_codes(self):
         if not self.context.swap_xy:

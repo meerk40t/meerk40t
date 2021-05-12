@@ -40,8 +40,9 @@ class Interpreter:
     objects that may also be common within devices.
     """
 
-    def __init__(self, context):
+    def __init__(self, context, name=None):
         self.context = context
+        self.name = name
         self.root_context = context.get_context("/")
         self.settings = LaserSettings()
 

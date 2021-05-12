@@ -31,6 +31,9 @@ class FilePipe:
         self._stream.write(data)
         self._stream.flush()
 
+    def __repr__(self):
+        return "FilePipe(%s)" % self.filename
+
     def __len__(self):
         return 0
 
