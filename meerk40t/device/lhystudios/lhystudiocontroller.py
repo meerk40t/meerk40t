@@ -112,7 +112,7 @@ def onewire_crc_lookup(line):
     return crc
 
 
-class LhystudioController(Module):
+class LhystudioController:
     """
     K40 Controller controls the Lhystudios boards sending any queued data to the USB when the signal is not busy.
 
@@ -126,7 +126,9 @@ class LhystudioController(Module):
     """
 
     def __init__(self, context, name, channel=None, *args, **kwargs):
-        Module.__init__(self, context, name, channel)
+        context = context.get_context('lhypipe/%s' % name)
+        self.context = context
+        self.name = name
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
 
@@ -164,25 +166,9 @@ class LhystudioController(Module):
         self.recv_channel = context.channel("%s/recv" % name)
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
 
-        send = context.channel("%s/send" % name)
-        send.watch(self.write)
-        send.__len__ = lambda: len(self._buffer) + len(self._queue)
-        context.channel("%s/send_realtime" % name).watch(self.realtime_write)
+        # send.__len__ = lambda: len(self._buffer) + len(self._queue)
+        # TODO: Hold length value things no longer functions.
 
-    def viewbuffer(self):
-        buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
-        try:
-            buffer_str = buffer.decode()
-        except ValueError:
-            try:
-                buffer_str = buffer.decode("utf8")
-            except UnicodeDecodeError:
-                buffer_str = str(buffer)
-        except AttributeError:
-            buffer_str = buffer
-        return buffer_str
-
-    def initialize(self, *args, **kwargs):
         context = self.context
 
         context.setting(int, "usb_index", -1)
@@ -288,9 +274,6 @@ class LhystudioController(Module):
             self.close()
             channel("CH341 Closed.")
 
-        context.setting(int, "packet_count", 0)
-        context.setting(int, "rejected_count", 0)
-
         context.register("control/Status Update", self.update_status)
         self.reset()
 
@@ -314,6 +297,19 @@ class LhystudioController(Module):
         self.context.get_context("/").listen(
             "lifecycle;ready", self.on_controller_ready
         )
+
+    def viewbuffer(self):
+        buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
+        try:
+            buffer_str = buffer.decode()
+        except ValueError:
+            try:
+                buffer_str = buffer.decode("utf8")
+            except UnicodeDecodeError:
+                buffer_str = str(buffer)
+        except AttributeError:
+            buffer_str = buffer
+        return buffer_str
 
     def on_controller_ready(self, *args):
         self.start()

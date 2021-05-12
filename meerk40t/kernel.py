@@ -170,6 +170,11 @@ class Context:
         """
         return self._kernel.get_context(self.abs_path(path))
 
+
+    @property
+    def root(self):
+        return self.get_context('/')
+
     def get_context(self, path):
         """
         Get a context at a given path location.
@@ -1222,6 +1227,10 @@ class Kernel:
         if subpath.startswith("/"):
             subpath = subpath[1:]
         return "/%s/%s" % (self._path, subpath)
+
+    @property
+    def root(self):
+        return self.get_context('/')
 
     def get_context(self, path):
         """
