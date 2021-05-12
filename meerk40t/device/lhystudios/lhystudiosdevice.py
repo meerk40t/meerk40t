@@ -368,7 +368,7 @@ class LhymicroInterpreter(Interpreter):
 
         kernel = context._kernel
         _ = kernel.translation
-        root_context = context.get_context("/")
+        root_context = context.root
         root_context.setting(bool, "opt_rapid_between", True)
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 127)
@@ -1249,6 +1249,9 @@ class LhystudioController:
         self.name = name
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
+
+        self.next = None
+        self.prev = None
 
         self._thread = None
         self._buffer = (

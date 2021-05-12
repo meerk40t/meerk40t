@@ -33,10 +33,18 @@ class Spooler:
         self.spooler_name = spooler_name
         self.queue_lock = Lock()
         self._queue = []
-        self.interpreter = None
+        self.next = None
 
     def __repr__(self):
-        return "Spooler(%s, %s)" % (repr(self.context), str(self.spooler_name))
+        return "Spooler(%s)" % str(self.spooler_name)
+
+    def as_device(self):
+        links = []
+        obj = self
+        while obj is not None:
+            links.append(str(obj))
+            obj = obj.next
+        return " -> ".join(links)
 
     @property
     def queue(self):

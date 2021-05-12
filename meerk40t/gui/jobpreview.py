@@ -177,9 +177,6 @@ class JobPreview(MWindow):
         selected_spooler = self.context.spoolers._default_spooler
         spools = [str(i) for i in self.available_spoolers]
         index = spools.index(selected_spooler)
-        self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
-        )
         self.connected_spooler, self.connected_name = None, None
         try:
             self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
@@ -187,6 +184,10 @@ class JobPreview(MWindow):
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
+        spools = [self.available_spoolers[i][0].as_device() for i in self.available_spoolers]
+        self.combo_device = wx.ComboBox(
+            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
+        )
         self.combo_device.SetSelection(index)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])

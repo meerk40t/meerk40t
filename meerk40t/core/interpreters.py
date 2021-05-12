@@ -45,8 +45,10 @@ class Interpreter:
         self.root_context = context.get_context("/")
         self.settings = LaserSettings()
 
+        self.next = None
+        self.prev = None
+
         self.spooler = None
-        self.output = None
         self.data_output = lambda e: e
         self.realtime_data_output = lambda e: e
 
@@ -559,7 +561,9 @@ class Interpreters(Modifier):
                 spooler, spooler_name = data
                 try:
                     interpreter.spooler = spooler
-                    spooler.interpreter = interpreter
+
+                    spooler.next = interpreter
+                    interpreter.prev = spooler
                 except AttributeError:
                     pass
                 return "interpret", (interpreter, name)

@@ -16,6 +16,8 @@ class Source:
     def __init__(self):
         self.output = None
         self.input = None
+        self.next = None
+        self.prev = None
 
 
 class FileSource(Source):
@@ -101,6 +103,7 @@ class Sources(Modifier):
                 if data_type == "interpret":
                     dinter, dname = data
                     dinter.output = source
+                    source.next = dinter
                 elif data_type == "source":
                     dsource, dname = data
                     dsource.output = source

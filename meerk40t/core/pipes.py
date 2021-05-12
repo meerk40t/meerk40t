@@ -14,7 +14,8 @@ def plugin(kernel, lifecycle=None):
 class FilePipe:
     def __init__(self, filename):
         super().__init__()
-        self.source = None
+        self.next = None
+        self.prev = None
         self.filename = filename
         self._stream = None
 
@@ -106,11 +107,11 @@ class Pipes(Modifier):
             self.context.signal("pipe", pipe_name, 1)
 
             if data is not None:
-                dsource, dname = data
-                dsource.output = pipe
-                pipe.source = dsource
-                dsource.data_output = pipe.write
-                dsource.data_output_realtime = pipe.realtime_write
+                src_or_interp, dname = data
+                src_or_interp.next = pipe
+                pipe.prev = src_or_interp
+                src_or_interp.data_output = pipe.write
+                src_or_interp.data_output_realtime = pipe.realtime_write
             elif remainder is None:
                 pipe, pipe_name = pipe_data
                 channel(_("----------"))
@@ -145,8 +146,7 @@ class Pipes(Modifier):
 
             if data is not None:
                 dsource, dname = data
-                dsource.output = pipe
-                pipe.source = dsource
+                dsource.next = filepipe
                 dsource.data_output = filepipe.write
                 dsource.data_output_realtime = filepipe.realtime_write
             return "pipe", (filepipe, pipe_name)
