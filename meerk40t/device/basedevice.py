@@ -1,4 +1,3 @@
-from ..kernel import Modifier
 
 INTERPRETER_STATE_RAPID = 0
 INTERPRETER_STATE_FINISH = 1
@@ -15,84 +14,74 @@ PLOT_DIRECTION = 32
 
 
 def plugin(kernel, lifecycle=None):
-    if lifecycle == "register":
-        pass
-        # context = kernel.get_context('/')
+    if lifecycle == "boot":
+        device_context = kernel.get_context('devices')
+        index = 0
+        while hasattr(device_context, "device-%d" % index):
+            line = getattr(device_context, "device-%d" % index)
+            device_context(line + '\n')
+            index += 1
+        device_context._devices = index
 
-        # @context.console_option("path", "p", type=str, help="Path to Device")
-        # @context.console_command(
-        #     "device",
-        #     help="device",
-        #     output_type="device"
-        # )
-        # def device(channel, _, path=None, **kwargs):
-        #     if path is None:
-        #         return None
-        #     else:
-        #         device_context = context.get_context(path)
-        #     if not hasattr(device_context, "spooler"):
-        #         device_context.activate("modifier/Spooler")
-        #     return "device", device_context
+    elif lifecycle == "register":
+        @kernel.console_command(
+            "device",
+            help="device",
+            output_type="device",
+        )
+        def device(channel, _, remainder=None, **kwargs):
+            data = kernel.get_context('devices')
+            if remainder is None:
+                channel(_("----------"))
+                channel(_("Devices:"))
+                index = 0
+                while hasattr(data, "device-%d" % index):
+                    line = getattr(data, "device-%d" % index)
+                    channel("%d: %s" % (index, line))
+                    index += 1
+                channel("----------")
+            return "device", data
 
-        # @context.console_command(
-        #     "list",
-        #     help="list devices",
-        #     input_type="device",
-        #     output_type="device",
-        # )
-        # def list(channel, _, data, **kwargs):
-        #     channel(_("----------"))
-        #     channel(_("Devices:"))
-        #     for i, ctx_name in enumerate(kernel.contexts):
-        #         ctx = kernel.contexts[ctx_name]
-        #         if hasattr(ctx, "spooler"):
-        #             channel("Device: %s, %s" % (ctx._path, str(ctx)))
-        #     channel("----------")
-        #     return "device", data
+        @kernel.console_command(
+            "list",
+            help="list devices",
+            input_type="device",
+            output_type="device",
+        )
+        def list(channel, _, data, **kwargs):
+            channel(_("----------"))
+            channel(_("Devices:"))
+            index = 0
+            while hasattr(data, "device-%d" % index):
+                line = getattr(data, "device-%d" % index)
+                channel("%d: %s" % (index,line))
+                index += 1
+            channel("----------")
+            return "device", data
 
-        # @context.console_command(
-        #     "type",
-        #     help="list device types",
-        #     input_type="device",
-        #     output_type="device",
-        # )
-        # def list_type(channel, _, data, **kwargs):
-        #     channel(_("----------"))
-        #     channel(_("Backends permitted:"))
-        #     for i, name in enumerate(context.match("device/", suffix=True)):
-        #         channel("%d: %s" % (i + 1, name))
-        #     channel(_("----------"))
-        #     return "device", data
+        @kernel.console_command(
+            "add",
+            help="add <device-string>",
+            input_type="device",
+        )
+        def add(channel, _, data, remainder, **kwargs):
+            if not remainder.startswith("spool") and not remainder.startswith("source"):
+                raise SyntaxError("Device string must start with 'spool' or 'source'")
+            index = 0
+            while hasattr(data, "device-%d" % index):
+                index += 1
+            setattr(data, "device-%d" % index, remainder)
 
-        #
-        # @context.console_command(
-        #     "activate",
-        #     help="activate device",
-        #     input_type="device",
-        #     output_type="device",
-        # )
-        # def activate(channel, _, data, **kwargs):
-        #     channel(_("Device at context '%s' activated" % data._path))
-        #     return "device", data
-        #
-        # @context.console_argument("device", help="Device to initialize...")
-        # @context.console_command(
-        #     "init",
-        #     help="init <device>, eg. init Lhystudios",
-        #     input_type="device",
-        #     output_type="device",
-        # )
-        # def init(channel, _, data, device=None, **kwargs):
-        #     if device is None:
-        #         raise SyntaxError
-        #     try:
-        #         data.activate("device/%s" % device)
-        #     except KeyError:
-        #         channel(_("Device %s is not valid type. 'device type' for a list of valid types."))
-        #         return
-        #     channel(_("Device %s, initialized at %s" % (device, data._path)))
-        #     return "device", data
-
+        @kernel.console_command(
+            "delete",
+            help="delete <index>",
+            input_type="device",
+        )
+        def delete(channel, _, data, remainder, **kwargs):
+            try:
+                delattr(data, "device-%d" % index)
+            except KeyError:
+                raise SyntaxError("Invalid device-string index.")
 
 # class Device(Modifier):
 #     def __init__(

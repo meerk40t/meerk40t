@@ -298,24 +298,16 @@ def run():
     kernel.bootstrap("configure")
     kernel.boot()
 
-    # kernel_root("spool interpret new lhystudios pipe new lhystudios")
-
-    # TODO: boot a default args.device device if no device started because of .boot()
-    # devices = list()
-    # for dev in kernel_root.derivable():
-    #     try:
-    #         devices.append(int(dev))
-    #     except ValueError:
-    #         pass
-    #
-    # if len(devices) != 0:
-    #     device = kernel_root.derive(str(devices[0]))
-    #     device.setting(str, "device_name", args.device)
-    # else:
-    #     device = kernel_root.derive("1")
-    #     device.activate("device/%s" % args.device)
+    device_context = kernel.get_context('devices')
+    if not hasattr(device_context, "_devices") or device_context._devices == 0:
+        if args.device == "Moshi":
+            dev = "spool interpret -n moshi pipe -n moshi"
+        else:
+            dev = "spool interpret -n lhystudios pipe -n lhystudios"
+        kernel_root("device add %s\n%s\n" % (dev, dev))
 
     if args.verbose:
+        kernel._start_debugging()
         kernel_root.execute("Debug Device")
 
     if args.input is not None:
@@ -328,24 +320,15 @@ def run():
 
     if args.mock:
         # Set the device to mock.
-        device.setting(bool, "mock", True)
-        device.mock = True
+        kernel_root.setting(bool, "mock", True)
+        kernel_root.mock = True
 
     if args.set is not None:
         # Set the variables requested here.
         for v in args.set:
             attr = v[0]
             value = v[1]
-            if hasattr(device, attr):
-                v = getattr(device, attr)
-                if isinstance(v, bool):
-                    setattr(device, attr, bool(value))
-                elif isinstance(v, int):
-                    setattr(device, attr, int(value))
-                elif isinstance(v, float):
-                    setattr(device, attr, float(value))
-                elif isinstance(v, str):
-                    setattr(device, attr, str(value))
+            kernel_root.execute("set %s %s\n" % (attr, value))
 
     kernel.bootstrap("ready")
 
@@ -355,7 +338,7 @@ def run():
         for v in args.execute:
             if v is None:
                 continue
-            device(v.strip() + "\n")
+            kernel_root(v.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
     if args.batch:
@@ -363,7 +346,7 @@ def run():
         kernel_root.channel("console").watch(print)
         with args.batch as batch:
             for line in batch:
-                device(line.strip() + "\n")
+                kernel_root(line.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
     if args.auto:
@@ -372,16 +355,16 @@ def run():
         if args.speed is not None:
             for o in elements.ops():
                 o.speed = args.speed
-        device("plan copy preprocess validate blob preopt optimize\n")
+        kernel_root("plan copy preprocess validate blob preopt optimize\n")
         if args.origin:
-            device("plan append origin\n")
+            kernel_root("plan append origin\n")
         if args.quit:
-            device("plan append shutdown\n")
-        device("plan spool\n")
+            kernel_root("plan append shutdown\n")
+        kernel_root("plan spool\n")
     else:
         if args.quit:
             # Flag quitting on complete.
-            device._quit = True
+            kernel_root._quit = True
 
     if args.output is not None:
         # output the file you have at this point.
