@@ -8,6 +8,7 @@ import sys
 import threading
 import traceback
 
+from .lhystudioscontroller import LhystudiosController
 from .lhystudiosdriver import LhystudiosDriver
 from .mwindow import MWindow
 
@@ -3498,6 +3499,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/LhystudiosDriver", LhystudiosDriver)
+        kernel.register("window/LhystudiosController", LhystudiosController)
 
         context = kernel.get_context("/")
 
@@ -3548,7 +3550,7 @@ class wxMeerK40t(wx.App, Module):
             if window is None or subcommand == "list":
                 channel(_("----------"))
                 channel(_("Windows Registered:"))
-                for i, name in enumerate(context.match("window")):
+                for i, name in enumerate(context.match("window", suffix=True)):
                     channel("%d: %s" % (i + 1, name))
                 return
             elif subcommand == "open":
