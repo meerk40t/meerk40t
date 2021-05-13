@@ -364,13 +364,11 @@ class LhystudiosDriver(MWindow):
         print("Event handler 'on_combo_driver' not implemented!")
         event.Skip()
 
-    def on_check_limit_packet_buffer(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
-        print("Event handler 'on_check_limit_packet_buffer' not implemented!")
-        event.Skip()
+    def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
+        self.context.buffer_limit = not self.context.buffer_limit
 
-    def on_spin_packet_buffer_max(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
-        print("Event handler 'on_spin_packet_buffer_max' not implemented!")
-        event.Skip()
+    def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
+        self.context.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def on_check_vector_accel_enable(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
         print("Event handler 'on_check_vector_accel_enable' not implemented!")
