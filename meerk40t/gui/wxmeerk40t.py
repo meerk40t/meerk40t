@@ -386,7 +386,7 @@ class MeerK40t(MWindow, Job):
         stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         stop.SetToolTip(_("Emergency stop/reset the controller."))
         stop.SetSize(stop.GetBestSize())
-        self._mgr.AddPane(stop, aui.AuiPaneInfo().Bottom())
+        self._mgr.AddPane(stop, aui.AuiPaneInfo().Bottom().Name("stop"))
         #
         # home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
         # self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
@@ -405,6 +405,7 @@ class MeerK40t(MWindow, Job):
         self._mgr.AddPane(
             self._ribbon,
             aui.AuiPaneInfo()
+            .Name('ribbon')
             .Top()
             .TopDockable()
             .BottomDockable()
@@ -416,6 +417,7 @@ class MeerK40t(MWindow, Job):
         self._mgr.AddPane(
             self.wxtree,
             aui.AuiPaneInfo()
+            .Name('tree')
             .CloseButton(False)
             .Left()
             .MinSize(200, -1)
@@ -425,7 +427,7 @@ class MeerK40t(MWindow, Job):
             .BottomDockable(False)
             .TopDockable(False),
         )
-        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane())
+        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name('scene'))
 
         self._mgr.Update()
 
@@ -498,6 +500,10 @@ class MeerK40t(MWindow, Job):
 
         self._rotary_view = False
         self.CenterOnScreen()
+
+        self.context.setting(str, "perspective")
+        if self.context.perspective is not None:
+            self._mgr.LoadPerspective(self.context.perspective)
 
     @property
     def is_dark(self):
@@ -1510,9 +1516,10 @@ class MeerK40t(MWindow, Job):
             self.window_button_bar.EnableButton(ID_USB, False)
 
     def window_close(self):
-        self._mgr.UnInit()
-
         context = self.context
+
+        context.perspective = self._mgr.SavePerspective()
+        self._mgr.UnInit()
 
         if context.print_shutdown:
             context.channel("shutdown").watch(print)
