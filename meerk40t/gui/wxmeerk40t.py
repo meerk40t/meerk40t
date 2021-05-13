@@ -44,12 +44,13 @@ from ..kernel import STATE_BUSY, Job, Module
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
+    Group,
     Length,
     Matrix,
     Path,
     SVGElement,
     SVGImage,
-    SVGText, Group,
+    SVGText,
 )
 from .about import About
 from .bufferview import BufferView
@@ -76,6 +77,7 @@ from .icons import (
     icons8_flip_vertical_50,
     icons8_group_objects_20,
     icons8_group_objects_50,
+    icons8_home_filled_50,
     icons8_keyboard_50,
     icons8_laser_beam_20,
     icons8_laser_beam_52,
@@ -93,13 +95,15 @@ from .icons import (
     icons8_roll_50,
     icons8_route_50,
     icons8_save_50,
+    icons8_scatter_plot_20,
+    icons8_system_task_20,
     icons8_type_50,
     icons8_ungroup_objects_50,
     icons8_usb_connector_50,
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
-    icons_evenspace_vert, icons8_scatter_plot_20, icons8_system_task_20, icons8_home_filled_50,
+    icons_evenspace_vert,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -184,7 +188,7 @@ def plugin(kernel, lifecycle):
         kernel_root = kernel.get_context("/")
         kernel_root.open("module/wxMeerK40t")
 
-        context = kernel.get_context('/')
+        context = kernel.get_context("/")
         renderer = LaserRender(context)
         context.register("render-op/make_raster", renderer.make_raster)
     if GUI_START[0]:
@@ -356,11 +360,10 @@ class MeerK40t(MWindow, Job):
             self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS
         )
 
-
         self._mgr.AddPane(
             self.wxtree,
             aui.AuiPaneInfo()
-            .Name('tree')
+            .Name("tree")
             .CloseButton(False)
             .Left()
             .MinSize(200, -1)
@@ -374,7 +377,7 @@ class MeerK40t(MWindow, Job):
         # Define Scene
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
-        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name('scene'))
+        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
@@ -394,14 +397,14 @@ class MeerK40t(MWindow, Job):
         self._mgr.AddPane(
             self._ribbon,
             aui.AuiPaneInfo()
-                .Name('ribbon')
-                .Top()
-                .TopDockable()
-                .BottomDockable()
-                .RightDockable(False)
-                .LeftDockable(False)
-                .MinSize(-1, 150)
-                .CaptionVisible(False),
+            .Name("ribbon")
+            .Top()
+            .TopDockable()
+            .BottomDockable()
+            .RightDockable(False)
+            .LeftDockable(False)
+            .MinSize(-1, 150)
+            .CaptionVisible(False),
         )
 
         # Define Stop.
@@ -1476,7 +1479,7 @@ class MeerK40t(MWindow, Job):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
-    def on_active_change(self,  origin,old_active, context_active):
+    def on_active_change(self, origin, old_active, context_active):
         if old_active is not None:
             old_active.unlisten("device;noactive", self.on_device_noactive)
             old_active.unlisten("pipe;error", self.on_usb_error)
@@ -1548,7 +1551,7 @@ class MeerK40t(MWindow, Job):
         self.context.fps = fps
         self.interval = 1.0 / float(self.context.fps)
 
-    def on_element_update(self,  origin,*args):
+    def on_element_update(self, origin, *args):
         """
         Called by 'element_property_update' when the properties of an element are changed.
 
@@ -1571,7 +1574,7 @@ class MeerK40t(MWindow, Job):
     def on_refresh_tree_signal(self, *args):
         self.request_refresh()
 
-    def on_rebuild_tree_signal(self,  origin,*args):
+    def on_rebuild_tree_signal(self, origin, *args):
         """
         Called by 'rebuild_tree' signal. To refresh tree directly
 
@@ -1595,7 +1598,7 @@ class MeerK40t(MWindow, Job):
         """
         self.request_refresh()
 
-    def on_device_noactive(self,  origin,value):
+    def on_device_noactive(self, origin, value):
         dlg = wx.MessageDialog(
             None,
             _("No active device existed. Add a primary device."),
@@ -1615,7 +1618,7 @@ class MeerK40t(MWindow, Job):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def on_usb_state_text(self,  origin,value):
+    def on_usb_state_text(self, origin, value):
         self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
 
     def on_pipe_state(self, origin, state):
@@ -2590,9 +2593,7 @@ class MeerK40t(MWindow, Job):
         sy = r.scale_y
         i = self.context.default_interpreter()
 
-        mx = Matrix(
-            "scale(%f, %f, %f, %f)" % (sx, sy, i.current_x, i.current_y)
-        )
+        mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, i.current_x, i.current_y))
         for element in self.context.get_context("/").elements.elems():
             try:
                 element *= mx
@@ -3185,7 +3186,7 @@ class ShadowTree:
     def create_menu_for_node(self, gui, node) -> wx.Menu:
         """
         Create menu for a particular node. Does not invoke the menu.
-        
+
         Processes submenus, references, radio_state as needed.
         """
         menu = wx.Menu()
@@ -3211,7 +3212,9 @@ class ShadowTree:
 
             menu_context = submenu if submenu is not None else menu
             if func.reference is not None:
-                menu_context.AppendSubMenu(self.create_menu_for_node(gui, func.reference(node)), func.real_name)
+                menu_context.AppendSubMenu(
+                    self.create_menu_for_node(gui, func.reference(node)), func.real_name
+                )
                 continue
             if func.radio_state is not None:
                 item = menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_RADIO)

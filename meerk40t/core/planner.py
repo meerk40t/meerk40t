@@ -1,7 +1,6 @@
 from copy import copy
 from math import ceil
 
-from .optimizer import Optimizer
 from ..core.cutcode import CutCode
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
@@ -16,17 +15,10 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
 )
 from ..kernel import Modifier
-from ..svgelements import (
-    Group,
-    Length,
-    Path,
-    Polygon,
-    SVGElement,
-    SVGImage,
-    SVGText,
-)
-from .elements import LaserOperation
+from ..svgelements import Group, Length, Path, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
+from .elements import LaserOperation
+from .optimizer import Optimizer
 
 
 def plugin(kernel, lifecycle=None):
@@ -111,7 +103,9 @@ class Planner(Modifier):
         self.context.setting(int, "opt_jog_minimum", 127)
         self.context.setting(int, "opt_jog_mode", 0)
 
-        @self.context.console_argument("alias", type=str, help="plan command name to alias")
+        @self.context.console_argument(
+            "alias", type=str, help="plan command name to alias"
+        )
         @self.context.console_command(
             "plan-alias",
             help="Define a spoolable console command",
@@ -135,8 +129,9 @@ class Planner(Modifier):
                 raise SyntaxError("You may not overwrite an already used alias.")
 
             def user_defined_alias():
-                for s in remainder.split(';'):
-                    self.context(s + '\n')
+                for s in remainder.split(";"):
+                    self.context(s + "\n")
+
             user_defined_alias.__name__ = remainder
             self.context.registered[plan_command] = user_defined_alias
 
@@ -154,7 +149,9 @@ class Planner(Modifier):
 
             if data is not None:
                 # If ops data is in data, then we copy that and move on to next step.
-                plan, original, commands, name = self.get_or_make_plan(self._default_plan)
+                plan, original, commands, name = self.get_or_make_plan(
+                    self._default_plan
+                )
                 for c in data:
                     if not c.output:
                         continue
@@ -259,14 +256,25 @@ class Planner(Modifier):
             return data_type, data
 
         @self.context.console_option("index", "i", type=int, help="insert index")
-        @self.context.console_option("op", "o", type=str, help="unlock, origin, home, etc.")
+        @self.context.console_option(
+            "op", "o", type=str, help="unlock, origin, home, etc."
+        )
         @self.context.console_command(
             "command",
             help="plan<?> command",
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, op=None, index=None, data=None, **kwargs):
+        def plan(
+            command,
+            channel,
+            _,
+            data_type=None,
+            op=None,
+            index=None,
+            data=None,
+            **kwargs
+        ):
             plan, original, commands, name = data
             if op is None:
                 channel(_("Plan Commands:"))
@@ -584,7 +592,7 @@ class Planner(Modifier):
         plan, original, commands, name = self.default_plan()
 
         def strip_text():
-            for k in range(len(plan)-1,-1,-1):
+            for k in range(len(plan) - 1, -1, -1):
                 op = plan[k]
                 try:
                     if op.operation in ("Cut", "Engrave"):
@@ -635,17 +643,13 @@ class Planner(Modifier):
 
         def make_image_for_op(op):
             subitems = list(op.flat(types=("elem", "opnode")))
-            make_raster = self.context.registered.get(
-                "render-op/make_raster"
-            )
+            make_raster = self.context.registered.get("render-op/make_raster")
             objs = [s.object for s in subitems]
             bounds = Group.union_bbox(objs)
             if bounds is None:
                 return None
             xmin, ymin, xmax, ymax = bounds
-            image = make_raster(
-                subitems, bounds, step=op.settings.raster_step
-            )
+            image = make_raster(subitems, bounds, step=op.settings.raster_step)
             image_element = SVGImage(image=image)
             image_element.transform.post_translate(xmin, ymin)
             return image_element
@@ -661,7 +665,10 @@ class Planner(Modifier):
                         image_element = make_image_for_op(op)
                         if image_element is None:
                             continue
-                        if image_element.image_width == 1 and image_element.image_height == 1:
+                        if (
+                            image_element.image_width == 1
+                            and image_element.image_height == 1
+                        ):
                             # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
                             #  time around because the renderer is what sets the size of the text. If the size hasn't
                             #  already been set, the initial bounds are wrong.
@@ -1015,5 +1022,3 @@ class Planner(Modifier):
             except AttributeError:
                 pass
         return optimized
-
-

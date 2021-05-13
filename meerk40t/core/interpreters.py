@@ -1,10 +1,9 @@
-
 import os
 import time
 
 from ..core.cutcode import LaserSettings
-from ..kernel import Modifier
 from ..device.lasercommandconstants import *
+from ..kernel import Modifier
 
 INTERPRETER_STATE_RAPID = 0
 INTERPRETER_STATE_FINISH = 1
@@ -490,7 +489,6 @@ class Interpreter:
 
 
 class Interpreters(Modifier):
-
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         self._interpreters = dict()
@@ -510,11 +508,16 @@ class Interpreters(Modifier):
             try:
                 for itype in self.context.match("interpreter/%s" % interpreter_type):
                     interpret_class = self.context.registered[itype]
-                    interpreter = interpret_class(self.context, interpreter_name, **kwargs)
+                    interpreter = interpret_class(
+                        self.context, interpreter_name, **kwargs
+                    )
                     self._interpreters[interpreter_name] = interpreter, interpreter_name
                     return interpreter, interpreter_name
 
-                self._interpreters[interpreter_name] = Interpreter(self.context), interpreter_name
+                self._interpreters[interpreter_name] = (
+                    Interpreter(self.context),
+                    interpreter_name,
+                )
             except (KeyError, IndexError):
                 pass
         return None
@@ -538,7 +541,9 @@ class Interpreters(Modifier):
             input_type=(None, "spooler"),
             output_type="interpret",
         )
-        def interpret(command, channel, _, data=None, new=None, remainder=None, **kwargs):
+        def interpret(
+            command, channel, _, data=None, new=None, remainder=None, **kwargs
+        ):
             if len(command) > 9:
                 self._default_interpreter = command[9:]
                 self.context.signal("interpreter", self._default_interpreter, None)

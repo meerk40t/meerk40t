@@ -187,7 +187,7 @@ class Scene(Module):
             "rightdown",
             "wheeldown",
             "wheelup",
-            "hover"
+            "hover",
         ):
             self.time = time.time()
             self.rebuild_hittable_chain()
@@ -1140,7 +1140,9 @@ class GridWidget(Widget):
                 self.calculate_grid()
             starts, ends = self.grid
             try:
-                line_width = 1 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
+                line_width = (
+                    1 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
+                )
                 if line_width < 1:
                     line_width = 1
                 self.grid_line_pen.SetWidth(line_width)

@@ -1,7 +1,5 @@
 from copy import copy
 
-from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
-from ..svgelements import Color, Path, Point
 from meerk40t.tools.rasterplotter import (
     BOTTOM,
     LEFT,
@@ -13,6 +11,9 @@ from meerk40t.tools.rasterplotter import (
     RasterPlotter,
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
+
+from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
+from ..svgelements import Color, Path, Point
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
@@ -186,7 +187,7 @@ class CutObject:
         self.settings = settings
         self._start = start
         self._end = end
-        self.normal = True # Normal or Reversed.
+        self.normal = True  # Normal or Reversed.
 
     def start(self):
         return self._start if self.normal else self._end
@@ -233,9 +234,7 @@ class LineCut(CutObject):
     def generator(self):
         start = self.start()
         end = self.end()
-        return ZinglPlotter.plot_line(
-            start[0], start[1], end[0], end[1]
-        )
+        return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
 
 
 class QuadCut(CutObject):

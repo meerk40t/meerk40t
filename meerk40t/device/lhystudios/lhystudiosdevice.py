@@ -1,10 +1,21 @@
 import threading
 import time
 
-from .lhystudioemulator import EgvLoader, LhystudioEmulator
+from meerk40t.tools.zinglplotter import ZinglPlotter
+
 from ...core.interpreters import Interpreter
 from ...core.plotplanner import PlotPlanner
-from meerk40t.tools.zinglplotter import ZinglPlotter
+from ...kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+)
 from ..basedevice import (
     INTERPRETER_STATE_FINISH,
     INTERPRETER_STATE_MODECHANGE,
@@ -19,18 +30,7 @@ from ..basedevice import (
 )
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
-
-from ...kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-)
+from .lhystudioemulator import EgvLoader, LhystudioEmulator
 
 
 def plugin(kernel, lifecycle=None):
@@ -338,7 +338,6 @@ def onewire_crc_lookup(line):
     return crc
 
 
-
 STATE_X_FORWARD_LEFT = (
     0b0000000000000001  # Direction is flagged left rather than right.
 )
@@ -363,7 +362,7 @@ class LhymicroInterpreter(Interpreter):
     """
 
     def __init__(self, context, name, *args, **kwargs):
-        context = context.get_context('lhyinterpreter/%s' % name)
+        context = context.get_context("lhyinterpreter/%s" % name)
         Interpreter.__init__(self, context=context, name=name)
 
         kernel = context._kernel
@@ -446,9 +445,7 @@ class LhymicroInterpreter(Interpreter):
         context.root.listen("lifecycle;ready", self.on_interpreter_ready)
 
     def detach(self, *args, **kwargs):
-        self.context.root.unlisten(
-            "lifecycle;ready", self.on_interpreter_ready
-        )
+        self.context.root.unlisten("lifecycle;ready", self.on_interpreter_ready)
         self.thread = None
 
     def on_interpreter_ready(self, origin, *args):
@@ -1244,7 +1241,7 @@ class LhystudioController:
     """
 
     def __init__(self, context, name, channel=None, *args, **kwargs):
-        context = context.get_context('lhypipe/%s' % name)
+        context = context.get_context("lhypipe/%s" % name)
         self.context = context
         self.name = name
         self.state = STATE_UNKNOWN
@@ -1415,9 +1412,7 @@ class LhystudioController:
 
         context.register("control/Resume", resume_k40)
 
-        self.context.root.listen(
-            "lifecycle;ready", self.on_controller_ready
-        )
+        self.context.root.listen("lifecycle;ready", self.on_controller_ready)
 
     def viewbuffer(self):
         buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)

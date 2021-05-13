@@ -8,6 +8,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("interpreter/moshi", MoshiInterpreter)
         kernel.register("pipe/moshi", MoshiController)
 
+
 #
 # """
 # MoshiboardDevice is the backend for Moshiboard devices.

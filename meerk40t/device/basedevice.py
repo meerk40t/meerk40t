@@ -1,4 +1,3 @@
-
 INTERPRETER_STATE_RAPID = 0
 INTERPRETER_STATE_FINISH = 1
 INTERPRETER_STATE_PROGRAM = 2
@@ -15,22 +14,23 @@ PLOT_DIRECTION = 32
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "boot":
-        device_context = kernel.get_context('devices')
+        device_context = kernel.get_context("devices")
         index = 0
         while hasattr(device_context, "device-%d" % index):
             line = getattr(device_context, "device-%d" % index)
-            device_context(line + '\n')
+            device_context(line + "\n")
             index += 1
         device_context._devices = index
 
     elif lifecycle == "register":
+
         @kernel.console_command(
             "device",
             help="device",
             output_type="device",
         )
         def device(channel, _, remainder=None, **kwargs):
-            data = kernel.get_context('devices')
+            data = kernel.get_context("devices")
             if remainder is None:
                 channel(_("----------"))
                 channel(_("Devices:"))
@@ -54,7 +54,7 @@ def plugin(kernel, lifecycle=None):
             index = 0
             while hasattr(data, "device-%d" % index):
                 line = getattr(data, "device-%d" % index)
-                channel("%d: %s" % (index,line))
+                channel("%d: %s" % (index, line))
                 index += 1
             channel("----------")
             return "device", data
@@ -82,6 +82,7 @@ def plugin(kernel, lifecycle=None):
                 delattr(data, "device-%d" % index)
             except KeyError:
                 raise SyntaxError("Invalid device-string index.")
+
 
 # class Device(Modifier):
 #     def __init__(

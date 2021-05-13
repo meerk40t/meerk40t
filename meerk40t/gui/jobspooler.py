@@ -16,12 +16,16 @@ class JobSpooler(MWindow):
         index = spools.index(selected_spooler)
         self.connected_spooler, self.connected_name = None, None
         try:
-            self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
+            self.connected_spooler, self.connected_name = self.available_spoolers[
+                spools[index]
+            ]
         except IndexError:
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [self.available_spoolers[i][0].as_device() for i in self.available_spoolers]
+        spools = [
+            self.available_spoolers[i][0].as_device() for i in self.available_spoolers
+        ]
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
@@ -113,7 +117,9 @@ class JobSpooler(MWindow):
         self.available_spoolers = self.context.spoolers._spoolers
         spools = [str(i) for i in self.available_spoolers]
         index = self.combo_device.GetSelection()
-        self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
+        self.connected_spooler, self.connected_name = self.available_spoolers[
+            spools[index]
+        ]
         self.update_spooler = True
         self.refresh_spooler_list()
 
@@ -211,6 +217,6 @@ class JobSpooler(MWindow):
 
         return delete
 
-    def on_spooler_update(self,  origin, value, *args, **kwargs):
+    def on_spooler_update(self, origin, value, *args, **kwargs):
         self.update_spooler = True
         self.refresh_spooler_list()

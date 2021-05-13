@@ -2,8 +2,8 @@ from threading import Lock
 
 from meerk40t.svgelements import Length
 
-from ..kernel import Modifier
 from ..device.lasercommandconstants import *
+from ..kernel import Modifier
 
 
 def plugin(kernel, lifecycle=None):
@@ -65,7 +65,7 @@ class Spooler:
         queue_head = self._queue[0]
         del self._queue[0]
         self.queue_lock.release()
-        self.context.signal("spooler;queue", len(self._queue),  self.spooler_name)
+        self.context.signal("spooler;queue", len(self._queue), self.spooler_name)
         return queue_head
 
     def job(self, *job):
@@ -133,7 +133,10 @@ class Spoolers(Modifier):
         try:
             return self._spoolers[spooler_name]
         except KeyError:
-            self._spoolers[spooler_name] = Spooler(self.context, spooler_name), spooler_name
+            self._spoolers[spooler_name] = (
+                Spooler(self.context, spooler_name),
+                spooler_name,
+            )
             return self._spoolers[spooler_name]
 
     def default_spooler(self):
@@ -143,7 +146,7 @@ class Spoolers(Modifier):
         context = self.context
         context.spoolers = self
         context.spooler = self.default_spooler
-        bed_dim = context.get_context('/')
+        bed_dim = context.get_context("/")
 
         kernel = self.context._kernel
         _ = kernel.translation
@@ -208,7 +211,9 @@ class Spoolers(Modifier):
             input_type="spooler",
             output_type="spooler",
         )
-        def spooler_send(command, channel, _, data_type=None, op=None, data=None, **kwargs):
+        def spooler_send(
+            command, channel, _, data_type=None, op=None, data=None, **kwargs
+        ):
             spooler, spooler_name = data
             if op is None:
                 raise SyntaxError
@@ -264,29 +269,43 @@ class Spoolers(Modifier):
 
             return move
 
-        @context.console_command("+laser", hidden=True, input_type=("spooler", None), output_type='spooler',
-                                 help="turn laser on in place")
+        @context.console_command(
+            "+laser",
+            hidden=True,
+            input_type=("spooler", None),
+            output_type="spooler",
+            help="turn laser on in place",
+        )
         def plus_laser(data, **kwargs):
             if data is None:
                 data = self.default_spooler()
             spooler, spooler_name = data
             spooler.job(COMMAND_LASER_ON)
-            return 'spooler', data
+            return "spooler", data
 
-        @context.console_command("-laser", hidden=True, input_type=("spooler", None), output_type='spooler',
-                                 help="turn laser off in place")
+        @context.console_command(
+            "-laser",
+            hidden=True,
+            input_type=("spooler", None),
+            output_type="spooler",
+            help="turn laser off in place",
+        )
         def minus_laser(data, **kwargs):
             if data is None:
                 data = self.default_spooler()
             spooler, spooler_name = data
             spooler.job(COMMAND_LASER_OFF)
-            return 'spooler', data
+            return "spooler", data
 
         @context.console_argument(
             "amount", type=Length, help="amount to move in the set direction."
         )
-        @context.console_command(("left", "right", "up", "down"), input_type=("spooler", None), output_type='spooler',
-                                 help="cmd <amount>")
+        @context.console_command(
+            ("left", "right", "up", "down"),
+            input_type=("spooler", None),
+            output_type="spooler",
+            help="cmd <amount>",
+        )
         def direction(command, channel, _, data=None, amount=None, **kwargs):
             if data is None:
                 data = self.default_spooler()
@@ -308,10 +327,14 @@ class Spoolers(Modifier):
             elif command.endswith("down"):
                 spooler._dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
             context(".timer 1 0 spool%s jog\n" % spooler_name)
-            return 'spooler', data
+            return "spooler", data
 
         @context.console_command(
-            "jog", hidden=True, input_type="spooler", output_type='spooler', help="executes outstanding jog buffer"
+            "jog",
+            hidden=True,
+            input_type="spooler",
+            output_type="spooler",
+            help="executes outstanding jog buffer",
         )
         def jog(command, channel, _, data, **kwargs):
             if data is None:
@@ -330,13 +353,15 @@ class Spoolers(Modifier):
                 spooler._dy -= idy
             else:
                 channel(_("Busy Error"))
-            return 'spooler', data
+            return "spooler", data
 
         @context.console_argument("x", type=Length, help="change in x")
         @context.console_argument("y", type=Length, help="change in y")
         @context.console_command(
-            ("move", "move_absolute"), input_type=("spooler", None), output_type='spooler',
-            help="move <x> <y>: move to position."
+            ("move", "move_absolute"),
+            input_type=("spooler", None),
+            output_type="spooler",
+            help="move <x> <y>: move to position.",
         )
         def move(channel, _, x, y, data=None, **kwargs):
             if data is None:
@@ -346,12 +371,16 @@ class Spoolers(Modifier):
                 raise SyntaxError
             if not spooler.job_if_idle(execute_absolute_position(x, y)):
                 channel(_("Busy Error"))
-            return 'spooler', data
+            return "spooler", data
 
         @context.console_argument("dx", type=Length, help="change in x")
         @context.console_argument("dy", type=Length, help="change in y")
-        @context.console_command("move_relative", input_type=("spooler", None), output_type='spooler',
-                                 help="move_relative <dx> <dy>")
+        @context.console_command(
+            "move_relative",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help="move_relative <dx> <dy>",
+        )
         def move_relative(channel, _, dx, dy, data=None, **kwargs):
             if data is None:
                 data = self.default_spooler()
@@ -360,42 +389,53 @@ class Spoolers(Modifier):
                 raise SyntaxError
             if not spooler.job_if_idle(execute_relative_position(dx, dy)):
                 channel(_("Busy Error"))
-            return 'spooler', data
+            return "spooler", data
 
         @context.console_argument("x", type=Length, help="x offset")
         @context.console_argument("y", type=Length, help="y offset")
-        @context.console_command("home", input_type=("spooler", None), output_type='spooler', help="home the laser")
+        @context.console_command(
+            "home",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help="home the laser",
+        )
         def home(x=None, y=None, data=None, **kwargs):
             if data is None:
                 data = self.default_spooler()
             spooler, spooler_name = data
             if x is not None and y is not None:
-                x = x.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
-                )
-                y = y.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
-                )
+                x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701)
+                y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701)
                 spooler.job(COMMAND_HOME, int(x), int(y))
-                return 'spooler', data
+                return "spooler", data
             spooler.job(COMMAND_HOME)
-            return 'spooler', data
+            return "spooler", data
 
-        @context.console_command("unlock", input_type=("spooler", None), output_type='spooler', help="unlock the rail")
+        @context.console_command(
+            "unlock",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help="unlock the rail",
+        )
         def unlock(data=None, **kwargs):
             if data is None:
                 data = self.default_spooler()
             spooler, spooler_name = data
             spooler.job(COMMAND_UNLOCK)
-            return 'spooler', data
+            return "spooler", data
 
-        @context.console_command("lock", input_type=("spooler", None), output_type='spooler', help="lock the rail")
+        @context.console_command(
+            "lock",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help="lock the rail",
+        )
         def lock(data, **kwargs):
             if data is None:
                 data = self.default_spooler()
             spooler, spooler_name = data
             spooler.job(COMMAND_LOCK)
-            return 'spooler', data
+            return "spooler", data
 
         for i in range(5):
             self.get_or_make_spooler(str(i))

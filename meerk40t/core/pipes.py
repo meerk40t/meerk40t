@@ -44,7 +44,6 @@ class FilePipe:
 
 
 class Pipes(Modifier):
-
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         self._pipes = dict()
@@ -88,9 +87,18 @@ class Pipes(Modifier):
             help="pipe<?> <command>",
             regex=True,
             input_type=(None, "source", "interpret"),
-            output_type="pipe"
+            output_type="pipe",
         )
-        def pipe(command, channel, _, data=None, data_type=None, new=None, remainder=None, **kwargs):
+        def pipe(
+            command,
+            channel,
+            _,
+            data=None,
+            data_type=None,
+            new=None,
+            remainder=None,
+            **kwargs
+        ):
             if len(command) > 4:
                 self._default_pipe = command[4:]
                 self.context.signal("pipe", self._default_pipe, None)
@@ -135,7 +143,7 @@ class Pipes(Modifier):
             "outfile",
             help="outfile filename",
             input_type=(None, "source", "interpret"),
-            output_type="pipe"
+            output_type="pipe",
         )
         def outfile(command, channel, _, data=None, filename=None, **kwargs):
             if filename is None:
@@ -174,11 +182,7 @@ class Pipes(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_command(
-            "type",
-            help="list pipe types",
-            input_type="pipe"
-        )
+        @context.console_command("type", help="list pipe types", input_type="pipe")
         def list_type(channel, _, **kwargs):
             channel(_("----------"))
             channel(_("Pipe types:"))

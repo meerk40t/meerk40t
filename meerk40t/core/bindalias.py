@@ -1,4 +1,4 @@
-from ..kernel import Modifier, CommandMatchRejected
+from ..kernel import CommandMatchRejected, Modifier
 
 
 def plugin(kernel, lifecycle=None):

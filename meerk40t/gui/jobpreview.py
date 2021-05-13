@@ -179,12 +179,16 @@ class JobPreview(MWindow):
         index = spools.index(selected_spooler)
         self.connected_spooler, self.connected_name = None, None
         try:
-            self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
+            self.connected_spooler, self.connected_name = self.available_spoolers[
+                spools[index]
+            ]
         except IndexError:
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [self.available_spoolers[i][0].as_device() for i in self.available_spoolers]
+        spools = [
+            self.available_spoolers[i][0].as_device() for i in self.available_spoolers
+        ]
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
@@ -509,7 +513,9 @@ class JobPreview(MWindow):
         self.available_spoolers = self.context.spoolers._spoolers
         spools = [str(i) for i in self.available_spoolers]
         index = self.combo_device.GetSelection()
-        self.connected_spooler, self.connected_name = self.available_spoolers[spools[index]]
+        self.connected_spooler, self.connected_name = self.available_spoolers[
+            spools[index]
+        ]
 
     def on_listbox_operation_click(self, event):  # wxGlade: JobInfo.<event_handler>
         event.Skip()

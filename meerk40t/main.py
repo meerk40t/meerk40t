@@ -38,7 +38,9 @@ parser.add_argument(
     "-o", "--output", type=argparse.FileType("w"), help="output file name"
 )
 parser.add_argument("-z", "--no-gui", action="store_true", help="run without gui")
-parser.add_argument("-Z", "--gui-suppress", action="store_true", help="completely suppress gui")
+parser.add_argument(
+    "-Z", "--gui-suppress", action="store_true", help="completely suppress gui"
+)
 parser.add_argument(
     "-b", "--batch", type=argparse.FileType("r"), help="console batch file"
 )
@@ -298,7 +300,7 @@ def run():
     kernel.bootstrap("configure")
     kernel.boot()
 
-    device_context = kernel.get_context('devices')
+    device_context = kernel.get_context("devices")
     if not hasattr(device_context, "_devices") or device_context._devices == 0:
         if args.device == "Moshi":
             dev = "spool interpret -n moshi pipe -n moshi"
@@ -377,7 +379,7 @@ def run():
 
         async def aio_readline(loop):
             while kernel.lifecycle != "shutdown":
-                print('>>', end='', flush=True)
+                print(">>", end="", flush=True)
                 line = await loop.run_in_executor(None, sys.stdin.readline)
                 kernel_root("." + line + "\n")
                 if line in ("quit", "shutdown"):
@@ -389,5 +391,3 @@ def run():
         kernel_root.channel("console").unwatch(print)
 
     kernel.bootstrap("mainloop")  # This is where the GUI loads and runs.
-
-

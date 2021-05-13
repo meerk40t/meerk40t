@@ -571,7 +571,7 @@ class Navigation(MWindow):
         context_root.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("interpreter;position", self.on_position_update)
 
-    def on_emphasized_elements_changed(self,  origin,elements):
+    def on_emphasized_elements_changed(self, origin, elements):
         self.select_ready(self.elements.has_emphasis())
         self.update_matrix_text()
 
@@ -873,18 +873,12 @@ class Navigation(MWindow):
 
     def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
         inter = self.context.default_interpreter()
-        self.context(
-            "rotate %fdeg %f %f\n"
-            % (-5, inter.current_x, inter.current_y)
-        )
+        self.context("rotate %fdeg %f %f\n" % (-5, inter.current_x, inter.current_y))
         self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
         inter = self.context.default_interpreter()
-        self.context(
-            "rotate %fdeg %f %f\n"
-            % (5, inter.current_x, inter.current_y)
-        )
+        self.context("rotate %fdeg %f %f\n" % (5, inter.current_x, inter.current_y))
         self.matrix_updated()
 
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>

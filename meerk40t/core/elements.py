@@ -5,9 +5,13 @@ from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
     COMMAND_HOME,
+    COMMAND_LASER_OFF,
+    COMMAND_LASER_ON,
     COMMAND_MODE_RAPID,
     COMMAND_MOVE,
-    COMMAND_WAIT_FINISH, COMMAND_SET_ABSOLUTE, COMMAND_WAIT, COMMAND_LASER_ON, COMMAND_LASER_OFF,
+    COMMAND_SET_ABSOLUTE,
+    COMMAND_WAIT,
+    COMMAND_WAIT_FINISH,
 )
 from ..kernel import Modifier
 from ..svgelements import (
@@ -1797,7 +1801,9 @@ class Elemental(Modifier):
                     x_pos += x
                 y_pos += y
 
-        @context.console_argument("path_d", type=str, help="svg path syntax command (quoted).")
+        @context.console_argument(
+            "path_d", type=str, help="svg path syntax command (quoted)."
+        )
         @context.console_command("path", help="path <svg path>")
         def path(path_d, **kwargs):
             try:
@@ -2111,7 +2117,9 @@ class Elemental(Modifier):
             try:
                 element = Polygon(list(map(float, args)))
             except ValueError:
-                raise SyntaxError("Must be a list of spaced delimited floating point numbers values.")
+                raise SyntaxError(
+                    "Must be a list of spaced delimited floating point numbers values."
+                )
             self.add_element(element)
 
         @context.console_command(
@@ -2123,10 +2131,14 @@ class Elemental(Modifier):
             try:
                 element = Polyline(list(map(float, args)))
             except ValueError:
-                raise SyntaxError("Must be a list of spaced delimited floating point numbers values.")
+                raise SyntaxError(
+                    "Must be a list of spaced delimited floating point numbers values."
+                )
             self.add_element(element)
 
-        @context.console_command("path", help="convert any shapes to paths", input_type="elements")
+        @context.console_command(
+            "path", help="convert any shapes to paths", input_type="elements"
+        )
         def path(data, **kwargs):
             for e in data:
                 try:

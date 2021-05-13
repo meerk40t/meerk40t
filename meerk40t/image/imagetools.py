@@ -37,6 +37,7 @@ def plugin(kernel, lifecycle=None):
             inkscape_path, filename = data
             if filename.endswith("png"):
                 from PIL import Image
+
                 img = Image.open(filename)
 
                 svg_image = SVGImage()
@@ -163,7 +164,9 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "threshold", help="", input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs):
+    def image(
+        command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs
+    ):
         if threshold_min is None:
             raise SyntaxError
         divide = (threshold_max - threshold_min) / 255.0
@@ -688,7 +691,12 @@ def plugin(kernel, lifecycle=None):
                 channel(_("image autocontrast <cutoff-percent>"))
         return "image", data
 
-    @context.console_option("method", "m", type=str, help="Method of grayscale conversion: red, green, blue, alpha")
+    @context.console_option(
+        "method",
+        "m",
+        type=str,
+        help="Method of grayscale conversion: red, green, blue, alpha",
+    )
     @context.console_command(
         ("grayscale", "grayscale"),
         help="convert image to grayscale",
@@ -959,7 +967,7 @@ def dither(image, method="Floyd-Steinberg"):
     diff_map = _DIFFUSION_MAPS.get(method.lower())
     if diff_map is None:
         raise NotImplementedError
-    diff = image.convert('F')
+    diff = image.convert("F")
     pix = diff.load()
     width, height = image.size
     for y in range(height):
@@ -1121,7 +1129,7 @@ class RasterScripts:
                 ],
             }
         )
-        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1158,7 +1166,7 @@ class RasterScripts:
                 "threshold": 0,
             }
         )
-        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1196,7 +1204,7 @@ class RasterScripts:
                 "oversample": 2,
             }
         )
-        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1216,7 +1224,7 @@ class RasterScripts:
                 "lightness": 1.0,
             }
         )
-        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1513,9 +1521,9 @@ class RasterScripts:
                                 for x in range(width):
                                     if pixel_data[x, y][3] == 0:
                                         pixel_data[x, y] = (255, 255, 255, 255)
-                        if op['type'] != "Floyd-Steinberg":
+                        if op["type"] != "Floyd-Steinberg":
                             image = dither(image, op["type"])
-                        image = image.convert('1')
+                        image = image.convert("1")
                 except KeyError:
                     pass
             elif name == "halftone":

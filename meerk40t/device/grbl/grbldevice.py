@@ -19,19 +19,19 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/grbl", GRBLEmulator)
         kernel.register("load/GCodeLoader", GCodeLoader)
 
-        @kernel.console_option("path", "p", type=str, default='/', help="Path of variables to set.")
+        @kernel.console_option(
+            "path", "p", type=str, default="/", help="Path of variables to set."
+        )
         @kernel.console_command("grblserver", help="activate the grblserver.")
         def grblserver(command, channel, _, path=None, args=tuple(), **kwargs):
-            path_context = kernel.get_context(path if path is not None else '/')
+            path_context = kernel.get_context(path if path is not None else "/")
             if path_context is None:
                 return
             _ = kernel.translation
             port = 23
             try:
                 path_context.open_as("module/TCPServer", "grbl", port=port)
-                path_context.channel(
-                    "grbl/send"
-                ).greet = "Grbl 1.1e ['$' for help]\r\n"
+                path_context.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
                 channel(_("GRBL Mode."))
                 chan = "grbl"
                 path_context.channel(chan).watch(kernel.channel("console"))

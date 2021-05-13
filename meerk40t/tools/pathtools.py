@@ -1,4 +1,4 @@
-from math import isnan, isinf
+from math import isinf, isnan
 
 from meerk40t.svgelements import Point
 

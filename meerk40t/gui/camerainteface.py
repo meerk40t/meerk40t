@@ -67,9 +67,7 @@ class CameraInterface(MWindow, Job):
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context.open(
-                "window/CameraURI", self, index=self.index
-            ),
+            lambda e: self.context.open("window/CameraURI", self, index=self.index),
             id=item.GetId(),
         )
 
@@ -808,12 +806,11 @@ class CameraURI(MWindow):
 
     def on_tree_popup_duplicate(self, index):
         def duplicate(event):
-            self.uri_list.insert(index,self.uri_list[index])
+            self.uri_list.insert(index, self.uri_list[index])
             self.changed = True
             self.on_list_refresh()
 
         return duplicate
-
 
     def on_tree_popup_edit(self, index):
         def edit(event):

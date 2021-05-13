@@ -493,15 +493,15 @@ class DitherPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
         self.choices = [
-                "Floyd-Steinberg",
-                "Atkinson",
-                "Jarvis-Judice-Ninke",
-                "Stucki",
-                "Burkes",
-                "Sierra3",
-                "Sierra2",
-                "Sierra-2-4a",
-            ]
+            "Floyd-Steinberg",
+            "Atkinson",
+            "Jarvis-Judice-Ninke",
+            "Stucki",
+            "Burkes",
+            "Sierra3",
+            "Sierra2",
+            "Sierra-2-4a",
+        ]
         self.combo_dither = wx.ComboBox(
             self,
             wx.ID_ANY,

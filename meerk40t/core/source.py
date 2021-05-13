@@ -31,7 +31,6 @@ class TcpSource(Source):
 
 
 class Sources(Modifier):
-
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         self._sources = dict()
@@ -77,7 +76,16 @@ class Sources(Modifier):
             input_type=None,
             output_type="source",
         )
-        def source(command, channel, _, data=None, data_type=None, new=None, remainder=None, **kwargs):
+        def source(
+            command,
+            channel,
+            _,
+            data=None,
+            data_type=None,
+            new=None,
+            remainder=None,
+            **kwargs
+        ):
             if len(command) > 6:
                 self._default_source = command[6:]
                 self.context.signal("source", self._default_source, None)
@@ -136,11 +144,7 @@ class Sources(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_command(
-            "type",
-            help="list source types",
-            input_type="source"
-        )
+        @context.console_command("type", help="list source types", input_type="source")
         def list_type(channel, _, **kwargs):
             channel(_("----------"))
             channel(_("Source types:"))

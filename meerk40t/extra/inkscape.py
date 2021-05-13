@@ -1,6 +1,6 @@
 import os.path
+from subprocess import PIPE, run
 from sys import platform
-from subprocess import run, PIPE
 
 
 def plugin(kernel, lifecycle):
@@ -15,7 +15,7 @@ def plugin(kernel, lifecycle):
         def load(channel, _, data=None, **kwargs):
             inkscape_path, filename = data
             channel(_("Loading..."))
-            e = kernel.get_context('/')
+            e = kernel.get_context("/")
             e.load(filename)
             e.signal("refresh_scene", 0)
             return "inkscape", data
@@ -30,10 +30,13 @@ def plugin(kernel, lifecycle):
             inkscape_path, filename = data
             channel(_("Making plain_svg with Inkscape."))
             c = run(
-                [inkscape_path,
-                 "--export-plain-svg",
-                 "--export-filename=temp.svg",
-                 filename], stdout=PIPE
+                [
+                    inkscape_path,
+                    "--export-plain-svg",
+                    "--export-filename=temp.svg",
+                    filename,
+                ],
+                stdout=PIPE,
             )
             channel(c.stdout)
             return "inkscape", (inkscape_path, "temp.svg")
@@ -74,8 +77,10 @@ def plugin(kernel, lifecycle):
             c = run(
                 [
                     inkscape_path,
-                    "--export-background", "white",
-                    "--export-background-opacity", "255",
+                    "--export-background",
+                    "white",
+                    "--export-background-opacity",
+                    "255",
                     "--export-area-drawing",
                     "--export-type=png",
                     "--export-filename=temp.png",
@@ -85,7 +90,7 @@ def plugin(kernel, lifecycle):
                 stdout=PIPE,
             )
             channel(c.stdout)
-            return "inkscape",  (inkscape_path, "temp.png")
+            return "inkscape", (inkscape_path, "temp.png")
 
         @kernel.console_argument(
             "filename", type=str, help="filename of svg to be simplified"
@@ -130,7 +135,7 @@ def plugin(kernel, lifecycle):
             if "darwin" in platform:
                 inkscape = [
                     "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
-                    "/Applications/Inkscape.app/Contents/Resources/bin/inkscape"
+                    "/Applications/Inkscape.app/Contents/Resources/bin/inkscape",
                 ]
             elif "win" in platform:
                 inkscape = [
