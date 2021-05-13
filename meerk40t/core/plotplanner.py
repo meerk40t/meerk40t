@@ -298,7 +298,7 @@ class PlotPlanner:
         """
         for event in plot:
             if event is None:
-                if self.group_x is not None and self.group_y is not None:
+                if self.group_x is not None and self.group_y is not None and self.group_on is not None:
                     yield self.group_x, self.group_y, self.group_on
                 self.group_dx = 0
                 self.group_dy = 0
