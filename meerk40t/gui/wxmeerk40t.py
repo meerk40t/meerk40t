@@ -98,7 +98,7 @@ from .icons import (
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
-    icons_evenspace_vert, icons8_scatter_plot_20, icons8_system_task_20,
+    icons_evenspace_vert, icons8_scatter_plot_20, icons8_system_task_20, icons8_home_filled_50,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -343,17 +343,39 @@ class MeerK40t(MWindow, Job):
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
         self.screen_refresh_lock = threading.Lock()
+
         self.background_brush = wx.Brush("Grey")
         self.renderer = LaserRender(context)
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
         self.working_file = None
+
+        # Define Tree
         self.wxtree = wx.TreeCtrl(
             self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS
         )
+
+
+        self._mgr.AddPane(
+            self.wxtree,
+            aui.AuiPaneInfo()
+            .Name('tree')
+            .CloseButton(False)
+            .Left()
+            .MinSize(200, -1)
+            .MaxSize(275, -1)
+            .LeftDockable()
+            .RightDockable()
+            .BottomDockable(False)
+            .TopDockable(False),
+        )
+
+        # Define Scene
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
+        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name('scene'))
 
+        # Define Ribbon.
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
 
         if self.is_dark:
@@ -368,6 +390,20 @@ class MeerK40t(MWindow, Job):
         self.ribbon_position_units = 0
         self.ribbon_position_name = None
         self.__set_ribbonbar()
+        self._mgr.AddPane(
+            self._ribbon,
+            aui.AuiPaneInfo()
+                .Name('ribbon')
+                .Top()
+                .TopDockable()
+                .BottomDockable()
+                .RightDockable(False)
+                .LeftDockable(False)
+                .MinSize(-1, 150)
+                .CaptionVisible(False),
+        )
+
+        # Define Stop.
         stop = wx.BitmapButton(
             self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
         )
@@ -387,48 +423,13 @@ class MeerK40t(MWindow, Job):
         stop.SetToolTip(_("Emergency stop/reset the controller."))
         stop.SetSize(stop.GetBestSize())
         self._mgr.AddPane(stop, aui.AuiPaneInfo().Bottom().Name("stop"))
-        #
-        # home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        # self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
-        # self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom())
 
-        # self.auiToolBar = wx.aui.AuiToolBar(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize,
-        #                                     wx.aui.AUI_TB_HORZ_LAYOUT)
-        # self.auiToolBar.AddTool(wx.ID_ANY, u"tool", icons8_home_filled_50.GetBitmap(),
-        #                         wx.NullBitmap, wx.ITEM_NORMAL, wx.EmptyString, wx.EmptyString, None)
-        # self.auiToolBar.Realize()
-        # self._mgr.AddPane(self.auiToolBar,
-        #                   wx.aui.AuiPaneInfo().Top().CaptionVisible(False).CloseButton(False).MaximizeButton(
-        #                        False).MinimizeButton(False).PinButton(False).PaneBorder(False).Movable(
-        #                        False).Dock().Fixed().DockFixed(False).Floatable(False).Layer(1))
+        # Define Home.
+        home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
+        self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("home"))
 
-        self._mgr.AddPane(
-            self._ribbon,
-            aui.AuiPaneInfo()
-            .Name('ribbon')
-            .Top()
-            .TopDockable()
-            .BottomDockable()
-            .RightDockable(False)
-            .LeftDockable(False)
-            .MinSize(-1, 150)
-            .CaptionVisible(False),
-        )
-        self._mgr.AddPane(
-            self.wxtree,
-            aui.AuiPaneInfo()
-            .Name('tree')
-            .CloseButton(False)
-            .Left()
-            .MinSize(200, -1)
-            .MaxSize(275, -1)
-            .LeftDockable()
-            .RightDockable()
-            .BottomDockable(False)
-            .TopDockable(False),
-        )
-        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name('scene'))
-
+        # AUI MAnager Update.
         self._mgr.Update()
 
         # Menu Bar
