@@ -386,7 +386,8 @@ class LaserOperation(list):
                 width, height = image.size
                 mode = image.mode
 
-                if mode != "1" and mode != "P" and mode != "L" and mode != "RGB" and mode != "RGBA":
+                if mode not in ("1", "P", "L", "RGB", "RGBA") or \
+                        mode is "P" and 'transparency' in image.info:
                     # Any mode without a filter should get converted.
                     image = image.convert("RGBA")
                     mode = image.mode
