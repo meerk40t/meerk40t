@@ -387,7 +387,7 @@ class LaserOperation(list):
                 mode = image.mode
 
                 if mode not in ("1", "P", "L", "RGB", "RGBA") or \
-                        mode is "P" and 'transparency' in image.info:
+                        mode == "P" and 'transparency' in image.info:
                     # Any mode without a filter should get converted.
                     image = image.convert("RGBA")
                     mode = image.mode
@@ -399,7 +399,7 @@ class LaserOperation(list):
 
                     def image_filter(pixel):
                         v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
-                        return 1.0 - v / 765.0
+                        return 1.0 - (v / 765.0)
                 elif mode == "L":
                     def image_filter(pixel):
                         return (255 - pixel) / 255.0
