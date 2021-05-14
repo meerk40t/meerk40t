@@ -1519,7 +1519,7 @@ class Preferences:
             elif t == bool:
                 return self._config.ReadBool(key, default)
             elif t == Color:
-                return self._config.ReadInt(key, default)
+                return Color(argb=self._config.ReadInt(key, default))
         else:
             if t == str:
                 return self._config.Read(key)
@@ -1530,7 +1530,7 @@ class Preferences:
             elif t == bool:
                 return self._config.ReadBool(key)
             elif t == Color:
-                return self._config.ReadInt(key)
+                return Color(argb=self._config.ReadInt(key))
         return default
 
     def write_persistent(self, key, value):
