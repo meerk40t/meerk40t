@@ -303,7 +303,8 @@ class ArcCut(CutObject):
         return self.arc.end
 
     def reverse(self):
-        self.arc = copy(self.arc).reversed()
+        self.arc = copy(self.arc)
+        self.arc.reverse()
 
     def generator(self):
         return ZinglPlotter.plot_arc(self.arc)
@@ -339,7 +340,8 @@ class RasterCut(CutObject):
         width, height = image.size
         mode = image.mode
 
-        if mode not in ("1", "P", "L", "RGB", "RGBA"):
+        if mode not in ("1", "P", "L", "RGB", "RGBA") or \
+                mode is "P" and 'transparency' in image.info:
             # Any mode without a filter should get converted.
             image = image.convert("RGBA")
             mode = image.mode
