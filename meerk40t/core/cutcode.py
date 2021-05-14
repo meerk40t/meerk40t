@@ -304,7 +304,8 @@ class ArcCut(CutObject):
         return self.arc.end
 
     def reverse(self):
-        self.arc = copy(self.arc).reversed()
+        self.arc = copy(self.arc)
+        self.arc.reverse()
 
     def generator(self):
         return ZinglPlotter.plot_arc(self.arc)
