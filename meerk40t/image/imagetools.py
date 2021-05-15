@@ -296,6 +296,17 @@ def plugin(kernel, lifecycle=None):
                 element.node.altered()
         return "image", data
 
+    @context.console_command("rgba", help="", input_type="image", output_type="image")
+    def image(data, **kwargs):
+        for element in data:
+            img = element.image
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
+            element.image = img
+            if hasattr(element, "node"):
+                element.node.altered()
+        return "image", data
+
     @context.console_argument("left", help="left side of crop", type=Length)
     @context.console_argument("upper", help="upper side of crop", type=Length)
     @context.console_argument("right", help="right side of crop", type=Length)
