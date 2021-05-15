@@ -30,7 +30,7 @@ from ..basedevice import (
 )
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
-from .lhystudioemulator import EgvLoader, LhystudiosEmulator
+from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 
 
 def plugin(kernel, lifecycle=None):
