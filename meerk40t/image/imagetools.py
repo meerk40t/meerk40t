@@ -208,7 +208,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "dither", help="Dither to 1-bit", input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, method=None, **kwargs):
+    def image(command, channel, _, data, method="Floyd-Steinberg", **kwargs):
         for element in data:
             img = element.image
             if img.mode == "RGBA":
@@ -295,6 +295,24 @@ def plugin(kernel, lifecycle=None):
             if hasattr(element, "node"):
                 element.node.altered()
         return "image", data
+
+    @context.console_command("dewhite", help="", input_type="image", output_type="image")
+    def image(channel, _, data, **kwargs):
+        for element in data:
+            img = element.image
+            if img.mode not in ("1", "L"):
+                channel(_("Requires 1 bit image."))
+                return "image", data
+            from PIL import Image
+
+            black = Image.new("L", img.size, color='black')
+            img = img.point(lambda e: 255 - e)
+            black.putalpha(img)
+            element.image = black
+            if hasattr(element, "node"):
+                element.node.altered()
+        return "image", data
+
 
     @context.console_command("rgba", help="", input_type="image", output_type="image")
     def image(data, **kwargs):
