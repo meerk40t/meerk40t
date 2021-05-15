@@ -5,8 +5,6 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/Pipes", Pipes)
         kernel.register("pipe/file", FilePipe)
-
-    elif lifecycle == "boot":
         kernel_root = kernel.get_context("/")
         kernel_root.activate("modifier/Pipes")
 

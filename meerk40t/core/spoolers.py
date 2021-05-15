@@ -9,8 +9,6 @@ from ..kernel import Modifier
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/Spoolers", Spoolers)
-
-    elif lifecycle == "boot":
         kernel_root = kernel.get_context("/")
         kernel_root.activate("modifier/Spoolers")
 

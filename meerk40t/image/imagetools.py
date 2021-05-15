@@ -301,7 +301,7 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             if img.mode not in ("1", "L"):
-                channel(_("Requires 1 bit image."))
+                channel(_("Requires 1-bit or grayscale image."))
                 return "image", data
             from PIL import Image
 

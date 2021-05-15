@@ -6,7 +6,6 @@
 
 import wx
 
-from ..kernel import STATE_UNKNOWN
 from .icons import (
     icons8_plus_50,
     icons8_trash_50,
@@ -78,84 +77,71 @@ class DeviceManager(MWindow):
             driver = None
             output = None
             registered = True
-            if spooler.next is not None:
+            if spooler is not None and spooler.next is not None:
                 driver = spooler.next
-            if driver.next is not None:
+            if driver is not None and driver.next is not None:
                 output = driver.next
             if m != -1:
-                self.devices_list.SetItem(m, 1, str(i))
-                self.devices_list.SetItem(m, 2, str(spooler))
-                self.devices_list.SetItem(m, 3, str(driver))
-                self.devices_list.SetItem(m, 4, str(output))
-                self.devices_list.SetItem(m, 5, str(registered))
+                self.devices_list.SetItem(m, 1, str(spooler))
+                self.devices_list.SetItem(m, 2, str(driver))
+                self.devices_list.SetItem(m, 3, str(output))
+                self.devices_list.SetItem(m, 4, str(registered))
 
     def on_list_drag(self, event):  # wxGlade: DeviceManager.<event_handler>
         pass
 
     def on_list_right_click(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
-        # If the device is booted change the autoboot settings.
-        context_obj = self.context.get_context("/%s" % uid)
-        context_obj.setting(bool, "autoboot", True)
-        context_obj.autoboot = not context_obj.autoboot
-        context_obj._kernel.write_persistent(
-            context_obj.abs_path("autoboot"), context_obj.autoboot
-        )
+        print(uid)
         self.refresh_device_list()
 
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
-        uid = event.GetLabel()
-        context = self.context.get_context("/%s" % uid)
-        context_name = context.setting(str, "device_name", "Lhystudios")
-        if context._state == STATE_UNKNOWN:
-            context.boot()
-        else:
-            dlg = wx.MessageDialog(
-                None,
-                _("That device already booted."),
-                _("Cannot Boot Selected Device"),
-                wx.OK | wx.ICON_WARNING,
-            )
-            result = dlg.ShowModal()
-            dlg.Destroy()
+        pass
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
-        names = [name[7:] for name in self.context._kernel.match("device")]
-        dlg = wx.SingleChoiceDialog(
-            None, _("What type of device is being added?"), _("Device Type"), names
+        dlg = wx.TextEntryDialog(
+            None, _("What spooler does this device attach to?"), _("Spooler"),
         )
-        dlg.SetSelection(0)
         if dlg.ShowModal() == wx.ID_OK:
-            device_type = dlg.GetSelection()
-            device_type = names[device_type]
+            spooler_input = dlg.GetValue()
         else:
             dlg.Destroy()
             return
         dlg.Destroy()
-        device_uid = 0
-        devices = list(self.context.derivable())
-        while device_uid <= 100:
-            device_uid += 1
-            if str(device_uid) not in devices:
-                break
-        settings = self.context.get_context("%d" % device_uid)
-        settings.setting(str, "device_name", device_type)
-        settings.setting(bool, "autoboot", True)
-        settings.flush()
+
+        names = [name for name in self.context._kernel.match("driver", suffix=True)]
+        dlg = wx.SingleChoiceDialog(
+            None, _("What type of driver is being added?"), _("Device Type"), names
+        )
+        dlg.SetSelection(0)
+        if dlg.ShowModal() == wx.ID_OK:
+            device_type = names[dlg.GetSelection()]
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+
+        names = [name for name in self.context._kernel.match("pipe", suffix=True)]
+        dlg = wx.SingleChoiceDialog(
+            None, _("Where does the device output data?"), _("Ouput Type"), names
+        )
+        dlg.SetSelection(0)
+        if dlg.ShowModal() == wx.ID_OK:
+            pipe_type = names[dlg.GetSelection()]
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+
+        dev = "spool%s driver -n %s pipe -n %s\n" % (spooler_input, device_type, pipe_type)
+        print(dev)
+        self.context("device add %s\n%s\n" % (dev,dev))
         self.refresh_device_list()
+        self.context.get_context('devices').flush()
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         if item == -1:
             return
         uid = self.devices_list.GetItem(item).Text
-        settings = self.context.derive(str(uid))
-        settings._kernel.clear_persistent(settings._path)
-        try:
-            device = self.context._kernel.contexts[uid]
-            del self.context._kernel.contexts[uid]
-            device.opened["window/MeerK40t"].Close()
-        except (KeyError, AttributeError):
-            pass
-
         self.refresh_device_list()

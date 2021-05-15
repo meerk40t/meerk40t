@@ -16,9 +16,15 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "boot":
         device_context = kernel.get_context("devices")
         index = 0
-        while hasattr(device_context, "device-%d" % index):
-            line = getattr(device_context, "device-%d" % index)
-            device_context(line + "\n")
+        while True:
+            line = device_context._kernel.read_persistent(
+                str, device_context.abs_path("device_%d" % index), None
+            )
+            if line is not None and len(line):
+                device_context(line + "\n")
+                device_context.setting(str, "device_%d" % index, None)
+            else:
+                break
             index += 1
         device_context._devices = index
 
@@ -35,8 +41,8 @@ def plugin(kernel, lifecycle=None):
                 channel(_("----------"))
                 channel(_("Devices:"))
                 index = 0
-                while hasattr(data, "device-%d" % index):
-                    line = getattr(data, "device-%d" % index)
+                while hasattr(data, "device_%d" % index):
+                    line = getattr(data, "device_%d" % index)
                     channel("%d: %s" % (index, line))
                     index += 1
                 channel("----------")
@@ -52,8 +58,8 @@ def plugin(kernel, lifecycle=None):
             channel(_("----------"))
             channel(_("Devices:"))
             index = 0
-            while hasattr(data, "device-%d" % index):
-                line = getattr(data, "device-%d" % index)
+            while hasattr(data, "device_%d" % index):
+                line = getattr(data, "device_%d" % index)
                 channel("%d: %s" % (index, line))
                 index += 1
             channel("----------")
@@ -68,9 +74,9 @@ def plugin(kernel, lifecycle=None):
             if not remainder.startswith("spool") and not remainder.startswith("source"):
                 raise SyntaxError("Device string must start with 'spool' or 'source'")
             index = 0
-            while hasattr(data, "device-%d" % index):
+            while hasattr(data, "device_%d" % index):
                 index += 1
-            setattr(data, "device-%d" % index, remainder)
+            setattr(data, "device_%d" % index, remainder)
 
         @kernel.console_command(
             "delete",
@@ -79,6 +85,6 @@ def plugin(kernel, lifecycle=None):
         )
         def delete(channel, _, data, remainder, **kwargs):
             try:
-                delattr(data, "device-%d" % index)
+                delattr(data, "device_%d" % index)
             except KeyError:
                 raise SyntaxError("Invalid device-string index.")
