@@ -396,6 +396,30 @@ class Node:
         node.notify_attached(node, pos=pos)
         return node
 
+    def _get_node_name(self, node) -> str:
+        """
+        Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
+        node str. If something else provides a superior name it should be added in here.
+        """
+        try:
+            return node.object.values['label']
+        except (AttributeError, KeyError):
+            pass
+
+        try:
+            return node.object.values['{http://www.inkscape.org/namespaces/inkscape}label']
+        except (AttributeError, KeyError):
+            pass
+
+        try:
+            return node.object.id
+        except AttributeError:
+            pass
+
+        if node.object is not None:
+            return str(node.object)
+        return str(node)
+
     def set_name(self, name):
         """
         Set the name of this node to the name given.
@@ -405,12 +429,7 @@ class Node:
         self.name = name
         if name is None:
             if self.name is None:
-                try:
-                    self.name = self.object.id
-                    if self.name is None:
-                        self.name = str(self.object)
-                except AttributeError:
-                    self.name = str(self.object)
+                self.name = self._get_node_name(self)
         else:
             self.name = name
 
