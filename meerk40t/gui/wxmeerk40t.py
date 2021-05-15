@@ -2969,16 +2969,29 @@ class ShadowTree:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
 
-    def update_name(self, node, force=False):
+    def _get_name_from_node(self, node) -> str:
         try:
-            node.name = node.object.id
+            return node.object.values['label']
+        except (AttributeError, KeyError):
+            pass
+
+        try:
+            return node.object.values['inkscape:label']
+        except (AttributeError, KeyError):
+            pass
+
+        try:
+            return node.object.id
         except AttributeError:
             pass
+
+        if node.object is not None:
+            return str(node.object)
+        return str(node)
+
+    def update_name(self, node, force=False):
         if node.name is None or force:
-            if node.object is not None:
-                node.name = str(node.object)
-            else:
-                node.name = str(node)
+            node.name = self._get_name_from_node(node)
         if not hasattr(node, "item"):
             # Unregistered node updating name.
             self.rebuild_tree()
