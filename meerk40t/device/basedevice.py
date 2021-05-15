@@ -1,8 +1,8 @@
-INTERPRETER_STATE_RAPID = 0
-INTERPRETER_STATE_FINISH = 1
-INTERPRETER_STATE_PROGRAM = 2
-INTERPRETER_STATE_RASTER = 3
-INTERPRETER_STATE_MODECHANGE = 4
+DRIVER_STATE_RAPID = 0
+DRIVER_STATE_FINISH = 1
+DRIVER_STATE_PROGRAM = 2
+DRIVER_STATE_RASTER = 3
+DRIVER_STATE_MODECHANGE = 4
 
 PLOT_FINISH = 256
 PLOT_RAPID = 4
@@ -82,27 +82,3 @@ def plugin(kernel, lifecycle=None):
                 delattr(data, "device-%d" % index)
             except KeyError:
                 raise SyntaxError("Invalid device-string index.")
-
-
-# class Device(Modifier):
-#     def __init__(
-#         self, context, interpreter=None, name=None, channel=None, *args, **kwargs
-#     ):
-#         Modifier.__init__(self, context, name, channel)
-#         self.context.activate("modifier/Spooler")
-#         self.spooler = self.context.spooler
-#         if interpreter is not None:
-#             self.context.activate(interpreter)
-#         else:
-#             self.interpreter = None
-#         self.pipes = []
-#
-#     def __repr__(self):
-#         return "Spooler()"
-#
-#     def attach(self, *a, **kwargs):
-#         """Overloaded attach to demand .spooler attribute."""
-#         self.context.spooler = self.spooler
-#         self.context.pipes = self.pipes
-#         self.context.interpreter = self.interpreter
-#

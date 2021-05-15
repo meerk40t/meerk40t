@@ -1,11 +1,11 @@
 from .moshicontroller import MoshiController
-from .moshiinterpreter import MoshiInterpreter
+from .moshidriver import MoshiDriver
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         # kernel.register("device/Moshi", MoshiDevice)
-        kernel.register("interpreter/moshi", MoshiInterpreter)
+        kernel.register("driver/moshi", MoshiDriver)
         kernel.register("pipe/moshi", MoshiController)
 
 
@@ -16,7 +16,7 @@ def plugin(kernel, lifecycle=None):
 # The device is primary composed of three main modules.
 #
 # * A generic spooler to take in lasercode.
-# * An interpreter to convert lasercode into moshi-programs.
+# * An driver to convert lasercode into moshi-programs.
 # * A controller to send the data to the hardware using moshi protocols.
 #
 # """
@@ -65,14 +65,14 @@ def plugin(kernel, lifecycle=None):
 #         self.dy = 0
 #
 #         context.open_as("module/MoshiController", "pipe")
-#         context.activate("modifier/MoshiInterpreter", context)
+#         context.activate("modifier/MoshiDriver", context)
 #         context.activate("modifier/Spooler")
 #
-#         context.listen("interpreter;mode", self.on_mode_change)
+#         context.listen("driver;mode", self.on_mode_change)
 #         context.signal("bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height))
 #
 #     def detach(self, *args, **kwargs):
-#         self.context.unlisten("interpreter;mode", self.on_mode_change)
+#         self.context.unlisten("driver;mode", self.on_mode_change)
 #
 #     def on_mode_change(self, *args):
 #         self.dx = 0

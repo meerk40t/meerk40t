@@ -562,14 +562,14 @@ class Navigation(MWindow):
         self.set_jog_distances(self.context.navigate_jog)
 
         context_root.listen("emphasized", self.on_emphasized_elements_changed)
-        context.listen("interpreter;position", self.on_position_update)
+        context.listen("driver;position", self.on_position_update)
         self.update_matrix_text()
         self.SetFocus()
 
     def window_close(self):
         context_root = self.context.get_context("/")
         context_root.unlisten("emphasized", self.on_emphasized_elements_changed)
-        self.context.unlisten("interpreter;position", self.on_position_update)
+        self.context.unlisten("driver;position", self.on_position_update)
 
     def on_emphasized_elements_changed(self, origin, elements):
         self.select_ready(self.elements.has_emphasis())
@@ -817,7 +817,7 @@ class Navigation(MWindow):
 
     def on_scale_down(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 19.0 / 20.0
-        inter = self.context.default_interpreter()
+        inter = self.context.default_driver()
         self.context(
             "scale %f %f %f %f\n"
             % (
@@ -831,7 +831,7 @@ class Navigation(MWindow):
 
     def on_scale_up(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
-        inter = self.context.default_interpreter()
+        inter = self.context.default_driver()
         self.context(
             "scale %f %f %f %f\n"
             % (
@@ -872,12 +872,12 @@ class Navigation(MWindow):
         self.matrix_updated()
 
     def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
-        inter = self.context.default_interpreter()
+        inter = self.context.default_driver()
         self.context("rotate %fdeg %f %f\n" % (-5, inter.current_x, inter.current_y))
         self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
-        inter = self.context.default_interpreter()
+        inter = self.context.default_driver()
         self.context("rotate %fdeg %f %f\n" % (5, inter.current_x, inter.current_y))
         self.matrix_updated()
 

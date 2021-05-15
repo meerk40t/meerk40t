@@ -108,7 +108,7 @@ class Sources(Modifier):
             self.context.signal("source", source_name, 1)
 
             if data is not None:
-                if data_type == "interpret":
+                if data_type == "driver":
                     dinter, dname = data
                     dinter.output = source
                     source.next = dinter

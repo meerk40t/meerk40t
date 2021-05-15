@@ -769,7 +769,7 @@ class Planner(Modifier):
     def jobadd_scale_rotary(self):
         def scale_for_rotary():
             r = self.context.get_context("rotary/1")
-            i = self.context.default_interpreter()
+            i = self.context.default_driver()
             scale_str = "scale(%f,%f,%f,%f)" % (
                 r.scale_x,
                 r.scale_y,

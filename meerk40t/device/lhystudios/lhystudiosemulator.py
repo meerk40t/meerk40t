@@ -4,7 +4,7 @@ from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
 
 
-class LhystudioEmulator(Module):
+class LhystudiosEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
         self.board = "M2"
@@ -39,7 +39,7 @@ class LhystudioEmulator(Module):
         self.channel = self.context.channel("lhy")
 
     def __repr__(self):
-        return "LhystudioEmulator(%s, %d cuts)" % (self.name, len(self.cutcode))
+        return "LhystudiosEmulator(%s, %d cuts)" % (self.name, len(self.cutcode))
 
     def generate(self):
         for cutobject in self.cutcode:
@@ -105,7 +105,7 @@ class LhystudioEmulator(Module):
     def state_pop(self, b, c):
         if c == "P":
             # Home sequence triggered.
-            self.context.signal("interpreter;position", (self.x, self.y, 0, 0))
+            self.context.signal("driver;position", (self.x, self.y, 0, 0))
             self.x = 0
             self.y = 0
             self.process = self.state_default
@@ -195,7 +195,7 @@ class LhystudioEmulator(Module):
             self.distance_y = 0
 
             self.context.signal(
-                "interpreter;position", (self.x, self.y, self.x + dx, self.y + dy)
+                "driver;position", (self.x, self.y, self.x + dx, self.y + dy)
             )
             self.x += dx
             self.y += dy
@@ -312,7 +312,7 @@ class EgvLoader:
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
             lhymicroemulator = kernel.get_context("/").open_as(
-                "module/LhystudiosEmulator", basename
+                "module/LhystudiossEmulator", basename
             )
             lhymicroemulator.write_header(f.read())
             return [lhymicroemulator.cutcode], None, None, pathname, basename

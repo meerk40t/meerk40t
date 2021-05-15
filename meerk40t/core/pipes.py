@@ -86,7 +86,7 @@ class Pipes(Modifier):
             "pipe",
             help="pipe<?> <command>",
             regex=True,
-            input_type=(None, "source", "interpret"),
+            input_type=(None, "source", "driver"),
             output_type="pipe",
         )
         def pipe(
@@ -142,7 +142,7 @@ class Pipes(Modifier):
         @context.console_command(
             "outfile",
             help="outfile filename",
-            input_type=(None, "source", "interpret"),
+            input_type=(None, "source", "driver"),
             output_type="pipe",
         )
         def outfile(command, channel, _, data=None, filename=None, **kwargs):

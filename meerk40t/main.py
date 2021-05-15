@@ -135,9 +135,9 @@ def run():
         pass
 
     try:
-        from .core import interpreters
+        from .core import drivers
 
-        kernel.add_plugin(interpreters.plugin)
+        kernel.add_plugin(drivers.plugin)
     except ImportError:
         pass
 
@@ -303,9 +303,9 @@ def run():
     device_context = kernel.get_context("devices")
     if not hasattr(device_context, "_devices") or device_context._devices == 0:
         if args.device == "Moshi":
-            dev = "spool interpret -n moshi pipe -n moshi"
+            dev = "spool driver -n moshi pipe -n moshi"
         else:
-            dev = "spool interpret -n lhystudios pipe -n lhystudios"
+            dev = "spool driver -n lhystudios pipe -n lhystudios"
         kernel_root("device add %s\n%s\n" % (dev, dev))
 
     if args.verbose:

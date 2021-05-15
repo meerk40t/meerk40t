@@ -5,11 +5,11 @@ from ..core.cutcode import LaserSettings
 from ..device.lasercommandconstants import *
 from ..kernel import Modifier
 
-INTERPRETER_STATE_RAPID = 0
-INTERPRETER_STATE_FINISH = 1
-INTERPRETER_STATE_PROGRAM = 2
-INTERPRETER_STATE_RASTER = 3
-INTERPRETER_STATE_MODECHANGE = 4
+DRIVER_STATE_RAPID = 0
+DRIVER_STATE_FINISH = 1
+DRIVER_STATE_PROGRAM = 2
+DRIVER_STATE_RASTER = 3
+DRIVER_STATE_MODECHANGE = 4
 
 PLOT_FINISH = 256
 PLOT_RAPID = 4
@@ -21,22 +21,19 @@ PLOT_DIRECTION = 32
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/Interpreters", Interpreters)
+        kernel.register("modifier/Drivers", Drivers)
     elif lifecycle == "boot":
         kernel_root = kernel.get_context("/")
-        kernel_root.activate("modifier/Interpreters")
+        kernel_root.activate("modifier/Drivers")
 
 
-class Interpreter:
+class Driver:
     """
-    An Interpreter Module takes spoolable commands and turns those commands into states and code in a language
+    An Driver takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
 
-    Interpreters register themselves as context.interpreter objects.
-    Interpreters expect the context.spooler object exists to provide spooled commands as needed.
-
-    These modules function to interpret hardware specific backend information from the reusable spoolers and server
-    objects that may also be common within devices.
+    These drive hardware specific backend information from the reusable spoolers and server objects that may also be
+    common within devices.
     """
 
     def __init__(self, context, name=None):
@@ -57,7 +54,7 @@ class Interpreter:
         self.holds = []
         self.temp_holds = []
 
-        self.state = INTERPRETER_STATE_RAPID
+        self.state = DRIVER_STATE_RAPID
         self.properties = 0
         self.is_relative = False
         self.laser = False
@@ -78,20 +75,20 @@ class Interpreter:
         self._thread = None
         self._shutdown = False
 
-    def start_interpreter(self, *args):
+    def start_driver(self, *args):
         if self._thread is None:
 
             def clear_thread(*args):
                 self._shutdown = True
 
             self._thread = self.context.threaded(
-                self._interpret_threaded,
+                self._driver_threaded,
                 result=clear_thread,
-                thread_name="Interpreter(%s)" % (self.context._path),
+                thread_name="Driver(%s)" % (self.context._path),
             )
             self._thread.stop = clear_thread
 
-    def _interpret_threaded(self, *args):
+    def _driver_threaded(self, *args):
         """
         Fetch and Execute.
 
@@ -381,28 +378,28 @@ class Interpreter:
         self.context.current_y = 0
 
     def ensure_rapid_mode(self, *values):
-        if self.state == INTERPRETER_STATE_RAPID:
+        if self.state == DRIVER_STATE_RAPID:
             return
-        self.state = INTERPRETER_STATE_RAPID
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_RAPID
+        self.context.signal("driver;mode", self.state)
 
     def ensure_finished_mode(self, *values):
-        if self.state == INTERPRETER_STATE_FINISH:
+        if self.state == DRIVER_STATE_FINISH:
             return
-        self.state = INTERPRETER_STATE_FINISH
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_FINISH
+        self.context.signal("driver;mode", self.state)
 
     def ensure_program_mode(self, *values):
-        if self.state == INTERPRETER_STATE_PROGRAM:
+        if self.state == DRIVER_STATE_PROGRAM:
             return
-        self.state = INTERPRETER_STATE_PROGRAM
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_PROGRAM
+        self.context.signal("driver;mode", self.state)
 
     def ensure_raster_mode(self, *values):
-        if self.state == INTERPRETER_STATE_RASTER:
+        if self.state == DRIVER_STATE_RASTER:
             return
-        self.state = INTERPRETER_STATE_RASTER
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_RASTER
+        self.context.signal("driver;mode", self.state)
 
     def set_speed(self, speed=None):
         self.settings.speed = speed
@@ -470,7 +467,7 @@ class Interpreter:
         parts.append("speed=%f" % self.settings.speed)
         parts.append("power=%d" % self.settings.power)
         status = ";".join(parts)
-        self.context.signal("interpreter;status", status)
+        self.context.signal("driver;status", status)
 
     def set_prop(self, mask):
         self.properties |= mask
@@ -488,150 +485,150 @@ class Interpreter:
             self.set_prop(mask)
 
 
-class Interpreters(Modifier):
+class Drivers(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
-        self._interpreters = dict()
-        self._default_interpreter = "0"
+        self._drivers = dict()
+        self._default_driver = "0"
 
-    def get_interpreter(self, interpreter_name, **kwargs):
+    def get_driver(self, driver_name, **kwargs):
         try:
-            return self._interpreters[interpreter_name]
+            return self._drivers[driver_name]
         except KeyError:
             pass
         return None
 
-    def make_interpreter(self, interpreter_name, interpreter_type, **kwargs):
+    def make_driver(self, driver_name, driver_type, **kwargs):
         try:
-            return self._interpreters[interpreter_name]
+            return self._drivers[driver_name]
         except KeyError:
             try:
-                for itype in self.context.match("interpreter/%s" % interpreter_type):
-                    interpret_class = self.context.registered[itype]
-                    interpreter = interpret_class(
-                        self.context, interpreter_name, **kwargs
+                for itype in self.context.match("driver/%s" % driver_type):
+                    driver_class = self.context.registered[itype]
+                    driver = driver_class(
+                        self.context, driver_name, **kwargs
                     )
-                    self._interpreters[interpreter_name] = interpreter, interpreter_name
-                    return interpreter, interpreter_name
+                    self._drivers[driver_name] = driver, driver_name
+                    return driver, driver_name
 
-                self._interpreters[interpreter_name] = (
-                    Interpreter(self.context),
-                    interpreter_name,
+                self._drivers[driver_name] = (
+                    Driver(self.context),
+                    driver_name,
                 )
             except (KeyError, IndexError):
                 pass
         return None
 
-    def default_interpreter(self):
-        return self.get_interpreter(self._default_interpreter)
+    def default_driver(self):
+        return self.get_driver(self._default_driver)
 
     def attach(self, *a, **kwargs):
         context = self.context
-        context.interpreters = self
-        context.default_interpreter = self.default_interpreter
+        context.drivers = self
+        context.default_driver = self.default_driver
 
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @context.console_option("new", "n", type=str, help="new interpreter type")
+        @context.console_option("new", "n", type=str, help="new driver type")
         @self.context.console_command(
-            "interpret",
-            help="interpret<?> <command>",
+            "driver",
+            help="driver<?> <command>",
             regex=True,
             input_type=(None, "spooler"),
-            output_type="interpret",
+            output_type="driver",
         )
-        def interpret(
+        def driver(
             command, channel, _, data=None, new=None, remainder=None, **kwargs
         ):
-            if len(command) > 9:
-                self._default_interpreter = command[9:]
-                self.context.signal("interpreter", self._default_interpreter, None)
-            if new is not None and self._default_interpreter in self._interpreters:
+            if len(command) > 6:
+                self._default_driver = command[6:]
+                self.context.signal("driver", self._default_driver, None)
+            if new is not None and self._default_driver in self._drivers:
                 for i in range(1000):
-                    if str(i) in self._interpreters:
+                    if str(i) in self._drivers:
                         continue
-                    self._default_interpreter = str(i)
+                    self._default_driver = str(i)
                     break
 
             if new is not None:
-                inter_data = self.make_interpreter(self._default_interpreter, new)
+                driver_data = self.make_driver(self._default_driver, new)
             else:
-                inter_data = self.get_interpreter(self._default_interpreter)
-            if inter_data is None:
-                raise SyntaxError("No Interpreter.")
+                driver_data = self.get_driver(self._default_driver)
+            if driver_data is None:
+                raise SyntaxError("No Driver.")
 
-            interpreter, name = inter_data
+            driver, name = driver_data
 
             if data is not None:
                 spooler, spooler_name = data
                 try:
-                    interpreter.spooler = spooler
+                    driver.spooler = spooler
 
-                    spooler.next = interpreter
-                    interpreter.prev = spooler
+                    spooler.next = driver
+                    driver.prev = spooler
                 except AttributeError:
                     pass
-                return "interpret", (interpreter, name)
+                return "driver", (driver, name)
 
             if remainder is None:
                 channel(_("----------"))
-                channel(_("Interpreter:"))
-                for i, inter in enumerate(self._interpreters):
-                    channel("%d: %s" % (i, inter))
+                channel(_("Driver:"))
+                for i, drv in enumerate(self._drivers):
+                    channel("%d: %s" % (i, drv))
                 channel(_("----------"))
-                channel(_("Interpreter %s:" % name))
-                channel(str(interpreter))
+                channel(_("Driver %s:" % name))
+                channel(str(driver))
                 channel(_("----------"))
-            return "interpret", data
+            return "driver", driver_data
 
         @self.context.console_command(
             "list",
-            help="intepret<?> list",
-            input_type="interpret",
-            output_type="interpret",
+            help="driver<?> list",
+            input_type="driver",
+            output_type="driver",
         )
-        def interpret_list(command, channel, _, data_type=None, data=None, **kwargs):
-            interpreter, name = data
+        def driver_list(command, channel, _, data_type=None, data=None, **kwargs):
+            driver, name = data
             channel(_("----------"))
-            channel(_("Interpreter:"))
-            for i, inter in enumerate(self._interpreters):
-                channel("%d: %s" % (i, inter))
+            channel(_("Driver:"))
+            for i, drv in enumerate(self._drivers):
+                channel("%d: %s" % (i, drv))
             channel(_("----------"))
-            channel(_("Interpreter %s:" % name))
-            channel(str(interpreter))
+            channel(_("Driver %s:" % name))
+            channel(str(driver))
             channel(_("----------"))
             return data_type, data
 
         @context.console_command(
             "type",
-            help="list interpreter types",
-            input_type="interpret",
+            help="list driver types",
+            input_type="driver",
         )
         def list_type(channel, _, **kwargs):
             channel(_("----------"))
-            channel(_("Interpreter permitted:"))
-            for i, name in enumerate(context.match("interpreter/", suffix=True)):
+            channel(_("Drivers permitted:"))
+            for i, name in enumerate(context.match("driver/", suffix=True)):
                 channel("%d: %s" % (i + 1, name))
             channel(_("----------"))
 
         @self.context.console_command(
             "reset",
-            help="interpret<?> reset",
-            input_type="interpret",
-            output_type="interpret",
+            help="driver<?> reset",
+            input_type="driver",
+            output_type="driver",
         )
-        def interpreter_reset(data_type=None, data=None, **kwargs):
-            interpreter, name = data
-            interpreter.reset()
+        def driver_reset(data_type=None, data=None, **kwargs):
+            driver, name = data
+            driver.reset()
             return data_type, data
 
         @self.context.console_command(
             "out",
-            help="converts interpreter into source stream for pipes",
-            input_type="interpret",
+            help="converts driver into source stream for pipes",
+            input_type="driver",
             output_type="source",
         )
-        def interpret_list(data=None, **kwargs):
-            interpreter, name = data
-            return "source", (interpreter, None)
+        def driver_list(data=None, **kwargs):
+            driver, name = data
+            return "source", (driver, None)

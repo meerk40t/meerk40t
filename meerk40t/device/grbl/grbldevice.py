@@ -1,9 +1,9 @@
 import os
 import re
 
-from ...core.interpreters import Interpreter
+from ...core.drivers import Driver
 from ...kernel import Module
-from ..basedevice import INTERPRETER_STATE_PROGRAM
+from ..basedevice import DRIVER_STATE_PROGRAM
 from ..lasercommandconstants import *
 
 MILS_PER_MM = 39.3701
@@ -15,7 +15,7 @@ GRBL device is a stub device. Serving as a placeholder.
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("interpreter/grbl", GRBLInterpreter)
+        kernel.register("driver/grbl", GRBLDriver)
         kernel.register("emulator/grbl", GRBLEmulator)
         kernel.register("load/GCodeLoader", GCodeLoader)
 
@@ -76,15 +76,15 @@ def plugin(kernel, lifecycle=None):
 #         :return:
 #         """
 #         self.write = print
-#         device.activate("modifier/GRBLInterpreter")
+#         device.activate("modifier/GRBLDriver")
 #
 #     def __len__(self):
 #         return 0
 
 
-class GRBLInterpreter(Interpreter):
+class GRBLDriver(Driver):
     def __init__(self, pipe):
-        Interpreter.__init__(self, pipe=pipe)
+        Driver.__init__(self, pipe=pipe)
         self.plot = None
         self.speed = 20.0
         self.scale = 1000.0  # g21 default.
@@ -117,11 +117,11 @@ class GRBLInterpreter(Interpreter):
         self.set_incremental()
 
     def set_power(self, power=1000.0):
-        Interpreter.set_power(self, power)
+        Driver.set_power(self, power)
         self.power_updated = True
 
     def set_speed(self, speed=None):
-        Interpreter.set_speed(self, speed)
+        Driver.set_speed(self, speed)
         self.speed_updated = True
 
     def initialize(self, channel=None):
@@ -129,11 +129,11 @@ class GRBLInterpreter(Interpreter):
 
     def ensure_program_mode(self, *values):
         self.pipe.write("M3" + self.context.line_end)
-        Interpreter.ensure_program_mode(self, *values)
+        Driver.ensure_program_mode(self, *values)
 
     def ensure_finished_mode(self, *values):
         self.pipe.write("M5" + self.context.line_end)
-        Interpreter.ensure_finished_mode(self, *values)
+        Driver.ensure_finished_mode(self, *values)
 
     def plot_path(self, path):
         pass
@@ -143,7 +143,7 @@ class GRBLInterpreter(Interpreter):
 
     def move(self, x, y):
         line = []
-        if self.state == INTERPRETER_STATE_PROGRAM:
+        if self.state == DRIVER_STATE_PROGRAM:
             line.append("G1")
         else:
             line.append("G0")
@@ -156,7 +156,7 @@ class GRBLInterpreter(Interpreter):
             line.append("F%d" % int(self.feed_convert(self.speed)))
             self.speed_updated = False
         self.pipe.write(" ".join(line) + self.context.line_end)
-        Interpreter.move(self, x, y)
+        Driver.move(self, x, y)
 
     def execute_deprecated(self):
         if self.hold():
@@ -177,7 +177,7 @@ class GRBLInterpreter(Interpreter):
             except RuntimeError:
                 self.plot = None
                 return
-        Interpreter._process_spooled_item(self)
+        Driver._process_spooled_item(self)
 
 
 class GRBLEmulator(Module):
@@ -266,10 +266,10 @@ class GRBLEmulator(Module):
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
-        interpreter = self.context.interpreter
+        driver = self.context.driver
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            if interpreter.state == 0:
+            if driver.state == 0:
                 state = "Idle"
             else:
                 state = "Busy"
@@ -279,16 +279,16 @@ class GRBLEmulator(Module):
             parts = list()
             parts.append(state)
             parts.append("MPos:%f,%f,%f" % (x, y, z))
-            f = self.feed_invert(self.context.interpreter.speed)
-            s = self.context.interpreter.power
+            f = self.feed_invert(self.context.driver.speed)
+            s = self.context.driver.power
             parts.append("FS:%f,%d" % (f, s))
             self.grbl_write("<%s>\r\n" % "|".join(parts))
         elif bytes_to_write == "~":  # Resume.
-            interpreter.realtime_command(REALTIME_RESUME)
+            driver.realtime_command(REALTIME_RESUME)
         elif bytes_to_write == "!":  # Pause.
-            interpreter.realtime_command(REALTIME_PAUSE)
+            driver.realtime_command(REALTIME_PAUSE)
         elif bytes_to_write == "\x18":  # Soft reset.
-            interpreter.realtime_command(REALTIME_RESET)
+            driver.realtime_command(REALTIME_RESET)
 
     def write(self, data, reply=None, channel=None, elements=None):
         self.reply = reply

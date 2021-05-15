@@ -1,12 +1,12 @@
-from ...core.interpreters import Interpreter
+from ...core.drivers import Driver
 from ...core.plotplanner import PlotPlanner
 from ...kernel import Modifier
 from ..basedevice import (
-    INTERPRETER_STATE_FINISH,
-    INTERPRETER_STATE_MODECHANGE,
-    INTERPRETER_STATE_PROGRAM,
-    INTERPRETER_STATE_RAPID,
-    INTERPRETER_STATE_RASTER,
+    DRIVER_STATE_FINISH,
+    DRIVER_STATE_MODECHANGE,
+    DRIVER_STATE_PROGRAM,
+    DRIVER_STATE_RAPID,
+    DRIVER_STATE_RASTER,
     PLOT_AXIS,
     PLOT_DIRECTION,
     PLOT_FINISH,
@@ -17,10 +17,10 @@ from ..basedevice import (
 from .moshiconstants import swizzle_table
 
 
-class MoshiInterpreter(Interpreter, Modifier):
+class MoshiDriver(Driver, Modifier):
     def __init__(self, context, job_name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, job_name, channel)
-        Interpreter.__init__(self, context=context)
+        Driver.__init__(self, context=context)
 
         self.plot_planner = PlotPlanner(self.settings)
 
@@ -49,7 +49,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         kernel = context._kernel
         _ = kernel.translation
 
-        context.interpreter = self
+        context.driver = self
 
         context.setting(int, "home_adjust_x", 0)
         context.setting(int, "home_adjust_y", 0)
@@ -61,19 +61,19 @@ class MoshiInterpreter(Interpreter, Modifier):
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 127)
 
-        context.root.listen("lifecycle;ready", self.on_interpreter_ready)
+        context.root.listen("lifecycle;ready", self.on_driver_ready)
 
     def detach(self, *args, **kwargs):
         self.context.get_context("/").unlisten(
-            "lifecycle;ready", self.on_interpreter_ready
+            "lifecycle;ready", self.on_driver_ready
         )
         self.thread = None
 
-    def on_interpreter_ready(self, origin, *args):
-        self.start_interpreter()
+    def on_driver_ready(self, origin, *args):
+        self.start_driver()
 
     def __repr__(self):
-        return "MoshiInterpreter()"
+        return "MoshiDriver()"
 
     def swizzle(self, b, p7, p6, p5, p4, p3, p2, p1, p0):
         return (
@@ -209,9 +209,9 @@ class MoshiInterpreter(Interpreter, Modifier):
         self.pipe_int16le(int(y))
 
     def ensure_program_mode(self):
-        if self.state == INTERPRETER_STATE_PROGRAM:
+        if self.state == DRIVER_STATE_PROGRAM:
             return
-        if self.state == INTERPRETER_STATE_RASTER:
+        if self.state == DRIVER_STATE_RASTER:
             self.ensure_rapid_mode()
         speed = int(self.settings.speed)
         # Normal speed is rapid. Passing same speed so PPI isn't crazy.
@@ -220,13 +220,13 @@ class MoshiInterpreter(Interpreter, Modifier):
         self.offset_x = x
         self.offset_y = y
         self.write_set_offset(0, x, y)
-        self.state = INTERPRETER_STATE_PROGRAM
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_PROGRAM
+        self.context.signal("driver;mode", self.state)
 
     def ensure_raster_mode(self):
-        if self.state == INTERPRETER_STATE_RASTER:
+        if self.state == DRIVER_STATE_RASTER:
             return
-        if self.state == INTERPRETER_STATE_PROGRAM:
+        if self.state == DRIVER_STATE_PROGRAM:
             self.ensure_rapid_mode()
         speed = int(self.settings.speed)
         self.write_raster_speed(speed)
@@ -234,35 +234,35 @@ class MoshiInterpreter(Interpreter, Modifier):
         self.offset_x = x
         self.offset_y = y
         self.write_set_offset(0, x, y)
-        self.state = INTERPRETER_STATE_RASTER
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_RASTER
+        self.context.signal("driver;mode", self.state)
         self.write_move_abs(0, 0)
 
     def ensure_rapid_mode(self):
-        if self.state == INTERPRETER_STATE_RAPID:
+        if self.state == DRIVER_STATE_RAPID:
             return
-        if self.state == INTERPRETER_STATE_FINISH:
-            self.state = INTERPRETER_STATE_RAPID
+        if self.state == DRIVER_STATE_FINISH:
+            self.state = DRIVER_STATE_RAPID
         elif (
-            self.state == INTERPRETER_STATE_PROGRAM
-            or self.state == INTERPRETER_STATE_MODECHANGE
-            or self.state == INTERPRETER_STATE_RASTER
+                self.state == DRIVER_STATE_PROGRAM
+                or self.state == DRIVER_STATE_MODECHANGE
+                or self.state == DRIVER_STATE_RASTER
         ):
             self.write_termination()
             self.control("execute\n")
-        self.state = INTERPRETER_STATE_RAPID
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_RAPID
+        self.context.signal("driver;mode", self.state)
 
     def ensure_finished_mode(self):
-        if self.state == INTERPRETER_STATE_FINISH:
+        if self.state == DRIVER_STATE_FINISH:
             return
         if (
-            self.state == INTERPRETER_STATE_PROGRAM
-            or self.state == INTERPRETER_STATE_MODECHANGE
-            or self.state == INTERPRETER_STATE_RASTER
+            self.state == DRIVER_STATE_PROGRAM
+            or self.state == DRIVER_STATE_MODECHANGE
+            or self.state == DRIVER_STATE_RASTER
         ):
             self.ensure_rapid_mode()
-            self.state = INTERPRETER_STATE_FINISH
+            self.state = DRIVER_STATE_FINISH
 
     def plotplanner_process(self):
         """
@@ -319,7 +319,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         else:
             self.ensure_program_mode()
             # self.ensure_raster_mode() # Rastermode is not functional.
-        if self.state == INTERPRETER_STATE_PROGRAM:
+        if self.state == DRIVER_STATE_PROGRAM:
             if cut:
                 self.write_cut_abs(x, y)
             else:
@@ -341,7 +341,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         oldy = self.context.current_y
         self.context.current_x = x
         self.context.current_y = y
-        self.context.signal("interpreter;position", (oldx, oldy, x, y))
+        self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def plot_plot(self, plot):
         """
@@ -370,7 +370,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         oldy = self.context.current_y
         self.context.current_x = x
         self.context.current_y = y
-        self.context.signal("interpreter;position", (oldx, oldy, x, y))
+        self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def cut_relative(self, dx, dy):
         x = dx + self.context.current_x
@@ -395,7 +395,7 @@ class MoshiInterpreter(Interpreter, Modifier):
         self.write_move_abs(x, y)
         x = self.context.current_x
         y = self.context.current_y
-        self.context.signal("interpreter;position", (oldx, oldy, x, y))
+        self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def move_relative(self, dx, dy):
         x = dx + self.context.current_x
@@ -406,19 +406,19 @@ class MoshiInterpreter(Interpreter, Modifier):
         if self.settings.speed != speed:
             self.settings.speed = speed
             if (
-                self.state == INTERPRETER_STATE_PROGRAM
-                or self.state == INTERPRETER_STATE_RASTER
+                self.state == DRIVER_STATE_PROGRAM
+                or self.state == DRIVER_STATE_RASTER
             ):
-                self.state = INTERPRETER_STATE_MODECHANGE
+                self.state = DRIVER_STATE_MODECHANGE
 
     def set_step(self, step=None):
         if self.settings.raster_step != step:
             self.settings.raster_step = step
             if (
-                self.state == INTERPRETER_STATE_PROGRAM
-                or self.state == INTERPRETER_STATE_RASTER
+                self.state == DRIVER_STATE_PROGRAM
+                or self.state == DRIVER_STATE_RASTER
             ):
-                self.state = INTERPRETER_STATE_MODECHANGE
+                self.state = DRIVER_STATE_MODECHANGE
 
     def calc_home_position(self):
         x = self.context.home_adjust_x

@@ -341,7 +341,7 @@ class RasterCut(CutObject):
         mode = image.mode
 
         if mode not in ("1", "P", "L", "RGB", "RGBA") or \
-                mode is "P" and 'transparency' in image.info:
+                mode == "P" and 'transparency' in image.info:
             # Any mode without a filter should get converted.
             image = image.convert("RGBA")
             mode = image.mode

@@ -51,7 +51,7 @@ class BindAlias(Modifier):
                 command_line = " ".join(args[1:])
                 f = command_line.find("bind")
                 if f == -1:  # If bind value has a bind, do not evaluate.
-                    inter = context.default_interpreter()
+                    inter = context.default_driver()
                     if "$x" in command_line:
                         try:
                             x = inter.current_x

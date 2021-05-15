@@ -1487,8 +1487,8 @@ class MeerK40t(MWindow, Job):
             old_active.unlisten("pipe;usb_status", self.on_usb_state_text)
             old_active.unlisten("pipe;thread", self.on_pipe_state)
             old_active.unlisten("spooler;thread", self.on_spooler_state)
-            old_active.unlisten("interpreter;position", self.update_position)
-            old_active.unlisten("interpreter;mode", self.on_interpreter_mode)
+            old_active.unlisten("driver;position", self.update_position)
+            old_active.unlisten("driver;mode", self.on_driver_mode)
             old_active.unlisten("bed_size", self.bed_changed)
         if context_active is not None:
             context_active.listen("device;noactive", self.on_device_noactive)
@@ -1496,8 +1496,8 @@ class MeerK40t(MWindow, Job):
             context_active.listen("pipe;usb_status", self.on_usb_state_text)
             context_active.listen("pipe;thread", self.on_pipe_state)
             context_active.listen("spooler;thread", self.on_spooler_state)
-            context_active.listen("interpreter;position", self.update_position)
-            context_active.listen("interpreter;mode", self.on_interpreter_mode)
+            context_active.listen("driver;position", self.update_position)
+            context_active.listen("driver;mode", self.on_driver_mode)
             context_active.listen("bed_size", self.bed_changed)
             self.main_menubar.Enable(ID_MENU_ROTARY, True)
             self.main_menubar.Enable(ID_MENU_USB, True)
@@ -1637,7 +1637,7 @@ class MeerK40t(MWindow, Job):
             _("Spooler: %s") % self.context.get_text_thread_state(value), 2
         )
 
-    def on_interpreter_mode(self, origin, state):
+    def on_driver_mode(self, origin, state):
         if state == 0:
             self.background_brush = wx.Brush("Grey")
         else:
@@ -2592,7 +2592,7 @@ class MeerK40t(MWindow, Job):
         r = self.context.get_context("rotary/1")
         sx = r.scale_x
         sy = r.scale_y
-        i = self.context.default_interpreter()
+        i = self.context.default_driver()
 
         mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, i.current_x, i.current_y))
         for element in self.context.get_context("/").elements.elems():

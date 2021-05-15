@@ -2,8 +2,8 @@ import threading
 import time
 
 from meerk40t.tools.zinglplotter import ZinglPlotter
+from ...core.drivers import Driver
 
-from ...core.interpreters import Interpreter
 from ...core.plotplanner import PlotPlanner
 from ...kernel import (
     STATE_ACTIVE,
@@ -17,10 +17,10 @@ from ...kernel import (
     STATE_WAIT,
 )
 from ..basedevice import (
-    INTERPRETER_STATE_FINISH,
-    INTERPRETER_STATE_MODECHANGE,
-    INTERPRETER_STATE_PROGRAM,
-    INTERPRETER_STATE_RAPID,
+    DRIVER_STATE_FINISH,
+    DRIVER_STATE_MODECHANGE,
+    DRIVER_STATE_PROGRAM,
+    DRIVER_STATE_RAPID,
     PLOT_AXIS,
     PLOT_DIRECTION,
     PLOT_FINISH,
@@ -30,14 +30,14 @@ from ..basedevice import (
 )
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
-from .lhystudioemulator import EgvLoader, LhystudioEmulator
+from .lhystudioemulator import EgvLoader, LhystudiosEmulator
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("interpreter/lhystudios", LhymicroInterpreter)
-        kernel.register("pipe/lhystudios", LhystudioController)
-        kernel.register("emulator/lhystudios", LhystudioEmulator)
+        kernel.register("driver/lhystudios", LhystudiosDriver)
+        kernel.register("pipe/lhystudios", LhystudiosController)
+        kernel.register("emulator/lhystudios", LhystudiosEmulator)
         kernel.register("load/EgvLoader", EgvLoader)
         context = kernel.root
 
@@ -76,7 +76,7 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Pulse laser failed: Busy"))
             return
 
-        @context.console_command("speed", help="Set Speed in Interpreter.")
+        @context.console_command("speed", help="Set Speed in Driver.")
         def speed(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("Speed set at: %f mm/s") % self.speed)
@@ -104,7 +104,7 @@ def plugin(kernel, lifecycle=None):
             self.set_speed(s)
             channel(_("Speed set at: %f mm/s") % self.speed)
 
-        @context.console_command("power", help="Set Interpreter Power")
+        @context.console_command("power", help="Set Driver Power")
         def power(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("Power set at: %d pulses per inch") % self.power)
@@ -115,7 +115,7 @@ def plugin(kernel, lifecycle=None):
                     pass
 
         @context.console_command(
-            "acceleration", help="Set Interpreter Acceleration [1-4]"
+            "acceleration", help="Set Driver Acceleration [1-4]"
         )
         def acceleration(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
@@ -353,17 +353,17 @@ REQUEST_AXIS = 0b0000001000000000
 REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Requested horizontal major axis.
 
 
-class LhymicroInterpreter(Interpreter):
+class LhystudiosDriver(Driver):
     """
-    LhymicroInterpreter provides Lhystudio specific coding for elements and sends it to the backend
+    LhystudiosDriver provides Lhystudios specific coding for elements and sends it to the backend
     to write to the usb.
 
     The interpret() ticks to process additional data.
     """
 
     def __init__(self, context, name, *args, **kwargs):
-        context = context.get_context("lhyinterpreter/%s" % name)
-        Interpreter.__init__(self, context=context, name=name)
+        context = context.get_context("lhydriver/%s" % name)
+        Driver.__init__(self, context=context, name=name)
 
         kernel = context._kernel
         _ = kernel.translation
@@ -372,7 +372,7 @@ class LhymicroInterpreter(Interpreter):
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 127)
 
-        context.interpreter = self
+        context.driver = self
 
         context.setting(bool, "strict", False)
         context.setting(bool, "swap_xy", False)
@@ -442,17 +442,17 @@ class LhymicroInterpreter(Interpreter):
         context.register("control/Realtime Resume", self.resume)
         context.register("control/Update Codes", self.update_codes)
 
-        context.root.listen("lifecycle;ready", self.on_interpreter_ready)
+        context.root.listen("lifecycle;ready", self.on_driver_ready)
 
     def detach(self, *args, **kwargs):
-        self.context.root.unlisten("lifecycle;ready", self.on_interpreter_ready)
+        self.context.root.unlisten("lifecycle;ready", self.on_driver_ready)
         self.thread = None
 
-    def on_interpreter_ready(self, origin, *args):
-        self.start_interpreter()
+    def on_driver_ready(self, origin, *args):
+        self.start_driver()
 
     def __repr__(self):
-        return "LhymicroInterpreter(%s)" % self.name
+        return "LhystudiosDriver(%s)" % self.name
 
     def update_codes(self):
         if not self.context.swap_xy:
@@ -538,7 +538,7 @@ class LhymicroInterpreter(Interpreter):
                 ):  # Plot planner requests position change.
                     if (
                         on & PLOT_RAPID
-                        or self.state != INTERPRETER_STATE_PROGRAM
+                        or self.state != DRIVER_STATE_PROGRAM
                         or self.settings.raster_step != 0
                     ):
                         # Perform a rapid position change. Always perform this for raster moves.
@@ -621,15 +621,15 @@ class LhymicroInterpreter(Interpreter):
         self.is_paused = False
 
     def reset(self):
-        Interpreter.reset(self)
+        Driver.reset(self)
         self.context.signal("pipe;buffer", 0)
         self.plot = None
         self.plot_planner.clear()
         self.realtime_data_output(b"I*\n")
         self.laser = False
         self.properties = 0
-        self.state = INTERPRETER_STATE_RAPID
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_RAPID
+        self.context.signal("driver;mode", self.state)
         self.is_paused = False
 
     def cut(self, x, y):
@@ -668,7 +668,7 @@ class LhymicroInterpreter(Interpreter):
     def _program_mode_jog_event(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
-        self.state = INTERPRETER_STATE_RAPID
+        self.state = DRIVER_STATE_RAPID
         self.laser = False
         if self.is_prop(STATE_HORIZONTAL_MAJOR):
             if not self.is_left and dx >= 0:
@@ -687,7 +687,7 @@ class LhymicroInterpreter(Interpreter):
             self.goto_x(dx)
         self.data_output(b"SE")
         self.declare_directions()
-        self.state = INTERPRETER_STATE_PROGRAM
+        self.state = DRIVER_STATE_PROGRAM
 
     def move(self, x, y):
         self.goto(x, y, False)
@@ -738,7 +738,7 @@ class LhymicroInterpreter(Interpreter):
             return
         dx = int(round(dx))
         dy = int(round(dy))
-        if self.state == INTERPRETER_STATE_RAPID:
+        if self.state == DRIVER_STATE_RAPID:
             if self.rapid_override and (dx != 0 or dy != 0):
                 self.set_acceleration(None)
                 self.set_step(0)
@@ -763,23 +763,23 @@ class LhymicroInterpreter(Interpreter):
                 self.data_output(b"S1P\n")
                 if not self.context.autolock:
                     self.data_output(b"IS2P\n")
-        elif self.state == INTERPRETER_STATE_PROGRAM:
+        elif self.state == DRIVER_STATE_PROGRAM:
             mx = 0
             my = 0
             for x, y in ZinglPlotter.plot_line(0, 0, dx, dy):
                 self.goto_octent(x - mx, y - my, cut)
                 mx = x
                 my = y
-        elif self.state == INTERPRETER_STATE_FINISH:
+        elif self.state == DRIVER_STATE_FINISH:
             if dx != 0:
                 self.goto_x(dx)
             if dy != 0:
                 self.goto_y(dy)
             self.data_output(b"N")
-        elif self.state == INTERPRETER_STATE_MODECHANGE:
+        elif self.state == DRIVER_STATE_MODECHANGE:
             self.fly_switch_speed(dx, dy)
         self.check_bounds()
-        # self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y,
+        # self.context.signal('driver;position', (self.context.current_x, self.context.current_y,
         #                                              self.context.current_x - dx, self.context.current_y - dy))
 
     def goto_octent_abs(self, x, y, on):
@@ -811,45 +811,45 @@ class LhymicroInterpreter(Interpreter):
                     "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
                     % (str(dx), str(dy))
                 )
-        # self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y,
+        # self.context.signal('driver;position', (self.context.current_x, self.context.current_y,
         #                                              self.context.current_x - dx, self.context.current_y - dy))
 
     def set_speed(self, speed=None):
         if self.settings.speed != speed:
             self.settings.speed = speed
-            if self.state == INTERPRETER_STATE_PROGRAM:
-                self.state = INTERPRETER_STATE_MODECHANGE
+            if self.state == DRIVER_STATE_PROGRAM:
+                self.state = DRIVER_STATE_MODECHANGE
 
     def set_d_ratio(self, dratio=None):
         if self.settings.dratio != dratio:
             self.settings.dratio = dratio
-            if self.state == INTERPRETER_STATE_PROGRAM:
-                self.state = INTERPRETER_STATE_MODECHANGE
+            if self.state == DRIVER_STATE_PROGRAM:
+                self.state = DRIVER_STATE_MODECHANGE
 
     def set_acceleration(self, accel=None):
         if self.settings.acceleration != accel:
             self.settings.acceleration = accel
-            if self.state == INTERPRETER_STATE_PROGRAM:
-                self.state = INTERPRETER_STATE_MODECHANGE
+            if self.state == DRIVER_STATE_PROGRAM:
+                self.state = DRIVER_STATE_MODECHANGE
 
     def set_step(self, step=None):
         if self.settings.raster_step != step:
             self.settings.raster_step = step
-            if self.state == INTERPRETER_STATE_PROGRAM:
-                self.state = INTERPRETER_STATE_MODECHANGE
+            if self.state == DRIVER_STATE_PROGRAM:
+                self.state = DRIVER_STATE_MODECHANGE
 
     def laser_off(self):
         if not self.laser:
             return False
-        if self.state == INTERPRETER_STATE_RAPID:
+        if self.state == DRIVER_STATE_RAPID:
             self.data_output(b"I")
             self.data_output(self.CODE_LASER_OFF)
             self.data_output(b"S1P\n")
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
-        elif self.state == INTERPRETER_STATE_PROGRAM:
+        elif self.state == DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_LASER_OFF)
-        elif self.state == INTERPRETER_STATE_FINISH:
+        elif self.state == DRIVER_STATE_FINISH:
             self.data_output(self.CODE_LASER_OFF)
             self.data_output(b"N")
         self.laser = False
@@ -858,41 +858,41 @@ class LhymicroInterpreter(Interpreter):
     def laser_on(self):
         if self.laser:
             return False
-        if self.state == INTERPRETER_STATE_RAPID:
+        if self.state == DRIVER_STATE_RAPID:
             self.data_output(b"I")
             self.data_output(self.CODE_LASER_ON)
             self.data_output(b"S1P\n")
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
-        elif self.state == INTERPRETER_STATE_PROGRAM:
+        elif self.state == DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_LASER_ON)
-        elif self.state == INTERPRETER_STATE_FINISH:
+        elif self.state == DRIVER_STATE_FINISH:
             self.data_output(self.CODE_LASER_ON)
             self.data_output(b"N")
         self.laser = True
         return True
 
     def ensure_rapid_mode(self):
-        if self.state == INTERPRETER_STATE_RAPID:
+        if self.state == DRIVER_STATE_RAPID:
             return
-        if self.state == INTERPRETER_STATE_FINISH:
+        if self.state == DRIVER_STATE_FINISH:
             self.data_output(b"S1P\n")
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
         elif (
-            self.state == INTERPRETER_STATE_PROGRAM
-            or self.state == INTERPRETER_STATE_MODECHANGE
+                self.state == DRIVER_STATE_PROGRAM
+                or self.state == DRIVER_STATE_MODECHANGE
         ):
             self.data_output(b"FNSE-\n")
             self.laser = False
-        self.state = INTERPRETER_STATE_RAPID
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_RAPID
+        self.context.signal("driver;mode", self.state)
 
     def fly_switch_speed(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
         self.data_output(b"@NSE")
-        self.state = INTERPRETER_STATE_RAPID
+        self.state = DRIVER_STATE_RAPID
         speed_code = LaserSpeed(
             self.context.board,
             self.settings.speed,
@@ -917,24 +917,24 @@ class LhymicroInterpreter(Interpreter):
         self.set_requested_directions()
         self.data_output(self.code_declare_directions())
         self.data_output(b"S1E")
-        self.state = INTERPRETER_STATE_PROGRAM
+        self.state = DRIVER_STATE_PROGRAM
 
     def ensure_finished_mode(self):
-        if self.state == INTERPRETER_STATE_FINISH:
+        if self.state == DRIVER_STATE_FINISH:
             return
         if (
-            self.state == INTERPRETER_STATE_PROGRAM
-            or self.state == INTERPRETER_STATE_MODECHANGE
+            self.state == DRIVER_STATE_PROGRAM
+            or self.state == DRIVER_STATE_MODECHANGE
         ):
             self.data_output(b"@NSE")
             self.laser = False
-        elif self.state == INTERPRETER_STATE_RAPID:
+        elif self.state == DRIVER_STATE_RAPID:
             self.data_output(b"I")
-        self.state = INTERPRETER_STATE_FINISH
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_FINISH
+        self.context.signal("driver;mode", self.state)
 
     def ensure_program_mode(self):
-        if self.state == INTERPRETER_STATE_PROGRAM:
+        if self.state == DRIVER_STATE_PROGRAM:
             return
         self.ensure_finished_mode()
 
@@ -958,8 +958,8 @@ class LhymicroInterpreter(Interpreter):
         self.set_requested_directions()
         self.declare_directions()
         self.data_output(b"S1E")
-        self.state = INTERPRETER_STATE_PROGRAM
-        self.context.signal("interpreter;mode", self.state)
+        self.state = DRIVER_STATE_PROGRAM
+        self.context.signal("driver;mode", self.state)
 
     def h_switch(self):
         if self.is_prop(STATE_X_FORWARD_LEFT):
@@ -1008,7 +1008,7 @@ class LhymicroInterpreter(Interpreter):
         self.context.current_x = x
         self.context.current_y = y
         self.reset_modes()
-        self.state = INTERPRETER_STATE_RAPID
+        self.state = DRIVER_STATE_RAPID
         adjust_x = self.context.home_adjust_x
         adjust_y = self.context.home_adjust_y
         try:
@@ -1026,8 +1026,8 @@ class LhymicroInterpreter(Interpreter):
             self.context.current_x = x
             self.context.current_y = y
 
-        self.context.signal("interpreter;mode", self.state)
-        # self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y, old_x, old_y))
+        self.context.signal("driver;mode", self.state)
+        # self.context.signal('driver;position', (self.context.current_x, self.context.current_y, old_x, old_y))
 
     def lock_rail(self):
         self.ensure_rapid_mode()
@@ -1192,7 +1192,7 @@ class LhymicroInterpreter(Interpreter):
 
     def move_right(self, dx=0):
         self.context.current_x += dx
-        if not self.is_right or self.state != INTERPRETER_STATE_PROGRAM:
+        if not self.is_right or self.state != DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_RIGHT)
             self.set_right()
         if dx != 0:
@@ -1201,7 +1201,7 @@ class LhymicroInterpreter(Interpreter):
 
     def move_left(self, dx=0):
         self.context.current_x -= abs(dx)
-        if not self.is_left or self.state != INTERPRETER_STATE_PROGRAM:
+        if not self.is_left or self.state != DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_LEFT)
             self.set_left()
         if dx != 0:
@@ -1210,7 +1210,7 @@ class LhymicroInterpreter(Interpreter):
 
     def move_bottom(self, dy=0):
         self.context.current_y += dy
-        if not self.is_bottom or self.state != INTERPRETER_STATE_PROGRAM:
+        if not self.is_bottom or self.state != DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_BOTTOM)
             self.set_bottom()
         if dy != 0:
@@ -1219,7 +1219,7 @@ class LhymicroInterpreter(Interpreter):
 
     def move_top(self, dy=0):
         self.context.current_y -= abs(dy)
-        if not self.is_top or self.state != INTERPRETER_STATE_PROGRAM:
+        if not self.is_top or self.state != DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_TOP)
             self.set_top()
         if dy != 0:
@@ -1227,7 +1227,7 @@ class LhymicroInterpreter(Interpreter):
             self.check_bounds()
 
 
-class LhystudioController:
+class LhystudiosController:
     """
     K40 Controller controls the Lhystudios boards sending any queued data to the USB when the signal is not busy.
 
@@ -1438,7 +1438,7 @@ class LhystudioController:
             self.write(b"\x18\n")
 
     def __repr__(self):
-        return "LhystudioController(%s)" % self.name
+        return "LhystudiosController(%s)" % self.name
 
     def __len__(self):
         """Provides the length of the buffer of this device."""
