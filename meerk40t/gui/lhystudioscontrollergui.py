@@ -29,7 +29,7 @@ _ = wx.GetTranslation
 
 _simple_width = 500
 _advanced_width = 1040
-_default_height = 606
+_default_height = 565
 
 
 class LhystudiosControllerGui(MWindow):
@@ -132,9 +132,8 @@ class LhystudiosControllerGui(MWindow):
         )
         # end wxGlade
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
-        self.buffer_max = 1
         self.last_control_state = None
-        self.gui_update = True
+        self.set_widgets()
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -314,22 +313,17 @@ class LhystudiosControllerGui(MWindow):
         # end wxGlade
 
     def window_open(self):
-        self.context.setting(bool, "show_usb_log", True)
-        self.set_widgets()
         self.context.channel("pipe/usb", buffer_size=50).watch(self.update_text)
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;packet_text", self.update_packet_text)
-        self.context.listen("pipe;buffer", self.on_buffer_update)
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
         self.context.listen("pipe;state", self.on_connection_state_change)
         self.context.listen("pipe;thread", self.on_control_state)
 
     def window_close(self):
         self.context.channel("pipe/usb").unwatch(self.update_text)
-        self.gui_update = False
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;packet_text", self.update_packet_text)
-        self.context.unlisten("pipe;buffer", self.on_buffer_update)
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)
         self.context.unlisten("pipe;thread", self.on_control_state)
@@ -351,7 +345,20 @@ class LhystudiosControllerGui(MWindow):
         self.set_widgets()
 
     def set_widgets(self):
+        self.context.setting(bool, "show_usb_log", False)
+        self.context.setting(int, "usb_index", -1)
+        self.context.setting(int, "usb_bus", -1)
+        self.context.setting(int, "usb_address", -1)
+        self.context.setting(int, "usb_version", -1)
+        self.context.setting(bool, "mock", False)
+
         self.checkbox_show_usb_log.SetValue(self.context.show_usb_log)
+        self.checkbox_mock_usb.SetValue(self.context.mock)
+        self.spin_device_index.SetValue(self.context.usb_index)
+        self.spin_device_bus.SetValue(self.context.usb_bus)
+        self.spin_device_address.SetValue(self.context.usb_address)
+        self.spin_device_version.SetValue(self.context.usb_version)
+
         self.on_check_show_usb_log()
 
     def device_execute(self, control_name):
@@ -454,14 +461,6 @@ class LhystudiosControllerGui(MWindow):
                 dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
             self.context("usb_disconnect\n")
-
-    def on_buffer_update(self, origin, value, *args):
-        if self.gui_update:
-            if value > self.buffer_max:
-                self.buffer_max = value
-            self.text_buffer_length.SetValue(str(value))
-            self.gauge_buffer.SetRange(self.buffer_max)
-            self.gauge_buffer.SetValue(min(value, self.gauge_buffer.GetRange()))
 
     def on_control_state(self, origin, state):
         if self.last_control_state == state:
