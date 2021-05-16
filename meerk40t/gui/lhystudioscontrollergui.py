@@ -27,10 +27,14 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
+_simple_width = 500
+_advanced_width = 1040
+_default_height = 606
+
 
 class LhystudiosControllerGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(1040, 642, *args, **kwds)
+        super().__init__(_advanced_width, _default_height, *args, **kwds)
         self.combo_controller_selection = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
@@ -141,7 +145,7 @@ class LhystudiosControllerGui(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("LhystudiosController")
+        self.SetTitle("Lhystudios-Controller")
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
         self.combo_controller_selection.SetToolTip(
             "Select the lhystudios controller to modify"
@@ -323,6 +327,8 @@ class LhystudiosControllerGui(MWindow):
         # end wxGlade
 
     def window_open(self):
+        self.context.setting(bool, "show_usb_log", True)
+        self.set_widgets()
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;packet_text", self.update_packet_text)
         self.context.listen("pipe;buffer", self.on_buffer_update)
@@ -338,6 +344,13 @@ class LhystudiosControllerGui(MWindow):
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)
         self.context.unlisten("pipe;thread", self.on_control_state)
+
+    def restore(self, *args, **kwargs):
+        self.set_widgets()
+
+    def set_widgets(self):
+        self.checkbox_show_usb_log.SetValue(self.context.show_usb_log)
+        self.on_check_show_usb_log()
 
     def device_execute(self, control_name):
         def menu_element(event):
@@ -542,10 +555,15 @@ class LhystudiosControllerGui(MWindow):
         event.Skip()
 
     def on_check_show_usb_log(
-        self, event
+        self, event=None
     ):  # wxGlade: LhystudiosController.<event_handler>
-        print("Event handler 'on_check_show_usb_log' not implemented!")
-        event.Skip()
+        on = self.checkbox_show_usb_log.GetValue()
+        self.text_usb_log.Show(on)
+        self.context.show_usb_log = bool(on)
+        if on:
+            self.SetSize((_advanced_width, _default_height))
+        else:
+            self.SetSize((_simple_width, _default_height))
 
     def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
         print("Event handler 'on_menu_usb_reset' not implemented!")
