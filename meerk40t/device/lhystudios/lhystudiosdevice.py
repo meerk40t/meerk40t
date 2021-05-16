@@ -1226,6 +1226,10 @@ class LhystudiosDriver(Driver):
             self.data_output(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
+    @property
+    def type(self):
+        return "lhystudios"
+
 
 class LhystudiosController:
     """
@@ -1877,3 +1881,7 @@ class LhystudiosController:
                 self.abort_waiting = False
                 return  # Wait abort was requested.
         self.update_state(original_state)
+
+    @property
+    def type(self):
+        return "lhystudios"

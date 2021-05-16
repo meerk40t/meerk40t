@@ -143,59 +143,59 @@ class LhystudiosControllerGui(MWindow):
         self.SetIcon(_icon)
         self.SetTitle("LhystudiosController")
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
-        self.combo_controller_selection.SetToolTipString(
+        self.combo_controller_selection.SetToolTip(
             "Select the lhystudios controller to modify"
         )
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetFont(
             wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
         )
-        self.button_device_connect.SetToolTipString(
+        self.button_device_connect.SetToolTip(
             "Force connection/disconnection from the device."
         )
         self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
-        self.text_connection_status.SetToolTipString("Connection status")
-        self.checkbox_mock_usb.SetToolTipString(
+        self.text_connection_status.SetToolTip("Connection status")
+        self.checkbox_mock_usb.SetToolTip(
             "DEBUG. Without a K40 connected continue to process things as if there was one."
         )
         self.text_device_index.SetMinSize((55, 23))
-        self.spin_device_index.SetToolTipString(
+        self.spin_device_index.SetToolTip(
             "-1 match anything. 0-5 match exactly that value."
         )
         self.text_device_address.SetMinSize((55, 23))
-        self.spin_device_address.SetToolTipString(
+        self.spin_device_address.SetToolTip(
             "-1 match anything. 0-5 match exactly that value."
         )
         self.text_device_bus.SetMinSize((55, 23))
-        self.spin_device_bus.SetToolTipString(
+        self.spin_device_bus.SetToolTip(
             "-1 match anything. 0-5 match exactly that value."
         )
         self.text_device_version.SetMinSize((55, 23))
-        self.spin_device_version.SetToolTipString(
+        self.spin_device_version.SetToolTip(
             "-1 match anything. 0-255 match exactly that value."
         )
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_controller_control.SetFont(
             wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
         )
-        self.button_controller_control.SetToolTipString(
+        self.button_controller_control.SetToolTip(
             "Change the currently performed operation."
         )
         self.button_controller_control.SetBitmap(icons8_play_50.GetBitmap())
-        self.text_controller_status.SetToolTipString(
+        self.text_controller_status.SetToolTip(
             "Displays the controller's current process."
         )
         self.packet_count_text.SetMinSize((77, 23))
-        self.packet_count_text.SetToolTipString("Total number of packets sent")
+        self.packet_count_text.SetToolTip("Total number of packets sent")
         self.rejected_packet_count_text.SetMinSize((77, 23))
-        self.rejected_packet_count_text.SetToolTipString(
+        self.rejected_packet_count_text.SetToolTip(
             "Total number of packets rejected"
         )
-        self.packet_text_text.SetToolTipString("Last packet information sent")
+        self.packet_text_text.SetToolTip("Last packet information sent")
         self.text_byte_0.SetMinSize((77, 23))
         self.text_byte_1.SetMinSize((77, 23))
         self.text_desc.SetMinSize((75, 23))
-        self.text_desc.SetToolTipString("The meaning of Byte 1")
+        self.text_desc.SetToolTip("The meaning of Byte 1")
         self.text_byte_2.SetMinSize((77, 23))
         self.text_byte_3.SetMinSize((77, 23))
         self.text_byte_4.SetMinSize((77, 23))

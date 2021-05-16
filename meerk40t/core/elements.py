@@ -3134,7 +3134,7 @@ class Elemental(Modifier):
             # self.context.open("window/JobPreview", self.gui, "0", selected=True)
             node.emphasized = True
             self.context("plan0 copy-selected\n")
-            self.context("window -p / open JobPreview 0\n")
+            self.context("window open JobPreview 0\n")
 
         @self.tree_operation(_("Clear All"), node_type="branch ops", help="")
         def clear_all(node, **kwargs):
@@ -3546,7 +3546,7 @@ class Elemental(Modifier):
         )
         @self.tree_operation(_("RasterWizard: {script}"), node_type="elem", help="")
         def image_rasterwizard_open(node, script=None, **kwargs):
-            self.context("window open -p / RasterWizard %s\n" % script)
+            self.context("window open RasterWizard %s\n" % script)
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply Raster Script"))
