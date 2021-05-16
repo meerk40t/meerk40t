@@ -5,7 +5,7 @@
 
 import wx
 
-from ..kernel import (
+from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
     STATE_END,
@@ -15,7 +15,7 @@ from ..kernel import (
     STATE_TERMINATE,
     STATE_WAIT,
 )
-from .icons import (
+from meerk40t.gui.icons import (
     icons8_connected_50,
     icons8_disconnected_50,
     icons8_emergency_stop_button_50,
@@ -23,7 +23,7 @@ from .icons import (
     icons8_pause_50,
     icons8_play_50,
 )
-from .mwindow import MWindow
+from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 

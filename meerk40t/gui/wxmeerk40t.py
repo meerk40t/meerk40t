@@ -130,8 +130,8 @@ from .laserrender import (
     LaserRender,
     swizzlecolor,
 )
-from .lhystudioscontrollergui import LhystudiosControllerGui
-from .lhystudiosdrivergui import LhystudiosDriverGui
+from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
+from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
 from .navigation import Navigation
 from .notes import Notes
 from .operationproperty import OperationProperty
