@@ -8,7 +8,7 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class LhystudiosConfig(MWindow):
+class LhystudiosDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(393, 533, *args, **kwds)
         self.bed_dim = self.context.get_context("/")

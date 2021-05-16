@@ -28,7 +28,7 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class LhystudiosController(MWindow):
+class LhystudiosControllerGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(1040, 642, *args, **kwds)
         self.combo_controller_selection = wx.ComboBox(

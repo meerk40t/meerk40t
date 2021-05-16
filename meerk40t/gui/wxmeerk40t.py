@@ -8,8 +8,8 @@ import sys
 import threading
 import traceback
 
-from .lhystudioscontroller import LhystudiosController
-from .lhystudiosdriver import LhystudiosConfig
+from .lhystudioscontroller import LhystudiosControllerGui
+from .lhystudiosconfig import LhystudiosDriverGui
 from .mwindow import MWindow
 
 try:
@@ -3511,8 +3511,8 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/JobPreview", JobPreview)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/RasterWizard", RasterWizard)
-        kernel.register("window/LhystudiosDriver", LhystudiosConfig)
-        kernel.register("window/LhystudiosController", LhystudiosController)
+        kernel.register("window/LhystudiosDriver", LhystudiosDriverGui)
+        kernel.register("window/LhystudiosController", LhystudiosControllerGui)
 
         context = kernel.get_context("/")
 
