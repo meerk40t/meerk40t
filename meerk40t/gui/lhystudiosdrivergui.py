@@ -15,9 +15,6 @@ class LhystudiosDriverGui(MWindow):
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
 
-        self.combo_driver_selection = wx.ComboBox(
-            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
-        )
         self.combobox_board = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -62,8 +59,10 @@ class LhystudiosDriverGui(MWindow):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_driver, self.combo_driver_selection)
         self.Bind(wx.EVT_COMBOBOX, self.on_combobox_boardtype, self.combobox_board)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_fix_speeds, self.checkbox_fix_speeds)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_strict, self.checkbox_strict)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_swap_xy, self.checkbox_swap_xy)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_x, self.checkbox_flip_x)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_y, self.checkbox_flip_y)
@@ -144,13 +143,13 @@ class LhystudiosDriverGui(MWindow):
             else None,
             self,
         )
+        self.set_widgets()
 
     def __set_properties(self):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle("Lhystudios-Prefererences")
-        self.combo_driver_selection.SetToolTip("Select the lhystudios driver to modify")
         self.combobox_board.SetToolTip(
             "Select the board to use. This has an effects the speedcodes used."
         )
@@ -278,11 +277,6 @@ class LhystudiosDriverGui(MWindow):
         sizer_board = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Board Setup"), wx.HORIZONTAL
         )
-        sizer_20 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Driver"), wx.VERTICAL
-        )
-        sizer_20.Add(self.combo_driver_selection, 0, wx.EXPAND, 0)
-        sizer_main.Add(sizer_20, 0, wx.EXPAND, 0)
         sizer_board.Add(self.combobox_board, 1, 0, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, "")
         sizer_board.Add(label_1, 1, 0, 0)
@@ -381,37 +375,54 @@ class LhystudiosDriverGui(MWindow):
         # end wxGlade
 
     def window_open(self):
-        self.context.setting(bool, "swap_xy", False)
-        self.context.setting(bool, "flip_x", False)
-        self.context.setting(bool, "flip_y", False)
-        self.context.setting(bool, "home_right", False)
-        self.context.setting(bool, "home_bottom", False)
-        self.context.setting(int, "home_adjust_x", 0)
-        self.context.setting(int, "home_adjust_y", 0)
-        self.context.setting(int, "current_x", 0)
-        self.context.setting(int, "current_y", 0)
-
-        self.context.setting(bool, "mock", False)
-        self.context.setting(bool, "autolock", True)
-        self.context.setting(str, "board", "M2")
-        self.context.setting(int, "units_index", 0)
-        self.context.setting(int, "usb_index", -1)
-        self.context.setting(int, "usb_bus", -1)
-        self.context.setting(int, "usb_address", -1)
-        self.context.setting(int, "usb_version", -1)
-
-        self.checkbox_swap_xy.SetValue(self.context.swap_xy)
-        self.checkbox_flip_x.SetValue(self.context.flip_x)
-        self.checkbox_flip_y.SetValue(self.context.flip_y)
-        self.checkbox_home_right.SetValue(self.context.home_right)
-        self.checkbox_home_bottom.SetValue(self.context.home_bottom)
-        self.checkbox_autolock.SetValue(self.context.autolock)
-        self.combobox_board.SetValue(self.context.board)
-        self.spin_home_x.SetValue(self.context.home_adjust_x)
-        self.spin_home_y.SetValue(self.context.home_adjust_y)
+        pass
 
     def window_close(self):
         pass
+
+    def set_widgets(self):
+        context = self.context
+        context.setting(bool, "fix_speeds", False)
+        context.setting(bool, "swap_xy", False)
+        context.setting(bool, "flip_x", False)
+        context.setting(bool, "flip_y", False)
+        context.setting(bool, "home_right", False)
+        context.setting(bool, "home_bottom", False)
+        context.setting(bool, "strict", False)
+
+        context.setting(int, "home_adjust_x", 0)
+        context.setting(int, "home_adjust_y", 0)
+        context.setting(int, "current_x", 0)
+        context.setting(int, "current_y", 0)
+        context.setting(bool, "autolock", True)
+        context.setting(str, "board", "M2")
+        context.setting(bool, "buffer_limit", True)
+        context.setting(int, "buffer_max", 1500)
+        context.setting(bool, "random_ppi", False)
+        context.setting(bool, "plot_shift", False)
+        context.setting(bool, "raster_accel_table", False)
+        context.setting(bool, "vector_accel_table", False)
+
+        self.checkbox_fix_speeds.SetValue(context.fix_speeds)
+        self.checkbox_swap_xy.SetValue(context.swap_xy)
+        self.checkbox_flip_x.SetValue(context.flip_x)
+        self.checkbox_flip_y.SetValue(context.flip_y)
+        self.checkbox_home_right.SetValue(context.home_right)
+        self.checkbox_home_bottom.SetValue(context.home_bottom)
+        self.checkbox_strict.SetValue(context.strict)
+
+        self.spin_home_x.SetValue(context.home_adjust_x)
+        self.spin_home_y.SetValue(context.home_adjust_y)
+        self.checkbox_autolock.SetValue(context.autolock)
+        self.combobox_board.SetValue(context.board)
+        self.checkbox_limit_buffer.SetValue(context.buffer_limit)
+        self.spin_packet_buffer_max.SetValue(context.buffer_max)
+
+        self.checkbox_random_ppi.SetValue(context.random_ppi)
+        self.checkbox_plot_shift.SetValue(context.plot_shift)
+
+        self.checkbox_raster_accel_enable.SetValue(context.raster_accel_table)
+        self.checkbox_vector_accel_enable.SetValue(context.vector_accel_table)
 
     def calc_home_position(self):
         x = 0
@@ -428,6 +439,12 @@ class LhystudiosDriverGui(MWindow):
     def on_check_swap_xy(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
         self.context.execute("Update Codes")
+
+    def on_check_fix_speeds(self, event):  # wxGlade: Preferences.<event_handler>
+        self.context.fix_speeds = self.checkbox_fix_speeds.GetValue()
+
+    def on_check_strict(self, event):  # wxGlade: Preferences.<event_handler>
+        self.context.strict = self.checkbox_strict.GetValue()
 
     def on_check_flip_x(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.flip_x = self.checkbox_flip_x.GetValue()
@@ -461,12 +478,8 @@ class LhystudiosDriverGui(MWindow):
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.autolock = self.checkbox_autolock.GetValue()
 
-    def on_combo_driver(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
-        print("Event handler 'on_combo_driver' not implemented!")
-        event.Skip()
-
     def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.context.buffer_limit = not self.context.buffer_limit
+        self.context.buffer_limit = self.checkbox_limit_buffer.GetValue()
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
         self.context.buffer_max = self.spin_packet_buffer_max.GetValue()
@@ -474,27 +487,22 @@ class LhystudiosDriverGui(MWindow):
     def on_check_vector_accel_enable(
         self, event
     ):  # wxGlade: LhystudiosDriver.<event_handler>
-        print("Event handler 'on_check_vector_accel_enable' not implemented!")
-        event.Skip()
+
+        self.context.vector_accel_table = self.checkbox_vector_accel_enable.GetValue()
 
     def on_text_vector_accel(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
-        print("Event handler 'on_text_vector_accel' not implemented!")
-        event.Skip()
+        pass
 
     def on_check_raster_accel_enable(
         self, event
     ):  # wxGlade: LhystudiosDriver.<event_handler>
-        print("Event handler 'on_check_raster_accel_enable' not implemented!")
-        event.Skip()
+        self.context.raster_accel_table = self.checkbox_vector_accel_enable.GetValue()
 
     def on_text_raster_accel(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
-        print("Event handler 'on_text_raster_accel' not implemented!")
-        event.Skip()
+        pass
 
     def on_check_pulse_shift(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
-        print("Event handler 'on_check_pulse_shift' not implemented!")
-        event.Skip()
+        self.context.plot_shift = self.checkbox_plot_shift.GetValue()
 
     def on_check_random_ppi(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
-        print("Event handler 'on_check_random_ppi' not implemented!")
-        event.Skip()
+        self.context.random_ppi = self.checkbox_random_ppi.GetValue()
