@@ -362,7 +362,7 @@ class LhystudiosDriver(Driver):
     """
 
     def __init__(self, context, name, *args, **kwargs):
-        context = context.get_context("lhydriver/%s" % name)
+        context = context.get_context("lhystudios/driver/%s" % name)
         Driver.__init__(self, context=context, name=name)
 
         kernel = context._kernel
@@ -1245,7 +1245,7 @@ class LhystudiosController:
     """
 
     def __init__(self, context, name, channel=None, *args, **kwargs):
-        context = context.get_context("lhypipe/%s" % name)
+        context = context.get_context("lhystudios/output/%s" % name)
         self.context = context
         self.name = name
         self.state = STATE_UNKNOWN

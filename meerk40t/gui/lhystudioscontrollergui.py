@@ -35,6 +35,7 @@ _default_height = 606
 class LhystudiosControllerGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(_advanced_width, _default_height, *args, **kwds)
+
         self.combo_controller_selection = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
@@ -329,6 +330,7 @@ class LhystudiosControllerGui(MWindow):
     def window_open(self):
         self.context.setting(bool, "show_usb_log", True)
         self.set_widgets()
+        self.context.channel("pipe/usb", buffer_size=50).watch(self.update_text)
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;packet_text", self.update_packet_text)
         self.context.listen("pipe;buffer", self.on_buffer_update)
@@ -337,6 +339,7 @@ class LhystudiosControllerGui(MWindow):
         self.context.listen("pipe;thread", self.on_control_state)
 
     def window_close(self):
+        self.context.channel("pipe/usb").unwatch(self.update_text)
         self.gui_update = False
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;packet_text", self.update_packet_text)
@@ -344,6 +347,19 @@ class LhystudiosControllerGui(MWindow):
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)
         self.context.unlisten("pipe;thread", self.on_control_state)
+
+    def update_text(self, text):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.update_text_gui, text + "\n")
+        else:
+            self.update_text_gui(text + "\n")
+
+    def update_text_gui(self, text):
+        try:
+            if self.text_usb_log.IsShown():
+                self.text_usb_log.AppendText(text)
+        except RuntimeError:
+            pass
 
     def restore(self, *args, **kwargs):
         self.set_widgets()
@@ -402,9 +418,9 @@ class LhystudiosControllerGui(MWindow):
     def on_connection_state_change(self, origin, state):
         if state == "STATE_CONNECTION_FAILED" or state == "STATE_DRIVER_NO_BACKEND":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
-            self.button_device_connect.SetLabel(
-                str(self.context.last_signal("pipe;usb_status")[0])
-            )
+            usb_status = self.context.last_signal("pipe;usb_status")
+            if usb_status is not None:
+                self.button_device_connect.SetLabel(str(usb_status[0]))
             self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
             self.button_device_connect.Enable()
         elif state == "STATE_UNINITIALIZED" or state == "STATE_USB_DISCONNECTED":
