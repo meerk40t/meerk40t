@@ -28,7 +28,7 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 _simple_width = 500
-_advanced_width = 1040
+_advanced_width = 952
 _default_height = 565
 
 
@@ -36,54 +36,12 @@ class LhystudiosControllerGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(_advanced_width, _default_height, *args, **kwds)
 
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
-        self.text_connection_status = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.checkbox_mock_usb = wx.CheckBox(
-            self, wx.ID_ANY, "Mock USB Connection Mode"
-        )
-        self.text_device_index = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
-        self.text_device_address = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
-        self.text_device_bus = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
-        self.text_device_version = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=25)
-        self.button_controller_control = wx.Button(self, wx.ID_ANY, "Start Controller")
-        self.text_controller_status = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.rejected_packet_count_text = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.packet_text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_0 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_1 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_2 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.checkbox_show_usb_log = wx.CheckBox(self, wx.ID_ANY, "Show USB Log")
-        self.text_usb_log = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
-        )
-
         # Menu Bar
         self.LhystudiosController_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(wx.ID_ANY, "Reset USB", "Reset USB connection")
         self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, "Release USB", "Release USB resources"
-        )
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Release USB", "Release USB resources")
         self.Bind(wx.EVT_MENU, self.on_menu_usb_release, id=item.GetId())
         self.LhystudiosController_menubar.Append(wxglade_tmp_menu, "Tools")
         wxglade_tmp_menu = wx.Menu()
@@ -93,13 +51,36 @@ class LhystudiosControllerGui(MWindow):
         self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
         self.LhystudiosController_menubar.Append(wxglade_tmp_menu, "Commands")
         wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, "BufferView", "Views the Controller Buffer"
-        )
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "BufferView", "Views the Controller Buffer")
         self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
         self.LhystudiosController_menubar.Append(wxglade_tmp_menu, "Views")
         self.SetMenuBar(self.LhystudiosController_menubar)
         # Menu Bar end
+        self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
+        self.text_connection_status = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.checkbox_mock_usb = wx.CheckBox(self, wx.ID_ANY, "Mock USB Connection Mode")
+        self.text_device_index = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
+        self.text_device_address = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
+        self.text_device_bus = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
+        self.text_device_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=25)
+        self.button_controller_control = wx.Button(self, wx.ID_ANY, "Start Controller")
+        self.text_controller_status = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.rejected_packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.packet_text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_0 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_1 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_2 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.checkbox_show_usb_log = wx.CheckBox(self, wx.ID_ANY, "Show USB Log")
+        self.text_usb_log = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -108,28 +89,14 @@ class LhystudiosControllerGui(MWindow):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_mock_usb, self.checkbox_mock_usb)
         self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_index, self.spin_device_index)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_index, self.spin_device_index)
-        self.Bind(
-            wx.EVT_SPINCTRL, self.spin_on_device_address, self.spin_device_address
-        )
-        self.Bind(
-            wx.EVT_TEXT_ENTER, self.spin_on_device_address, self.spin_device_address
-        )
+        self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_address, self.spin_device_address)
+        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_address, self.spin_device_address)
         self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_bus, self.spin_device_bus)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_bus, self.spin_device_bus)
-        self.Bind(
-            wx.EVT_SPINCTRL, self.spin_on_device_version, self.spin_device_version
-        )
-        self.Bind(
-            wx.EVT_TEXT_ENTER, self.spin_on_device_version, self.spin_device_version
-        )
-        self.Bind(
-            wx.EVT_BUTTON,
-            self.on_button_start_controller,
-            self.button_controller_control,
-        )
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log
-        )
+        self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_version, self.spin_device_version)
+        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_version, self.spin_device_version)
+        self.Bind(wx.EVT_BUTTON, self.on_button_start_controller, self.button_controller_control)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log)
         # end wxGlade
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
         self.last_control_state = None
@@ -142,50 +109,27 @@ class LhystudiosControllerGui(MWindow):
         self.SetTitle("Lhystudios-Controller")
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
-        self.button_device_connect.SetFont(
-            wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
-        )
-        self.button_device_connect.SetToolTip(
-            "Force connection/disconnection from the device."
-        )
-        self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
+        self.button_device_connect.SetFont(wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
+        self.button_device_connect.SetToolTip("Force connection/disconnection from the device.")
         self.text_connection_status.SetToolTip("Connection status")
         self.checkbox_mock_usb.SetToolTip(
-            "DEBUG. Without a K40 connected continue to process things as if there was one."
-        )
+            "DEBUG. Without a K40 connected continue to process things as if there was one.")
         self.text_device_index.SetMinSize((55, 23))
-        self.spin_device_index.SetToolTip(
-            "-1 match anything. 0-5 match exactly that value."
-        )
+        self.spin_device_index.SetToolTip("-1 match anything. 0-5 match exactly that value.")
         self.text_device_address.SetMinSize((55, 23))
-        self.spin_device_address.SetToolTip(
-            "-1 match anything. 0-5 match exactly that value."
-        )
+        self.spin_device_address.SetToolTip("-1 match anything. 0-5 match exactly that value.")
         self.text_device_bus.SetMinSize((55, 23))
-        self.spin_device_bus.SetToolTip(
-            "-1 match anything. 0-5 match exactly that value."
-        )
+        self.spin_device_bus.SetToolTip("-1 match anything. 0-5 match exactly that value.")
         self.text_device_version.SetMinSize((55, 23))
-        self.spin_device_version.SetToolTip(
-            "-1 match anything. 0-255 match exactly that value."
-        )
+        self.spin_device_version.SetToolTip("-1 match anything. 0-255 match exactly that value.")
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
-        self.button_controller_control.SetFont(
-            wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
-        )
-        self.button_controller_control.SetToolTip(
-            "Change the currently performed operation."
-        )
-        self.button_controller_control.SetBitmap(icons8_play_50.GetBitmap())
-        self.text_controller_status.SetToolTip(
-            "Displays the controller's current process."
-        )
+        self.button_controller_control.SetFont(wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
+        self.button_controller_control.SetToolTip("Change the currently performed operation.")
+        self.text_controller_status.SetToolTip("Displays the controller's current process.")
         self.packet_count_text.SetMinSize((77, 23))
         self.packet_count_text.SetToolTip("Total number of packets sent")
         self.rejected_packet_count_text.SetMinSize((77, 23))
-        self.rejected_packet_count_text.SetToolTip(
-            "Total number of packets rejected"
-        )
+        self.rejected_packet_count_text.SetToolTip("Total number of packets rejected")
         self.packet_text_text.SetToolTip("Last packet information sent")
         self.text_byte_0.SetMinSize((77, 23))
         self.text_byte_1.SetMinSize((77, 23))
@@ -202,55 +146,31 @@ class LhystudiosControllerGui(MWindow):
         # begin wxGlade: LhystudiosController.__do_layout
         sizer_24 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_26 = wx.BoxSizer(wx.HORIZONTAL)
-        packet_count = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Packet Info"), wx.VERTICAL
-        )
-        byte_data_status = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Byte Data Status"), wx.HORIZONTAL
-        )
+        sizer_show_usb_log = wx.BoxSizer(wx.HORIZONTAL)
+        packet_count = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Packet Info"), wx.VERTICAL)
+        byte_data_status = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Byte Data Status"), wx.HORIZONTAL)
         byte5sizer = wx.BoxSizer(wx.VERTICAL)
         byte4sizer = wx.BoxSizer(wx.VERTICAL)
         byte3sizer = wx.BoxSizer(wx.VERTICAL)
         byte2sizer = wx.BoxSizer(wx.VERTICAL)
         byte1sizer = wx.BoxSizer(wx.VERTICAL)
         byte0sizer = wx.BoxSizer(wx.VERTICAL)
-        packet_info = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Last Packet"), wx.HORIZONTAL
-        )
+        packet_info = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Last Packet"), wx.HORIZONTAL)
         sizer_25 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_21 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Rejected Packets"), wx.VERTICAL
-        )
-        sizer_22 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Packet Count"), wx.VERTICAL
-        )
-        start_controller = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Controller"), wx.VERTICAL
-        )
-        sizer_usb = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "USB Settings"), wx.VERTICAL
-        )
+        sizer_21 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Rejected Packets"), wx.VERTICAL)
+        sizer_22 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Packet Count"), wx.VERTICAL)
+        sizer_controller = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Controller"), wx.VERTICAL)
+        sizer_usb_settings = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "USB Settings"), wx.VERTICAL)
         sizer_23 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_12 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Chip Version"), wx.HORIZONTAL
-        )
-        sizer_11 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Device Bus:"), wx.HORIZONTAL
-        )
-        sizer_10 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Device Address:"), wx.HORIZONTAL
-        )
-        sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Device Index:"), wx.HORIZONTAL
-        )
-        usb_controller = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "USB Connection"), wx.VERTICAL
-        )
-        usb_controller.Add(self.button_device_connect, 0, wx.EXPAND, 0)
-        usb_controller.Add(self.text_connection_status, 0, wx.EXPAND, 0)
-        sizer_1.Add(usb_controller, 0, wx.EXPAND, 0)
-        sizer_usb.Add(self.checkbox_mock_usb, 0, 0, 0)
+        sizer_12 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Chip Version"), wx.HORIZONTAL)
+        sizer_11 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Device Bus:"), wx.HORIZONTAL)
+        sizer_10 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Device Address:"), wx.HORIZONTAL)
+        sizer_3 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Device Index:"), wx.HORIZONTAL)
+        sizer_usb_connect = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "USB Connection"), wx.VERTICAL)
+        sizer_usb_connect.Add(self.button_device_connect, 0, wx.EXPAND, 0)
+        sizer_usb_connect.Add(self.text_connection_status, 0, wx.EXPAND, 0)
+        sizer_1.Add(sizer_usb_connect, 0, wx.EXPAND, 0)
+        sizer_usb_settings.Add(self.checkbox_mock_usb, 0, 0, 0)
         sizer_3.Add(self.text_device_index, 0, 0, 0)
         sizer_3.Add(self.spin_device_index, 0, 0, 0)
         sizer_23.Add(sizer_3, 0, wx.EXPAND, 0)
@@ -263,11 +183,11 @@ class LhystudiosControllerGui(MWindow):
         sizer_12.Add(self.text_device_version, 0, 0, 0)
         sizer_12.Add(self.spin_device_version, 0, 0, 0)
         sizer_23.Add(sizer_12, 0, wx.EXPAND, 0)
-        sizer_usb.Add(sizer_23, 1, wx.EXPAND, 0)
-        sizer_1.Add(sizer_usb, 0, wx.EXPAND, 0)
-        start_controller.Add(self.button_controller_control, 0, wx.EXPAND, 0)
-        start_controller.Add(self.text_controller_status, 0, wx.EXPAND, 0)
-        sizer_1.Add(start_controller, 0, wx.EXPAND, 0)
+        sizer_usb_settings.Add(sizer_23, 1, wx.EXPAND, 0)
+        sizer_1.Add(sizer_usb_settings, 0, wx.EXPAND, 0)
+        sizer_controller.Add(self.button_controller_control, 0, wx.EXPAND, 0)
+        sizer_controller.Add(self.text_controller_status, 0, wx.EXPAND, 0)
+        sizer_1.Add(sizer_controller, 0, wx.EXPAND, 0)
         sizer_22.Add(self.packet_count_text, 0, wx.EXPAND, 0)
         sizer_25.Add(sizer_22, 1, wx.EXPAND, 0)
         sizer_21.Add(self.rejected_packet_count_text, 0, wx.EXPAND, 0)
@@ -303,9 +223,9 @@ class LhystudiosControllerGui(MWindow):
         packet_count.Add(byte_data_status, 0, wx.EXPAND, 0)
         sizer_1.Add(packet_count, 0, 0, 0)
         label_6 = wx.StaticText(self, wx.ID_ANY, "")
-        sizer_26.Add(label_6, 10, wx.EXPAND, 0)
-        sizer_26.Add(self.checkbox_show_usb_log, 0, 0, 0)
-        sizer_1.Add(sizer_26, 1, wx.EXPAND, 0)
+        sizer_show_usb_log.Add(label_6, 10, wx.EXPAND, 0)
+        sizer_show_usb_log.Add(self.checkbox_show_usb_log, 0, 0, 0)
+        sizer_1.Add(sizer_show_usb_log, 1, wx.EXPAND, 0)
         sizer_24.Add(sizer_1, 1, 0, 0)
         sizer_24.Add(self.text_usb_log, 2, wx.EXPAND, 0)
         self.SetSizer(sizer_24)
