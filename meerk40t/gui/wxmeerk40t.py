@@ -3616,14 +3616,16 @@ class wxMeerK40t(wx.App, Module):
                 parent = None
             q = context.default_driver()
             t = "default"
+            m = '/'
             if q is not None:
                 driver, name = q
                 try:
                     t = driver.type
+                    m = driver.context._path
                 except AttributeError:
                     pass
             try:
-                path.open("window/%s/Preferences" % t, parent, *args)
+                context.get_context(m).open("window/%s/Preferences" % t, parent, *args)
                 channel(_("Window Opened."))
             except (KeyError, ValueError):
                 channel(_("No such window as %s" % window))
