@@ -510,6 +510,7 @@ class MeerK40t(MWindow, Job):
         self.context.setting(str, "perspective")
         if self.context.perspective is not None:
             self._mgr.LoadPerspective(self.context.perspective)
+        self.on_rebuild_tree_request()
 
     @property
     def is_dark(self):
