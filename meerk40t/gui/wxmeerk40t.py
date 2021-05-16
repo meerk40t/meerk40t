@@ -3592,15 +3592,17 @@ class wxMeerK40t(wx.App, Module):
                 parent = None
             q = context.default_pipe()
             t = "default"
+            m = '/'
             if q is not None:
                 pipe, name = q
                 try:
                     t = pipe.type
+                    m = pipe.context._path
                 except AttributeError:
                     pass
 
             try:
-                path.open("window/%s/Controller" % t, parent, *args)
+                context.get_context(m).open("window/%s/Controller" % t, parent, *args)
                 channel(_("Window Opened."))
             except (KeyError, ValueError):
                 channel(_("No such window as %s" % window))

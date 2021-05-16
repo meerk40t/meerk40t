@@ -36,9 +36,6 @@ class LhystudiosControllerGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(_advanced_width, _default_height, *args, **kwds)
 
-        self.combo_controller_selection = wx.ComboBox(
-            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
-        )
         self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
         self.text_connection_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
@@ -107,9 +104,6 @@ class LhystudiosControllerGui(MWindow):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(
-            wx.EVT_COMBOBOX, self.on_combo_controller, self.combo_controller_selection
-        )
         self.Bind(wx.EVT_BUTTON, self.on_button_start_usb, self.button_device_connect)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_mock_usb, self.checkbox_mock_usb)
         self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_index, self.spin_device_index)
@@ -148,9 +142,6 @@ class LhystudiosControllerGui(MWindow):
         self.SetIcon(_icon)
         self.SetTitle("Lhystudios-Controller")
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
-        self.combo_controller_selection.SetToolTip(
-            "Select the lhystudios controller to modify"
-        )
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetFont(
             wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
@@ -257,11 +248,6 @@ class LhystudiosControllerGui(MWindow):
         usb_controller = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "USB Connection"), wx.VERTICAL
         )
-        sizer_20 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Controller"), wx.VERTICAL
-        )
-        sizer_20.Add(self.combo_controller_selection, 0, wx.EXPAND, 0)
-        sizer_1.Add(sizer_20, 0, wx.EXPAND, 0)
         usb_controller.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         usb_controller.Add(self.text_connection_status, 0, wx.EXPAND, 0)
         sizer_1.Add(usb_controller, 0, wx.EXPAND, 0)
@@ -557,12 +543,6 @@ class LhystudiosControllerGui(MWindow):
 
     def on_check_mock_usb(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.mock = self.checkbox_mock_usb.GetValue()
-
-    def on_combo_controller(
-        self, event
-    ):  # wxGlade: LhystudiosController.<event_handler>
-        print("Event handler 'on_combo_controller' not implemented!")
-        event.Skip()
 
     def on_button_start_controller(
         self, event
