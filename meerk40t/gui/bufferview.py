@@ -30,7 +30,9 @@ class BufferView(MWindow):
         self.__do_layout()
 
     def window_open(self):
-        pipe = self.context.open("pipe")
+        active = self.context.root.active
+        spooler, input_driver, pipe = self.context.registered['device/%s' % active]
+        # pipe = self.context.open("pipe")
         buffer = None
         if pipe is not None:
             try:
