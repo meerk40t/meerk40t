@@ -312,10 +312,10 @@ def run():
     device_context = kernel.get_context("devices")
     if not hasattr(device_context, "_devices") or device_context._devices == 0:
         if args.device == "Moshi":
-            dev = "spool0 driver -n moshi output -n moshi"
+            dev = "spool0 -r driver -n moshi output -n moshi\n"
         else:
-            dev = "spool0 driver -n lhystudios output -n lhystudios"
-        kernel_root("device init %s\n" % dev)
+            dev = "spool0 -r driver -n lhystudios output -n lhystudios\n"
+        kernel_root(dev)
 
     if args.verbose:
         kernel._start_debugging()

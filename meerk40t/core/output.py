@@ -52,7 +52,7 @@ class Outputs(Modifier):
         except KeyError:
             device = [None, None, None]
             self.context.registered[dev] = device
-        if device[2] is not None:
+        if device[2] is not None and output_type is None:
             return device[2]
         try:
             for itype in self.context.match("output/%s" % output_type):

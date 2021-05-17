@@ -153,9 +153,10 @@ class DeviceManager(MWindow):
             else:
                 dlg.Destroy()
                 return
-            dev = "spool%s driver -n %s outfile %s\n" % (spooler_input, device_type, filename)
-            self.context("device init %s\n" % dev)
+            self.context("spool%s -r driver -n %s outfile %s\n" % (spooler_input, device_type, filename))
+
             dlg.Destroy()
+            self.refresh_device_list()
             return
 
         if output_type == 'network':
@@ -168,13 +169,12 @@ class DeviceManager(MWindow):
             else:
                 dlg.Destroy()
                 return
-            dev = "spool%s driver -n %s network %s\n" % (spooler_input, device_type, network)
-            self.context("device init %s\n" % dev)
+            self.context("spool%s -r driver -n %s network %s\n" % (spooler_input, device_type, network))
             dlg.Destroy()
+            self.refresh_device_list()
             return
 
-        dev = "spool%s driver -n %s output -n %s\n" % (spooler_input, device_type, output_type)
-        self.context("device init %s\n" % dev)
+        self.context("spool%s -r driver -n %s output -n %s\n" % (spooler_input, device_type, output_type))
         self.refresh_device_list()
         self.context.get_context('devices').flush()
 

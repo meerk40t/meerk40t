@@ -16,10 +16,11 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "boot":
         device_context = kernel.get_context("devices")
         index = 0
-        while True:
-            line = device_context._kernel.read_persistent(
-                str, device_context.abs_path("device_%d" % index), None
-            )
+        for d in device_context._kernel.keylist(device_context._path):
+            suffix = d.split('/')[-1]
+            if not suffix.startswith("device_"):
+                continue
+            line = device_context.setting(str, suffix, None)
             if line is not None and len(line):
                 device_context(line + "\n")
                 device_context.setting(str, "device_%d" % index, None)
@@ -27,9 +28,9 @@ def plugin(kernel, lifecycle=None):
                 break
             index += 1
         device_context._devices = index
+        kernel.root.setting(str, 'active', '0')
     elif lifecycle == "register":
         root = kernel.root
-        root.setting(str, 'active', '0')
 
         @kernel.console_command(
             "dev",
@@ -59,7 +60,6 @@ def plugin(kernel, lifecycle=None):
             output_type="device",
         )
         def device(channel, _, index, **kwargs):
-            device_context = kernel.get_context("devices")
             root.active = str(index)
             return "device", (None, str(index))
 
@@ -98,34 +98,34 @@ def plugin(kernel, lifecycle=None):
                 index += 1
             channel("----------")
             return "device", data
-
-        @kernel.console_command(
-            "add",
-            help="add <device-string>",
-            input_type="device",
-        )
-        def add(channel, _, data, remainder, **kwargs):
-            if not remainder.startswith("spool") and not remainder.startswith("input"):
-                raise SyntaxError("Device string must start with 'spool' or 'input'")
-            index = 0
-            while hasattr(data, "device_%d" % index) or 'device/%d' % index in root.registered:
-                index += 1
-            setattr(data, "device_%d" % index, remainder)
-
-        @kernel.console_command(
-            "init",
-            help="init <device-string>",
-            input_type="device",
-        )
-        def init(channel, _, data, remainder, **kwargs):
-            device_context = kernel.get_context("devices")
-            if not remainder.startswith("spool") and not remainder.startswith("source"):
-                raise SyntaxError("Device string must start with 'spool' or 'source'")
-            index = 0
-            while hasattr(device_context, "device_%d" % index) or 'device/%d' % index in root.registered:
-                index += 1
-            setattr(device_context, "device_%d" % index, remainder)
-            kernel.root(remainder + '\n')
+        #
+        # @kernel.console_command(
+        #     "add",
+        #     help="add <device-string>",
+        #     input_type="device",
+        # )
+        # def add(channel, _, data, remainder, **kwargs):
+        #     if not remainder.startswith("spool") and not remainder.startswith("input"):
+        #         raise SyntaxError("Device string must start with 'spool' or 'input'")
+        #     index = 0
+        #     while hasattr(data, "device_%d" % index) or 'device/%d' % index in root.registered:
+        #         index += 1
+        #     setattr(data, "device_%d" % index, remainder)
+        #
+        # @kernel.console_command(
+        #     "init",
+        #     help="init <device-string>",
+        #     input_type="device",
+        # )
+        # def init(channel, _, data, remainder, **kwargs):
+        #     device_context = kernel.get_context("devices")
+        #     if not remainder.startswith("spool") and not remainder.startswith("input"):
+        #         raise SyntaxError("Device string must start with 'spool' or 'input'")
+        #     index = 0
+        #     while hasattr(device_context, "device_%d" % index) or 'device/%d' % index in root.registered:
+        #         index += 1
+        #     setattr(device_context, "device_%d" % index, remainder)
+        #     kernel.root(remainder + '\n')
 
         @kernel.console_command(
             "delete",

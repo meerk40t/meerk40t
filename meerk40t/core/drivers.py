@@ -504,7 +504,7 @@ class Drivers(Modifier):
         except KeyError:
             device = [None, None, None]
             self.context.registered[dev] = device
-        if device[1] is not None:
+        if device[1] is not None and driver_type is None:
             return device[1]
         try:
             for itype in self.context.match("driver/%s" % driver_type):
