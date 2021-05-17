@@ -489,44 +489,40 @@ class Driver:
 class Drivers(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
-        self._drivers = dict()
-        self._default_driver = "0"
 
     def get_driver(self, driver_name, **kwargs):
+        dev = 'device/%s' % driver_name
         try:
-            return self._drivers[driver_name]
-        except KeyError:
-            pass
-        return None
+            return self.context.registered[dev][1]
+        except (KeyError, IndexError):
+            return None
 
-    def make_driver(self, driver_name, driver_type, **kwargs):
+    def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
+        dev = 'device/%s' % device_name
         try:
-            return self._drivers[driver_name]
+            device = self.context.registered[dev]
         except KeyError:
-            try:
-                for itype in self.context.match("driver/%s" % driver_type):
-                    driver_class = self.context.registered[itype]
-                    driver = driver_class(
-                        self.context, driver_name, **kwargs
-                    )
-                    self._drivers[driver_name] = driver, driver_name
-                    return driver, driver_name
-
-                self._drivers[driver_name] = (
-                    Driver(self.context),
-                    driver_name,
+            device = [None, None, None]
+            self.context.registered[dev] = device
+        if device[1] is not None:
+            return device[1]
+        try:
+            for itype in self.context.match("driver/%s" % driver_type):
+                driver_class = self.context.registered[itype]
+                driver = driver_class(
+                    self.context, device_name, **kwargs
                 )
-            except (KeyError, IndexError):
-                pass
-        return None
+                device[1] = driver
+                return driver
+        except (KeyError, IndexError):
+            return None
 
     def default_driver(self):
-        return self.get_driver(self._default_driver)
+        return self.get_driver(self.context.root.active)
 
     def attach(self, *a, **kwargs):
         context = self.context
         context.drivers = self
-        context.default_driver = self.default_driver
 
         kernel = self.context._kernel
         _ = kernel.translation
@@ -542,46 +538,37 @@ class Drivers(Modifier):
         def driver(
             command, channel, _, data=None, new=None, remainder=None, **kwargs
         ):
-            if len(command) > 6:
-                self._default_driver = command[6:]
-                self.context.signal("driver", self._default_driver, None)
-            if new is not None and self._default_driver in self._drivers:
-                for i in range(1000):
-                    if str(i) in self._drivers:
-                        continue
-                    self._default_driver = str(i)
-                    break
-
-            if new is not None:
-                driver_data = self.make_driver(self._default_driver, new)
+            spooler = None
+            if data is None:
+                if len(command) > 6:
+                    device_name = command[6:]
+                    self.context.active = device_name
+                else:
+                    device_name = self.context.active
             else:
-                driver_data = self.get_driver(self._default_driver)
-            if driver_data is None:
+                spooler, device_name = data
+
+            driver = self.get_or_make_driver(device_name, new)
+            if driver is None:
                 raise SyntaxError("No Driver.")
 
-            driver, name = driver_data
-
-            if data is not None:
-                spooler, spooler_name = data
+            if spooler is not None:
                 try:
                     driver.spooler = spooler
-
                     spooler.next = driver
                     driver.prev = spooler
                 except AttributeError:
                     pass
-                return "driver", (driver, name)
-
-            if remainder is None:
+            elif remainder is None:
                 channel(_("----------"))
                 channel(_("Driver:"))
-                for i, drv in enumerate(self._drivers):
+                for i, drv in enumerate(self.context.root.match('device', suffix=True)):
                     channel("%d: %s" % (i, drv))
                 channel(_("----------"))
-                channel(_("Driver %s:" % name))
+                channel(_("Driver %s:" % device_name))
                 channel(str(driver))
                 channel(_("----------"))
-            return "driver", driver_data
+            return "driver", (driver, device_name)
 
         @self.context.console_command(
             "list",
@@ -593,7 +580,7 @@ class Drivers(Modifier):
             driver, name = data
             channel(_("----------"))
             channel(_("Driver:"))
-            for i, drv in enumerate(self._drivers):
+            for i, drv in enumerate(self.context.root.match('device', suffix=True)):
                 channel("%d: %s" % (i, drv))
             channel(_("----------"))
             channel(_("Driver %s:" % name))

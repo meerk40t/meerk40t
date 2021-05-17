@@ -28,6 +28,8 @@ def plugin(kernel, lifecycle=None):
             index += 1
         device_context._devices = index
     elif lifecycle == "register":
+        root = kernel.root
+        root.setting(str, 'active', '0')
 
         @kernel.console_command(
             "dev",
@@ -35,46 +37,31 @@ def plugin(kernel, lifecycle=None):
             output_type="dev",
         )
         def dev(channel, _, remainder=None, **kwargs):
-            root = kernel.root
-            spooler, name = root.spooler()
-            driver = spooler.next
             try:
-                output = driver.next
-            except AttributeError:
-                output = None
+                spooler, input_driver, output = root.registered[root.active]
+            except (KeyError, ValueError):
+                return
             if remainder is None:
-                channel(_("Device %s, %s, %s" % (str(spooler), str(driver), str(output))))
-            if driver is not None:
+                channel(_("Device %s, %s, %s" % (str(spooler), str(input_driver), str(output))))
+            if input_driver is not None:
                 try:
-                    t = driver.type
-                    return t, (spooler, driver, output)
+                    t = input_driver.type
+                    return t, (spooler, input_driver, output)
                 except AttributeError:
                     pass
-            return "dev", (spooler, driver, output)
+            return "dev", (spooler, input_driver, output)
 
-        @kernel.console_argument("index", type=int, help="Index of Spooler device being activated")
+        @kernel.console_argument("index", type=int, help="Index of device being activated")
         @kernel.console_command(
             "activate",
             help="delegate commands to currently selected device",
+            input_type="device",
             output_type="device",
         )
         def device(channel, _, index, **kwargs):
-            root = kernel.root
-            spooler, name = root.spoolers.get_or_make_spooler(str(index))
-            root.spoolers._default_spooler = spooler.name
-            driver = spooler.next
-            try:
-                output = driver.next
-            except AttributeError:
-                output = None
-
-            if driver is not None:
-                root.drivers._default_driver = driver.name
-                try:
-                    root.outputs._default_output = output.name
-                except AttributeError:
-                    pass
-            return "device", (spooler, driver, output)
+            device_context = kernel.get_context("devices")
+            root.active = str(index)
+            return "device", (None, str(index))
 
         @kernel.console_command(
             "device",
@@ -82,17 +69,17 @@ def plugin(kernel, lifecycle=None):
             output_type="device",
         )
         def device(channel, _, remainder=None, **kwargs):
-            data = kernel.get_context("devices")
+            device_context = kernel.get_context("devices")
             if remainder is None:
                 channel(_("----------"))
                 channel(_("Devices:"))
                 index = 0
-                while hasattr(data, "device_%d" % index):
-                    line = getattr(data, "device_%d" % index)
+                while hasattr(device_context, "device_%d" % index):
+                    line = getattr(device_context, "device_%d" % index)
                     channel("%d: %s" % (index, line))
                     index += 1
                 channel("----------")
-            return "device", data
+            return "device", (None, root.active)
 
         @kernel.console_command(
             "list",
@@ -101,11 +88,12 @@ def plugin(kernel, lifecycle=None):
             output_type="device",
         )
         def list(channel, _, data, **kwargs):
+            device_context = kernel.get_context("devices")
             channel(_("----------"))
             channel(_("Devices:"))
             index = 0
-            while hasattr(data, "device_%d" % index):
-                line = getattr(data, "device_%d" % index)
+            while hasattr(device_context, "device_%d" % index):
+                line = getattr(device_context, "device_%d" % index)
                 channel("%d: %s" % (index, line))
                 index += 1
             channel("----------")
@@ -117,10 +105,10 @@ def plugin(kernel, lifecycle=None):
             input_type="device",
         )
         def add(channel, _, data, remainder, **kwargs):
-            if not remainder.startswith("spool") and not remainder.startswith("source"):
-                raise SyntaxError("Device string must start with 'spool' or 'source'")
+            if not remainder.startswith("spool") and not remainder.startswith("input"):
+                raise SyntaxError("Device string must start with 'spool' or 'input'")
             index = 0
-            while hasattr(data, "device_%d" % index):
+            while hasattr(data, "device_%d" % index) or 'device/%d' % index in root.registered:
                 index += 1
             setattr(data, "device_%d" % index, remainder)
 
@@ -130,12 +118,13 @@ def plugin(kernel, lifecycle=None):
             input_type="device",
         )
         def init(channel, _, data, remainder, **kwargs):
+            device_context = kernel.get_context("devices")
             if not remainder.startswith("spool") and not remainder.startswith("source"):
                 raise SyntaxError("Device string must start with 'spool' or 'source'")
             index = 0
-            while hasattr(data, "device_%d" % index):
+            while hasattr(device_context, "device_%d" % index) or 'device/%d' % index in root.registered:
                 index += 1
-            setattr(data, "device_%d" % index, remainder)
+            setattr(device_context, "device_%d" % index, remainder)
             kernel.root(remainder + '\n')
 
         @kernel.console_command(
@@ -144,7 +133,9 @@ def plugin(kernel, lifecycle=None):
             input_type="device",
         )
         def delete(channel, _, data, remainder, **kwargs):
+            device_context = kernel.get_context("devices")
             try:
-                delattr(data, "device_%d" % index)
-            except KeyError:
+                delattr(device_context, "device_%d" % index)
+                del root.registered['device/%d' % index]
+            except (KeyError, ValueError):
                 raise SyntaxError("Invalid device-string index.")

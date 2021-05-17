@@ -44,37 +44,46 @@ class FileOutput:
 class Outputs(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
-        self._outputs = dict()
-        self._default_output = "0"
 
-    def get_output(self, output_name, **kwargs):
+    def get_or_make_output(self, device_name, output_type=None, **kwargs):
+        dev = 'device/%s' % device_name
         try:
-            return self._outputs[output_name]
+            device = self.context.registered[dev]
         except KeyError:
+            device = [None, None, None]
+            self.context.registered[dev] = device
+        if device[2] is not None:
+            return device[2]
+        try:
+            for itype in self.context.match("output/%s" % output_type):
+                output_class = self.context.registered[itype]
+                output = output_class(
+                    self.context, device_name, **kwargs
+                )
+                device[2] = output
+                return output
+        except (KeyError, IndexError):
+            return None
+
+    def put_output(self, device_name, output):
+        dev = 'device/%s' % device_name
+        try:
+            device = self.context.registered[dev]
+        except KeyError:
+            device = [None, None, None]
+            self.context.registered[dev] = device
+
+        try:
+            device[2] = output
+        except (KeyError, IndexError):
             pass
-        return None
-
-    def make_output(self, output_name, output_type, **kwargs):
-        try:
-            return self._outputs[output_name]
-        except KeyError:
-            try:
-                for pname in self.context.match("output/%s" % output_type):
-                    output_class = self.context.registered[pname]
-                    output = output_class(self.context, output_name, **kwargs)
-                    self._outputs[output_name] = output, output_name
-                    return output, output_name
-            except (KeyError, IndexError):
-                pass
-        return None
 
     def default_output(self):
-        return self.get_output(self._default_output)
+        return self.get_or_make_output(self.context.root.active)
 
     def attach(self, *a, **kwargs):
         context = self.context
         context.outputs = self
-        context.default_output = self.default_output
 
         kernel = self.context._kernel
         _ = kernel.translation
@@ -84,7 +93,7 @@ class Outputs(Modifier):
             "output",
             help="output<?> <command>",
             regex=True,
-            input_type=(None, "source", "driver"),
+            input_type=(None, "input", "driver"),
             output_type="output",
         )
         def output(
@@ -92,76 +101,65 @@ class Outputs(Modifier):
             channel,
             _,
             data=None,
-            data_type=None,
             new=None,
             remainder=None,
             **kwargs
         ):
-            if len(command) > 6:
-                self._default_output = command[6:]
-                self.context.signal("output", self._default_output, None)
-            if new is not None and self._default_output in self._outputs:
-                for i in range(1000):
-                    if str(i) in self._outputs:
-                        continue
-                    self._default_output = str(i)
-                    break
-
-            if new is not None:
-                output_data = self.make_output(self._default_output, new)
+            input_driver = None
+            if data is None:
+                if len(command) > 6:
+                    device_name = command[6:]
+                    self.context.active = device_name
+                else:
+                    device_name = self.context.active
             else:
-                output_data = self.get_output(self._default_output)
+                input_driver, device_name = data
 
-            if output_data is None:
+            output = self.get_or_make_output(device_name, new)
+
+            if output is None:
                 raise SyntaxError("No Output")
 
-            output, output_name = output_data
-            self.context.signal("output", output_name, 1)
+            self.context.signal("output", device_name, 1)
 
-            if data is not None:
-                input_driver, dname = data
+            if input_driver is not None:
                 input_driver.next = output
                 output.prev = input_driver
                 input_driver.data_output = output.write
                 input_driver.data_output_realtime = output.realtime_write
             elif remainder is None:
-                output, output_name = output_data
-                channel(_("----------"))
-                channel(_("Output:"))
-                for i, pname in enumerate(self._outputs):
-                    channel("%d: %s" % (i, pname))
-                channel(_("----------"))
-                channel(_("Output %s: %s" % (output_name, str(output))))
-                channel(_("----------"))
+                pass
 
-            return "output", output_data
+            return "output", (output, device_name)
 
         @context.console_argument("filename")
         @context.console_command(
             "outfile",
             help="outfile filename",
-            input_type=(None, "source", "driver"),
+            input_type=(None, "input", "driver"),
             output_type="output",
         )
         def outfile(command, channel, _, data=None, filename=None, **kwargs):
             if filename is None:
                 raise SyntaxError("No file specified.")
+            input_driver = None
+            if data is None:
+                if len(command) > 6:
+                    device_name = command[6:]
+                else:
+                    device_name = self.context.active
+            else:
+                input_driver, device_name = data
 
-            for i in range(1000):
-                if str(i) in self._outputs:
-                    continue
-                self.default_output = str(i)
-                break
-            output_name = self.default_output
-            fileoutput = FileOutput(filename)
-            self._outputs[output_name] = fileoutput, output_name
+            output = FileOutput(filename)
+            self.put_output(device_name, output)
 
-            if data is not None:
-                input_driver, dname = data
-                input_driver.next = fileoutput
-                input_driver.data_output = fileoutput.write
-                input_driver.data_output_realtime = fileoutput.realtime_write
-            return "output", (fileoutput, output_name)
+            if input_driver is not None:
+                input_driver.next = output
+                output.prev = input_driver
+                input_driver.data_output = output.write
+                input_driver.data_output_realtime = output.realtime_write
+            return "output", (output, device_name)
 
         @self.context.console_command(
             "list",

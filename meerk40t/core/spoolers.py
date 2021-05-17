@@ -124,26 +124,24 @@ class Spooler:
 class Spoolers(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
-        self._spoolers = dict()
-        self._default_spooler = "0"
 
-    def get_or_make_spooler(self, spooler_name):
+    def get_or_make_spooler(self, device_name):
+        dev = 'device/%s' % device_name
         try:
-            return self._spoolers[spooler_name]
+            device = self.context.registered[dev]
         except KeyError:
-            self._spoolers[spooler_name] = (
-                Spooler(self.context, spooler_name),
-                spooler_name,
-            )
-            return self._spoolers[spooler_name]
+            device = [None, None, None]
+            self.context.registered[dev] = device
+        if device[0] is None:
+            device[0] = Spooler(self.context, device_name)
+        return device[0]
 
     def default_spooler(self):
-        return self.get_or_make_spooler(self._default_spooler)
+        return self.get_or_make_spooler(self.context.root.active)
 
     def attach(self, *a, **kwargs):
         context = self.context
         context.spoolers = self
-        context.spooler = self.default_spooler
         bed_dim = context.get_context("/")
 
         kernel = self.context._kernel
@@ -151,53 +149,54 @@ class Spoolers(Modifier):
 
         @context.console_command(
             "spool",
-            help="spooler<?> <command>",
+            help="spool<?> <command>",
             regex=True,
-            input_type=(None, "plan"),
+            input_type=(None, "plan", "device"),
             output_type="spooler",
         )
         def spool(command, channel, _, data=None, remainder=None, **kwargs):
+            root = self.context.root
             if len(command) > 5:
-                self._default_spooler = command[5:]
-                self.context.signal("spooler", self._default_spooler, None)
-            spooler_data = self.get_or_make_spooler(self._default_spooler)
-            spooler, spooler_name = spooler_data
+                device_name = command[5:]
+            else:
+                device_name = root.active
+
+            spooler = self.get_or_make_spooler(device_name)
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
                 plan, original, commands, plan_name = data
                 spooler.jobs(plan)
                 channel(_("Spooled Plan."))
-
                 self.context.signal("plan", plan_name, 6)
 
             if remainder is None:
                 channel(_("----------"))
                 channel(_("Spoolers:"))
-                for i, spooler_name in enumerate(self._spoolers):
-                    channel("%d: %s" % (i, spooler_name))
+                for i, d_name in enumerate(self.context.match('device', True)):
+                    channel("%d: %s" % (i, d_name))
                 channel(_("----------"))
-                channel(_("Spooler %s:" % self._default_spooler))
+                channel(_("Spooler %s:" % device_name))
                 for i, op_name in enumerate(spooler.queue):
                     channel("%d: %s" % (i, op_name))
                 channel(_("----------"))
 
-            return "spooler", (spooler, self._default_spooler)
+            return "spooler", (spooler, device_name)
 
         @context.console_command(
             "list",
             help="spool<?> list",
-            input_type="spool",
-            output_type="spool",
+            input_type="spooler",
+            output_type="spooler",
         )
         def spooler_list(command, channel, _, data_type=None, data=None, **kwargs):
-            spooler, spooler_name = data
+            spooler, device_name = data
             channel(_("----------"))
             channel(_("Spoolers:"))
-            for i, s_name in enumerate(self._spoolers):
-                channel("%d: %s" % (i, s_name))
+            for i, d_name in enumerate(self.context.match('device', True)):
+                channel("%d: %s" % (i, d_name))
             channel(_("----------"))
-            channel(_("Spooler %s:" % spooler_name))
-            for i, op_name in enumerate(spooler):
+            channel(_("Spooler %s:" % device_name))
+            for i, op_name in enumerate(spooler.queue):
                 channel("%d: %s" % (i, op_name))
             channel(_("----------"))
             return data_type, data
@@ -212,7 +211,7 @@ class Spoolers(Modifier):
         def spooler_send(
             command, channel, _, data_type=None, op=None, data=None, **kwargs
         ):
-            spooler, spooler_name = data
+            spooler, device_name = data
             if op is None:
                 raise SyntaxError
             try:
@@ -228,11 +227,11 @@ class Spoolers(Modifier):
         @context.console_command(
             "clear",
             help="spooler<?> clear",
-            input_type="plan",
-            output_type="plan",
+            input_type="spooler",
+            output_type="spooler",
         )
         def spooler_clear(command, channel, _, data_type=None, data=None, **kwargs):
-            spooler, spooler_name = data
+            spooler, device_name = data
             spooler.clear_queue()
             return data_type, data
 
@@ -276,8 +275,8 @@ class Spoolers(Modifier):
         )
         def plus_laser(data, **kwargs):
             if data is None:
-                data = self.default_spooler()
-            spooler, spooler_name = data
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
             spooler.job(COMMAND_LASER_ON)
             return "spooler", data
 
@@ -290,8 +289,8 @@ class Spoolers(Modifier):
         )
         def minus_laser(data, **kwargs):
             if data is None:
-                data = self.default_spooler()
-            spooler, spooler_name = data
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
             spooler.job(COMMAND_LASER_OFF)
             return "spooler", data
 
@@ -306,8 +305,8 @@ class Spoolers(Modifier):
         )
         def direction(command, channel, _, data=None, amount=None, **kwargs):
             if data is None:
-                data = self.default_spooler()
-            spooler, spooler_name = data
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
             if amount is None:
                 amount = Length("1mm")
             max_bed_height = bed_dim.bed_height * 39.3701
@@ -324,7 +323,7 @@ class Spoolers(Modifier):
                 spooler._dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
             elif command.endswith("down"):
                 spooler._dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
-            context(".timer 1 0 spool%s jog\n" % spooler_name)
+            context(".timer 1 0 spool%s jog\n" % device_name)
             return "spooler", data
 
         @context.console_command(
@@ -336,8 +335,8 @@ class Spoolers(Modifier):
         )
         def jog(command, channel, _, data, **kwargs):
             if data is None:
-                data = self.default_spooler()
-            spooler, spooler_name = data
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
             try:
                 idx = int(spooler._dx)
                 idy = int(spooler._dy)
@@ -363,8 +362,8 @@ class Spoolers(Modifier):
         )
         def move(channel, _, x, y, data=None, **kwargs):
             if data is None:
-                data = self.default_spooler()
-            spooler, spooler_name = data
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
             if y is None:
                 raise SyntaxError
             if not spooler.job_if_idle(execute_absolute_position(x, y)):
@@ -381,8 +380,8 @@ class Spoolers(Modifier):
         )
         def move_relative(channel, _, dx, dy, data=None, **kwargs):
             if data is None:
-                data = self.default_spooler()
-            spooler, spooler_name = data
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
             if dy is None:
                 raise SyntaxError
             if not spooler.job_if_idle(execute_relative_position(dx, dy)):
@@ -399,8 +398,8 @@ class Spoolers(Modifier):
         )
         def home(x=None, y=None, data=None, **kwargs):
             if data is None:
-                data = self.default_spooler()
-            spooler, spooler_name = data
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
             if x is not None and y is not None:
                 x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701)
                 y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701)
@@ -417,8 +416,8 @@ class Spoolers(Modifier):
         )
         def unlock(data=None, **kwargs):
             if data is None:
-                data = self.default_spooler()
-            spooler, spooler_name = data
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
             spooler.job(COMMAND_UNLOCK)
             return "spooler", data
 
@@ -430,10 +429,10 @@ class Spoolers(Modifier):
         )
         def lock(data, **kwargs):
             if data is None:
-                data = self.default_spooler()
-            spooler, spooler_name = data
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
             spooler.job(COMMAND_LOCK)
             return "spooler", data
-
-        for i in range(5):
-            self.get_or_make_spooler(str(i))
+        #
+        # for i in range(5):
+        #     self.get_or_make_spooler(str(i))

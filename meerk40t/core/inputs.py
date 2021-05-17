@@ -3,7 +3,7 @@ from ..kernel import Modifier
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/Input", Input)
+        kernel.register("modifier/Inputs", Inputs)
         kernel.register("input/file", FileInput)
         kernel.register("input/tcp", TcpInput)
 

@@ -9,6 +9,7 @@ import wx
 from .icons import (
     icons8_plus_50,
     icons8_trash_50,
+    icons8_manager_50
 )
 from .mwindow import MWindow
 
@@ -35,7 +36,9 @@ class DeviceManager(MWindow):
         # end wxGlade
 
     def __set_properties(self):
-        # begin wxGlade: DeviceManager.__set_properties
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
+        self.SetIcon(_icon)
         self.SetTitle("Device Manager")
         self.devices_list.SetFont(wx.Font(13, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         self.devices_list.AppendColumn("Index", format=wx.LIST_FORMAT_LEFT, width=56)
@@ -64,7 +67,6 @@ class DeviceManager(MWindow):
         # end wxGlade
 
     def window_open(self):
-        self.context.setting(str, "list_devices", "")
         self.refresh_device_list()
 
     def window_close(self):
@@ -75,19 +77,15 @@ class DeviceManager(MWindow):
 
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
-        for i, s in enumerate(self.context.spoolers._spoolers):
-            spooler = self.context.spoolers._spoolers[s][0]
+        for i, dev in enumerate(self.context.match('device')):
+            device = self.context.registered[dev]
+            spooler, input_driver, output = device
+            device_context = self.context.get_context('devices')
+            registered = hasattr(device_context, "device_%d" % i)
             m = self.devices_list.InsertItem(i, str(i))
-            driver = None
-            output = None
-            registered = True
-            if spooler is not None and spooler.next is not None:
-                driver = spooler.next
-            if driver is not None and driver.next is not None:
-                output = driver.next
             if m != -1:
                 self.devices_list.SetItem(m, 1, str(spooler))
-                self.devices_list.SetItem(m, 2, str(driver))
+                self.devices_list.SetItem(m, 2, str(input_driver))
                 self.devices_list.SetItem(m, 3, str(output))
                 self.devices_list.SetItem(m, 4, str(registered))
 
@@ -109,13 +107,16 @@ class DeviceManager(MWindow):
         if item == -1:
             return
         uid = self.devices_list.GetItem(item).Text
-        self.context("activate %s\n" % uid)
+        self.context("device activate %s\n" % uid)
+        self.context("window close DeviceManager\n")
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         if item == -1:
             return
         spooler_input = self.devices_list.GetItem(item).Text
+        # END SPOOLER
+
         names = [name for name in self.context._kernel.match("driver", suffix=True)]
         dlg = wx.SingleChoiceDialog(
             None, _("What type of driver is being added?"), _("Device Type"), names
@@ -127,6 +128,7 @@ class DeviceManager(MWindow):
             dlg.Destroy()
             return
         dlg.Destroy()
+        # END Driver
 
         names = [name for name in self.context._kernel.match("output", suffix=True)]
         dlg = wx.SingleChoiceDialog(
@@ -139,6 +141,7 @@ class DeviceManager(MWindow):
             dlg.Destroy()
             return
         dlg.Destroy()
+        # END OUTPUT
 
         if output_type == 'file':
             dlg.Destroy()
@@ -166,12 +169,12 @@ class DeviceManager(MWindow):
                 dlg.Destroy()
                 return
             dev = "spool%s driver -n %s network %s\n" % (spooler_input, device_type, network)
-            self.context("device add %s\n" % dev)
+            self.context("device init %s\n" % dev)
             dlg.Destroy()
             return
 
         dev = "spool%s driver -n %s output -n %s\n" % (spooler_input, device_type, output_type)
-        self.context("device add %s\n" % dev)
+        self.context("device init %s\n" % dev)
         self.refresh_device_list()
         self.context.get_context('devices').flush()
 
