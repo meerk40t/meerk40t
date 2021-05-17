@@ -41,12 +41,21 @@ def plugin(kernel, lifecycle=None):
         kernel.register("load/EgvLoader", EgvLoader)
         context = kernel.root
 
-        @context.console_option("idonotlovemyhouse", type=bool, action="store_true", help="laser fire pulse duration")
+        @context.console_option(
+            "idonotlovemyhouse",
+            type=bool,
+            action="store_true",
+            help="override one second laser fire pulse duration",
+        )
         @context.console_argument("time", type=float, help="laser fire pulse duration")
         @context.console_command(
-            "pulse", input_type="lhystudios", help="pulse <time>: Pulse the laser in place."
+            "pulse",
+            input_type="lhystudios",
+            help="pulse <time>: Pulse the laser in place.",
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, data=None, **kwargs):
+        def pulse(
+            command, channel, _, time=None, idonotlovemyhouse=False, data=None, **kwargs
+        ):
             spooler, driver, output = data
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
@@ -54,8 +63,7 @@ def plugin(kernel, lifecycle=None):
             value = time / 1000.0
             if value > 1.0:
                 channel(
-                    _('"%s" exceeds 1 second limit to fire a standing laser.')
-                    % (value)
+                    _('"%s" exceeds 1 second limit to fire a standing laser.') % (value)
                 )
                 try:
                     if not idonotlovemyhouse:
@@ -75,10 +83,27 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Pulse laser failed: Busy"))
             return
 
-        @context.console_option("difference", "d", type=bool, action="store_true", help="Change speed by this amount.")
+        @context.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help="Change speed by this amount.",
+        )
         @context.console_argument("speed", type=str, help="Set the driver speed.")
-        @context.console_command("speed", input_type="lhystudios", help="Set current speed of driver.")
-        def speed(command, channel, _, data=None, speed=None, increment=False, decrement=False,  **kwargs):
+        @context.console_command(
+            "speed", input_type="lhystudios", help="Set current speed of driver."
+        )
+        def speed(
+            command,
+            channel,
+            _,
+            data=None,
+            speed=None,
+            increment=False,
+            decrement=False,
+            **kwargs
+        ):
             spooler, driver, output = data
             if speed is None or (increment and decrement):
                 channel(_("Speed set at: %f mm/s") % driver.speed)
@@ -103,7 +128,9 @@ def plugin(kernel, lifecycle=None):
             channel(_("Speed set at: %f mm/s") % driver.speed)
 
         @context.console_argument("ppi", type=int, help="pulses per inch [0-1000]")
-        @context.console_command("power", input_type="lhystudios", help="Set Driver Power")
+        @context.console_command(
+            "power", input_type="lhystudios", help="Set Driver Power"
+        )
         def power(command, channel, _, data, ppi=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             if ppi is None:
@@ -116,9 +143,11 @@ def plugin(kernel, lifecycle=None):
 
         @context.console_argument("accel", type=int, help="Acceleration amount [1-4]")
         @context.console_command(
-            "acceleration", input_type="lhystudios", help="Set Driver Acceleration [1-4]"
+            "acceleration",
+            input_type="lhystudios",
+            help="Set Driver Acceleration [1-4]",
         )
-        def acceleration(command, channel, _, data=None, accel=None, args=tuple(), **kwargs):
+        def acceleration(channel, _, data=None, accel=None, **kwargs):
             """
             Lhymicro-gl speedcodes have a single character of either 1,2,3,4 which indicates
             the acceleration value of the laser. This is typically 1 below 25.4, 2 below 60,
@@ -145,16 +174,22 @@ def plugin(kernel, lifecycle=None):
                     channel(_("Invalid Acceleration [1-4]."))
                     return
 
-        @context.console_command("pause",  input_type="lhystudios",help="realtime pause/resume of the machine")
-        def realtime_pause(command, channel, _, data=None, **kwargs):
+        @context.console_command(
+            "pause",
+            input_type="lhystudios",
+            help="realtime pause/resume of the machine",
+        )
+        def realtime_pause(data=None, **kwargs):
             spooler, driver, output = data
             if driver.is_paused:
                 driver.resume()
             else:
                 driver.pause()
 
-        @context.console_command(("estop", "abort"), input_type="lhystudios", help="Abort Job")
-        def pipe_abort(command, channel, _, data=None, **kwargs):
+        @context.console_command(
+            ("estop", "abort"), input_type="lhystudios", help="Abort Job"
+        )
+        def pipe_abort(channel, _, data=None, **kwargs):
             spooler, driver, output = data
             driver.reset()
             channel("Lhystudios Channel Aborted.")
@@ -166,9 +201,11 @@ def plugin(kernel, lifecycle=None):
             "rapid_y", type=float, help="limit y speed for rapid."
         )
         @context.console_command(
-            "rapid_override",  input_type="lhystudios",help="limit speed of typical rapid moves."
+            "rapid_override",
+            input_type="lhystudios",
+            help="limit speed of typical rapid moves.",
         )
-        def rapid_override(command, channel, _, data=None, rapid_x=None, rapid_y=None, **kwargs):
+        def rapid_override(channel, _, data=None, rapid_x=None, rapid_y=None, **kwargs):
             spooler, driver, output = data
             if rapid_x is not None:
                 if rapid_y is None:
@@ -188,7 +225,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "egv_import", help="Lhystudios Engrave Buffer Import. egv_import <egv_file>"
         )
-        def egv_import(command, channel, _, filename, data=None, **kwargs):
+        def egv_import(filename, data=None, **kwargs):
             spooler, driver, output = data
             if filename is None:
                 raise SyntaxError
@@ -221,9 +258,11 @@ def plugin(kernel, lifecycle=None):
 
         @context.console_argument("filename", type=str)
         @context.console_command(
-            "egv_export",   input_type="lhystudios", help="Lhystudios Engrave Buffer Export. egv_export <egv_file>"
+            "egv_export",
+            input_type="lhystudios",
+            help="Lhystudios Engrave Buffer Export. egv_export <egv_file>",
         )
-        def egv_export(command, channel, _, filename, data=None, **kwargs):
+        def egv_export(channel, _, filename, data=None, **kwargs):
             spooler, driver, output = data
             if filename is None:
                 raise SyntaxError
@@ -245,7 +284,9 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Could not save: %s" % filename))
 
         @context.console_command(
-            "egv",input_type="lhystudios",  help="Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
+            "egv",
+            input_type="lhystudios",
+            help="Lhystudios Engrave Code Sender. egv <lhymicro-gl>",
         )
         def egv(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
@@ -254,34 +295,44 @@ def plugin(kernel, lifecycle=None):
             else:
                 output.write(bytes(args[0].replace("$", "\n"), "utf8"))
 
-        @context.console_command("start", input_type="lhystudios", help="Start Pipe to Controller")
+        @context.console_command(
+            "start", input_type="lhystudios", help="Start Pipe to Controller"
+        )
         def pipe_start(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel("Lhystudios Channel Started.")
 
-        @context.console_command("hold", input_type="lhystudios", help="Hold Controller")
+        @context.console_command(
+            "hold", input_type="lhystudios", help="Hold Controller"
+        )
         def pipe_pause(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_PAUSE)
             output.pause()
             channel("Lhystudios Channel Paused.")
 
-        @context.console_command("resume", input_type="lhystudios", help="Resume Controller")
+        @context.console_command(
+            "resume", input_type="lhystudios", help="Resume Controller"
+        )
         def pipe_resume(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel("Lhystudios Channel Resumed.")
 
-        @context.console_command("usb_connect", input_type="lhystudios", help="Connects USB")
+        @context.console_command(
+            "usb_connect", input_type="lhystudios", help="Connects USB"
+        )
         def usb_connect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.open()
             channel("CH341 Opened.")
 
-        @context.console_command("usb_disconnect", input_type="lhystudios", help="Disconnects USB")
+        @context.console_command(
+            "usb_disconnect", input_type="lhystudios", help="Disconnects USB"
+        )
         def usb_disconnect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.close()
@@ -994,8 +1045,7 @@ class LhystudiosDriver(Driver):
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
         elif (
-                self.state == DRIVER_STATE_PROGRAM
-                or self.state == DRIVER_STATE_MODECHANGE
+            self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_MODECHANGE
         ):
             self.data_output(b"FNSE-\n")
             self.laser = False
@@ -1036,10 +1086,7 @@ class LhystudiosDriver(Driver):
     def ensure_finished_mode(self):
         if self.state == DRIVER_STATE_FINISH:
             return
-        if (
-            self.state == DRIVER_STATE_PROGRAM
-            or self.state == DRIVER_STATE_MODECHANGE
-        ):
+        if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_MODECHANGE:
             self.data_output(b"@NSE")
             self.laser = False
         elif self.state == DRIVER_STATE_RAPID:
