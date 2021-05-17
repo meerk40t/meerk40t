@@ -383,9 +383,12 @@ def plugin(kernel, lifecycle=None):
             input_type="moshi",
             help="abort waiting process on the controller.",
         )
-        def realtime_pause(data=None, **kwargs):
+        def realtime_status(channel, _,data=None, **kwargs):
             spooler, driver, output = data
-            driver.update_status()
+            try:
+                output.update_status()
+            except ConnectionError:
+                channel(_("Could not check status, usb not connected."))
 
         @context.console_command(
             "continue",
