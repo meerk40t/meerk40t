@@ -184,6 +184,109 @@ def plugin(kernel, lifecycle=None):
                 driver.rapid_override = False
                 channel(_("Rapid Limit Off"))
 
+        @context.console_argument("filename", type=str)
+        @context.console_command(
+            "egv_import", help="Lhystudios Engrave Buffer Import. egv_import <egv_file>"
+        )
+        def egv_import(command, channel, _, filename, data=None, **kwargs):
+            spooler, driver, output = data
+            if filename is None:
+                raise SyntaxError
+
+            def skip(read, byte, count):
+                """Skips forward in the file until we find <count> instances of <byte>"""
+                pos = read.tell()
+                while count > 0:
+                    char = read.read(1)
+                    if char == byte:
+                        count -= 1
+                    if char is None or len(char) == 0:
+                        read.seek(pos, 0)
+                        # If we didn't skip the right stuff, reset the position.
+                        break
+
+            def skip_header(file):
+                skip(file, "\n", 3)
+                skip(file, "%", 5)
+
+            with open(filename, "r") as f:
+                skip_header(f)
+                while True:
+                    data = f.read(1024)
+                    if not data:
+                        break
+                    buffer = bytes(data, "utf8")
+                    output.write(buffer)
+                output.write(b"\n")
+
+        @context.console_argument("filename", type=str)
+        @context.console_command(
+            "egv_export", help="Lhystudios Engrave Buffer Export. egv_export <egv_file>"
+        )
+        def egv_export(command, channel, _, filename, data=None, **kwargs):
+            spooler, driver, output = data
+            if filename is None:
+                raise SyntaxError
+            try:
+                with open(filename, "w") as f:
+                    f.write("Document type : LHYMICRO-GL file\n")
+                    f.write("File version: 1.0.01\n")
+                    f.write("Copyright: Unknown\n")
+                    f.write(
+                        "Creator-Software: %s v%s\n"
+                        % (output.context._kernel.name, output.context._kernel.version)
+                    )
+                    f.write("\n")
+                    f.write("%0%0%0%0%\n")
+                    buffer = bytes(output._buffer)
+                    buffer += bytes(output._queue)
+                    f.write(buffer.decode("utf-8"))
+            except (PermissionError, IOError):
+                channel(_("Could not save: %s" % filename))
+
+        @context.console_command(
+            "egv", help="Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
+        )
+        def egv(command, channel, _, data=None, args=tuple(), **kwargs):
+            spooler, driver, output = data
+            if len(args) == 0:
+                channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
+            else:
+                output.write(bytes(args[0].replace("$", "\n"), "utf8"))
+
+        @context.console_command("start", help="Start Pipe to Controller")
+        def pipe_start(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.update_state(STATE_ACTIVE)
+            output.start()
+            channel("Lhystudios Channel Started.")
+
+        @context.console_command("hold", help="Hold Controller")
+        def pipe_pause(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.update_state(STATE_PAUSE)
+            output.pause()
+            channel("Lhystudios Channel Paused.")
+
+        @context.console_command("resume", help="Resume Controller")
+        def pipe_resume(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.update_state(STATE_ACTIVE)
+            output.start()
+            channel("Lhystudios Channel Resumed.")
+
+        @context.console_command("usb_connect", help="Connects USB")
+        def usb_connect(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.open()
+            channel("CH341 Opened.")
+
+        @context.console_command("usb_disconnect", help="Disconnects USB")
+        def usb_disconnect(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.close()
+            channel("CH341 Closed.")
+
 
 distance_lookup = [
     b"",
@@ -1311,101 +1414,6 @@ class LhystudiosController:
         context.setting(bool, "mock", False)
         context.setting(int, "packet_count", 0)
         context.setting(int, "rejected_count", 0)
-
-        @self.context.console_argument("filename", type=str)
-        @self.context.console_command(
-            "egv_import", help="Lhystudios Engrave Buffer Import. egv_import <egv_file>"
-        )
-        def egv_import(command, channel, _, filename, args=tuple(), **kwargs):
-            if filename is None:
-                raise SyntaxError
-
-            def skip(read, byte, count):
-                """Skips forward in the file until we find <count> instances of <byte>"""
-                pos = read.tell()
-                while count > 0:
-                    char = read.read(1)
-                    if char == byte:
-                        count -= 1
-                    if char is None or len(char) == 0:
-                        read.seek(pos, 0)
-                        # If we didn't skip the right stuff, reset the position.
-                        break
-
-            def skip_header(file):
-                skip(file, "\n", 3)
-                skip(file, "%", 5)
-
-            with open(filename, "r") as f:
-                skip_header(f)
-                while True:
-                    data = f.read(1024)
-                    if not data:
-                        break
-                    buffer = bytes(data, "utf8")
-                    self.write(buffer)
-                self.write(b"\n")
-
-        @self.context.console_argument("filename", type=str)
-        @self.context.console_command(
-            "egv_export", help="Lhystudios Engrave Buffer Export. egv_export <egv_file>"
-        )
-        def egv_export(command, channel, _, filename, args=tuple(), **kwargs):
-            if filename is None:
-                raise SyntaxError
-            try:
-                with open(filename, "w") as f:
-                    f.write("Document type : LHYMICRO-GL file\n")
-                    f.write("File version: 1.0.01\n")
-                    f.write("Copyright: Unknown\n")
-                    f.write(
-                        "Creator-Software: %s v%s\n"
-                        % (self.context._kernel.name, self.context._kernel.version)
-                    )
-                    f.write("\n")
-                    f.write("%0%0%0%0%\n")
-                    buffer = bytes(self._buffer)
-                    buffer += bytes(self._queue)
-                    f.write(buffer.decode("utf-8"))
-            except (PermissionError, IOError):
-                channel(_("Could not save: %s" % filename))
-
-        @self.context.console_command(
-            "egv", help="Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
-        )
-        def egv(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
-            else:
-                self.write(bytes(args[0].replace("$", "\n"), "utf8"))
-
-        @self.context.console_command("start", help="Start Pipe to Controller")
-        def pipe_start(command, channel, _, args=tuple(), **kwargs):
-            self.update_state(STATE_ACTIVE)
-            self.start()
-            channel("Lhystudios Channel Started.")
-
-        @self.context.console_command("hold", help="Hold Controller")
-        def pipe_pause(command, channel, _, args=tuple(), **kwargs):
-            self.update_state(STATE_PAUSE)
-            self.pause()
-            channel("Lhystudios Channel Paused.")
-
-        @self.context.console_command("resume", help="Resume Controller")
-        def pipe_resume(command, channel, _, args=tuple(), **kwargs):
-            self.update_state(STATE_ACTIVE)
-            self.start()
-            channel("Lhystudios Channel Resumed.")
-
-        @self.context.console_command("usb_connect", help="Connects USB")
-        def usb_connect(command, channel, _, args=tuple(), **kwargs):
-            self.open()
-            channel("CH341 Opened.")
-
-        @self.context.console_command("usb_disconnect", help="Disconnects USB")
-        def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
-            self.close()
-            channel("CH341 Closed.")
 
         context.register("control/Status Update", self.update_status)
         self.reset()
