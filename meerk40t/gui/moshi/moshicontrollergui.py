@@ -366,7 +366,7 @@ class MoshiControllerGui(MWindow):
             None,
         ):
             try:
-                self.context("usb_connect\n")
+                self.context("dev usb_connect\n")
             except ConnectionRefusedError:
                 dlg = wx.MessageDialog(
                     None,
@@ -377,7 +377,7 @@ class MoshiControllerGui(MWindow):
                 result = dlg.ShowModal()
                 dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
-            self.context("usb_disconnect\n")
+            self.context("dev usb_disconnect\n")
 
     def spin_on_device_index(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.usb_index = int(self.spin_device_index.GetValue())
@@ -423,13 +423,13 @@ class MoshiControllerGui(MWindow):
 
     def on_menu_pause(self, event):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("pause\n")
+            self.context("dev pause\n")
         except AttributeError:
             pass
 
     def on_menu_stop(self, event):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("estop\n")
+            self.context("dev estop\n")
         except AttributeError:
             pass
 
