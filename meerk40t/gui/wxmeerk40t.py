@@ -8,6 +8,7 @@ import sys
 import threading
 import traceback
 
+from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from .mwindow import MWindow
 
 try:
@@ -130,6 +131,8 @@ from .laserrender import (
     LaserRender,
     swizzlecolor,
 )
+from .moshi.moshicontrollergui import MoshiControllerGui
+from .moshi.moshidrivergui import MoshiDriverGui
 from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
 from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
 from .navigation import Navigation
@@ -937,12 +940,12 @@ class MeerK40t(MWindow, Job):
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window controller\n"),
+            lambda v: self.context.console("window open -o Controller\n"),
             id=ID_CONTROLLER,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window preferences\n"),
+            lambda v: self.context.console("window open -d Preferences\n"),
             id=ID_PREFERENCES,
         )
         windows.Bind(
@@ -1382,7 +1385,7 @@ class MeerK40t(MWindow, Job):
             )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window preferences\n"),
+            lambda v: self.context.console("window open -d Preferences\n"),
             id=wx.ID_PREFERENCES,
         )
         self.Bind(
@@ -1392,7 +1395,7 @@ class MeerK40t(MWindow, Job):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window controller\n"),
+            lambda v: self.context.console("window open -o Controller\n"),
             id=ID_MENU_CONTROLLER,
         )
         self.Bind(
@@ -3515,6 +3518,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/default/Preferences", Preferences)
         kernel.register("window/lhystudios/Preferences", LhystudiosDriverGui)
         kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
+        kernel.register("window/lhystudios/AccelerationChart", LhystudiosAccelerationChart)
+        kernel.register("window/moshi/Preferences", LhystudiosDriverGui)
+        kernel.register("window/moshi/Controller", LhystudiosControllerGui)
 
         context = kernel.get_context("/")
 
@@ -3562,73 +3568,50 @@ class wxMeerK40t(wx.App, Module):
         def window(channel, _, data, **kwargs):
             channel(_("----------"))
             channel(_("Windows Registered:"))
-            for i, name in enumerate(context.match("window", suffix=True)):
-                channel("%d: %s" % (i + 1, name))
+            for i, name in enumerate(context.match("window")):
+                name = name[7:]
+                if '/' in name:
+                    channel("%d: Specific Window: %s" % (i + 1, name))
+                else:
+                    channel("%d: %s" % (i + 1, name))
             return "window", data
 
+        @kernel.console_option("driver", "d", type=bool, action="store_true", help="Load Driver Specific Window")
+        @kernel.console_option("output", "o", type=bool, action="store_true", help="Load Ouput Specific Window")
+        @kernel.console_option("source", "s", type=bool, action="store_true", help="Load Source Specific Window")
         @kernel.console_argument(
             "window", type=str, help="window to apply subcommand to"
         )
         @kernel.console_command("open",  input_type="window", help="wxMeerK40 window information")
-        def window(channel, _, data, window=None, args=(), **kwargs):
+        def window(channel, _, data, window=None, driver=False, output=False, source=False, args=(), **kwargs):
             path = data
             try:
                 parent = context.gui
             except AttributeError:
                 parent = None
-            try:
-                path.open("window/%s" % window, parent, *args)
-                channel(_("Window Opened."))
-            except (KeyError, ValueError):
-                channel(_("No such window as %s" % window))
-            except IndexError:
-                raise SyntaxError
-
-        @kernel.console_command("controller",  input_type="window", help="wxMeerK40 window information")
-        def window(channel, _, data, args=(), **kwargs):
-            path = data
-            try:
-                parent = context.gui
-            except AttributeError:
-                parent = None
-            q = context.default_pipe()
-            t = "default"
-            m = '/'
-            if q is not None:
-                pipe, name = q
-                try:
-                    t = pipe.type
-                    m = pipe.context._path
-                except AttributeError:
-                    pass
+            window_uri = "window/%s" % window
+            if output or driver or source:
+                # Specific class subwindow.
+                if output:
+                    q = context.default_pipe()
+                elif driver:
+                    q = context.default_driver()
+                else:  # source
+                    q = context.default_source()
+                t = "default"
+                m = '/'
+                if q is not None:
+                    obj, name = q
+                    try:
+                        t = obj.type
+                        m = obj.context._path
+                    except AttributeError:
+                        pass
+                path = context.get_context(m)
+                window_uri = "window/%s/%s" % (t, window)
 
             try:
-                context.get_context(m).open("window/%s/Controller" % t, parent, *args)
-                channel(_("Window Opened."))
-            except (KeyError, ValueError):
-                channel(_("No such window as %s" % window))
-            except IndexError:
-                raise SyntaxError
-
-        @kernel.console_command("preferences",  input_type="window", help="wxMeerK40 window information")
-        def window(channel, _, data, args=(), **kwargs):
-            path = data
-            try:
-                parent = context.gui
-            except AttributeError:
-                parent = None
-            q = context.default_driver()
-            t = "default"
-            m = '/'
-            if q is not None:
-                driver, name = q
-                try:
-                    t = driver.type
-                    m = driver.context._path
-                except AttributeError:
-                    pass
-            try:
-                context.get_context(m).open("window/%s/Preferences" % t, parent, *args)
+                path.open(window_uri, parent, *args)
                 channel(_("Window Opened."))
             except (KeyError, ValueError):
                 channel(_("No such window as %s" % window))

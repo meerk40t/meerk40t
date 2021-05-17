@@ -209,7 +209,7 @@ class BindAlias(Modifier):
         self.keymap["f4"] = "window open CameraInterface"
         self.keymap["f5"] = "refresh"
         self.keymap["f6"] = "window open JobSpooler"
-        self.keymap["f7"] = "window controller"
+        self.keymap["f7"] = "window open -o Controller"
         self.keymap["f8"] = "control Path"
         self.keymap["f9"] = "control Transform"
         self.keymap["control+f9"] = "control Flip"

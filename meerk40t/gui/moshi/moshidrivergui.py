@@ -32,7 +32,9 @@ class MoshiDriverGui(MWindow):
         # end wxGlade
 
     def __set_properties(self):
-        # begin wxGlade: MoshiDriverGui.__set_properties
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        self.SetIcon(_icon)
         self.SetTitle("Moshiboard-Prefererences")
         self.checkbox_home_right.SetToolTip("Indicates the device Home is on the right")
         self.checkbox_home_bottom.SetToolTip("Indicates the device Home is on the bottom")
