@@ -828,6 +828,10 @@ class MoshiDriver(Driver, Modifier):
     def abort(self):
         self.control("stop\n")
 
+    @property
+    def type(self):
+        return "moshi"
+
 
 class MoshiController(Module):
     def __init__(self, context, name, channel=None, *args, **kwargs):
@@ -861,10 +865,6 @@ class MoshiController(Module):
         self.usb_send_channel = context.channel("%s/usb_send" % name)
         self.recv_channel = context.channel("%s/recv" % name)
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
-
-        send = context.channel("%s/send" % name)
-        send.watch(self.write)
-        send.__len__ = lambda: len(self._buffer)
 
         control = context.channel("%s/control" % name)
         control.watch(self.control)
@@ -948,6 +948,8 @@ class MoshiController(Module):
 
     def realtime_pipe(self, data):
         self.connection.write_addr(data)
+
+    realtime_write = realtime_pipe
 
     def open(self):
         self.pipe_channel("open()")
@@ -1239,3 +1241,7 @@ class MoshiController(Module):
             if status == STATUS_PROCESSING:
                 time.sleep(0.5)  # Half a second between requests.
         self.update_state(original_state)
+
+    @property
+    def type(self):
+        return "moshi"
