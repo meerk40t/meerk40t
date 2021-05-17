@@ -10,6 +10,7 @@ import traceback
 
 from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from .mwindow import MWindow
+from .simulation import Simulation
 
 try:
     from math import tau
@@ -3514,6 +3515,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/JobPreview", JobPreview)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/RasterWizard", RasterWizard)
+        kernel.register("window/Simulation", Simulation)
 
         kernel.register("window/default/Controller", Controller)
         kernel.register("window/default/Preferences", Preferences)
