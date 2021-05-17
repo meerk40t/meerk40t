@@ -389,6 +389,7 @@ def run():
         async def aio_readline(loop):
             while kernel.lifecycle != "shutdown":
                 print(">>", end="", flush=True)
+
                 line = await loop.run_in_executor(None, sys.stdin.readline)
                 kernel_root("." + line + "\n")
                 if line in ("quit", "shutdown"):

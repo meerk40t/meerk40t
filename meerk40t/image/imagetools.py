@@ -1159,7 +1159,6 @@ class RasterScripts:
             }
         )
         ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
-        return ops
 
     @staticmethod
     def raster_script_xin():
@@ -1553,6 +1552,7 @@ class RasterScripts:
                         if op["type"] != "Floyd-Steinberg":
                             image = dither(image, op["type"])
                         image = image.convert("1")
+
                 except KeyError:
                     pass
             elif name == "halftone":
