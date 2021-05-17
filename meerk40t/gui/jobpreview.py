@@ -179,6 +179,7 @@ class JobPreview(MWindow):
         selected_spooler = self.context.root.active
         spools = [str(i) for i in self.context.match("device", suffix=True)]
         index = spools.index(selected_spooler)
+        self.connected_name = spools[index]
         self.connected_spooler, self.connected_driver, self.connected_output = (
             None,
             None,
@@ -195,7 +196,6 @@ class JobPreview(MWindow):
                 if isinstance(m, wx.Window):
                     m.Disable()
         spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
-        self.connected_name = spools[index]
 
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
