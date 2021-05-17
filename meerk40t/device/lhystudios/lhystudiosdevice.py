@@ -221,7 +221,7 @@ def plugin(kernel, lifecycle=None):
 
         @context.console_argument("filename", type=str)
         @context.console_command(
-            "egv_export", help="Lhystudios Engrave Buffer Export. egv_export <egv_file>"
+            "egv_export",   input_type="lhystudios", help="Lhystudios Engrave Buffer Export. egv_export <egv_file>"
         )
         def egv_export(command, channel, _, filename, data=None, **kwargs):
             spooler, driver, output = data
@@ -245,7 +245,7 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Could not save: %s" % filename))
 
         @context.console_command(
-            "egv", help="Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
+            "egv",input_type="lhystudios",  help="Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
         )
         def egv(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
@@ -254,34 +254,34 @@ def plugin(kernel, lifecycle=None):
             else:
                 output.write(bytes(args[0].replace("$", "\n"), "utf8"))
 
-        @context.console_command("start", help="Start Pipe to Controller")
+        @context.console_command("start", input_type="lhystudios", help="Start Pipe to Controller")
         def pipe_start(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel("Lhystudios Channel Started.")
 
-        @context.console_command("hold", help="Hold Controller")
+        @context.console_command("hold", input_type="lhystudios", help="Hold Controller")
         def pipe_pause(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_PAUSE)
             output.pause()
             channel("Lhystudios Channel Paused.")
 
-        @context.console_command("resume", help="Resume Controller")
+        @context.console_command("resume", input_type="lhystudios", help="Resume Controller")
         def pipe_resume(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel("Lhystudios Channel Resumed.")
 
-        @context.console_command("usb_connect", help="Connects USB")
+        @context.console_command("usb_connect", input_type="lhystudios", help="Connects USB")
         def usb_connect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.open()
             channel("CH341 Opened.")
 
-        @context.console_command("usb_disconnect", help="Disconnects USB")
+        @context.console_command("usb_disconnect", input_type="lhystudios", help="Disconnects USB")
         def usb_disconnect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.close()

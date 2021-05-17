@@ -331,7 +331,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("pipe/moshi", MoshiController)
         context = kernel.root
 
-        @context.console_command("usb_connect", type="moshi", help="Connect USB")
+        @context.console_command("usb_connect", input_type="moshi", help="Connect USB")
         def usb_connect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             try:
@@ -339,7 +339,7 @@ def plugin(kernel, lifecycle=None):
             except ConnectionRefusedError:
                 channel("Connection Refused.")
 
-        @context.console_command("usb_disconnect",type="moshi", help="Disconnect USB")
+        @context.console_command("usb_disconnect",input_type="moshi", help="Disconnect USB")
         def usb_disconnect(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             if output.connection is not None:
@@ -347,28 +347,28 @@ def plugin(kernel, lifecycle=None):
             else:
                 channel("Usb is not connected.")
 
-        @context.console_command("start", type="moshi",help="Start Pipe to Controller")
+        @context.console_command("start", input_type="moshi",help="Start Pipe to Controller")
         def pipe_start(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel("Moshi Channel Started.")
 
-        @context.console_command("hold", type="moshi",help="Hold Controller")
+        @context.console_command("hold", input_type="moshi",help="Hold Controller")
         def pipe_pause(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_PAUSE)
             output.pause()
             channel("Moshi Channel Paused.")
 
-        @context.console_command("resume", type="moshi",help="Resume Controller")
+        @context.console_command("resume", input_type="moshi",help="Resume Controller")
         def pipe_resume(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel("Moshi Channel Resumed.")
 
-        @context.console_command("abort", type="moshi",help="Abort Job")
+        @context.console_command("abort", input_type="moshi",help="Abort Job")
         def pipe_abort(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.reset()

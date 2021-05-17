@@ -31,6 +31,29 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "register":
 
         @kernel.console_command(
+            "dev",
+            help="delegate commands to currently selected device",
+            output_type="device",
+        )
+        def device(channel, _, remainder=None, **kwargs):
+            root = kernel.root
+            spooler, name = root.spooler()
+            driver = spooler.next
+            try:
+                output = driver.next
+            except AttributeError:
+                output = None
+            if remainder is None:
+                channel(_("Device %s, %s, %s" % (str(spooler), str(driver), str(output))))
+            if driver is not None:
+                try:
+                    t = driver.type
+                    return t, (spooler, driver, output)
+                except AttributeError:
+                    pass
+            return "device", (spooler, driver, output)
+
+        @kernel.console_command(
             "device",
             help="device",
             output_type="device",
