@@ -109,19 +109,13 @@ class DeviceManager(MWindow):
         if item == -1:
             return
         uid = self.devices_list.GetItem(item).Text
-        self.context("dev activate %s\n" % uid)
+        self.context("activate %s\n" % uid)
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
-        dlg = wx.TextEntryDialog(
-            None, _("What spooler does this device attach to?"), _("Spooler"),
-        )
-        if dlg.ShowModal() == wx.ID_OK:
-            spooler_input = dlg.GetValue()
-        else:
-            dlg.Destroy()
+        item = self.devices_list.GetFirstSelected()
+        if item == -1:
             return
-        dlg.Destroy()
-
+        spooler_input = self.devices_list.GetItem(item).Text
         names = [name for name in self.context._kernel.match("driver", suffix=True)]
         dlg = wx.SingleChoiceDialog(
             None, _("What type of driver is being added?"), _("Device Type"), names
@@ -136,7 +130,7 @@ class DeviceManager(MWindow):
 
         names = [name for name in self.context._kernel.match("pipe", suffix=True)]
         dlg = wx.SingleChoiceDialog(
-            None, _("Where does the device output data?"), _("Ouput Type"), names
+            None, _("Where does the device output data?"), _("Output Type"), names
         )
         dlg.SetSelection(0)
         if dlg.ShowModal() == wx.ID_OK:
@@ -146,8 +140,37 @@ class DeviceManager(MWindow):
             return
         dlg.Destroy()
 
+        if pipe_type == 'file':
+            dlg.Destroy()
+            dlg = wx.TextEntryDialog(
+                None, _("What filename does this device output to?"), _("Output"),
+            )
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetValue()
+            else:
+                dlg.Destroy()
+                return
+            dev = "spool%s driver -n %s outfile %s\n" % (spooler_input, device_type, filename)
+            self.context("device add %s\n%s\n" % (dev, dev))
+            dlg.Destroy()
+            return
+
+        if pipe_type == 'network':
+            dlg.Destroy()
+            dlg = wx.TextEntryDialog(
+                None, _("What network address does this device output to?"), _("Output"),
+            )
+            if dlg.ShowModal() == wx.ID_OK:
+                network = dlg.GetValue()
+            else:
+                dlg.Destroy()
+                return
+            dev = "spool%s driver -n %s network %s\n" % (spooler_input, device_type, network)
+            self.context("device add %s\n%s\n" % (dev, dev))
+            dlg.Destroy()
+            return
+
         dev = "spool%s driver -n %s pipe -n %s\n" % (spooler_input, device_type, pipe_type)
-        print(dev)
         self.context("device add %s\n%s\n" % (dev,dev))
         self.refresh_device_list()
         self.context.get_context('devices').flush()
