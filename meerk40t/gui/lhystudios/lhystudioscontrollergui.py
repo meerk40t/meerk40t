@@ -191,6 +191,8 @@ class LhystudiosControllerGui(MWindow):
         self.text_byte_4.SetMinSize((77, 23))
         self.text_byte_5.SetMinSize((77, 23))
         self.checkbox_show_usb_log.SetValue(1)
+        self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
+        self.button_controller_control.SetBitmap(icons8_play_50.GetBitmap())
         # end wxGlade
 
     def __do_layout(self):
