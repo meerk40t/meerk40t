@@ -28,6 +28,8 @@ class DeviceManager(MWindow):
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.devices_list)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_list_item_activated, self.devices_list)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_list_right_click, self.devices_list)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_list_item_selected, self.devices_list)
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_list_item_selected, self.devices_list)
         self.Bind(wx.EVT_BUTTON, self.on_button_new, self.new_device_button)
         self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.remove_device_button)
         # end wxGlade
@@ -55,6 +57,8 @@ class DeviceManager(MWindow):
         button_sizer.Add(self.new_device_button, 0, 0, 0)
         button_sizer.Add(self.remove_device_button, 0, 0, 0)
         main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
+        self.new_device_button.Enable(False)
+        self.remove_device_button.Enable(False)
         self.SetSizer(main_sizer)
         self.Layout()
         # end wxGlade
@@ -95,8 +99,17 @@ class DeviceManager(MWindow):
         print(uid)
         self.refresh_device_list()
 
-    def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
-        pass
+    def on_list_item_selected(self, event=None):
+        item = self.devices_list.GetFirstSelected()
+        self.new_device_button.Enable(item != -1)
+        self.remove_device_button.Enable(item != -1)
+
+    def on_list_item_activated(self, event=None):  # wxGlade: DeviceManager.<event_handler>
+        item = self.devices_list.GetFirstSelected()
+        if item == -1:
+            return
+        uid = self.devices_list.GetItem(item).Text
+        self.context("dev activate %s\n" % uid)
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
         dlg = wx.TextEntryDialog(
