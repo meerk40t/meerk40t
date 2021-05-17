@@ -27,15 +27,14 @@ def plugin(kernel, lifecycle=None):
                 break
             index += 1
         device_context._devices = index
-
     elif lifecycle == "register":
 
         @kernel.console_command(
             "dev",
             help="delegate commands to currently selected device",
-            output_type="device",
+            output_type="dev",
         )
-        def device(channel, _, remainder=None, **kwargs):
+        def dev(channel, _, remainder=None, **kwargs):
             root = kernel.root
             spooler, name = root.spooler()
             driver = spooler.next
@@ -49,6 +48,30 @@ def plugin(kernel, lifecycle=None):
                 try:
                     t = driver.type
                     return t, (spooler, driver, output)
+                except AttributeError:
+                    pass
+            return "dev", (spooler, driver, output)
+
+        @kernel.console_argument("index", type=int, help="Index of Spooler device being activated")
+        @kernel.console_command(
+            "activate",
+            help="delegate commands to currently selected device",
+            output_type="device",
+        )
+        def device(channel, _, index, **kwargs):
+            root = kernel.root
+            spooler, name = root.spoolers.get_or_make_spooler(str(index))
+            root.spoolers._default_spooler = spooler.name
+            driver = spooler.next
+            try:
+                output = driver.next
+            except AttributeError:
+                output = None
+
+            if driver is not None:
+                root.drivers._default_driver = driver.name
+                try:
+                    root.pipes._default_pipe = output.name
                 except AttributeError:
                     pass
             return "device", (spooler, driver, output)
