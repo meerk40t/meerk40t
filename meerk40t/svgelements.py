@@ -6234,7 +6234,7 @@ class Rect(Shape):
         scale_x = self.transform.value_scale_x()
         scale_y = self.transform.value_scale_y()
         if scale_x * scale_y < 0:
-            return self # No reification of negative values, gives negative dims.
+            return self  # No reification of negative values, gives negative dims.
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if (
@@ -8295,13 +8295,13 @@ class SVG(Group):
                     for key, value in assignments:
                         key = key.strip()
                         value = value.strip()
-                        for selector in key.split(","): # Can comma select subitems.
+                        for selector in key.split(","):  # Can comma select subitems.
                             sel = selector.strip()
                             if sel not in styles:
                                 styles[sel] = value
                             else:
-                                if not styles[sel].endswith(';'):
-                                    styles[sel] += ';'
+                                if not styles[sel].endswith(";"):
+                                    styles[sel] += ";"
                                 styles[sel] += value
                 elif SVG_TAG_CLIPPATH == tag:
                     clip -= 1

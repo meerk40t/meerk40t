@@ -172,11 +172,25 @@ class JobPreview(MWindow):
 
         self.SetMenuBar(self.preview_menu)
         # Menu Bar end
-        self.connected_device = self.context.active
+
+        self.available_devices = [self.context.registered[i] for i in self.context.match('device')]
+        selected_spooler = self.context.root.active
+        spools = [str(i) for i in self.context.match('device', suffix=True)]
+        index = spools.index(selected_spooler)
+        self.connected_spooler, self.connected_driver, self.connected_output = None, None, None
+        try:
+            self.connected_spooler, self.connected_driver, self.connected_output = self.available_devices[index]
+        except IndexError:
+            for m in self.Children:
+                if isinstance(m, wx.Window):
+                    m.Disable()
+        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        self.connected_name = spools[index]
+
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=[str(self.connected_device)], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
-        self.combo_device.SetSelection(0)
+        self.combo_device.SetSelection(index)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.slider_progress = wx.Slider(self, wx.ID_ANY, 10000, 0, 10000)
@@ -372,7 +386,9 @@ class JobPreview(MWindow):
         self.context.opt_inner_first = self.check_cut_inner_first.IsChecked()
 
     def on_check_reduce_directions(self, event):  # wxGlade: Preview.<event_handler>
-        self.context.opt_reduce_directions = self.check_reduce_direction_changes.IsChecked()
+        self.context.opt_reduce_directions = (
+            self.check_reduce_direction_changes.IsChecked()
+        )
 
     def on_check_remove_overlap(self, event):  # wxGlade: Preview.<event_handler>
         self.context.opt_remove_overlap = self.check_remove_overlap_cuts.IsChecked()
@@ -459,11 +475,8 @@ class JobPreview(MWindow):
             return
         dlg.Destroy()
         self.context(
-            "plan%s step_repeat %s %s %s %s" % (self.plan_name,
-            cols,
-            rows,
-            x_distance,
-            y_distance)
+            "plan%s step_repeat %s %s %s %s"
+            % (self.plan_name, cols, rows, x_distance, y_distance)
         )
 
     def jobadd_physicalhome(self, event=None):
@@ -495,7 +508,10 @@ class JobPreview(MWindow):
         self.update_gui()
 
     def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
-        event.Skip()
+        self.available_devices = [self.context.registered[i] for i in self.context.match('device')]
+        index = self.combo_device.GetSelection()
+        self.connected_spooler, self.connected_driver, self.connected_output = self.available_devices[index]
+        self.connected_name = [str(i) for i in self.context.match('device', suffix=True)][index]
 
     def on_listbox_operation_click(self, event):  # wxGlade: JobInfo.<event_handler>
         event.Skip()
@@ -504,7 +520,7 @@ class JobPreview(MWindow):
         node_index = self.list_operations.GetSelection()
         if node_index == -1:
             return
-        operations, original, commands = self.context.default_plan()
+        operations, original, commands, name = self.context.default_plan()
         obj = operations[node_index]
         if isinstance(obj, LaserOperation):
             self.context.open("window/OperationProperty", self, node=obj)
@@ -519,12 +535,12 @@ class JobPreview(MWindow):
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
             self.context("plan%s copy preprocess\n" % self.plan_name)
-            operations, original, commands = self.context.default_plan()
+            operations, original, commands, name = self.context.default_plan()
             if len(commands) == 0:
                 self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 1:
             self.context("plan%s preprocess\n" % self.plan_name)
-            operations, original, commands = self.context.default_plan()
+            operations, original, commands, name = self.context.default_plan()
             if len(commands) == 0:
                 self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 2:
@@ -536,7 +552,7 @@ class JobPreview(MWindow):
         elif self.stage == 5:
             self.context("plan%s optimize\n" % self.plan_name)
         elif self.stage == 6:
-            self.context("plan%s spool\n" % self.plan_name)
+            self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
             self.Close()
         self.update_gui()
 
@@ -592,14 +608,14 @@ class JobPreview(MWindow):
         )
         self.context.unlisten("plan", self.plan_update)
 
-    def plan_update(self, *message):
+    def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]
         if stage is not None:
             self.stage = stage
         self.plan_name = plan_name
         self.update_gui()
 
-    def on_element_property_update(self, *args):
+    def on_element_property_update(self, origin, *args):
         self.update_gui()
 
     def update_gui(self):
@@ -611,7 +627,7 @@ class JobPreview(MWindow):
 
         self.list_operations.Clear()
         self.list_command.Clear()
-        operations, original, commands = self.context.default_plan()
+        operations, original, commands, plan_name = self.context.default_plan()
         if operations is not None and len(operations) != 0:
             self.list_operations.InsertItems([name_str(e) for e in operations], 0)
         if commands is not None and len(commands) != 0:

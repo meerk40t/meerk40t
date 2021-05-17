@@ -5,9 +5,13 @@ from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
     COMMAND_HOME,
+    COMMAND_LASER_OFF,
+    COMMAND_LASER_ON,
     COMMAND_MODE_RAPID,
     COMMAND_MOVE,
-    COMMAND_WAIT_FINISH, COMMAND_SET_ABSOLUTE, COMMAND_WAIT, COMMAND_LASER_ON, COMMAND_LASER_OFF,
+    COMMAND_SET_ABSOLUTE,
+    COMMAND_WAIT,
+    COMMAND_WAIT_FINISH,
 )
 from ..kernel import Modifier
 from ..svgelements import (
@@ -1820,7 +1824,9 @@ class Elemental(Modifier):
                     x_pos += x
                 y_pos += y
 
-        @context.console_argument("path_d", type=str, help="svg path syntax command (quoted).")
+        @context.console_argument(
+            "path_d", type=str, help="svg path syntax command (quoted)."
+        )
         @context.console_command("path", help="path <svg path>")
         def path(path_d, **kwargs):
             try:
@@ -2134,7 +2140,9 @@ class Elemental(Modifier):
             try:
                 element = Polygon(list(map(float, args)))
             except ValueError:
-                raise SyntaxError("Must be a list of spaced delimited floating point numbers values.")
+                raise SyntaxError(
+                    "Must be a list of spaced delimited floating point numbers values."
+                )
             self.add_element(element)
 
         @context.console_command(
@@ -2146,10 +2154,14 @@ class Elemental(Modifier):
             try:
                 element = Polyline(list(map(float, args)))
             except ValueError:
-                raise SyntaxError("Must be a list of spaced delimited floating point numbers values.")
+                raise SyntaxError(
+                    "Must be a list of spaced delimited floating point numbers values."
+                )
             self.add_element(element)
 
-        @context.console_command("path", help="convert any shapes to paths", input_type="elements")
+        @context.console_command(
+            "path", help="convert any shapes to paths", input_type="elements"
+        )
         def path(data, **kwargs):
             for e in data:
                 try:
@@ -2969,9 +2981,7 @@ class Elemental(Modifier):
             "trace_hull", help="trace the convex hull of current elements"
         )
         def trace_hull(command, channel, _, args=tuple(), **kwargs):
-            if context.active is None:
-                return
-            spooler = context.active.spooler
+            spooler = context.default_spooler
             pts = []
             for obj in self.elems(emphasized=True):
                 if isinstance(obj, Path):
@@ -3003,9 +3013,7 @@ class Elemental(Modifier):
             "trace_quick", help="quick trace the bounding box of current elements"
         )
         def trace_quick(command, channel, _, args=tuple(), **kwargs):
-            if context.active is None:
-                return
-            spooler = context.active.spooler
+            spooler = context.default_spooler
             bbox = self.selected_area()
             if bbox is None:
                 channel(_("No elements bounds to trace."))
@@ -3131,7 +3139,7 @@ class Elemental(Modifier):
             # self.context.open("window/JobPreview", self.gui, "0", selected=True)
             node.emphasized = True
             self.context("plan0 copy-selected\n")
-            self.context("window -p / open JobPreview 0\n")
+            self.context("window open JobPreview 0\n")
 
         @self.tree_operation(_("Clear All"), node_type="branch ops", help="")
         def clear_all(node, **kwargs):
@@ -3545,7 +3553,7 @@ class Elemental(Modifier):
         )
         @self.tree_operation(_("RasterWizard: {script}"), node_type="elem", help="")
         def image_rasterwizard_open(node, script=None, **kwargs):
-            self.context("window open -p / RasterWizard %s\n" % script)
+            self.context("window open RasterWizard %s\n" % script)
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply Raster Script"))

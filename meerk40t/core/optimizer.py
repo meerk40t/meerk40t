@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Point, Group, Polygon
+from meerk40t.svgelements import Group, Point, Polygon
 from meerk40t.tools.pathtools import VectorMontonizer
 
 
@@ -13,9 +13,12 @@ class Optimizer:
         old_len = self.length_travel()
         self.optimize_travel()
         new_len = self.length_travel()
-        red = new_len-old_len
+        red = new_len - old_len
         try:
-            print("%f -> %f reduced %f (%f%%)" % (old_len, new_len, red, 100 * (red/old_len)))
+            print(
+                "%f -> %f reduced %f (%f%%)"
+                % (old_len, new_len, red, 100 * (red / old_len))
+            )
         except ZeroDivisionError:
             pass
 
@@ -23,9 +26,14 @@ class Optimizer:
         cutcode = self.cutcode
         a1 = cutcode[j].start()
         a0 = cutcode[j - 1].end()
-        b0 = cutcode[k-1].end()
+        b0 = cutcode[k - 1].end()
         b1 = cutcode[k].start()
-        return Point.distance(a0, b0) + Point.distance(a1, b1) - Point.distance(a0, a1) - Point.distance(b0, b1)
+        return (
+            Point.distance(a0, b0)
+            + Point.distance(a1, b1)
+            - Point.distance(a0, a1)
+            - Point.distance(b0, b1)
+        )
 
     def optimize_travel(self):
         cutcode = self.cutcode
@@ -34,7 +42,7 @@ class Optimizer:
         while improved:
             passes -= 1
             improved = False
-            for j in range(1,len(cutcode)-1):
+            for j in range(1, len(cutcode) - 1):
                 for k in range(j + 1, len(cutcode)):
                     new_cut = self.delta_distance(j, k)
                     if new_cut < 0:
@@ -93,7 +101,7 @@ class Optimizer:
         cutcode = self.cutcode
         distance = 0.0
         for i in range(1, len(cutcode)):
-            prev = cutcode[i-1]
+            prev = cutcode[i - 1]
             curr = cutcode[i]
             distance += Point.distance(prev.end(), curr.start())
         return distance

@@ -1,7 +1,6 @@
 from copy import copy
 from math import ceil
 
-from .optimizer import Optimizer
 from ..core.cutcode import CutCode
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
@@ -16,17 +15,10 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
 )
 from ..kernel import Modifier
-from ..svgelements import (
-    Group,
-    Length,
-    Path,
-    Polygon,
-    SVGElement,
-    SVGImage,
-    SVGText,
-)
-from .elements import LaserOperation
+from ..svgelements import Group, Length, Path, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
+from .elements import LaserOperation
+from .optimizer import Optimizer
 
 
 def plugin(kernel, lifecycle=None):
@@ -70,12 +62,12 @@ class Planner(Modifier):
 
     def get_or_make_plan(self, plan_name):
         """
-        Plans are a tuple of 3 lists. Plan, Original, Commands.
+        Plans are a tuple of 3 lists and the name. Plan, Original, Commands, and Plan-Name
         """
         try:
             return self._plan[plan_name]
         except KeyError:
-            self._plan[plan_name] = list(), list(), list()
+            self._plan[plan_name] = list(), list(), list(), plan_name
             return self._plan[plan_name]
 
     def default_plan(self):
@@ -111,7 +103,9 @@ class Planner(Modifier):
         self.context.setting(int, "opt_jog_minimum", 127)
         self.context.setting(int, "opt_jog_mode", 0)
 
-        @self.context.console_argument("alias", type=str, help="plan command name to alias")
+        @self.context.console_argument(
+            "alias", type=str, help="plan command name to alias"
+        )
         @self.context.console_command(
             "plan-alias",
             help="Define a spoolable console command",
@@ -135,8 +129,9 @@ class Planner(Modifier):
                 raise SyntaxError("You may not overwrite an already used alias.")
 
             def user_defined_alias():
-                for s in remainder.split(';'):
-                    self.context(s + '\n')
+                for s in remainder.split(";"):
+                    self.context(s + "\n")
+
             user_defined_alias.__name__ = remainder
             self.context.registered[plan_command] = user_defined_alias
 
@@ -154,7 +149,9 @@ class Planner(Modifier):
 
             if data is not None:
                 # If ops data is in data, then we copy that and move on to next step.
-                plan, original, commands = self.get_or_make_plan(self._default_plan)
+                plan, original, commands, name = self.get_or_make_plan(
+                    self._default_plan
+                )
                 for c in data:
                     if not c.output:
                         continue
@@ -170,11 +167,11 @@ class Planner(Modifier):
                         pass
                     plan.append(copy_c)
                 self.context.signal("plan", self._default_plan, 1)
-                return "plan", (plan, original, commands)
+                return "plan", (plan, original, commands, self._default_plan)
 
             data = self.get_or_make_plan(self._default_plan)
             if remainder is None:
-                plan, original, commands = data
+                plan, original, commands, name = data
                 channel(_("----------"))
                 channel(_("Plan:"))
                 for i, plan_name in enumerate(self._plan):
@@ -197,7 +194,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             channel(_("----------"))
             channel(_("Plan:"))
             for i, plan_name in enumerate(self._plan):
@@ -219,7 +216,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             elements.classify(list(elements.elems(emphasized=True)), plan, plan.append)
             return data_type, data
 
@@ -230,7 +227,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             for c in elements.ops(emphasized=True):
                 try:
                     if not c.output:
@@ -243,6 +240,7 @@ class Planner(Modifier):
                 except AttributeError:
                     pass
                 plan.append(copy_c)
+
             channel(_("Copied Operations."))
             self.context.signal("plan", self._default_plan, 1)
             return data_type, data
@@ -254,7 +252,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             for c in elements.ops():
                 if not c.output:
                     continue
@@ -274,15 +272,26 @@ class Planner(Modifier):
             return data_type, data
 
         @self.context.console_option("index", "i", type=int, help="insert index")
-        @self.context.console_option("op", "o", type=str, help="unlock, origin, home, etc.")
+        @self.context.console_option(
+            "op", "o", type=str, help="unlock, origin, home, etc."
+        )
         @self.context.console_command(
             "command",
             help="plan<?> command",
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, op=None, index=None, data=None, **kwargs):
-            plan, original, commands = data
+        def plan(
+            command,
+            channel,
+            _,
+            data_type=None,
+            op=None,
+            index=None,
+            data=None,
+            **kwargs
+        ):
+            plan, original, commands, name = data
             if op is None:
                 channel(_("Plan Commands:"))
                 for command_name in self.context.match("plan/.*", suffix=True):
@@ -312,7 +321,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, op=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             if op is None:
                 raise SyntaxError
             try:
@@ -334,7 +343,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, op=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             if op is None:
                 raise SyntaxError
             try:
@@ -354,7 +363,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             rotary_context = self.context.get_context("rotary/1")
             if self.context.prephysicalhome:
                 if not rotary_context.rotary:
@@ -398,7 +407,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             self.execute()
             self.context.signal("plan", self._default_plan, 3)
             return data_type, data
@@ -410,7 +419,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
 
             for i, c in enumerate(plan):
                 first_index = None
@@ -444,7 +453,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             if self.context.opt_reduce_travel:
                 self.conditional_jobadd_optimize_travel()
             if self.context.opt_inner_first:
@@ -463,7 +472,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             self.execute()
             self.context.signal("plan", self._default_plan, 6)
             return data_type, data
@@ -475,26 +484,10 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
+            plan, original, commands, name = data
             plan.clear()
             commands.clear()
             self.context.signal("plan", self._default_plan, 0)
-            return data_type, data
-
-        @self.context.console_command(
-            "spool",
-            help="plan<?> spool",
-            input_type="plan",
-            output_type="plan",
-        )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands = data
-            active = context.active
-            if active is None:
-                return
-            context.active.spooler.jobs(plan)
-            channel(_("Spooled Plan."))
-            self.context.signal("plan", self._default_plan, 6)
             return data_type, data
 
         @self.context.console_option("op", "o", type=str, help="unlock, origin, home")
@@ -524,7 +517,7 @@ class Planner(Modifier):
             data=None,
             **kwargs
         ):
-            plan, original, commands = data
+            plan, original, commands, name = data
             if y_distance is None:
                 raise SyntaxError
             # TODO: IMPLEMENT!
@@ -565,7 +558,7 @@ class Planner(Modifier):
         #     output_type="plan",
         # )
         # def plan(command, channel, _, data_type=None, data=None, **kwargs):
-        #     plan, original, commands = data
+        #     plan, original, commands, name = data
         #     return data_type, data
 
     def plan(self, **kwargs):
@@ -574,14 +567,14 @@ class Planner(Modifier):
 
     def execute(self):
         # Using copy of commands, so commands can add ops.
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
         cmds = commands[:]
         commands.clear()
         for cmd in cmds:
             cmd()
 
     def conditional_jobadd_strip_text(self):
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
         for op in plan:
             try:
                 if op.operation in ("Cut", "Engrave"):
@@ -595,10 +588,10 @@ class Planner(Modifier):
         return False
 
     def jobadd_strip_text(self):
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
 
         def strip_text():
-            for k in range(len(plan)-1,-1,-1):
+            for k in range(len(plan) - 1, -1, -1):
                 op = plan[k]
                 try:
                     if op.operation in ("Cut", "Engrave"):
@@ -613,7 +606,7 @@ class Planner(Modifier):
         commands.append(strip_text)
 
     def conditional_jobadd_make_raster(self):
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
         for op in plan:
             try:
                 if op.operation == "Raster":
@@ -629,7 +622,7 @@ class Planner(Modifier):
 
     def jobadd_make_raster(self):
         make_raster = self.context.registered.get("render-op/make_raster")
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
 
         def strip_rasters():
             stripped = False
@@ -649,17 +642,13 @@ class Planner(Modifier):
 
         def make_image_for_op(op):
             subitems = list(op.flat(types=("elem", "opnode")))
-            make_raster = self.context.registered.get(
-                "render-op/make_raster"
-            )
+            make_raster = self.context.registered.get("render-op/make_raster")
             objs = [s.object for s in subitems]
             bounds = Group.union_bbox(objs)
             if bounds is None:
                 return None
             xmin, ymin, xmax, ymax = bounds
-            image = make_raster(
-                subitems, bounds, step=op.settings.raster_step
-            )
+            image = make_raster(subitems, bounds, step=op.settings.raster_step)
             image_element = SVGImage(image=image)
             image_element.transform.post_translate(xmin, ymin)
             return image_element
@@ -675,7 +664,10 @@ class Planner(Modifier):
                         image_element = make_image_for_op(op)
                         if image_element is None:
                             continue
-                        if image_element.image_width == 1 and image_element.image_height == 1:
+                        if (
+                            image_element.image_width == 1
+                            and image_element.image_height == 1
+                        ):
                             # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
                             #  time around because the renderer is what sets the size of the text. If the size hasn't
                             #  already been set, the initial bounds are wrong.
@@ -700,11 +692,11 @@ class Planner(Modifier):
                     opt = Optimizer(c)
                     opt.optimize()
 
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
         commands.append(optimize_travel)
 
     def conditional_jobadd_optimize_cuts(self):
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
         for op in plan:
             try:
                 if op.operation in ("Cut"):
@@ -715,7 +707,7 @@ class Planner(Modifier):
 
     def jobadd_optimize_cuts(self):
         def optimize_cuts():
-            plan, original, commands = self.default_plan()
+            plan, original, commands, name = self.default_plan()
             for op in plan:
                 try:
                     if op.operation in ("Cut"):
@@ -725,11 +717,11 @@ class Planner(Modifier):
                 except AttributeError:
                     pass
 
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
         commands.append(optimize_cuts)
 
     def conditional_jobadd_actualize_image(self):
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
         for op in plan:
             try:
                 if op.operation == "Raster":
@@ -749,7 +741,7 @@ class Planner(Modifier):
 
     def jobadd_actualize_image(self):
         def actualize():
-            plan, original, commands = self.default_plan()
+            plan, original, commands, name = self.default_plan()
             for op in plan:
                 try:
                     if op.operation == "Raster":
@@ -765,7 +757,7 @@ class Planner(Modifier):
                 except AttributeError:
                     pass
 
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
         commands.append(actualize)
 
     def conditional_jobadd_scale_rotary(self):
@@ -776,14 +768,14 @@ class Planner(Modifier):
     def jobadd_scale_rotary(self):
         def scale_for_rotary():
             r = self.context.get_context("rotary/1")
-            a = self.context.active
+            i = self.context.default_driver()
             scale_str = "scale(%f,%f,%f,%f)" % (
                 r.scale_x,
                 r.scale_y,
-                a.current_x,
-                a.current_y,
+                i.current_x,
+                i.current_y,
             )
-            plan, original, commands = self.default_plan()
+            plan, original, commands, name = self.default_plan()
             for o in plan:
                 if isinstance(o, LaserOperation):
                     for e in o.children:
@@ -794,7 +786,7 @@ class Planner(Modifier):
                             pass
             self.conditional_jobadd_actualize_image()
 
-        plan, original, commands = self.default_plan()
+        plan, original, commands, name = self.default_plan()
         commands.append(scale_for_rotary)
 
     @staticmethod
@@ -1029,5 +1021,3 @@ class Planner(Modifier):
             except AttributeError:
                 pass
         return optimized
-
-

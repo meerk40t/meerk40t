@@ -9,6 +9,8 @@ import threading
 import traceback
 
 from .mwindow import MWindow
+from .simulation import Simulation
+from ..core.cutcode import CutCode
 
 try:
     from math import tau
@@ -43,12 +45,13 @@ from ..kernel import STATE_BUSY, Job, Module
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
+    Group,
     Length,
     Matrix,
     Path,
     SVGElement,
     SVGImage,
-    SVGText, Group,
+    SVGText,
 )
 from .about import About
 from .bufferview import BufferView
@@ -75,6 +78,7 @@ from .icons import (
     icons8_flip_vertical_50,
     icons8_group_objects_20,
     icons8_group_objects_50,
+    icons8_home_filled_50,
     icons8_keyboard_50,
     icons8_laser_beam_20,
     icons8_laser_beam_52,
@@ -92,13 +96,15 @@ from .icons import (
     icons8_roll_50,
     icons8_route_50,
     icons8_save_50,
+    icons8_scatter_plot_20,
+    icons8_system_task_20,
     icons8_type_50,
     icons8_ungroup_objects_50,
     icons8_usb_connector_50,
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
-    icons_evenspace_vert, icons8_scatter_plot_20, icons8_system_task_20,
+    icons_evenspace_vert,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -126,6 +132,11 @@ from .laserrender import (
     LaserRender,
     swizzlecolor,
 )
+from .moshi.moshicontrollergui import MoshiControllerGui
+from .moshi.moshidrivergui import MoshiDriverGui
+from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
+from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
+from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
 from .navigation import Navigation
 from .notes import Notes
 from .operationproperty import OperationProperty
@@ -174,7 +185,7 @@ def plugin(kernel, lifecycle):
             del kernel.registered["command/None/gui"]
             kernel_root = kernel.get_context("/")
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
-            kernel.console("window open -p / MeerK40t\n")
+            kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
 
     if lifecycle == "register":
@@ -183,14 +194,14 @@ def plugin(kernel, lifecycle):
         kernel_root = kernel.get_context("/")
         kernel_root.open("module/wxMeerK40t")
 
-        context = kernel.get_context('/')
+        context = kernel.get_context("/")
         renderer = LaserRender(context)
         context.register("render-op/make_raster", renderer.make_raster)
     if GUI_START[0]:
         if lifecycle == "mainloop":
             kernel_root = kernel.get_context("/")
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
-            kernel.console("window open -p / MeerK40t\n")
+            kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
 
 
@@ -304,9 +315,9 @@ _ = wx.GetTranslation
 supported_languages = (
     ("en", u"English", wx.LANGUAGE_ENGLISH),
     ("it", u"italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", u"français", wx.LANGUAGE_FRENCH),
+    ("fr", u"franÃ§ais", wx.LANGUAGE_FRENCH),
     ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", u"español", wx.LANGUAGE_SPANISH),
+    ("es", u"espaÃ±ol", wx.LANGUAGE_SPANISH),
     ("zh", u"Chinese", wx.LANGUAGE_CHINESE),
 )
 
@@ -343,17 +354,38 @@ class MeerK40t(MWindow, Job):
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
         self.screen_refresh_lock = threading.Lock()
+
         self.background_brush = wx.Brush("Grey")
         self.renderer = LaserRender(context)
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
         self.working_file = None
+
+        # Define Tree
         self.wxtree = wx.TreeCtrl(
             self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS
         )
+
+        self._mgr.AddPane(
+            self.wxtree,
+            aui.AuiPaneInfo()
+            .Name("tree")
+            .CloseButton(False)
+            .Left()
+            .MinSize(200, -1)
+            .MaxSize(275, -1)
+            .LeftDockable()
+            .RightDockable()
+            .BottomDockable(False)
+            .TopDockable(False),
+        )
+
+        # Define Scene
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
+        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
+        # Define Ribbon.
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
 
         if self.is_dark:
@@ -368,6 +400,20 @@ class MeerK40t(MWindow, Job):
         self.ribbon_position_units = 0
         self.ribbon_position_name = None
         self.__set_ribbonbar()
+        self._mgr.AddPane(
+            self._ribbon,
+            aui.AuiPaneInfo()
+            .Name("ribbon")
+            .Top()
+            .TopDockable()
+            .BottomDockable()
+            .RightDockable(False)
+            .LeftDockable(False)
+            .MinSize(-1, 150)
+            .CaptionVisible(False),
+        )
+
+        # Define Stop.
         stop = wx.BitmapButton(
             self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
         )
@@ -386,47 +432,14 @@ class MeerK40t(MWindow, Job):
         stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         stop.SetToolTip(_("Emergency stop/reset the controller."))
         stop.SetSize(stop.GetBestSize())
-        self._mgr.AddPane(stop, aui.AuiPaneInfo().Bottom())
-        #
-        # home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        # self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
-        # self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom())
+        self._mgr.AddPane(stop, aui.AuiPaneInfo().Bottom().Name("stop"))
 
-        # self.auiToolBar = wx.aui.AuiToolBar(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize,
-        #                                     wx.aui.AUI_TB_HORZ_LAYOUT)
-        # self.auiToolBar.AddTool(wx.ID_ANY, u"tool", icons8_home_filled_50.GetBitmap(),
-        #                         wx.NullBitmap, wx.ITEM_NORMAL, wx.EmptyString, wx.EmptyString, None)
-        # self.auiToolBar.Realize()
-        # self._mgr.AddPane(self.auiToolBar,
-        #                   wx.aui.AuiPaneInfo().Top().CaptionVisible(False).CloseButton(False).MaximizeButton(
-        #                        False).MinimizeButton(False).PinButton(False).PaneBorder(False).Movable(
-        #                        False).Dock().Fixed().DockFixed(False).Floatable(False).Layer(1))
+        # Define Home.
+        home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
+        self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("home"))
 
-        self._mgr.AddPane(
-            self._ribbon,
-            aui.AuiPaneInfo()
-            .Top()
-            .TopDockable()
-            .BottomDockable()
-            .RightDockable(False)
-            .LeftDockable(False)
-            .MinSize(-1, 150)
-            .CaptionVisible(False),
-        )
-        self._mgr.AddPane(
-            self.wxtree,
-            aui.AuiPaneInfo()
-            .CloseButton(False)
-            .Left()
-            .MinSize(200, -1)
-            .MaxSize(275, -1)
-            .LeftDockable()
-            .RightDockable()
-            .BottomDockable(False)
-            .TopDockable(False),
-        )
-        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane())
-
+        # AUI MAnager Update.
         self._mgr.Update()
 
         # Menu Bar
@@ -498,6 +511,11 @@ class MeerK40t(MWindow, Job):
 
         self._rotary_view = False
         self.CenterOnScreen()
+
+        self.context.setting(str, "perspective")
+        if self.context.perspective is not None:
+            self._mgr.LoadPerspective(self.context.perspective)
+        self.on_rebuild_tree_request()
 
     @property
     def is_dark(self):
@@ -913,7 +931,7 @@ class MeerK40t(MWindow, Job):
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -p / JobPreview 0\n"),
+            lambda v: self.context.console("window open JobPreview 0\n"),
             id=ID_JOB,
         )
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
@@ -924,17 +942,17 @@ class MeerK40t(MWindow, Job):
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Controller\n"),
+            lambda v: self.context.console("window open -o Controller\n"),
             id=ID_CONTROLLER,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Preferences\n"),
+            lambda v: self.context.console("window open -d Preferences\n"),
             id=ID_PREFERENCES,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -p rotary/1 Rotary\n"),
+            lambda v: self.context.console("window -p rotary/1 open Rotary\n"),
             id=ID_ROTARY,
         )
         windows.Bind(
@@ -945,37 +963,37 @@ class MeerK40t(MWindow, Job):
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA)
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -p / Navigation\n"),
+            lambda v: self.context.console("window open Navigation\n"),
             id=ID_NAV,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -p / DeviceManager\n"),
+            lambda v: self.context.console("window open DeviceManager\n"),
             id=ID_DEVICES,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -p / Keymap\n"),
+            lambda v: self.context.console("window open Keymap\n"),
             id=ID_KEYMAP,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -p / Notes\n"),
+            lambda v: self.context.console("window open Notes\n"),
             id=ID_NOTES,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -p / Terminal\n"),
+            lambda v: self.context.console("window open Terminal\n"),
             id=ID_TERMINAL,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -p / Operations\n"),
+            lambda v: self.context.console("window open Operations\n"),
             id=ID_OPERATIONS,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -p / RasterWizard\n"),
+            lambda v: self.context.console("window open RasterWizard\n"),
             id=ID_RASTER,
         )
         if self.context.has_feature("modifier/Camera"):
@@ -1323,63 +1341,63 @@ class MeerK40t(MWindow, Job):
 
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -p / About\n"),
+            lambda v: self.context.console("window open About\n"),
             id=wx.ID_ABOUT,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -p / Terminal\n"),
+            lambda v: self.context.console("window open Terminal\n"),
             id=ID_MENU_TERMINAL,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -p / DeviceManager\n"),
+            lambda v: self.context.console("window open DeviceManager\n"),
             id=ID_MENU_DEVICE_MANAGER,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -p / Keymap\n"),
+            lambda v: self.context.console("window open Keymap\n"),
             id=ID_MENU_KEYMAP,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -p / Settings\n"),
+            lambda v: self.context.console("window open Settings\n"),
             id=ID_MENU_SETTINGS,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -p / Notes\n"),
+            lambda v: self.context.console("window open Notes\n"),
             id=ID_MENU_NOTES,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -p / Navigation\n"),
+            lambda v: self.context.console("window open Navigation\n"),
             id=ID_MENU_NAVIGATION,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -p / JobPreview 0\n"),
+            lambda v: self.context.console("window open JobPreview 0\n"),
             id=ID_MENU_JOB,
         )
         if self.context.has_feature("modifier/Camera"):
             self.Bind(
                 wx.EVT_MENU,
-                lambda v: self.context.console("window open -p / CameraInterface\n"),
+                lambda v: self.context.console("window open CameraInterface\n"),
                 id=ID_MENU_CAMERA,
             )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open Preferences\n"),
+            lambda v: self.context.console("window open -d Preferences\n"),
             id=wx.ID_PREFERENCES,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -p rotary/1 Rotary\n"),
+            lambda v: self.context.console("window -p rotary/1 open Rotary\n"),
             id=ID_MENU_ROTARY,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open Controller\n"),
+            lambda v: self.context.console("window open -o Controller\n"),
             id=ID_MENU_CONTROLLER,
         )
         self.Bind(
@@ -1468,15 +1486,15 @@ class MeerK40t(MWindow, Job):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
-    def on_active_change(self, old_active, context_active):
+    def on_active_change(self, origin, old_active, context_active):
         if old_active is not None:
             old_active.unlisten("device;noactive", self.on_device_noactive)
             old_active.unlisten("pipe;error", self.on_usb_error)
             old_active.unlisten("pipe;usb_status", self.on_usb_state_text)
             old_active.unlisten("pipe;thread", self.on_pipe_state)
             old_active.unlisten("spooler;thread", self.on_spooler_state)
-            old_active.unlisten("interpreter;position", self.update_position)
-            old_active.unlisten("interpreter;mode", self.on_interpreter_mode)
+            old_active.unlisten("driver;position", self.update_position)
+            old_active.unlisten("driver;mode", self.on_driver_mode)
             old_active.unlisten("bed_size", self.bed_changed)
         if context_active is not None:
             context_active.listen("device;noactive", self.on_device_noactive)
@@ -1484,8 +1502,8 @@ class MeerK40t(MWindow, Job):
             context_active.listen("pipe;usb_status", self.on_usb_state_text)
             context_active.listen("pipe;thread", self.on_pipe_state)
             context_active.listen("spooler;thread", self.on_spooler_state)
-            context_active.listen("interpreter;position", self.update_position)
-            context_active.listen("interpreter;mode", self.on_interpreter_mode)
+            context_active.listen("driver;position", self.update_position)
+            context_active.listen("driver;mode", self.on_driver_mode)
             context_active.listen("bed_size", self.bed_changed)
             self.main_menubar.Enable(ID_MENU_ROTARY, True)
             self.main_menubar.Enable(ID_MENU_USB, True)
@@ -1510,9 +1528,10 @@ class MeerK40t(MWindow, Job):
             self.window_button_bar.EnableButton(ID_USB, False)
 
     def window_close(self):
-        self._mgr.UnInit()
-
         context = self.context
+
+        context.perspective = self._mgr.SavePerspective()
+        self._mgr.UnInit()
 
         if context.print_shutdown:
             context.channel("shutdown").watch(print)
@@ -1539,7 +1558,7 @@ class MeerK40t(MWindow, Job):
         self.context.fps = fps
         self.interval = 1.0 / float(self.context.fps)
 
-    def on_element_update(self, *args):
+    def on_element_update(self, origin, *args):
         """
         Called by 'element_property_update' when the properties of an element are changed.
 
@@ -1562,7 +1581,7 @@ class MeerK40t(MWindow, Job):
     def on_refresh_tree_signal(self, *args):
         self.request_refresh()
 
-    def on_rebuild_tree_signal(self, *args):
+    def on_rebuild_tree_signal(self, origin, *args):
         """
         Called by 'rebuild_tree' signal. To refresh tree directly
 
@@ -1577,7 +1596,7 @@ class MeerK40t(MWindow, Job):
         self.shadow_tree.rebuild_tree()
         self.request_refresh()
 
-    def on_refresh_scene(self, *args):
+    def on_refresh_scene(self, origin, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
 
@@ -1586,7 +1605,7 @@ class MeerK40t(MWindow, Job):
         """
         self.request_refresh()
 
-    def on_device_noactive(self, value):
+    def on_device_noactive(self, origin, value):
         dlg = wx.MessageDialog(
             None,
             _("No active device existed. Add a primary device."),
@@ -1596,7 +1615,7 @@ class MeerK40t(MWindow, Job):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def on_usb_error(self, value):
+    def on_usb_error(self, origin, value):
         dlg = wx.MessageDialog(
             None,
             _("All attempts to connect to USB have failed."),
@@ -1606,10 +1625,10 @@ class MeerK40t(MWindow, Job):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def on_usb_state_text(self, value):
+    def on_usb_state_text(self, origin, value):
         self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
 
-    def on_pipe_state(self, state):
+    def on_pipe_state(self, origin, state):
         if state == self.pipe_state:
             return
         self.pipe_state = state
@@ -1619,19 +1638,19 @@ class MeerK40t(MWindow, Job):
         )
         self.toolbar_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
 
-    def on_spooler_state(self, value):
+    def on_spooler_state(self, origin, value):
         self.main_statusbar.SetStatusText(
             _("Spooler: %s") % self.context.get_text_thread_state(value), 2
         )
 
-    def on_interpreter_mode(self, state):
+    def on_driver_mode(self, origin, state):
         if state == 0:
             self.background_brush = wx.Brush("Grey")
         else:
             self.background_brush = wx.Brush("Red")
         self.request_refresh_for_animation()
 
-    def on_export_signal(self, frame):
+    def on_export_signal(self, origin, frame):
         image_width, image_height, frame = frame
         if frame is not None:
             elements = self.context.elements
@@ -1644,7 +1663,7 @@ class MeerK40t(MWindow, Job):
             obj.image_height = image_height
             elements.add_elem(obj)
 
-    def on_background_signal(self, background):
+    def on_background_signal(self, origin, background):
         background = wx.Bitmap.FromBuffer(*background)
         self.widget_scene.signal("background", background)
         self.request_refresh()
@@ -1839,7 +1858,7 @@ class MeerK40t(MWindow, Job):
             if results:
                 self.save_recent(pathname)
                 if n != self.context.elements.note and self.context.auto_note:
-                    self.context.console("window open -p / Notes\n")
+                    self.context.console("window open Notes\n")
                 try:
                     if self.context.uniform_svg and pathname.lower().endswith("svg"):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
@@ -1897,7 +1916,7 @@ class MeerK40t(MWindow, Job):
         self.widget_scene.signal("guide")
         self.request_refresh()
 
-    def update_position(self, pos):
+    def update_position(self, origin, pos):
         self.laserpath[0][self.laserpath_index][0] = pos[0]
         self.laserpath[0][self.laserpath_index][1] = pos[1]
         self.laserpath[1][self.laserpath_index][0] = pos[2]
@@ -1909,22 +1928,22 @@ class MeerK40t(MWindow, Job):
         # self.request_refresh()
         self.request_refresh_for_animation()
 
-    def space_changed(self, *args):
+    def space_changed(self, origin, *args):
         self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
         self.widget_scene.signal("grid")
         self.widget_scene.signal("guide")
-        self.request_refresh()
+        self.request_refresh(origin)
 
-    def bed_changed(self, *args):
+    def bed_changed(self, origin, *args):
         self.widget_scene.signal("grid")
         # self.widget_scene.signal('guide')
-        self.request_refresh()
+        self.request_refresh(origin)
 
     def on_emphasized_elements_changed(self, *args):
         self.update_ribbon_position()
         self.clear_laserpath()
-        self.request_refresh()
+        self.request_refresh(origin)
 
     def on_element_modified(self, *args):
         self.update_ribbon_position()
@@ -1944,7 +1963,7 @@ class MeerK40t(MWindow, Job):
         except AttributeError:
             pass
 
-    def request_refresh(self):
+    def request_refresh(self, origin=None, *args):
         """Request an update to the scene."""
         try:
             if self.context.draw_mode & DRAW_MODE_REFRESH == 0:
@@ -2579,11 +2598,9 @@ class MeerK40t(MWindow, Job):
         r = self.context.get_context("rotary/1")
         sx = r.scale_x
         sy = r.scale_y
-        a = self.context.active
+        i = self.context.default_driver()
 
-        mx = Matrix(
-            "scale(%f, %f, %f, %f)" % (r.scale_x, r.scale_y, a.current_x, a.current_y)
-        )
+        mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, i.current_x, i.current_y))
         for element in self.context.get_context("/").elements.elems():
             try:
                 element *= mx
@@ -3143,6 +3160,8 @@ class ShadowTree:
             self.context.open("window/ImageProperty", self.gui, node=node)
         elif isinstance(obj, SVGElement):
             self.context.open("window/PathProperty", self.gui, node=node)
+        elif isinstance(obj, CutCode):
+            self.context.open("window/Simulate", self.gui, node=node)
 
     def on_item_selection_changed(self, event):
         """
@@ -3190,7 +3209,7 @@ class ShadowTree:
     def create_menu_for_node(self, gui, node) -> wx.Menu:
         """
         Create menu for a particular node. Does not invoke the menu.
-        
+
         Processes submenus, references, radio_state as needed.
         """
         menu = wx.Menu()
@@ -3216,7 +3235,9 @@ class ShadowTree:
 
             menu_context = submenu if submenu is not None else menu
             if func.reference is not None:
-                menu_context.AppendSubMenu(self.create_menu_for_node(gui, func.reference(node)), func.real_name)
+                menu_context.AppendSubMenu(
+                    self.create_menu_for_node(gui, func.reference(node)), func.real_name
+                )
                 continue
             if func.radio_state is not None:
                 item = menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_RADIO)
@@ -3419,10 +3440,6 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
-        try:
-            self.InitLocale()
-        except AttributeError:
-            pass  # 4.1
 
     def on_app_close(self, event):
         try:
@@ -3477,14 +3494,12 @@ class wxMeerK40t(wx.App, Module):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register("window/MeerK40t", MeerK40t)
         kernel.register("module/Scene", Scene)
+        kernel.register("window/MeerK40t", MeerK40t)
         kernel.register("window/PathProperty", PathProperty)
         kernel.register("window/TextProperty", TextProperty)
         kernel.register("window/ImageProperty", ImageProperty)
         kernel.register("window/OperationProperty", OperationProperty)
-        kernel.register("window/Controller", Controller)
-        kernel.register("window/Preferences", Preferences)
         kernel.register("window/CameraInterface", CameraInterface)
         kernel.register("window/Terminal", Terminal)
         kernel.register("window/Settings", Settings)
@@ -3499,36 +3514,40 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/JobPreview", JobPreview)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/RasterWizard", RasterWizard)
+        kernel.register("window/Simulation", Simulation)
+
+        kernel.register("window/default/Controller", Controller)
+        kernel.register("window/default/Preferences", Preferences)
+        kernel.register("window/lhystudios/Preferences", LhystudiosDriverGui)
+        kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
+        kernel.register("window/lhystudios/AccelerationChart", LhystudiosAccelerationChart)
+        kernel.register("window/moshi/Preferences", MoshiDriverGui)
+        kernel.register("window/moshi/Controller", MoshiControllerGui)
 
         context = kernel.get_context("/")
 
         @kernel.console_option(
             "path",
             "p",
-            type=context.get_context,
-            default=context.active,
+            type=str,
+            default="/",
             help="Context Path at which to open the window",
         )
-        @kernel.console_argument("subcommand", type=str, help="open <window>")
-        @kernel.console_argument(
-            "window", type=str, help="window to apply subcommand to"
-        )
-        @kernel.console_command("window", help="wxMeerK40 window information")
-        def window(
-            channel, _, subcommand=None, window=None, path=None, args=(), **kwargs
-        ):
+        @kernel.console_command("window", output_type="window", help="wxMeerK40 window information")
+        def window(channel, _, path=None, remainder=None, **kwargs):
             """
             Opens a MeerK40t window or provides information. This command is restricted to use with the wxMeerK40t gui.
             This also allows use of a -p flag that sets the context path for this window to operate at. This should
             often be restricted to where the windows are typically opened since their function and settings usually
-            depend on the context used. The default root path is "/". Eg. "window open -p / Settings"
+            depend on the context used. The default root path is "/". Eg. "window -p / open Settings"
             """
             context = kernel.get_context("/")
             if path is None:
-                path = context.active
-            if path is None:
                 path = context
-            if subcommand is None:
+            else:
+                path = kernel.get_context(path)
+
+            if remainder is None:
                 channel(_("----------"))
                 channel(_("Loaded Windows in Context %s:") % str(context._path))
                 for i, name in enumerate(context.opened):
@@ -3545,45 +3564,94 @@ class wxMeerK40t(wx.App, Module):
                     module = path.opened[name]
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
                 channel(_("----------"))
-                return
-            if window is None or subcommand == "list":
-                channel(_("----------"))
-                channel(_("Windows Registered:"))
-                for i, name in enumerate(context.match("window")):
+            return "window", path
+
+        @kernel.console_command("list", input_type="window", output_type="window", help="wxMeerK40 window information")
+        def window(channel, _, data, **kwargs):
+            channel(_("----------"))
+            channel(_("Windows Registered:"))
+            for i, name in enumerate(context.match("window")):
+                name = name[7:]
+                if '/' in name:
+                    channel("%d: Specific Window: %s" % (i + 1, name))
+                else:
                     channel("%d: %s" % (i + 1, name))
-                return
-            elif subcommand == "open":
-                try:
-                    parent = context.gui
-                except AttributeError:
-                    parent = None
-                try:
-                    path.open("window/%s" % window, parent, *args)
-                    channel(_("Window Opened."))
-                except (KeyError, ValueError):
-                    channel(_("No such window as %s" % window))
-                except IndexError:
-                    raise SyntaxError
-            elif subcommand == "close":
-                try:
-                    parent = context.gui
-                except AttributeError:
-                    parent = None
-                try:
-                    path.close("window/%s" % window, parent, *args)
-                    channel(_("Window closed."))
-                except (KeyError, ValueError):
-                    channel(_("No such window as %s" % window))
-                except IndexError:
-                    raise SyntaxError
-            elif subcommand == "reset":
-                if kernel._config is not None:
-                    for context in list(kernel.contexts):
-                        if context.startswith("window"):
-                            del kernel.contexts[context]
-                    kernel._config.DeleteGroup("window")
+            return "window", data
+
+        @kernel.console_option("driver", "d", type=bool, action="store_true", help="Load Driver Specific Window")
+        @kernel.console_option("output", "o", type=bool, action="store_true", help="Load Output Specific Window")
+        @kernel.console_option("input", "i", type=bool, action="store_true", help="Load Source Specific Window")
+        @kernel.console_argument(
+            "window", type=str, help="window to apply subcommand to"
+        )
+        @kernel.console_command("open",  input_type="window", help="wxMeerK40 window information")
+        def window(channel, _, data, window=None, driver=False, output=False, source=False, args=(), **kwargs):
+            path = data
+            try:
+                parent = context.gui
+            except AttributeError:
+                parent = None
+            window_uri = "window/%s" % window
+            if output or driver or source:
+                # Specific class subwindow.
+                active = context.root.active
+                _spooler, _input_driver, _output = context.registered["device/%s" % active]
+                if output:
+                    q = _output
+                elif driver:
+                    q = _input_driver
+                else:  # source
+                    q = _input_driver
+                t = "default"
+                m = '/'
+                if q is not None:
+                    obj= q
+                    try:
+                        t = obj.type
+                        m = obj.context._path
+                    except AttributeError:
+                        pass
+                path = context.get_context(m)
+                window_uri = "window/%s/%s" % (t, window)
+
+            if window_uri in context.registered:
+                path.open(window_uri, parent, *args)
+                channel(_("Window Opened."))
             else:
+                channel(_("No such window as %s" % window))
                 raise SyntaxError
+
+        @kernel.console_argument(
+            "window", type=str, help="window to apply subcommand to"
+        )
+        @kernel.console_command("close",  input_type="window", output_type="window", help="wxMeerK40 window information")
+        def window(
+                channel, _, data, window=None, args=(), **kwargs
+        ):
+            path = data
+            try:
+                parent = context.gui
+            except AttributeError:
+                parent = None
+
+            try:
+                path.close("window/%s" % window, parent, *args)
+                channel(_("Window closed."))
+            except (KeyError, ValueError):
+                channel(_("No such window as %s" % window))
+            except IndexError:
+                raise SyntaxError
+
+        @kernel.console_argument(
+            "window", type=str, help="window to apply subcommand to"
+        )
+        @kernel.console_command("reset",  input_type="window", output_type="window", help="wxMeerK40 window information")
+        def window(channel, _, data, window=None, **kwargs):
+            if kernel._config is not None:
+                for context in list(kernel.contexts):
+                    if context.startswith("window"):
+                        del kernel.contexts[context]
+                kernel._config.DeleteGroup("window")
 
         @kernel.console_command("refresh", help="wxMeerK40 refresh")
         def refresh(command, channel, _, args=tuple(), **kwargs):
@@ -3735,7 +3803,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :return:
     """
     error_log = "MeerK40t crash log. Version: %s on %s\n" % (
-        "0.7.0 Beta-23",
+        "0.7.0 Beta-24",
         sys.platform,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))

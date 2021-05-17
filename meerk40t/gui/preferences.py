@@ -13,8 +13,8 @@ class Preferences(MWindow):
         super().__init__(395, 424, *args, **kwds)
 
         self.bed_dim = self.context.get_context("/")
-        self.bed_dim.setting(int, "bed_width", 280)
-        self.bed_dim.setting(int, "bed_height", 200)
+        self.bed_dim.setting(int, "bed_width", 310)
+        self.bed_dim.setting(int, "bed_height", 210)
 
         self.combobox_board = wx.ComboBox(
             self,

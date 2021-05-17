@@ -37,6 +37,7 @@ def plugin(kernel, lifecycle=None):
             inkscape_path, filename = data
             if filename.endswith("png"):
                 from PIL import Image
+
                 img = Image.open(filename)
 
                 svg_image = SVGImage()
@@ -163,7 +164,9 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "threshold", help="", input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs):
+    def image(
+        command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs
+    ):
         if threshold_min is None:
             raise SyntaxError
         divide = (threshold_max - threshold_min) / 255.0
@@ -205,7 +208,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "dither", help="Dither to 1-bit", input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, method=None, **kwargs):
+    def image(command, channel, _, data, method="Floyd-Steinberg", **kwargs):
         for element in data:
             img = element.image
             if img.mode == "RGBA":
@@ -241,7 +244,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image(command, channel, _, data, color, distance, args=tuple(), **kwargs):
+    def image(command, channel, _, data, color, distance=1, args=tuple(), **kwargs):
         if color is None:
             raise SyntaxError(_("Must specify a color"))
         distance_sq = distance * distance
@@ -288,6 +291,35 @@ def plugin(kernel, lifecycle=None):
                     if pixel[3] == 0:
                         new_data[x, y] = pix
                         continue
+            element.image = img
+            if hasattr(element, "node"):
+                element.node.altered()
+        return "image", data
+
+    @context.console_command("dewhite", help="", input_type="image", output_type="image")
+    def image(channel, _, data, **kwargs):
+        for element in data:
+            img = element.image
+            if img.mode not in ("1", "L"):
+                channel(_("Requires 1-bit or grayscale image."))
+                return "image", data
+            from PIL import Image
+
+            black = Image.new("L", img.size, color='black')
+            img = img.point(lambda e: 255 - e)
+            black.putalpha(img)
+            element.image = black
+            if hasattr(element, "node"):
+                element.node.altered()
+        return "image", data
+
+
+    @context.console_command("rgba", help="", input_type="image", output_type="image")
+    def image(data, **kwargs):
+        for element in data:
+            img = element.image
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
             element.image = img
             if hasattr(element, "node"):
                 element.node.altered()
@@ -688,7 +720,12 @@ def plugin(kernel, lifecycle=None):
                 channel(_("image autocontrast <cutoff-percent>"))
         return "image", data
 
-    @context.console_option("method", "m", type=str, help="Method of grayscale conversion: red, green, blue, alpha")
+    @context.console_option(
+        "method",
+        "m",
+        type=str,
+        help="Method of grayscale conversion: red, green, blue, alpha",
+    )
     @context.console_command(
         ("grayscale", "grayscale"),
         help="convert image to grayscale",
@@ -959,7 +996,7 @@ def dither(image, method="Floyd-Steinberg"):
     diff_map = _DIFFUSION_MAPS.get(method.lower())
     if diff_map is None:
         raise NotImplementedError
-    diff = image.convert('F')
+    diff = image.convert("F")
     pix = diff.load()
     width, height = image.size
     for y in range(height):
@@ -1121,8 +1158,7 @@ class RasterScripts:
                 ],
             }
         )
-        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
-        return ops
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
 
     @staticmethod
     def raster_script_xin():
@@ -1158,7 +1194,7 @@ class RasterScripts:
                 "threshold": 0,
             }
         )
-        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1196,7 +1232,7 @@ class RasterScripts:
                 "oversample": 2,
             }
         )
-        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1216,7 +1252,7 @@ class RasterScripts:
                 "lightness": 1.0,
             }
         )
-        ops.append({"name": "dither", "enable": True,  "type": "Floyd-Steinberg"})
+        ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
         return ops
 
     @staticmethod
@@ -1513,9 +1549,10 @@ class RasterScripts:
                                 for x in range(width):
                                     if pixel_data[x, y][3] == 0:
                                         pixel_data[x, y] = (255, 255, 255, 255)
-                        if op['type'] != "Floyd-Steinberg":
+                        if op["type"] != "Floyd-Steinberg":
                             image = dither(image, op["type"])
-                        image = image.convert('1')
+                        image = image.convert("1")
+
                 except KeyError:
                     pass
             elif name == "halftone":

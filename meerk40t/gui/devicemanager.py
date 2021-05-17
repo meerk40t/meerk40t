@@ -6,12 +6,10 @@
 
 import wx
 
-from ..kernel import STATE_UNKNOWN, Module
 from .icons import (
-    icons8_administrative_tools_50,
-    icons8_manager_50,
     icons8_plus_50,
     icons8_trash_50,
+    icons8_manager_50
 )
 from .mwindow import MWindow
 
@@ -20,39 +18,55 @@ _ = wx.GetTranslation
 
 class DeviceManager(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(707, 337, *args, **kwds)
-
-        self.devices_list = wx.ListCtrl(
-            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
-        )
-        self.new_device_button = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_plus_50.GetBitmap()
-        )
-        self.remove_device_button = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_trash_50.GetBitmap()
-        )
-        self.device_properties_button = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_administrative_tools_50.GetBitmap()
-        )
+        super().__init__(653, 332, *args, **kwds)
+        self.devices_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
+        self.new_device_button = wx.BitmapButton(self, wx.ID_ANY, icons8_plus_50.GetBitmap())
+        self.remove_device_button = wx.BitmapButton(self, wx.ID_ANY, icons8_trash_50.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.devices_list)
-        self.Bind(
-            wx.EVT_LIST_ITEM_ACTIVATED, self.on_list_item_activated, self.devices_list
-        )
-        self.Bind(
-            wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_list_right_click, self.devices_list
-        )
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_list_item_activated, self.devices_list)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_list_right_click, self.devices_list)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_list_item_selected, self.devices_list)
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_list_item_selected, self.devices_list)
         self.Bind(wx.EVT_BUTTON, self.on_button_new, self.new_device_button)
         self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.remove_device_button)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_properties, self.device_properties_button
-        )
+        # end wxGlade
+
+    def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle("Device Manager")
+        self.devices_list.SetFont(wx.Font(13, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        self.devices_list.AppendColumn("Index", format=wx.LIST_FORMAT_LEFT, width=56)
+        self.devices_list.AppendColumn("Spooler", format=wx.LIST_FORMAT_LEFT, width=74)
+        self.devices_list.AppendColumn("Driver/Input", format=wx.LIST_FORMAT_LEFT, width=170)
+        self.devices_list.AppendColumn("Output", format=wx.LIST_FORMAT_LEFT, width=170)
+        self.devices_list.AppendColumn("Registered", format=wx.LIST_FORMAT_LEFT, width=93)
+        self.new_device_button.SetToolTip("Add a new device")
+        self.new_device_button.SetSize(self.new_device_button.GetBestSize())
+        self.remove_device_button.SetToolTip("Remove selected device")
+        self.remove_device_button.SetSize(self.remove_device_button.GetBestSize())
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: DeviceManager.__do_layout
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self.devices_list, 0, wx.EXPAND, 0)
+        button_sizer.Add(self.new_device_button, 0, 0, 0)
+        button_sizer.Add(self.remove_device_button, 0, 0, 0)
+        main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
+        self.new_device_button.Enable(False)
+        self.remove_device_button.Enable(False)
+        self.SetSizer(main_sizer)
+        self.Layout()
+        # end wxGlade
 
     def window_open(self):
-        self.context.setting(str, "list_devices", "")
         self.refresh_device_list()
 
     def window_close(self):
@@ -61,155 +75,112 @@ class DeviceManager(MWindow):
             uid = self.devices_list.GetItem(item).Text
             self.context.device_primary = uid
 
-    def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: DeviceManager.__set_properties
-        self.SetTitle("Device Manager")
-        self.devices_list.SetFont(
-            wx.Font(
-                13,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-                0,
-                "Segoe UI",
-            )
-        )
-        self.devices_list.AppendColumn(_("Id"), format=wx.LIST_FORMAT_LEFT, width=72)
-        self.devices_list.AppendColumn(
-            _("Driver"), format=wx.LIST_FORMAT_LEFT, width=119
-        )
-        self.devices_list.AppendColumn(
-            _("State"), format=wx.LIST_FORMAT_LEFT, width=127
-        )
-        self.devices_list.AppendColumn(
-            _("Location"), format=wx.LIST_FORMAT_LEFT, width=258
-        )
-        self.devices_list.AppendColumn(_("Boot"), format=wx.LIST_FORMAT_LEFT, width=51)
-        self.new_device_button.SetToolTip(_("Add a new device"))
-        self.new_device_button.SetSize(self.new_device_button.GetBestSize())
-        self.remove_device_button.SetToolTip(_("Remove selected device"))
-        self.remove_device_button.SetSize(self.remove_device_button.GetBestSize())
-        self.device_properties_button.SetToolTip(_("View Device Properties"))
-        self.device_properties_button.SetSize(
-            self.device_properties_button.GetBestSize()
-        )
-        # end wxGlade
-
-    def __do_layout(self):
-        # begin wxGlade: DeviceManager.__do_layout
-        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        button_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(self.devices_list, 1, wx.EXPAND, 0)
-        button_sizer.Add(self.new_device_button, 0, 0, 0)
-        button_sizer.Add(self.remove_device_button, 0, 0, 0)
-        button_sizer.Add(self.device_properties_button, 0, 0, 0)
-        main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
-        self.SetSizer(main_sizer)
-        self.Layout()
-        # end wxGlade
-
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
-        i = 0
-        for device in self.context.derivable():
-            try:
-                d = int(device)
-            except ValueError:
-                continue
-            settings = self.context.derive(device)
-            device_name = settings.setting(str, "device_name", "Lhystudios")
-            autoboot = settings.setting(bool, "autoboot", True)
-            location_name = settings.setting(str, "location_name", "Unknown")
-            try:
-                device_obj = self.context._kernel.contexts[device]
-                state = device_obj._state
-            except KeyError:
-                state = -1
-            m = self.devices_list.InsertItem(i, str(d))
+        for i, dev in enumerate(self.context.match('device')):
+            device = self.context.registered[dev]
+            spooler, input_driver, output = device
+            device_context = self.context.get_context('devices')
+            registered = hasattr(device_context, "device_%d" % i)
+            m = self.devices_list.InsertItem(i, str(i))
             if m != -1:
-                self.devices_list.SetItem(m, 1, str(device_name))
-                self.devices_list.SetItem(m, 2, str(state))
-                self.devices_list.SetItem(m, 3, str(location_name))
-                self.devices_list.SetItem(m, 4, str(autoboot))
-            i += 1
+                self.devices_list.SetItem(m, 1, str(spooler))
+                self.devices_list.SetItem(m, 2, str(input_driver))
+                self.devices_list.SetItem(m, 3, str(output))
+                self.devices_list.SetItem(m, 4, str(registered))
 
     def on_list_drag(self, event):  # wxGlade: DeviceManager.<event_handler>
         pass
 
     def on_list_right_click(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
-        # If the device is booted change the autoboot settings.
-        context_obj = self.context.get_context("/%s" % uid)
-        context_obj.setting(bool, "autoboot", True)
-        context_obj.autoboot = not context_obj.autoboot
-        context_obj._kernel.write_persistent(
-            context_obj.abs_path("autoboot"), context_obj.autoboot
-        )
+        print(uid)
         self.refresh_device_list()
 
-    def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
-        uid = event.GetLabel()
-        context = self.context.get_context("/%s" % uid)
-        context_name = context.setting(str, "device_name", "Lhystudios")
-        if context._state == STATE_UNKNOWN:
-            context.boot()
-        else:
-            dlg = wx.MessageDialog(
-                None,
-                _("That device already booted."),
-                _("Cannot Boot Selected Device"),
-                wx.OK | wx.ICON_WARNING,
-            )
-            result = dlg.ShowModal()
-            dlg.Destroy()
+    def on_list_item_selected(self, event=None):
+        item = self.devices_list.GetFirstSelected()
+        self.new_device_button.Enable(item != -1)
+        self.remove_device_button.Enable(item != -1)
+
+    def on_list_item_activated(self, event=None):  # wxGlade: DeviceManager.<event_handler>
+        item = self.devices_list.GetFirstSelected()
+        if item == -1:
+            return
+        uid = self.devices_list.GetItem(item).Text
+        self.context("device activate %s\n" % uid)
+        self.context("window close DeviceManager\n")
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
-        names = [name[7:] for name in self.context._kernel.match("device")]
+        item = self.devices_list.GetFirstSelected()
+        if item == -1:
+            return
+        spooler_input = self.devices_list.GetItem(item).Text
+        # END SPOOLER
+
+        names = [name for name in self.context._kernel.match("driver", suffix=True)]
         dlg = wx.SingleChoiceDialog(
-            None, _("What type of device is being added?"), _("Device Type"), names
+            None, _("What type of driver is being added?"), _("Device Type"), names
         )
         dlg.SetSelection(0)
         if dlg.ShowModal() == wx.ID_OK:
-            device_type = dlg.GetSelection()
-            device_type = names[device_type]
+            device_type = names[dlg.GetSelection()]
         else:
             dlg.Destroy()
             return
         dlg.Destroy()
-        device_uid = 0
-        devices = list(self.context.derivable())
-        while device_uid <= 100:
-            device_uid += 1
-            if str(device_uid) not in devices:
-                break
-        settings = self.context.get_context("%d" % device_uid)
-        settings.setting(str, "device_name", device_type)
-        settings.setting(bool, "autoboot", True)
-        settings.flush()
+        # END Driver
+
+        names = [name for name in self.context._kernel.match("output", suffix=True)]
+        dlg = wx.SingleChoiceDialog(
+            None, _("Where does the device output data?"), _("Output Type"), names
+        )
+        dlg.SetSelection(0)
+        if dlg.ShowModal() == wx.ID_OK:
+            output_type = names[dlg.GetSelection()]
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        # END OUTPUT
+
+        if output_type == 'file':
+            dlg.Destroy()
+            dlg = wx.TextEntryDialog(
+                None, _("What filename does this device output to?"), _("Output"),
+            )
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetValue()
+            else:
+                dlg.Destroy()
+                return
+            self.context("spool%s -r driver -n %s outfile %s\n" % (spooler_input, device_type, filename))
+
+            dlg.Destroy()
+            self.refresh_device_list()
+            return
+
+        if output_type == 'network':
+            dlg.Destroy()
+            dlg = wx.TextEntryDialog(
+                None, _("What network address does this device output to?"), _("Output"),
+            )
+            if dlg.ShowModal() == wx.ID_OK:
+                network = dlg.GetValue()
+            else:
+                dlg.Destroy()
+                return
+            self.context("spool%s -r driver -n %s network %s\n" % (spooler_input, device_type, network))
+            dlg.Destroy()
+            self.refresh_device_list()
+            return
+
+        self.context("spool%s -r driver -n %s output -n %s\n" % (spooler_input, device_type, output_type))
         self.refresh_device_list()
+        self.context.get_context('devices').flush()
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         if item == -1:
             return
         uid = self.devices_list.GetItem(item).Text
-        settings = self.context.derive(str(uid))
-        settings._kernel.clear_persistent(settings._path)
-        try:
-            device = self.context._kernel.contexts[uid]
-            del self.context._kernel.contexts[uid]
-            device.opened["window/MeerK40t"].Close()
-        except (KeyError, AttributeError):
-            pass
-
         self.refresh_device_list()
-
-    def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
-        item = self.devices_list.GetFirstSelected()
-        if item == -1:
-            return
-        uid = self.devices_list.GetItem(item).Text
-        self.context.console("window open -p %s Preferences\n" % uid)

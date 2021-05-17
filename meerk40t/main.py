@@ -2,11 +2,6 @@ import argparse
 import asyncio
 import sys
 
-from .device.lasercommandconstants import (
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-)
 from .kernel import Kernel
 
 try:
@@ -26,7 +21,7 @@ for full details.
 
 """
 
-MEERK40T_VERSION = "0.7.0 Beta-23"
+MEERK40T_VERSION = "0.7.0 Beta-24"
 
 
 def pair(value):
@@ -42,8 +37,10 @@ parser.add_argument("input", nargs="?", type=argparse.FileType("r"), help="input
 parser.add_argument(
     "-o", "--output", type=argparse.FileType("w"), help="output file name"
 )
-parser.add_argument("-z", "--no_gui", action="store_true", help="run without gui")
-parser.add_argument("-Z", "--gui-suppress", action="store_true", help="completely suppress gui")
+parser.add_argument("-z", "--no-gui", action="store_true", help="run without gui")
+parser.add_argument(
+    "-Z", "--gui-suppress", action="store_true", help="completely suppress gui"
+)
 parser.add_argument(
     "-b", "--batch", type=argparse.FileType("r"), help="console batch file"
 )
@@ -129,6 +126,36 @@ def run():
         kernel.add_plugin(basedevice.plugin)
     except ImportError:
         pass
+
+    try:
+        from .core import spoolers
+
+        kernel.add_plugin(spoolers.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .core import drivers
+
+        kernel.add_plugin(drivers.plugin)
+    except ImportError:
+        pass
+
+    try:
+        from .core import output
+
+        kernel.add_plugin(output.plugin)
+    except ImportError:
+        pass
+
+
+    try:
+        from .core import inputs
+
+        kernel.add_plugin(inputs.plugin)
+    except ImportError:
+        pass
+
 
     try:
         from .core import elements
@@ -282,22 +309,16 @@ def run():
     kernel.bootstrap("configure")
     kernel.boot()
 
-    devices = list()
-    for dev in kernel_root.derivable():
-        try:
-            devices.append(int(dev))
-        except ValueError:
-            pass
-
-    if len(devices) != 0:
-        device = kernel_root.derive(str(devices[0]))
-        device.setting(str, "device_name", args.device)
-    else:
-        device = kernel_root.derive("1")
-        device.activate("device/%s" % args.device)
-        kernel.set_active_device(device)
+    device_context = kernel.get_context("devices")
+    if not hasattr(device_context, "_devices") or device_context._devices == 0:
+        if args.device == "Moshi":
+            dev = "spool0 -r driver -n moshi output -n moshi\n"
+        else:
+            dev = "spool0 -r driver -n lhystudios output -n lhystudios\n"
+        kernel_root(dev)
 
     if args.verbose:
+        kernel._start_debugging()
         kernel_root.execute("Debug Device")
 
     if args.input is not None:
@@ -310,24 +331,15 @@ def run():
 
     if args.mock:
         # Set the device to mock.
-        device.setting(bool, "mock", True)
-        device.mock = True
+        kernel_root.setting(bool, "mock", True)
+        kernel_root.mock = True
 
     if args.set is not None:
         # Set the variables requested here.
         for v in args.set:
             attr = v[0]
             value = v[1]
-            if hasattr(device, attr):
-                v = getattr(device, attr)
-                if isinstance(v, bool):
-                    setattr(device, attr, bool(value))
-                elif isinstance(v, int):
-                    setattr(device, attr, int(value))
-                elif isinstance(v, float):
-                    setattr(device, attr, float(value))
-                elif isinstance(v, str):
-                    setattr(device, attr, str(value))
+            kernel_root.execute("set %s %s\n" % (attr, value))
 
     kernel.bootstrap("ready")
 
@@ -337,7 +349,7 @@ def run():
         for v in args.execute:
             if v is None:
                 continue
-            device(v.strip() + "\n")
+            kernel_root(v.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
     if args.batch:
@@ -345,7 +357,7 @@ def run():
         kernel_root.channel("console").watch(print)
         with args.batch as batch:
             for line in batch:
-                device(line.strip() + "\n")
+                kernel_root(line.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
     if args.auto:
@@ -354,16 +366,16 @@ def run():
         if args.speed is not None:
             for o in elements.ops():
                 o.speed = args.speed
-        device("plan copy preprocess validate blob preopt optimize\n")
+        kernel_root("plan copy preprocess validate blob preopt optimize\n")
         if args.origin:
-            device("plan append origin\n")
+            kernel_root("plan append origin\n")
         if args.quit:
-            device("plan append shutdown\n")
-        device("plan spool\n")
+            kernel_root("plan append shutdown\n")
+        kernel_root("plan spool\n")
     else:
         if args.quit:
             # Flag quitting on complete.
-            device._quit = True
+            kernel_root._quit = True
 
     if args.output is not None:
         # output the file you have at this point.
@@ -376,7 +388,8 @@ def run():
 
         async def aio_readline(loop):
             while kernel.lifecycle != "shutdown":
-                print('>>', end='', flush=True)
+                print(">>", end="", flush=True)
+
                 line = await loop.run_in_executor(None, sys.stdin.readline)
                 kernel_root("." + line + "\n")
                 if line in ("quit", "shutdown"):
@@ -388,5 +401,3 @@ def run():
         kernel_root.channel("console").unwatch(print)
 
     kernel.bootstrap("mainloop")  # This is where the GUI loads and runs.
-
-

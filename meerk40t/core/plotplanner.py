@@ -1,3 +1,5 @@
+from meerk40t.tools.zinglplotter import ZinglPlotter
+
 from ..device.basedevice import (
     PLOT_AXIS,
     PLOT_DIRECTION,
@@ -6,11 +8,10 @@ from ..device.basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
 )
-from meerk40t.tools.zinglplotter import ZinglPlotter
 
 """
 
-The PlotPlanner simplifies the plotting modifications routines. These are buffered with plottable elements.
+The PlotPlanner simplifies the plotting and pulsing modifications routines. These are buffered with plottable elements.
 These can be submitted as destination graphics commands, or by submitting a plot routine. Which may yield either 2 or
 3 value coordinates. These are x, y, and on. Where on is a number between 0 and 1 which designates the on-value. In the
 graphics commands the move is given a 0 and all other plots are given a 1. All graphics commands take an optional

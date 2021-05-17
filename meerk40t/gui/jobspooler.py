@@ -10,11 +10,22 @@ class JobSpooler(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(673, 456, *args, **kwds)
 
-        self.connected_device = self.context.active
+        self.available_devices = [self.context.registered[i] for i in self.context.match('device')]
+        selected_spooler = self.context.root.active
+        spools = [str(i) for i in self.context.match('device', suffix=True)]
+        index = spools.index(selected_spooler)
+        self.connected_spooler, self.connected_driver, self.connected_output = None, None, None
+        try:
+            self.connected_spooler, self.connected_driver, self.connected_output = self.available_devices[index]
+        except IndexError:
+            for m in self.Children:
+                if isinstance(m, wx.Window):
+                    m.Disable()
+        spools = [" -> ".join(map(repr,ad)) for ad in self.available_devices ]
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=[str(self.connected_device)], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
-        self.combo_device.SetSelection(0)
+        self.combo_device.SetSelection(index)
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -37,7 +48,7 @@ class JobSpooler(MWindow):
         self.dirty = False
         self.update_buffer_size = False
         self.update_spooler_state = False
-        self.update_spooler = False
+        self.update_spooler = True
 
         self.elements_progress = 0
         self.elements_progress_total = 0
@@ -99,14 +110,18 @@ class JobSpooler(MWindow):
         # end wxGlade
 
     def on_combo_device(self, event):  # wxGlade: Spooler.<event_handler>
-        event.Skip()
+        self.available_devices = [self.context.registered[i] for i in self.context.match('device')]
+        index = self.combo_device.GetSelection()
+        self.connected_spooler, self.connected_driver, self.connected_output = self.available_devices[index]
+        self.update_spooler = True
+        self.refresh_spooler_list()
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         event.Skip()
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         index = event.Index
-        spooler = self.connected_device.spooler
+        spooler = self.connected_spooler
         try:
             element = spooler._queue[index]
         except IndexError:
@@ -122,14 +137,16 @@ class JobSpooler(MWindow):
         menu.Destroy()
 
     def window_open(self):
-        self.connected_device.listen("spooler;queue", self.on_spooler_update)
+        self.context.listen("spooler;queue", self.on_spooler_update)
         self.refresh_spooler_list()
 
     def window_close(self):
-        self.connected_device.unlisten("spooler;queue", self.on_spooler_update)
+        self.context.unlisten("spooler;queue", self.on_spooler_update)
 
     def refresh_spooler_list(self):
         if not self.update_spooler:
+            return
+        if not self.connected_spooler:
             return
 
         def name_str(e):
@@ -143,7 +160,7 @@ class JobSpooler(MWindow):
         except RuntimeError:
             return
 
-        spooler = self.connected_device.spooler
+        spooler = self.connected_spooler
         if len(spooler._queue) > 0:
             # This should actually process and update the queue items.
             for i, e in enumerate(spooler._queue):
@@ -179,7 +196,7 @@ class JobSpooler(MWindow):
 
     def on_tree_popup_clear(self, element):
         def delete(event):
-            spooler = self.connected_device.spooler
+            spooler = self.connected_spooler
             spooler.clear_queue()
             self.refresh_spooler_list()
 
@@ -187,12 +204,12 @@ class JobSpooler(MWindow):
 
     def on_tree_popup_delete(self, element):
         def delete(event):
-            spooler = self.connected_device.spooler
+            spooler = self.connected_spooler
             spooler.remove(element)
             self.refresh_spooler_list()
 
         return delete
 
-    def on_spooler_update(self, value):
+    def on_spooler_update(self, origin, value, *args, **kwargs):
         self.update_spooler = True
         self.refresh_spooler_list()

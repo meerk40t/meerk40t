@@ -3,7 +3,7 @@ from math import ceil, floor, sqrt
 import wx
 from PIL import Image
 
-from ..core.cutcode import CutCode, LineCut, QuadCut, CubicCut, RasterCut
+from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
 from ..core.elements import Node
 from ..svgelements import (
     Arc,
@@ -21,7 +21,6 @@ from ..svgelements import (
     SVGText,
 )
 from .zmatrix import ZMatrix
-
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -58,6 +57,7 @@ class LaserRender:
     """
     Laser Render provides GUI relevant methods of displaying the given elements.
     """
+
     def __init__(self, context):
         self.context = context
         self.pen = wx.Pen()
@@ -179,7 +179,9 @@ class LaserRender:
     def set_element_brush(self, gc, element):
         self.set_brush(gc, element.fill)
 
-    def draw_cutcode_node(self, node: Node, gc: wx.GraphicsContext, x: int = 0, y: int = 0):
+    def draw_cutcode_node(
+        self, node: Node, gc: wx.GraphicsContext, x: int = 0, y: int = 0
+    ):
         cutcode = node.object
         last_point = None
         p = gc.CreatePath()
@@ -191,7 +193,9 @@ class LaserRender:
             if isinstance(cut, LineCut):
                 p.AddLineToPoint(end[0] + x, end[1] + y)
             elif isinstance(cut, QuadCut):
-                p.AddQuadCurveToPoint(cut.control[0] + x, cut.control[1] + y, end[0] + x, end[1] + y)
+                p.AddQuadCurveToPoint(
+                    cut.control[0] + x, cut.control[1] + y, end[0] + x, end[1] + y
+                )
             elif isinstance(cut, CubicCut):
                 p.AddCurveToPoint(
                     cut.control1[0] + x,
@@ -207,7 +211,7 @@ class LaserRender:
                     matrix = Matrix(image.transform)
                 except AttributeError:
                     matrix = Matrix()
-                matrix.post_translate(x,y)
+                matrix.post_translate(x, y)
                 gc.PushState()
                 gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
                 cache = None
@@ -461,4 +465,3 @@ class LaserRender:
             pil_data = pil_data.convert("RGBA")
         pil_bytes = pil_data.tobytes()
         return wx.Bitmap.FromBufferRGBA(width, height, pil_bytes)
-

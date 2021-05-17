@@ -1,5 +1,4 @@
-
-from meerk40t.svgelements import Path, Polyline, Matrix, Angle, Length, Shape
+from meerk40t.svgelements import Angle, Length, Matrix, Path, Polyline, Shape
 from meerk40t.tools.pathtools import EulerianFill
 
 
@@ -54,6 +53,3 @@ def split(points):
             pos = i + 1
     if pos != len(points):
         yield points[pos : len(points)]
-
-
-

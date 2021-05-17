@@ -1,4 +1,4 @@
-from ..kernel import Modifier, CommandMatchRejected
+from ..kernel import CommandMatchRejected, Modifier
 
 
 def plugin(kernel, lifecycle=None):
@@ -51,15 +51,16 @@ class BindAlias(Modifier):
                 command_line = " ".join(args[1:])
                 f = command_line.find("bind")
                 if f == -1:  # If bind value has a bind, do not evaluate.
+                    inter = context.default_driver()
                     if "$x" in command_line:
                         try:
-                            x = context.active.current_x
+                            x = inter.current_x
                         except AttributeError:
                             x = 0
                         command_line = command_line.replace("$x", str(x))
                     if "$y" in command_line:
                         try:
-                            y = context.active.current_y
+                            y = inter.current_y
                         except AttributeError:
                             y = 0
                         command_line = command_line.replace("$y", str(y))
@@ -208,7 +209,7 @@ class BindAlias(Modifier):
         self.keymap["f4"] = "window open CameraInterface"
         self.keymap["f5"] = "refresh"
         self.keymap["f6"] = "window open JobSpooler"
-        self.keymap["f7"] = "window open Controller"
+        self.keymap["f7"] = "window open -o Controller"
         self.keymap["f8"] = "control Path"
         self.keymap["f9"] = "control Transform"
         self.keymap["control+f9"] = "control Flip"

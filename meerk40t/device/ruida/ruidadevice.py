@@ -12,43 +12,25 @@ STATE_CONCAT = 1
 STATE_COMPACT = 2
 
 """
-Ruida device is a stub-backend. It doesn't work as of yet, but should be able to be configured.
+Ruida device interfacing. We do not send or interpret ruida code, but we can emulator ruidacode into cutcode and read
+ruida files (*.rd) and turn them likewise into cutcode.
 """
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("disabled-device/Ruida", RuidaDevice)
-
-
-class RuidaDevice:
-    """"""
-
-    def __init__(self, root, uid=""):
-        self.uid = uid
-        self.device_name = "Ruida-STUB"
-        self.location_name = "UDP"
-
-        self.current_x = 0
-        self.current_y = 0
-
-        self.hold_condition = lambda e: False
-        self.pipe = None
-        self.interpreter = None
-        self.spooler = None
-
-    def __repr__(self):
-        return "RuidaDevice(uid='%s')" % str(self.uid)
-
-    @staticmethod
-    def sub_register(kernel):
         kernel.register("load/RDLoader", RDLoader)
-        kernel.register("module/RuidaEmulator", RuidaEmulator)
+        kernel.register("emulator/ruida", RuidaEmulator)
 
+        @kernel.console_option(
+            "path", "p", type=str, default="/", help="Path of ruidaserver launch."
+        )
         @kernel.console_option("spool", type=bool, action="store_true")
         @kernel.console_command("ruidaserver", help="activate the ruidaserver.")
-        def ruidaserver(command, channel, _, spool=False, args=tuple(), **kwargs):
-            c = kernel.active_device
+        def ruidaserver(
+            command, channel, _, spool=False, path=None, args=tuple(), **kwargs
+        ):
+            c = kernel.get_context(path if path is not None else "/")
             if c is None:
                 return
             try:
@@ -78,12 +60,6 @@ class RuidaDevice:
             except OSError:
                 channel(_("Server failed."))
             return
-
-    def initialize(self, context, channel=None):
-        """
-        Device initialize.
-        """
-        pass
 
 
 class RuidaEmulator(Module):

@@ -1,10 +1,10 @@
-from meerk40t.svgelements import Path, Polygon, Point, Group, Move
+from meerk40t.svgelements import Group, Move, Path, Point, Polygon
 from meerk40t.tools.pathtools import VectorMontonizer
 
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
-        context = kernel.get_context('/')
+        context = kernel.get_context("/")
 
         @context.console_command("optimize", help="optimize <type>")
         def optimize(command, channel, _, args=tuple(), **kwargs):
@@ -55,7 +55,6 @@ def plugin(kernel, lifecycle):
 
 
 class CutPlanner:
-
     @staticmethod
     def is_inside(inner_path, outer_path):
         """
@@ -269,4 +268,3 @@ class CutPlanner:
             except AttributeError:
                 pass
         return optimized
-
