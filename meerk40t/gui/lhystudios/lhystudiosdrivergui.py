@@ -275,7 +275,7 @@ class LhystudiosDriverGui(MWindow):
 
     def on_check_swapxy(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
-        self.context.execute("Update Codes")
+        self.context("dev code_update\n")
 
     def on_check_fix_speeds(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.fix_speeds = self.checkbox_fix_speeds.GetValue()
@@ -285,14 +285,14 @@ class LhystudiosDriverGui(MWindow):
 
     def on_check_flip_x(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.flip_x = self.checkbox_flip_x.GetValue()
-        self.context.execute("Update Codes")
+        self.context("dev code_update\n")
 
     def on_check_home_right(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.home_right = self.checkbox_home_right.GetValue()
 
     def on_check_flip_y(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.flip_y = self.checkbox_flip_y.GetValue()
-        self.context.execute("Update Codes")
+        self.context("dev code_update\n")
 
     def on_check_home_bottom(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()

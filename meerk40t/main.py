@@ -337,7 +337,7 @@ def run():
         for v in args.set:
             attr = v[0]
             value = v[1]
-            kernel_root.execute("set %s %s\n" % (attr, value))
+            kernel_root("set %s %s\n" % (attr, value))
 
     kernel.bootstrap("ready")
 

@@ -175,6 +175,33 @@ def plugin(kernel, lifecycle=None):
                     return
 
         @context.console_command(
+            "code_update",
+            input_type="lhystudios",
+            help="update movement codes for the drivers",
+        )
+        def realtime_pause(data=None, **kwargs):
+            spooler, driver, output = data
+            driver.update_codes()
+
+        @context.console_command(
+            "status",
+            input_type="lhystudios",
+            help="abort waiting process on the controller.",
+        )
+        def realtime_pause(data=None, **kwargs):
+            spooler, driver, output = data
+            driver.update_status()
+
+        @context.console_command(
+            "continue",
+            input_type="lhystudios",
+            help="abort waiting process on the controller.",
+        )
+        def realtime_pause(data=None, **kwargs):
+            spooler, driver, output = data
+            driver.abort_waiting = True
+
+        @context.console_command(
             "pause",
             input_type="lhystudios",
             help="realtime pause/resume of the machine",
@@ -602,10 +629,6 @@ class LhystudiosDriver(Driver):
         self.min_y = current_y
         self.start_x = current_x
         self.start_y = current_y
-
-        context.register("control/Realtime Pause", self.pause)
-        context.register("control/Realtime Resume", self.resume)
-        context.register("control/Update Codes", self.update_codes)
 
         context.root.listen("lifecycle;ready", self.on_driver_ready)
 
@@ -1462,25 +1485,7 @@ class LhystudiosController:
         context.setting(int, "packet_count", 0)
         context.setting(int, "rejected_count", 0)
 
-        context.register("control/Status Update", self.update_status)
         self.reset()
-
-        def abort_wait():
-            self.abort_waiting = True
-
-        context.register("control/Wait Abort", abort_wait)
-
-        def pause_k40():
-            self.update_state(STATE_PAUSE)
-            self.start()
-
-        context.register("control/Pause", pause_k40)
-
-        def resume_k40():
-            self.update_state(STATE_ACTIVE)
-            self.start()
-
-        context.register("control/Resume", resume_k40)
 
         self.context.root.listen("lifecycle;ready", self.on_controller_ready)
 
