@@ -96,7 +96,6 @@ class CH341(Module, Handler):
             self, self.context.channel("pipe/usb", buffer_size=500), self._state_change
         )
 
-
     def connect(self, driver_index=-1, chipv=-1, bus=-1, address=-1, mock=False):
         """
         Requests and returns an available connection. The connection object itself has open() and close() functions and

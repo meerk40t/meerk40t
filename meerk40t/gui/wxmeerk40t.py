@@ -8,9 +8,9 @@ import sys
 import threading
 import traceback
 
+from ..core.cutcode import CutCode
 from .mwindow import MWindow
 from .simulation import Simulation
-from ..core.cutcode import CutCode
 
 try:
     from math import tau
@@ -132,11 +132,11 @@ from .laserrender import (
     LaserRender,
     swizzlecolor,
 )
-from .moshi.moshicontrollergui import MoshiControllerGui
-from .moshi.moshidrivergui import MoshiDriverGui
 from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
 from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
+from .moshi.moshicontrollergui import MoshiControllerGui
+from .moshi.moshidrivergui import MoshiDriverGui
 from .navigation import Navigation
 from .notes import Notes
 from .operationproperty import OperationProperty
@@ -2988,12 +2988,12 @@ class ShadowTree:
 
     def _get_name_from_node(self, node) -> str:
         try:
-            return node.object.values['label']
+            return node.object.values["label"]
         except (AttributeError, KeyError):
             pass
 
         try:
-            return node.object.values['inkscape:label']
+            return node.object.values["inkscape:label"]
         except (AttributeError, KeyError):
             pass
 
@@ -3520,7 +3520,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/default/Preferences", Preferences)
         kernel.register("window/lhystudios/Preferences", LhystudiosDriverGui)
         kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
-        kernel.register("window/lhystudios/AccelerationChart", LhystudiosAccelerationChart)
+        kernel.register(
+            "window/lhystudios/AccelerationChart", LhystudiosAccelerationChart
+        )
         kernel.register("window/moshi/Preferences", MoshiDriverGui)
         kernel.register("window/moshi/Controller", MoshiControllerGui)
 
@@ -3533,7 +3535,9 @@ class wxMeerK40t(wx.App, Module):
             default="/",
             help="Context Path at which to open the window",
         )
-        @kernel.console_command("window", output_type="window", help="wxMeerK40 window information")
+        @kernel.console_command(
+            "window", output_type="window", help="wxMeerK40 window information"
+        )
         def window(channel, _, path=None, remainder=None, **kwargs):
             """
             Opens a MeerK40t window or provides information. This command is restricted to use with the wxMeerK40t gui.
@@ -3566,26 +3570,61 @@ class wxMeerK40t(wx.App, Module):
                 channel(_("----------"))
             return "window", path
 
-        @kernel.console_command("list", input_type="window", output_type="window", help="wxMeerK40 window information")
+        @kernel.console_command(
+            "list",
+            input_type="window",
+            output_type="window",
+            help="wxMeerK40 window information",
+        )
         def window(channel, _, data, **kwargs):
             channel(_("----------"))
             channel(_("Windows Registered:"))
             for i, name in enumerate(context.match("window")):
                 name = name[7:]
-                if '/' in name:
+                if "/" in name:
                     channel("%d: Specific Window: %s" % (i + 1, name))
                 else:
                     channel("%d: %s" % (i + 1, name))
             return "window", data
 
-        @kernel.console_option("driver", "d", type=bool, action="store_true", help="Load Driver Specific Window")
-        @kernel.console_option("output", "o", type=bool, action="store_true", help="Load Output Specific Window")
-        @kernel.console_option("input", "i", type=bool, action="store_true", help="Load Source Specific Window")
+        @kernel.console_option(
+            "driver",
+            "d",
+            type=bool,
+            action="store_true",
+            help="Load Driver Specific Window",
+        )
+        @kernel.console_option(
+            "output",
+            "o",
+            type=bool,
+            action="store_true",
+            help="Load Output Specific Window",
+        )
+        @kernel.console_option(
+            "input",
+            "i",
+            type=bool,
+            action="store_true",
+            help="Load Source Specific Window",
+        )
         @kernel.console_argument(
             "window", type=str, help="window to apply subcommand to"
         )
-        @kernel.console_command("open",  input_type="window", help="wxMeerK40 window information")
-        def window(channel, _, data, window=None, driver=False, output=False, source=False, args=(), **kwargs):
+        @kernel.console_command(
+            "open", input_type="window", help="wxMeerK40 window information"
+        )
+        def window(
+            channel,
+            _,
+            data,
+            window=None,
+            driver=False,
+            output=False,
+            source=False,
+            args=(),
+            **kwargs
+        ):
             path = data
             try:
                 parent = context.gui
@@ -3595,7 +3634,9 @@ class wxMeerK40t(wx.App, Module):
             if output or driver or source:
                 # Specific class subwindow.
                 active = context.root.active
-                _spooler, _input_driver, _output = context.registered["device/%s" % active]
+                _spooler, _input_driver, _output = context.registered[
+                    "device/%s" % active
+                ]
                 if output:
                     q = _output
                 elif driver:
@@ -3603,9 +3644,9 @@ class wxMeerK40t(wx.App, Module):
                 else:  # source
                     q = _input_driver
                 t = "default"
-                m = '/'
+                m = "/"
                 if q is not None:
-                    obj= q
+                    obj = q
                     try:
                         t = obj.type
                         m = obj.context._path
@@ -3624,10 +3665,13 @@ class wxMeerK40t(wx.App, Module):
         @kernel.console_argument(
             "window", type=str, help="window to apply subcommand to"
         )
-        @kernel.console_command("close",  input_type="window", output_type="window", help="wxMeerK40 window information")
-        def window(
-                channel, _, data, window=None, args=(), **kwargs
-        ):
+        @kernel.console_command(
+            "close",
+            input_type="window",
+            output_type="window",
+            help="wxMeerK40 window information",
+        )
+        def window(channel, _, data, window=None, args=(), **kwargs):
             path = data
             try:
                 parent = context.gui
@@ -3645,7 +3689,12 @@ class wxMeerK40t(wx.App, Module):
         @kernel.console_argument(
             "window", type=str, help="window to apply subcommand to"
         )
-        @kernel.console_command("reset",  input_type="window", output_type="window", help="wxMeerK40 window information")
+        @kernel.console_command(
+            "reset",
+            input_type="window",
+            output_type="window",
+            help="wxMeerK40 window information",
+        )
         def window(channel, _, data, window=None, **kwargs):
             if kernel._config is not None:
                 for context in list(kernel.contexts):

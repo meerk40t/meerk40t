@@ -2,8 +2,8 @@ import threading
 import time
 
 from meerk40t.tools.zinglplotter import ZinglPlotter
-from ...core.drivers import Driver
 
+from ...core.drivers import Driver
 from ...core.plotplanner import PlotPlanner
 from ...kernel import (
     STATE_ACTIVE,

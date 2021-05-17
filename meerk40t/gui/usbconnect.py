@@ -27,7 +27,6 @@ class UsbConnect(MWindow):
     def window_open(self):
         self.context.channel("pipe/usb", buffer_size=500).watch(self.update_text)
 
-
     def window_close(self):
         self.context.channel("pipe/usb").unwatch(self.update_text)
 

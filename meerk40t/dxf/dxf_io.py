@@ -299,9 +299,7 @@ class DxfLoader:
                             (b[1][0], b[1][1]), (b[2][0], b[2][1]), (b[3][0], b[3][1])
                         )
                     elif len(b) == 3:
-                        element.quad(
-                            (b[1][0], b[1][1]), (b[2][0], b[2][1])
-                        )
+                        element.quad((b[1][0], b[1][1]), (b[2][0], b[2][1]))
             except (AttributeError, TypeError):
                 # Fallback for rational b-splines.
                 try:
@@ -311,12 +309,12 @@ class DxfLoader:
                         b = bezier.control_points
                         if len(b) == 4:
                             element.cubic(
-                                (b[1][0], b[1][1]), (b[2][0], b[2][1]), (b[3][0], b[3][1])
+                                (b[1][0], b[1][1]),
+                                (b[2][0], b[2][1]),
+                                (b[3][0], b[3][1]),
                             )
                         elif len(b) == 3:
-                            element.quad(
-                                (b[1][0], b[1][1]), (b[2][0], b[2][1])
-                            )
+                            element.quad((b[1][0], b[1][1]), (b[2][0], b[2][1]))
                 except (AttributeError, TypeError):
                     # Fallback for versions of EZDXF prior to 0.13
                     element.move(entity.control_points[0])

@@ -30,33 +30,69 @@ class LhystudiosAccelerationChart(MWindow):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_vector_accel_enable, self.checkbox_vector_accel_enable)
+        self.Bind(
+            wx.EVT_CHECKBOX,
+            self.on_check_vector_accel_enable,
+            self.checkbox_vector_accel_enable,
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_vector_accel, self.text_vector_accel_1)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_vector_accel, self.text_vector_accel_1)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_vector_accel, self.text_vector_accel_1
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_vector_accel, self.text_vector_accel_2)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_vector_accel, self.text_vector_accel_2)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_vector_accel, self.text_vector_accel_2
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_vector_accel, self.text_vector_accel_3)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_vector_accel, self.text_vector_accel_3)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_vector_accel, self.text_vector_accel_3
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_vector_accel, self.text_vector_accel_4)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_vector_accel, self.text_vector_accel_4)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_vraster_accel_enable, self.checkbox_vraster_accel_enable)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_vector_accel, self.text_vector_accel_4
+        )
+        self.Bind(
+            wx.EVT_CHECKBOX,
+            self.on_check_vraster_accel_enable,
+            self.checkbox_vraster_accel_enable,
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_vraster_accel, self.text_vraster_accel_1)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_vraster_accel, self.text_vraster_accel_1)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_vraster_accel, self.text_vraster_accel_1
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_vraster_accel, self.text_vraster_accel_2)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_vraster_accel, self.text_vraster_accel_2)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_vraster_accel, self.text_vraster_accel_2
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_vraster_accel, self.text_vraster_accel_3)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_vraster_accel, self.text_vraster_accel_3)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_vraster_accel, self.text_vraster_accel_3
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_vraster_accel, self.text_vraster_accel_4)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_vraster_accel, self.text_vraster_accel_4)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_raster_accel_enable, self.checkbox_raster_accel_enable)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_vraster_accel, self.text_vraster_accel_4
+        )
+        self.Bind(
+            wx.EVT_CHECKBOX,
+            self.on_check_raster_accel_enable,
+            self.checkbox_raster_accel_enable,
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_raster_accel, self.text_raster_accel_1)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_accel, self.text_raster_accel_1)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_raster_accel, self.text_raster_accel_1
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_raster_accel, self.text_raster_accel_2)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_accel, self.text_raster_accel_2)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_raster_accel, self.text_raster_accel_2
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_raster_accel, self.text_raster_accel_3)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_accel, self.text_raster_accel_3)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_raster_accel, self.text_raster_accel_3
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_raster_accel, self.text_raster_accel_4)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_accel, self.text_raster_accel_4)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_raster_accel, self.text_raster_accel_4
+        )
         # end wxGlade
         self.set_widgets()
 
@@ -65,7 +101,9 @@ class LhystudiosAccelerationChart(MWindow):
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle("Acceleration Chart")
-        self.checkbox_vector_accel_enable.SetToolTip("Enable defined acceleration chart for vectors")
+        self.checkbox_vector_accel_enable.SetToolTip(
+            "Enable defined acceleration chart for vectors"
+        )
         self.text_vector_accel_1.SetMinSize((55, 23))
         self.text_vector_accel_1.SetToolTip("Upper limit for accel level 1")
         self.text_vector_accel_1.Enable(False)
@@ -78,7 +116,9 @@ class LhystudiosAccelerationChart(MWindow):
         self.text_vector_accel_4.SetMinSize((55, 23))
         self.text_vector_accel_4.SetToolTip("Upper limit for accel level 4")
         self.text_vector_accel_4.Enable(False)
-        self.checkbox_vraster_accel_enable.SetToolTip("Enable defined acceleration chart for vertical rasters")
+        self.checkbox_vraster_accel_enable.SetToolTip(
+            "Enable defined acceleration chart for vertical rasters"
+        )
         self.text_vraster_accel_1.SetMinSize((55, 23))
         self.text_vraster_accel_1.SetToolTip("Upper limit for accel level 1")
         self.text_vraster_accel_1.Enable(False)
@@ -91,7 +131,9 @@ class LhystudiosAccelerationChart(MWindow):
         self.text_vraster_accel_4.SetMinSize((55, 23))
         self.text_vraster_accel_4.SetToolTip("Upper limit for accel level 4")
         self.text_vraster_accel_4.Enable(False)
-        self.checkbox_raster_accel_enable.SetToolTip("Enable defined acceleration chart for horizontal rasters")
+        self.checkbox_raster_accel_enable.SetToolTip(
+            "Enable defined acceleration chart for horizontal rasters"
+        )
         self.text_raster_accel_1.SetMinSize((55, 23))
         self.text_raster_accel_1.SetToolTip("Upper limit for accel level 1")
         self.text_raster_accel_1.Enable(False)
@@ -109,17 +151,23 @@ class LhystudiosAccelerationChart(MWindow):
     def __do_layout(self):
         # begin wxGlade: AccelBuild.__do_layout
         sizer_accel = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_13 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Horizontal Raster"), wx.VERTICAL)
+        sizer_13 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Horizontal Raster"), wx.VERTICAL
+        )
         sizer_19 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_18 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_16 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Vertical Raster"), wx.VERTICAL)
+        sizer_16 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Vertical Raster"), wx.VERTICAL
+        )
         sizer_22 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_21 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_20 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_17 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_8 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Vector"), wx.VERTICAL)
+        sizer_8 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Vector"), wx.VERTICAL
+        )
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_10 = wx.BoxSizer(wx.HORIZONTAL)
@@ -216,7 +264,6 @@ class LhystudiosAccelerationChart(MWindow):
         self.checkbox_raster_accel_enable.SetValue(context.raster_accel_table)
         self.checkbox_vector_accel_enable.SetValue(context.vector_accel_table)
 
-
     def on_check_vector_accel_enable(
         self, event
     ):  # wxGlade: LhystudiosDriver.<event_handler>
@@ -234,7 +281,9 @@ class LhystudiosAccelerationChart(MWindow):
     def on_text_raster_accel(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
         pass
 
-    def on_check_vraster_accel_enable(self, event):  # wxGlade: AccelBuild.<event_handler>
+    def on_check_vraster_accel_enable(
+        self, event
+    ):  # wxGlade: AccelBuild.<event_handler>
         self.context.vraster_accel_table = self.checkbox_vraster_accel_enable.GetValue()
 
     def on_text_vraster_accel(self, event):  # wxGlade: AccelBuild.<event_handler>

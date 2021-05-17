@@ -13,8 +13,12 @@ class MoshiDriverGui(MWindow):
         super().__init__(335, 170, *args, **kwds)
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, "Home Right")
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, "Home Bottom")
-        self.spin_home_x = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0)
-        self.spin_home_y = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0)
+        self.spin_home_x = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
+        )
+        self.spin_home_y = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
+        )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, "Set Current")
         self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, "Randomize PPI")
 
@@ -27,7 +31,9 @@ class MoshiDriverGui(MWindow):
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_x, self.spin_home_x)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_y, self.spin_home_y)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_y, self.spin_home_y)
-        self.Bind(wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
+        )
         self.Bind(wx.EVT_CHECKBOX, self.on_check_random_ppi, self.checkbox_random_ppi)
         # end wxGlade
 
@@ -37,24 +43,36 @@ class MoshiDriverGui(MWindow):
         self.SetIcon(_icon)
         self.SetTitle("Moshiboard-Prefererences")
         self.checkbox_home_right.SetToolTip("Indicates the device Home is on the right")
-        self.checkbox_home_bottom.SetToolTip("Indicates the device Home is on the bottom")
+        self.checkbox_home_bottom.SetToolTip(
+            "Indicates the device Home is on the bottom"
+        )
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip("Translate Home X")
         self.spin_home_y.SetMinSize((80, 23))
         self.spin_home_y.SetToolTip("Translate Home Y")
-        self.button_home_by_current.SetToolTip("Set Home Position based on the current position")
-        self.checkbox_random_ppi.SetToolTip("Rather than orderly PPI, we perform PPI based on a randomized average")
+        self.button_home_by_current.SetToolTip(
+            "Set Home Position based on the current position"
+        )
+        self.checkbox_random_ppi.SetToolTip(
+            "Rather than orderly PPI, we perform PPI based on a randomized average"
+        )
         self.checkbox_random_ppi.Enable(False)
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: MoshiDriverGui.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_6 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Pulse Planner"), wx.HORIZONTAL)
-        sizer_home = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Shift Home Position"), wx.HORIZONTAL)
+        sizer_6 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Pulse Planner"), wx.HORIZONTAL
+        )
+        sizer_home = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Shift Home Position"), wx.HORIZONTAL
+        )
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_config = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Configuration"), wx.HORIZONTAL)
+        sizer_config = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Configuration"), wx.HORIZONTAL
+        )
         sizer_config.Add(self.checkbox_home_right, 0, 0, 0)
         sizer_config.Add(self.checkbox_home_bottom, 0, 0, 0)
         sizer_main.Add(sizer_config, 1, wx.EXPAND, 0)
@@ -94,7 +112,9 @@ class MoshiDriverGui(MWindow):
         print("Event handler 'spin_on_home_y' not implemented!")
         event.Skip()
 
-    def on_button_set_home_current(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
+    def on_button_set_home_current(
+        self, event
+    ):  # wxGlade: MoshiDriverGui.<event_handler>
         print("Event handler 'on_button_set_home_current' not implemented!")
         event.Skip()
 

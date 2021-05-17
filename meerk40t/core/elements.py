@@ -402,12 +402,14 @@ class Node:
         node str. If something else provides a superior name it should be added in here.
         """
         try:
-            return node.object.values['label']
+            return node.object.values["label"]
         except (AttributeError, KeyError):
             pass
 
         try:
-            return node.object.values['{http://www.inkscape.org/namespaces/inkscape}label']
+            return node.object.values[
+                "{http://www.inkscape.org/namespaces/inkscape}label"
+            ]
         except (AttributeError, KeyError):
             pass
 

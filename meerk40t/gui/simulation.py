@@ -1,6 +1,6 @@
 import wx
 
-from .icons import icons8_route_50, icons8_play_50, icons8_administrative_tools_50
+from .icons import icons8_administrative_tools_50, icons8_play_50, icons8_route_50
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -14,7 +14,7 @@ class Simulation(MWindow):
         else:
             cutcode = 0
         self.cutcode = cutcode
-        
+
         # Menu Bar
         self.Simulation_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -33,16 +33,26 @@ class Simulation(MWindow):
         # Menu Bar end
         self.view_pane = wx.Panel(self, wx.ID_ANY)
         self.slider_progress = wx.Slider(self, wx.ID_ANY, 0, 0, 10)
-        self.text_distance_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_distance_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_distance_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_distance_laser = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_distance_travel = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_distance_total = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.button_play = wx.Button(self, wx.ID_ANY, "")
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 100, 1, 1000)
-        self.text_playback_speed = wx.TextCtrl(self, wx.ID_ANY, "100%", style=wx.TE_READONLY)
-        self.combo_device = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
+        self.text_playback_speed = wx.TextCtrl(
+            self, wx.ID_ANY, "100%", style=wx.TE_READONLY
+        )
+        self.combo_device = wx.ComboBox(
+            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
+        )
         self.button_spool = wx.Button(self, wx.ID_ANY, "Send to Laser")
 
         self.__set_properties()
@@ -70,7 +80,15 @@ class Simulation(MWindow):
         self.text_playback_speed.SetMinSize((55, 23))
         self.combo_device.SetToolTip("Select the device")
         self.button_spool.SetFont(
-            wx.Font(18, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+            wx.Font(
+                18,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
         self.button_spool.SetBitmap(icons8_route_50.GetBitmap())
         # end wxGlade
 
@@ -83,13 +101,25 @@ class Simulation(MWindow):
         sizer_4 = wx.BoxSizer(wx.VERTICAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_time = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_total_time = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL)
-        sizer_travel_time = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL)
-        sizer_laser_time = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL)
+        sizer_total_time = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL
+        )
+        sizer_travel_time = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL
+        )
+        sizer_laser_time = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL
+        )
         sizer_distance = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_total_distance = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Total Distance"), wx.VERTICAL)
-        sizer_travel_distance = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Travel Distance"), wx.VERTICAL)
-        sizer_laser_distance = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Laser Distance"), wx.VERTICAL)
+        sizer_total_distance = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Total Distance"), wx.VERTICAL
+        )
+        sizer_travel_distance = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Travel Distance"), wx.VERTICAL
+        )
+        sizer_laser_distance = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Laser Distance"), wx.VERTICAL
+        )
         sizer_1.Add(self.view_pane, 3, wx.EXPAND, 0)
         sizer_2.Add(self.slider_progress, 0, wx.EXPAND, 0)
         sizer_laser_distance.Add(self.text_distance_laser, 0, wx.EXPAND, 0)

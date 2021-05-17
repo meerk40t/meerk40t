@@ -296,7 +296,9 @@ def plugin(kernel, lifecycle=None):
                 element.node.altered()
         return "image", data
 
-    @context.console_command("dewhite", help="", input_type="image", output_type="image")
+    @context.console_command(
+        "dewhite", help="", input_type="image", output_type="image"
+    )
     def image(channel, _, data, **kwargs):
         for element in data:
             img = element.image
@@ -305,14 +307,13 @@ def plugin(kernel, lifecycle=None):
                 return "image", data
             from PIL import Image
 
-            black = Image.new("L", img.size, color='black')
+            black = Image.new("L", img.size, color="black")
             img = img.point(lambda e: 255 - e)
             black.putalpha(img)
             element.image = black
             if hasattr(element, "node"):
                 element.node.altered()
         return "image", data
-
 
     @context.console_command("rgba", help="", input_type="image", output_type="image")
     def image(data, **kwargs):

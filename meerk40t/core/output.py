@@ -46,7 +46,7 @@ class Outputs(Modifier):
         Modifier.__init__(self, context, name, channel)
 
     def get_or_make_output(self, device_name, output_type=None, **kwargs):
-        dev = 'device/%s' % device_name
+        dev = "device/%s" % device_name
         try:
             device = self.context.registered[dev]
         except KeyError:
@@ -57,16 +57,14 @@ class Outputs(Modifier):
         try:
             for itype in self.context.match("output/%s" % output_type):
                 output_class = self.context.registered[itype]
-                output = output_class(
-                    self.context, device_name, **kwargs
-                )
+                output = output_class(self.context, device_name, **kwargs)
                 device[2] = output
                 return output
         except (KeyError, IndexError):
             return None
 
     def put_output(self, device_name, output):
-        dev = 'device/%s' % device_name
+        dev = "device/%s" % device_name
         try:
             device = self.context.registered[dev]
         except KeyError:
@@ -96,15 +94,7 @@ class Outputs(Modifier):
             input_type=(None, "input", "driver"),
             output_type="output",
         )
-        def output(
-            command,
-            channel,
-            _,
-            data=None,
-            new=None,
-            remainder=None,
-            **kwargs
-        ):
+        def output(command, channel, _, data=None, new=None, remainder=None, **kwargs):
             input_driver = None
             if data is None:
                 if len(command) > 6:

@@ -126,7 +126,7 @@ class Spoolers(Modifier):
         Modifier.__init__(self, context, name, channel)
 
     def get_or_make_spooler(self, device_name):
-        dev = 'device/%s' % device_name
+        dev = "device/%s" % device_name
         try:
             device = self.context.registered[dev]
         except KeyError:
@@ -147,7 +147,9 @@ class Spoolers(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @context.console_option("register", "r", type=bool, action="store_true", help="Register this device")
+        @context.console_option(
+            "register", "r", type=bool, action="store_true", help="Register this device"
+        )
         @context.console_command(
             "spool",
             help="spool<?> <command>",
@@ -155,7 +157,9 @@ class Spoolers(Modifier):
             input_type=(None, "plan", "device"),
             output_type="spooler",
         )
-        def spool(command, channel, _, data=None, register=False, remainder=None, **kwargs):
+        def spool(
+            command, channel, _, data=None, register=False, remainder=None, **kwargs
+        ):
             root = self.context.root
             if len(command) > 5:
                 device_name = command[5:]
@@ -170,7 +174,11 @@ class Spoolers(Modifier):
                     device_name = root.active
             if register:
                 device_context = kernel.get_context("devices")
-                setattr(device_context, "device_%s" % device_name, ("spool%s -r " % device_name) + remainder + '\n')
+                setattr(
+                    device_context,
+                    "device_%s" % device_name,
+                    ("spool%s -r " % device_name) + remainder + "\n",
+                )
 
             spooler = self.get_or_make_spooler(device_name)
             if data is not None:
@@ -183,7 +191,7 @@ class Spoolers(Modifier):
             if remainder is None:
                 channel(_("----------"))
                 channel(_("Spoolers:"))
-                for i, d_name in enumerate(self.context.match('device', True)):
+                for i, d_name in enumerate(self.context.match("device", True)):
                     channel("%d: %s" % (i, d_name))
                 channel(_("----------"))
                 channel(_("Spooler %s:" % device_name))
@@ -203,7 +211,7 @@ class Spoolers(Modifier):
             spooler, device_name = data
             channel(_("----------"))
             channel(_("Spoolers:"))
-            for i, d_name in enumerate(self.context.match('device', True)):
+            for i, d_name in enumerate(self.context.match("device", True)):
                 channel("%d: %s" % (i, d_name))
             channel(_("----------"))
             channel(_("Spooler %s:" % device_name))

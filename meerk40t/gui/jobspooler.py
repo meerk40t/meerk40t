@@ -10,18 +10,28 @@ class JobSpooler(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(673, 456, *args, **kwds)
 
-        self.available_devices = [self.context.registered[i] for i in self.context.match('device')]
+        self.available_devices = [
+            self.context.registered[i] for i in self.context.match("device")
+        ]
         selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match('device', suffix=True)]
+        spools = [str(i) for i in self.context.match("device", suffix=True)]
         index = spools.index(selected_spooler)
-        self.connected_spooler, self.connected_driver, self.connected_output = None, None, None
+        self.connected_spooler, self.connected_driver, self.connected_output = (
+            None,
+            None,
+            None,
+        )
         try:
-            self.connected_spooler, self.connected_driver, self.connected_output = self.available_devices[index]
+            (
+                self.connected_spooler,
+                self.connected_driver,
+                self.connected_output,
+            ) = self.available_devices[index]
         except IndexError:
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr,ad)) for ad in self.available_devices ]
+        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
@@ -110,9 +120,15 @@ class JobSpooler(MWindow):
         # end wxGlade
 
     def on_combo_device(self, event):  # wxGlade: Spooler.<event_handler>
-        self.available_devices = [self.context.registered[i] for i in self.context.match('device')]
+        self.available_devices = [
+            self.context.registered[i] for i in self.context.match("device")
+        ]
         index = self.combo_device.GetSelection()
-        self.connected_spooler, self.connected_driver, self.connected_output = self.available_devices[index]
+        (
+            self.connected_spooler,
+            self.connected_driver,
+            self.connected_output,
+        ) = self.available_devices[index]
         self.update_spooler = True
         self.refresh_spooler_list()
 

@@ -148,14 +148,12 @@ def run():
     except ImportError:
         pass
 
-
     try:
         from .core import inputs
 
         kernel.add_plugin(inputs.plugin)
     except ImportError:
         pass
-
 
     try:
         from .core import elements

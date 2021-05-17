@@ -19,11 +19,17 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/grbl", GRBLEmulator)
         kernel.register("load/GCodeLoader", GCodeLoader)
 
-        @kernel.console_option('grbl', type=int, help='run grbl-emulator on given port.')
-        @kernel.console_option('flip_x', type=bool, action='store_true', help="grbl x-flip")
-        @kernel.console_option('flip_y', type=bool, action='store_true', help="grbl y-flip")
-        @kernel.console_option('adjust_x', type=int, help='adjust grbl home_x position')
-        @kernel.console_option('adjust_y', type=int, help='adjust grbl home_y position')
+        @kernel.console_option(
+            "grbl", type=int, help="run grbl-emulator on given port."
+        )
+        @kernel.console_option(
+            "flip_x", type=bool, action="store_true", help="grbl x-flip"
+        )
+        @kernel.console_option(
+            "flip_y", type=bool, action="store_true", help="grbl y-flip"
+        )
+        @kernel.console_option("adjust_x", type=int, help="adjust grbl home_x position")
+        @kernel.console_option("adjust_y", type=int, help="adjust grbl home_y position")
         @kernel.console_option(
             "path", "p", type=str, default="/", help="Path of variables to set."
         )
@@ -187,7 +193,6 @@ class GRBLDriver(Driver):
     @property
     def type(self):
         return "grbl"
-
 
 
 class GRBLEmulator(Module):

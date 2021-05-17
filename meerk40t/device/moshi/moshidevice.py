@@ -3,7 +3,19 @@ import time
 
 from ...core.drivers import Driver
 from ...core.plotplanner import PlotPlanner
-from ...kernel import Modifier
+from ...kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+    Modifier,
+    Module,
+)
 from ..basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -16,18 +28,6 @@ from ..basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
-)
-from ...kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-    Module,
 )
 
 STATUS_OK = 205  # Seen before file send. And after file send.
@@ -339,7 +339,9 @@ def plugin(kernel, lifecycle=None):
             except ConnectionRefusedError:
                 channel("Connection Refused.")
 
-        @context.console_command("usb_disconnect",input_type="moshi", help="Disconnect USB")
+        @context.console_command(
+            "usb_disconnect", input_type="moshi", help="Disconnect USB"
+        )
         def usb_disconnect(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             if output.connection is not None:
@@ -347,28 +349,30 @@ def plugin(kernel, lifecycle=None):
             else:
                 channel("Usb is not connected.")
 
-        @context.console_command("start", input_type="moshi",help="Start Pipe to Controller")
+        @context.console_command(
+            "start", input_type="moshi", help="Start Pipe to Controller"
+        )
         def pipe_start(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel("Moshi Channel Started.")
 
-        @context.console_command("hold", input_type="moshi",help="Hold Controller")
+        @context.console_command("hold", input_type="moshi", help="Hold Controller")
         def pipe_pause(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_PAUSE)
             output.pause()
             channel("Moshi Channel Paused.")
 
-        @context.console_command("resume", input_type="moshi",help="Resume Controller")
+        @context.console_command("resume", input_type="moshi", help="Resume Controller")
         def pipe_resume(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel("Moshi Channel Resumed.")
 
-        @context.console_command("abort", input_type="moshi",help="Abort Job")
+        @context.console_command("abort", input_type="moshi", help="Abort Job")
         def pipe_abort(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.reset()
@@ -436,9 +440,7 @@ class MoshiDriver(Driver, Modifier):
         context.root.listen("lifecycle;ready", self.on_driver_ready)
 
     def detach(self, *args, **kwargs):
-        self.context.get_context("/").unlisten(
-            "lifecycle;ready", self.on_driver_ready
-        )
+        self.context.get_context("/").unlisten("lifecycle;ready", self.on_driver_ready)
         self.thread = None
 
     def on_driver_ready(self, origin, *args):
@@ -616,9 +618,9 @@ class MoshiDriver(Driver, Modifier):
         if self.state == DRIVER_STATE_FINISH:
             self.state = DRIVER_STATE_RAPID
         elif (
-                self.state == DRIVER_STATE_PROGRAM
-                or self.state == DRIVER_STATE_MODECHANGE
-                or self.state == DRIVER_STATE_RASTER
+            self.state == DRIVER_STATE_PROGRAM
+            or self.state == DRIVER_STATE_MODECHANGE
+            or self.state == DRIVER_STATE_RASTER
         ):
             self.write_termination()
             self.control("execute\n")
@@ -777,19 +779,13 @@ class MoshiDriver(Driver, Modifier):
     def set_speed(self, speed=None):
         if self.settings.speed != speed:
             self.settings.speed = speed
-            if (
-                self.state == DRIVER_STATE_PROGRAM
-                or self.state == DRIVER_STATE_RASTER
-            ):
+            if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_RASTER:
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_step(self, step=None):
         if self.settings.raster_step != step:
             self.settings.raster_step = step
-            if (
-                self.state == DRIVER_STATE_PROGRAM
-                or self.state == DRIVER_STATE_RASTER
-            ):
+            if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_RASTER:
                 self.state = DRIVER_STATE_MODECHANGE
 
     def calc_home_position(self):

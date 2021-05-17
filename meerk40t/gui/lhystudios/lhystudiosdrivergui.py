@@ -11,22 +11,35 @@ _ = wx.GetTranslation
 class LhystudiosDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(337, 317, *args, **kwds)
-        self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"], style=wx.CB_DROPDOWN)
-        self.checkbox_fix_speeds = wx.CheckBox(self, wx.ID_ANY, "Fix rated to actual speed")
+        self.combobox_board = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=["M2", "B2", "M", "M1", "A", "B", "B1"],
+            style=wx.CB_DROPDOWN,
+        )
+        self.checkbox_fix_speeds = wx.CheckBox(
+            self, wx.ID_ANY, "Fix rated to actual speed"
+        )
         self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, "Flip X")
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, "Home Right")
         self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, "Flip Y")
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, "Home Bottom")
         self.checkbox_swap_xy = wx.CheckBox(self, wx.ID_ANY, "Swap X and Y")
         self.checkbox_strict = wx.CheckBox(self, wx.ID_ANY, "Strict")
-        self.spin_home_x = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0)
-        self.spin_home_y = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0)
+        self.spin_home_x = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
+        )
+        self.spin_home_y = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
+        )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, "Set Current")
         self.checkbox_plot_shift = wx.CheckBox(self, wx.ID_ANY, "Pulse Shifting")
         self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, "Randomize PPI")
         self.checkbox_limit_buffer = wx.CheckBox(self, wx.ID_ANY, "Limit Write Buffer")
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.spin_packet_buffer_max = wx.SpinCtrl(self, wx.ID_ANY, "1500", min=1, max=1000000)
+        self.spin_packet_buffer_max = wx.SpinCtrl(
+            self, wx.ID_ANY, "1500", min=1, max=1000000
+        )
         self.checkbox_autolock = wx.CheckBox(self, wx.ID_ANY, "Automatically lock rail")
 
         self.__set_properties()
@@ -44,13 +57,27 @@ class LhystudiosDriverGui(MWindow):
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_x, self.spin_home_x)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_y, self.spin_home_y)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_y, self.spin_home_y)
-        self.Bind(wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
+        )
         self.Bind(wx.EVT_CHECKBOX, self.on_check_pulse_shift, self.checkbox_plot_shift)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_random_ppi, self.checkbox_random_ppi)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_limit_packet_buffer, self.checkbox_limit_buffer)
-        self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
-        self.Bind(wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
+        self.Bind(
+            wx.EVT_CHECKBOX,
+            self.on_check_limit_packet_buffer,
+            self.checkbox_limit_buffer,
+        )
+        self.Bind(
+            wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max
+        )
+        self.Bind(
+            wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max
+        )
+        self.Bind(
+            wx.EVT_TEXT_ENTER,
+            self.on_spin_packet_buffer_max,
+            self.spin_packet_buffer_max,
+        )
         self.Bind(wx.EVT_CHECKBOX, self.on_check_autolock, self.checkbox_autolock)
         # end wxGlade
         # end wxGlade
@@ -68,26 +95,50 @@ class LhystudiosDriverGui(MWindow):
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle("Lhystudios-Prefererences")
-        self.combobox_board.SetToolTip("Select the board to use. This has an effects the speedcodes used.")
+        self.combobox_board.SetToolTip(
+            "Select the board to use. This has an effects the speedcodes used."
+        )
         self.combobox_board.SetSelection(0)
-        self.checkbox_fix_speeds.SetToolTip("Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated speed.")
-        self.checkbox_flip_x.SetToolTip("Flip the Right and Left commands sent to the controller")
+        self.checkbox_fix_speeds.SetToolTip(
+            "Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated speed."
+        )
+        self.checkbox_flip_x.SetToolTip(
+            "Flip the Right and Left commands sent to the controller"
+        )
         self.checkbox_home_right.SetToolTip("Indicates the device Home is on the right")
-        self.checkbox_flip_y.SetToolTip("Flip the Top and Bottom commands sent to the controller")
-        self.checkbox_home_bottom.SetToolTip("Indicates the device Home is on the bottom")
-        self.checkbox_swap_xy.SetToolTip("Swaps the X and Y axis. This happens before the FlipX and FlipY.")
-        self.checkbox_strict.SetToolTip("Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed.")
+        self.checkbox_flip_y.SetToolTip(
+            "Flip the Top and Bottom commands sent to the controller"
+        )
+        self.checkbox_home_bottom.SetToolTip(
+            "Indicates the device Home is on the bottom"
+        )
+        self.checkbox_swap_xy.SetToolTip(
+            "Swaps the X and Y axis. This happens before the FlipX and FlipY."
+        )
+        self.checkbox_strict.SetToolTip(
+            "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
+        )
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip("Translate Home X")
         self.spin_home_y.SetMinSize((80, 23))
         self.spin_home_y.SetToolTip("Translate Home Y")
-        self.button_home_by_current.SetToolTip("Set Home Position based on the current position")
-        self.checkbox_plot_shift.SetToolTip("During the pulse planning process allow shifting pulses by one unit to increase command efficiency\nThis may prevent device stutter and reduce pulse accuracy by one up to one unit.")
-        self.checkbox_random_ppi.SetToolTip("Rather than orderly PPI, we perform PPI based on a randomized average")
+        self.button_home_by_current.SetToolTip(
+            "Set Home Position based on the current position"
+        )
+        self.checkbox_plot_shift.SetToolTip(
+            "During the pulse planning process allow shifting pulses by one unit to increase command efficiency\nThis may prevent device stutter and reduce pulse accuracy by one up to one unit."
+        )
+        self.checkbox_random_ppi.SetToolTip(
+            "Rather than orderly PPI, we perform PPI based on a randomized average"
+        )
         self.checkbox_random_ppi.Enable(False)
-        self.checkbox_limit_buffer.SetToolTip("Limit the write buffer to a certain amount. Permits on-the-fly command production.")
+        self.checkbox_limit_buffer.SetToolTip(
+            "Limit the write buffer to a certain amount. Permits on-the-fly command production."
+        )
         self.checkbox_limit_buffer.SetValue(1)
-        self.text_buffer_length.SetToolTip("Current number of bytes in the write buffer.")
+        self.text_buffer_length.SetToolTip(
+            "Current number of bytes in the write buffer."
+        )
         self.spin_packet_buffer_max.SetToolTip("Current maximum write buffer limit.")
         self.checkbox_autolock.SetToolTip("Lock rail after operations are finished.")
         self.checkbox_autolock.SetValue(1)
@@ -96,17 +147,29 @@ class LhystudiosDriverGui(MWindow):
     def __do_layout(self):
         # begin wxGlade: LhystudiosDriver.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_general = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "General Options"), wx.HORIZONTAL)
-        sizer_buffer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Write Buffer"), wx.HORIZONTAL)
-        sizer_6 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Pulse Planner"), wx.HORIZONTAL)
-        sizer_home = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Shift Home Position"), wx.HORIZONTAL)
+        sizer_general = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "General Options"), wx.HORIZONTAL
+        )
+        sizer_buffer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Write Buffer"), wx.HORIZONTAL
+        )
+        sizer_6 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Pulse Planner"), wx.HORIZONTAL
+        )
+        sizer_home = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Shift Home Position"), wx.HORIZONTAL
+        )
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_config = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Configuration"), wx.HORIZONTAL)
+        sizer_config = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Configuration"), wx.HORIZONTAL
+        )
         sizer_3 = wx.BoxSizer(wx.VERTICAL)
         sizer_16 = wx.BoxSizer(wx.VERTICAL)
         sizer_17 = wx.BoxSizer(wx.VERTICAL)
-        sizer_board = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Board Setup"), wx.HORIZONTAL)
+        sizer_board = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Board Setup"), wx.HORIZONTAL
+        )
         sizer_board.Add(self.combobox_board, 1, 0, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, "")
         sizer_board.Add(label_1, 1, 0, 0)
@@ -263,5 +326,3 @@ class LhystudiosDriverGui(MWindow):
 
     def on_check_random_ppi(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
         self.context.random_ppi = self.checkbox_random_ppi.GetValue()
-
-

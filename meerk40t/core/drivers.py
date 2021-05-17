@@ -491,14 +491,14 @@ class Drivers(Modifier):
         Modifier.__init__(self, context, name, channel)
 
     def get_driver(self, driver_name, **kwargs):
-        dev = 'device/%s' % driver_name
+        dev = "device/%s" % driver_name
         try:
             return self.context.registered[dev][1]
         except (KeyError, IndexError):
             return None
 
     def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
-        dev = 'device/%s' % device_name
+        dev = "device/%s" % device_name
         try:
             device = self.context.registered[dev]
         except KeyError:
@@ -509,9 +509,7 @@ class Drivers(Modifier):
         try:
             for itype in self.context.match("driver/%s" % driver_type):
                 driver_class = self.context.registered[itype]
-                driver = driver_class(
-                    self.context, device_name, **kwargs
-                )
+                driver = driver_class(self.context, device_name, **kwargs)
                 device[1] = driver
                 return driver
         except (KeyError, IndexError):
@@ -535,9 +533,7 @@ class Drivers(Modifier):
             input_type=(None, "spooler"),
             output_type="driver",
         )
-        def driver(
-            command, channel, _, data=None, new=None, remainder=None, **kwargs
-        ):
+        def driver(command, channel, _, data=None, new=None, remainder=None, **kwargs):
             spooler = None
             if data is None:
                 if len(command) > 6:
@@ -562,7 +558,7 @@ class Drivers(Modifier):
             elif remainder is None:
                 channel(_("----------"))
                 channel(_("Driver:"))
-                for i, drv in enumerate(self.context.root.match('device', suffix=True)):
+                for i, drv in enumerate(self.context.root.match("device", suffix=True)):
                     channel("%d: %s" % (i, drv))
                 channel(_("----------"))
                 channel(_("Driver %s:" % device_name))
@@ -580,7 +576,7 @@ class Drivers(Modifier):
             driver, name = data
             channel(_("----------"))
             channel(_("Driver:"))
-            for i, drv in enumerate(self.context.root.match('device', suffix=True)):
+            for i, drv in enumerate(self.context.root.match("device", suffix=True)):
                 channel("%d: %s" % (i, drv))
             channel(_("----------"))
             channel(_("Driver %s:" % name))
@@ -610,4 +606,3 @@ class Drivers(Modifier):
             driver, name = data
             driver.reset()
             return data_type, data
-

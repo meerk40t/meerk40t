@@ -17,7 +17,7 @@ def plugin(kernel, lifecycle=None):
         device_context = kernel.get_context("devices")
         index = 0
         for d in device_context._kernel.keylist(device_context._path):
-            suffix = d.split('/')[-1]
+            suffix = d.split("/")[-1]
             if not suffix.startswith("device_"):
                 continue
             line = device_context.setting(str, suffix, None)
@@ -28,7 +28,7 @@ def plugin(kernel, lifecycle=None):
                 break
             index += 1
         device_context._devices = index
-        kernel.root.setting(str, 'active', '0')
+        kernel.root.setting(str, "active", "0")
     elif lifecycle == "register":
         root = kernel.root
 
@@ -43,7 +43,12 @@ def plugin(kernel, lifecycle=None):
             except (KeyError, ValueError):
                 return
             if remainder is None:
-                channel(_("Device %s, %s, %s" % (str(spooler), str(input_driver), str(output))))
+                channel(
+                    _(
+                        "Device %s, %s, %s"
+                        % (str(spooler), str(input_driver), str(output))
+                    )
+                )
             if input_driver is not None:
                 try:
                     t = input_driver.type
@@ -52,7 +57,9 @@ def plugin(kernel, lifecycle=None):
                     pass
             return "dev", (spooler, input_driver, output)
 
-        @kernel.console_argument("index", type=int, help="Index of device being activated")
+        @kernel.console_argument(
+            "index", type=int, help="Index of device being activated"
+        )
         @kernel.console_command(
             "activate",
             help="delegate commands to currently selected device",
@@ -98,6 +105,7 @@ def plugin(kernel, lifecycle=None):
                 index += 1
             channel("----------")
             return "device", data
+
         #
         # @kernel.console_command(
         #     "add",
@@ -136,6 +144,6 @@ def plugin(kernel, lifecycle=None):
             device_context = kernel.get_context("devices")
             try:
                 delattr(device_context, "device_%d" % index)
-                del root.registered['device/%d' % index]
+                del root.registered["device/%d" % index]
             except (KeyError, ValueError):
                 raise SyntaxError("Invalid device-string index.")
