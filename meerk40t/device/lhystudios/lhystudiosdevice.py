@@ -368,6 +368,20 @@ def plugin(kernel, lifecycle=None):
             output.close()
             channel("CH341 Closed.")
 
+        @kernel.console_option("port", "p", default=23, help="port to listen on.")
+        @kernel.console_command("lhyserver", help="activate the lhyserver.")
+        def lhyserver(channel, _, port=23, **kwargs):
+            root = kernel.root
+            try:
+                root.open_as("module/TCPServer", "lhyserver", port=port)
+                channel(_("TCP Server for Lhystudios"))
+                root.channel("server").watch(kernel.channel("console"))
+                channel(_("Watching Channel: %s") % "server")
+                spooler, input_driver, output = root.registered["device/%s" % root.active]
+                root.channel("lhyserver/recv").watch(output.write)
+            except OSError:
+                channel(_("Server failed on port: %d") % port)
+            return
 
 distance_lookup = [
     b"",
