@@ -169,7 +169,6 @@ class DeviceManager(MWindow):
         # END OUTPUT
 
         if output_type == "file":
-            dlg.Destroy()
             dlg = wx.TextEntryDialog(
                 None,
                 _("What filename does this device output to?"),
@@ -189,23 +188,34 @@ class DeviceManager(MWindow):
             self.refresh_device_list()
             return
 
-        if output_type == "network":
-            dlg.Destroy()
+        if output_type == "tcp":
             dlg = wx.TextEntryDialog(
                 None,
                 _("What network address does this device output to?"),
                 _("Output"),
             )
             if dlg.ShowModal() == wx.ID_OK:
-                network = dlg.GetValue()
+                address = dlg.GetValue()
             else:
                 dlg.Destroy()
                 return
-            self.context(
-                "spool%s -r driver -n %s network %s\n"
-                % (spooler_input, device_type, network)
-            )
             dlg.Destroy()
+            dlg = wx.TextEntryDialog(
+                None,
+                _("What network port does this device output to?"),
+                _("Output"),
+            )
+            if dlg.ShowModal() == wx.ID_OK:
+                port = dlg.GetValue()
+            else:
+                dlg.Destroy()
+                return
+            dlg.Destroy()
+            self.context(
+                "spool%s -r driver -n %s tcp %s %s\n"
+                % (spooler_input, device_type, address, port)
+            )
+
             self.refresh_device_list()
             return
 
