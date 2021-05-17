@@ -163,7 +163,12 @@ class Planner(Modifier):
                             continue
                     except TypeError:
                         pass
-                    plan.append(copy(c))
+                    copy_c = copy(c)
+                    try:
+                        copy_c.deep_copy_children(c)
+                    except AttributeError:
+                        pass
+                    plan.append(copy_c)
                 self.context.signal("plan", self._default_plan, 1)
                 return "plan", (plan, original, commands)
 
@@ -232,7 +237,12 @@ class Planner(Modifier):
                         continue
                 except AttributeError:
                     pass
-                plan.append(copy(c))
+                copy_c = copy(c)
+                try:
+                    copy_c.deep_copy_children(c)
+                except AttributeError:
+                    pass
+                plan.append(copy_c)
             channel(_("Copied Operations."))
             self.context.signal("plan", self._default_plan, 1)
             return data_type, data
@@ -253,7 +263,12 @@ class Planner(Modifier):
                         continue
                 except TypeError:
                     pass
-                plan.append(copy(c))
+                copy_c = copy(c)
+                try:
+                    copy_c.deep_copy_children(c)
+                except AttributeError:
+                    pass
+                plan.append(copy_c)
             channel(_("Copied Operations."))
             self.context.signal("plan", self._default_plan, 1)
             return data_type, data
