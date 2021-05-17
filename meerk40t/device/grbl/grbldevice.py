@@ -19,6 +19,11 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/grbl", GRBLEmulator)
         kernel.register("load/GCodeLoader", GCodeLoader)
 
+        @kernel.console_option('grbl', type=int, help='run grbl-emulator on given port.')
+        @kernel.console_option('flip_x', type=bool, action='store_true', help="grbl x-flip")
+        @kernel.console_option('flip_y', type=bool, action='store_true', help="grbl y-flip")
+        @kernel.console_option('adjust_x', type=int, help='adjust grbl home_x position')
+        @kernel.console_option('adjust_y', type=int, help='adjust grbl home_y position')
         @kernel.console_option(
             "path", "p", type=str, default="/", help="Path of variables to set."
         )
@@ -39,7 +44,7 @@ def plugin(kernel, lifecycle=None):
                 chan = "server"
                 path_context.channel(chan).watch(kernel.channel("console"))
                 channel(_("Watching Channel: %s") % chan)
-                emulator = path_context.open("module/GRBLEmulator")
+                emulator = path_context.open("emulator/grbl")
                 path_context.channel("grbl/recv").watch(emulator.write)
             except OSError:
                 channel(_("Server failed on port: %d") % port)
@@ -179,6 +184,11 @@ class GRBLDriver(Driver):
                 return
         Driver._process_spooled_item(self)
 
+    @property
+    def type(self):
+        return "grbl"
+
+
 
 class GRBLEmulator(Module):
     def __init__(self, context, path):
@@ -245,12 +255,6 @@ class GRBLEmulator(Module):
         self.elements = None
 
     def initialize(self, *args, **kwargs):
-        # TODO: fix grbl commands with proper console commands.
-        # parser.add_argument('-gs', '--grbl', type=int, help='run grbl-emulator on given port.')
-        # parser.add_argument('-gy', '--flip_y', action='store_true', help="grbl y-flip")
-        # parser.add_argument('-gx', '--flip_x', action='store_true', help="grbl x-flip")
-        # parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x position')
-        # parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
         self.grbl_channel = self.context.channel("grbl")
 
     def close(self):
@@ -688,6 +692,10 @@ class GRBLEmulator(Module):
         self.feed_convert = lambda s: s / ((self.scale / MILS_PER_MM) * 60.0)
         self.feed_invert = lambda s: s * ((self.scale / MILS_PER_MM) * 60.0)
         # units to mm, seconds to minutes.
+
+    @property
+    def type(self):
+        return "grbl"
 
 
 class GcodeBlob:
