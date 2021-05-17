@@ -2983,7 +2983,8 @@ class Elemental(Modifier):
             "trace_hull", help="trace the convex hull of current elements"
         )
         def trace_hull(command, channel, _, args=tuple(), **kwargs):
-            spooler = context.default_spooler
+            active = self.context.active
+            spooler, input_device, output = self.context.registered['device/%s' % active]
             pts = []
             for obj in self.elems(emphasized=True):
                 if isinstance(obj, Path):
@@ -3015,7 +3016,8 @@ class Elemental(Modifier):
             "trace_quick", help="quick trace the bounding box of current elements"
         )
         def trace_quick(command, channel, _, args=tuple(), **kwargs):
-            spooler = context.default_spooler
+            active = self.context.active
+            spooler, input_device, output = self.context.registered['device/%s' % active]
             bbox = self.selected_area()
             if bbox is None:
                 channel(_("No elements bounds to trace."))

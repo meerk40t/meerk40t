@@ -63,8 +63,6 @@ class TCPOutput:
 
     def write(self, data):
         self.buffer += data
-        if self._stream is not None:
-            self.buffer = bytearray()
         try:
             if self._stream is None:
                 self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

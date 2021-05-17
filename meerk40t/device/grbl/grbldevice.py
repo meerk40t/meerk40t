@@ -352,7 +352,8 @@ class GRBLEmulator(Module):
             yield code
 
     def commandline(self, data):
-        spooler = self.context.default_spooler
+        active = self.context.active
+        spooler, input_device, output = self.context.registered['device/%s' % active]
         pos = data.find("(")
         commands = {}
         while pos != -1:
@@ -421,7 +422,8 @@ class GRBLEmulator(Module):
         return self.command(commands)
 
     def command(self, gc):
-        spooler = self.context.default_spooler
+        active = self.context.active
+        spooler, input_device, output = self.context.registered['device/%s' % active]
         if "m" in gc:
             for v in gc["m"]:
                 if v == 0 or v == 1:
