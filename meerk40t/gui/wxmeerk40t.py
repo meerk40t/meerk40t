@@ -2996,7 +2996,8 @@ class ShadowTree:
             pass
 
         try:
-            return node.object.id
+            if node.object.id is not None:
+                return node.object.id
         except AttributeError:
             pass
 
