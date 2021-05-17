@@ -391,6 +391,9 @@ class MoshiDriver(Driver, Modifier):
         Modifier.__init__(self, context, job_name, channel)
         Driver.__init__(self, context=context)
 
+        self.next = None
+        self.prev = None
+
         self.plot_planner = PlotPlanner(self.settings)
 
         self.plot = None
@@ -837,6 +840,10 @@ class MoshiController(Module):
     def __init__(self, context, name, channel=None, *args, **kwargs):
         Module.__init__(self, context, name, channel)
         self.state = STATE_UNKNOWN
+
+        self.next = None
+        self.prev = None
+
         self.is_shutdown = False
 
         self._thread = None
