@@ -446,7 +446,7 @@ class LhystudiosControllerGui(MWindow):
             None,
         ):
             try:
-                self.context("usb_connect\n")
+                self.context("dev usb_connect\n")
             except ConnectionRefusedError:
                 dlg = wx.MessageDialog(
                     None,
@@ -457,7 +457,7 @@ class LhystudiosControllerGui(MWindow):
                 result = dlg.ShowModal()
                 dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
-            self.context("usb_disconnect\n")
+            self.context("dev usb_disconnect\n")
 
     def on_control_state(self, origin, state):
         if self.last_control_state == state:
@@ -471,8 +471,8 @@ class LhystudiosControllerGui(MWindow):
         if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
 
             def f(event):
-                self.context("start\n")
-                self.context("hold\n")
+                self.context("dev start\n")
+                self.context("dev hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#009900")
@@ -497,7 +497,7 @@ class LhystudiosControllerGui(MWindow):
         elif state == STATE_PAUSE:
 
             def f(event):
-                self.context("resume\n")
+                self.context("dev resume\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00dd00")
@@ -507,7 +507,7 @@ class LhystudiosControllerGui(MWindow):
         elif state == STATE_ACTIVE:
 
             def f(event):
-                self.context("hold\n")
+                self.context("dev hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ff00")
@@ -517,7 +517,7 @@ class LhystudiosControllerGui(MWindow):
         elif state == STATE_TERMINATE:
 
             def f(event):
-                self.context("abort\n")
+                self.context("dev abort\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ffff")
@@ -569,13 +569,13 @@ class LhystudiosControllerGui(MWindow):
 
     def on_menu_pause(self, event):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("pause\n")
+            self.context("dev pause\n")
         except AttributeError:
             pass
 
     def on_menu_stop(self, event):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("estop\n")
+            self.context("dev estop\n")
         except AttributeError:
             pass
 

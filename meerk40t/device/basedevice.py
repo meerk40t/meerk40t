@@ -39,7 +39,7 @@ def plugin(kernel, lifecycle=None):
         )
         def dev(channel, _, remainder=None, **kwargs):
             try:
-                spooler, input_driver, output = root.registered[root.active]
+                spooler, input_driver, output = root.registered["device/%s" % root.active]
             except (KeyError, ValueError):
                 return
             if remainder is None:
