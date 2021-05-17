@@ -41,25 +41,24 @@ def plugin(kernel, lifecycle=None):
         kernel.register("load/EgvLoader", EgvLoader)
         context = kernel.root
 
+        @context.console_option("idonotlovemyhouse", type=bool, action="store_true", help="laser fire pulse duration")
+        @context.console_argument("time", type=float, help="laser fire pulse duration")
         @context.console_command(
-            "pulse", help="pulse <time>: Pulse the laser in place."
+            "pulse", input_type="lhystudios", help="pulse <time>: Pulse the laser in place."
         )
-        def pulse(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, data=None, **kwargs):
+            spooler, driver, output = data
+            if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
-            try:
-                value = float(args[0]) / 1000.0
-            except ValueError:
-                channel(_('"%s" not a valid pulse time in milliseconds') % (args[0]))
-                return
+            value = time / 1000.0
             if value > 1.0:
                 channel(
                     _('"%s" exceeds 1 second limit to fire a standing laser.')
-                    % (args[0])
+                    % (value)
                 )
                 try:
-                    if args[1] != "idonotlovemyhouse":
+                    if not idonotlovemyhouse:
                         return
                 except IndexError:
                     return
@@ -70,83 +69,94 @@ def plugin(kernel, lifecycle=None):
                 yield COMMAND_WAIT, value
                 yield COMMAND_LASER_OFF
 
-            if self.spooler.job_if_idle(timed_fire):
+            if spooler.job_if_idle(timed_fire):
                 channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
             else:
                 channel(_("Pulse laser failed: Busy"))
             return
 
-        @context.console_command("speed", help="Set Speed in Driver.")
-        def speed(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("Speed set at: %f mm/s") % self.speed)
+        @context.console_option("difference", "d", type=bool, action="store_true", help="Change speed by this amount.")
+        @context.console_argument("speed", type=str, help="Set the driver speed.")
+        @context.console_command("speed", input_type="lhystudios", help="Set current speed of driver.")
+        def speed(command, channel, _, data=None, speed=None, increment=False, decrement=False,  **kwargs):
+            spooler, driver, output = data
+            if speed is None or (increment and decrement):
+                channel(_("Speed set at: %f mm/s") % driver.speed)
                 return
-            inc = False
-            percent = False
-            speed = args[0]
-            if speed == "inc":
-                speed = args[1]
-                inc = True
             if speed.endswith("%"):
                 speed = speed[:-1]
                 percent = True
+            else:
+                percent = False
             try:
                 s = float(speed)
             except ValueError:
                 channel(_("Not a valid speed or percent."))
                 return
-            if percent and inc:
-                s = self.speed + self.speed * (s / 100.0)
-            elif inc:
-                s += self.speed
+            if percent and increment:
+                s = driver.speed + driver.speed * (s / 100.0)
+            elif increment:
+                s += driver.speed
             elif percent:
-                s = self.speed * (s / 100.0)
-            self.set_speed(s)
-            channel(_("Speed set at: %f mm/s") % self.speed)
+                s = driver.speed * (s / 100.0)
+            driver.set_speed(s)
+            channel(_("Speed set at: %f mm/s") % driver.speed)
 
-        @context.console_command("power", help="Set Driver Power")
-        def power(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("Power set at: %d pulses per inch") % self.power)
+        @context.console_argument("ppi", type=int, help="pulses per inch [0-1000]")
+        @context.console_command("power", input_type="lhystudios", help="Set Driver Power")
+        def power(command, channel, _, data, ppi=None, args=tuple(), **kwargs):
+            spooler, driver, output = data
+            if ppi is None:
+                channel(_("Power set at: %d pulses per inch") % driver.power)
             else:
                 try:
-                    self.set_power(int(args[0]))
+                    driver.set_power(ppi)
                 except ValueError:
                     pass
 
+        @context.console_argument("accel", type=int, help="Acceleration amount [1-4]")
         @context.console_command(
-            "acceleration", help="Set Driver Acceleration [1-4]"
+            "acceleration", input_type="lhystudios", help="Set Driver Acceleration [1-4]"
         )
-        def acceleration(command, channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                if self.acceleration is None:
+        def acceleration(command, channel, _, data=None, accel=None, args=tuple(), **kwargs):
+            """
+            Lhymicro-gl speedcodes have a single character of either 1,2,3,4 which indicates
+            the acceleration value of the laser. This is typically 1 below 25.4, 2 below 60,
+            3 below 127, and 4 at any value greater than that. Manually setting this on the
+            fly can be used to check the various properties of that mode.
+            """
+            spooler, driver, output = data
+            if accel is None:
+                if driver.acceleration is None:
                     channel(_("Acceleration is set to default."))
                 else:
-                    channel(_("Acceleration: %d") % self.acceleration)
+                    channel(_("Acceleration: %d") % driver.acceleration)
 
             else:
                 try:
-                    v = int(args[0])
+                    v = accel
                     if v not in (1, 2, 3, 4):
-                        self.set_acceleration(None)
+                        driver.set_acceleration(None)
                         channel(_("Acceleration is set to default."))
                         return
-                    self.set_acceleration(v)
-                    channel(_("Acceleration: %d") % self.acceleration)
+                    driver.set_acceleration(v)
+                    channel(_("Acceleration: %d") % driver.acceleration)
                 except ValueError:
                     channel(_("Invalid Acceleration [1-4]."))
                     return
 
-        @context.console_command("pause", help="realtime pause/resume of the machine")
-        def realtime_pause(command, channel, _, args=tuple(), **kwargs):
-            if self.is_paused:
-                self.resume()
+        @context.console_command("pause",  input_type="lhystudios",help="realtime pause/resume of the machine")
+        def realtime_pause(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            if driver.is_paused:
+                driver.resume()
             else:
-                self.pause()
+                driver.pause()
 
-        @context.console_command(("estop", "abort"), help="Abort Job")
-        def pipe_abort(command, channel, _, args=tuple(), **kwargs):
-            self.reset()
+        @context.console_command(("estop", "abort"), input_type="lhystudios", help="Abort Job")
+        def pipe_abort(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            driver.reset()
             channel("Lhystudios Channel Aborted.")
 
         @context.console_argument(
@@ -156,21 +166,22 @@ def plugin(kernel, lifecycle=None):
             "rapid_y", type=float, help="limit y speed for rapid."
         )
         @context.console_command(
-            "rapid_override", help="limit speed of typical rapid moves."
+            "rapid_override",  input_type="lhystudios",help="limit speed of typical rapid moves."
         )
-        def rapid_override(command, channel, _, rapid_x=None, rapid_y=None, **kwargs):
+        def rapid_override(command, channel, _, data=None, rapid_x=None, rapid_y=None, **kwargs):
+            spooler, driver, output = data
             if rapid_x is not None:
                 if rapid_y is None:
                     rapid_y = rapid_x
-                self.rapid_override = True
-                self.rapid_override_speed_x = rapid_x
-                self.rapid_override_speed_y = rapid_y
+                driver.rapid_override = True
+                driver.rapid_override_speed_x = rapid_x
+                driver.rapid_override_speed_y = rapid_y
                 channel(
                     _("Rapid Limit: %f, %f")
-                    % (self.rapid_override_speed_x, self.rapid_override_speed_y)
+                    % (driver.rapid_override_speed_x, driver.rapid_override_speed_y)
                 )
             else:
-                self.rapid_override = False
+                driver.rapid_override = False
                 channel(_("Rapid Limit Off"))
 
 

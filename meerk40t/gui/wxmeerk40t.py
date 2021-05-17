@@ -8,9 +8,9 @@ import sys
 import threading
 import traceback
 
-from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from .mwindow import MWindow
 from .simulation import Simulation
+from ..core.cutcode import CutCode
 
 try:
     from math import tau
@@ -134,6 +134,7 @@ from .laserrender import (
 )
 from .moshi.moshicontrollergui import MoshiControllerGui
 from .moshi.moshidrivergui import MoshiDriverGui
+from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
 from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
 from .navigation import Navigation
@@ -3159,6 +3160,8 @@ class ShadowTree:
             self.context.open("window/ImageProperty", self.gui, node=node)
         elif isinstance(obj, SVGElement):
             self.context.open("window/PathProperty", self.gui, node=node)
+        elif isinstance(obj, CutCode):
+            self.context.open("window/Simulate", self.gui, node=node)
 
     def on_item_selection_changed(self, event):
         """
@@ -3522,8 +3525,8 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/lhystudios/Preferences", LhystudiosDriverGui)
         kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
         kernel.register("window/lhystudios/AccelerationChart", LhystudiosAccelerationChart)
-        kernel.register("window/moshi/Preferences", LhystudiosDriverGui)
-        kernel.register("window/moshi/Controller", LhystudiosControllerGui)
+        kernel.register("window/moshi/Preferences", MoshiDriverGui)
+        kernel.register("window/moshi/Controller", MoshiControllerGui)
 
         context = kernel.get_context("/")
 
@@ -3580,7 +3583,7 @@ class wxMeerK40t(wx.App, Module):
             return "window", data
 
         @kernel.console_option("driver", "d", type=bool, action="store_true", help="Load Driver Specific Window")
-        @kernel.console_option("output", "o", type=bool, action="store_true", help="Load Ouput Specific Window")
+        @kernel.console_option("output", "o", type=bool, action="store_true", help="Load Output Specific Window")
         @kernel.console_option("source", "s", type=bool, action="store_true", help="Load Source Specific Window")
         @kernel.console_argument(
             "window", type=str, help="window to apply subcommand to"
