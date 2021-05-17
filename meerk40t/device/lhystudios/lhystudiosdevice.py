@@ -36,7 +36,7 @@ from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("driver/lhystudios", LhystudiosDriver)
-        kernel.register("pipe/lhystudios", LhystudiosController)
+        kernel.register("output/lhystudios", LhystudiosController)
         kernel.register("emulator/lhystudios", LhystudiosEmulator)
         kernel.register("load/EgvLoader", EgvLoader)
         context = kernel.root

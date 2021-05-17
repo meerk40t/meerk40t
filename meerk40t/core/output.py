@@ -97,8 +97,8 @@ class Outputs(Modifier):
             remainder=None,
             **kwargs
         ):
-            if len(command) > 4:
-                self._default_output = command[4:]
+            if len(command) > 6:
+                self._default_output = command[6:]
                 self.context.signal("output", self._default_output, None)
             if new is not None and self._default_output in self._outputs:
                 for i in range(1000):
@@ -119,11 +119,11 @@ class Outputs(Modifier):
             self.context.signal("output", output_name, 1)
 
             if data is not None:
-                src_or_interp, dname = data
-                src_or_interp.next = output
-                output.prev = src_or_interp
-                src_or_interp.data_output = output.write
-                src_or_interp.data_output_realtime = output.realtime_write
+                input_driver, dname = data
+                input_driver.next = output
+                output.prev = input_driver
+                input_driver.data_output = output.write
+                input_driver.data_output_realtime = output.realtime_write
             elif remainder is None:
                 output, output_name = output_data
                 channel(_("----------"))
@@ -157,10 +157,10 @@ class Outputs(Modifier):
             self._outputs[output_name] = fileoutput, output_name
 
             if data is not None:
-                dsource, dname = data
-                dsource.next = fileoutput
-                dsource.data_output = fileoutput.write
-                dsource.data_output_realtime = fileoutput.realtime_write
+                input_driver, dname = data
+                input_driver.next = fileoutput
+                input_driver.data_output = fileoutput.write
+                input_driver.data_output_realtime = fileoutput.realtime_write
             return "output", (fileoutput, output_name)
 
         @self.context.console_command(

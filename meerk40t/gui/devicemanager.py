@@ -128,19 +128,19 @@ class DeviceManager(MWindow):
             return
         dlg.Destroy()
 
-        names = [name for name in self.context._kernel.match("pipe", suffix=True)]
+        names = [name for name in self.context._kernel.match("output", suffix=True)]
         dlg = wx.SingleChoiceDialog(
             None, _("Where does the device output data?"), _("Output Type"), names
         )
         dlg.SetSelection(0)
         if dlg.ShowModal() == wx.ID_OK:
-            pipe_type = names[dlg.GetSelection()]
+            output_type = names[dlg.GetSelection()]
         else:
             dlg.Destroy()
             return
         dlg.Destroy()
 
-        if pipe_type == 'file':
+        if output_type == 'file':
             dlg.Destroy()
             dlg = wx.TextEntryDialog(
                 None, _("What filename does this device output to?"), _("Output"),
@@ -151,11 +151,11 @@ class DeviceManager(MWindow):
                 dlg.Destroy()
                 return
             dev = "spool%s driver -n %s outfile %s\n" % (spooler_input, device_type, filename)
-            self.context("device add %s\n%s\n" % (dev, dev))
+            self.context("device init %s\n" % dev)
             dlg.Destroy()
             return
 
-        if pipe_type == 'network':
+        if output_type == 'network':
             dlg.Destroy()
             dlg = wx.TextEntryDialog(
                 None, _("What network address does this device output to?"), _("Output"),
@@ -166,12 +166,12 @@ class DeviceManager(MWindow):
                 dlg.Destroy()
                 return
             dev = "spool%s driver -n %s network %s\n" % (spooler_input, device_type, network)
-            self.context("device add %s\n%s\n" % (dev, dev))
+            self.context("device add %s\n" % dev)
             dlg.Destroy()
             return
 
-        dev = "spool%s driver -n %s pipe -n %s\n" % (spooler_input, device_type, pipe_type)
-        self.context("device add %s\n%s\n" % (dev,dev))
+        dev = "spool%s driver -n %s output -n %s\n" % (spooler_input, device_type, output_type)
+        self.context("device add %s\n" % dev)
         self.refresh_device_list()
         self.context.get_context('devices').flush()
 

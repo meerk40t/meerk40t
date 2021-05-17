@@ -142,11 +142,20 @@ def run():
         pass
 
     try:
-        from .core import pipes
+        from .core import output
 
-        kernel.add_plugin(pipes.plugin)
+        kernel.add_plugin(output.plugin)
     except ImportError:
         pass
+
+
+    try:
+        from .core import inputs
+
+        kernel.add_plugin(inputs.plugin)
+    except ImportError:
+        pass
+
 
     try:
         from .core import elements
@@ -303,10 +312,10 @@ def run():
     device_context = kernel.get_context("devices")
     if not hasattr(device_context, "_devices") or device_context._devices == 0:
         if args.device == "Moshi":
-            dev = "spool driver -n moshi pipe -n moshi"
+            dev = "spool driver -n moshi output -n moshi"
         else:
-            dev = "spool driver -n lhystudios pipe -n lhystudios"
-        kernel_root("device add %s\n%s\n" % (dev, dev))
+            dev = "spool driver -n lhystudios output -n lhystudios"
+        kernel_root("device init %s\n" % dev)
 
     if args.verbose:
         kernel._start_debugging()

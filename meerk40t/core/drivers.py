@@ -624,12 +624,3 @@ class Drivers(Modifier):
             driver.reset()
             return data_type, data
 
-        @self.context.console_command(
-            "out",
-            help="converts driver into source stream for pipes",
-            input_type="driver",
-            output_type="source",
-        )
-        def driver_list(data=None, **kwargs):
-            driver, name = data
-            return "source", (driver, None)

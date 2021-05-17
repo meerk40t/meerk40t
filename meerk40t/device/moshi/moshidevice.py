@@ -328,7 +328,7 @@ swizzle_table = [
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("driver/moshi", MoshiDriver)
-        kernel.register("pipe/moshi", MoshiController)
+        kernel.register("output/moshi", MoshiController)
         context = kernel.root
 
         @context.console_command("usb_connect", input_type="moshi", help="Connect USB")

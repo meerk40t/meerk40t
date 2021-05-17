@@ -71,7 +71,7 @@ def plugin(kernel, lifecycle=None):
             if driver is not None:
                 root.drivers._default_driver = driver.name
                 try:
-                    root.pipes._default_pipe = output.name
+                    root.outputs._default_output = output.name
                 except AttributeError:
                     pass
             return "device", (spooler, driver, output)
@@ -123,6 +123,20 @@ def plugin(kernel, lifecycle=None):
             while hasattr(data, "device_%d" % index):
                 index += 1
             setattr(data, "device_%d" % index, remainder)
+
+        @kernel.console_command(
+            "init",
+            help="init <device-string>",
+            input_type="device",
+        )
+        def init(channel, _, data, remainder, **kwargs):
+            if not remainder.startswith("spool") and not remainder.startswith("source"):
+                raise SyntaxError("Device string must start with 'spool' or 'source'")
+            index = 0
+            while hasattr(data, "device_%d" % index):
+                index += 1
+            setattr(data, "device_%d" % index, remainder)
+            kernel.root(remainder + '\n')
 
         @kernel.console_command(
             "delete",
