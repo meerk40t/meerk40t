@@ -160,7 +160,12 @@ class Planner(Modifier):
                             continue
                     except TypeError:
                         pass
-                    plan.append(copy(c))
+                    copy_c = copy(c)
+                    try:
+                        copy_c.deep_copy_children(c)
+                    except AttributeError:
+                        pass
+                    plan.append(copy_c)
                 self.context.signal("plan", self._default_plan, 1)
                 return "plan", (plan, original, commands, self._default_plan)
 
@@ -229,7 +234,13 @@ class Planner(Modifier):
                         continue
                 except AttributeError:
                     pass
-                plan.append(copy(c))
+                copy_c = copy(c)
+                try:
+                    copy_c.deep_copy_children(c)
+                except AttributeError:
+                    pass
+                plan.append(copy_c)
+
             channel(_("Copied Operations."))
             self.context.signal("plan", self._default_plan, 1)
             return data_type, data
@@ -250,7 +261,12 @@ class Planner(Modifier):
                         continue
                 except TypeError:
                     pass
-                plan.append(copy(c))
+                copy_c = copy(c)
+                try:
+                    copy_c.deep_copy_children(c)
+                except AttributeError:
+                    pass
+                plan.append(copy_c)
             channel(_("Copied Operations."))
             self.context.signal("plan", self._default_plan, 1)
             return data_type, data
@@ -473,23 +489,6 @@ class Planner(Modifier):
             commands.clear()
             self.context.signal("plan", self._default_plan, 0)
             return data_type, data
-
-        # CHANGED TO spool, for context 'spool'.
-        # @self.context.console_command(
-        #     "spool",
-        #     help="plan<?> spool",
-        #     input_type="plan",
-        #     output_type="plan",
-        # )
-        # def plan(command, channel, _, data_type=None, data=None, **kwargs):
-        #     plan, original, commands, name = data
-        #     active = context.active
-        #     if active is None:
-        #         return
-        #     context.active.spooler.jobs(plan)
-        #     channel(_("Spooled Plan."))
-        #     self.context.signal("plan", self._default_plan, 6)
-        #     return data_type, data
 
         @self.context.console_option("op", "o", type=str, help="unlock, origin, home")
         @self.context.console_argument("cols", type=int, help="columns for the grid")

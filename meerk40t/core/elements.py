@@ -711,9 +711,6 @@ class LaserOperation(Node):
                 self.show = obj.show
 
                 self.settings = LaserSettings(obj.settings)
-
-                for element in obj.children:
-                    self.add(element.object, type="opnode")
         if self.operation == "Cut":
             if self.settings.speed is None:
                 self.settings.speed = 10.0
@@ -785,6 +782,14 @@ class LaserOperation(Node):
 
     def __copy__(self):
         return LaserOperation(self)
+
+    def copy_children(self, obj):
+        for element in obj.children:
+            self.add(element.object, type="opnode")
+
+    def deep_copy_children(self, obj):
+        for element in obj.children:
+            self.add(element.object, type="elem")
 
     @property
     def operation(self):
@@ -3261,7 +3266,9 @@ class Elemental(Modifier):
             help="duplicate operation element nodes",
         )
         def duplicate_operation(node, **kwargs):
-            self.add_op(LaserOperation(node))
+            copy_op = LaserOperation(node)
+            copy_op.copy_children(node)
+            self.add_op(copy_op)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_conditional(
