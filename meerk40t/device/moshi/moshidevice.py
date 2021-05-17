@@ -331,6 +331,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("pipe/moshi", MoshiController)
         context = kernel.root
 
+        #Todo: Make all of these accept type moshi, then regular pipe can defer to these indirectly.
         @context.console_command("usb_connect", help="Connect USB")
         def usb_connect(command, channel, _, args=tuple(), **kwargs):
             try:
