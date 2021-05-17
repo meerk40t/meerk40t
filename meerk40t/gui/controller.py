@@ -443,8 +443,8 @@ class Controller(MWindow):
         if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
 
             def f(event):
-                self.context("start\n")
-                self.context("hold\n")
+                self.context("dev start\n")
+                self.context("dev hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#009900")
@@ -459,7 +459,7 @@ class Controller(MWindow):
         elif state == STATE_WAIT:
 
             def f(event):
-                self.context("control Wait Abort\n")
+                self.context("dev continue\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#dddd00")
@@ -469,7 +469,7 @@ class Controller(MWindow):
         elif state == STATE_PAUSE:
 
             def f(event):
-                self.context("resume\n")
+                self.context("dev resume\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00dd00")
@@ -479,7 +479,7 @@ class Controller(MWindow):
         elif state == STATE_ACTIVE:
 
             def f(event):
-                self.context("hold\n")
+                self.context("dev hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ff00")
@@ -489,7 +489,7 @@ class Controller(MWindow):
         elif state == STATE_TERMINATE:
 
             def f(event):
-                self.context("abort\n")
+                self.context("dev abort\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ffff")

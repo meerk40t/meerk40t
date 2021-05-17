@@ -487,7 +487,7 @@ class LhystudiosControllerGui(MWindow):
         elif state == STATE_WAIT:
 
             def f(event):
-                self.context("control Wait Abort\n")
+                self.context("dev continue\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#dddd00")

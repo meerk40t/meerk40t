@@ -378,6 +378,24 @@ def plugin(kernel, lifecycle=None):
             output.reset()
             channel("Moshi Channel Aborted.")
 
+        @context.console_command(
+            "status",
+            input_type="moshi",
+            help="abort waiting process on the controller.",
+        )
+        def realtime_pause(data=None, **kwargs):
+            spooler, driver, output = data
+            driver.update_status()
+
+        @context.console_command(
+            "continue",
+            input_type="moshi",
+            help="abort waiting process on the controller.",
+        )
+        def realtime_pause(data=None, **kwargs):
+            spooler, driver, output = data
+            driver.abort_waiting = True
+
 
 def get_code_string_from_moshicode(code):
     if code == STATUS_OK:
@@ -877,12 +895,6 @@ class MoshiController(Module):
 
         context.setting(int, "packet_count", 0)
         context.setting(int, "rejected_count", 0)
-
-        def abort_wait():
-            self.abort_waiting = True
-
-        context.register("control/Wait Abort", abort_wait)
-        context.register("control/Status Update", self.update_status)
 
         self.reset()
 
