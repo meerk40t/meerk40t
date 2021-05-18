@@ -86,6 +86,9 @@ parser.add_argument(
     default="Lhystudios",
     help="Specify a default boot device type",
 )
+parser.add_argument(
+    "-p", "--no-plugins", action="store_true", help="Do not load meerk40t.plugins entrypoints"
+)
 
 
 def run():
@@ -281,7 +284,7 @@ def run():
         # Complete Gui Suppress implies no-gui.
         args.no_gui = True
 
-    if not getattr(sys, "frozen", False):
+    if not getattr(sys, "frozen", False) and not args.no_plugins:
         """
         These are dynamic plugins. They are dynamically found by entry points.
         """
