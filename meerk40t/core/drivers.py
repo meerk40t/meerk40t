@@ -47,8 +47,7 @@ class Driver:
         self.prev = None
 
         self.spooler = None
-        self.data_output = lambda e: e
-        self.realtime_data_output = lambda e: e
+        self.output = None
 
         self.process_item = None
         self.spooled_item = None
@@ -324,6 +323,12 @@ class Driver:
                 self.realtime_mist_coolant(*values)
         except AttributeError:
             pass  # Method doesn't exist.
+
+    def data_output(self, e):
+        self.output.write(e)
+
+    def realtime_data_output(self, e):
+        self.output.realtime_write(e)
 
     def hold(self):
         """

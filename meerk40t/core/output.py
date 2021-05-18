@@ -157,8 +157,9 @@ class Outputs(Modifier):
             if input_driver is not None:
                 input_driver.next = output
                 output.prev = input_driver
-                input_driver.data_output = output.write
-                input_driver.data_output_realtime = output.realtime_write
+
+                input_driver.output = output
+                output.input = input_driver
             elif remainder is None:
                 pass
 
@@ -189,8 +190,9 @@ class Outputs(Modifier):
             if input_driver is not None:
                 input_driver.next = output
                 output.prev = input_driver
-                input_driver.data_output = output.write
-                input_driver.data_output_realtime = output.realtime_write
+
+                input_driver.output = output
+                output.input = input_driver
             return "output", (output, device_name)
 
         @context.console_argument("address", type=str, help="tcp address")
@@ -219,8 +221,9 @@ class Outputs(Modifier):
             if input_driver is not None:
                 input_driver.next = output
                 output.prev = input_driver
-                input_driver.data_output = output.write
-                input_driver.data_output_realtime = output.realtime_write
+
+                input_driver.output = output
+                output.input = input_driver
             return "output", (output, device_name)
 
         @self.context.console_command(

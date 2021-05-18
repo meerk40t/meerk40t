@@ -626,7 +626,10 @@ class LhystudiosDriver(Driver):
         self.context._buffer_size = 0
 
         def primary_hold():
-            buffer = self.context._buffer_size
+            if self.output is None:
+                return True
+
+            buffer = len(self.output)
             if buffer is None:
                 return False
             return self.context.buffer_limit and buffer > self.context.buffer_max
@@ -1488,9 +1491,6 @@ class LhystudiosController:
         self.usb_send_channel = context.channel("%s/usb_send" % name)
         self.recv_channel = context.channel("%s/recv" % name)
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
-
-        # send.__len__ = lambda: len(self._buffer) + len(self._queue)
-        # TODO: Hold length value things no longer functions.
 
         context = self.context
 
