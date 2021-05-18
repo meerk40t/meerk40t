@@ -1639,7 +1639,7 @@ class Kernel:
                     self.listeners[signal] = [funct]
                 if path + signal in self.last_message:
                     last_message = self.last_message[path + signal]
-                    funct(*last_message)
+                    funct(path, *last_message)
         # Process any removing listeners.
         if remove is not None:
             for signal, path, funct in remove:
@@ -1661,7 +1661,10 @@ class Kernel:
                         "%s %s: %s was sent %s"
                         % (path, signal, str(listener), str(message))
                     )
-            self.last_message[signal] = message
+            if path is None:
+                self.last_message[signal] = message
+            else:
+                self.last_message[path + signal] = message
         self._is_queue_processing = False
 
     def last_signal(self, signal: str, path: str) -> Optional[Tuple]:
