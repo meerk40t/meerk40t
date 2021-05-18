@@ -455,11 +455,10 @@ class MoshiDriver(Driver, Modifier):
         root_context.setting(bool, "opt_rapid_between", True)
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 127)
-
-        context.root.listen("lifecycle;ready", self.on_driver_ready)
+        self.context._kernel.listen("lifecycle;ready", '', self.on_driver_ready)
 
     def detach(self, *args, **kwargs):
-        self.context.get_context("/").unlisten("lifecycle;ready", self.on_driver_ready)
+        self.context._kernel.unlisten("lifecycle;ready", '', self.on_driver_ready)
         self.thread = None
 
     def on_driver_ready(self, origin, *args):

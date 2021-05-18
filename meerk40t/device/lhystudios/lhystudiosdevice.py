@@ -656,10 +656,10 @@ class LhystudiosDriver(Driver):
         self.start_x = current_x
         self.start_y = current_y
 
-        context.root.listen("lifecycle;ready", self.on_driver_ready)
+        self.context._kernel.listen("lifecycle;ready", '', self.on_driver_ready)
 
     def detach(self, *args, **kwargs):
-        self.context.root.unlisten("lifecycle;ready", self.on_driver_ready)
+        self.context._kernel.unlisten("lifecycle;ready", '', self.on_driver_ready)
         self.thread = None
 
     def on_driver_ready(self, origin, *args):
