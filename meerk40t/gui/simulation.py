@@ -1,19 +1,34 @@
 import wx
 
 from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard_50
+from .laserrender import DRAW_MODE_INVERT, DRAW_MODE_FLIPXY, LaserRender
 from .mwindow import MWindow
+from .zmatrix import ZMatrix
+from ..core.cutcode import CutCode
+from ..kernel import Job
+from ..svgelements import Matrix
 
 _ = wx.GetTranslation
 
+MILS_PER_MM = 39.3701
 
-class Simulation(MWindow):
+
+class Simulation(MWindow, Job):
     def __init__(self, *args, **kwds):
         super().__init__(706, 755, *args, **kwds)
+        Job.__init__(self, job_name="Simulation")
         if len(args) >= 4:
             plan_name = args[3]
         else:
             plan_name = 0
         self.plan_name = plan_name
+
+        self.bed_dim = self.context.get_context("/")
+        self.bed_dim.setting(int, "bed_width", 310)
+        self.bed_dim.setting(int, "bed_height", 210)
+
+        self.process = self.update_view
+        self.interval = 1.0 / 20.0
 
         # Menu Bar
         self.Simulation_menubar = wx.MenuBar()
@@ -84,12 +99,37 @@ class Simulation(MWindow):
         self.__set_properties()
         self.__do_layout()
 
+        self.matrix = Matrix()
+
+        self.renderer = LaserRender(self.context)
+
+        self.previous_window_position = None
+        self.previous_scene_position = None
+        self._Buffer = None
+
         self.Bind(wx.EVT_SLIDER, self.on_slider_progress, self.slider_progress)
         self.Bind(wx.EVT_BUTTON, self.on_button_play, self.button_play)
         self.Bind(wx.EVT_SLIDER, self.on_slider_playback, self.slider_playbackspeed)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         # end wxGlade
+
+        self.view_pane.Bind(wx.EVT_PAINT, self.on_paint)
+        self.view_pane.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
+        self.view_pane.Bind(wx.EVT_MOTION, self.on_mouse_move)
+        self.view_pane.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
+        self.view_pane.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
+        self.view_pane.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
+
+        self.view_pane.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
+        self.view_pane.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
+        self.view_pane.Bind(wx.EVT_LEFT_UP, self.on_mouse_left_up)
+        self.view_pane.Bind(
+            wx.EVT_ENTER_WINDOW, lambda event: self.view_pane.SetFocus()
+        )  # Focus follows mouse.
+
+        self.Bind(wx.EVT_SIZE, self.on_size, self)
+        self.on_size()
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -183,9 +223,30 @@ class Simulation(MWindow):
         self.context.setting(str, "units_name", "mm")
         self.context.setting(int, "units_marks", 10)
         self.context.setting(int, "units_index", 0)
+        self.context.schedule(self)
+
+        bbox = (0, 0, self.bed_dim.bed_width * MILS_PER_MM, self.bed_dim.bed_height * MILS_PER_MM)
+        self.focus_viewport_scene(
+            bbox, self.view_pane.Size, 0.1
+        )
 
     def window_close(self):
-        pass
+        self.context.unschedule(self)
+
+    def on_size(self, event=None):
+        self.Layout()
+        width, height = self.ClientSize
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        self._Buffer = wx.Bitmap(width, height)
+        self.on_update_buffer()
+        try:
+            self.Refresh(True)
+            self.Update()
+        except RuntimeError:
+            pass
 
     def on_view_travel(self, event):  # wxGlade: Simulation.<event_handler>
         print("Event handler 'on_view_travel' not implemented!")
@@ -232,3 +293,274 @@ class Simulation(MWindow):
     def on_button_spool(self, event):  # wxGlade: Simulation.<event_handler>
         self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
         self.context("window close Simulation\n")
+
+    def update_view(self):
+        if not wx.IsMainThread():
+            wx.CallAfter(self._guithread_update_view)
+        else:
+            self._guithread_update_view()
+
+    def _guithread_update_view(self):
+        bed_width = self.bed_dim.bed_width
+        bed_height = self.bed_dim.bed_height
+
+        self.on_update_buffer()
+        try:
+            self.Refresh(True)
+            self.Update()
+        except RuntimeError:
+            pass
+
+    def on_erase(self, event):
+        """
+        Erase camera view.
+        :param event:
+        :return:
+        """
+        pass
+
+    def on_paint(self, event):
+        """
+        Paint camera view.
+        :param event:
+        :return:
+        """
+        try:
+            wx.BufferedPaintDC(self.view_pane, self._Buffer)
+        except (RuntimeError, TypeError):
+            pass
+
+    def on_update_buffer(self, event=None):
+        """
+        Draw Camera view.
+
+        :param event:
+        :return:
+        """
+        dm = self.context.draw_mode
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._Buffer)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        w, h = self._Buffer.GetSize()
+        # dc.SetBackground(wx.WHITE_BRUSH)
+        gc.SetBrush(wx.GREY_BRUSH)
+        gc.DrawRectangle(0, 0, w, h)
+        font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+        gc.SetFont(font, wx.BLACK)
+        gc.DrawText(_("Simulating Burn..."), 0, 0)
+
+        if dm & DRAW_MODE_FLIPXY != 0:
+            dc.SetUserScale(-1, -1)
+            dc.SetLogicalOrigin(w, h)
+
+        gc.PushState()
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
+        gc.SetBrush(wx.WHITE_BRUSH)
+        gc.DrawRectangle(0, 0, self.bed_dim.bed_width * MILS_PER_MM, self.bed_dim.bed_height * MILS_PER_MM)
+
+        context = self.context
+        zoom_scale = 1 / self.matrix.value_scale_x()
+        if zoom_scale < 1:
+            zoom_scale = 1
+        operations, original, commands, plan_name = self.context.default_plan()
+        for op in reversed(operations):
+            if isinstance(op, CutCode):
+                self.renderer.draw_cutcode(op,gc,0,0)
+        gc.PopState()
+        if dm & DRAW_MODE_INVERT != 0:
+            dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
+        gc.Destroy()
+        del dc
+
+    def convert_scene_to_window(self, position):
+        """
+        Scene Matrix convert scene to window.
+        :param position:
+        :return:
+        """
+        point = self.matrix.point_in_matrix_space(position)
+        return point[0], point[1]
+
+    def convert_window_to_scene(self, position):
+        """
+        Scene Matrix convert window to scene.
+        :param position:
+        :return:
+        """
+        point = self.matrix.point_in_inverse_space(position)
+        return point[0], point[1]
+
+    def on_mouse_move(self, event):
+        """
+        Handle mouse movement.
+
+        :param event:
+        :return:
+        """
+        if not event.Dragging():
+            return
+        else:
+            self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+        if self.previous_window_position is None:
+            return
+        pos = event.GetPosition()
+        window_position = pos.x, pos.y
+        scene_position = self.convert_window_to_scene(
+            [window_position[0], window_position[1]]
+        )
+        sdx = scene_position[0] - self.previous_scene_position[0]
+        sdy = scene_position[1] - self.previous_scene_position[1]
+        wdx = window_position[0] - self.previous_window_position[0]
+        wdy = window_position[1] - self.previous_window_position[1]
+        self.scene_post_pan(wdx, wdy)
+        self.previous_window_position = window_position
+        self.previous_scene_position = scene_position
+
+    def on_mouse_right_down(self, event):
+        menu = wx.Menu()
+        if menu.MenuItemCount != 0:
+            self.PopupMenu(menu)
+            menu.Destroy()
+
+    def on_mousewheel(self, event):
+        """
+        Handle mouse wheel.
+
+        Used for zooming.
+
+        :param event:
+        :return:
+        """
+        rotation = event.GetWheelRotation()
+        mouse = event.GetPosition()
+        if self.context.root.mouse_zoom_invert:
+            rotation = -rotation
+        if rotation > 1:
+            self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
+        elif rotation < -1:
+            self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
+
+    def on_mouse_left_down(self, event):
+        """
+        Handle mouse left down event.
+
+        Used for adjusting perspective items.
+
+        :param event:
+        :return:
+        """
+        self.previous_window_position = event.GetPosition()
+        self.previous_scene_position = self.convert_window_to_scene(
+            self.previous_window_position
+        )
+
+    def on_mouse_left_up(self, event):
+        """
+        Handle Mouse Left Up.
+
+        Drag Ends.
+
+        :param event:
+        :return:
+        """
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+        self.previous_window_position = None
+        self.previous_scene_position = None
+
+    def on_mouse_middle_down(self, event):
+        """
+        Handle mouse middle down
+
+        Panning.
+
+        :param event:
+        :return:
+        """
+        self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+        self.previous_window_position = event.GetPosition()
+        self.previous_scene_position = self.convert_window_to_scene(
+            self.previous_window_position
+        )
+
+    def on_mouse_middle_up(self, event):
+        """
+        Handle mouse middle up.
+
+        Pan ends.
+
+        :param event:
+        :return:
+        """
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+        self.previous_window_position = None
+        self.previous_scene_position = None
+
+    def scene_post_pan(self, px, py):
+        """
+        Scene Pan.
+        :param px:
+        :param py:
+        :return:
+        """
+        self.matrix.post_translate(px, py)
+        self.on_update_buffer()
+
+    def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
+        """
+        Scene Zoom.
+        :param sx:
+        :param sy:
+        :param ax:
+        :param ay:
+        :return:
+        """
+        self.matrix.post_scale(sx, sy, ax, ay)
+        self.on_update_buffer()
+
+    def focus_viewport_scene(
+        self, new_scene_viewport, scene_size, buffer=0.0, lock=True
+    ):
+        """
+        Focus on the given viewport in the scene.
+
+        :param new_scene_viewport: Viewport to have after this process within the scene.
+        :param scene_size: Size of the scene in which this viewport is active.
+        :param buffer: Amount of buffer around the edge of the new viewport.
+        :param lock: lock the scalex, scaley.
+        :return:
+        """
+        window_width, window_height = scene_size
+        left = new_scene_viewport[0]
+        top = new_scene_viewport[1]
+        right = new_scene_viewport[2]
+        bottom = new_scene_viewport[3]
+        viewport_width = right - left
+        viewport_height = bottom - top
+
+        left -= viewport_width * buffer
+        right += viewport_width * buffer
+        top -= viewport_height * buffer
+        bottom += viewport_height * buffer
+
+        if right == left:
+            scale_x = 100
+        else:
+            scale_x = window_width / float(right - left)
+        if bottom == top:
+            scale_y = 100
+        else:
+            scale_y = window_height / float(bottom - top)
+
+        cx = (right + left) / 2
+        cy = (top + bottom) / 2
+        self.matrix.reset()
+        self.matrix.post_translate(-cx, -cy)
+        if lock:
+            scale = min(scale_x, scale_y)
+            if scale != 0:
+                self.matrix.post_scale(scale)
+        else:
+            if scale_x != 0 and scale_y != 0:
+                self.matrix.post_scale(scale_x, scale_y)
+        self.matrix.post_translate(window_width / 2.0, window_height / 2.0)

@@ -194,14 +194,68 @@ class LaserRender:
                 p.AddLineToPoint(end[0] + x, end[1] + y)
             elif isinstance(cut, QuadCut):
                 p.AddQuadCurveToPoint(
-                    cut.control[0] + x, cut.control[1] + y, end[0] + x, end[1] + y
+                    cut.c()[0] + x, cut.c()[1] + y, end[0] + x, end[1] + y
                 )
             elif isinstance(cut, CubicCut):
                 p.AddCurveToPoint(
-                    cut.control1[0] + x,
-                    cut.control1[1] + y,
-                    cut.control2[0] + x,
-                    cut.control2[1] + y,
+                    cut.c1()[0] + x,
+                    cut.c1()[1] + y,
+                    cut.c2()[0] + x,
+                    cut.c2()[1] + y,
+                    end[0] + x,
+                    end[1] + y,
+                )
+            elif isinstance(cut, RasterCut):
+                image = cut.image
+                try:
+                    matrix = Matrix(image.transform)
+                except AttributeError:
+                    matrix = Matrix()
+                matrix.post_translate(x, y)
+                gc.PushState()
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+                cache = None
+                cache_id = -1
+                try:
+                    cache = cut.cache
+                    cache_id = cut.cache_id
+                except AttributeError:
+                    pass
+                if cache_id != id(image.image):
+                    cache = None
+                if cache is None:
+                    # max_allowed = 2048
+                    cut.c_width, cut.c_height = image.image.size
+                    cut.cache = self.make_thumbnail(image.image)
+                    cut.cache_id = id(image.image)
+                gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
+                gc.PopState()
+            last_point = end
+        gc.StrokePath(p)
+        del p
+
+    def draw_cutcode(
+        self, cutcode: CutCode, gc: wx.GraphicsContext, x: int = 0, y: int = 0
+    ):
+        last_point = None
+        p = gc.CreatePath()
+        for cut in cutcode:
+            start = cut.start()
+            end = cut.end()
+            if last_point != start:
+                p.MoveToPoint(start[0] + x, start[1] + y)
+            if isinstance(cut, LineCut):
+                p.AddLineToPoint(end[0] + x, end[1] + y)
+            elif isinstance(cut, QuadCut):
+                p.AddQuadCurveToPoint(
+                    cut.c()[0] + x, cut.c()[1] + y, end[0] + x, end[1] + y
+                )
+            elif isinstance(cut, CubicCut):
+                p.AddCurveToPoint(
+                    cut.c1()[0] + x,
+                    cut.c1()[1] + y,
+                    cut.c2()[0] + x,
+                    cut.c2()[1] + y,
                     end[0] + x,
                     end[1] + y,
                 )
