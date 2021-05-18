@@ -3145,6 +3145,17 @@ class Elemental(Modifier):
             self.context("plan0 copy-selected\n")
             self.context("window open JobPreview 0\n")
 
+        @self.tree_separator_after()
+        @self.tree_operation(
+            _("Compile and Simulate"),
+            node_type="op",
+            help="Compile Job and run simulation",
+        )
+        def compile_and_simulate(node, **kwargs):
+            node.emphasized = True
+            self.context("plan0 copy-selected preprocess validate blob preopt optimize\n")
+            self.context("window open Simulation 1\n")
+
         @self.tree_operation(_("Clear All"), node_type="branch ops", help="")
         def clear_all(node, **kwargs):
             self.context("operation* delete\n")
