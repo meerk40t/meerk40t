@@ -1495,46 +1495,9 @@ class MeerK40t(MWindow, Job):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
-    def on_active_change(self, origin, old_active, context_active):
-        if old_active is not None:
-            old_active.unlisten("device;noactive", self.on_device_noactive)
-            old_active.unlisten("pipe;error", self.on_usb_error)
-            old_active.unlisten("pipe;usb_status", self.on_usb_state_text)
-            old_active.unlisten("pipe;thread", self.on_pipe_state)
-            old_active.unlisten("spooler;thread", self.on_spooler_state)
-            old_active.unlisten("driver;position", self.update_position)
-            old_active.unlisten("driver;mode", self.on_driver_mode)
-            old_active.unlisten("bed_size", self.bed_changed)
-        if context_active is not None:
-            context_active.listen("device;noactive", self.on_device_noactive)
-            context_active.listen("pipe;error", self.on_usb_error)
-            context_active.listen("pipe;usb_status", self.on_usb_state_text)
-            context_active.listen("pipe;thread", self.on_pipe_state)
-            context_active.listen("spooler;thread", self.on_spooler_state)
-            context_active.listen("driver;position", self.update_position)
-            context_active.listen("driver;mode", self.on_driver_mode)
-            context_active.listen("bed_size", self.bed_changed)
-            self.main_menubar.Enable(ID_MENU_ROTARY, True)
-            self.main_menubar.Enable(ID_MENU_USB, True)
-            self.main_menubar.Enable(ID_MENU_CONTROLLER, True)
-            self.main_menubar.Enable(wx.ID_PREFERENCES, True)
-            self.main_menubar.Enable(ID_MENU_SPOOLER, True)
-            self.window_button_bar.EnableButton(ID_CONTROLLER, True)
-            self.window_button_bar.EnableButton(ID_PREFERENCES, True)
-            self.window_button_bar.EnableButton(ID_ROTARY, True)
-            self.window_button_bar.EnableButton(ID_SPOOLER, True)
-            self.window_button_bar.EnableButton(ID_USB, True)
-        else:
-            self.main_menubar.Enable(ID_MENU_ROTARY, False)
-            self.main_menubar.Enable(ID_MENU_USB, False)
-            self.main_menubar.Enable(ID_MENU_CONTROLLER, False)
-            self.main_menubar.Enable(wx.ID_PREFERENCES, False)
-            self.main_menubar.Enable(ID_MENU_SPOOLER, False)
-            self.window_button_bar.EnableButton(ID_CONTROLLER, False)
-            self.window_button_bar.EnableButton(ID_PREFERENCES, False)
-            self.window_button_bar.EnableButton(ID_ROTARY, False)
-            self.window_button_bar.EnableButton(ID_SPOOLER, False)
-            self.window_button_bar.EnableButton(ID_USB, False)
+    def on_active_change(self, origin, active):
+        self.__set_titlebar()
+
 
     def window_close(self):
         context = self.context
@@ -1683,7 +1646,16 @@ class MeerK40t(MWindow, Job):
         if self.context is not None:
             device_version = self.context.device_version
             device_name = str(self.context.device_name)
-        self.SetTitle(_("%s v%s") % (device_name, device_version))
+        try:
+            active = self.context.active
+            _spooler, _input_driver, _output = self.context.registered[
+                "device/%s" % active
+                ]
+            self.SetTitle(_("%s v%s      (%s -> %s -> %s)") % (
+                device_name, device_version, _spooler.name,
+                _input_driver.type, _output.type))
+        except (KeyError, AttributeError):
+            self.SetTitle(_("%s v%s") % (device_name, device_version))
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties

@@ -116,6 +116,7 @@ def plugin(kernel, lifecycle=None):
         )
         def device(channel, _, index, **kwargs):
             root.active = str(index)
+            root.signal("active", index)
             return "device", (None, str(index))
 
         @kernel.console_command(
