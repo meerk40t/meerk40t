@@ -2462,7 +2462,7 @@ class Channel:
             repr(self.line_end),
         )
 
-    def __call__(self, message: str, *args, **kwargs):
+    def __call__(self, message: Union[str, bytes, bytearray], *args, **kwargs):
         if self.line_end is not None:
             message = message + self.line_end
         for w in self.watchers:
