@@ -41,7 +41,7 @@ class LaserSettings:
         self.acceleration = 1
 
         self.raster_step = 0
-        self.raster_direction = 0
+        self.raster_direction = 1  # Bottom To Top - Default.
         self.raster_swing = False  # False = bidirectional, True = Unidirectional
         self.raster_preference_top = 0
         self.raster_preference_right = 0
