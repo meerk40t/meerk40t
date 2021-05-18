@@ -34,23 +34,30 @@ def plugin(kernel, lifecycle=None):
             "grbl", type=int, help="run grbl-emulator on given port."
         )
         @kernel.console_option(
-            "flip_x", type=bool, action="store_true", help="grbl x-flip"
+            "flip_x","X", type=bool, action="store_true", help="grbl x-flip"
         )
         @kernel.console_option(
-            "flip_y", type=bool, action="store_true", help="grbl y-flip"
+            "flip_y","Y",  type=bool, action="store_true", help="grbl y-flip"
         )
-        @kernel.console_option("adjust_x", type=int, help="adjust grbl home_x position")
-        @kernel.console_option("adjust_y", type=int, help="adjust grbl home_y position")
+        @kernel.console_option("adjust_x", "x", type=int, help="adjust grbl home_x position")
+        @kernel.console_option("adjust_y", "y", type=int, help="adjust grbl home_y position")
         @kernel.console_option(
-            "path", "p", type=str, default="/", help="Path of variables to set."
+            "port", "p", type=int, default=23, help="port to listen on."
         )
         @kernel.console_command("grblserver", help="activate the grblserver.")
-        def grblserver(command, channel, _, path=None, args=tuple(), **kwargs):
+        def grblserver(command,
+                       channel,
+                       _,
+                       port=23,
+                       path=None,
+                       flip_x=False,
+                       flip_y=False,
+                       adjust_x=0,
+                       adjust_y=0, **kwargs):
             path_context = kernel.get_context(path if path is not None else "/")
             if path_context is None:
                 return
             _ = kernel.translation
-            port = 23
             try:
                 path_context.open_as("module/TCPServer", "grbl", port=port)
                 path_context.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
@@ -61,8 +68,14 @@ def plugin(kernel, lifecycle=None):
                 chan = "server"
                 path_context.channel(chan).watch(kernel.channel("console"))
                 channel(_("Watching Channel: %s") % chan)
+
                 emulator = path_context.open("emulator/grbl")
+                emulator.flip_x = flip_x
+                emulator.flip_y = flip_y
+                emulator.home_adjust = (adjust_x, adjust_y)
+
                 path_context.channel("grbl/recv").watch(emulator.write)
+                channel(_("TCP Server for GRBL Emulator on port: %d" % port))
             except OSError:
                 channel(_("Server failed on port: %d") % port)
             return
@@ -79,7 +92,6 @@ class GRBLDriver(Driver):
         self.feed_invert = lambda s: s * (self.scale * 60.0)
         self.power_updated = True
         self.speed_updated = True
-        self.group_modulation = False
 
     def __repr__(self):
         return "GRBLDriver(%s)" % self.name
@@ -124,7 +136,7 @@ class GRBLDriver(Driver):
 
     def move(self, x, y):
         line = []
-        if self.state == DRIVER_STATE_PROGRAM:
+        if self.laser:
             line.append("G1")
         else:
             line.append("G0")
@@ -603,7 +615,7 @@ class GRBLEmulator(Module):
                 elif v == 53:
                     pass  # Move in Absolute Coordinates
                 elif 54 <= v <= 59:
-                    # Fixure offset 1-6, G10 and G92
+                    # Fixture offset 1-6, G10 and G92
                     system = v - 54
                     pass  # Work Coordinate Systems
                 elif v == 61:
