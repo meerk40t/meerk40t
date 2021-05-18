@@ -107,12 +107,13 @@ class BindAlias(Modifier):
             else:
                 raise CommandMatchRejected("This is not an alias.")
 
+        @self.context.console_option(
+            "port", "p", type=int, default=23, help="port to listen on."
+        )
         @self.context.console_command(
             "consoleserver", help="starts a console_server on port 23 (telnet)"
         )
-        def server_console(command, channel, _, args=tuple(), **kwargs):
-            _ = self.context._kernel.translation
-            port = 23
+        def server_console(command, channel, _, port=23, args=tuple(), **kwargs):
             try:
                 self.context.open_as("module/TCPServer", "console-server", port=port)
                 send = self.context.channel("console-server/send")
