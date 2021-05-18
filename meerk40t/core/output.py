@@ -46,8 +46,9 @@ class FileOutput:
 
 
 class TCPOutput:
-    def __init__(self, address, port, name=None):
+    def __init__(self, context, address, port, name=None):
         super().__init__()
+        self.context = context
         self.next = None
         self.prev = None
         self.address = address
@@ -62,14 +63,20 @@ class TCPOutput:
         return True
 
     def write(self, data):
+        self.context.signal("tcp;write", data)
         self.buffer += data
+        self.context.signal("tcp;buffer", len(self.buffer))
         try:
             if self._stream is None:
                 self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self._stream.connect((self.address, self.port))
+                self.context.signal("tcp;status", "connected")
             self._stream.sendall(self.buffer)
             self.buffer = bytearray()
+            self.context.signal("tcp;buffer", 0)
         except ConnectionError:
+            self.context.signal("tcp;status", "disconnected")
+            self._stream.close()
             self._stream = None
 
     def __repr__(self):
@@ -207,7 +214,7 @@ class Outputs(Modifier):
             input_type=(None, "input", "driver"),
             output_type="output",
         )
-        def outfile(command, channel, _, data=None, address=None, port=None, **kwargs):
+        def outtcp(command, channel, _, data=None, address=None, port=None, **kwargs):
             if port is None:
                 raise SyntaxError("No address/port specified")
             input_driver = None
@@ -219,7 +226,7 @@ class Outputs(Modifier):
             else:
                 input_driver, device_name = data
 
-            output = TCPOutput(address, port)
+            output = TCPOutput(context, address, port)
             self.put_output(device_name, output)
 
             if input_driver is not None:

@@ -23,6 +23,7 @@ class TCPController(MWindow):
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect)
         # end wxGlade
+        self.max = 0
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
@@ -77,6 +78,30 @@ class TCPController(MWindow):
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
+
+    def window_open(self):
+        self.context.listen("tcp;write", self.on_tcp_write)
+        self.context.listen("tcp;status", self.on_tcp_status)
+        self.context.listen("tcp;buffer", self.on_tcp_buffer)
+
+    def window_close(self):
+        self.context.unlisten("tcp;write", self.on_tcp_write)
+        self.context.unlisten("tcp;status", self.on_tcp_status)
+        self.context.unlisten("tcp;buffer", self.on_tcp_buffer)
+
+    def on_tcp_status(self, origin, status):
+        self.text_status.SetValue(str(status))
+
+    def on_tcp_buffer(self, origin, status):
+        self.text_buffer_length.SetValue(str(status))
+        if self.max < status:
+            self.max = status
+            self.text_buffer_max.SetValue(str(status))
+
+    def on_tcp_write(self, origin, status):
+        self.text_location.SetValue(str(status))
+
+
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         print("Event handler 'on_button_start_connection' not implemented!")
