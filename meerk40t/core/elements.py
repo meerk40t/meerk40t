@@ -3182,8 +3182,8 @@ class Elemental(Modifier):
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
-            _("Reverse Layer Order"),
-            node_type=("op", "branch elems", "branch ops"),
+            _("Reverse Order"),
+            node_type=("op", "group", "branch elems", "file", "branch ops"),
             help="reverse the items within this subitem",
         )
         def reverse_layer_order(node, **kwargs):
