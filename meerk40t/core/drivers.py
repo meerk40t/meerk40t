@@ -87,7 +87,10 @@ class Driver:
         self.thread = None
 
     def on_driver_ready(self, origin, *args):
-        self.start_driver()
+        try:
+            self.start_driver()
+        except PermissionError:
+            pass
 
     def start_driver(self, *args):
         if self._thread is None:
