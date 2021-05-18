@@ -215,10 +215,10 @@ class LhystudiosDriverGui(MWindow):
         # end wxGlade
 
     def window_open(self):
-        pass
+        self.context.listen("pipe;buffer", self.on_buffer_update)
 
     def window_close(self):
-        pass
+        self.context.unlisten("pipe;buffer", self.on_buffer_update)
 
     def set_widgets(self):
         context = self.context
@@ -326,3 +326,6 @@ class LhystudiosDriverGui(MWindow):
 
     def on_check_random_ppi(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
         self.context.random_ppi = self.checkbox_random_ppi.GetValue()
+
+    def on_buffer_update(self, origin, value, *args):
+        self.text_buffer_length.SetValue(str(value))

@@ -1667,7 +1667,7 @@ class LhystudiosController:
             self.context._buffer_size = (
                 len(self._realtime_buffer) + len(self._buffer) + len(self._queue)
             )
-            self.context.signal("pipe;buffer", self.context._buffer_size)
+            self.context.signal("pipe;buffer", len(self))
 
     def update_packet(self, packet):
         if self.context is not None:
