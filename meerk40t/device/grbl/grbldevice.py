@@ -3,13 +3,24 @@ import re
 
 from ...core.drivers import Driver
 from ...kernel import Module
-from ..basedevice import DRIVER_STATE_PROGRAM
 from ..lasercommandconstants import *
-
+from ..basedevice import (
+    DRIVER_STATE_FINISH,
+    DRIVER_STATE_MODECHANGE,
+    DRIVER_STATE_PROGRAM,
+    DRIVER_STATE_RAPID,
+    DRIVER_STATE_RASTER,
+    PLOT_AXIS,
+    PLOT_DIRECTION,
+    PLOT_FINISH,
+    PLOT_JOG,
+    PLOT_RAPID,
+    PLOT_SETTING,
+)
 MILS_PER_MM = 39.3701
 
 """
-GRBL device is a stub device. Serving as a placeholder.
+GRBL device.
 """
 
 
@@ -57,53 +68,20 @@ def plugin(kernel, lifecycle=None):
             return
 
 
-# class GrblDevice:
-#     """"""
-#
-#     def __init__(self, root, uid=""):
-#         self.uid = uid
-#         self.device_name = "GRBL"
-#         self.location_name = "Print"
-#
-#         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
-#         self._device_log = ""
-#         self.current_x = 0
-#         self.current_y = 0
-#
-#         self.hold_condition = lambda e: False
-#         self.pipe = None
-#         self.interpreter = None
-#         self.spooler = None
-#
-#     def __repr__(self):
-#         return "GrblDevice(uid='%s')" % str(self.uid)
-#
-#     def initialize(self, device, channel=None):
-#         """
-#         Device initialize.
-#
-#         :param device:
-#         :param name:
-#         :return:
-#         """
-#         self.write = print
-#         device.activate("modifier/GRBLDriver")
-#
-#     def __len__(self):
-#         return 0
-
-
 class GRBLDriver(Driver):
-    def __init__(self, pipe):
-        Driver.__init__(self, pipe=pipe)
+    def __init__(self, context, name):
+        context = context.get_context("grbl/driver/%s" % name)
+        Driver.__init__(self, context=context, name=name)
         self.plot = None
-        self.speed = 20.0
         self.scale = 1000.0  # g21 default.
         self.feed_convert = lambda s: s / (self.scale * 60.0)  # G94 default
         self.feed_invert = lambda s: s * (self.scale * 60.0)
         self.power_updated = True
         self.speed_updated = True
         self.group_modulation = False
+
+    def __repr__(self):
+        return "GRBLDriver(%s)" % self.name
 
     def g20(self):
         self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
@@ -139,18 +117,12 @@ class GRBLDriver(Driver):
         self.context.setting(str, "line_end", "\n")
 
     def ensure_program_mode(self, *values):
-        self.pipe.write("M3" + self.context.line_end)
+        self.output.write("M3" + self.context.line_end)
         Driver.ensure_program_mode(self, *values)
 
     def ensure_finished_mode(self, *values):
-        self.pipe.write("M5" + self.context.line_end)
+        self.output.write("M5" + self.context.line_end)
         Driver.ensure_finished_mode(self, *values)
-
-    def plot_path(self, path):
-        pass
-
-    def plot_raster(self, raster):
-        pass
 
     def move(self, x, y):
         line = []
@@ -161,34 +133,65 @@ class GRBLDriver(Driver):
         line.append("X%f" % (x / self.scale))
         line.append("Y%f" % (y / self.scale))
         if self.power_updated:
-            line.append("S%f" % self.power)
+            line.append("S%f" % self.settings.power)
             self.power_updated = False
         if self.speed_updated:
-            line.append("F%d" % int(self.feed_convert(self.speed)))
+            line.append("F%d" % int(self.feed_convert(self.settings.speed)))
             self.speed_updated = False
-        self.pipe.write(" ".join(line) + self.context.line_end)
+        self.output.write(" ".join(line) + self.context.line_end)
         Driver.move(self, x, y)
 
-    def execute_deprecated(self):
-        if self.hold():
-            return
-        while self.plot is not None:
-            if self.hold():
-                return
-            try:
+    def plotplanner_process(self):
+        """
+        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
+        movements. Or updating the laser state based on the settings of the cutcode.
+
+        :return:
+        """
+        if self.plot is not None:
+            while True:
+                try:
+                    if self.hold():
+                        return True
+                    x, y, on = next(self.plot)
+                except StopIteration:
+                    break
+                except TypeError:
+                    break
+                on = int(on)
+                if on & PLOT_FINISH:  # Plot planner is ending.
+                    self.ensure_rapid_mode()
+                    continue
+                if on & PLOT_SETTING:  # Plot planner settings have changed.
+                    p_set = self.plot_planner.settings
+                    s_set = self.settings
+                    if p_set.power != s_set.power:
+                        self.set_power(p_set.power)
+                    if (
+                        p_set.speed != s_set.speed
+                        or p_set.raster_step != s_set.raster_step
+                    ):
+                        self.set_speed(p_set.speed)
+                        self.set_step(p_set.raster_step)
+                        self.ensure_rapid_mode()
+                    self.settings.set_values(p_set)
+                    continue
+                if on & PLOT_AXIS:  # Major Axis.
+                    continue
+                if on & PLOT_DIRECTION:
+                    continue
+                if on & (
+                    PLOT_RAPID | PLOT_JOG
+                ):  # Plot planner requests position change.
+                    self.ensure_rapid_mode()
                 x, y, on = next(self.plot)
                 if on == 0:
                     self.laser_on()
                 else:
                     self.laser_off()
                 self.move(x, y)
-            except StopIteration:
-                self.plot = None
-                return
-            except RuntimeError:
-                self.plot = None
-                return
-        Driver._process_spooled_item(self)
+            self.plot = None
+        return False
 
     @property
     def type(self):

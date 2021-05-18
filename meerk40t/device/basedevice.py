@@ -183,15 +183,18 @@ def plugin(kernel, lifecycle=None):
         #     setattr(device_context, "device_%d" % index, remainder)
         #     kernel.root(remainder + '\n')
 
+        @kernel.console_argument(
+            "index", type=int, help="Index of device deleted"
+        )
         @kernel.console_command(
             "delete",
             help="delete <index>",
             input_type="device",
         )
-        def delete(channel, _, data, remainder, **kwargs):
+        def delete(index, **kwargs):
             device_context = kernel.get_context("devices")
             try:
-                delattr(device_context, "device_%d" % index)
-                del root.registered["device/%d" % index]
+                setattr(device_context, "device_%d" % index, "")
+                root.registered["device/%d" % index] = [None, None, None]
             except (KeyError, ValueError):
                 raise SyntaxError("Invalid device-string index.")

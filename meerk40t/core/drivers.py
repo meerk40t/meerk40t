@@ -1,6 +1,7 @@
 import os
 import time
 
+from .plotplanner import PlotPlanner
 from ..core.cutcode import LaserSettings
 from ..device.lasercommandconstants import *
 from ..kernel import Modifier
@@ -53,6 +54,9 @@ class Driver:
         self.spooled_item = None
         self.holds = []
         self.temp_holds = []
+
+        self.plot_planner = PlotPlanner(self.settings)
+        self.plot = None
 
         self.state = DRIVER_STATE_RAPID
         self.properties = 0
@@ -139,7 +143,8 @@ class Driver:
 
     def plotplanner_process(self):
         """
-        Executes the device specific processing.
+        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
+        movements. Or updating the laser state based on the settings of the cutcode.
 
         :return: if execute tick was processed.
         """
@@ -367,6 +372,17 @@ class Driver:
     def laser_enable(self, *values):
         self.settings.laser_enabled = True
 
+    def plot_plot(self, plot):
+        """
+        :param plot:
+        :return:
+        """
+        self.plot_planner.push(plot)
+
+    def plot_start(self):
+        if self.plot is None:
+            self.plot = self.plot_planner.gen()
+
     def jog(self, x, y, mode=0, min_jog=127):
         self.context.current_x = x
         self.context.current_y = y
@@ -458,11 +474,13 @@ class Driver:
 
     def wait_finish(self, *values):
         """Adds an additional holding requirement if the pipe has any data."""
-        self.temp_holds.append(lambda: self.context._buffer_size != 0)
+        self.temp_holds.append(lambda: len(self.output) != 0)
 
     def reset(self):
         if self.spooler is not None:
             self.spooler.clear_queue()
+        self.plot = None
+        self.plot_planner.clear()
         self.spooled_item = None
         self.temp_holds.clear()
 

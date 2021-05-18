@@ -420,9 +420,7 @@ class MoshiDriver(Driver, Modifier):
         self.prev = None
 
         self.plot_planner = PlotPlanner(self.settings)
-
         self.plot = None
-        self.plot_gen = None
 
         self.offset_x = 0
         self.offset_y = 0
@@ -468,7 +466,7 @@ class MoshiDriver(Driver, Modifier):
         self.start_driver()
 
     def __repr__(self):
-        return "MoshiDriver()"
+        return "MoshiDriver(%s)" % self.name
 
     def swizzle(self, b, p7, p6, p5, p4, p3, p2, p1, p0):
         return (
@@ -737,17 +735,6 @@ class MoshiDriver(Driver, Modifier):
         self.context.current_x = x
         self.context.current_y = y
         self.context.signal("driver;position", (oldx, oldy, x, y))
-
-    def plot_plot(self, plot):
-        """
-        :param plot:
-        :return:
-        """
-        self.plot_planner.push(plot)
-
-    def plot_start(self):
-        if self.plot is None:
-            self.plot = self.plot_planner.gen()
 
     def cut(self, x, y):
         if self.is_relative:

@@ -4,7 +4,6 @@ import time
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ...core.drivers import Driver
-from ...core.plotplanner import PlotPlanner
 from ...kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -621,11 +620,6 @@ class LhystudiosDriver(Driver):
         self.CODE_LASER_ON = b"D"
         self.CODE_LASER_OFF = b"U"
 
-        self.plot_planner = PlotPlanner(self.settings)
-
-        self.plot = None
-        self.plot_gen = None
-
         self.next_x = None
         self.next_y = None
         self.max_x = None
@@ -821,17 +815,6 @@ class LhystudiosDriver(Driver):
             self.plot = None
         return False
 
-    def plot_plot(self, plot):
-        """
-        :param plot:
-        :return:
-        """
-        self.plot_planner.push(plot)
-
-    def plot_start(self):
-        if self.plot is None:
-            self.plot = self.plot_planner.gen()
-
     def pause(self, *values):
         self.realtime_data_output(b"PN!\n")
         self.is_paused = True
@@ -843,8 +826,6 @@ class LhystudiosDriver(Driver):
     def reset(self):
         Driver.reset(self)
         self.context.signal("pipe;buffer", 0)
-        self.plot = None
-        self.plot_planner.clear()
         self.realtime_data_output(b"I*\n")
         self.laser = False
         self.properties = 0

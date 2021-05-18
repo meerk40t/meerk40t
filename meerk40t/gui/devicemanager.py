@@ -104,12 +104,19 @@ class DeviceManager(MWindow):
             device = self.context.registered[dev]
             spooler, input_driver, output = device
             device_context = self.context.get_context("devices")
-            registered = hasattr(device_context, "device_%d" % i)
+            dev_string = "device_%d" % i
+            if hasattr(device_context, dev_string):
+                line = getattr(device_context, dev_string)
+                registered = len(line) > 0
+            else:
+                registered = False
             m = self.devices_list.InsertItem(i, str(i))
             if self.context.active == str(m):
                 self.devices_list.SetItemBackgroundColour(m, wx.LIGHT_GREY)
+
             if m != -1:
-                self.devices_list.SetItem(m, 1, str(spooler))
+                spooler_name = spooler.name if spooler is not None else "None"
+                self.devices_list.SetItem(m, 1, str(spooler_name))
                 self.devices_list.SetItem(m, 2, str(input_driver))
                 self.devices_list.SetItem(m, 3, str(output))
                 self.devices_list.SetItem(m, 4, str(registered))
@@ -244,4 +251,5 @@ class DeviceManager(MWindow):
         if item == -1:
             return
         uid = self.devices_list.GetItem(item).Text
+        self.context("device delete %s\n" % uid)
         self.refresh_device_list()

@@ -28,13 +28,13 @@ class Spooler:
 
     def __init__(self, context, spooler_name, *args, **kwargs):
         self.context = context
-        self.spooler_name = spooler_name
+        self.name = spooler_name
         self.queue_lock = Lock()
         self._queue = []
         self.next = None
 
     def __repr__(self):
-        return "Spooler(%s)" % str(self.spooler_name)
+        return "Spooler(%s)" % str(self.name)
 
     def as_device(self):
         links = []
@@ -63,7 +63,7 @@ class Spooler:
         queue_head = self._queue[0]
         del self._queue[0]
         self.queue_lock.release()
-        self.context.signal("spooler;queue", len(self._queue), self.spooler_name)
+        self.context.signal("spooler;queue", len(self._queue), self.name)
         return queue_head
 
     def job(self, *job):
@@ -453,5 +453,5 @@ class Spoolers(Modifier):
             spooler.job(COMMAND_LOCK)
             return "spooler", data
 
-        for i in range(10):
+        for i in range(5):
             self.get_or_make_spooler(str(i))
