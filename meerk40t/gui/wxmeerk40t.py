@@ -8,6 +8,7 @@ import sys
 import threading
 import traceback
 
+from .file.fileoutput import FileOutput
 from ..core.cutcode import CutCode
 from .mwindow import MWindow
 from .simulation import Simulation
@@ -3520,6 +3521,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/default/Controller", Controller)
         kernel.register("window/default/Preferences", Preferences)
         kernel.register("window/tcp/Controller", TCPController)
+        kernel.register("window/file/Controller", FileOutput)
         kernel.register("window/lhystudios/Preferences", LhystudiosDriverGui)
         kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
         kernel.register(
