@@ -89,7 +89,7 @@ class TCPServer(Module):
         self.server_channel = None
         self.socket = None
         self.server_channel = self.context.channel("server")
-        self.context.threaded(self.run_tcp_delegater, daemon=True)
+        self.context.threaded(self.run_tcp_delegater, thread_name="tcp-%d" % port, daemon=True)
 
     def finalize(self, *args, **kwargs):
         self.server_channel("Shutting down server.")
