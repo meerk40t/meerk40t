@@ -368,7 +368,7 @@ def plugin(kernel, lifecycle=None):
             output.close()
             channel("CH341 Closed.")
 
-        @kernel.console_option("port", "p", default=23, help="port to listen on.")
+        @kernel.console_option("port", "p", type=int, default=23, help="port to listen on.")
         @kernel.console_command("lhyserver", help="activate the lhyserver.")
         def lhyserver(channel, _, port=23, **kwargs):
             root = kernel.root
