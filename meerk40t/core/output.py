@@ -82,6 +82,8 @@ class TCPOutput:
         try:
             if self._stream is None:
                 self.connect()
+                if self._stream is None:
+                    return
             self._stream.sendall(self.buffer)
             self.buffer = bytearray()
             self.context.signal("tcp;buffer", 0)

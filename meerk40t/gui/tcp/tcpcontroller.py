@@ -14,8 +14,8 @@ class TCPController(MWindow):
         self.spooler, self.input_driver, self.output = self.context.registered["device/%s" % self.context.root.active]
         self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_device = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_location = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_ip_host = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_port = wx.TextCtrl(self, wx.ID_ANY, "")
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_buffer_max = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -39,8 +39,8 @@ class TCPController(MWindow):
         self.button_device_connect.SetToolTip("Force connection/disconnection from the device.")
         self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
         self.text_status.SetToolTip("Connection status")
-        self.text_device.SetToolTip("IP/Host if the server computer")
-        self.text_location.SetToolTip("Port for tcp connection on the server computer")
+        self.text_ip_host.SetToolTip("IP/Host if the server computer")
+        self.text_port.SetToolTip("Port for tcp connection on the server computer")
         self.text_buffer_length.SetMinSize((165, 23))
         self.text_buffer_length.SetToolTip("Current number of bytes in the write buffer.")
         self.text_buffer_max.SetMinSize((165, 23))
@@ -59,11 +59,11 @@ class TCPController(MWindow):
         sizer_15.Add(self.text_status, 11, 0, 0)
         label_8 = wx.StaticText(self, wx.ID_ANY, "Address")
         sizer_15.Add(label_8, 1, 0, 0)
-        sizer_15.Add(self.text_device, 11, 0, 0)
+        sizer_15.Add(self.text_ip_host, 11, 0, 0)
         sizer_15.Add((20, 20), 0, 0, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "Port")
         sizer_15.Add(label_9, 1, 0, 0)
-        sizer_15.Add(self.text_location, 11, 0, 0)
+        sizer_15.Add(self.text_port, 11, 0, 0)
         connection_controller.Add(sizer_15, 0, 0, 0)
         sizer_1.Add(connection_controller, 0, wx.EXPAND, 0)
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
@@ -83,13 +83,16 @@ class TCPController(MWindow):
         # end wxGlade
 
     def window_open(self):
-        self.context.listen("tcp;write", self.on_tcp_write)
+        # self.context.listen("tcp;write", self.on_tcp_write)
         self.context.listen("tcp;status", self.on_tcp_status)
         self.context.listen("tcp;buffer", self.on_tcp_buffer)
-        # self.text_device.
+        self.text_ip_host.SetValue(str(self.output.address))
+        self.text_port.SetValue(str(self.output.port))
+        self.text_buffer_max.SetValue('0')
+        self.text_buffer_length.SetValue('0')
 
     def window_close(self):
-        self.context.unlisten("tcp;write", self.on_tcp_write)
+        # self.context.unlisten("tcp;write", self.on_tcp_write)
         self.context.unlisten("tcp;status", self.on_tcp_status)
         self.context.unlisten("tcp;buffer", self.on_tcp_buffer)
 
@@ -114,7 +117,7 @@ class TCPController(MWindow):
             self.text_buffer_max.SetValue(str(status))
 
     def on_tcp_write(self, origin, status):
-        self.text_location.SetValue(str(status))
+        self.text_port.SetValue(str(status))
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         if isinstance(self.output, TCPOutput):
