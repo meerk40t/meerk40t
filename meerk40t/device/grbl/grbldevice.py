@@ -72,6 +72,7 @@ class GRBLDriver(Driver):
     def __init__(self, context, name):
         context = context.get_context("grbl/driver/%s" % name)
         Driver.__init__(self, context=context, name=name)
+        self.context.setting(str, "line_end", "\n")
         self.plot = None
         self.scale = 1000.0  # g21 default.
         self.feed_convert = lambda s: s / (self.scale * 60.0)  # G94 default
@@ -112,9 +113,6 @@ class GRBLDriver(Driver):
     def set_speed(self, speed=None):
         Driver.set_speed(self, speed)
         self.speed_updated = True
-
-    def initialize(self, channel=None):
-        self.context.setting(str, "line_end", "\n")
 
     def ensure_program_mode(self, *values):
         self.output.write("M3" + self.context.line_end)
@@ -184,7 +182,6 @@ class GRBLDriver(Driver):
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
                     self.ensure_rapid_mode()
-                x, y, on = next(self.plot)
                 if on == 0:
                     self.laser_on()
                 else:

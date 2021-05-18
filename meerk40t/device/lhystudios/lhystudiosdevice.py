@@ -381,7 +381,7 @@ def plugin(kernel, lifecycle=None):
                 ]
 
                 root.open_as("module/TCPServer", "lhyserver", port=port)
-                channel(_("TCP Server for Lhystudios"))
+                channel(_("TCP Server for Lhystudios on port: %d" % port))
                 root.channel("server").watch(kernel.channel("console"))
                 channel(_("Watching Channel: %s") % "server")
                 root.channel("lhyserver/recv").watch(output.write)
@@ -655,15 +655,6 @@ class LhystudiosDriver(Driver):
         self.min_y = current_y
         self.start_x = current_x
         self.start_y = current_y
-
-        self.context._kernel.listen("lifecycle;ready", '', self.on_driver_ready)
-
-    def detach(self, *args, **kwargs):
-        self.context._kernel.unlisten("lifecycle;ready", '', self.on_driver_ready)
-        self.thread = None
-
-    def on_driver_ready(self, origin, *args):
-        self.start_driver()
 
     def __repr__(self):
         return "LhystudiosDriver(%s)" % self.name
