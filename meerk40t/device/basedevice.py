@@ -1,3 +1,5 @@
+from meerk40t.kernel import CommandMatchRejected
+
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
 DRIVER_STATE_PROGRAM = 2
@@ -56,6 +58,25 @@ def plugin(kernel, lifecycle=None):
                 except AttributeError:
                     pass
             return "dev", (spooler, input_driver, output)
+
+        @kernel.console_command(".+", regex=True, hidden=True)
+        def virtual_dev(command, channel, _, remainder=None, **kwargs):
+            try:
+                spooler, input_driver, output = root.registered["device/%s" % root.active]
+                t = input_driver.type
+            except (KeyError, ValueError, AttributeError):
+                raise CommandMatchRejected("No device selected.")
+
+            if input_driver is not None:
+                for command_name in root.match("command/%s/%s" % (str(t), command)):
+                    command_funct = root.registered[command_name]
+                    if command_funct is not None:
+                        if remainder is not None:
+                            root(".dev %s %s\n" % (command, remainder))
+                        else:
+                            root(".dev %s\n" % command)
+                        return
+            raise CommandMatchRejected("No matching command.")
 
         @kernel.console_argument(
             "index", type=int, help="Index of device being activated"
