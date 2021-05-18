@@ -55,9 +55,13 @@ class FileOutput(MWindow):
 
     def window_open(self):
         self.text_filename.SetValue(str(self.output.filename))
+        self.context.listen("active", self.on_active_change)
 
     def window_close(self):
-        pass
+        self.context.unlisten("active", self.on_active_change)
+
+    def on_active_change(self, origin, active):
+        self.Close()
 
     def on_text_filename(self, event):  # wxGlade: Controller.<event_handler>
         self.output.filename = self.text_filename.GetValue()

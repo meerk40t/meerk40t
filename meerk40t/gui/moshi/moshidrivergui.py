@@ -96,6 +96,17 @@ class MoshiDriverGui(MWindow):
         self.Layout()
         # end wxGlade
 
+    def window_open(self):
+        # self.context.listen("pipe;buffer", self.on_buffer_update)
+        self.context.listen("active", self.on_active_change)
+
+    def window_close(self):
+        # self.context.unlisten("pipe;buffer", self.on_buffer_update)
+        self.context.unlisten("active", self.on_active_change)
+
+    def on_active_change(self, origin, active):
+        self.Close()
+
     def on_check_home_right(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
         print("Event handler 'on_check_home_right' not implemented!")
         event.Skip()

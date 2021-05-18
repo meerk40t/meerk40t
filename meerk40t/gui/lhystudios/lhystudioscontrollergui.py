@@ -316,6 +316,7 @@ class LhystudiosControllerGui(MWindow):
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
         self.context.listen("pipe;state", self.on_connection_state_change)
         self.context.listen("pipe;thread", self.on_control_state)
+        self.context.listen("active", self.on_active_change)
 
     def window_close(self):
         self.context.channel("pipe/usb").unwatch(self.update_text)
@@ -324,6 +325,10 @@ class LhystudiosControllerGui(MWindow):
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)
         self.context.unlisten("pipe;thread", self.on_control_state)
+        self.context.unlisten("active", self.on_active_change)
+
+    def on_active_change(self, origin, active):
+        self.Close()
 
     def update_text(self, text):
         if not wx.IsMainThread():

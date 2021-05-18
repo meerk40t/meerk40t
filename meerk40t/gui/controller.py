@@ -38,10 +38,13 @@ class Controller(MWindow):
         # end wxGlade
 
     def window_open(self):
-        pass
+        self.context.listen("active", self.on_active_change)
 
     def window_close(self):
-        pass
+        self.context.unlisten("active", self.on_active_change)
+
+    def on_active_change(self, origin, active):
+        self.Close()
 
 
 #

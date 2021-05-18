@@ -34,6 +34,16 @@ class Preferences(MWindow):
         self.Layout()
         # end wxGlade
 
+    def window_open(self):
+        self.context.listen("active", self.on_active_change)
+
+    def window_close(self):
+        self.context.unlisten("active", self.on_active_change)
+
+    def on_active_change(self, origin, active):
+        self.Close()
+
+
 
 # class Preferences(MWindow):
 #     def __init__(self, *args, **kwds):

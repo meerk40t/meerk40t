@@ -90,11 +90,16 @@ class TCPController(MWindow):
         self.text_port.SetValue(str(self.output.port))
         self.text_buffer_max.SetValue('0')
         self.text_buffer_length.SetValue('0')
+        self.context.listen("active", self.on_active_change)
 
     def window_close(self):
         # self.context.unlisten("tcp;write", self.on_tcp_write)
         self.context.unlisten("tcp;status", self.on_tcp_status)
         self.context.unlisten("tcp;buffer", self.on_tcp_buffer)
+        self.context.unlisten("active", self.on_active_change)
+
+    def on_active_change(self, origin, active):
+        self.Close()
 
     def on_tcp_status(self, origin, state):
         self.text_status.SetValue(str(state))

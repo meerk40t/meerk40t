@@ -264,6 +264,17 @@ class LhystudiosAccelerationChart(MWindow):
         self.checkbox_raster_accel_enable.SetValue(context.raster_accel_table)
         self.checkbox_vector_accel_enable.SetValue(context.vector_accel_table)
 
+    def window_open(self):
+        # self.context.listen("pipe;buffer", self.on_buffer_update)
+        self.context.listen("active", self.on_active_change)
+
+    def window_close(self):
+        # self.context.unlisten("pipe;buffer", self.on_buffer_update)
+        self.context.unlisten("active", self.on_active_change)
+
+    def on_active_change(self, origin, active):
+        self.Close()
+
     def on_check_vector_accel_enable(
         self, event
     ):  # wxGlade: LhystudiosDriver.<event_handler>
