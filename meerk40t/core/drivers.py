@@ -41,7 +41,7 @@ class Driver:
     def __init__(self, context, name=None):
         self.context = context
         self.name = name
-        self.root_context = context.get_context("/")
+        self.root_context = context.root
         self.settings = LaserSettings()
 
         self.next = None
@@ -78,6 +78,16 @@ class Driver:
         self.rapid_override_speed_y = 50.0
         self._thread = None
         self._shutdown = False
+        self.context._kernel.listen("lifecycle;ready", '', self.on_driver_ready)
+        self.context._kernel.listen("lifecycle;shutdown", '', self.on_shutdown)
+
+    def on_shutdown(self, *args, **kwargs):
+        self.context._kernel.unlisten("lifecycle;ready", '', self.on_driver_ready)
+        self.context._kernel.unlisten("lifecycle;shutdown", '', self.on_shutdown)
+        self.thread = None
+
+    def on_driver_ready(self, origin, *args):
+        self.start_driver()
 
     def start_driver(self, *args):
         if self._thread is None:
