@@ -89,7 +89,7 @@ class TCPServer(Module):
         self.server_channel = None
         self.socket = None
         self.server_channel = self.context.channel("server")
-        self.context.threaded(self.run_tcp_delegater)
+        self.context.threaded(self.run_tcp_delegater, daemon=True)
 
     def finalize(self, *args, **kwargs):
         self.server_channel("Shutting down server.")
@@ -118,7 +118,7 @@ class TCPServer(Module):
             try:
                 connection, addr = self.socket.accept()
                 self.server_channel("Socket Connected: %s" % str(addr))
-                self.context.threaded(self.connection_handler(connection, addr))
+                self.context.threaded(self.connection_handler(connection, addr), daemon=True)
             except socket.timeout:
                 pass
             except OSError:
