@@ -135,6 +135,7 @@ from .laserrender import (
 from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
 from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
+from .tcp.tcpcontroller import TCPController
 from .moshi.moshicontrollergui import MoshiControllerGui
 from .moshi.moshidrivergui import MoshiDriverGui
 from .navigation import Navigation
@@ -3518,6 +3519,7 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("window/default/Controller", Controller)
         kernel.register("window/default/Preferences", Preferences)
+        kernel.register("window/tcp/Controller", TCPController)
         kernel.register("window/lhystudios/Preferences", LhystudiosDriverGui)
         kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
         kernel.register(

@@ -40,6 +40,10 @@ class FileOutput:
 
     realtime_write = write
 
+    @property
+    def type(self):
+        return "file"
+
 
 class TCPOutput:
     def __init__(self, address, port, name=None):
@@ -77,6 +81,10 @@ class TCPOutput:
         return len(self.buffer)
 
     realtime_write = write
+
+    @property
+    def type(self):
+        return "tcp"
 
 
 class Outputs(Modifier):
