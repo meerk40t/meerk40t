@@ -47,7 +47,7 @@ def plugin(kernel, lifecycle=None):
                 c.channel(chan).watch(kernel.channel("console"))
                 channel(_("Watching Channel: %s") % chan)
 
-                emulator = c.open("module/RuidaEmulator")
+                emulator = c.open("emulator/ruida")
                 c.channel("ruidaserver/recv").watch(emulator.checksum_write)
                 c.channel("ruidajog/recv").watch(emulator.realtime_write)
                 c.channel("ruida_reply").watch(c.channel("ruidaserver/send"))
