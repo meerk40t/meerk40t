@@ -115,6 +115,8 @@ class TCPController(MWindow):
         if self.max < status:
             self.max = status
             self.text_buffer_max.SetValue(str(status))
+            self.gauge_buffer.SetRange(self.max)
+        self.gauge_buffer.SetValue(min(status, self.gauge_buffer.GetRange()))
 
     def on_tcp_write(self, origin, status):
         self.text_port.SetValue(str(status))
