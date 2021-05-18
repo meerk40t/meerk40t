@@ -34,12 +34,13 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "register":
         root = kernel.root
 
+        @kernel.console_option("out", "o", type=bool, action="store_true", help="match on output rather than driver")
         @kernel.console_command(
             "dev",
-            help="delegate commands to currently selected device",
+            help="delegate commands to currently selected device by input/driver",
             output_type="dev",
         )
-        def dev(channel, _, remainder=None, **kwargs):
+        def dev(channel, _, remainder=None, out=False, **kwargs):
             try:
                 spooler, input_driver, output = root.registered["device/%s" % root.active]
             except (KeyError, ValueError):
@@ -51,31 +52,57 @@ def plugin(kernel, lifecycle=None):
                         % (str(spooler), str(input_driver), str(output))
                     )
                 )
-            if input_driver is not None:
+            if out:
+                if output is not None:
+                    try:
+                        t = output.type + "out"
+                        return t, (spooler, input_driver, output)
+                    except AttributeError:
+                        pass
+            elif input_driver is not None:
                 try:
                     t = input_driver.type
                     return t, (spooler, input_driver, output)
                 except AttributeError:
                     pass
+
             return "dev", (spooler, input_driver, output)
 
         @kernel.console_command(".+", regex=True, hidden=True)
         def virtual_dev(command, channel, _, remainder=None, **kwargs):
             try:
                 spooler, input_driver, output = root.registered["device/%s" % root.active]
-                t = input_driver.type
             except (KeyError, ValueError, AttributeError):
                 raise CommandMatchRejected("No device selected.")
 
             if input_driver is not None:
-                for command_name in root.match("command/%s/%s" % (str(t), command)):
-                    command_funct = root.registered[command_name]
-                    if command_funct is not None:
-                        if remainder is not None:
-                            root(".dev %s %s\n" % (command, remainder))
-                        else:
-                            root(".dev %s\n" % command)
-                        return
+                try:
+                    t = input_driver.type
+                    match = "command/%s/%s" % (str(t), command)
+                    for command_name in root.match(match):
+                        command_funct = root.registered[command_name]
+                        if command_funct is not None:
+                            if remainder is not None:
+                                root(".dev %s %s\n" % (command, remainder))
+                            else:
+                                root(".dev %s\n" % command)
+                            return
+                except AttributeError:
+                    pass
+            if output is not None:
+                try:
+                    t = output.type + 'out'
+                    match = "command/%s/%s" % (str(t), command)
+                    for command_name in root.match(match):
+                        command_funct = root.registered[command_name]
+                        if command_funct is not None:
+                            if remainder is not None:
+                                root(".dev -o %s %s\n" % (command, remainder))
+                            else:
+                                root(".dev -o %s\n" % command)
+                            return
+                except AttributeError:
+                    pass
             raise CommandMatchRejected("No matching command.")
 
         @kernel.console_argument(

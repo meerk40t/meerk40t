@@ -12,6 +12,20 @@ def plugin(kernel, lifecycle=None):
         kernel_root = kernel.get_context("/")
         kernel_root.activate("modifier/Outputs")
 
+        @kernel.console_argument(
+            "port", type=int, help="Port of TCPOutput to change."
+        )
+        @kernel.console_command(
+            "port",
+            help="change the port of the tcpdevice",
+            input_type="tcpout",
+        )
+        def tcpport(channel, _, port, data=None, **kwargs):
+            spooler, input_driver, output = data
+            old_port = output.port
+            output.port = port
+            channel(_("TCP port changed: %s -> %s" % (str(old_port), str(port))))
+
 
 class FileOutput:
     def __init__(self, filename, name=None):
