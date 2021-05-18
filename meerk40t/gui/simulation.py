@@ -1,6 +1,6 @@
 import wx
 
-from .icons import icons8_administrative_tools_50, icons8_play_50, icons8_route_50
+from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard_50
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -10,10 +10,10 @@ class Simulation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(706, 755, *args, **kwds)
         if len(args) >= 4:
-            cutcode = args[3]
+            plan_name = args[3]
         else:
-            cutcode = 0
-        self.cutcode = cutcode
+            plan_name = 0
+        self.plan_name = plan_name
 
         # Menu Bar
         self.Simulation_menubar = wx.MenuBar()
@@ -50,9 +50,35 @@ class Simulation(MWindow):
         self.text_playback_speed = wx.TextCtrl(
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
-        self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
+
+        self.available_devices = [
+            self.context.registered[i] for i in self.context.match("device")
+        ]
+        selected_spooler = self.context.root.active
+        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        index = spools.index(selected_spooler)
+        self.connected_name = spools[index]
+        self.connected_spooler, self.connected_driver, self.connected_output = (
+            None,
+            None,
+            None,
         )
+        try:
+            (
+                self.connected_spooler,
+                self.connected_driver,
+                self.connected_output,
+            ) = self.available_devices[index]
+        except IndexError:
+            for m in self.Children:
+                if isinstance(m, wx.Window):
+                    m.Disable()
+        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+
+        self.combo_device = wx.ComboBox(
+            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
+        )
+        self.combo_device.SetSelection(index)
         self.button_spool = wx.Button(self, wx.ID_ANY, "Send to Laser")
 
         self.__set_properties()
@@ -60,14 +86,14 @@ class Simulation(MWindow):
 
         self.Bind(wx.EVT_SLIDER, self.on_slider_progress, self.slider_progress)
         self.Bind(wx.EVT_BUTTON, self.on_button_play, self.button_play)
-        self.Bind(wx.EVT_SLIDER, self.on_sldier_playback, self.slider_playbackspeed)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_playback, self.slider_playbackspeed)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         # end wxGlade
 
     def __set_properties(self):
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_laser_beam_hazard_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle("Simulation")
         self.text_distance_laser.SetToolTip("Time Estimate: Lasering Time")
@@ -185,14 +211,24 @@ class Simulation(MWindow):
         print("Event handler 'on_button_play' not implemented!")
         event.Skip()
 
-    def on_sldier_playback(self, event):  # wxGlade: Simulation.<event_handler>
+    def on_slider_playback(self, event):  # wxGlade: Simulation.<event_handler>
         print("Event handler 'on_sldier_playback' not implemented!")
         event.Skip()
 
-    def on_combo_device(self, event):  # wxGlade: Simulation.<event_handler>
-        print("Event handler 'on_combo_device' not implemented!")
-        event.Skip()
+    def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
+        self.available_devices = [
+            self.context.registered[i] for i in self.context.match("device")
+        ]
+        index = self.combo_device.GetSelection()
+        (
+            self.connected_spooler,
+            self.connected_driver,
+            self.connected_output,
+        ) = self.available_devices[index]
+        self.connected_name = [
+            str(i) for i in self.context.match("device", suffix=True)
+        ][index]
 
     def on_button_spool(self, event):  # wxGlade: Simulation.<event_handler>
-        print("Event handler 'on_button_spool' not implemented!")
-        event.Skip()
+        self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
+        self.context("window close Simulation\n")

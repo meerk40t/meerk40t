@@ -105,7 +105,7 @@ from .icons import (
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
-    icons_evenspace_vert,
+    icons_evenspace_vert, icons8_laser_beam_hazard_50,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -224,6 +224,7 @@ ID_CAMERA3 = wx.NewId()
 ID_CAMERA4 = wx.NewId()
 ID_CAMERA5 = wx.NewId()
 ID_JOB = wx.NewId()
+ID_SIM = wx.NewId()
 ID_PAUSE = wx.NewId()
 
 ID_SPOOLER = wx.NewId()
@@ -693,6 +694,7 @@ class MeerK40t(MWindow, Job):
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
         toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
         toolbar.AddButton(ID_JOB, _("Start Job"), icons8_laser_beam_52.GetBitmap(), "")
+        toolbar.AddButton(ID_SIM, _("Compile & Sim"), icons8_laser_beam_hazard_50.GetBitmap(), "")
         toolbar.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
 
         windows_panel = RB.RibbonPanel(
@@ -935,6 +937,11 @@ class MeerK40t(MWindow, Job):
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context.console("window open JobPreview 0\n"),
             id=ID_JOB,
+        )
+        toolbar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+            id=ID_SIM,
         )
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
         windows.Bind(
