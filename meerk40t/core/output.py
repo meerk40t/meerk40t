@@ -26,13 +26,9 @@ class FileOutput:
         return True
 
     def write(self, data):
-        if self._stream is None:
-            if isinstance(data, (bytes, bytearray)):
-                self._stream = open(self.filename, "wb")
-            else:
-                self._stream = open(self.filename, "w")
-        self._stream.write(data)
-        self._stream.flush()
+        with open(self.filename, "ab" if isinstance(data, (bytes, bytearray)) else "a") as stream:
+            stream.write(data)
+            stream.flush()
 
     def __repr__(self):
         if self.name is not None:
