@@ -142,7 +142,7 @@ class DeviceManager(MWindow):
             return
         uid = self.devices_list.GetItem(item).Text
         self.context("device activate %s\n" % uid)
-        self.context("timer 1 0.2 window close DeviceManager\n")
+        self.context("window close DeviceManager\n")
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
