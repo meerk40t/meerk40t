@@ -106,6 +106,8 @@ class DeviceManager(MWindow):
             device_context = self.context.get_context("devices")
             registered = hasattr(device_context, "device_%d" % i)
             m = self.devices_list.InsertItem(i, str(i))
+            if self.context.active == str(m):
+                self.devices_list.SetItemBackgroundColour(m,wx.LIGHT_GREY)
             if m != -1:
                 self.devices_list.SetItem(m, 1, str(spooler))
                 self.devices_list.SetItem(m, 2, str(input_driver))
