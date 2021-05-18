@@ -202,20 +202,31 @@ class DeviceManager(MWindow):
                 dlg.Destroy()
                 return
             dlg.Destroy()
-            dlg = wx.TextEntryDialog(
-                None,
-                _("What network port does this device output to?"),
-                _("Output"),
-            )
-            if dlg.ShowModal() == wx.ID_OK:
-                port = dlg.GetValue()
-            else:
+
+            port = None
+            if ":" in address:
+                port = address.split(':')[-1]
+                try:
+                    port = int(port)
+                    address = address.split(':')[0]
+                except ValueError:
+                    port = None
+
+            if port is None:
+                dlg = wx.TextEntryDialog(
+                    None,
+                    _("What network port does this device output to?"),
+                    _("Output"),
+                )
+                if dlg.ShowModal() == wx.ID_OK:
+                    port = dlg.GetValue()
+                else:
+                    dlg.Destroy()
+                    return
                 dlg.Destroy()
-                return
-            dlg.Destroy()
             self.context(
                 "spool%s -r driver -n %s tcp %s %s\n"
-                % (spooler_input, device_type, address, port)
+                % (spooler_input, device_type, address, str(port))
             )
 
             self.refresh_device_list()
