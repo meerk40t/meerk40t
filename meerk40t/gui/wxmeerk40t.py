@@ -3656,6 +3656,8 @@ class wxMeerK40t(wx.App, Module):
                         pass
                 path = context.get_context(m)
                 window_uri = "window/%s/%s" % (t, window)
+                if window_uri not in context.registered:
+                    window_uri = "window/%s/%s" % ('default', window)
 
             if window_uri in context.registered:
                 path.open(window_uri, parent, *args)
