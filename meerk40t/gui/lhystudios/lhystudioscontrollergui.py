@@ -382,6 +382,8 @@ class LhystudiosControllerGui(MWindow):
             menu.Destroy()
 
     def update_status(self, origin, status_data, code_string):
+        if origin != self.context._path:
+            return
         if status_data is not None:
             if isinstance(status_data, int):
                 self.text_desc.SetValue(str(status_data))
@@ -399,13 +401,19 @@ class LhystudiosControllerGui(MWindow):
         self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
 
     def update_packet_text(self, origin, string_data):
+        if origin != self.context._path:
+            return
         if string_data is not None and len(string_data) != 0:
             self.packet_text_text.SetValue(str(string_data))
 
     def on_connection_status_change(self, origin, status):
+        if origin != self.context._path:
+            return
         self.text_connection_status.SetValue(str(status))
 
     def on_connection_state_change(self, origin, state):
+        if origin != self.context._path:
+            return
         if state == "STATE_CONNECTION_FAILED" or state == "STATE_DRIVER_NO_BACKEND":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
             usb_status = self.context.last_signal("pipe;usb_status")
@@ -460,6 +468,9 @@ class LhystudiosControllerGui(MWindow):
             self.context("dev usb_disconnect\n")
 
     def on_control_state(self, origin, state):
+        if origin != self.context._path:
+            return
+
         if self.last_control_state == state:
             return
         self.last_control_state = state
