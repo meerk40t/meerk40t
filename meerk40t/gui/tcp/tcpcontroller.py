@@ -1,6 +1,7 @@
 
 import wx
 
+from meerk40t.core.output import TCPOutput
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
 
@@ -10,6 +11,7 @@ _ = wx.GetTranslation
 class TCPController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
+        self.spooler, self.input_driver, self.output = self.context.registered["device/%s" % self.context.root.active]
         self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_device = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -24,6 +26,7 @@ class TCPController(MWindow):
         self.Bind(wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect)
         # end wxGlade
         self.max = 0
+        self.state = None
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
@@ -83,14 +86,26 @@ class TCPController(MWindow):
         self.context.listen("tcp;write", self.on_tcp_write)
         self.context.listen("tcp;status", self.on_tcp_status)
         self.context.listen("tcp;buffer", self.on_tcp_buffer)
+        # self.text_device.
 
     def window_close(self):
         self.context.unlisten("tcp;write", self.on_tcp_write)
         self.context.unlisten("tcp;status", self.on_tcp_status)
         self.context.unlisten("tcp;buffer", self.on_tcp_buffer)
 
-    def on_tcp_status(self, origin, status):
-        self.text_status.SetValue(str(status))
+    def on_tcp_status(self, origin, state):
+        self.text_status.SetValue(str(state))
+        self.state = state
+        if state == "uninitialized" or state == "disconnected":
+            self.button_device_connect.SetBackgroundColour("#ffff00")
+            self.button_device_connect.SetLabel(_("Connect"))
+            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
+            self.button_device_connect.Enable()
+        elif state == "connected":
+            self.button_device_connect.SetBackgroundColour("#00ff00")
+            self.button_device_connect.SetLabel(_("Disconnect"))
+            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
+            self.button_device_connect.Enable()
 
     def on_tcp_buffer(self, origin, status):
         self.text_buffer_length.SetValue(str(status))
@@ -101,8 +116,9 @@ class TCPController(MWindow):
     def on_tcp_write(self, origin, status):
         self.text_location.SetValue(str(status))
 
-
-
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
-        print("Event handler 'on_button_start_connection' not implemented!")
-        event.Skip()
+        if isinstance(self.output, TCPOutput):
+            if self.state == "connected":
+                self.output.disconnect()
+            else:
+                self.output.connect()

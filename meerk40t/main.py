@@ -331,6 +331,7 @@ def run():
         elements.classify(list(elements.elems()))
 
     if args.mock:
+        # TODO: Mock needs to find the settings of the active output and set that value there.
         # Set the device to mock.
         kernel_root.setting(bool, "mock", True)
         kernel_root.mock = True

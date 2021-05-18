@@ -62,22 +62,31 @@ class TCPOutput:
     def writable(self):
         return True
 
+    def connect(self):
+        try:
+            self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._stream.connect((self.address, self.port))
+            self.context.signal("tcp;status", "connected")
+        except ConnectionError:
+            self.disconnect()
+
+    def disconnect(self):
+        self.context.signal("tcp;status", "disconnected")
+        self._stream.close()
+        self._stream = None
+
     def write(self, data):
         self.context.signal("tcp;write", data)
         self.buffer += data
         self.context.signal("tcp;buffer", len(self.buffer))
         try:
             if self._stream is None:
-                self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._stream.connect((self.address, self.port))
-                self.context.signal("tcp;status", "connected")
+                self.connect()
             self._stream.sendall(self.buffer)
             self.buffer = bytearray()
             self.context.signal("tcp;buffer", 0)
         except ConnectionError:
-            self.context.signal("tcp;status", "disconnected")
-            self._stream.close()
-            self._stream = None
+            self.disconnect()
 
     def __repr__(self):
         if self.name is not None:
