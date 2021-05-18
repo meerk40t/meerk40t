@@ -126,6 +126,9 @@ class TCPServer(Module):
                 if connection is not None:
                     connection.close()
                 break
+            except AttributeError:
+                self.server_channel("Socket did not exist to accept connection.")
+                break
         if self.socket is not None:
             self.socket.close()
 
