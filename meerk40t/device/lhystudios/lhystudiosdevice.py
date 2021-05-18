@@ -253,7 +253,9 @@ def plugin(kernel, lifecycle=None):
 
         @context.console_argument("filename", type=str)
         @context.console_command(
-            "egv_import", help="Lhystudios Engrave Buffer Import. egv_import <egv_file>"
+            "egv_import",
+            input_type="lhystudios",
+            help="Lhystudios Engrave Buffer Import. egv_import <egv_file>",
         )
         def egv_import(filename, data=None, **kwargs):
             spooler, driver, output = data
@@ -368,20 +370,30 @@ def plugin(kernel, lifecycle=None):
             output.close()
             channel("CH341 Closed.")
 
-        @kernel.console_option("port", "p", type=int, default=23, help="port to listen on.")
+        @kernel.console_option(
+            "port", "p", type=int, default=23, help="port to listen on."
+        )
         @kernel.console_command("lhyserver", help="activate the lhyserver.")
         def lhyserver(channel, _, port=23, **kwargs):
             root = kernel.root
             try:
+                spooler, input_driver, output = root.registered[
+                    "device/%s" % root.active
+                ]
+
                 root.open_as("module/TCPServer", "lhyserver", port=port)
                 channel(_("TCP Server for Lhystudios"))
                 root.channel("server").watch(kernel.channel("console"))
                 channel(_("Watching Channel: %s") % "server")
-                spooler, input_driver, output = root.registered["device/%s" % root.active]
                 root.channel("lhyserver/recv").watch(output.write)
+                channel(_("Attached: %s" % repr(output)))
+
             except OSError:
                 channel(_("Server failed on port: %d") % port)
+            except KeyError:
+                channel(_("Server cannot be attached to any device."))
             return
+
 
 distance_lookup = [
     b"",
