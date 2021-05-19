@@ -35,8 +35,8 @@ def plugin(kernel, lifecycle=None):
             controls that type of device. This would then be sent to the device in a
             somewhat agnostic fashion. Commands like Ruida ACS's pause and stop require
             that the meerk40t device has a "pause" command and stop requires it has an
-            estop. Most of the other commands are device agnostic, including the sending
-            of data.
+            "estop". You cannot stop a file output for example. Most of the other commands
+            are device agnostic, including the data sent.
 
             ruidacontrol gives the ruida device control over the active device.
             ruidadesign accepts the ruida signals but turns them only into cutcode to be run locally.
