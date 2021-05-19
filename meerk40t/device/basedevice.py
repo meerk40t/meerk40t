@@ -34,6 +34,14 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "register":
         root = kernel.root
 
+        def device():
+            try:
+                return root.registered["device/%s" % root.active]
+            except KeyError:
+                return None, None, None
+
+        root.device = device
+
         @kernel.console_option("out", "o", type=bool, action="store_true", help="match on output rather than driver")
         @kernel.console_command(
             "dev",
