@@ -330,11 +330,14 @@ class RuidaEmulator(Module):
             self.y = self.abscoord(array[6:11])
             desc = "Move Absolute (%f, %f)" % (self.x, self.y)
         elif array[0] == 0x89:  # 0b10001001 5 characters
-            dx = self.relcoord(array[1:3])
-            dy = self.relcoord(array[3:5])
-            self.x += dx
-            self.y += dy
-            desc = "Move Relative (%f, %f)" % (dx, dy)
+            if len(array) > 1:
+                dx = self.relcoord(array[1:3])
+                dy = self.relcoord(array[3:5])
+                self.x += dx
+                self.y += dy
+                desc = "Move Relative (%f, %f)" % (dx, dy)
+            else:
+                desc = "Move Relative (no coords)"
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
