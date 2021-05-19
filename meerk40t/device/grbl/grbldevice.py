@@ -44,6 +44,12 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_option(
             "port", "p", type=int, default=23, help="port to listen on."
         )
+        @kernel.console_option(
+            "silent", "s", type=bool, action="store_true", help="do not watch server channels"
+        )
+        @kernel.console_option(
+            "watch", "w", type=bool, action="store_true", help="watch send/recv data"
+        )
         @kernel.console_command("grblserver", help="activate the grblserver.")
         def grblserver(command,
                        channel,
@@ -53,25 +59,31 @@ def plugin(kernel, lifecycle=None):
                        flip_x=False,
                        flip_y=False,
                        adjust_x=0,
-                       adjust_y=0, **kwargs):
-            path_context = kernel.get_context(path if path is not None else "/")
-            if path_context is None:
+                       adjust_y=0,
+                       silent=False,
+                       watch=False,
+                       **kwargs):
+            ctx = kernel.get_context(path if path is not None else "/")
+            if ctx is None:
                 return
             _ = kernel.translation
             try:
-                server = path_context.open_as("module/TCPServer", "grbl", port=port)
-                path_context.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
+                server = ctx.open_as("module/TCPServer", "grbl", port=port)
+                ctx.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
                 channel(_("GRBL Mode."))
-                chan = "grbl"
-                path_context.channel(chan).watch(kernel.channel("console"))
-                server.events_channel.watch(kernel.channel("console"))
+                if not silent:
+                    console = kernel.channel("console")
+                    ctx.channel("grbl").watch(console)
+                    server.events_channel.watch(console)
+                    if watch:
+                        server.events_channel.watch(console)
 
-                emulator = path_context.open("emulator/grbl")
+                emulator = ctx.open("emulator/grbl")
                 emulator.flip_x = flip_x
                 emulator.flip_y = flip_y
                 emulator.home_adjust = (adjust_x, adjust_y)
 
-                path_context.channel("grbl/recv").watch(emulator.write)
+                ctx.channel("grbl/recv").watch(emulator.write)
                 channel(_("TCP Server for GRBL Emulator on port: %d" % port))
             except OSError:
                 channel(_("Server failed on port: %d") % port)

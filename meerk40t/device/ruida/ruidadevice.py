@@ -26,9 +26,12 @@ def plugin(kernel, lifecycle=None):
             "path", "p", type=str, default="/", help="Path of ruidaserver launch."
         )
         @kernel.console_option("spool", type=bool, action="store_true")
+        @kernel.console_option(
+            "silent", "s", type=bool, action="store_true", help="do not watch server channels"
+        )
         @kernel.console_command("ruidaserver", help="activate the ruidaserver.")
         def ruidaserver(
-            command, channel, _, spool=False, path=None, args=tuple(), **kwargs
+            command, channel, _, spool=False, path=None, silent=False, **kwargs
         ):
             c = kernel.get_context(path if path is not None else "/")
             if c is None:
@@ -39,11 +42,12 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Ruida Data Server opened on port %d.") % 50200)
                 channel(_("Ruida Jog Server opened on port %d.") % 50207)
 
-                chan = "ruida"
-                c.channel(chan).watch(kernel.channel("console"))
-
-                server.events_channel.watch(kernel.channel("console"))
-                jog.events_channel.watch(kernel.channel("console"))
+                if not silent:
+                    console = kernel.channel("console")
+                    chan = "ruida"
+                    c.channel(chan).watch()
+                    server.events_channel.watch(console)
+                    jog.events_channel.watch(console)
 
                 emulator = c.open("emulator/ruida")
                 c.channel("ruidaserver/recv").watch(emulator.checksum_write)

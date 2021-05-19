@@ -110,10 +110,13 @@ class BindAlias(Modifier):
         @self.context.console_option(
             "port", "p", type=int, default=23, help="port to listen on."
         )
+        @self.context.console_option(
+            "silent", "s", type=bool, action="store_true", help="do not watch server channels"
+        )
         @self.context.console_command(
             "consoleserver", help="starts a console_server on port 23 (telnet)"
         )
-        def server_console(command, channel, _, port=23, args=tuple(), **kwargs):
+        def server_console(command, channel, _, port=23, silent=False, **kwargs):
             try:
                 server = self.context.open_as("module/TCPServer", "console-server", port=port)
                 send = self.context.channel("console-server/send")
@@ -125,14 +128,17 @@ class BindAlias(Modifier):
 
                 recv = self.context.channel("console-server/recv")
                 recv.watch(self.context.console)
-
-                self.context.channel("console").watch(send)
                 channel(_("%s %s console server on port: %d" % (
                     self.context._kernel.name,
                     self.context._kernel.version,
                     port
                 )))
-                server.events_channel.watch(self.context.channel("console"))
+
+                if not silent:
+                    console = self.context.channel("console")
+                    console.watch(send)
+                    server.events_channel.watch(console)
+
             except (OSError, ValueError):
                 channel(_("Server failed on port: %d") % port)
             return

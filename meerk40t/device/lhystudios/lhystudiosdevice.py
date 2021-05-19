@@ -372,8 +372,14 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_option(
             "port", "p", type=int, default=23, help="port to listen on."
         )
+        @kernel.console_option(
+            "silent", "s", type=bool, action="store_true", help="do not watch server channels"
+        )
+        @kernel.console_option(
+            "watch", "w", type=bool, action="store_true", help="watch send/recv data"
+        )
         @kernel.console_command("lhyserver", help="activate the lhyserver.")
-        def lhyserver(channel, _, port=23, **kwargs):
+        def lhyserver(channel, _, port=23,  silent=False, watch=False, **kwargs):
             root = kernel.root
             try:
                 spooler, input_driver, output = root.registered[
@@ -382,7 +388,11 @@ def plugin(kernel, lifecycle=None):
 
                 server = root.open_as("module/TCPServer", "lhyserver", port=port)
                 channel(_("TCP Server for Lhystudios on port: %d" % port))
-                server.events_channel.watch(kernel.channel("console"))
+                if not silent:
+                    console = kernel.channel("console")
+                    server.events_channel.watch(console)
+                    if watch:
+                        server.data_channel.watch(console)
                 channel(_("Watching Channel: %s") % "server")
                 root.channel("lhyserver/recv").watch(output.write)
                 channel(_("Attached: %s" % repr(output)))
