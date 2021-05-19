@@ -1534,7 +1534,7 @@ class LhystudiosController:
             self.connection.open()
 
         if self.connection is None:
-            raise ConnectionRefusedError
+            raise ConnectionRefusedError("ch341 connect did not return a connection.")
 
     def close(self):
         self.pipe_channel("close()")
