@@ -60,11 +60,12 @@ class UDPServer(Module):
             self.events_channel("UDP Socket(%d) Listening." % self.port)
             while True:
                 try:
-                    message, self.udp_address = self.socket.recvfrom(1024)
+                    message, address = self.socket.recvfrom(1024)
                 except socket.timeout:
                     if self.state == STATE_TERMINATE:
                         return
                     continue
+                self.udp_address = address
                 self.recv(message)
         except OSError:
             pass

@@ -313,7 +313,6 @@ class RuidaEmulator(Module):
         respond_desc = None
         start_x = self.x
         start_y = self.y
-        self.ruida_channel("--> %s\t(%s)" % (str(bytes(array).hex()), desc))
         if array[0] < 0x80:
             self.ruida_channel("NOT A COMMAND: %d" % array[0])
             raise ValueError
