@@ -300,7 +300,11 @@ class RuidaEmulator(Module):
         :return:
         """
         for array in self.parse_commands(data):
-            self.process(array)
+            try:
+                self.process(array)
+            except Exception as e:
+                self.ruida_channel("Crashed processing: %s" % str(bytes(array).hex()))
+                raise e
 
     def process(self, array):
         """
@@ -316,6 +320,7 @@ class RuidaEmulator(Module):
         respond_desc = None
         start_x = self.x
         start_y = self.y
+
         if array[0] < 0x80:
             self.ruida_channel("NOT A COMMAND: %d" % array[0])
             raise ValueError
