@@ -3142,7 +3142,7 @@ class ShadowTree:
         elif isinstance(obj, SVGElement):
             self.context.open("window/PathProperty", self.gui, node=node)
         elif isinstance(obj, CutCode):
-            self.context.open("window/Simulate", self.gui, node=node)
+            self.context.open("window/Simulation", self.gui, node=node)
 
     def on_item_selection_changed(self, event):
         """

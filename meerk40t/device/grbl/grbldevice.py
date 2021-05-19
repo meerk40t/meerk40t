@@ -5,11 +5,6 @@ from ...core.drivers import Driver
 from ...kernel import Module
 from ..lasercommandconstants import *
 from ..basedevice import (
-    DRIVER_STATE_FINISH,
-    DRIVER_STATE_MODECHANGE,
-    DRIVER_STATE_PROGRAM,
-    DRIVER_STATE_RAPID,
-    DRIVER_STATE_RASTER,
     PLOT_AXIS,
     PLOT_DIRECTION,
     PLOT_FINISH,

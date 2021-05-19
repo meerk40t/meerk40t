@@ -22,43 +22,46 @@ def plugin(kernel, lifecycle=None):
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("emulator/ruida", RuidaEmulator)
 
-        @kernel.console_option(
-            "path", "p", type=str, default="/", help="Path of ruidaserver launch."
-        )
         @kernel.console_option("spool", type=bool, action="store_true")
         @kernel.console_option(
             "silent", "s", type=bool, action="store_true", help="do not watch server channels"
         )
         @kernel.console_command("ruidaserver", help="activate the ruidaserver.")
         def ruidaserver(
-            command, channel, _, spool=False, path=None, silent=False, **kwargs
+            command, channel, _, spool=False, silent=False, **kwargs
         ):
-            c = kernel.get_context(path if path is not None else "/")
-            if c is None:
-                return
+            root = kernel.root
             try:
-                server = c.open_as("module/UDPServer", "ruidaserver", port=50200)
-                jog = c.open_as("module/UDPServer", "ruidajog", port=50207)
+                server = root.open_as("module/UDPServer", "ruidaserver", port=50200)
+                jog = root.open_as("module/UDPServer", "ruidajog", port=50207)
                 channel(_("Ruida Data Server opened on port %d.") % 50200)
                 channel(_("Ruida Jog Server opened on port %d.") % 50207)
 
                 if not silent:
                     console = kernel.channel("console")
                     chan = "ruida"
-                    c.channel(chan).watch()
+                    root.channel(chan).watch(console)
                     server.events_channel.watch(console)
                     jog.events_channel.watch(console)
 
-                emulator = c.open("emulator/ruida")
-                c.channel("ruidaserver/recv").watch(emulator.checksum_write)
-                c.channel("ruidajog/recv").watch(emulator.realtime_write)
-                c.channel("ruida_reply").watch(c.channel("ruidaserver/send"))
-                if spool:
-                    emulator.spooler = c.spooler
-                else:
-                    emulator.elements = c.get_context("/").elements
-                    # Output to elements
-                    pass
+                emulator = root.open("emulator/ruida")
+                root.channel("ruidaserver/recv").watch(emulator.checksum_write)
+                root.channel("ruidajog/recv").watch(emulator.realtime_write)
+                root.channel("ruida_reply").watch(root.channel("ruidaserver/send"))
+
+                try:
+                    spooler, input_driver, output = kernel.registered["device/%s" % kernel.root.active]
+                except (KeyError, ValueError):
+                    channel(_("Must run with a correct active device"))
+                    return
+
+                emulator.spooler = spooler
+                emulator.driver = input_driver
+                emulator.output = output
+
+                emulator.elements = root.elements
+                emulator.spool = spool
+
             except OSError:
                 channel(_("Server failed."))
             return
@@ -69,11 +72,15 @@ class RuidaEmulator(Module):
         Module.__init__(self, context, path)
 
         self.cutcode = CutCode()
+
         # self.layer_settings = []
         self.settings = LaserSettings()
         self._use_set = None
         self.spooler = None
+        self.driver = None
+        self.output = None
         self.elements = None
+        self.spool = False
 
         self.x = 0.0
         self.y = 0.0
@@ -641,11 +648,10 @@ class RuidaEmulator(Module):
             desc = "Keep Alive"
         elif array[0] == 0xD7:
             self.in_file = False
-            if self.spooler is not None:
+            if self.spool:
                 self.spooler.append(self.cutcode)
-            if self.elements is not None:
-                self.elements.add_element(self.cutcode)
-                self.elements.classify([self.cutcode])
+            else:
+                self.elements.op_branch.add(self.cutcode, type="cutcode")
             if self.spooler is not None or self.elements is not None:
                 self.cutcode = CutCode()
             desc = "End Of File"

@@ -201,7 +201,7 @@ def plugin(kernel, lifecycle=None):
         )
         def realtime_pause(data=None, **kwargs):
             spooler, driver, output = data
-            driver.abort_waiting = True
+            output.abort_waiting = True
 
         @context.console_command(
             "pause",
