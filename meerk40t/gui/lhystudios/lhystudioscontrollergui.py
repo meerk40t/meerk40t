@@ -327,10 +327,10 @@ class LhystudiosControllerGui(MWindow):
     def window_close(self):
         self.context.channel("pipe/usb").unwatch(self.update_text)
 
-        self.context.listen("pipe;index", self.on_update_pipe_index)
-        self.context.listen("pipe;chipv", self.on_update_pipe_chipv)
-        self.context.listen("pipe;bus", self.on_update_pipe_bus)
-        self.context.listen("pipe;address", self.on_update_pipe_address)
+        self.context.unlisten("pipe;index", self.on_update_pipe_index)
+        self.context.unlisten("pipe;chipv", self.on_update_pipe_chipv)
+        self.context.unlisten("pipe;bus", self.on_update_pipe_bus)
+        self.context.unlisten("pipe;address", self.on_update_pipe_address)
 
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;packet_text", self.update_packet_text)
