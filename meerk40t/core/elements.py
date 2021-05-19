@@ -889,6 +889,7 @@ class LaserOperation(Node):
                     else:
                         plot = abs(object_path)
 
+                settings.line_color = plot.stroke
                 for seg in plot:
                     if isinstance(seg, Move):
                         pass  # Move operations are ignored.
@@ -952,6 +953,36 @@ class LaserOperation(Node):
         return c
 
 
+class CutNode(Node):
+    """
+    Node type "cutcode"
+    """
+
+    def __init__(self, data_object, **kwargs):
+        super().__init__(data_object, type="cutcode", **kwargs)
+        self.output = True
+        self.operation = "Cutcode"
+
+    def __repr__(self):
+        return "CutNode('%s', '%s')" % (self.name, str(self.command))
+
+    def __repr__(self):
+        return "CutNode('%s', %s, %s)" % (
+            self.type,
+            str(self.object),
+            str(self._parent),
+        )
+
+    def __copy__(self):
+        return CutNode(self.object)
+
+    def __len__(self):
+        return 1
+
+    def as_blob(self):
+        return self.object
+
+
 class CommandOperation(Node):
     """
     CommandOperation is a basic command operation. It contains nothing except a single command to be executed.
@@ -1004,6 +1035,7 @@ class RootNode(Node):
             "cmdop": CommandOperation,
             "elem": ElemNode,
             "opnode": OpNode,
+            "cutcode": CutNode,
         }
         self.add(type="branch ops", name="Operations")
         self.add(type="branch elems", name="Elements")

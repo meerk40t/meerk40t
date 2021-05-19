@@ -253,9 +253,13 @@ class Planner(Modifier):
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
             plan, original, commands, name = data
-            for c in elements.ops():
-                if not c.output:
-                    continue
+            operations = elements.get(type="branch ops")
+            for c in operations.flat(types=("op", "cutcode", "cmdop"), depth=1):
+                try:
+                    if not c.output:
+                        continue
+                except AttributeError:
+                    pass
                 try:
                     if len(c) == 0:
                         continue
@@ -427,14 +431,14 @@ class Planner(Modifier):
                 try:
                     if c.operation == "Dots":
                         continue
-                    c.settings.jog_distance = self.context.opt_jog_minimum
-                    c.settings.jog_enable = self.context.opt_rapid_between
                     b = c.as_blob()
                     if b is not None:
                         blob.extend(b)
                         if first_index is None:
                             first_index = i
                     plan[i] = None
+                    c.settings.jog_distance = self.context.opt_jog_minimum
+                    c.settings.jog_enable = self.context.opt_rapid_between
                 except AttributeError:
                     pass
                 if first_index is not None:
