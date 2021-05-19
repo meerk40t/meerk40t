@@ -566,6 +566,15 @@ class MeerK40t(MWindow, Job):
         context.listen("refresh_tree", self.request_refresh)
         context.listen("refresh_scene", self.on_refresh_scene)
         context.listen("element_property_update", self.on_element_update)
+
+        context.listen("device;noactive", self.on_device_noactive)
+        context.listen("pipe;error", self.on_usb_error)
+        context.listen("pipe;usb_status", self.on_usb_state_text)
+        context.listen("pipe;thread", self.on_pipe_state)
+        context.listen("spooler;thread", self.on_spooler_state)
+        context.listen("driver;position", self.update_position)
+        context.listen("driver;mode", self.on_driver_mode)
+        context.listen("bed_size", self.bed_changed)
         bed_dim = context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)  # Default Value
         bed_dim.setting(int, "bed_height", 210)  # Default Value
@@ -1497,7 +1506,10 @@ class MeerK40t(MWindow, Job):
 
     def on_active_change(self, origin, active):
         self.__set_titlebar()
-
+        _, driver, _ = self.root_context.device()
+        if driver is not None:
+            self.context._reticle_x = driver.current_x
+            self.context._reticle_y = driver.current_y
 
     def window_close(self):
         context = self.context
@@ -1519,6 +1531,15 @@ class MeerK40t(MWindow, Job):
         context.unlisten("refresh_scene", self.on_refresh_scene)
         context.unlisten("refresh_tree", self.request_refresh)
         context.unlisten("element_property_update", self.on_element_update)
+
+        context.unlisten("device;noactive", self.on_device_noactive)
+        context.unlisten("pipe;error", self.on_usb_error)
+        context.unlisten("pipe;usb_status", self.on_usb_state_text)
+        context.unlisten("pipe;thread", self.on_pipe_state)
+        context.unlisten("spooler;thread", self.on_spooler_state)
+        context.unlisten("driver;position", self.update_position)
+        context.unlisten("driver;mode", self.on_driver_mode)
+        context.unlisten("bed_size", self.bed_changed)
 
         context.unlisten("active", self.on_active_change)
 
@@ -2579,7 +2600,7 @@ class MeerK40t(MWindow, Job):
         r = self.context.get_context("rotary/1")
         sx = r.scale_x
         sy = r.scale_y
-        spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
+        spooler, input_driver, output = self.context.root.device()
 
         mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, input_driver.current_x, input_driver.current_y))
         for element in self.context.get_context("/").elements.elems():

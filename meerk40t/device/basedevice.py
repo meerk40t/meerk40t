@@ -37,7 +37,7 @@ def plugin(kernel, lifecycle=None):
         def device():
             try:
                 return root.registered["device/%s" % root.active]
-            except KeyError:
+            except (KeyError, AttributeError):
                 return None, None, None
 
         root.device = device
@@ -47,6 +47,7 @@ def plugin(kernel, lifecycle=None):
             "dev",
             help="delegate commands to currently selected device by input/driver",
             output_type="dev",
+            hidden=True
         )
         def dev(channel, _, remainder=None, out=False, **kwargs):
             try:

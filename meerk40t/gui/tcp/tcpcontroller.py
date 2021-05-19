@@ -99,7 +99,8 @@ class TCPController(MWindow):
         self.context.unlisten("active", self.on_active_change)
 
     def on_active_change(self, origin, active):
-        self.Close()
+        # self.Close()
+        pass
 
     def on_tcp_status(self, origin, state):
         self.text_status.SetValue(str(state))

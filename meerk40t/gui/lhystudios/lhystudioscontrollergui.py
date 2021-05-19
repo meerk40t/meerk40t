@@ -340,7 +340,8 @@ class LhystudiosControllerGui(MWindow):
         self.context.unlisten("active", self.on_active_change)
 
     def on_active_change(self, origin, active):
-        self.Close()
+        # self.Close()
+        pass
 
     def update_text(self, text):
         if not wx.IsMainThread():

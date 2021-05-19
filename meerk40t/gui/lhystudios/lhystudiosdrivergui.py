@@ -223,7 +223,8 @@ class LhystudiosDriverGui(MWindow):
         self.context.unlisten("active", self.on_active_change)
 
     def on_active_change(self, origin, active):
-        self.Close()
+        # self.Close()
+        pass
 
     def set_widgets(self):
         context = self.context

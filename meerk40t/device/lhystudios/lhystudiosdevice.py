@@ -373,13 +373,17 @@ def plugin(kernel, lifecycle=None):
             "port", "p", type=int, default=23, help="port to listen on."
         )
         @kernel.console_option(
-            "silent", "s", type=bool, action="store_true", help="do not watch server channels"
+            "silent",
+            "s",
+            type=bool,
+            action="store_true",
+            help="do not watch server channels",
         )
         @kernel.console_option(
             "watch", "w", type=bool, action="store_true", help="watch send/recv data"
         )
         @kernel.console_command("lhyserver", help="activate the lhyserver.")
-        def lhyserver(channel, _, port=23,  silent=False, watch=False, **kwargs):
+        def lhyserver(channel, _, port=23, silent=False, watch=False, **kwargs):
             root = kernel.root
             try:
                 spooler, input_driver, output = root.registered[
@@ -832,9 +836,7 @@ class LhystudiosDriver(Driver):
             self.jog_absolute(x, y, **kwargs)
 
     def jog_absolute(self, x, y, **kwargs):
-        self.jog_relative(
-            x - self.current_x, y - self.current_y, **kwargs
-        )
+        self.jog_relative(x - self.current_x, y - self.current_y, **kwargs)
 
     def jog_relative(self, dx, dy, mode=0):
         self.laser_off()
@@ -963,8 +965,10 @@ class LhystudiosDriver(Driver):
         elif self.state == DRIVER_STATE_MODECHANGE:
             self.fly_switch_speed(dx, dy)
         self.check_bounds()
-        # self.context.signal('driver;position', (self.current_x, self.current_y,
-        #                                              self.current_x - dx, self.current_y - dy))
+        self.context.signal(
+            "driver;position",
+            (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
+        )
 
     def goto_octent_abs(self, x, y, on):
         dx = x - self.current_x
@@ -995,8 +999,10 @@ class LhystudiosDriver(Driver):
                     "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
                     % (str(dx), str(dy))
                 )
-        # self.context.signal('driver;position', (self.current_x, self.current_y,
-        #                                              self.current_x - dx, self.current_y - dy))
+        self.context.signal(
+            "driver;position",
+            (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
+        )
 
     def set_speed(self, speed=None):
         if self.settings.speed != speed:
@@ -1183,8 +1189,8 @@ class LhystudiosDriver(Driver):
         x, y = self.calc_home_position()
         self.ensure_rapid_mode()
         self.data_output(b"IPP\n")
-        # old_x = self.current_x
-        # old_y = self.current_y
+        old_x = self.current_x
+        old_y = self.current_y
         self.current_x = x
         self.current_y = y
         self.reset_modes()
@@ -1207,7 +1213,9 @@ class LhystudiosDriver(Driver):
             self.current_y = y
 
         self.context.signal("driver;mode", self.state)
-        # self.context.signal('driver;position', (self.current_x, self.current_y, old_x, old_y))
+        self.context.signal(
+            "driver;position", (self.current_x, self.current_y, old_x, old_y)
+        )
 
     def lock_rail(self):
         self.ensure_rapid_mode()
