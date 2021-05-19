@@ -232,6 +232,7 @@ class Simulation(MWindow, Job):
 
     def window_close(self):
         self.context.unschedule(self)
+        self.context("plan%s clear\n" % self.plan_name)
 
     def on_size(self, event=None):
         self.Layout()
@@ -363,6 +364,7 @@ class Simulation(MWindow, Job):
         zoom_scale = 1 / self.matrix.value_scale_x()
         if zoom_scale < 1:
             zoom_scale = 1
+        gc.SetPen(wx.BLACK_PEN)
         operations, original, commands, plan_name = self.context.default_plan()
         for op in reversed(operations):
             if isinstance(op, CutCode):
