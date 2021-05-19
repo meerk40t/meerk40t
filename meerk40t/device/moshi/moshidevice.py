@@ -383,7 +383,7 @@ def plugin(kernel, lifecycle=None):
             input_type="moshi",
             help="abort waiting process on the controller.",
         )
-        def realtime_status(channel, _,data=None, **kwargs):
+        def realtime_status(channel, _, data=None, **kwargs):
             spooler, driver, output = data
             try:
                 output.update_status()
@@ -723,7 +723,7 @@ class MoshiDriver(Driver, Modifier):
         oldy = self.current_y
         self.current_x = x
         self.current_y = y
-        self.context.signal("driver;position", (oldx, oldy, x, y))
+        self.context.signal("driver;position", (x, y, oldx, oldy))
 
     def cut(self, x, y):
         if self.is_relative:
@@ -741,7 +741,7 @@ class MoshiDriver(Driver, Modifier):
         oldy = self.current_y
         self.current_x = x
         self.current_y = y
-        self.context.signal("driver;position", (oldx, oldy, x, y))
+        self.context.signal("driver;position", (x, y, oldx, oldy))
 
     def cut_relative(self, dx, dy):
         x = dx + self.current_x
@@ -766,7 +766,7 @@ class MoshiDriver(Driver, Modifier):
         self.write_move_abs(x, y)
         x = self.current_x
         y = self.current_y
-        self.context.signal("driver;position", (oldx, oldy, x, y))
+        self.context.signal("driver;position", (x, y, oldx, oldy))
 
     def move_relative(self, dx, dy):
         x = dx + self.current_x
