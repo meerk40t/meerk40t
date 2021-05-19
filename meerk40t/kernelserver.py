@@ -26,8 +26,8 @@ class UDPServer(Module):
         :param port: UDP listen port.
         """
         Module.__init__(self, context, name)
-        self.server_channel = self.context.channel("server")
         self.port = port
+        self.server_channel = self.context.channel("server-udp-%d" % port)
 
         self.udp_address = None
         self.context.channel("%s/send" % name).watch(self.send)
@@ -86,9 +86,8 @@ class TCPServer(Module):
         Module.__init__(self, context, name)
         self.port = port
 
-        self.server_channel = None
         self.socket = None
-        self.server_channel = self.context.channel("server")
+        self.server_channel = self.context.channel("server-tcp-%d" % port)
         self.context.threaded(self.run_tcp_delegater, thread_name="tcp-%d" % port, daemon=True)
 
     def finalize(self, *args, **kwargs):

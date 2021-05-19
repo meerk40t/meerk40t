@@ -380,9 +380,9 @@ def plugin(kernel, lifecycle=None):
                     "device/%s" % root.active
                 ]
 
-                root.open_as("module/TCPServer", "lhyserver", port=port)
+                server = root.open_as("module/TCPServer", "lhyserver", port=port)
                 channel(_("TCP Server for Lhystudios on port: %d" % port))
-                root.channel("server").watch(kernel.channel("console"))
+                server.server_channel.watch(kernel.channel("console"))
                 channel(_("Watching Channel: %s") % "server")
                 root.channel("lhyserver/recv").watch(output.write)
                 channel(_("Attached: %s" % repr(output)))

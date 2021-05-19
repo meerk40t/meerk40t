@@ -34,18 +34,16 @@ def plugin(kernel, lifecycle=None):
             if c is None:
                 return
             try:
-                c.open_as("module/UDPServer", "ruidaserver", port=50200)
-                c.open_as("module/UDPServer", "ruidajog", port=50207)
+                server = c.open_as("module/UDPServer", "ruidaserver", port=50200)
+                jog = c.open_as("module/UDPServer", "ruidajog", port=50207)
                 channel(_("Ruida Data Server opened on port %d.") % 50200)
                 channel(_("Ruida Jog Server opened on port %d.") % 50207)
 
                 chan = "ruida"
                 c.channel(chan).watch(kernel.channel("console"))
-                channel(_("Watching Channel: %s") % chan)
 
-                chan = "server"
-                c.channel(chan).watch(kernel.channel("console"))
-                channel(_("Watching Channel: %s") % chan)
+                server.server_channel.watch(kernel.channel("console"))
+                jog.server_channel.watch(kernel.channel("console"))
 
                 emulator = c.open("emulator/ruida")
                 c.channel("ruidaserver/recv").watch(emulator.checksum_write)

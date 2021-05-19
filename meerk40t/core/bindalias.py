@@ -122,8 +122,10 @@ class BindAlias(Modifier):
                     self.context._kernel.version,
                 )
                 send.line_end = "\r\n"
+
                 recv = self.context.channel("console-server/recv")
                 recv.watch(self.context.console)
+
                 self.context.channel("console").watch(send)
                 channel(_("%s %s console server on port: %d" % (
                     self.context._kernel.name,

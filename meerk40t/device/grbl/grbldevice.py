@@ -59,15 +59,12 @@ def plugin(kernel, lifecycle=None):
                 return
             _ = kernel.translation
             try:
-                path_context.open_as("module/TCPServer", "grbl", port=port)
+                server = path_context.open_as("module/TCPServer", "grbl", port=port)
                 path_context.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
                 channel(_("GRBL Mode."))
                 chan = "grbl"
                 path_context.channel(chan).watch(kernel.channel("console"))
-                channel(_("Watching Channel: %s") % chan)
-                chan = "server"
-                path_context.channel(chan).watch(kernel.channel("console"))
-                channel(_("Watching Channel: %s") % chan)
+                server.server_channel.watch(kernel.channel("console"))
 
                 emulator = path_context.open("emulator/grbl")
                 emulator.flip_x = flip_x
