@@ -17,26 +17,26 @@ class UDPServer(Module):
     Any packet the server picks up will be sent to the path/recv channel.
     """
 
-    def __init__(self, context, path, port=23):
+    def __init__(self, context, name, port=23):
         """
         Laser Server init.
 
         :param context: Context at which this module is attached.
-        :param path: Path of this module.
+        :param name: Name of this module.
         :param port: UDP listen port.
         """
-        Module.__init__(self, context, path)
+        Module.__init__(self, context, name)
         self.server_channel = self.context.channel("server")
         self.port = port
 
         self.udp_address = None
-        self.context.channel("%s/send" % path).watch(self.send)
-        self.recv = self.context.channel("%s/recv" % path)
+        self.context.channel("%s/send" % name).watch(self.send)
+        self.recv = self.context.channel("%s/recv" % name)
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(2)
         self.socket.bind(("", self.port))
-        self.context.threaded(self.run_udp_listener, thread_name=path)
+        self.context.threaded(self.run_udp_listener, thread_name=name)
 
     def finalize(self, *args, **kwargs):
         self.context.channel("%s/send" % self.name).unwatch(
@@ -75,15 +75,15 @@ class TCPServer(Module):
     TCPServer opens up a localhost server and waits. Any connection is given its own handler.
     """
 
-    def __init__(self, context, path, port=23):
+    def __init__(self, context, name, port=23):
         """
         Laser Server init.
 
         :param context: Context at which this module is attached.
-        :param path: Path of this module.
+        :param name: Name of this module
         :param port: Port being used for the server.
         """
-        Module.__init__(self, context, path)
+        Module.__init__(self, context, name)
         self.port = port
 
         self.server_channel = None
@@ -148,7 +148,8 @@ class TCPServer(Module):
                         connection.close()
 
             recv = self.context.channel("%s/recv" % self.name)
-            self.context.channel("%s/send" % self.name).watch(send)
+            send_channel_name = "%s/send" % self.name
+            self.context.channel(send_channel_name).watch(send)
             while self.state != STATE_TERMINATE:
                 try:
                     data_from_socket = connection.recv(1024)
@@ -162,6 +163,6 @@ class TCPServer(Module):
                     if connection is not None:
                         connection.close()
                     break
-            self.context.channel("%s/send" % self.name).unwatch(send)
+            self.context.channel(send_channel_name).unwatch(send)
 
         return handle
