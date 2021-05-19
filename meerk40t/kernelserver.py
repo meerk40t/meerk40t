@@ -65,7 +65,8 @@ class UDPServer(Module):
                     if self.state == STATE_TERMINATE:
                         return
                     continue
-                self.udp_address = address
+                if address is not None:
+                    self.udp_address = address
                 self.recv(message)
         except OSError:
             pass

@@ -59,7 +59,9 @@ def plugin(kernel, lifecycle=None):
                 emulator = root.open("emulator/ruida")
                 root.channel("ruidaserver/recv").watch(emulator.checksum_write)
                 root.channel("ruidajog/recv").watch(emulator.realtime_write)
+
                 root.channel("ruida_reply").watch(root.channel("ruidaserver/send"))
+                root.channel("ruida_reply_realtime").watch(root.channel("ruidajog/send"))
 
                 try:
                     spooler, input_driver, output = kernel.registered["device/%s" % kernel.root.active]
@@ -111,9 +113,10 @@ class RuidaEmulator(Module):
         self.power2_max = 0
 
         self.ruida_channel = self.context.channel("ruida")
-        self.ruida_reply = self.context.channel("ruida_reply")
-        self.ruida_send = self.context.channel("ruida_send")
         self.ruida_describe = self.context.channel("ruida_desc")
+
+        self.ruida_reply = self.context.channel("ruida_reply")
+        self.ruida_reply_realtime = self.context.channel("ruida_reply_realtime")
 
         self.process_commands = True
         self.parse_lasercode = True
@@ -236,7 +239,7 @@ class RuidaEmulator(Module):
         if self.swizzle_mode:
             self.ruida_reply(self.swizzle(response))
         else:
-            self.ruida_reply(response)
+            self.ruida_reply_realtime(response)
         self.ruida_channel("<-- %s\t(%s)" % (response.hex(), desc))
 
     def checksum_write(self, sent_data):
