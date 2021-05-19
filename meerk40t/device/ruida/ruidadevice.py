@@ -313,6 +313,7 @@ class RuidaEmulator(Module):
         respond_desc = None
         start_x = self.x
         start_y = self.y
+        self.ruida_channel("--> %s\t(%s)" % (str(bytes(array).hex()), desc))
         if array[0] < 0x80:
             self.ruida_channel("NOT A COMMAND: %d" % array[0])
             raise ValueError
@@ -689,9 +690,6 @@ class RuidaEmulator(Module):
             desc = "Keep Alive"
         elif array[0] == 0xD0:
             if array[1] == 0x29:
-                #  Unknown Lightburn Home.
-                if self.control:
-                    self.context("home\n")
                 desc = "Unknown Lightburn Command"
         elif array[0] == 0xD7:
             self.in_file = False
