@@ -22,14 +22,26 @@ def plugin(kernel, lifecycle=None):
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("emulator/ruida", RuidaEmulator)
 
-        @kernel.console_option("spool", type=bool, action="store_true")
         @kernel.console_option(
             "silent", "s", type=bool, action="store_true", help="do not watch server channels"
         )
-        @kernel.console_command("ruidaserver", help="activate the ruidaserver.")
+        @kernel.console_command(("ruidacontrol", "ruidadesign"), help="activate the ruidaserver.")
         def ruidaserver(
-            command, channel, _, spool=False, silent=False, **kwargs
+            command, channel, _, silent=False, **kwargs
         ):
+            """
+            The ruidaserver emulation methods provide a simulation of a ruida device.
+            this interprets ruida devices in order to be compatible with software that
+            controls that type of device. This would then be sent to the device in a
+            somewhat agnostic fashion. Commands like Ruida ACS's pause and stop require
+            that the meerk40t device has a "pause" command and stop requires it has an
+            estop. Most of the other commands are device agnostic, including the sending
+            of data.
+
+            ruidacontrol gives the ruida device control over the active device.
+            ruidadesign accepts the ruida signals but turns them only into cutcode to be run locally.
+            """
+            control = command == "ruidacontrol"
             root = kernel.root
             try:
                 server = root.open_as("module/UDPServer", "ruidaserver", port=50200)
@@ -60,7 +72,7 @@ def plugin(kernel, lifecycle=None):
                 emulator.output = output
 
                 emulator.elements = root.elements
-                emulator.spool = spool
+                emulator.control = control
 
             except OSError:
                 channel(_("Server failed."))
@@ -80,7 +92,7 @@ class RuidaEmulator(Module):
         self.driver = None
         self.output = None
         self.elements = None
-        self.spool = False
+        self.control = False
 
         self.x = 0.0
         self.y = 0.0
@@ -348,28 +360,28 @@ class RuidaEmulator(Module):
             else:
                 if array[2] == 0x02:
                     desc = "Interface +X %s" % key
-                    if self.spool:
+                    if self.control:
                         if key == "Down":
                             self.context("+right\n")
                         else:
                             self.context("-right\n")
                 elif array[2] == 0x01:
                     desc = "Interface -X %s" % key
-                    if self.spool:
+                    if self.control:
                         if key == "Down":
                             self.context("+left\n")
                         else:
                             self.context("-left\n")
                 if array[2] == 0x03:
                     desc = "Interface +Y %s" % key
-                    if self.spool:
+                    if self.control:
                         if key == "Down":
                             self.context("+down\n")
                         else:
                             self.context("-down\n")
                 elif array[2] == 0x04:
                     desc = "Interface -Y %s" % key
-                    if self.spool:
+                    if self.control:
                         if key == "Down":
                             self.context("+up\n")
                         else:
@@ -384,7 +396,7 @@ class RuidaEmulator(Module):
                     desc = "Interface -U %s" % key
                 elif array[2] == 0x05:
                     desc = "Interface Pulse %s" % key
-                    if self.spool:
+                    if self.control:
                         if key == "Down":
                             self.context("+laser\n")
                         else:
@@ -393,11 +405,11 @@ class RuidaEmulator(Module):
                     desc = "Interface Speed"
                 elif array[2] == 0x06:
                     desc = "Interface Start/Pause"
-                    if self.spool:
+                    if self.control:
                         self.context("pause\n")
                 elif array[2] == 0x09:
                     desc = "Interface Stop"
-                    if self.spool:
+                    if self.control:
                         self.context("estop\n")
                 elif array[2] == 0x5A:
                     desc = "Interface Reset"
@@ -677,7 +689,7 @@ class RuidaEmulator(Module):
             desc = "Keep Alive"
         elif array[0] == 0xD7:
             self.in_file = False
-            if self.spool:
+            if self.control:
                 self.spooler.append(self.cutcode)
             else:
                 self.elements.op_branch.add(self.cutcode, type="cutcode")
@@ -722,13 +734,13 @@ class RuidaEmulator(Module):
                 coord = self.abscoord(array[3:8])
                 self.x += coord
                 desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
-                if self.spool:
+                if self.control:
                     self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
             elif array[1] == 0x01:
                 coord = self.abscoord(array[3:8])
                 self.y += coord
                 desc = "Move %s Y: %f (%f,%f)" % (param, coord, self.x, self.y)
-                if self.spool:
+                if self.control:
                     self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
             elif array[1] == 0x02:
                 coord = self.abscoord(array[3:8])
@@ -742,7 +754,7 @@ class RuidaEmulator(Module):
                 desc = "Home %s XY" % param
                 self.x = 0
                 self.y = 0
-                if self.spool:
+                if self.control:
                     self.context("home\n")
         elif array[0] == 0xDA:
             v = 0
