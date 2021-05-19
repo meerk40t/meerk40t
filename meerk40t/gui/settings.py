@@ -52,6 +52,7 @@ class Settings(MWindow):
             (_("Invert MouseWheel Pan"), "mouse_pan_invert", False),
             (_("Invert MouseWheel Zoom"), "mouse_zoom_invert", False),
             (_("Default Operation Empty"), "operation_default_empty", True),
+            (_("Reverse SVG Element Load"), "svg_reverse", False),
         ]
         self.checklist_options = wx.CheckListBox(
             self, wx.ID_ANY, choices=[c[0] for c in self.choices]

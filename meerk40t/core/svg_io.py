@@ -259,6 +259,8 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
+        context.root.setting(bool, 'svg_reverse', False)
+        reverse = context.root.svg_reverse
         bed_dim = context.get_context("/")
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
@@ -283,12 +285,14 @@ class SVGLoader:
         file_node = context_node.add(type="file", name=basename)
         file_node.filepath = pathname
         return SVGLoader.parse(
-            svg, elements_modifier, file_node, pathname, scale_factor
+            svg, elements_modifier, file_node, pathname, scale_factor, reverse
         )
 
     @staticmethod
-    def parse(svg, elements_modifier, context_node, pathname, scale_factor):
+    def parse(svg, elements_modifier, context_node, pathname, scale_factor, reverse):
         operations_cleared = False
+        if reverse:
+            svg = reversed(svg)
         for element in svg:
             try:
                 if element.values["visibility"] == "hidden":
@@ -335,7 +339,7 @@ class SVGLoader:
             elif isinstance(element, Group):
                 new_context = context_node.add(type="group", name=element.id)
                 SVGLoader.parse(
-                    element, elements_modifier, new_context, pathname, scale_factor
+                    element, elements_modifier, new_context, pathname, scale_factor, reverse
                 )
                 continue
             elif isinstance(element, SVGElement):
