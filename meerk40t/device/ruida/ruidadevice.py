@@ -697,10 +697,12 @@ class RuidaEmulator(Module):
             self.in_file = False
             if self.control:
                 self.spooler.append(self.cutcode)
-            else:
-                self.elements.op_branch.add(self.cutcode, type="cutcode")
-            if self.spooler is not None or self.elements is not None:
                 self.cutcode = CutCode()
+            else:
+                if self.elements is not None:
+                    self.elements.op_branch.add(self.cutcode, type="cutcode")
+                    self.cutcode = CutCode()
+            # Also could be in design mode without elements. Preserves cutcode
             desc = "End Of File"
         elif array[0] == 0xD8:
             self.in_file = True
@@ -1352,11 +1354,12 @@ class RDLoader:
         yield "RDWorks File", ("rd",), "application/x-rd"
 
     @staticmethod
-    def load(kernel, pathname, channel=None, **kwargs):
+    def load(kernel, elements_modifier, pathname, **kwargs):
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            ruidaemulator = kernel.get_context("/").open_as(
-                "module/RuidaEmulator", basename
+            ruidaemulator = kernel.root.open_as(
+                "emulator/ruida", basename
             )
+            ruidaemulator.elements = elements_modifier
             ruidaemulator.write(BytesIO(ruidaemulator.unswizzle(f.read())))
-            return [ruidaemulator.cutcode], None, None, pathname, basename
+            return True
