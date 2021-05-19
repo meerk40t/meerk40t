@@ -2433,12 +2433,12 @@ class MeerK40t(MWindow, Job):
         dlg.SetValue("")
 
         if dlg.ShowModal() == wx.ID_OK:
-            p = self.context
+            spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
             root_context = self.context.get_context("/")
             bed_dim = self.context.get_context("/")
             m = str(dlg.GetValue())
-            m = m.replace("$x", str(p.current_x))
-            m = m.replace("$y", str(p.current_y))
+            m = m.replace("$x", str(input_driver.current_x))
+            m = m.replace("$y", str(input_driver.current_y))
             mx = Matrix(m)
             wmils = bed_dim.bed_width * 39.37
             hmils = bed_dim.bed_height * 39.37
@@ -2579,9 +2579,9 @@ class MeerK40t(MWindow, Job):
         r = self.context.get_context("rotary/1")
         sx = r.scale_x
         sy = r.scale_y
-        i = self.context.default_driver()
+        spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
 
-        mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, i.current_x, i.current_y))
+        mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, input_driver.current_x, input_driver.current_y))
         for element in self.context.get_context("/").elements.elems():
             try:
                 element *= mx

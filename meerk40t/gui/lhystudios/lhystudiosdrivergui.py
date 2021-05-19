@@ -237,8 +237,6 @@ class LhystudiosDriverGui(MWindow):
 
         context.setting(int, "home_adjust_x", 0)
         context.setting(int, "home_adjust_y", 0)
-        context.setting(int, "current_x", 0)
-        context.setting(int, "current_y", 0)
         context.setting(bool, "autolock", True)
         context.setting(str, "board", "M2")
         context.setting(bool, "buffer_limit", True)
@@ -310,8 +308,9 @@ class LhystudiosDriverGui(MWindow):
 
     def on_button_set_home_current(self, event):  # wxGlade: Preferences.<event_handler>
         x, y = self.calc_home_position()
-        current_x = self.context.current_x - x
-        current_y = self.context.current_y - y
+        spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
+        current_x = input_driver.current_x - x
+        current_y = input_driver.current_y - y
         self.context.home_adjust_x = int(current_x)
         self.context.home_adjust_y = int(current_y)
         self.spin_home_x.SetValue(self.context.home_adjust_x)

@@ -55,6 +55,9 @@ class Driver:
         self.holds = []
         self.temp_holds = []
 
+        self.current_x = 0
+        self.current_y = 0
+
         self.plot_planner = PlotPlanner(self.settings)
         self.plot = None
 
@@ -62,15 +65,11 @@ class Driver:
         self.properties = 0
         self.is_relative = False
         self.laser = False
-        context.setting(int, "current_x", 0)
-        context.setting(int, "current_y", 0)
         self.root_context.setting(bool, "opt_rapid_between", True)
         self.root_context.setting(int, "opt_jog_mode", 0)
         self.root_context.setting(int, "opt_jog_minimum", 127)
         context._quit = False
 
-        context.current_x = 0
-        context.current_y = 0
         self.rapid = self.root_context.opt_rapid_between
         self.jog = self.root_context.opt_jog_mode
         self.rapid_override = False
@@ -397,20 +396,20 @@ class Driver:
             self.plot = self.plot_planner.gen()
 
     def jog(self, x, y, mode=0, min_jog=127):
-        self.context.current_x = x
-        self.context.current_y = y
+        self.current_x = x
+        self.current_y = y
 
     def move(self, x, y):
-        self.context.current_x = x
-        self.context.current_y = y
+        self.current_x = x
+        self.current_y = y
 
     def cut(self, x, y):
-        self.context.current_x = x
-        self.context.current_y = y
+        self.current_x = x
+        self.current_y = y
 
     def home(self, *values):
-        self.context.current_x = 0
-        self.context.current_y = 0
+        self.current_x = 0
+        self.current_y = 0
 
     def ensure_rapid_mode(self, *values):
         if self.state == DRIVER_STATE_RAPID:
@@ -479,8 +478,8 @@ class Driver:
         self.is_relative = False
 
     def set_position(self, x, y):
-        self.context.current_x = x
-        self.context.current_y = y
+        self.current_x = x
+        self.current_y = y
 
     def wait(self, t):
         time.sleep(float(t))
@@ -499,8 +498,8 @@ class Driver:
 
     def status(self):
         parts = list()
-        parts.append("x=%f" % self.context.current_x)
-        parts.append("y=%f" % self.context.current_y)
+        parts.append("x=%f" % self.current_x)
+        parts.append("y=%f" % self.current_y)
         parts.append("speed=%f" % self.settings.speed)
         parts.append("power=%d" % self.settings.power)
         status = ";".join(parts)

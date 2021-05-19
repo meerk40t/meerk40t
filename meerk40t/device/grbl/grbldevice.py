@@ -214,6 +214,9 @@ class GRBLDriver(Driver):
 class GRBLEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
+
+        self.spooler, self.input_driver, self.output = context.registered["device/%s" % context.root.active]
+
         self.home_adjust = None
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
@@ -291,21 +294,21 @@ class GRBLEmulator(Module):
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
-        driver = self.context.driver
+        driver = self.input_driver
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
             if driver.state == 0:
                 state = "Idle"
             else:
                 state = "Busy"
-            x = self.context.current_x / self.scale
-            y = self.context.current_y / self.scale
+            x = driver.current_x / self.scale
+            y = driver.current_y / self.scale
             z = 0.0
             parts = list()
             parts.append(state)
             parts.append("MPos:%f,%f,%f" % (x, y, z))
-            f = self.feed_invert(self.context.driver.speed)
-            s = self.context.driver.power
+            f = self.feed_invert(driver.settings.speed)
+            s = driver.settings.power
             parts.append("FS:%f,%d" % (f, s))
             self.grbl_write("<%s>\r\n" % "|".join(parts))
         elif bytes_to_write == "~":  # Resume.
@@ -368,8 +371,6 @@ class GRBLEmulator(Module):
             yield code
 
     def commandline(self, data):
-        active = self.context.active
-        spooler, input_device, output = self.context.registered['device/%s' % active]
         pos = data.find("(")
         commands = {}
         while pos != -1:
@@ -418,10 +419,10 @@ class GRBLEmulator(Module):
             elif data == "$N":
                 pass
             elif data == "$H":
-                spooler.job(COMMAND_HOME)
+                self.spooler.job(COMMAND_HOME)
                 if self.home_adjust is not None:
-                    spooler.job(COMMAND_MODE_RAPID)
-                    spooler.job(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
+                    self.spooler.job(COMMAND_MODE_RAPID)
+                    self.spooler.job(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
                 return 0
                 # return 5  # Homing cycle not enabled by settings.
             return 3  # GRBL '$' system command was not recognized or supported.
@@ -438,13 +439,11 @@ class GRBLEmulator(Module):
         return self.command(commands)
 
     def command(self, gc):
-        active = self.context.active
-        spooler, input_device, output = self.context.registered['device/%s' % active]
         if "m" in gc:
             for v in gc["m"]:
                 if v == 0 or v == 1:
-                    spooler.job(COMMAND_MODE_RAPID)
-                    spooler.job(COMMAND_WAIT_FINISH)
+                    self.spooler.job(COMMAND_MODE_RAPID)
+                    self.spooler.job(COMMAND_WAIT_FINISH)
                 elif v == 2:
                     return 0
                 elif v == 30:
@@ -453,14 +452,14 @@ class GRBLEmulator(Module):
                     self.on_mode = True
                 elif v == 5:
                     self.on_mode = False
-                    spooler.job(COMMAND_LASER_OFF)
+                    self.spooler.job(COMMAND_LASER_OFF)
                 elif v == 7:
                     #  Coolant control.
                     pass
                 elif v == 8:
-                    spooler.job(COMMAND_SIGNAL, ("coolant", True))
+                    self.spooler.job(COMMAND_SIGNAL, ("coolant", True))
                 elif v == 9:
-                    spooler.job(COMMAND_SIGNAL, ("coolant", False))
+                    self.spooler.job(COMMAND_SIGNAL, ("coolant", False))
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -492,8 +491,8 @@ class GRBLEmulator(Module):
                         t = float(gc["s"].pop())
                         if len(gc["s"]) == 0:
                             del gc["s"]
-                    spooler.job(COMMAND_MODE_RAPID)
-                    spooler.job(COMMAND_WAIT, t)
+                    self.spooler.job(COMMAND_MODE_RAPID)
+                    self.spooler.job(COMMAND_WAIT, t)
                 elif v == 10.0:
                     if "l" in gc:
                         l = float(gc["l"].pop(0))
@@ -514,14 +513,14 @@ class GRBLEmulator(Module):
                 elif v == 21.0 or v == 71.0:
                     self.scale = 39.3701  # g21 is mm mode. 39.3701 mils in a mm
                 elif v == 28.0:
-                    spooler.job(COMMAND_MODE_RAPID)
-                    spooler.job(COMMAND_HOME)
+                    self.spooler.job(COMMAND_MODE_RAPID)
+                    self.spooler.job(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.job(
+                        self.spooler.job(
                             COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
                         )
                     if self.home is not None:
-                        spooler.job(COMMAND_MOVE, self.home)
+                        self.spooler.job(COMMAND_MOVE, self.home)
                 elif v == 28.1:
                     if "x" in gc and "y" in gc:
                         x = gc["x"].pop(0)
@@ -537,17 +536,17 @@ class GRBLEmulator(Module):
                         self.home = (x, y)
                 elif v == 28.2:
                     # Run homing cycle.
-                    spooler.job(COMMAND_MODE_RAPID)
-                    spooler.job(COMMAND_HOME)
+                    self.spooler.job(COMMAND_MODE_RAPID)
+                    self.spooler.job(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.job(
+                        self.spooler.job(
                             COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
                         )
                 elif v == 28.3:
-                    spooler.job(COMMAND_MODE_RAPID)
-                    spooler.job(COMMAND_HOME)
+                    self.spooler.job(COMMAND_MODE_RAPID)
+                    self.spooler.job(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.job(
+                        self.spooler.job(
                             COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
                         )
                     if "x" in gc:
@@ -556,14 +555,14 @@ class GRBLEmulator(Module):
                             del gc["x"]
                         if x is None:
                             x = 0
-                        spooler.job(COMMAND_MOVE, x, 0)
+                        self.spooler.job(COMMAND_MOVE, x, 0)
                     if "y" in gc:
                         y = gc["y"].pop(0)
                         if len(gc["y"]) == 0:
                             del gc["y"]
                         if y is None:
                             y = 0
-                        spooler.job(COMMAND_MOVE, 0, y)
+                        self.spooler.job(COMMAND_MOVE, 0, y)
                 elif v == 30.0:
                     # Goto predefined position. Return to secondary home position.
                     if "p" in gc:
@@ -572,14 +571,14 @@ class GRBLEmulator(Module):
                             del gc["p"]
                     else:
                         p = None
-                    spooler.job(COMMAND_MODE_RAPID)
-                    spooler.job(COMMAND_HOME)
+                    self.spooler.job(COMMAND_MODE_RAPID)
+                    self.spooler.job(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.job(
+                        self.spooler.job(
                             COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
                         )
                     if self.home2 is not None:
-                        spooler.job(COMMAND_MOVE, self.home2)
+                        self.spooler.job(COMMAND_MOVE, self.home2)
                 elif v == 30.1:
                     # Stores the current absolute position.
                     if "x" in gc and "y" in gc:
@@ -629,9 +628,9 @@ class GRBLEmulator(Module):
                     # Motion mode cancel. Canned cycle.
                     pass
                 elif v == 90.0:
-                    spooler.job(COMMAND_SET_ABSOLUTE)
+                    self.spooler.job(COMMAND_SET_ABSOLUTE)
                 elif v == 91.0:
-                    spooler.job(COMMAND_SET_INCREMENTAL)
+                    self.spooler.job(COMMAND_SET_INCREMENTAL)
                 elif v == 91.1:
                     # Offset mode for certain cam. Incremental distance mode for arcs.
                     pass  # ARC IJK Distance Modes # TODO Implement
@@ -665,7 +664,7 @@ class GRBLEmulator(Module):
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 self.power = v
-                spooler.job(COMMAND_SET_POWER, v)
+                self.spooler.job(COMMAND_SET_POWER, v)
 
             del gc["s"]
         if "x" in gc or "y" in gc:
@@ -690,17 +689,17 @@ class GRBLEmulator(Module):
             else:
                 y = 0
             if self.move_mode == 0:
-                spooler.job(COMMAND_MODE_PROGRAM)
-                spooler.job(COMMAND_MOVE, x, y)
+                self.spooler.job(COMMAND_MODE_PROGRAM)
+                self.spooler.job(COMMAND_MOVE, x, y)
             elif self.move_mode >= 1:
-                spooler.job(COMMAND_MODE_PROGRAM)
+                self.spooler.job(COMMAND_MODE_PROGRAM)
                 if self.power == 0:
-                    spooler.job(COMMAND_MOVE, x, y)
+                    self.spooler.job(COMMAND_MOVE, x, y)
                 else:
                     if self.used_speed != self.speed:
-                        spooler.job(COMMAND_SET_SPEED, self.speed)
+                        self.spooler.job(COMMAND_SET_SPEED, self.speed)
                         self.used_speed = self.speed
-                    spooler.job(COMMAND_CUT, x, y)
+                    self.spooler.job(COMMAND_CUT, x, y)
                 # TODO: Implement CW_ARC
                 # TODO: Implement CCW_ARC
         return 0

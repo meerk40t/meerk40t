@@ -450,8 +450,6 @@ class MoshiDriver(Driver, Modifier):
         context.setting(int, "home_adjust_y", 0)
         context.setting(bool, "home_right", False)
         context.setting(bool, "home_bottom", False)
-        context.setting(int, "current_x", 0)
-        context.setting(int, "current_y", 0)
         root_context.setting(bool, "opt_rapid_between", True)
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 127)
@@ -548,8 +546,8 @@ class MoshiDriver(Driver, Modifier):
             x = 0
         if y < 0:
             y = 0
-        self.context.current_x = x
-        self.context.current_y = y
+        self.current_x = x
+        self.current_y = y
         x -= self.offset_x
         y -= self.offset_y
         self.pipe_int16le(int(x))
@@ -561,33 +559,33 @@ class MoshiDriver(Driver, Modifier):
             x = 0
         if y < 0:
             y = 0
-        self.context.current_x = x
-        self.context.current_y = y
+        self.current_x = x
+        self.current_y = y
         x -= self.offset_x
         y -= self.offset_y
         self.pipe_int16le(int(x))
         self.pipe_int16le(int(y))
 
     def write_move_vertical_abs(self, y):
-        self.context.current_y = y
+        self.current_y = y
         y -= self.offset_y
         self.pipe(swizzle_table[3][0])
         self.pipe_int16le(int(y))
 
     def write_move_horizontal_abs(self, x):
-        self.context.current_x = x
+        self.current_x = x
         x -= self.offset_x
         self.pipe(swizzle_table[6][0])
         self.pipe_int16le(int(x))
 
     def write_cut_horizontal_abs(self, x):
-        self.context.current_x = x
+        self.current_x = x
         x -= self.offset_x
         self.pipe(swizzle_table[14][0])
         self.pipe_int16le(int(x))
 
     def write_cut_vertical_abs(self, y):
-        self.context.current_y = y
+        self.current_y = y
         y -= self.offset_y
         self.pipe(swizzle_table[11][0])
         self.pipe_int16le(int(y))
@@ -709,22 +707,22 @@ class MoshiDriver(Driver, Modifier):
             else:
                 self.write_move_abs(x, y)
         else:
-            if x == self.context.current_x and y == self.context.current_y:
+            if x == self.current_x and y == self.current_y:
                 return
             if cut:
-                if x == self.context.current_x:
+                if x == self.current_x:
                     self.write_cut_vertical_abs(y=y)
-                if y == self.context.current_y:
+                if y == self.current_y:
                     self.write_cut_horizontal_abs(x=x)
             else:
-                if x == self.context.current_x:
+                if x == self.current_x:
                     self.write_move_vertical_abs(y=y)
-                if y == self.context.current_y:
+                if y == self.current_y:
                     self.write_move_horizontal_abs(x=x)
-        oldx = self.context.current_x
-        oldy = self.context.current_y
-        self.context.current_x = x
-        self.context.current_y = y
+        oldx = self.current_x
+        oldy = self.current_y
+        self.current_x = x
+        self.current_y = y
         self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def cut(self, x, y):
@@ -739,15 +737,15 @@ class MoshiDriver(Driver, Modifier):
         self.ensure_program_mode()
         self.write_cut_abs(x, y)
 
-        oldx = self.context.current_x
-        oldy = self.context.current_y
-        self.context.current_x = x
-        self.context.current_y = y
+        oldx = self.current_x
+        oldy = self.current_y
+        self.current_x = x
+        self.current_y = y
         self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def cut_relative(self, dx, dy):
-        x = dx + self.context.current_x
-        y = dy + self.context.current_y
+        x = dx + self.current_x
+        y = dy + self.current_y
         self.cut_absolute(x, y)
 
     def jog(self, x, y, **kwargs):
@@ -763,16 +761,16 @@ class MoshiDriver(Driver, Modifier):
 
     def move_absolute(self, x, y):
         self.ensure_program_mode()
-        oldx = self.context.current_x
-        oldy = self.context.current_y
+        oldx = self.current_x
+        oldy = self.current_y
         self.write_move_abs(x, y)
-        x = self.context.current_x
-        y = self.context.current_y
+        x = self.current_x
+        y = self.current_y
         self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def move_relative(self, dx, dy):
-        x = dx + self.context.current_x
-        y = dy + self.context.current_y
+        x = dx + self.current_x
+        y = dy + self.current_y
         self.move_absolute(x, y)
 
     def set_speed(self, speed=None):

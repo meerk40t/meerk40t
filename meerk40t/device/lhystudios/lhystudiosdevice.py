@@ -614,8 +614,6 @@ class LhystudiosDriver(Driver):
         context.setting(int, "home_adjust_y", 0)
         context.setting(int, "buffer_max", 900)
         context.setting(bool, "buffer_limit", True)
-        context.setting(int, "current_x", 0)
-        context.setting(int, "current_y", 0)
 
         context.setting(bool, "autolock", True)
 
@@ -630,14 +628,6 @@ class LhystudiosDriver(Driver):
         self.CODE_LASER_ON = b"D"
         self.CODE_LASER_OFF = b"U"
 
-        self.next_x = None
-        self.next_y = None
-        self.max_x = None
-        self.max_y = None
-        self.min_x = None
-        self.min_y = None
-        self.start_x = None
-        self.start_y = None
         self.is_paused = False
         self.context._buffer_size = 0
 
@@ -653,18 +643,10 @@ class LhystudiosDriver(Driver):
         self.holds.append(primary_hold)
 
         self.update_codes()
-
-        current_x = context.current_x
-        current_y = context.current_y
-
-        self.next_x = current_x
-        self.next_y = current_y
-        self.max_x = current_x
-        self.max_y = current_y
-        self.min_x = current_x
-        self.min_y = current_y
-        self.start_x = current_x
-        self.start_y = current_y
+        self.max_x = self.current_x
+        self.max_y = self.current_y
+        self.min_x = self.current_x
+        self.min_y = self.current_y
 
     def __repr__(self):
         return "LhystudiosDriver(%s)" % self.name
@@ -706,8 +688,8 @@ class LhystudiosDriver(Driver):
                     break
                 except TypeError:
                     break
-                sx = self.context.current_x
-                sy = self.context.current_y
+                sx = self.current_x
+                sy = self.current_y
                 on = int(on)
                 if on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_rapid_mode()
@@ -851,7 +833,7 @@ class LhystudiosDriver(Driver):
 
     def jog_absolute(self, x, y, **kwargs):
         self.jog_relative(
-            x - self.context.current_x, y - self.context.current_y, **kwargs
+            x - self.current_x, y - self.current_y, **kwargs
         )
 
     def jog_relative(self, dx, dy, mode=0):
@@ -925,7 +907,7 @@ class LhystudiosDriver(Driver):
         :param cut:
         :return:
         """
-        self.goto_relative(x - self.context.current_x, y - self.context.current_y, cut)
+        self.goto_relative(x - self.current_x, y - self.current_y, cut)
 
     def goto_relative(self, dx, dy, cut):
         """
@@ -981,12 +963,12 @@ class LhystudiosDriver(Driver):
         elif self.state == DRIVER_STATE_MODECHANGE:
             self.fly_switch_speed(dx, dy)
         self.check_bounds()
-        # self.context.signal('driver;position', (self.context.current_x, self.context.current_y,
-        #                                              self.context.current_x - dx, self.context.current_y - dy))
+        # self.context.signal('driver;position', (self.current_x, self.current_y,
+        #                                              self.current_x - dx, self.current_y - dy))
 
     def goto_octent_abs(self, x, y, on):
-        dx = x - self.context.current_x
-        dy = y - self.context.current_y
+        dx = x - self.current_x
+        dy = y - self.current_y
         self.goto_octent(dx, dy, on)
 
     def goto_octent(self, dx, dy, on):
@@ -1013,8 +995,8 @@ class LhystudiosDriver(Driver):
                     "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
                     % (str(dx), str(dy))
                 )
-        # self.context.signal('driver;position', (self.context.current_x, self.context.current_y,
-        #                                              self.context.current_x - dx, self.context.current_y - dy))
+        # self.context.signal('driver;position', (self.current_x, self.current_y,
+        #                                              self.current_x - dx, self.current_y - dy))
 
     def set_speed(self, speed=None):
         if self.settings.speed != speed:
@@ -1167,9 +1149,9 @@ class LhystudiosDriver(Driver):
             self.data_output(self.CODE_LEFT)
             self.set_prop(STATE_X_FORWARD_LEFT)
         if self.is_prop(STATE_Y_FORWARD_TOP):
-            self.context.current_y -= self.settings.raster_step
+            self.current_y -= self.settings.raster_step
         else:
-            self.context.current_y += self.settings.raster_step
+            self.current_y += self.settings.raster_step
         self.laser = False
 
     def v_switch(self):
@@ -1180,9 +1162,9 @@ class LhystudiosDriver(Driver):
             self.data_output(self.CODE_TOP)
             self.set_prop(STATE_Y_FORWARD_TOP)
         if self.is_prop(STATE_X_FORWARD_LEFT):
-            self.context.current_x -= self.settings.raster_step
+            self.current_x -= self.settings.raster_step
         else:
-            self.context.current_x += self.settings.raster_step
+            self.current_x += self.settings.raster_step
         self.laser = False
 
     def calc_home_position(self):
@@ -1201,10 +1183,10 @@ class LhystudiosDriver(Driver):
         x, y = self.calc_home_position()
         self.ensure_rapid_mode()
         self.data_output(b"IPP\n")
-        # old_x = self.context.current_x
-        # old_y = self.context.current_y
-        self.context.current_x = x
-        self.context.current_y = y
+        # old_x = self.current_x
+        # old_y = self.current_y
+        self.current_x = x
+        self.current_y = y
         self.reset_modes()
         self.state = DRIVER_STATE_RAPID
         adjust_x = self.context.home_adjust_x
@@ -1221,11 +1203,11 @@ class LhystudiosDriver(Driver):
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)
             # Erase adjustment
-            self.context.current_x = x
-            self.context.current_y = y
+            self.current_x = x
+            self.current_y = y
 
         self.context.signal("driver;mode", self.state)
-        # self.context.signal('driver;position', (self.context.current_x, self.context.current_y, old_x, old_y))
+        # self.context.signal('driver;position', (self.current_x, self.current_y, old_x, old_y))
 
     def lock_rail(self):
         self.ensure_rapid_mode()
@@ -1239,10 +1221,10 @@ class LhystudiosDriver(Driver):
         self.data_output(b"I\n")
 
     def check_bounds(self):
-        self.min_x = min(self.min_x, self.context.current_x)
-        self.min_y = min(self.min_y, self.context.current_y)
-        self.max_x = max(self.max_x, self.context.current_x)
-        self.max_y = max(self.max_y, self.context.current_y)
+        self.min_x = min(self.min_x, self.current_x)
+        self.min_y = min(self.min_y, self.current_y)
+        self.max_x = max(self.max_x, self.current_x)
+        self.max_y = max(self.max_y, self.current_y)
 
     def reset_modes(self):
         self.laser = False
@@ -1281,8 +1263,8 @@ class LhystudiosDriver(Driver):
             if not self.is_prop(STATE_Y_FORWARD_TOP):
                 self.data_output(self.CODE_TOP)
                 self.set_prop(STATE_Y_FORWARD_TOP)
-        self.context.current_x += dx
-        self.context.current_y += dy
+        self.current_x += dx
+        self.current_y += dy
         self.check_bounds()
         self.data_output(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
 
@@ -1389,7 +1371,7 @@ class LhystudiosDriver(Driver):
         self.unset_prop(STATE_Y_FORWARD_TOP)
 
     def move_right(self, dx=0):
-        self.context.current_x += dx
+        self.current_x += dx
         if not self.is_right or self.state != DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_RIGHT)
             self.set_right()
@@ -1398,7 +1380,7 @@ class LhystudiosDriver(Driver):
             self.check_bounds()
 
     def move_left(self, dx=0):
-        self.context.current_x -= abs(dx)
+        self.current_x -= abs(dx)
         if not self.is_left or self.state != DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_LEFT)
             self.set_left()
@@ -1407,7 +1389,7 @@ class LhystudiosDriver(Driver):
             self.check_bounds()
 
     def move_bottom(self, dy=0):
-        self.context.current_y += dy
+        self.current_y += dy
         if not self.is_bottom or self.state != DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_BOTTOM)
             self.set_bottom()
@@ -1416,7 +1398,7 @@ class LhystudiosDriver(Driver):
             self.check_bounds()
 
     def move_top(self, dy=0):
-        self.context.current_y -= abs(dy)
+        self.current_y -= abs(dy)
         if not self.is_top or self.state != DRIVER_STATE_PROGRAM:
             self.data_output(self.CODE_TOP)
             self.set_top()

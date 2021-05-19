@@ -51,16 +51,16 @@ class BindAlias(Modifier):
                 command_line = " ".join(args[1:])
                 f = command_line.find("bind")
                 if f == -1:  # If bind value has a bind, do not evaluate.
-                    inter = context.default_driver()
+                    spooler, input_driver, output = context.registered["device/%s" % context.root.active]
                     if "$x" in command_line:
                         try:
-                            x = inter.current_x
+                            x = input_driver.current_x
                         except AttributeError:
                             x = 0
                         command_line = command_line.replace("$x", str(x))
                     if "$y" in command_line:
                         try:
-                            y = inter.current_y
+                            y = input_driver.current_y
                         except AttributeError:
                             y = 0
                         command_line = command_line.replace("$y", str(y))
