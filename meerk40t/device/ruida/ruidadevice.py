@@ -693,10 +693,14 @@ class RuidaEmulator(Module):
                 coord = self.abscoord(array[3:8])
                 self.x += coord
                 desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
+                if self.spool:
+                    self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
             elif array[1] == 0x01:
                 coord = self.abscoord(array[3:8])
                 self.y += coord
                 desc = "Move %s Y: %f (%f,%f)" % (param, coord, self.x, self.y)
+                if self.spool:
+                    self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
             elif array[1] == 0x02:
                 coord = self.abscoord(array[3:8])
                 self.z += coord
@@ -709,6 +713,8 @@ class RuidaEmulator(Module):
                 desc = "Home %s XY" % param
                 self.x = 0
                 self.y = 0
+                if self.spool:
+                    self.context("home\n")
         elif array[0] == 0xDA:
             v = 0
             name = None
