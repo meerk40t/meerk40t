@@ -115,7 +115,7 @@ class BindAlias(Modifier):
         )
         def server_console(command, channel, _, port=23, args=tuple(), **kwargs):
             try:
-                self.context.open_as("module/TCPServer", "console-server", port=port)
+                server = self.context.open_as("module/TCPServer", "console-server", port=port)
                 send = self.context.channel("console-server/send")
                 send.greet = "%s %s Telnet Console.\r\n" % (
                     self.context._kernel.name,
@@ -132,6 +132,7 @@ class BindAlias(Modifier):
                     self.context._kernel.version,
                     port
                 )))
+                server.events_channel.watch(self.context.channel("console"))
             except (OSError, ValueError):
                 channel(_("Server failed on port: %d") % port)
             return

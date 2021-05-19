@@ -382,7 +382,7 @@ def plugin(kernel, lifecycle=None):
 
                 server = root.open_as("module/TCPServer", "lhyserver", port=port)
                 channel(_("TCP Server for Lhystudios on port: %d" % port))
-                server.server_channel.watch(kernel.channel("console"))
+                server.events_channel.watch(kernel.channel("console"))
                 channel(_("Watching Channel: %s") % "server")
                 root.channel("lhyserver/recv").watch(output.write)
                 channel(_("Attached: %s" % repr(output)))

@@ -42,8 +42,8 @@ def plugin(kernel, lifecycle=None):
                 chan = "ruida"
                 c.channel(chan).watch(kernel.channel("console"))
 
-                server.server_channel.watch(kernel.channel("console"))
-                jog.server_channel.watch(kernel.channel("console"))
+                server.events_channel.watch(kernel.channel("console"))
+                jog.events_channel.watch(kernel.channel("console"))
 
                 emulator = c.open("emulator/ruida")
                 c.channel("ruidaserver/recv").watch(emulator.checksum_write)

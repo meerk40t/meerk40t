@@ -64,7 +64,7 @@ def plugin(kernel, lifecycle=None):
                 channel(_("GRBL Mode."))
                 chan = "grbl"
                 path_context.channel(chan).watch(kernel.channel("console"))
-                server.server_channel.watch(kernel.channel("console"))
+                server.events_channel.watch(kernel.channel("console"))
 
                 emulator = path_context.open("emulator/grbl")
                 emulator.flip_x = flip_x
