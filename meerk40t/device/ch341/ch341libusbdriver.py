@@ -186,6 +186,12 @@ class Ch341LibusbDriver:
             self.channel(str(e))
             self.channel(_("USB connection did not exist."))
 
+    def bus(self, index):
+        return self.devices[index].bus
+
+    def address(self, index):
+        return self.devices[index].address
+
     def CH341OpenDevice(self, index=0):
         """Opens device, returns index."""
         _ = self.channel._

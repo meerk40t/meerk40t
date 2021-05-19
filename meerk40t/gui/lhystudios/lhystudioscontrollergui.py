@@ -311,6 +311,12 @@ class LhystudiosControllerGui(MWindow):
 
     def window_open(self):
         self.context.channel("pipe/usb", buffer_size=500).watch(self.update_text)
+
+        self.context.listen("pipe;index", self.on_update_pipe_index)
+        self.context.listen("pipe;chipv", self.on_update_pipe_chipv)
+        self.context.listen("pipe;bus", self.on_update_pipe_bus)
+        self.context.listen("pipe;address", self.on_update_pipe_address)
+
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;packet_text", self.update_packet_text)
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
@@ -320,6 +326,12 @@ class LhystudiosControllerGui(MWindow):
 
     def window_close(self):
         self.context.channel("pipe/usb").unwatch(self.update_text)
+
+        self.context.listen("pipe;index", self.on_update_pipe_index)
+        self.context.listen("pipe;chipv", self.on_update_pipe_chipv)
+        self.context.listen("pipe;bus", self.on_update_pipe_bus)
+        self.context.listen("pipe;address", self.on_update_pipe_address)
+
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;packet_text", self.update_packet_text)
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
@@ -385,6 +397,26 @@ class LhystudiosControllerGui(MWindow):
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
+
+    def on_update_pipe_index(self, origin, value):
+        if origin != self.context._path:
+            return
+        self.text_device_index.SetValue(str(value))
+
+    def on_update_pipe_chipv(self, origin, value):
+        if origin != self.context._path:
+            return
+        self.text_device_version.SetValue(str(value))
+
+    def on_update_pipe_bus(self, origin, value):
+        if origin != self.context._path:
+            return
+        self.text_device_bus.SetValue(str(value))
+
+    def on_update_pipe_address(self, origin, value):
+        if origin != self.context._path:
+            return
+        self.text_device_address.SetValue(str(value))
 
     def update_status(self, origin, status_data, code_string):
         if origin != self.context._path:

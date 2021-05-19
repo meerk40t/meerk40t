@@ -39,6 +39,7 @@ class CH341Driver(CH341Connection):
                 self.channel(_("Connection to USB failed.\n"))
                 self.state("STATE_CONNECTION_FAILED")
                 raise ConnectionRefusedError  # No more devices.
+            self.index = self.driver_index
             self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
             self.channel(_("Sending CH341 mode change to EPP1.9."))
@@ -51,7 +52,6 @@ class CH341Driver(CH341Connection):
                 self.channel(str(e))
                 self.channel(_("CH341 mode change to EPP1.9: Fail."))
                 self.driver.CH341CloseDevice(self.driver_index)
-            # self.driver.CH341SetExclusive(self.driver_index, 1)
             self.channel(_("Device Connected.\n"))
 
     def close(self):
@@ -66,6 +66,8 @@ class CH341Driver(CH341Connection):
             self.channel(_("USB connection did not exist."))
             raise ConnectionError
         self.driver.CH341CloseDevice(self.driver_index)
+        self.index = None
+        self.chipv = None
         self.state("STATE_USB_DISCONNECTED")
         self.channel(_("USB Disconnection Successful.\n"))
 
@@ -138,7 +140,8 @@ class CH341Driver(CH341Connection):
         """
         if self.driver_value == -1:
             raise ConnectionRefusedError
-        return self.driver.CH341GetVerIC(self.driver_index)
+        self.chipv = self.driver.CH341GetVerIC(self.driver_index)
+        return self.chipv
 
 
 class Handler(CH341Handler):

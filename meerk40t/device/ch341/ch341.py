@@ -7,9 +7,17 @@ def plugin(kernel, lifecycle=None):
 
 
 class Connection:
+    """
+    A single connection to an CH341 device.
+    """
     def __init__(self, channel, state):
         self.channel = channel
         self.state = state
+
+        self.index = None
+        self.chipv = None
+        self.bus = None
+        self.address = None
 
     def open(self):
         """
@@ -74,6 +82,9 @@ class Connection:
 
 
 class Handler:
+    """
+    Handlers provide an implementation of a particular backend tasked with providing connections.
+    """
     def __init__(self, channel, status):
         self.channel = channel
         self.status = status
@@ -119,7 +130,7 @@ class CH341(Module, Handler):
         except ImportError:
             self.channel(_("No Windll interfacing. Skipping."))
 
-        if driver_index != -1:
+        if driver_index != -1:  # Match one specific index.
             for driver_handler in handlers:
                 try:
                     return self._connect_attempt(
@@ -147,7 +158,10 @@ class CH341(Module, Handler):
         )
         chip_version = connection.get_chip_version()
         self.channel(_("CH341 Chip Version: %d") % chip_version)
+        self.context.signal("pipe;index", connection.index)
         self.context.signal("pipe;chipv", chip_version)
+        self.context.signal("pipe;bus", connection.bus)
+        self.context.signal("pipe;address", connection.address)
         self.channel(_("Driver Detected: %s") % (connection.driver_name))
         self._state_change("STATE_CONNECTED")
         self.channel(_("Device Connected.\n"))

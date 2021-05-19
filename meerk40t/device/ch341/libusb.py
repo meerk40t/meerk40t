@@ -56,8 +56,10 @@ class CH341Driver(CH341Connection):
             self.channel(_("Device Connected.\n"))
             chip_version = self.get_chip_version()
             self.channel(_("CH341 Chip Version: %d") % chip_version)
-            # self.context.signal("pipe;chipv", chip_version)
             self.channel(_("Driver Detected: LibUsb"))
+            self.index = self.driver_index
+            self.bus = self.driver.bus(self.driver_value)
+            self.address = self.driver.address(self.driver_value)
             self.state("STATE_CONNECTED")
             self.channel(_("Device Connected.\n"))
 
@@ -83,9 +85,10 @@ class CH341Driver(CH341Connection):
         return self.driver.CH341GetStatus(self.driver_index)
 
     def get_chip_version(self):
-        return self.driver.CH341GetVerIC(
+        self.chipv = self.driver.CH341GetVerIC(
             self.driver_index
         )  # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)
+        return self.chipv
 
 
 class Handler(CH341Handler):
@@ -122,7 +125,7 @@ class Handler(CH341Handler):
                 connection.close()
                 return None
         if address != -1:
-            match_address = self.driver.devices[val].bus
+            match_address = self.driver.devices[val].address
             if address != match_address:
                 # Rejected
                 self.channel(

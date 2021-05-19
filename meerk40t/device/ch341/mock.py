@@ -41,6 +41,10 @@ class CH341Driver(CH341Connection):
             self.channel(_("Attempting connection to USB."))
             self.state("STATE_USB_CONNECTING")
             self.driver_value = 0  # Would connect here.
+            self.index = 0
+            self.chipv = 999
+            self.bus = 999
+            self.address = 999
             self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
             self.channel(_("Sending CH341 mode change to EPP1.9."))
@@ -66,6 +70,10 @@ class CH341Driver(CH341Connection):
             self.channel(_("USB connection did not exist."))
             raise ConnectionError
         # self.driver.CH341CloseDevice(self.driver_index)
+        self.index = None
+        self.chipv = None
+        self.bus = None
+        self.address = None
         self.state("STATE_USB_DISCONNECTED")
         self.channel(_("USB Disconnection Successful.\n"))
 
@@ -135,7 +143,8 @@ class CH341Driver(CH341Connection):
         """
         if self.driver_value == -1:
             raise ConnectionRefusedError
-        return 9999  # MOCK.
+        self.chipv = 999
+        return 999  # MOCK.
 
 
 class Handler(CH341Handler):
