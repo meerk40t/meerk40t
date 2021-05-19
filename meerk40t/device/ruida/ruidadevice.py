@@ -348,12 +348,32 @@ class RuidaEmulator(Module):
             else:
                 if array[2] == 0x02:
                     desc = "Interface +X %s" % key
+                    if self.spool:
+                        if key == "Down":
+                            self.context("+right\n")
+                        else:
+                            self.context("-right\n")
                 elif array[2] == 0x01:
                     desc = "Interface -X %s" % key
+                    if self.spool:
+                        if key == "Down":
+                            self.context("+left\n")
+                        else:
+                            self.context("-left\n")
                 if array[2] == 0x03:
                     desc = "Interface +Y %s" % key
+                    if self.spool:
+                        if key == "Down":
+                            self.context("+down\n")
+                        else:
+                            self.context("-down\n")
                 elif array[2] == 0x04:
                     desc = "Interface -Y %s" % key
+                    if self.spool:
+                        if key == "Down":
+                            self.context("+up\n")
+                        else:
+                            self.context("-up\n")
                 if array[2] == 0x0A:
                     desc = "Interface +Z %s" % key
                 elif array[2] == 0x0B:
@@ -364,12 +384,21 @@ class RuidaEmulator(Module):
                     desc = "Interface -U %s" % key
                 elif array[2] == 0x05:
                     desc = "Interface Pulse %s" % key
+                    if self.spool:
+                        if key == "Down":
+                            self.context("+laser\n")
+                        else:
+                            self.context("-laser\n")
                 elif array[2] == 0x11:
                     desc = "Interface Speed"
                 elif array[2] == 0x06:
                     desc = "Interface Start/Pause"
+                    if self.spool:
+                        self.context("pause\n")
                 elif array[2] == 0x09:
                     desc = "Interface Stop"
+                    if self.spool:
+                        self.context("estop\n")
                 elif array[2] == 0x5A:
                     desc = "Interface Reset"
                 elif array[2] == 0x0F:
