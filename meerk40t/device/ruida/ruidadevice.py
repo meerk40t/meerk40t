@@ -687,6 +687,12 @@ class RuidaEmulator(Module):
             desc = "ERR from machine"
         elif array[0] == 0xCE:
             desc = "Keep Alive"
+        elif array[0] == 0xD0:
+            if array[1] == 0x29:
+                #  Unknown Lightburn Home.
+                if self.control:
+                    self.context("home\n")
+                desc = "Unknown Lightburn Command"
         elif array[0] == 0xD7:
             self.in_file = False
             if self.control:
