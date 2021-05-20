@@ -26,8 +26,6 @@ def plugin(kernel, lifecycle=None):
             if line is not None and len(line):
                 device_context(line + "\n")
                 device_context.setting(str, "device_%d" % index, None)
-            else:
-                break
             index += 1
         device_context._devices = index
         kernel.root.setting(str, "active", "0")
