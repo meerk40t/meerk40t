@@ -3247,7 +3247,7 @@ class Elemental(Modifier):
 
         @self.tree_operation(
             _("Remove: {name}"),
-            node_type=("op", "elem", "file", "group", "opnode"),
+            node_type=("op", "elem", "cmdop", "file", "group", "opnode"),
             help="",
         )
         def remove_type_op(node, **kwargs):
