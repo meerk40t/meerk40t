@@ -1876,9 +1876,9 @@ class LhystudiosController:
 
         # Packet was processed. Remove that data.
         if realtime:
-            self._realtime_buffer = self._realtime_buffer[length:]
+            del self._realtime_buffer[:length]
         else:
-            self._buffer = self._buffer[length:]
+            del self._buffer[:length]
         self.update_buffer()
 
         if post_send_command is not None:
