@@ -1351,7 +1351,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             self.set_emphasis(data)
-            return "elements", list(self.elems(emphasized=True))
+            return "elements", data
 
         @context.console_command(
             "select+",
@@ -1360,10 +1360,10 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
-            for e in data:
-                if not e.emphasized:
-                    e.node.emphasized = True
-            return "elements", list(self.elems(emphasized=True))
+            elems = list(self.elems(emphasized=True))
+            elems.extend(data)
+            self.set_emphasis(elems)
+            return "elements", elems
 
         @context.console_command(
             "select-",
@@ -1372,10 +1372,14 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            elems = list(self.elems(emphasized=True))
             for e in data:
-                if e.node.emphasized:
-                    e.node.emphasized = False
-            return "elements", list(self.elems(emphasized=True))
+                try:
+                    elems.remove(e)
+                except ValueError:
+                    pass
+            self.set_emphasis(elems)
+            return "elements", elems
 
         @context.console_command(
             "select^",
@@ -1384,9 +1388,14 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            elems = list(self.elems(emphasized=True))
             for e in data:
-                e.node.emphasized = not e.node.emphasized
-            return "elements", list(self.elems(emphasized=True))
+                try:
+                    elems.remove(e)
+                except ValueError:
+                    elems.append(e)
+            self.set_emphasis(elems)
+            return "elements", elems
 
         # Operation Select
         @context.console_command(
@@ -1397,7 +1406,7 @@ class Elemental(Modifier):
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
             self.set_emphasis(data)
-            return "ops", list(self.ops(emphasized=True))
+            return "ops", data
 
         @context.console_command(
             "select+",
@@ -1406,10 +1415,10 @@ class Elemental(Modifier):
             output_type="ops",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
-            for e in data:
-                if not e.emphasized:
-                    e.emphasized = True
-            return "ops", list(self.ops(emphasized=True))
+            ops = list(self.ops(emphasized=True))
+            ops.extend(data)
+            self.set_emphasis(ops)
+            return "ops", ops
 
         @context.console_command(
             "select-",
@@ -1418,10 +1427,14 @@ class Elemental(Modifier):
             output_type="ops",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            ops = list(self.ops(emphasized=True))
             for e in data:
-                if e.emphasized:
-                    e.emphasize = False
-            return "ops", list(self.ops(emphasized=True))
+                try:
+                    ops.remove(e)
+                except ValueError:
+                    pass
+            self.set_emphasis(ops)
+            return "ops", ops
 
         @context.console_command(
             "select^",
@@ -1430,9 +1443,14 @@ class Elemental(Modifier):
             output_type="ops",
         )
         def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            ops = list(self.ops(emphasized=True))
             for e in data:
-                e.emphasized = not e.emphasized
-            return "ops", list(self.ops(emphasized=True))
+                try:
+                    ops.remove(e)
+                except ValueError:
+                    ops.append(e)
+            self.set_emphasis(ops)
+            return "ops", ops
 
         # Element Base
         @context.console_command(
@@ -3016,7 +3034,9 @@ class Elemental(Modifier):
         )
         def trace_hull(command, channel, _, args=tuple(), **kwargs):
             active = self.context.active
-            spooler, input_device, output = self.context.registered['device/%s' % active]
+            spooler, input_device, output = self.context.registered[
+                "device/%s" % active
+            ]
             pts = []
             for obj in self.elems(emphasized=True):
                 if isinstance(obj, Path):
@@ -3049,7 +3069,9 @@ class Elemental(Modifier):
         )
         def trace_quick(command, channel, _, args=tuple(), **kwargs):
             active = self.context.active
-            spooler, input_device, output = self.context.registered['device/%s' % active]
+            spooler, input_device, output = self.context.registered[
+                "device/%s" % active
+            ]
             bbox = self.selected_area()
             if bbox is None:
                 channel(_("No elements bounds to trace."))
@@ -3185,7 +3207,9 @@ class Elemental(Modifier):
         )
         def compile_and_simulate(node, **kwargs):
             node.emphasized = True
-            self.context("plan0 copy-selected preprocess validate blob preopt optimize\n")
+            self.context(
+                "plan0 copy-selected preprocess validate blob preopt optimize\n"
+            )
             self.context("window open Simulation 0\n")
 
         @self.tree_operation(_("Clear All"), node_type="branch ops", help="")
@@ -3957,13 +3981,14 @@ class Elemental(Modifier):
             if s.targeted:
                 s.targeted = False
 
+            in_list = emphasize is not None and (
+                s in emphasize or (hasattr(s, "object") and s.object in emphasize)
+            )
             if s.emphasized:
-                if emphasize is None or s not in emphasize:
+                if not in_list:
                     s.emphasized = False
             else:
-                if emphasize is not None and (
-                    s in emphasize or (hasattr(s, "object") and s.object in emphasize)
-                ):
+                if in_list:
                     s.emphasized = True
         if emphasize is not None:
             for e in emphasize:
