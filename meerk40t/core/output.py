@@ -1,5 +1,6 @@
 import threading
 import socket
+import time
 
 from ..kernel import Modifier
 
@@ -70,8 +71,9 @@ class TCPOutput:
         self._stream = None
         self.name = name
 
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.buffer = bytearray()
+        self.thread = None
 
     def writable(self):
         return True
@@ -91,18 +93,45 @@ class TCPOutput:
 
     def write(self, data):
         self.context.signal("tcp;write", data)
-        self.buffer += data
-        self.context.signal("tcp;buffer", len(self.buffer))
-        try:
-            if self._stream is None:
-                self.connect()
-                if self._stream is None:
-                    return
-            sent = self._stream.send(self.buffer)
-            del self.buffer[:sent]
-            self.context.signal("tcp;buffer", 0)
-        except ConnectionError:
-            self.disconnect()
+        with self.lock:
+            self.buffer += data
+            self.context.signal("tcp;buffer", len(self.buffer))
+        self._start()
+
+    realtime_write = write
+
+    def _start(self):
+        if self.thread is None:
+            self.thread = self.context.threaded(self._sending, thread_name="sender-%d" % self.port, result=self._stop)
+
+    def _stop(self, *args):
+        self.thread = None
+
+    def _sending(self):
+        tries = 0
+        while True:
+            try:
+                if len(self.buffer):
+                    if self._stream is None:
+                        self.connect()
+                        if self._stream is None:
+                            return
+                    with self.lock:
+                        sent = self._stream.send(self.buffer)
+                        del self.buffer[:sent]
+                        self.context.signal("tcp;buffer", len(self.buffer))
+                    tries = 0
+                else:
+                    tries += 1
+                    time.sleep(0.1)
+            except ConnectionError:
+                tries += 1
+                self.disconnect()
+                time.sleep(0.05)
+            if tries >= 20:
+                with self.lock:
+                    if len(self.buffer) == 0:
+                        break
 
     def __repr__(self):
         if self.name is not None:
@@ -111,8 +140,6 @@ class TCPOutput:
 
     def __len__(self):
         return len(self.buffer)
-
-    realtime_write = write
 
     @property
     def type(self):
