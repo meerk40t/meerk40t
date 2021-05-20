@@ -8276,7 +8276,7 @@ class SVG(Group):
                     SVG_TAG_STYLE,
                 ):
                     attributes = elem.attrib
-                    if SVG_ATTR_ID in values and root is not None:
+                    if SVG_ATTR_ID in attributes and root is not None:
                         root.objects[attributes[SVG_ATTR_ID]] = s
                 if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN):
                     s = SVGText(values, text=elem.text)
