@@ -238,8 +238,9 @@ class PlotPlanner:
                 continue
             x, y, on = event
             power = self.settings.power
-            if not self.settings.ppi_enabled:
-                power = 1000
+            #TODO: REENABLE WHEN SETTINGS.PPI CAN BE SET.
+            # if not self.settings.ppi_enabled:
+            #     power = 1000
             self.ppi_total += power * on
             if on and self.dot_left > 0:
                 self.dot_left -= 1
