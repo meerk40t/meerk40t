@@ -328,6 +328,11 @@ class LhystudiosDriverGui(MWindow):
 
     def on_check_pulse_shift(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
         self.context.plot_shift = self.checkbox_plot_shift.GetValue()
+        try:
+            _, driver, _ = self.context.root.device()
+            driver.plot_planner.force_shift = self.context.plot_shift
+        except (AttributeError, TypeError):
+            pass
 
     def on_check_random_ppi(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
         self.context.random_ppi = self.checkbox_random_ppi.GetValue()

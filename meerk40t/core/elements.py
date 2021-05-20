@@ -2684,7 +2684,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def resize(
-            command, x_pos, y_pos, width, height, data=None, args=tuple(), **kwargs
+            command, x_pos, y_pos, width, height, data=None, **kwargs
         ):
             if height is None:
                 raise SyntaxError
@@ -2701,7 +2701,10 @@ class Elemental(Modifier):
                 height = height.value(
                     ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
                 )
-                x, y, x1, y1 = self.selected_area()
+                area = self.selected_area()
+                if area is None:
+                    return
+                x, y, x1, y1 = area
                 w, h = x1 - x, y1 - y
                 sx = width / w
                 sy = height / h
@@ -2722,7 +2725,7 @@ class Elemental(Modifier):
                         e.node.modified()
                 context.signal("refresh_scene")
                 return "elements", data
-            except (ValueError, ZeroDivisionError):
+            except (ValueError, ZeroDivisionError, TypeError):
                 raise SyntaxError
 
         @context.console_argument("sx", type=float, help="scale_x value")

@@ -58,6 +58,8 @@ class PlotPlanner:
         self.shift_buffer = []
         self.shift_pixels = 0
 
+        self.force_shift = False
+
     def push(self, plot):
         self.queue.append(plot)
 
@@ -270,7 +272,7 @@ class PlotPlanner:
                     yield bx, by, bon
                 yield None
                 return
-            if not self.settings.shift_enabled:
+            if not self.force_shift and not self.settings.shift_enabled:
                 # Flush shift buffer, continue
                 while len(self.shift_buffer) > 0:
                     self.shift_pixels <<= 1

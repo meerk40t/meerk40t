@@ -58,7 +58,9 @@ class Driver:
         self.current_x = 0
         self.current_y = 0
 
+        context.setting(bool, "plot_shift", False)
         self.plot_planner = PlotPlanner(self.settings)
+        self.plot_planner.force_shift = context.plot_shift
         self.plot = None
 
         self.state = DRIVER_STATE_RAPID
