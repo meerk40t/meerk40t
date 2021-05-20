@@ -25,9 +25,13 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_option(
             "silent", "s", type=bool, action="store_true", help="do not watch server channels"
         )
+
+        @kernel.console_option(
+            "quit", "q", type=bool, action="store_true", help="shutdown current lhyserver"
+        )
         @kernel.console_command(("ruidacontrol", "ruidadesign"), help="activate the ruidaserver.")
         def ruidaserver(
-            command, channel, _, silent=False, **kwargs
+            command, channel, _, silent=False, quit=False, **kwargs
         ):
             """
             The ruidaserver emulation methods provide a simulation of a ruida device.
@@ -46,6 +50,13 @@ def plugin(kernel, lifecycle=None):
             try:
                 server = root.open_as("module/UDPServer", "ruidaserver", port=50200)
                 jog = root.open_as("module/UDPServer", "ruidajog", port=50207)
+                emulator = root.open("emulator/ruida")
+                if quit:
+                    root.close("ruidaserver")
+                    root.close("ruidajog")
+                    root.close("emulator/ruida")
+                    channel(_("RuidaServer shutdown."))
+                    return
                 channel(_("Ruida Data Server opened on port %d.") % 50200)
                 channel(_("Ruida Jog Server opened on port %d.") % 50207)
 
@@ -56,7 +67,6 @@ def plugin(kernel, lifecycle=None):
                     server.events_channel.watch(console)
                     jog.events_channel.watch(console)
 
-                emulator = root.open("emulator/ruida")
                 root.channel("ruidaserver/recv").watch(emulator.checksum_write)
                 root.channel("ruidajog/recv").watch(emulator.realtime_write)
 

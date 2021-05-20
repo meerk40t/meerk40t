@@ -113,12 +113,18 @@ class BindAlias(Modifier):
         @self.context.console_option(
             "silent", "s", type=bool, action="store_true", help="do not watch server channels"
         )
+        @self.context.console_option(
+            "quit", "q", type=bool, action="store_true", help="shutdown current lhyserver"
+        )
         @self.context.console_command(
             "consoleserver", help="starts a console_server on port 23 (telnet)"
         )
-        def server_console(command, channel, _, port=23, silent=False, **kwargs):
+        def server_console(command, channel, _, port=23, silent=False, quit=False, **kwargs):
             try:
                 server = self.context.open_as("module/TCPServer", "console-server", port=port)
+                if quit:
+                    self.context.close("console-server")
+                    return
                 send = self.context.channel("console-server/send")
                 send.greet = "%s %s Telnet Console.\r\n" % (
                     self.context._kernel.name,

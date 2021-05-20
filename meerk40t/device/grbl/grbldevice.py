@@ -45,6 +45,9 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_option(
             "watch", "w", type=bool, action="store_true", help="watch send/recv data"
         )
+        @kernel.console_option(
+            "quit", "q", type=bool, action="store_true", help="shutdown current lhyserver"
+        )
         @kernel.console_command("grblserver", help="activate the grblserver.")
         def grblserver(command,
                        channel,
@@ -57,6 +60,7 @@ def plugin(kernel, lifecycle=None):
                        adjust_y=0,
                        silent=False,
                        watch=False,
+                       quit=False,
                        **kwargs):
             ctx = kernel.get_context(path if path is not None else "/")
             if ctx is None:
@@ -64,6 +68,11 @@ def plugin(kernel, lifecycle=None):
             _ = kernel.translation
             try:
                 server = ctx.open_as("module/TCPServer", "grbl", port=port)
+                emulator = ctx.open("emulator/grbl")
+                if quit:
+                    ctx.close("grbl")
+                    ctx.close("emulator/grbl")
+                    return
                 ctx.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
                 channel(_("GRBL Mode."))
                 if not silent:
@@ -73,7 +82,7 @@ def plugin(kernel, lifecycle=None):
                     if watch:
                         server.events_channel.watch(console)
 
-                emulator = ctx.open("emulator/grbl")
+
                 emulator.flip_x = flip_x
                 emulator.flip_y = flip_y
                 emulator.home_adjust = (adjust_x, adjust_y)
