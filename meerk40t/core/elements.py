@@ -1342,62 +1342,61 @@ class Elemental(Modifier):
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
 
-        # Element Select
-        @context.console_command(
-            "select",
-            help="Set these values as the selection.",
-            input_type="elements",
-            output_type="elements",
-        )
-        def select(command, channel, _, data=None, args=tuple(), **kwargs):
-            self.set_emphasis(data)
-            return "elements", data
+        # ==========
+        # OPERATION BASE
+        # ==========
+        @context.console_command("operations", help="show information about operations")
+        def element(**kwargs):
+            context(".operation* list\n")
 
         @context.console_command(
-            "select+",
-            help="Add the input to the selection",
-            input_type="elements",
-            output_type="elements",
+            "operation.*", help="operation: selected operations", output_type="ops"
         )
-        def select(command, channel, _, data=None, args=tuple(), **kwargs):
-            elems = list(self.elems(emphasized=True))
-            elems.extend(data)
-            self.set_emphasis(elems)
-            return "elements", elems
+        def operation(**kwargs):
+            return "ops", list(self.ops(emphasized=True))
 
         @context.console_command(
-            "select-",
-            help="Remove the input data from the selection",
-            input_type="elements",
-            output_type="elements",
+            "operation*", help="operation*: all operations", output_type="ops"
         )
-        def select(command, channel, _, data=None, args=tuple(), **kwargs):
-            elems = list(self.elems(emphasized=True))
-            for e in data:
+        def operation(**kwargs):
+            return "ops", list(self.ops())
+
+        @context.console_command(
+            "operation~", help="operation~: non selected operations.", output_type="ops"
+        )
+        def operation(**kwargs):
+            return "ops", list(self.ops(emphasized=False))
+
+        @context.console_command(
+            "operation", help="operation: selected operations.", output_type="ops"
+        )
+        def operation(**kwargs):
+            return "ops", list(self.ops(emphasized=True))
+
+        @context.console_command(
+            r"operation([0-9]+,?)+",
+            help="operation0,2: operation #0 and #2",
+            regex=True,
+            output_type="ops",
+        )
+        def operation(command, channel, _, **kwargs):
+            arg = command[9:]
+            op_values = []
+            for value in arg.split(","):
                 try:
-                    elems.remove(e)
+                    value = int(value)
                 except ValueError:
-                    pass
-            self.set_emphasis(elems)
-            return "elements", elems
-
-        @context.console_command(
-            "select^",
-            help="Toggle the input data in the selection",
-            input_type="elements",
-            output_type="elements",
-        )
-        def select(command, channel, _, data=None, args=tuple(), **kwargs):
-            elems = list(self.elems(emphasized=True))
-            for e in data:
+                    continue
                 try:
-                    elems.remove(e)
-                except ValueError:
-                    elems.append(e)
-            self.set_emphasis(elems)
-            return "elements", elems
+                    op = self.get_op(value)
+                    op_values.append(op)
+                except IndexError:
+                    channel(_("index %d out of range") % value)
+            return "ops", op_values
 
-        # Operation Select
+        # ==========
+        # OPERATION SUBCOMMANDS
+        # ==========
         @context.console_command(
             "select",
             help="Set these values as the selection.",
@@ -1452,110 +1451,18 @@ class Elemental(Modifier):
             self.set_emphasis(ops)
             return "ops", ops
 
-        # Element Base
-        @context.console_command(
-            "element*",
-            help="element*, all elements",
-            output_type="elements",
-        )
-        def element(command, channel, _, args=tuple(), **kwargs):
-            return "elements", list(self.elems())
-
-        @context.console_command(
-            "element~",
-            help="element~, all non-selected elements",
-            output_type="elements",
-        )
-        def element(command, channel, _, args=tuple(), **kwargs):
-            return "elements", list(self.elems(emphasized=False))
-
-        @context.console_command(
-            "element",
-            help="element, selected elements",
-            output_type="elements",
-        )
-        def element(command, channel, _, args=tuple(), **kwargs):
-            return "elements", list(self.elems(emphasized=True))
-
         @context.console_command(
             "list",
             help="Show information about the chained data",
-            input_type="elements",
-            output_type="elements",
+            input_type="ops",
+            output_type="ops",
         )
-        def element_list(command, channel, _, data=None, **kwargs):
-            channel(_("----------"))
-            channel(_("Graphical Elements:"))
-            index_list = list(self.elems())
-            for e in data:
-                i = index_list.index(e)
-                name = str(e)
-                if len(name) > 50:
-                    name = name[:50] + "..."
-                if e.node.emphasized:
-                    channel("%d: * %s" % (i, name))
-                else:
-                    channel("%d: %s" % (i, name))
-            channel("----------")
-            return "elements", data
-
-        @context.console_command(
-            "elements",
-            help="show information about elements",
-        )
-        def element(**kwargs):
-            context(".element* list\n")
-
-        @context.console_command(
-            r"element([0-9]+,?)+",
-            help="element0,3,4,5: chain a list of specific elements",
-            regex=True,
-            output_type="elements",
-        )
-        def element(command, channel, _, args=tuple(), **kwargs):
-            arg = command[7:]
-            if arg == "":
-                return "elements", list(self.elems(emphasized=True))
-            elif arg == "*":
-                return "elements", list(self.elems())
-            elif arg == "~":
-                return "elements", list(self.elems(emphasized=False))
-            elif arg == "s":
-                channel(_("----------"))
-                channel(_("Graphical Elements:"))
-                i = 0
-                for e in self.elems():
-                    name = str(e)
-                    if len(name) > 50:
-                        name = name[:50] + "..."
-                    if e.node.emphasized:
-                        channel("%d: * %s" % (i, name))
-                    else:
-                        channel("%d: %s" % (i, name))
-                    i += 1
-                channel("----------")
-                return
-            else:
-                element_list = []
-                for value in arg.split(","):
-                    try:
-                        value = int(value)
-                    except ValueError:
-                        continue
-                    try:
-                        e = self.get_elem(value)
-                        element_list.append(e)
-                    except IndexError:
-                        channel(_("index %d out of range") % value)
-                return "elements", element_list
-
-        @context.console_command(
-            "operations", help="operations: list operations", output_type="ops"
-        )
-        def operation(command, channel, _, args=tuple(), **kwargs):
+        def operation(command, channel, _, data=None, **kwargs):
             channel(_("----------"))
             channel(_("Operations:"))
-            for i, operation in enumerate(self.ops()):
+            index_ops = list(self.ops())
+            for operation in data:
+                i = index_ops.index(operation)
                 selected = operation.emphasized
                 select = " *" if selected else "  "
                 color = (
@@ -1589,75 +1496,112 @@ class Elemental(Modifier):
                         channel(name)
             channel(_("----------"))
 
+        @context.console_option("speed", "s", type=float)
+        @context.console_option("power", "p", type=float)
+        @context.console_option("step", "S", type=int)
+        @context.console_option("overscan", "o", type=Length)
+        @context.console_option("color", "c", type=Color)
+        @context.console_option("passes", "x", type=int)
         @context.console_command(
-            "operation.*", help="operation: selected operations", output_type="ops"
-        )
-        def operation(command, channel, _, args=tuple(), **kwargs):
-            return "ops", list(self.ops(emphasized=True))
-
-        @context.console_command(
-            "operation*", help="operation*: all operations", output_type="ops"
-        )
-        def operation(command, channel, _, args=tuple(), **kwargs):
-            return "ops", list(self.ops())
-
-        @context.console_command(
-            "operation~", help="operation~: non selected operations.", output_type="ops"
-        )
-        def operation(command, channel, _, args=tuple(), **kwargs):
-            return "ops", list(self.ops(emphasized=False))
-
-        @context.console_command(
-            "operation", help="operation: selected operations.", output_type="ops"
-        )
-        def operation(command, channel, _, args=tuple(), **kwargs):
-            return "ops", list(self.ops(emphasized=True))
-
-        @context.console_command(
-            r"operation(\d+,?)+",
-            help="operation0,2: operation #0 and #2",
-            regex=True,
+            ("cut", "engrave", "raster", "imageop", "dots"),
+            help="<cut/engrave/raster/imageop> - group the elements into this operation",
+            input_type=(None, "elements"),
             output_type="ops",
         )
-        def operation(command, channel, _, args=tuple(), **kwargs):
-            arg = command[9:]
-            op_values = []
-            for value in arg.split(","):
-                try:
-                    value = int(value)
-                except ValueError:
-                    continue
-                try:
-                    op = self.get_op(value)
-                    op_values.append(op)
-                except IndexError:
-                    channel(_("index %d out of range") % value)
-            return "ops", op_values
-
-        @context.console_command(
-            "tree", help="access and alter tree elements", output_type="tree"
-        )
-        def tree(
-            command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
+        def makeop(
+            command,
+            channel,
+            _,
+            data,
+            color=None,
+            speed=None,
+            power=None,
+            step=None,
+            overscan=None,
+            passes=None,
+            args=tuple(),
+            **kwargs
         ):
-            return "tree", self._tree
+            op = LaserOperation()
+            if color is not None:
+                op.color = color
+            if speed is not None:
+                op.settings.speed = speed
+            if power is not None:
+                op.settings.power = power
+            if passes is not None:
+                op.settings.passes_custom = True
+                op.settings.passes = passes
+            if step is not None:
+                op.settings.raster_step = step
+            if overscan is not None:
+                op.settings.overscan = int(
+                    overscan.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
+                    )
+                )
+            if command == "cut":
+                op.operation = "Cut"
+            elif command == "engrave":
+                op.operation = "Engrave"
+            elif command == "raster":
+                op.operation = "Raster"
+            elif command == "imageop":
+                op.operation = "Image"
+            elif command == "dots":
+                op.operation = "Dots"
+            self.add_op(op)
+            if data is not None:
+                for item in data:
+                    op.add(item, type="opnode")
+            return "ops", [op]
 
+        @context.console_argument("step_size", type=int, help="raster step size")
         @context.console_command(
-            "list", help="view tree", input_type="tree", output_type="tree"
+            "step", help="step <raster-step-size>", input_type=("ops", "elements")
         )
-        def tree_list(
-            command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
-        ):
-            if data is None:
-                data = self._tree
-            channel(_("----------"))
-            channel(_("Tree:"))
-            path = ""
-            for i, node in enumerate(data.children):
-                channel("%s:%d %s" % (path, i, str(node.name)))
-            channel(_("----------"))
-            return "tree", data
+        def step(command, channel, _, step_size=None, args=tuple(), **kwargs):
+            if step_size is None:
+                found = False
+                for op in self.ops(emphasized=True):
+                    if op.operation in ("Raster", "Image"):
+                        step = op.settings.raster_step
+                        channel(_("Step for %s is currently: %d") % (str(op), step))
+                        found = True
+                for element in self.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            step = element.values["raster_step"]
+                        except KeyError:
+                            step = 1
+                        channel(
+                            _("Image step for %s is currently: %s")
+                            % (str(element), step)
+                        )
+                        found = True
+                if not found:
+                    channel(_("No raster operations selected."))
+                return
+            for op in self.ops(emphasized=True):
+                if op.operation in ("Raster", "Image"):
+                    op.settings.raster_step = step_size
+                    self.context.signal("element_property_update", op)
+            for element in self.elems(emphasized=True):
+                element.values["raster_step"] = str(step_size)
+                m = element.transform
+                tx = m.e
+                ty = m.f
+                element.transform = Matrix.scale(float(step_size), float(step_size))
+                element.transform.post_translate(tx, ty)
+                if hasattr(element, "node"):
+                    element.node.modified()
+                self.context.signal("element_property_update", element)
+                self.context.signal("refresh_scene")
+            return
 
+        # ==========
+        # ELEMENT/OPERATION SUBCOMMANDS
+        # ==========
         @context.console_command(
             "copy",
             help="duplicate elements",
@@ -1686,6 +1630,141 @@ class Elemental(Modifier):
             else:
                 self.remove_operations(data)
             self.context.signal("refresh_scene", 0)
+
+        # ==========
+        # ELEMENT BASE
+        # ==========
+
+        @context.console_command(
+            "elements",
+            help="show information about elements",
+        )
+        def element(**kwargs):
+            context(".element* list\n")
+
+        @context.console_command(
+            "element*",
+            help="element*, all elements",
+            output_type="elements",
+        )
+        def element(**kwargs):
+            return "elements", list(self.elems())
+
+        @context.console_command(
+            "element~",
+            help="element~, all non-selected elements",
+            output_type="elements",
+        )
+        def element(**kwargs):
+            return "elements", list(self.elems(emphasized=False))
+
+        @context.console_command(
+            "element",
+            help="element, selected elements",
+            output_type="elements",
+        )
+        def element(**kwargs):
+            return "elements", list(self.elems(emphasized=True))
+
+        @context.console_command(
+            r"element([0-9]+,?)+",
+            help="element0,3,4,5: chain a list of specific elements",
+            regex=True,
+            output_type="elements",
+        )
+        def element(command, channel, _, **kwargs):
+            arg = command[7:]
+            element_list = []
+            for value in arg.split(","):
+                try:
+                    value = int(value)
+                except ValueError:
+                    continue
+                try:
+                    e = self.get_elem(value)
+                    element_list.append(e)
+                except IndexError:
+                    channel(_("index %d out of range") % value)
+            return "elements", element_list
+
+        # ==========
+        # ELEMENT SUBCOMMANDS
+        # ==========
+        @context.console_command(
+            "select",
+            help="Set these values as the selection.",
+            input_type="elements",
+            output_type="elements",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            self.set_emphasis(data)
+            return "elements", data
+
+        @context.console_command(
+            "select+",
+            help="Add the input to the selection",
+            input_type="elements",
+            output_type="elements",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            elems = list(self.elems(emphasized=True))
+            elems.extend(data)
+            self.set_emphasis(elems)
+            return "elements", elems
+
+        @context.console_command(
+            "select-",
+            help="Remove the input data from the selection",
+            input_type="elements",
+            output_type="elements",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            elems = list(self.elems(emphasized=True))
+            for e in data:
+                try:
+                    elems.remove(e)
+                except ValueError:
+                    pass
+            self.set_emphasis(elems)
+            return "elements", elems
+
+        @context.console_command(
+            "select^",
+            help="Toggle the input data in the selection",
+            input_type="elements",
+            output_type="elements",
+        )
+        def select(command, channel, _, data=None, args=tuple(), **kwargs):
+            elems = list(self.elems(emphasized=True))
+            for e in data:
+                try:
+                    elems.remove(e)
+                except ValueError:
+                    elems.append(e)
+            self.set_emphasis(elems)
+            return "elements", elems
+
+        @context.console_command(
+            "list",
+            help="Show information about the chained data",
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_list(command, channel, _, data=None, **kwargs):
+            channel(_("----------"))
+            channel(_("Graphical Elements:"))
+            index_list = list(self.elems())
+            for e in data:
+                i = index_list.index(e)
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "..."
+                if e.node.emphasized:
+                    channel("%d: * %s" % (i, name))
+                else:
+                    channel("%d: %s" % (i, name))
+            channel("----------")
+            return "elements", data
 
         @context.console_command(
             "merge",
@@ -1885,131 +1964,9 @@ class Elemental(Modifier):
                     x_pos += x
                 y_pos += y
 
-        @context.console_argument(
-            "path_d", type=str, help="svg path syntax command (quoted)."
-        )
-        @context.console_command("path", help="path <svg path>")
-        def path(path_d, **kwargs):
-            try:
-                self.add_element(Path(path_d))
-            except ValueError:
-                raise SyntaxError("Not a valid path_d string (try quotes)")
-
-        @context.console_option("name", "n", type=str)
-        @context.console_command(
-            "clipboard",
-            help="clipboard",
-            input_type=(None, "elements"),
-            output_type="clipboard",
-        )
-        def clipboard(
-            command, channel, _, data=None, name=None, args=tuple(), **kwargs
-        ):
-            """
-            Clipboard commands. Applies to current selected elements to
-            make a copy of those elements. Paste a copy of those elements
-            or cut those elements. Clear clears the clipboard.
-
-            The list command will list them but this is only for debug.
-            """
-            if name is not None:
-                self._clipboard_default = name
-            if data is None:
-                return "clipboard", list(self.elems(emphasized=True))
-            else:
-                return "clipboard", data
-
-        @context.console_command(
-            "copy",
-            help="clipboard copy",
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_copy(command, channel, _, data=None, args=tuple(), **kwargs):
-            destination = self._clipboard_default
-            self._clipboard[destination] = [copy(e) for e in data]
-            return "elements", self._clipboard[destination]
-
-        @context.console_option("dx", "x", help="paste offset x", type=Length)
-        @context.console_option("dy", "y", help="paste offset y", type=Length)
-        @context.console_command(
-            "paste",
-            help="clipboard paste",
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_paste(
-            command, channel, _, data=None, dx=None, dy=None, args=tuple(), **kwargs
-        ):
-            destination = self._clipboard_default
-            try:
-                pasted = [copy(e) for e in self._clipboard[destination]]
-            except KeyError:
-                channel(_("Error: Clipboard Empty"))
-                return
-            if dx is not None or dy is not None:
-                if dx is None:
-                    dx = 0
-                else:
-                    dx = dx.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
-                    )
-                if dy is None:
-                    dy = 0
-                else:
-                    dy = dy.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
-                    )
-                m = Matrix("translate(%s, %s)" % (dx, dy))
-                for e in pasted:
-                    e *= m
-            self.add_elems(pasted)
-            return "elements", pasted
-
-        @context.console_command(
-            "cut",
-            help="clipboard cut",
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_cut(command, channel, _, data=None, args=tuple(), **kwargs):
-            destination = self._clipboard_default
-            self._clipboard[destination] = [copy(e) for e in data]
-            self.remove_elements(data)
-            return "elements", self._clipboard[destination]
-
-        @context.console_command(
-            "clear",
-            help="clipboard clear",
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_clear(command, channel, _, data=None, args=tuple(), **kwargs):
-            destination = self._clipboard_default
-            old = self._clipboard[destination]
-            self._clipboard[destination] = None
-            return "elements", old
-
-        @context.console_command(
-            "contents",
-            help="clipboard contents",
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_contents(command, channel, _, data=None, args=tuple(), **kwargs):
-            destination = self._clipboard_default
-            return "elements", self._clipboard[destination]
-
-        @context.console_command(
-            "list",
-            help="clipboard list",
-            input_type="clipboard",
-        )
-        def clipboard_list(command, channel, _, data=None, args=tuple(), **kwargs):
-            for v in self._clipboard:
-                k = self._clipboard[v]
-                channel("%s: %s" % (str(v).ljust(5), str(k)))
-
+        # ==========
+        # ELEMENT/SHAPE COMMANDS
+        # ==========
         @context.console_argument("x_pos", type=Length)
         @context.console_argument("y_pos", type=Length)
         @context.console_argument("r_pos", type=Length)
@@ -2244,9 +2201,7 @@ class Elemental(Modifier):
             ),
             output_type="elements",
         )
-        def stroke_width(
-            command, channel, _, stroke_width, args=tuple(), data=None, **kwargs
-        ):
+        def stroke_width(command, channel, _, stroke_width, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if stroke_width is None:
@@ -2916,6 +2871,164 @@ class Elemental(Modifier):
             self.remove_elements_from_operations(data)
             return "elements", data
 
+        # ==========
+        # TREE BASE
+        # ==========
+        @context.console_command(
+            "tree", help="access and alter tree elements", output_type="tree"
+        )
+        def tree(
+            command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
+        ):
+            return "tree", self._tree
+
+        @context.console_command(
+            "list", help="view tree", input_type="tree", output_type="tree"
+        )
+        def tree_list(
+            command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
+        ):
+            if data is None:
+                data = self._tree
+            channel(_("----------"))
+            channel(_("Tree:"))
+            path = ""
+            for i, node in enumerate(data.children):
+                channel("%s:%d %s" % (path, i, str(node.name)))
+            channel(_("----------"))
+            return "tree", data
+
+        @context.console_argument(
+            "path_d", type=str, help="svg path syntax command (quoted)."
+        )
+        @context.console_command("path", help="path <svg path>")
+        def path(path_d, **kwargs):
+            try:
+                self.add_element(Path(path_d))
+            except ValueError:
+                raise SyntaxError("Not a valid path_d string (try quotes)")
+
+        # ==========
+        # CLIPBOARD COMMANDS
+        # ==========
+        @context.console_option("name", "n", type=str)
+        @context.console_command(
+            "clipboard",
+            help="clipboard",
+            input_type=(None, "elements"),
+            output_type="clipboard",
+        )
+        def clipboard(
+            command, channel, _, data=None, name=None, args=tuple(), **kwargs
+        ):
+            """
+            Clipboard commands. Applies to current selected elements to
+            make a copy of those elements. Paste a copy of those elements
+            or cut those elements. Clear clears the clipboard.
+
+            The list command will list them but this is only for debug.
+            """
+            if name is not None:
+                self._clipboard_default = name
+            if data is None:
+                return "clipboard", list(self.elems(emphasized=True))
+            else:
+                return "clipboard", data
+
+        @context.console_command(
+            "copy",
+            help="clipboard copy",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_copy(command, channel, _, data=None, args=tuple(), **kwargs):
+            destination = self._clipboard_default
+            self._clipboard[destination] = [copy(e) for e in data]
+            return "elements", self._clipboard[destination]
+
+        @context.console_option("dx", "x", help="paste offset x", type=Length)
+        @context.console_option("dy", "y", help="paste offset y", type=Length)
+        @context.console_command(
+            "paste",
+            help="clipboard paste",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_paste(
+            command, channel, _, data=None, dx=None, dy=None, args=tuple(), **kwargs
+        ):
+            destination = self._clipboard_default
+            try:
+                pasted = [copy(e) for e in self._clipboard[destination]]
+            except KeyError:
+                channel(_("Error: Clipboard Empty"))
+                return
+            if dx is not None or dy is not None:
+                if dx is None:
+                    dx = 0
+                else:
+                    dx = dx.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
+                    )
+                if dy is None:
+                    dy = 0
+                else:
+                    dy = dy.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
+                    )
+                m = Matrix("translate(%s, %s)" % (dx, dy))
+                for e in pasted:
+                    e *= m
+            self.add_elems(pasted)
+            return "elements", pasted
+
+        @context.console_command(
+            "cut",
+            help="clipboard cut",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_cut(command, channel, _, data=None, args=tuple(), **kwargs):
+            destination = self._clipboard_default
+            self._clipboard[destination] = [copy(e) for e in data]
+            self.remove_elements(data)
+            return "elements", self._clipboard[destination]
+
+        @context.console_command(
+            "clear",
+            help="clipboard clear",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_clear(command, channel, _, data=None, args=tuple(), **kwargs):
+            destination = self._clipboard_default
+            old = self._clipboard[destination]
+            self._clipboard[destination] = None
+            return "elements", old
+
+        @context.console_command(
+            "contents",
+            help="clipboard contents",
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_contents(command, channel, _, data=None, args=tuple(), **kwargs):
+            destination = self._clipboard_default
+            return "elements", self._clipboard[destination]
+
+        @context.console_command(
+            "list",
+            help="clipboard list",
+            input_type="clipboard",
+        )
+        def clipboard_list(command, channel, _, data=None, args=tuple(), **kwargs):
+            for v in self._clipboard:
+                k = self._clipboard[v]
+                channel("%s: %s" % (str(v).ljust(5), str(k)))
+
+        # ==========
+        # NOTES COMMANDS
+        # ==========
         @context.console_option(
             "append", "a", type=bool, action="store_true", default=False
         )
@@ -2935,109 +3048,9 @@ class Elemental(Modifier):
                 channel(_("Note Set."))
                 channel(str(self.note))
 
-        @context.console_option("speed", "s", type=float)
-        @context.console_option("power", "p", type=float)
-        @context.console_option("step", "S", type=int)
-        @context.console_option("overscan", "o", type=Length)
-        @context.console_option("color", "c", type=Color)
-        @context.console_option("passes", "x", type=int)
-        @context.console_command(
-            ("cut", "engrave", "raster", "imageop", "dots"),
-            help="<cut/engrave/raster/imageop> - group the elements into this operation",
-            input_type=(None, "elements"),
-            output_type="ops",
-        )
-        def makeop(
-            command,
-            channel,
-            _,
-            data,
-            color=None,
-            speed=None,
-            power=None,
-            step=None,
-            overscan=None,
-            passes=None,
-            args=tuple(),
-            **kwargs
-        ):
-            op = LaserOperation()
-            if color is not None:
-                op.color = color
-            if speed is not None:
-                op.settings.speed = speed
-            if power is not None:
-                op.settings.power = power
-            if passes is not None:
-                op.settings.passes_custom = True
-                op.settings.passes = passes
-            if step is not None:
-                op.settings.raster_step = step
-            if overscan is not None:
-                op.settings.overscan = int(
-                    overscan.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
-                    )
-                )
-            if command == "cut":
-                op.operation = "Cut"
-            elif command == "engrave":
-                op.operation = "Engrave"
-            elif command == "raster":
-                op.operation = "Raster"
-            elif command == "imageop":
-                op.operation = "Image"
-            elif command == "dots":
-                op.operation = "Dots"
-            self.add_op(op)
-            if data is not None:
-                for item in data:
-                    op.add(item, type="opnode")
-            return "ops", [op]
-
-        @context.console_argument("step_size", type=int, help="raster step size")
-        @context.console_command(
-            "step", help="step <raster-step-size>", input_type=("ops", "elements")
-        )
-        def step(command, channel, _, step_size=None, args=tuple(), **kwargs):
-            if step_size is None:
-                found = False
-                for op in self.ops(emphasized=True):
-                    if op.operation in ("Raster", "Image"):
-                        step = op.settings.raster_step
-                        channel(_("Step for %s is currently: %d") % (str(op), step))
-                        found = True
-                for element in self.elems(emphasized=True):
-                    if isinstance(element, SVGImage):
-                        try:
-                            step = element.values["raster_step"]
-                        except KeyError:
-                            step = 1
-                        channel(
-                            _("Image step for %s is currently: %s")
-                            % (str(element), step)
-                        )
-                        found = True
-                if not found:
-                    channel(_("No raster operations selected."))
-                return
-            for op in self.ops(emphasized=True):
-                if op.operation in ("Raster", "Image"):
-                    op.settings.raster_step = step_size
-                    self.context.signal("element_property_update", op)
-            for element in self.elems(emphasized=True):
-                element.values["raster_step"] = str(step_size)
-                m = element.transform
-                tx = m.e
-                ty = m.f
-                element.transform = Matrix.scale(float(step_size), float(step_size))
-                element.transform.post_translate(tx, ty)
-                if hasattr(element, "node"):
-                    element.node.modified()
-                self.context.signal("element_property_update", element)
-                self.context.signal("refresh_scene")
-            return
-
+        # ==========
+        # TRACE OPERATIONS
+        # ==========
         @context.console_command(
             "trace_hull", help="trace the convex hull of current elements"
         )
