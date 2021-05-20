@@ -238,8 +238,6 @@ class BindAlias(Modifier):
         self.keymap["control+alt+g"] = "image wizard Gold"
         self.keymap["control+alt+x"] = "image wizard Xin"
         self.keymap["control+alt+s"] = "image wizard Stipo"
-        self.keymap["alt+f12"] = "terminal_ruida"
-        self.keymap["alt+f11"] = "terminal_watch"
         self.keymap["pause"] = "pause"
         self.keymap["home"] = "home"
         self.keymap["control+z"] = "reset"
@@ -270,8 +268,4 @@ class BindAlias(Modifier):
         self.alias["-left"] = "end left 1mm"
         self.alias["-up"] = "end up 1mm"
         self.alias["-down"] = "end down 1mm"
-        self.alias["terminal_ruida"] = "window open Terminal;ruidaserver"
-        self.alias[
-            "terminal_watch"
-        ] = "window open Terminal;channel save usb;channel save send;channel save recv"
         self.alias["reset_bind_alias"] = "bind default;alias default"
