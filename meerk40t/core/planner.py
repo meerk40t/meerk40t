@@ -842,8 +842,13 @@ class Planner(Modifier):
         matrix.post_scale(
             step_scale, step_scale
         )  # step level requires the actual image be scaled down.
-        matrix.inverse()
-
+        try:
+            matrix.inverse()
+        except ZeroDivisionError:
+            # Rare crash if matrix is malformed and cannot invert.
+            matrix.reset()
+            matrix.post_translate(-tx, -ty)
+            matrix.post_scale(step_scale, step_scale)
         if (
             matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0
         ) and pil_image.mode != "RGBA":
