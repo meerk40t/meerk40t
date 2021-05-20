@@ -1478,15 +1478,17 @@ class Elemental(Modifier):
             return "elements", list(self.elems(emphasized=True))
 
         @context.console_command(
-            "elements",
-            help="list all elements in console",
+            "list",
+            help="Show information about the chained data",
+            input_type="elements",
             output_type="elements",
         )
-        def element(command, channel, _, args=tuple(), **kwargs):
+        def element_list(command, channel, _, data=None, **kwargs):
             channel(_("----------"))
             channel(_("Graphical Elements:"))
-            i = 0
-            for e in self.elems():
+            index_list = list(self.elems())
+            for e in data:
+                i = index_list.index(e)
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "..."
@@ -1494,12 +1496,19 @@ class Elemental(Modifier):
                     channel("%d: * %s" % (i, name))
                 else:
                     channel("%d: %s" % (i, name))
-                i += 1
             channel("----------")
+            return "elements", data
+
+        @context.console_command(
+            "elements",
+            help="show information about elements",
+        )
+        def element(**kwargs):
+            context(".element* list\n")
 
         @context.console_command(
             r"element([0-9]+,?)+",
-            help="element0,3,4,5: elements 0, 3, 4, 5",
+            help="element0,3,4,5: chain a list of specific elements",
             regex=True,
             output_type="elements",
         )
