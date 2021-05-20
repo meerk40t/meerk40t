@@ -1209,7 +1209,10 @@ class Elemental(Modifier):
                     value = c(value)
                     func_dict[key] = value
                 if func.radio is not None:
-                    func.radio_state = func.radio(node, **func_dict)
+                    try:
+                        func.radio_state = func.radio(node, **func_dict)
+                    except:
+                        func.radio_state = False
                 else:
                     func.radio_state = None
                 name = func.name.format_map(func_dict)
@@ -3308,38 +3311,46 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Home"), node_type="branch ops", help="")
         def add_operation_home(node, **kwargs):
-            self.context.elements.add_op(CommandOperation("Home", COMMAND_HOME))
+            self.context.elements.op_branch.add(
+                CommandOperation("Home", COMMAND_HOME), type="cmdop"
+            )
 
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Beep"), node_type="branch ops", help="")
         def add_operation_beep(node, **kwargs):
-            self.context.elements.add_op(CommandOperation("Beep", COMMAND_BEEP))
+            self.context.elements.op_branch.add(
+                CommandOperation("Beep", COMMAND_BEEP), type="cmdop"
+            )
 
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Move Origin"), node_type="branch ops", help="")
         def add_operation_origin(node, **kwargs):
-            self.context.elements.add_op(CommandOperation("Origin", COMMAND_MOVE, 0, 0))
+            self.context.elements.op_branch.add(
+                CommandOperation("Origin", COMMAND_MOVE, 0, 0), type="cmdop"
+            )
 
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Interrupt"), node_type="branch ops", help="")
         def add_operation_interrupt(node, **kwargs):
-            self.context.elements.add_op(
+            self.context.elements.op_branch.add(
                 CommandOperation(
                     "Interrupt",
                     COMMAND_FUNCTION,
                     self.context.console_function("interrupt\n"),
-                )
+                ),
+                type="cmdop",
             )
 
         @self.tree_submenu(_("Special Operations"))
         @self.tree_operation(_("Add Shutdown"), node_type="branch ops", help="")
         def add_operation_shutdown(node, **kwargs):
-            self.context.elements.add_op(
+            self.context.elements.op_branch.add(
                 CommandOperation(
                     "Shutdown",
                     COMMAND_FUNCTION,
                     self.context.console_function("quit\n"),
-                )
+                ),
+                type="cmdop",
             )
 
         @self.tree_operation(
