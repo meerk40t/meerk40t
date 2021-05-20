@@ -99,10 +99,7 @@ class TCPOutput:
                 if self._stream is None:
                     return
             sent = self._stream.send(self.buffer)
-            if sent is not None:
-                self.buffer = self.buffer[sent:]
-            else:
-                self.buffer = bytearray()
+            del self.buffer[:sent]
             self.context.signal("tcp;buffer", 0)
         except ConnectionError:
             self.disconnect()
