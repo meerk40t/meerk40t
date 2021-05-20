@@ -1043,6 +1043,13 @@ class RuidaEmulator(Module):
                 elif array[3] == 0x05:
                     name = "Total Doc Number"
                     v = 0
+                elif array[3] == 0x07:
+                    name = "Free Space On System"
+                    from shutil import disk_usage
+                    from os.path import realpath
+
+                    total, used, free = disk_usage(realpath('.'))
+                    v = min(free, 100000000)  # Max 100 megs.
                 elif array[3] == 0x08:
                     name = "Previous Work Time"
                 elif array[3] == 0x11:
@@ -1074,6 +1081,9 @@ class RuidaEmulator(Module):
                 if array[3] == 0x7F:
                     v = b"MEERK40T\x00"
                     name = "Mainboard Version"
+            elif array[2] == 0x06:
+                if array[3] == 0x20:
+                    name = "?-FileSize-?"
             if array[1] == 0x00:
                 if name is None:
                     name = "Unmapped"
