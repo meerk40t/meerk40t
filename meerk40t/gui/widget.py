@@ -1087,14 +1087,14 @@ class GridWidget(Widget):
     def calculate_grid(self):
         if self.scene.context is not None:
             context = self.scene.context
-            bed_dim = context.get_context("/")
+            bed_dim = context.root
             wmils = bed_dim.bed_width * MILS_IN_MM
             hmils = bed_dim.bed_height * MILS_IN_MM
         else:
             wmils = 310 * MILS_IN_MM
             hmils = 210 * MILS_IN_MM
 
-        kernel_root = self.scene.context.get_context("/")
+        kernel_root = self.scene.context.root
         convert = kernel_root.units_convert
         marks = kernel_root.units_marks
         step = convert * marks
@@ -1119,7 +1119,7 @@ class GridWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             if context is not None:
-                bed_dim = context.get_context("/")
+                bed_dim = context.root
                 wmils = bed_dim.bed_width * MILS_IN_MM
                 hmils = bed_dim.bed_height * MILS_IN_MM
             else:

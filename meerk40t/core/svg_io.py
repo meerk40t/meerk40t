@@ -76,7 +76,7 @@ class SVGWriter:
         mils_per_mm = 39.3701
         # mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        bed_dim = context.get_context("/")
+        bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         mm_width = bed_dim.bed_width
@@ -261,7 +261,7 @@ class SVGLoader:
     def load(context, elements_modifier, pathname, **kwargs):
         context.root.setting(bool, 'svg_reverse', False)
         reverse = context.root.svg_reverse
-        bed_dim = context.get_context("/")
+        bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if "svg_ppi" in kwargs:

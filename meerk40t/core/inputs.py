@@ -8,7 +8,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("input/tcp", TcpInput)
 
     elif lifecycle == "boot":
-        kernel_root = kernel.get_context("/")
+        kernel_root = kernel.root
         kernel_root.activate("modifier/Inputs")
 
 

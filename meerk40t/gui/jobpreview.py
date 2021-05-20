@@ -443,7 +443,7 @@ class JobPreview(MWindow):
             "",
         )
         dlg.SetValue("")
-        bed_dim = self.context.get_context("/")
+        bed_dim = self.context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if dlg.ShowModal() == wx.ID_OK:

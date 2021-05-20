@@ -54,10 +54,10 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/Elemental", Elemental)
     elif lifecycle == "boot":
-        kernel_root = kernel.get_context("/")
+        kernel_root = kernel.root
         kernel_root.activate("modifier/Elemental")
     elif lifecycle == "ready":
-        context = kernel.get_context("/")
+        context = kernel.root
         context.signal("rebuild_tree")
         context.signal("refresh_tree")
 
@@ -1338,7 +1338,7 @@ class Elemental(Modifier):
         context.load_types = self.load_types
         context = self.context
         self._tree = RootNode(context)
-        bed_dim = context.get_context("/")
+        bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
 
@@ -3748,7 +3748,7 @@ class Elemental(Modifier):
             and len(element) == 0
         ):
             return  # No empty elements.
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         if hasattr(element, "stroke") and element.stroke is None:
             element.stroke = Color(stroke)
         node = context_root.elements.add_elem(element)

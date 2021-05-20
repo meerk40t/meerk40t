@@ -23,8 +23,8 @@ def plugin(kernel, lifecycle=None):
     kernel.register("raster_script/Newsy", RasterScripts.raster_script_newsy())
     kernel.register("raster_script/Simple", RasterScripts.raster_script_simple())
     kernel.register("load/ImageLoader", ImageLoader)
-    context = kernel.get_context("/")
-    bed_dim = context.get_context("/")
+    context = kernel.root
+    bed_dim = context.root
 
     @context.console_command(
         "image",

@@ -302,7 +302,7 @@ def run():
     else:
         kernel.bootstrap("gui")
 
-    kernel_root = kernel.get_context("/")
+    kernel_root = kernel.root
     kernel_root.device_version = MEERK40T_VERSION
     kernel_root.device_name = "MeerK40t"
 

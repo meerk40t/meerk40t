@@ -311,7 +311,7 @@ class EgvLoader:
 
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            lhymicroemulator = kernel.get_context("/").open_as(
+            lhymicroemulator = kernel.root.open_as(
                 "module/LhystudiossEmulator", basename
             )
             lhymicroemulator.write_header(f.read())

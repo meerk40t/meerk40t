@@ -11,7 +11,7 @@ def plugin(kernel, lifecycle=None):
             output_type="elements",
         )
         def vectrace(command, channel, _, data, args=tuple(), **kwargs):
-            elements = kernel.get_context("/").elements
+            elements = kernel.root.elements
             path = Path(fill="black", stroke="blue")
             paths = []
             for element in data:

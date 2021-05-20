@@ -23,7 +23,7 @@ class Simulation(MWindow, Job):
             plan_name = 0
         self.plan_name = plan_name
 
-        self.bed_dim = self.context.get_context("/")
+        self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
 

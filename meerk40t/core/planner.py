@@ -23,7 +23,7 @@ from .optimizer import Optimizer
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel_root = kernel.get_context("/")
+        kernel_root = kernel.root
         kernel.register("modifier/Planner", Planner)
 
         kernel.register("plan/physicalhome", Planner.physicalhome)
@@ -45,7 +45,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("plan/shutdown", shutdown)
 
     elif lifecycle == "boot":
-        kernel_root = kernel.get_context("/")
+        kernel_root = kernel.root
         kernel_root.activate("modifier/Planner")
 
 
@@ -82,7 +82,7 @@ class Planner(Modifier):
         _ = kernel.translation
         elements = context.elements
         rotary_context = self.context.get_context("rotary/1")
-        bed_dim = self.context.get_context("/")
+        bed_dim = self.context.root
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)

@@ -15,7 +15,7 @@ def plugin(kernel, lifecycle):
         def load(channel, _, data=None, **kwargs):
             inkscape_path, filename = data
             channel(_("Loading..."))
-            e = kernel.get_context("/")
+            e = kernel.root
             e.load(filename)
             e.signal("refresh_scene", 0)
             return "inkscape", data
@@ -166,7 +166,7 @@ def plugin(kernel, lifecycle):
             channel(_("----------"))
             if match is None:
                 raise ModuleNotFoundError
-            root_context = kernel.get_context("/")
+            root_context = kernel.root
             root_context.setting(str, "inkscape_path", "inkscape.exe")
             root_context.inkscape_path = match
             return "inkscape", (match, filename)
@@ -177,6 +177,6 @@ def plugin(kernel, lifecycle):
             output_type="inkscape",
         )
         def inkscape(channel, _, **kwargs):
-            root_context = kernel.get_context("/")
+            root_context = kernel.root
             root_context.setting(str, "inkscape_path", "inkscape.exe")
             return "inkscape", (root_context.inkscape_path, None)

@@ -23,7 +23,7 @@ PLOT_DIRECTION = 32
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/Drivers", Drivers)
-        kernel_root = kernel.get_context("/")
+        kernel_root = kernel.root
         kernel_root.activate("modifier/Drivers")
     elif lifecycle == "boot":
         pass

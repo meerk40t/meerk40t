@@ -185,7 +185,7 @@ def plugin(kernel, lifecycle):
         @kernel.console_command("gui", help="starts the gui")
         def gui_start(**kwargs):
             del kernel.registered["command/None/gui"]
-            kernel_root = kernel.get_context("/")
+            kernel_root = kernel.root
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
@@ -193,15 +193,15 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         kernel.register("module/wxMeerK40t", wxMeerK40t)
     if lifecycle == "configure":
-        kernel_root = kernel.get_context("/")
+        kernel_root = kernel.root
         kernel_root.open("module/wxMeerK40t")
 
-        context = kernel.get_context("/")
+        context = kernel.root
         renderer = LaserRender(context)
         context.register("render-op/make_raster", renderer.make_raster)
     if GUI_START[0]:
         if lifecycle == "mainloop":
-            kernel_root = kernel.get_context("/")
+            kernel_root = kernel.root
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
@@ -344,7 +344,7 @@ class MeerK40t(MWindow, Job):
         Job.__init__(self, job_name="refresh_scene", process=self.refresh_scene)
 
         context = self.context
-        self.root_context = context.get_context("/")
+        self.root_context = context.root
         context._kernel.run_later = self.run_later
 
         self.DragAcceptFiles(True)
@@ -575,7 +575,7 @@ class MeerK40t(MWindow, Job):
         context.listen("driver;position", self.update_position)
         context.listen("driver;mode", self.on_driver_mode)
         context.listen("bed_size", self.bed_changed)
-        bed_dim = context.get_context("/")
+        bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)  # Default Value
         bed_dim.setting(int, "bed_height", 210)  # Default Value
 
@@ -651,7 +651,7 @@ class MeerK40t(MWindow, Job):
         context.setting(str, "file9", None)
         self.populate_recent_menu()
 
-        bed_dim = context.get_context("/")
+        bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         bbox = (0, 0, bed_dim.bed_width * MILS_IN_MM, bed_dim.bed_height * MILS_IN_MM)
@@ -1942,7 +1942,7 @@ class MeerK40t(MWindow, Job):
         # self.widget_scene.signal('guide')
         self.request_refresh(origin)
 
-    def on_emphasized_elements_changed(self, *args):
+    def on_emphasized_elements_changed(self, origin, *args):
         self.update_ribbon_position()
         self.clear_laserpath()
         self.request_refresh(origin)
@@ -2395,7 +2395,7 @@ class MeerK40t(MWindow, Job):
         elements = self.context.elements
         bbox = elements.selected_area()
         if bbox is None:
-            bed_dim = self.context.get_context("/")
+            bed_dim = self.context.root
             bbox = (
                 0,
                 0,
@@ -2455,8 +2455,8 @@ class MeerK40t(MWindow, Job):
 
         if dlg.ShowModal() == wx.ID_OK:
             spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
-            root_context = self.context.get_context("/")
-            bed_dim = self.context.get_context("/")
+            root_context = self.context.root
+            bed_dim = self.context.root
             m = str(dlg.GetValue())
             m = m.replace("$x", str(input_driver.current_x))
             m = m.replace("$y", str(input_driver.current_y))
@@ -2534,7 +2534,7 @@ class MeerK40t(MWindow, Job):
         dlg.SetValue("")
         if dlg.ShowModal() == wx.ID_OK:
             p = self.context
-            root_context = p.get_context("/")
+            root_context = p.root
             bed_dim = root_context
             context = p
             wmils = bed_dim.bed_width * MILS_IN_MM
@@ -2603,7 +2603,7 @@ class MeerK40t(MWindow, Job):
         spooler, input_driver, output = self.context.root.device()
 
         mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, input_driver.current_x, input_driver.current_y))
-        for element in self.context.get_context("/").elements.elems():
+        for element in self.context.root.elements.elems():
             try:
                 element *= mx
                 element.node.modified()
@@ -3530,7 +3530,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/moshi/Preferences", MoshiDriverGui)
         kernel.register("window/moshi/Controller", MoshiControllerGui)
 
-        context = kernel.get_context("/")
+        context = kernel.root
 
         @kernel.console_option(
             "path",
@@ -3549,7 +3549,7 @@ class wxMeerK40t(wx.App, Module):
             often be restricted to where the windows are typically opened since their function and settings usually
             depend on the context used. The default root path is "/". Eg. "window -p / open Settings"
             """
-            context = kernel.get_context("/")
+            context = kernel.root
             if path is None:
                 path = context
             else:

@@ -30,7 +30,7 @@ class CameraInterface(MWindow, Job):
         self.camera_setting = self.context.get_context("camera")
         self.setting = self.camera_setting.derive(str(self.index))
 
-        self.root_context = self.context.get_context("/")
+        self.root_context = self.context.root
 
         self.button_update = wx.BitmapButton(
             self, wx.ID_ANY, icons8_camera_50.GetBitmap()
@@ -137,7 +137,7 @@ class CameraInterface(MWindow, Job):
         self.context.setting(bool, "mouse_zoom_invert", False)
         self.context.setting(int, "draw_mode", 0)
 
-        self.bed_dim = self.context.get_context("/")
+        self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
 
@@ -215,7 +215,7 @@ class CameraInterface(MWindow, Job):
         def camera_win(command, channel, _, index=None, args=tuple(), **kwargs):
             if index is None:
                 raise SyntaxError
-            context = kernel.get_context("/")
+            context = kernel.root
             try:
                 parent = context.gui
             except AttributeError:
@@ -475,7 +475,7 @@ class CameraInterface(MWindow, Job):
         """
         rotation = event.GetWheelRotation()
         mouse = event.GetPosition()
-        if self.context.get_context("/").mouse_zoom_invert:
+        if self.context.root.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
             self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])

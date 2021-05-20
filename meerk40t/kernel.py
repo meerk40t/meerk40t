@@ -809,7 +809,7 @@ class Kernel:
 
             return wrapper_debug
 
-        context = self.get_context("/")
+        context = self.root
         attach_list = [modules for modules, module_name in context.opened.items()]
         attach_list.append(self)
         for obj in attach_list:
@@ -895,7 +895,7 @@ class Kernel:
         self.bootstrap("shutdown")
         _ = self.translation
         if channel is None:
-            channel = self.get_context("/").channel("shutdown")
+            channel = self.root.channel("shutdown")
 
         self.state = STATE_END  # Terminates the Scheduler.
 
@@ -1565,7 +1565,7 @@ class Kernel:
             times = None
         self.schedule(
             ConsoleFunction(
-                self.get_context("/"),
+                self.root,
                 command,
                 interval=interval,
                 times=times,
@@ -2083,7 +2083,7 @@ class Kernel:
         @self.console_command("control", help="control [<executive>]")
         def control(channel, _, path=None, remainder=None, **kwargs):
             if remainder is None:
-                for control_name in self.get_context("/").match(
+                for control_name in self.root.match(
                     "[0-9]+/control", suffix=True
                 ):
                     channel(control_name)
@@ -2358,7 +2358,7 @@ class Kernel:
             if path is not None:
                 path_context = self.get_context(path)
             else:
-                path_context = self.get_context("/")
+                path_context = self.root
 
             if path_context is not None:
                 path_context.flush()

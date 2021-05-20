@@ -81,7 +81,7 @@ class Settings(MWindow):
         )
 
     def window_open(self):
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
 
         context_root.setting(float, "svg_ppi", 96.0)
         self.text_svg_ppi.SetValue(str(context_root.svg_ppi))
@@ -147,7 +147,7 @@ class Settings(MWindow):
         # end wxGlade
 
     def on_combo_svg_ppi(self, event):  # wxGlade: Settings.<event_handler>
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         ppi = self.combo_svg_ppi.GetSelection()
         if ppi == 0:
             context_root.setting(float, "svg_ppi", 96.0)
@@ -164,7 +164,7 @@ class Settings(MWindow):
         self.text_svg_ppi.SetValue(str(context_root.svg_ppi))
 
     def on_text_svg_ppi(self, event):  # wxGlade: Settings.<event_handler>
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         try:
             svg_ppi = float(self.text_svg_ppi.GetValue())
         except ValueError:
@@ -204,7 +204,7 @@ class Settings(MWindow):
             self.set_mil()
 
     def set_inch(self):
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         p = context_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (
             1000.0,
@@ -215,7 +215,7 @@ class Settings(MWindow):
         p.signal("units")
 
     def set_mil(self):
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         p = context_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (
             1.0,
@@ -226,7 +226,7 @@ class Settings(MWindow):
         p.signal("units")
 
     def set_cm(self):
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         p = context_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (
             393.7,
@@ -237,7 +237,7 @@ class Settings(MWindow):
         p.signal("units")
 
     def set_mm(self):
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         p = context_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (
             39.37,

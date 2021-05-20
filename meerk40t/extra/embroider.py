@@ -4,7 +4,7 @@ from meerk40t.tools.pathtools import EulerianFill
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
-        context = kernel.get_context("/")
+        context = kernel.root
 
         @context.console_option(
             "angle", "a", type=Angle.parse, default=0, help="Angle of the fill"
@@ -16,7 +16,7 @@ def plugin(kernel, lifecycle):
         def embroider(
             command, channel, _, angle=None, distance=None, args=tuple(), **kwargs
         ):
-            bed_dim = context.get_context("/")
+            bed_dim = context.root
             elements = context.elements
             channel(_("Embroidery Filling"))
             if distance is not None:

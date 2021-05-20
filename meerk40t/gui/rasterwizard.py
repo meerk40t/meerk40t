@@ -111,7 +111,7 @@ class RasterWizard(MWindow):
         if self.script is not None:
             self.set_wizard_script(self.script)
 
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         context_root.listen("emphasized", self.on_emphasis_change)
         self.context.listen(
             "RasterWizard-Refresh", self.on_raster_wizard_refresh_signal
@@ -120,7 +120,7 @@ class RasterWizard(MWindow):
         self.context.signal("RasterWizard-Image")
 
     def window_close(self):
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         context_root.unlisten("emphasized", self.on_emphasis_change)
         self.context.unlisten(
             "RasterWizard-Refresh", self.on_raster_wizard_refresh_signal

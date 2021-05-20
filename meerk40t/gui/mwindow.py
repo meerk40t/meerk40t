@@ -32,7 +32,7 @@ class MWindow(wx.Frame, Module):
             )
         Module.__init__(self, context, path)
 
-        self.root_context = context.get_context("/")
+        self.root_context = context.root
         self.window_context = context.get_context(path)
 
         self.root_context.setting(bool, "windows_save", True)

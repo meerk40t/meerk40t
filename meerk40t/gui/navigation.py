@@ -550,7 +550,7 @@ class Navigation(MWindow):
 
     def window_open(self):
         context = self.context
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
 
         self.elements = context_root.elements
         context.setting(float, "navigate_jog", float(self.spin_jog_mils.GetValue()))
@@ -567,7 +567,7 @@ class Navigation(MWindow):
         self.SetFocus()
 
     def window_close(self):
-        context_root = self.context.get_context("/")
+        context_root = self.context.root
         context_root.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("driver;position", self.on_position_update)
 

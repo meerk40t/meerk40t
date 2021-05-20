@@ -10,7 +10,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("modifier/Outputs", Outputs)
         kernel.register("output/file", FileOutput)
         kernel.register("output/tcp", TCPOutput)
-        kernel_root = kernel.get_context("/")
+        kernel_root = kernel.root
         kernel_root.activate("modifier/Outputs")
 
         @kernel.console_argument(

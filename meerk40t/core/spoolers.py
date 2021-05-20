@@ -9,7 +9,7 @@ from ..kernel import Modifier
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/Spoolers", Spoolers)
-        kernel_root = kernel.get_context("/")
+        kernel_root = kernel.root
         kernel_root.activate("modifier/Spoolers")
 
 
@@ -142,7 +142,7 @@ class Spoolers(Modifier):
     def attach(self, *a, **kwargs):
         context = self.context
         context.spoolers = self
-        bed_dim = context.get_context("/")
+        bed_dim = context.root
 
         kernel = self.context._kernel
         _ = kernel.translation

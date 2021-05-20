@@ -1181,7 +1181,7 @@ class LhystudiosDriver(Driver):
     def calc_home_position(self):
         x = 0
         y = 0
-        bed_dim = self.context.get_context("/")
+        bed_dim = self.context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if self.context.home_right:
@@ -1512,7 +1512,7 @@ class LhystudiosController:
         self.start()
 
     def finalize(self, *args, **kwargs):
-        self.context.get_context("/").unlisten(
+        self.context.root.unlisten(
             "lifecycle;ready", self.on_controller_ready
         )
         if self._thread is not None:
