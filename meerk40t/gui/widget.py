@@ -1290,7 +1290,7 @@ class SceneSpaceWidget(Widget):
         elif event_type == "rightup":
             self._previous_zoom = None
             self._placement_event = None
-            self._placement_event_type = "finish"
+            self._placement_event_type = None
         elif event_type == "wheeldown" or event_type == "wheeldown_ctrl":
             if self.scene.context.mouse_zoom_invert:
                 self.scene_widget.matrix.post_scale(
@@ -1350,7 +1350,7 @@ class SceneSpaceWidget(Widget):
 
             return RESPONSE_CONSUME
         # Movement
-        if self._placement_event_type == "finish":
+        if self._placement_event_type is None:
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
             self.scene.context.signal("refresh_scene", 0)
         elif self._placement_event_type == "zoom":
