@@ -107,48 +107,6 @@ class BindAlias(Modifier):
             else:
                 raise CommandMatchRejected("This is not an alias.")
 
-        @self.context.console_option(
-            "port", "p", type=int, default=23, help="port to listen on."
-        )
-        @self.context.console_option(
-            "silent", "s", type=bool, action="store_true", help="do not watch server channels"
-        )
-        @self.context.console_option(
-            "quit", "q", type=bool, action="store_true", help="shutdown current lhyserver"
-        )
-        @self.context.console_command(
-            "consoleserver", help="starts a console_server on port 23 (telnet)"
-        )
-        def server_console(command, channel, _, port=23, silent=False, quit=False, **kwargs):
-            try:
-                server = self.context.open_as("module/TCPServer", "console-server", port=port)
-                if quit:
-                    self.context.close("console-server")
-                    return
-                send = self.context.channel("console-server/send")
-                send.greet = "%s %s Telnet Console.\r\n" % (
-                    self.context._kernel.name,
-                    self.context._kernel.version,
-                )
-                send.line_end = "\r\n"
-
-                recv = self.context.channel("console-server/recv")
-                recv.watch(self.context.console)
-                channel(_("%s %s console server on port: %d" % (
-                    self.context._kernel.name,
-                    self.context._kernel.version,
-                    port
-                )))
-
-                if not silent:
-                    console = self.context.channel("console")
-                    console.watch(send)
-                    server.events_channel.watch(console)
-
-            except (OSError, ValueError):
-                channel(_("Server failed on port: %d") % port)
-            return
-
     def boot(self, *args, **kwargs):
         self.boot_keymap()
         self.boot_alias()
