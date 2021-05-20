@@ -382,15 +382,20 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_option(
             "watch", "w", type=bool, action="store_true", help="watch send/recv data"
         )
+        @kernel.console_option(
+            "quit", "q", type=bool, action="store_true", help="shutdown current lhyserver"
+        )
         @kernel.console_command("lhyserver", help="activate the lhyserver.")
-        def lhyserver(channel, _, port=23, silent=False, watch=False, **kwargs):
+        def lhyserver(channel, _, port=23, silent=False, watch=False, quit=False, **kwargs):
             root = kernel.root
             try:
                 spooler, input_driver, output = root.registered[
                     "device/%s" % root.active
                 ]
-
                 server = root.open_as("module/TCPServer", "lhyserver", port=port)
+                if quit:
+                    root.close("lhyserver")
+                    return
                 channel(_("TCP Server for Lhystudios on port: %d" % port))
                 if not silent:
                     console = kernel.channel("console")

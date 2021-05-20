@@ -95,8 +95,12 @@ class TCPServer(Module):
             self.run_tcp_delegater, thread_name="tcp-%d" % port, daemon=True
         )
 
+    def stop(self):
+        self.state = STATE_TERMINATE
+
     def finalize(self, *args, **kwargs):
         self.events_channel("Shutting down server.")
+        self.state = STATE_TERMINATE
         if self.socket is not None:
             self.socket.close()
             self.socket = None
