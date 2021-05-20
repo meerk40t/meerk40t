@@ -1778,6 +1778,8 @@ class Elemental(Modifier):
         def merge(command, channel, _, data=None, args=tuple(), **kwargs):
             superelement = Path()
             for e in data:
+                if not isinstance(e, Shape):
+                    continue
                 if superelement.stroke is None:
                     superelement.stroke = e.stroke
                 if superelement.fill is None:
