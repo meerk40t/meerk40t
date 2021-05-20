@@ -91,7 +91,9 @@ class TCPServer(Module):
         self.socket = None
         self.events_channel = self.context.channel("server-tcp-%d" % port)
         self.data_channel = self.context.channel("data-tcp-%d" % port)
-        self.context.threaded(self.run_tcp_delegater, thread_name="tcp-%d" % port, daemon=True)
+        self.context.threaded(
+            self.run_tcp_delegater, thread_name="tcp-%d" % port, daemon=True
+        )
 
     def finalize(self, *args, **kwargs):
         self.events_channel("Shutting down server.")
@@ -105,14 +107,14 @@ class TCPServer(Module):
         handle to interact with that connection. This thread here waits for sockets and delegates.
         """
         self.socket = socket.socket()
-        self.socket.settimeout(2)
+        self.socket.settimeout(5)
         try:
             self.socket.bind(("", self.port))
-            self.socket.listen(5)
+            self.socket.listen(1)
         except OSError:
             self.events_channel("Could not start listening.")
             return
-
+        handle = 1
         while self.state != STATE_TERMINATE:
             self.events_channel("Listening %s on port %d..." % (self.name, self.port))
             connection = None
@@ -120,7 +122,12 @@ class TCPServer(Module):
             try:
                 connection, addr = self.socket.accept()
                 self.events_channel("Socket Connected: %s" % str(addr))
-                self.context.threaded(self.connection_handler(connection, addr), daemon=True)
+                self.context.threaded(
+                    self.connection_handler(connection, addr),
+                    thread_name="handler-%d-%d" % (self.port, handle),
+                    daemon=True,
+                )
+                handle += 1
             except socket.timeout:
                 pass
             except OSError:
@@ -155,8 +162,10 @@ class TCPServer(Module):
             while self.state != STATE_TERMINATE:
                 try:
                     data_from_socket = connection.recv(1024)
-                    if len(data_from_socket) != 0:
+                    if len(data_from_socket):
                         self.data_channel("--> %s" % str(data_from_socket))
+                    else:
+                        break
                     recv(data_from_socket)
                 except socket.timeout:
                     self.events_channel("Connection to %s timed out." % str(addr))
@@ -166,5 +175,6 @@ class TCPServer(Module):
                         connection.close()
                     break
             self.context.channel(send_channel_name).unwatch(send)
+            self.events_channel("Connection to %s was closed." % str(addr))
 
         return handle
