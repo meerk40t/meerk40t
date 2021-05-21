@@ -3674,7 +3674,7 @@ class wxMeerK40t(wx.App, Module):
                     window_uri = "window/%s/%s" % ('default', window)
 
             if window_uri in context.registered:
-                path.open(window_uri, parent, *args)
+                kernel.run_later(lambda e: path.open(window_uri, parent, *args), None)
                 channel(_("Window Opened."))
             else:
                 channel(_("No such window as %s" % window))
@@ -3692,12 +3692,8 @@ class wxMeerK40t(wx.App, Module):
         def window(channel, _, data, window=None, args=(), **kwargs):
             path = data
             try:
-                parent = context.gui
-            except AttributeError:
-                parent = None
-
-            try:
-                path.close("window/%s" % window, parent, *args)
+                parent = context.gui if hasattr(context,'gui') else None
+                kernel.run_later(lambda e: path.close("window/%s" % window, parent, *args), None)
                 channel(_("Window closed."))
             except (KeyError, ValueError):
                 channel(_("No such window as %s" % window))
