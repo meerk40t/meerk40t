@@ -114,7 +114,7 @@ class Handler(CH341Handler):
                     )
                 )
                 connection.close()
-                return -1
+                raise ConnectionRefusedError("Chip Version Wrong.")
         if bus != -1:
             match_bus = self.driver.devices[val].bus
             if bus != match_bus:
@@ -123,7 +123,7 @@ class Handler(CH341Handler):
                     _("K40 devices were found but they were rejected due to usb bus.")
                 )
                 connection.close()
-                return None
+                raise ConnectionRefusedError("USB Bus Wrong.")
         if address != -1:
             match_address = self.driver.devices[val].address
             if address != match_address:
@@ -134,5 +134,5 @@ class Handler(CH341Handler):
                     )
                 )
                 connection.close()
-                return None
+                raise ConnectionRefusedError("USB Address Wrong.")
         return connection

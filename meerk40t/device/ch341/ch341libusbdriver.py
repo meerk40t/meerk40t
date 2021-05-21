@@ -57,6 +57,7 @@ class Ch341LibusbDriver:
         self.devices = {}
         self.interface = {}
         self.channel = channel
+        self.backend_error_code = None
 
     def find_device(self, index=0):
         _ = self.channel._
@@ -69,6 +70,8 @@ class Ch341LibusbDriver:
                 )
             )
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             raise ConnectionRefusedError
         if len(devices) == 0:
@@ -82,7 +85,10 @@ class Ch341LibusbDriver:
         try:
             device = devices[index]
         except IndexError:
-            self.channel(_("K40 devices were found but they were rejected."))
+            if self.backend_error_code == -5:
+                self.channel(_("K40 devices were found. But something else was connected to them."))
+            else:
+                self.channel(_("K40 devices were found but they were rejected by device criteria in Controller."))
             raise ConnectionRefusedError
         return device
 
@@ -95,6 +101,8 @@ class Ch341LibusbDriver:
                     device.detach_kernel_driver(interface.bInterfaceNumber)
                     self.channel(_("Kernel detach: Success."))
                 except usb.core.USBError as e:
+                    self.backend_error_code = e.backend_error_code
+                    print("Backend Error for this is: %d" % e.backend_error_code)
                     self.channel(str(e))
                     self.channel(_("Kernel detach: Failed."))
                     raise ConnectionRefusedError
@@ -112,6 +120,8 @@ class Ch341LibusbDriver:
             self.channel(_("Active Config: Success."))
             return interface
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             self.channel(_("Active Config: Failed."))
             raise ConnectionRefusedError
@@ -123,6 +133,8 @@ class Ch341LibusbDriver:
             device.set_configuration()
             self.channel(_("Config Set: Success"))
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             self.channel(
                 _(
@@ -138,6 +150,8 @@ class Ch341LibusbDriver:
             usb.util.claim_interface(device, interface)
             self.channel(_("Interface claim: Success"))
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             self.channel(_("Interface claim: Failed. (Interface is in use.)"))
             raise ConnectionRefusedError
@@ -150,6 +164,8 @@ class Ch341LibusbDriver:
             device.attach_kernel_driver(interface.bInterfaceNumber)
             self.channel(_("Kernel attach: Success."))
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             self.channel(_("Kernel attach: Fail."))
             # Continue and hope it is non-critical.
@@ -163,6 +179,8 @@ class Ch341LibusbDriver:
             usb.util.release_interface(device, interface)
             self.channel(_("Interface released."))
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             self.channel(_("Interface did not exist."))
 
@@ -173,6 +191,8 @@ class Ch341LibusbDriver:
             usb.util.dispose_resources(device)
             self.channel(_("Dispose Resources: Success"))
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             self.channel(_("Dispose Resources: Fail"))
 
@@ -183,6 +203,8 @@ class Ch341LibusbDriver:
             device.reset()
             self.channel(_("USB connection reset."))
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             self.channel(_("USB connection did not exist."))
 
@@ -256,6 +278,8 @@ class Ch341LibusbDriver:
             )
             # 0x40, 177, 0x8800, 0, 0
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             # Device was not found. Timed out, etc.
             raise ConnectionError
@@ -274,6 +298,8 @@ class Ch341LibusbDriver:
             )
             # 0x40, 154, 0x2525, 257, 0
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             raise ConnectionError
 
@@ -290,6 +316,8 @@ class Ch341LibusbDriver:
                 try:
                     device.write(BULK_WRITE_ENDPOINT, packet, 200)
                 except usb.core.USBError as e:
+                    self.backend_error_code = e.backend_error_code
+                    print("Backend Error for this is: %d" % e.backend_error_code)
                     self.channel(str(e))
                     raise ConnectionError
 
@@ -297,6 +325,8 @@ class Ch341LibusbDriver:
         try:
             return self.devices[index].read(BULK_READ_ENDPOINT, length, 200)
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             raise ConnectionError
 
@@ -307,6 +337,8 @@ class Ch341LibusbDriver:
             device.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 200)
             status[0] = device.read(BULK_READ_ENDPOINT, 6, 200)
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             raise ConnectionError
         return status[0]
@@ -324,6 +356,8 @@ class Ch341LibusbDriver:
                 timeout=200,
             )
         except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+            print("Backend Error for this is: %d" % e.backend_error_code)
             self.channel(str(e))
             raise ConnectionError
         if len(buffer) < 0:
