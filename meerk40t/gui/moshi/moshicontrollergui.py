@@ -52,17 +52,17 @@ class MoshiControllerGui(MWindow):
             self, wx.ID_ANY, "Mock USB Connection Mode"
         )
         self.text_device_index = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
+        self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
         self.text_device_address = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
+        self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
         self.text_device_bus = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
+        self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
         self.text_device_version = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=25)
+        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
         self.text_byte_0 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_1 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -123,19 +123,19 @@ class MoshiControllerGui(MWindow):
         )
         self.text_device_index.SetMinSize((55, 23))
         self.spin_device_index.SetToolTip(
-            "-1 match anything. 0-5 match exactly that value."
+            "-1 match anything. 0+ match exactly that value."
         )
         self.text_device_address.SetMinSize((55, 23))
         self.spin_device_address.SetToolTip(
-            "-1 match anything. 0-5 match exactly that value."
+            "-1 match anything. 0+ match exactly that value."
         )
         self.text_device_bus.SetMinSize((55, 23))
         self.spin_device_bus.SetToolTip(
-            "-1 match anything. 0-5 match exactly that value."
+            "-1 match anything. 0+ match exactly that value."
         )
         self.text_device_version.SetMinSize((55, 23))
         self.spin_device_version.SetToolTip(
-            "-1 match anything. 0-255 match exactly that value."
+            "-1 match anything. 0+ match exactly that value."
         )
         self.text_byte_0.SetMinSize((77, 23))
         self.text_byte_1.SetMinSize((77, 23))
