@@ -40,6 +40,7 @@ DRAW_MODE_ICONS = 0x0040000
 DRAW_MODE_TREE = 0x0080000
 DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
+DRAW_MODE_LINEWIDTH = 0x1000000
 
 
 def swizzlecolor(c):
@@ -283,6 +284,9 @@ class LaserRender:
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, path, zoomscale=zoomscale, width_scale=width_scale)
+        if draw_mode & DRAW_MODE_LINEWIDTH == 1:
+            self.pen.SetWidth(1)
+            gc.SetPen(self.pen)
         self.set_element_brush(gc, path)
         if draw_mode & DRAW_MODE_FILLS == 0 and path.fill is not None:
             gc.FillPath(node.cache)

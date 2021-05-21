@@ -114,6 +114,7 @@ from .keymap import Keymap
 from .laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_BACKGROUND,
+    DRAW_MODE_LINEWIDTH,
     DRAW_MODE_CACHE,
     DRAW_MODE_FILLS,
     DRAW_MODE_FLIPXY,
@@ -250,6 +251,7 @@ ID_MENU_HIDE_FILLS = wx.NewId()
 ID_MENU_HIDE_GUIDES = wx.NewId()
 ID_MENU_HIDE_GRID = wx.NewId()
 ID_MENU_HIDE_BACKGROUND = wx.NewId()
+ID_MENU_HIDE_LINEWIDTH = wx.NewId()
 ID_MENU_HIDE_STROKES = wx.NewId()
 ID_MENU_HIDE_ICONS = wx.NewId()
 ID_MENU_HIDE_TREE = wx.NewId()
@@ -1192,6 +1194,9 @@ class MeerK40t(MWindow, Job):
             ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK
         )
         wxglade_tmp_menu.Append(
+            ID_MENU_HIDE_LINEWIDTH, _("Hide Stroke-Width"), "", wx.ITEM_CHECK
+        )
+        wxglade_tmp_menu.Append(
             ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK
         )
         wxglade_tmp_menu.Append(
@@ -1293,6 +1298,11 @@ class MeerK40t(MWindow, Job):
             wx.EVT_MENU,
             self.toggle_draw_mode(DRAW_MODE_BACKGROUND),
             id=ID_MENU_HIDE_BACKGROUND,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.toggle_draw_mode(DRAW_MODE_LINEWIDTH),
+            id=ID_MENU_HIDE_LINEWIDTH,
         )
         self.Bind(
             wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GUIDES), id=ID_MENU_HIDE_GUIDES
@@ -1455,6 +1465,8 @@ class MeerK40t(MWindow, Job):
         m.Check(self.context.draw_mode & DRAW_MODE_GUIDES != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_BACKGROUND)
         m.Check(self.context.draw_mode & DRAW_MODE_BACKGROUND != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_LINEWIDTH)
+        m.Check(self.context.draw_mode & DRAW_MODE_LINEWIDTH != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
         m.Check(self.context.draw_mode & DRAW_MODE_GRID != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_LASERPATH)

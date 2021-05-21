@@ -12,6 +12,7 @@ import wx
 from ..kernel import Module
 from ..svgelements import Color, Matrix, Point
 from .laserrender import (
+    DRAW_MODE_LINEWIDTH,
     DRAW_MODE_BACKGROUND,
     DRAW_MODE_GRID,
     DRAW_MODE_GUIDES,
