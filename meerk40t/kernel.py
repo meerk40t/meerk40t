@@ -1048,6 +1048,10 @@ class Kernel:
         def decor(func):
             kwargs["name"] = name
             kwargs["short"] = short
+            if 'action' in kwargs:
+                kwargs["type"] = bool
+            elif 'type' not in kwargs:
+                kwargs['type'] = str
             func.options.insert(0, kwargs)
             return func
 
@@ -1057,6 +1061,8 @@ class Kernel:
     def console_argument(name: str, **kwargs) -> Callable:
         def decor(func):
             kwargs["name"] = name
+            if 'type' not in kwargs:
+                kwargs['type'] = str
             func.arguments.insert(0, kwargs)
             return func
 
@@ -1559,7 +1565,7 @@ class Kernel:
         return self.unschedule(job)
 
     def set_timer(
-        self, command: str, name: str = None, times: int = 1, interval: float = 1.0
+        self, command: str, name: str = None, times: int = 1, interval: float = 1.0, run_main: bool=False
     ):
         if name is None or len(name) == 0:
             i = 1
@@ -1577,6 +1583,7 @@ class Kernel:
                 interval=interval,
                 times=times,
                 job_name=name,
+                run_main=run_main
             )
         )
 
@@ -1849,10 +1856,11 @@ class Kernel:
             if extended_help is not None:
                 found = False
                 for command_name in self.match("command/.*/%s" % extended_help):
+                    func = self.registered[command_name]
                     parts = command_name.split("/")
                     input_type = parts[1]
                     command_item = parts[2]
-                    if command_item != extended_help:
+                    if command_item != extended_help and not func.regex:
                         continue
                     if input is not None and input != input_type:
                         continue
@@ -1872,10 +1880,10 @@ class Kernel:
                         )
                         channel("\n")
 
-                    channel("\t%s %s" % (extended_help, " ".join(help_args)))
+                    channel("\t%s %s" % (command_item, " ".join(help_args)))
                     channel(
                         "\t(%s) -> %s -> (%s)"
-                        % (input_type, extended_help, func.output_type)
+                        % (input_type, command_item, func.output_type)
                     )
                     for a in func.arguments:
                         arg_name = a.get("name", "")
@@ -1942,12 +1950,19 @@ class Kernel:
             else:
                 self._untick_command(" ".join(args))
 
+        @self.console_option("off", "o", action="store_true", help="Turn this timer off")
+        @self.console_option("gui", "g", action="store_true", help="Run this timer in the gui-thread")
+        @self.console_argument("times", help="Number of times this timer should execute.")
+        @self.console_argument("duration", type=float, help="How long in seconds between/before should this be run.")
         @self.console_command(
-            "timer.*", regex=True, help="timer<?> <duration> <iterations>"
+            "timer.*", regex=True, help="run the command a given number of times with a given duration between."
         )
-        def timer(command, channel, _, args=tuple(), **kwargs):
+        def timer(command, channel, _, times=None, duration=None, off=False, gui=False, remainder=None, **kwargs):
+            if times == "off":
+                off = True
+                times = None
             name = command[5:]
-            if len(args) == 0:
+            if times is None and not off:
                 channel(_("----------"))
                 channel(_("Timers:"))
                 i = 0
@@ -1968,41 +1983,42 @@ class Kernel:
                         parts.append(_("never"))
                     else:
                         parts.append(_("each %f seconds") % job.interval)
+                    if job.run_main:
+                        parts.append(_("- gui"))
                     channel(" ".join(parts))
                 channel(_("----------"))
                 return
-            if len(args) == 1:
-                if args[0] == "off":
-                    if name == "*":
-                        for job_name in list(self.jobs):
-                            if not job_name.startswith("timer"):
-                                continue
-                            try:
-                                job = self.jobs[job_name]
-                            except KeyError:
-                                continue
-                            job.cancel()
-                            self.unschedule(job)
-                        channel(_("All timers canceled."))
-                        return
-                    try:
-                        obj = self.jobs[command]
-                        obj.cancel()
-                        self.unschedule(obj)
-                        channel(_("Timer %s canceled." % name))
-                    except KeyError:
-                        channel(_("Timer %s does not exist." % name))
-                return
-            if len(args) <= 2:
-                channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
+            if off:
+                if name == "*":
+                    for job_name in [j for j in self.jobs if j.startswith("timer")]:
+                        # removing jobs, must create current list
+                        job = self.jobs[job_name]
+                        job.cancel()
+                        self.unschedule(job)
+                    channel(_("All timers canceled."))
+                    return
+                try:
+                    obj = self.jobs[command]
+                    obj.cancel()
+                    self.unschedule(obj)
+                    channel(_("Timer '%s' canceled." % name))
+                except KeyError:
+                    channel(_("Timer '%s' does not exist." % name))
                 return
             try:
-                timer_command = " ".join(args[2:])
+                times = int(times)
+            except (TypeError, ValueError):
+                raise SyntaxError
+            if duration is None:
+                raise SyntaxError
+            try:
+                timer_command = remainder
                 self.set_timer(
                     timer_command + "\n",
                     name=name,
-                    times=int(args[0]),
-                    interval=float(args[1]),
+                    times=times,
+                    interval=duration,
+                    run_main=gui
                 )
             except ValueError:
                 channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
