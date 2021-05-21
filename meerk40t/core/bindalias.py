@@ -151,6 +151,8 @@ class BindAlias(Modifier):
         self.keymap["a"] = "+left"
         self.keymap["w"] = "+up"
         self.keymap["s"] = "+down"
+        self.keymap["l"] = "lock"
+        self.keymap["u"] = "unlock"
         self.keymap["numpad_down"] = "+translate_down"
         self.keymap["numpad_up"] = "+translate_up"
         self.keymap["numpad_left"] = "+translate_left"
