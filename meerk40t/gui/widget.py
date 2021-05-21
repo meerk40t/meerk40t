@@ -49,7 +49,6 @@ BUFFER = 10.0
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
-
 class Scene(Module, Job):
     def __init__(self, context, path, gui):
         Module.__init__(self, context, path)
@@ -76,11 +75,16 @@ class Scene(Module, Job):
         self.establish_binds()
 
     def initialize(self, *args, **kwargs):
-        self.context.schedule(self)
-        self.context.setting(int, "draw_mode", 0)
-        self.context.setting(bool, "mouse_zoom_invert", False)
-        self.context.setting(bool, "mouse_pan_invert", False)
-        self.context.setting(bool, "mouse_wheel_pan", False)
+        context = self.context
+        context.schedule(self)
+        context.setting(int, "draw_mode", 0)
+        context.setting(bool, "mouse_zoom_invert", False)
+        context.setting(bool, "mouse_pan_invert", False)
+        context.setting(bool, "mouse_wheel_pan", False)
+        context.setting(int, "fps", 40)
+        if context.fps <= 0:
+            context.fps = 60
+        self.interval = 1.0 / float(context.fps)
 
     def restore(self, *args, **kwargs):
         pass

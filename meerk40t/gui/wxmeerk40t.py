@@ -510,9 +510,6 @@ class MeerK40t(MWindow):
         context.setting(int, "units_index", 0)
         context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "print_shutdown", False)
-        context.setting(int, "fps", 40)
-        if context.fps <= 0:
-            context.fps = 60
 
         context.listen("units", self.space_changed)
 
@@ -592,10 +589,6 @@ class MeerK40t(MWindow):
         @context.console_command("rotaryscale", help="Rotary Scale selected elements")
         def apply_rotary_scale(*args, **kwargs):
             self.apply_rotary_scale()
-
-        # Todo: may need adjusting.
-        self.widget_scene.interval = 1.0 / float(context.fps)
-        self.widget_scene.process()
 
         context.setting(str, "file0", None)
         context.setting(str, "file1", None)
