@@ -110,6 +110,7 @@ class Simulation(MWindow):
 
         self.widget_scene = self.context.open_as("module/Scene", "SimScene", self.view_pane)
 
+        self.widget_scene.add_interfacewidget(SimulationInterfaceWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
@@ -286,21 +287,18 @@ class SimulationWidget(Widget):
 
     def process_draw(self, gc):
         context = self.scene.context
-        font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetFont(font, wx.BLACK)
-        gc.DrawText(_("Simulating Burn..."), 0, 0)
-
-        # gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
-        # gc.SetBrush(wx.WHITE_BRUSH)
-        # gc.DrawRectangle(0, 0, self.bed_dim.bed_width * MILS_PER_MM, self.bed_dim.bed_height * MILS_PER_MM)
-
-        # context = self.context
-        # zoom_scale = 1 / self.matrix.value_scale_x()
-        # if zoom_scale < 1:
-        #     zoom_scale = 1
-        # gc.SetPen(wx.BLACK_PEN)
         operations, original, commands, plan_name = context.root.default_plan()
         for op in reversed(operations):
             if isinstance(op, CutCode):
                 self.renderer.draw_cutcode(op, gc, 0, 0)
+
+
+class SimulationInterfaceWidget(Widget):
+    def __init__(self, scene):
+        Widget.__init__(self, scene, all=False)
+
+    def process_draw(self, gc):
+        font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+        gc.SetFont(font, wx.BLACK)
+        gc.DrawText(_("Simulating Burn..."), 40, 40)
 
