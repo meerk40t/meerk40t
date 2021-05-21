@@ -1640,9 +1640,10 @@ class LhystudiosController:
     def reset(self):
         self.update_state(STATE_INITIALIZE)
 
-    def stop(self):
+    def stop(self, *args):
         self.abort()
-        self._thread.join()  # Wait until stop completes before continuing.
+        if self._thread is not None:
+            self._thread.join()  # Wait until stop completes before continuing.
         self._thread = None
 
     def update_state(self, state):

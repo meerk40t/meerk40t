@@ -1010,6 +1010,7 @@ class MoshiController(Module):
             self._thread = self.context.threaded(
                 self._thread_data_send,
                 thread_name="MoshiPipe(%s)" % (self.context._path),
+                result=self.stop
             )
             self.update_state(STATE_INITIALIZE)
 
@@ -1042,9 +1043,11 @@ class MoshiController(Module):
     def reset(self):
         self.update_state(STATE_INITIALIZE)
 
-    def stop(self):
+    def stop(self, *args):
         self.abort()
-        self._thread.join()  # Wait until stop completes before continuing.
+        if self._thread is not None:
+            self._thread.join()  # Wait until stop completes before continuing.
+        self._thread = None
 
     def update_state(self, state):
         if state == self.state:
