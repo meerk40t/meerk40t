@@ -284,7 +284,7 @@ class LaserRender:
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, path, zoomscale=zoomscale, width_scale=width_scale)
-        if draw_mode & DRAW_MODE_LINEWIDTH == 1:
+        if draw_mode & DRAW_MODE_LINEWIDTH:
             self.pen.SetWidth(1)
             gc.SetPen(self.pen)
         self.set_element_brush(gc, path)
