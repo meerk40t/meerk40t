@@ -126,7 +126,6 @@ class DeviceManager(MWindow):
 
     def on_list_right_click(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
-        print(uid)
         self.refresh_device_list()
 
     def on_list_item_selected(self, event=None):

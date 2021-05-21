@@ -89,7 +89,6 @@ class Driver:
 
     def start_driver(self, origin=None, *args):
         if self._thread is None:
-            print("thread starting")
             def clear_thread(*args):
                 self._shutdown = True
 
@@ -109,7 +108,6 @@ class Driver:
         """
         while True:
             if self._shutdown:
-                print("thread died")
                 return
             if self.spooled_item is None:
                 self._fetch_next_item_from_spooler()
