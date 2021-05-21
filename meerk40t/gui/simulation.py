@@ -3,7 +3,7 @@ import wx
 from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard_50
 from .laserrender import DRAW_MODE_INVERT, DRAW_MODE_FLIPXY, LaserRender
 from .mwindow import MWindow
-from .widget import GridWidget, GuideWidget, ReticleWidget, Widget
+from .widget import GridWidget, GuideWidget, ReticleWidget, Widget, HITCHAIN_HIT, RESPONSE_DROP, RESPONSE_CONSUME
 from .zmatrix import ZMatrix
 from ..core.cutcode import CutCode
 from ..svgelements import Matrix
@@ -295,10 +295,25 @@ class SimulationWidget(Widget):
 
 class SimulationInterfaceWidget(Widget):
     def __init__(self, scene):
-        Widget.__init__(self, scene, all=False)
+        Widget.__init__(self, scene, 40, 40, 200, 70)
+        self.selected = False
 
     def process_draw(self, gc):
         font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
-        gc.DrawText(_("Simulating Burn..."), 40, 40)
+        gc.DrawText(_("Simulating Burn..."), self.left, self.top)
+        gc.SetPen(wx.BLACK_PEN)
+        gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
+    def hit(self):
+        return HITCHAIN_HIT
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftdown":
+            self.selected = True
+        if event_type == "move":
+            self.translate_self(window_pos[4], window_pos[5])
+            self.scene.context.signal("refresh_scene")
+        if event_type == "leftup":
+            self.selected = False
+        return RESPONSE_CONSUME
