@@ -142,7 +142,7 @@ class DeviceManager(MWindow):
             return
         uid = self.devices_list.GetItem(item).Text
         self.context("device activate %s\n" % uid)
-        self.context("window close DeviceManager\n")
+        self.context("timer 1 0.1 window close DeviceManager\n")
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
@@ -188,6 +188,7 @@ class DeviceManager(MWindow):
             else:
                 dlg.Destroy()
                 return
+            self.context("device delete %s\n" % spooler_input)
             self.context(
                 "spool%s -r driver -n %s outfile %s\n"
                 % (spooler_input, device_type, filename)
@@ -231,6 +232,7 @@ class DeviceManager(MWindow):
                     dlg.Destroy()
                     return
                 dlg.Destroy()
+            self.context("device delete %s\n" % spooler_input)
             self.context(
                 "spool%s -r driver -n %s tcp %s %s\n"
                 % (spooler_input, device_type, address, str(port))
@@ -239,6 +241,7 @@ class DeviceManager(MWindow):
             self.refresh_device_list()
             return
 
+        self.context("device delete %s\n" % spooler_input)
         self.context(
             "spool%s -r driver -n %s output -n %s\n"
             % (spooler_input, device_type, output_type)
