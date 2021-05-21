@@ -697,7 +697,7 @@ class Kernel:
         self.translation = lambda e: e
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
-        self.run_later = lambda listener, message: listener(message)
+        self.run_later = lambda execute, op: execute(op)
         self.state = STATE_INITIALIZE
 
         # Scheduler
@@ -868,7 +868,11 @@ class Kernel:
         self.command_boot()
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
-            run=self.delegate_messages, name="kernel.signals", interval=0.005
+            run=self.process_queue,
+            name="kernel.signals",
+            interval=0.005,
+            run_main=True,
+            conditional=lambda: not self._is_queue_processing
         )
         self.bootstrap("boot")
         self.register("control/Debug Device", self._start_debugging)
@@ -1503,12 +1507,13 @@ class Kernel:
                         if job.times < 0:
                             continue
                     try:
-                        if isinstance(jobs, int):
-                            job.process(job.args[0])
-                        elif isinstance(job.args, tuple):
-                            job.process(*job.args)
+                        if job.run_main and self.run_later is not None:
+                            self.run_later(job.process, job.args)
                         else:
-                            job.process(job.args)
+                            if job.args is None:
+                                job.process()
+                            else:
+                                job.process(*job.args)
                     except Exception:
                         import sys
 
@@ -1535,6 +1540,8 @@ class Kernel:
         args: Tuple = (),
         interval: float = 1.0,
         times: int = None,
+        run_main: bool = False,
+        conditional: Callable = None
     ) -> "Job":
         """
         Adds a job to the scheduler.
@@ -1545,7 +1552,7 @@ class Kernel:
         :param times: limit on number of executions.
         :return: Reference to the job added.
         """
-        job = Job(job_name=name, process=run, args=args, interval=interval, times=times)
+        job = Job(job_name=name, process=run, args=args, interval=interval, times=times, run_main=run_main, conditional=conditional)
         return self.schedule(job)
 
     def remove_job(self, job: "Job") -> "Job":
@@ -1588,18 +1595,6 @@ class Kernel:
         self.queue_lock.acquire(True)
         self.message_queue[code] = path, message
         self.queue_lock.release()
-
-    def delegate_messages(self) -> None:
-        """
-        Delegate the process queue to the run_later thread.
-        run_later should be a threading instance wherein all signals are delivered.
-        """
-        if self._is_queue_processing:
-            return
-        if self.run_later is not None:
-            self.run_later(self.process_queue, None)
-        else:
-            self.process_queue(None)
 
     def process_queue(self, *args) -> None:
         """
@@ -2512,9 +2507,13 @@ class Job:
         interval: float = 1.0,
         times: Optional[int] = None,
         job_name: Optional[str] = None,
+        run_main: bool = False,
+        conditional: Callable = None
     ):
         self.job_name = job_name
         self.state = STATE_INITIALIZE
+        self.run_main = run_main
+        self.conditional = conditional
 
         self.process = process
         self.args = args
@@ -2537,7 +2536,7 @@ class Job:
 
     @property
     def scheduled(self) -> bool:
-        return self._next_run is not None and time.time() >= self._next_run
+        return self._next_run is not None and time.time() >= self._next_run and (self.conditional is None or self.conditional())
 
     def cancel(self) -> None:
         self.times = -1
@@ -2551,8 +2550,10 @@ class ConsoleFunction(Job):
         interval: float = 1.0,
         times: Optional[int] = None,
         job_name: Optional[str] = None,
+        run_main: bool = False,
+        conditional: Callable = None
     ):
-        Job.__init__(self, self.__call__, None, interval, times, job_name)
+        Job.__init__(self, self.__call__, None, interval, times, job_name, run_main, conditional)
         self.context = context
         self.data = data
 
