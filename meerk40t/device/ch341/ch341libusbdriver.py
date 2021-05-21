@@ -92,6 +92,7 @@ class Ch341LibusbDriver:
                         "Your OS does not give you permissions to access USB."
                     )
                 )
+                raise PermissionError
             elif self.backend_error_code == LIBUSB_ERROR_NOT_FOUND:
                 self.channel(
                     _(

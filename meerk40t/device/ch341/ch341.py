@@ -147,6 +147,8 @@ class CH341(Module, Handler):
                         )
                     except ConnectionRefusedError:
                         pass
+                    except PermissionError:
+                        return  # OS denied permissions, no point checking anything else.
 
     def _state_change(self, state_value):
         self.context.signal("pipe;state", state_value)
