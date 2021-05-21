@@ -3350,16 +3350,6 @@ class Elemental(Modifier):
             union.extend(materials)
             return union
 
-        @self.tree_submenu(_("Save Operations"))
-        @self.tree_values(
-            "opname", values=union_materials_saved
-        )
-        @self.tree_operation(
-            _("Save As: {opname}"), node_type="branch ops", help=""
-        )
-        def save_ops(node, opname="saved", **kwargs):
-            self.context("operation save %s\n" % opname)
-
         @self.tree_submenu(_("Load Operations"))
         @self.tree_values(
             "opname", values=self.context.get_context("operations").derivable
@@ -3369,6 +3359,16 @@ class Elemental(Modifier):
         )
         def load_ops(node, opname, **kwargs):
             self.context("operation load %s\n" % opname)
+
+        @self.tree_submenu(_("Save Operations"))
+        @self.tree_values(
+            "opname", values=union_materials_saved
+        )
+        @self.tree_operation(
+            _("Save As: {opname}"), node_type="branch ops", help=""
+        )
+        def save_ops(node, opname="saved", **kwargs):
+            self.context("operation save %s\n" % opname)
 
         @self.tree_separator_before()
         @self.tree_operation(
