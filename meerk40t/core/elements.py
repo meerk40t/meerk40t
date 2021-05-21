@@ -1295,6 +1295,14 @@ class Elemental(Modifier):
 
         return decor
 
+    @staticmethod
+    def tree_separator_before():
+        def decor(func):
+            func.separate_before = True
+            return func
+
+        return decor
+
     def tree_operation(self, name, node_type=None, help=None, **kwargs):
         def decorator(func):
             @functools.wraps(func)
@@ -1316,6 +1324,7 @@ class Elemental(Modifier):
             inner.submenu = None
             inner.reference = None
             inner.separate = False
+            inner.separate_before = False
             inner.conditionals = list()
             inner.try_conditionals = list()
             inner.calcs = list()
@@ -3287,6 +3296,7 @@ class Elemental(Modifier):
             node.reverse()
             self.context.signal("rebuild_tree", 0)
 
+        @self.tree_separator_after()
         @self.tree_operation(
             _("Refresh Classification"), node_type="branch ops", help=""
         )
@@ -3297,6 +3307,28 @@ class Elemental(Modifier):
             elements.classify(list(elements.elems()))
             self.context.signal("rebuild_tree", 0)
 
+        @self.tree_submenu(_("Save Operations"))
+        @self.tree_values(
+            "opname", values=("Wood", "Acrylic", "Foam", "Leather", "Cardboard", "Cork", "Textiles", "Paper", "Save 1", "Save 2", "Save 3")
+        )
+        @self.tree_operation(
+            _("Save As: {opname}"), node_type="branch ops", help=""
+        )
+        def save_ops(node, opname="saved", **kwargs):
+            self.context.elements.save_persistent_operations("operations/%s" % opname)
+
+        @self.tree_submenu(_("Restore Operations"))
+        @self.tree_values(
+            # "opname", values=self.context.get_context("operations").derivable()
+            "opname", values=("Wood", "Acrylic", "Foam", "Leather", "Cardboard", "Cork", "Textiles", "Paper", "Save 1", "Save 2", "Save 3")
+        )
+        @self.tree_operation(
+            _("Restore: {opname}"), node_type="branch ops", help=""
+        )
+        def load_ops(node, opname, **kwargs):
+            self.context.elements.load_persistent_operations("operations/%s" % opname)
+
+        @self.tree_separator_before()
         @self.tree_operation(
             _("Set Other/Blue/Red Classify"), node_type="branch ops", help=""
         )
@@ -3699,8 +3731,20 @@ class Elemental(Modifier):
         self.listen(self)
 
     def detach(self, *a, **kwargs):
+        self.save_persistent_operations("operations/previous")
+        self.unlisten(self)
+
+    def boot(self, *a, **kwargs):
+        self.context.setting(bool, "operation_default_empty", True)
+        self.load_persistent_operations("operations/previous")
+        ops = list(self.ops())
+        if not len(ops) and self.context.operation_default_empty:
+            self.load_default()
+            return
+
+    def save_persistent_operations(self, name):
         context = self.context
-        settings = context.derive("operations")
+        settings = context.derive(name)
         settings.clear_persistent()
 
         for i, op in enumerate(self.ops()):
@@ -3721,11 +3765,10 @@ class Elemental(Modifier):
                         value = value.argb
                     op_set.write_persistent(key, value)
         settings.close_subpaths()
-        self.unlisten(self)
 
-    def boot(self, *a, **kwargs):
-        self.context.setting(bool, "operation_default_empty", True)
-        settings = self.context.derive("operations")
+    def load_persistent_operations(self, name):
+        self.clear_operations()
+        settings = self.context.get_context(name)
         subitems = list(settings.derivable())
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
@@ -3738,10 +3781,9 @@ class Elemental(Modifier):
                 ops[i] = op
             except (ValueError, IndexError):
                 ops.append(op)
-        if not len(ops) and self.context.operation_default_empty:
-            self.load_default()
-            return
         self.add_ops([o for o in ops if o is not None])
+        self.classify(list(self.elems()))
+
 
     def emphasized(self, *args):
         self._emphasized_bounds_dirty = True

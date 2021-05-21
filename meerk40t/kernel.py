@@ -214,7 +214,7 @@ class Context:
         """
         for e in list(self._kernel.contexts):
             if e.startswith(self._path):
-                self._kernel.contexts[e] = None
+                del self._kernel.contexts[e]
 
     # ==========
     # PERSISTENT SETTINGS.
@@ -920,10 +920,11 @@ class Kernel:
 
         # Detach Modifiers
         for context_name in list(self.contexts):
-            context = self.contexts[context_name]
-            if context is None:
+            try:
+                context = self.contexts[context_name]
+            except KeyError:
+                # Context was deleted by the deactivation of another context.
                 continue
-
             for attached_name in list(context.attached):
                 obj = context.attached[attached_name]
                 channel(

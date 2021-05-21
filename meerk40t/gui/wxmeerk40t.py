@@ -3254,6 +3254,8 @@ class ShadowTree:
                 )
                 continue
             if func.radio_state is not None:
+                if func.separate_before:
+                    menu_context.AppendSeparator()
                 item = menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_RADIO)
                 gui.Bind(
                     wx.EVT_MENU,
@@ -3262,6 +3264,8 @@ class ShadowTree:
                 )
                 item.Check(func.radio_state)
             else:
+                if func.separate_before:
+                    menu_context.AppendSeparator()
                 gui.Bind(
                     wx.EVT_MENU,
                     menu_functions(func, node),
