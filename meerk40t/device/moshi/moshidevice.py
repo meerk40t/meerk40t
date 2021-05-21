@@ -412,8 +412,9 @@ def get_code_string_from_moshicode(code):
 
 
 class MoshiDriver(Driver, Modifier):
-    def __init__(self, context, job_name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, job_name, channel)
+    def __init__(self, context, name=None, channel=None, *args, **kwargs):
+        context = context.get_context("moshi/driver/%s" % name)
+        Modifier.__init__(self, context, name, channel)
         Driver.__init__(self, context=context)
 
         self.next = None
@@ -831,6 +832,7 @@ class MoshiDriver(Driver, Modifier):
 
 class MoshiController(Module):
     def __init__(self, context, name, channel=None, *args, **kwargs):
+        context = context.get_context("moshi/output/%s" % name)
         Module.__init__(self, context, name, channel)
         self.state = STATE_UNKNOWN
 
