@@ -5,7 +5,6 @@
 import copy
 import os
 import sys
-import threading
 import traceback
 
 from .file.fileoutput import FileOutput
@@ -333,17 +332,13 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-# TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
-
-
-class MeerK40t(MWindow, Job):
+class MeerK40t(MWindow):
     """
     MeerK40t main window
     """
 
     def __init__(self, *args, **kwds):
         super().__init__(1200, 600, *args, **kwds)
-        Job.__init__(self, job_name="refresh_scene", process=self.refresh_scene)
 
         context = self.context
         self.root_context = context.root
@@ -355,15 +350,7 @@ class MeerK40t(MWindow, Job):
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
 
-        self._Buffer = None
-        self.screen_refresh_is_requested = False
-        self.screen_refresh_is_running = False
-        self.screen_refresh_lock = threading.Lock()
-
-        self.background_brush = wx.Brush("Grey")
         self.renderer = LaserRender(context)
-        self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
-        self.laserpath_index = 0
         self.working_file = None
 
         # Define Tree
@@ -444,7 +431,7 @@ class MeerK40t(MWindow, Job):
         self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("dev home\n"), home)
         self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("home"))
 
-        # AUI MAnager Update.
+        # AUI Manager Update.
         self._mgr.Update()
 
         # Menu Bar
@@ -461,7 +448,6 @@ class MeerK40t(MWindow, Job):
         self.__set_properties()
         self.__do_layout()
 
-        self.__scene_binds()
 
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
@@ -470,17 +456,6 @@ class MeerK40t(MWindow, Job):
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-
-        try:
-            self.scene.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
-            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
-            self.scene.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
-            self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
-            self.tree.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
-            self.tree.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
-        except AttributeError:
-            # Not WX 4.1
-            pass
 
         self.scene.SetFocus()
         self.widget_scene = None
@@ -512,8 +487,6 @@ class MeerK40t(MWindow, Job):
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
-        self.context.schedule(self)
-
         self._rotary_view = False
         self.CenterOnScreen()
 
@@ -525,25 +498,6 @@ class MeerK40t(MWindow, Job):
     @property
     def is_dark(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-
-    def __scene_binds(self):
-        self.scene.Bind(wx.EVT_PAINT, self.on_paint)
-        self.scene.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
-
-        self.scene.Bind(wx.EVT_MOTION, self.on_mouse_move)
-
-        self.scene.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
-
-        self.scene.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
-        self.scene.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
-
-        self.scene.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
-
-        self.scene.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
-        self.scene.Bind(wx.EVT_RIGHT_UP, self.on_right_mouse_up)
-
-        self.scene.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
-        self.scene.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
 
     def __kernel_initialize(self, context):
         context.gui = self
@@ -583,13 +537,14 @@ class MeerK40t(MWindow, Job):
 
         context.listen("active", self.on_active_change)
 
-        self.widget_scene = context.open("module/Scene")
+        self.widget_scene = context.open("module/Scene", self.scene)
 
         self.widget_scene.add_scenewidget(
             SelectionWidget(self.widget_scene, self.shadow_tree)
         )
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
-        self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
+        self.laserpath_widget = LaserPathWidget(self.widget_scene)
+        self.widget_scene.add_scenewidget(self.laserpath_widget)
         self.widget_scene.add_scenewidget(
             ElementsWidget(self.widget_scene, self.shadow_tree, self.renderer)
         )
@@ -622,7 +577,7 @@ class MeerK40t(MWindow, Job):
             context.threaded(foo)
 
         context.register("control/Crash Thread", test_crash_in_thread)
-        context.register("control/Clear Laserpath", self.clear_laserpath)
+        context.register("control/Clear Laserpath", self.laserpath_widget.clear_laserpath)
         context.register("control/egv export", self.egv_export)
         context.register("control/egv import", self.egv_import)
 
@@ -638,8 +593,9 @@ class MeerK40t(MWindow, Job):
         def apply_rotary_scale(*args, **kwargs):
             self.apply_rotary_scale()
 
-        self.interval = 1.0 / float(context.fps)
-        self.process()
+        # Todo: may need adjusting.
+        self.widget_scene.interval = 1.0 / float(context.fps)
+        self.widget_scene.process()
 
         context.setting(str, "file0", None)
         context.setting(str, "file1", None)
@@ -1532,8 +1488,7 @@ class MeerK40t(MWindow, Job):
         if context.print_shutdown:
             context.channel("shutdown").watch(print)
 
-        context.unschedule(self)
-        self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
+        self.context.close("module/Scene")
 
         context.unlisten("units", self.space_changed)
 
@@ -1556,12 +1511,6 @@ class MeerK40t(MWindow, Job):
         context.unlisten("active", self.on_active_change)
 
         self.context.console("quit\n")
-
-    def set_fps(self, fps):
-        if fps == 0:
-            fps = 1
-        self.context.fps = fps
-        self.interval = 1.0 / float(self.context.fps)
 
     def on_element_update(self, origin, *args):
         """
@@ -1650,10 +1599,10 @@ class MeerK40t(MWindow, Job):
 
     def on_driver_mode(self, origin, state):
         if state == 0:
-            self.background_brush = wx.Brush("Grey")
+            self.widget_scene.background_brush = wx.Brush("Grey")
         else:
-            self.background_brush = wx.Brush("Red")
-        self.request_refresh_for_animation()
+            self.widget_scene.background_brush = wx.Brush("Red")
+        self.widget_scene.request_refresh_for_animation()
 
     def on_export_signal(self, origin, frame):
         image_width, image_height, frame = frame
@@ -1907,22 +1856,6 @@ class MeerK40t(MWindow, Job):
             dlg.ShowModal()
             dlg.Destroy()
 
-    def on_paint(self, event):
-        try:
-            if self._Buffer is None:
-                self.update_buffer_ui_thread()
-            wx.BufferedPaintDC(self.scene, self._Buffer)
-        except RuntimeError:
-            pass
-
-    def set_buffer(self):
-        width, height = self.scene.ClientSize
-        if width <= 0:
-            width = 1
-        if height <= 0:
-            height = 1
-        self._Buffer = wx.Bitmap(width, height)
-
     def on_size(self, event):
         if self.context is None:
             return
@@ -1931,16 +1864,18 @@ class MeerK40t(MWindow, Job):
         self.request_refresh()
 
     def update_position(self, origin, pos):
-        self.laserpath[0][self.laserpath_index][0] = pos[0]
-        self.laserpath[0][self.laserpath_index][1] = pos[1]
-        self.laserpath[1][self.laserpath_index][0] = pos[2]
-        self.laserpath[1][self.laserpath_index][1] = pos[3]
+        laserpath = self.laserpath_widget.laserpath
+        index = self.laserpath_widget.laserpath_index
+        laserpath[0][index][0] = pos[0]
+        laserpath[0][index][1] = pos[1]
+        laserpath[1][index][0] = pos[2]
+        laserpath[1][index][1] = pos[3]
         self.context._reticle_x = pos[2]
         self.context._reticle_y = pos[3]
-        self.laserpath_index += 1
-        self.laserpath_index %= len(self.laserpath[0])
-        # self.request_refresh()
-        self.request_refresh_for_animation()
+        index += 1
+        index %= len(laserpath[0])
+        self.laserpath_widget.laserpath_index = index
+        self.widget_scene.request_refresh_for_animation()
 
     def space_changed(self, origin, *args):
         self.ribbon_position_units = self.context.units_index
@@ -1956,185 +1891,14 @@ class MeerK40t(MWindow, Job):
 
     def on_emphasized_elements_changed(self, origin, *args):
         self.update_ribbon_position()
-        self.clear_laserpath()
+        self.laserpath_widget.clear_laserpath()
         self.request_refresh(origin)
+
+    def request_refresh(self, *args):
+        self.widget_scene.request_refresh(*args)
 
     def on_element_modified(self, *args):
         self.update_ribbon_position()
-
-    def clear_laserpath(self):
-        self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
-        self.laserpath_index = 0
-
-    def on_erase(self, event):
-        pass
-
-    def request_refresh_for_animation(self):
-        """Called on the various signals trying to animate the screen."""
-        try:
-            if self.context.draw_mode & DRAW_MODE_ANIMATE == 0:
-                self.request_refresh()
-        except AttributeError:
-            pass
-
-    def request_refresh(self, origin=None, *args):
-        """Request an update to the scene."""
-        try:
-            if self.context.draw_mode & DRAW_MODE_REFRESH == 0:
-                self.screen_refresh_is_requested = True
-        except AttributeError:
-            pass
-
-    def refresh_scene(self):
-        """Called by the Scheduler at a given the specified framerate."""
-        if self.screen_refresh_is_requested and not self.screen_refresh_is_running:
-            self.screen_refresh_is_running = True
-            if self.screen_refresh_lock.acquire(timeout=1):
-                if not wx.IsMainThread():
-                    wx.CallAfter(self._refresh_in_ui)
-                else:
-                    self._refresh_in_ui()
-            else:
-                self.screen_refresh_is_requested = False
-                self.screen_refresh_is_running = False
-
-    def _refresh_in_ui(self):
-        """Called by refresh_scene() in the UI thread."""
-        if self.context is None:
-            return
-        self.update_buffer_ui_thread()
-        self.scene.Refresh()
-        self.scene.Update()
-        self.screen_refresh_is_requested = False
-        self.screen_refresh_is_running = False
-        self.screen_refresh_lock.release()
-
-    def update_buffer_ui_thread(self):
-        """Performs the redraw of the data in the UI thread."""
-        dm = self.context.draw_mode
-        if self._Buffer is None or self._Buffer.GetSize() != self.scene.ClientSize:
-            self.set_buffer()
-        dc = wx.MemoryDC()
-        dc.SelectObject(self._Buffer)
-        dc.SetBackground(self.background_brush)
-        dc.Clear()
-        w, h = dc.Size
-        if dm & DRAW_MODE_FLIPXY != 0:
-            dc.SetUserScale(-1, -1)
-            dc.SetLogicalOrigin(w, h)
-        gc = wx.GraphicsContext.Create(dc)
-        gc.Size = dc.Size
-
-        gc.laserpath = self.laserpath
-        font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetFont(font, wx.BLACK)
-        if self.widget_scene is not None:
-            self.widget_scene.draw(gc)
-        if dm & DRAW_MODE_INVERT != 0:
-            dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
-        gc.Destroy()
-        del dc
-
-    # Mouse Events.
-
-    def on_mousewheel(self, event):
-        if self.scene.HasCapture():
-            return
-        rotation = event.GetWheelRotation()
-        if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not event.ShiftDown():
-            if event.HasAnyModifiers():
-                if rotation > 1:
-                    self.widget_scene.event(event.GetPosition(), "wheelup_ctrl")
-                elif rotation < -1:
-                    self.widget_scene.event(event.GetPosition(), "wheeldown_ctrl")
-            else:
-                if rotation > 1:
-                    self.widget_scene.event(event.GetPosition(), "wheelup")
-                elif rotation < -1:
-                    self.widget_scene.event(event.GetPosition(), "wheeldown")
-        else:
-            if rotation > 1:
-                self.widget_scene.event(event.GetPosition(), "wheelleft")
-            elif rotation < -1:
-                self.widget_scene.event(event.GetPosition(), "wheelright")
-
-    def on_mousewheel_zoom(self, event):
-        if self.scene.HasCapture():
-            return
-        rotation = event.GetWheelRotation()
-        if self.context.mouse_zoom_invert:
-            rotation = -rotation
-        if rotation > 1:
-            self.widget_scene.event(event.GetPosition(), "wheelup")
-        elif rotation < -1:
-            self.widget_scene.event(event.GetPosition(), "wheeldown")
-
-    def on_mouse_middle_down(self, event):
-        self.scene.SetFocus()
-        if not self.scene.HasCapture():
-            self.scene.CaptureMouse()
-        self.widget_scene.event(event.GetPosition(), "middledown")
-
-    def on_mouse_middle_up(self, event):
-        if self.scene.HasCapture():
-            self.scene.ReleaseMouse()
-        self.widget_scene.event(event.GetPosition(), "middleup")
-
-    def on_left_mouse_down(self, event):
-        self.scene.SetFocus()
-        if not self.scene.HasCapture():
-            self.scene.CaptureMouse()
-        self.widget_scene.event(event.GetPosition(), "leftdown")
-
-    def on_left_mouse_up(self, event):
-        if self.scene.HasCapture():
-            self.scene.ReleaseMouse()
-        self.widget_scene.event(event.GetPosition(), "leftup")
-
-    def on_mouse_double_click(self, event):
-        if self.scene.HasCapture():
-            return
-        self.widget_scene.event(event.GetPosition(), "doubleclick")
-
-    def on_mouse_move(self, event: wx.MouseEvent):
-        if event.Moving():
-            self.widget_scene.event(event.GetPosition(), "hover")
-        else:
-            self.widget_scene.event(event.GetPosition(), "move")
-
-    def on_right_mouse_down(self, event):
-        self.scene.SetFocus()
-        if event.AltDown():
-            self.widget_scene.event(event.GetPosition(), "rightdown+alt")
-        elif event.ControlDown():
-            self.widget_scene.event(event.GetPosition(), "rightdown+control")
-        else:
-            self.widget_scene.event(event.GetPosition(), "rightdown")
-
-    def on_right_mouse_up(self, event):
-        self.widget_scene.event(event.GetPosition(), "rightup")
-
-    def on_magnify_mouse(self, event):
-        magnify = event.GetMagnification()
-        if magnify > 0:
-            self.widget_scene.event(event.GetPosition(), "zoom-in")
-        if magnify < 0:
-            self.widget_scene.event(event.GetPosition(), "zoom-out")
-
-    def on_gesture(self, event):
-        """
-        This code requires WXPython 4.1 and the bind will fail otherwise.
-        """
-        if event.IsGestureStart():
-            self.widget_scene.event(event.GetPosition(), "gesture-start")
-        elif event.IsGestureEnd():
-            self.widget_scene.event(event.GetPosition(), "gesture-end")
-        else:
-            try:
-                zoom = event.GetZoomFactor()
-            except AttributeError:
-                zoom = 1.0
-            self.widget_scene.event(event.GetPosition(), "zoom %f" % zoom)
 
     def on_focus_lost(self, event):
         self.context.console("-laser\nend\n")
@@ -2335,7 +2099,7 @@ class MeerK40t(MWindow, Job):
         context = self.context
         self.working_file = None
         context.elements.clear_all()
-        self.clear_laserpath()
+        self.laserpath_widget.clear_laserpath()
         self.request_refresh()
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -2449,7 +2213,7 @@ class MeerK40t(MWindow, Job):
         if dlg.ShowModal() == wx.ID_OK:
             fps = dlg.GetValue()
             try:
-                self.set_fps(int(fps))
+                self.widget_scene.set_fps(int(fps))
             except ValueError:
                 pass
         dlg.Destroy()
