@@ -3346,11 +3346,11 @@ class Elemental(Modifier):
         materials = ["Wood", "Acrylic", "Foam", "Leather", "Cardboard", "Cork", "Textiles", "Paper", "Save-1", "Save-2", "Save-3"]
 
         def union_materials_saved():
-            union = [d for d in self.context.get_context("operations").derivable() if d not in materials]
+            union = [d for d in self.context.get_context("operations").derivable() if d not in materials and d != "previous"]
             union.extend(materials)
             return union
 
-        @self.tree_submenu(_("Load Operations"))
+        @self.tree_submenu(_("Use"))
         @self.tree_values(
             "opname", values=self.context.get_context("operations").derivable
         )
@@ -3360,29 +3360,31 @@ class Elemental(Modifier):
         def load_ops(node, opname, **kwargs):
             self.context("operation load %s\n" % opname)
 
-        @self.tree_submenu(_("Save Operations"))
+        @self.tree_submenu(_("Use"))
+        @self.tree_operation(
+            _("Other/Blue/Red"), node_type="branch ops", help=""
+        )
+        def default_classifications(node, **kwargs):
+            self.context.elements.load_default()
+
+        @self.tree_submenu(_("Use"))
+        @self.tree_operation(
+            _("Basic"), node_type="branch ops", help=""
+        )
+        def basic_classifications(node, **kwargs):
+            self.context.elements.load_default2()
+
+        @self.tree_submenu(_("Save"))
         @self.tree_values(
             "opname", values=union_materials_saved
         )
         @self.tree_operation(
-            _("Save As: {opname}"), node_type="branch ops", help=""
+            _("{opname}"), node_type="branch ops", help=""
         )
         def save_ops(node, opname="saved", **kwargs):
             self.context("operation save %s\n" % opname)
 
         @self.tree_separator_before()
-        @self.tree_operation(
-            _("Set Other/Blue/Red Classify"), node_type="branch ops", help=""
-        )
-        def default_classifications(node, **kwargs):
-            self.context.elements.load_default()
-
-        @self.tree_operation(
-            _("Set Basic Classification"), node_type="branch ops", help=""
-        )
-        def basic_classifications(node, **kwargs):
-            self.context.elements.load_default2()
-
         @self.tree_operation(_("Add Operation"), node_type="branch ops", help="")
         def add_operation_operation(node, **kwargs):
             self.context.elements.add_op(LaserOperation())
