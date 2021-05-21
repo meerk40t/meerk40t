@@ -1418,13 +1418,18 @@ class Kernel:
         :return: The thread object created.
         """
         self.thread_lock.acquire(True)  # Prevent dup-threading.
-        if thread_name is None:
-            thread_name = func.__name__
-        if thread_name in self.threads:
-            # Thread is already running.
-            raise PermissionError("Thread is already running!")
         channel = self.channel("threads")
         _ = self.translation
+        if thread_name is None:
+            thread_name = func.__name__
+        try:
+            old_thread = self.threads[thread_name]
+            channel(_("Thread: %s already exists. Waiting..." % thread_name))
+            old_thread.join()
+            # We must wait for the old thread to complete before running. Lock.
+        except KeyError:
+            # No current thread
+            pass
         thread = Thread(name=thread_name)
         channel(_("Thread: %s, Initialized" % thread_name))
 
