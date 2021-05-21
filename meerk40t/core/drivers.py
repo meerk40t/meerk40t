@@ -79,20 +79,17 @@ class Driver:
         self.rapid_override_speed_y = 50.0
         self._thread = None
         self._shutdown = False
-        self.context._kernel.listen("lifecycle;ready", '', self.on_driver_ready)
-        self.context._kernel.listen("lifecycle;shutdown", '', self.on_shutdown)
+        self.context._kernel.listen("lifecycle;ready", '', self.start_driver)
+        self.context._kernel.listen("lifecycle;shutdown", '', self.shutdown)
 
-    def on_shutdown(self, *args, **kwargs):
-        self.context._kernel.unlisten("lifecycle;ready", '', self.on_driver_ready)
-        self.context._kernel.unlisten("lifecycle;shutdown", '', self.on_shutdown)
-        self.thread = None
+    def shutdown(self, *args, **kwargs):
+        self.context._kernel.unlisten("lifecycle;ready", '', self.start_driver)
+        self.context._kernel.unlisten("lifecycle;shutdown", '', self.shutdown)
+        self._shutdown = True
 
-    def on_driver_ready(self, origin, *args):
-        self.start_driver()
-
-    def start_driver(self, *args):
+    def start_driver(self, origin=None, *args):
         if self._thread is None:
-
+            print("thread starting")
             def clear_thread(*args):
                 self._shutdown = True
 
@@ -112,6 +109,7 @@ class Driver:
         """
         while True:
             if self._shutdown:
+                print("thread died")
                 return
             if self.spooled_item is None:
                 self._fetch_next_item_from_spooler()

@@ -36,6 +36,12 @@ class Spooler:
     def __repr__(self):
         return "Spooler(%s)" % str(self.name)
 
+    def __del__(self):
+        self.name = None
+        self.queue_lock = None
+        self._queue = None
+        self.next = None
+
     def as_device(self):
         links = []
         obj = self

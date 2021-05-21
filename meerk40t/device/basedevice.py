@@ -40,7 +40,7 @@ def plugin(kernel, lifecycle=None):
 
         root.device = device
 
-        @kernel.console_option("out", "o", type=bool, action="store_true", help="match on output rather than driver")
+        @kernel.console_option("out", "o", action="store_true", help="match on output rather than driver")
         @kernel.console_command(
             "dev",
             help="delegate commands to currently selected device by input/driver",
@@ -162,35 +162,6 @@ def plugin(kernel, lifecycle=None):
             channel("----------")
             return "device", data
 
-        #
-        # @kernel.console_command(
-        #     "add",
-        #     help="add <device-string>",
-        #     input_type="device",
-        # )
-        # def add(channel, _, data, remainder, **kwargs):
-        #     if not remainder.startswith("spool") and not remainder.startswith("input"):
-        #         raise SyntaxError("Device string must start with 'spool' or 'input'")
-        #     index = 0
-        #     while hasattr(data, "device_%d" % index) or 'device/%d' % index in root.registered:
-        #         index += 1
-        #     setattr(data, "device_%d" % index, remainder)
-        #
-        # @kernel.console_command(
-        #     "init",
-        #     help="init <device-string>",
-        #     input_type="device",
-        # )
-        # def init(channel, _, data, remainder, **kwargs):
-        #     device_context = kernel.get_context("devices")
-        #     if not remainder.startswith("spool") and not remainder.startswith("input"):
-        #         raise SyntaxError("Device string must start with 'spool' or 'input'")
-        #     index = 0
-        #     while hasattr(device_context, "device_%d" % index) or 'device/%d' % index in root.registered:
-        #         index += 1
-        #     setattr(device_context, "device_%d" % index, remainder)
-        #     kernel.root(remainder + '\n')
-
         @kernel.console_argument(
             "index", type=int, help="Index of device deleted"
         )
@@ -203,6 +174,19 @@ def plugin(kernel, lifecycle=None):
             device_context = kernel.get_context("devices")
             try:
                 setattr(device_context, "device_%d" % index, "")
+                device = root.registered["device/%d" % index]
+                if device is not None:
+                    spooler, driver, output = device
+                    if driver is not None:
+                        try:
+                            driver.shutdown()
+                        except AttributeError:
+                            pass
+                    if output is not None:
+                        try:
+                            output.finalize()
+                        except AttributeError:
+                            pass
                 root.registered["device/%d" % index] = [None, None, None]
             except (KeyError, ValueError):
                 raise SyntaxError("Invalid device-string index.")
