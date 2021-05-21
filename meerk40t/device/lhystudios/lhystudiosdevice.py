@@ -1585,9 +1585,8 @@ class LhystudiosController:
         """
         if self._thread is None or not self._thread.is_alive():
             self._thread = self.context.threaded(
-                self._thread_data_send, thread_name="LhyPipe(%s)" % (self.context._path)
+                self._thread_data_send, thread_name="LhyPipe(%s)" % (self.context._path), result=self.stop
             )
-            self._thread.stop = self.stop
             self.update_state(STATE_INITIALIZE)
 
     def _pause_busy(self):
@@ -1643,6 +1642,7 @@ class LhystudiosController:
     def stop(self):
         self.abort()
         self._thread.join()  # Wait until stop completes before continuing.
+        self._thread = None
 
     def update_state(self, state):
         if state == self.state:
