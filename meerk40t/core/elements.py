@@ -1196,6 +1196,11 @@ class Elemental(Modifier):
             iterator = func.values
             if iterator is None:
                 iterator = [0]
+            else:
+                try:
+                    iterator = list(iterator())
+                except TypeError:
+                    pass
             for i, value in enumerate(iterator):
                 func_dict["iterator"] = i
                 func_dict["value"] = value
@@ -1409,6 +1414,37 @@ class Elemental(Modifier):
         # ==========
         # OPERATION SUBCOMMANDS
         # ==========
+
+        @context.console_argument("name", help="name to save the operation under")
+        @context.console_command(
+            "save",
+            help="Save current operations to persistent settings",
+            input_type="ops",
+            output_type="ops",
+        )
+        def save(command, channel, _, data=None, name=None, **kwargs):
+            if name is None:
+                raise SyntaxError
+            if '/' in name:
+                raise SyntaxError
+            self.save_persistent_operations(name)
+            return "ops", list(self.ops())
+
+        @context.console_argument("name", help="name to save the operation under")
+        @context.console_command(
+            "load",
+            help="Load operations from persistent settings",
+            input_type="ops",
+            output_type="ops",
+        )
+        def save(command, channel, _, data=None, name=None, **kwargs):
+            if name is None:
+                raise SyntaxError
+            if '/' in name:
+                raise SyntaxError
+            self.load_persistent_operations(name)
+            return "ops", list(self.ops())
+
         @context.console_command(
             "select",
             help="Set these values as the selection.",
@@ -3307,26 +3343,32 @@ class Elemental(Modifier):
             elements.classify(list(elements.elems()))
             self.context.signal("rebuild_tree", 0)
 
+        materials = ["Wood", "Acrylic", "Foam", "Leather", "Cardboard", "Cork", "Textiles", "Paper", "Save-1", "Save-2", "Save-3"]
+
+        def union_materials_saved():
+            union = [d for d in self.context.get_context("operations").derivable() if d not in materials]
+            union.extend(materials)
+            return union
+
         @self.tree_submenu(_("Save Operations"))
         @self.tree_values(
-            "opname", values=("Wood", "Acrylic", "Foam", "Leather", "Cardboard", "Cork", "Textiles", "Paper", "Save 1", "Save 2", "Save 3")
+            "opname", values=union_materials_saved
         )
         @self.tree_operation(
             _("Save As: {opname}"), node_type="branch ops", help=""
         )
         def save_ops(node, opname="saved", **kwargs):
-            self.context.elements.save_persistent_operations("operations/%s" % opname)
+            self.context("operation save %s\n" % opname)
 
-        @self.tree_submenu(_("Restore Operations"))
+        @self.tree_submenu(_("Load Operations"))
         @self.tree_values(
-            # "opname", values=self.context.get_context("operations").derivable()
-            "opname", values=("Wood", "Acrylic", "Foam", "Leather", "Cardboard", "Cork", "Textiles", "Paper", "Save 1", "Save 2", "Save 3")
+            "opname", values=self.context.get_context("operations").derivable
         )
         @self.tree_operation(
-            _("Restore: {opname}"), node_type="branch ops", help=""
+            _("Load: {opname}"), node_type="branch ops", help=""
         )
         def load_ops(node, opname, **kwargs):
-            self.context.elements.load_persistent_operations("operations/%s" % opname)
+            self.context("operation load %s\n" % opname)
 
         @self.tree_separator_before()
         @self.tree_operation(
@@ -3731,12 +3773,12 @@ class Elemental(Modifier):
         self.listen(self)
 
     def detach(self, *a, **kwargs):
-        self.save_persistent_operations("operations/previous")
+        self.save_persistent_operations("previous")
         self.unlisten(self)
 
     def boot(self, *a, **kwargs):
         self.context.setting(bool, "operation_default_empty", True)
-        self.load_persistent_operations("operations/previous")
+        self.load_persistent_operations("previous")
         ops = list(self.ops())
         if not len(ops) and self.context.operation_default_empty:
             self.load_default()
@@ -3744,7 +3786,7 @@ class Elemental(Modifier):
 
     def save_persistent_operations(self, name):
         context = self.context
-        settings = context.derive(name)
+        settings = context.derive("operations/" + name)
         settings.clear_persistent()
 
         for i, op in enumerate(self.ops()):
@@ -3768,7 +3810,7 @@ class Elemental(Modifier):
 
     def load_persistent_operations(self, name):
         self.clear_operations()
-        settings = self.context.get_context(name)
+        settings = self.context.get_context("operations/" + name)
         subitems = list(settings.derivable())
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
