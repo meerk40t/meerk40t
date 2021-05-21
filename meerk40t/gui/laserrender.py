@@ -285,8 +285,7 @@ class LaserRender:
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, path, zoomscale=zoomscale, width_scale=width_scale)
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self.pen.SetWidth(1)
-            gc.SetPen(self.pen)
+            self.set_pen(gc, path.stroke, width=1)
         self.set_element_brush(gc, path)
         if draw_mode & DRAW_MODE_FILLS == 0 and path.fill is not None:
             gc.FillPath(node.cache)
