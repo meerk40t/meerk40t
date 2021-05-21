@@ -1160,6 +1160,7 @@ class RasterScripts:
             }
         )
         ops.append({"name": "dither", "enable": True, "type": "Floyd-Steinberg"})
+        return ops
 
     @staticmethod
     def raster_script_xin():
