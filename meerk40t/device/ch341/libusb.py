@@ -116,7 +116,7 @@ class Handler(CH341Handler):
                 connection.close()
                 raise ConnectionRefusedError("Chip Version Wrong.")
         if bus != -1:
-            match_bus = self.driver.devices[val].bus
+            match_bus = connection.bus
             if bus != match_bus:
                 # Rejected.
                 self.channel(
@@ -125,7 +125,7 @@ class Handler(CH341Handler):
                 connection.close()
                 raise ConnectionRefusedError("USB Bus Wrong.")
         if address != -1:
-            match_address = self.driver.devices[val].address
+            match_address = connection.address
             if address != match_address:
                 # Rejected
                 self.channel(
