@@ -534,7 +534,7 @@ class MeerK40t(MWindow):
 
         context.listen("active", self.on_active_change)
 
-        self.widget_scene = context.open("module/Scene", self.scene)
+        self.widget_scene = context.open_as("module/Scene", "Scene", self.scene)
 
         self.widget_scene.add_scenewidget(
             SelectionWidget(self.widget_scene, self.shadow_tree)

@@ -50,7 +50,7 @@ BUFFER = 10.0
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
 class Scene(Module, Job):
-    def __init__(self, context, path, gui):
+    def __init__(self, context, path, gui, **kwargs):
         Module.__init__(self, context, path)
         Job.__init__(self, job_name="refresh_scene%s" % path, process=self.refresh_scene)
         self.gui = gui
@@ -94,6 +94,7 @@ class Scene(Module, Job):
         self.context.unschedule(self)
         for e in self.context.elements._tree.flat():
             e.unregister()
+        self._Buffer = None
 
     def establish_binds(self):
         gui_object = self.gui

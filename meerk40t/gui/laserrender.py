@@ -236,7 +236,7 @@ class LaserRender:
                 if cache is None:
                     # max_allowed = 2048
                     cut.c_width, cut.c_height = image.image.size
-                    cut.cache = self.make_thumbnail(image.image)
+                    cut.cache = self.make_thumbnail(image.image, dewhite=True)
                     cut.cache_id = id(image.image)
                 gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
                 gc.PopState()
@@ -453,7 +453,7 @@ class LaserRender:
             return bmp
         return image
 
-    def make_thumbnail(self, pil_data, maximum=None, width=None, height=None):
+    def make_thumbnail(self, pil_data, maximum=None, width=None, height=None, dewhite=False):
         """Resizes the given pil image into wx.Bitmap object that fits the constraints."""
         image_width, image_height = pil_data.size
         if width is not None and height is None:
@@ -473,6 +473,13 @@ class LaserRender:
             pil_data = pil_data.copy().resize((width, height))
         else:
             pil_data = pil_data.copy()
+        if dewhite:
+            img = pil_data.convert('L')
+            black = Image.new("L", img.size, color="black")
+            img = img.point(lambda e: 255 - e)
+            black.putalpha(img)
+            pil_data = black
+
         if pil_data.mode != "RGBA":
             pil_data = pil_data.convert("RGBA")
         pil_bytes = pil_data.tobytes()
