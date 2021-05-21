@@ -78,7 +78,7 @@ class LhystudiosControllerGui(MWindow):
         self.text_device_version = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=25)
+        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
         self.button_controller_control = wx.Button(self, wx.ID_ANY, "Start Controller")
         self.text_controller_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
