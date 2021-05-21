@@ -522,10 +522,6 @@ class MeerK40t(MWindow, Job):
             self._mgr.LoadPerspective(self.context.perspective)
         self.on_rebuild_tree_request()
 
-        self.left_mouse_down_processed = False
-        self.middle_mouse_down_processed = False
-        self.right_mouse_down_processed = False
-
     @property
     def is_dark(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
@@ -2074,31 +2070,23 @@ class MeerK40t(MWindow, Job):
             self.widget_scene.event(event.GetPosition(), "wheeldown")
 
     def on_mouse_middle_down(self, event):
-        self.middle_mouse_down_processed = True
         self.scene.SetFocus()
         if not self.scene.HasCapture():
             self.scene.CaptureMouse()
         self.widget_scene.event(event.GetPosition(), "middledown")
 
     def on_mouse_middle_up(self, event):
-        if not self.middle_mouse_down_processed:
-            return
-        self.middle_mouse_down_processed = False
         if self.scene.HasCapture():
             self.scene.ReleaseMouse()
         self.widget_scene.event(event.GetPosition(), "middleup")
 
     def on_left_mouse_down(self, event):
-        self.left_mouse_down_processed = True
         self.scene.SetFocus()
         if not self.scene.HasCapture():
             self.scene.CaptureMouse()
         self.widget_scene.event(event.GetPosition(), "leftdown")
 
     def on_left_mouse_up(self, event):
-        if not self.left_mouse_down_processed:
-            return
-        self.left_mouse_down_processed = False
         if self.scene.HasCapture():
             self.scene.ReleaseMouse()
         self.widget_scene.event(event.GetPosition(), "leftup")
@@ -2108,14 +2096,13 @@ class MeerK40t(MWindow, Job):
             return
         self.widget_scene.event(event.GetPosition(), "doubleclick")
 
-    def on_mouse_move(self, event):
-        if not self.left_mouse_down_processed and not self.right_mouse_down_processed and not self.middle_mouse_down_processed:
+    def on_mouse_move(self, event: wx.MouseEvent):
+        if event.Moving():
             self.widget_scene.event(event.GetPosition(), "hover")
         else:
             self.widget_scene.event(event.GetPosition(), "move")
 
     def on_right_mouse_down(self, event):
-        self.right_mouse_down_processed = True
         self.scene.SetFocus()
         if event.AltDown():
             self.widget_scene.event(event.GetPosition(), "rightdown+alt")
@@ -2125,9 +2112,6 @@ class MeerK40t(MWindow, Job):
             self.widget_scene.event(event.GetPosition(), "rightdown")
 
     def on_right_mouse_up(self, event):
-        if not self.right_mouse_down_processed:
-            return
-        self.right_mouse_down_processed = False
         self.widget_scene.event(event.GetPosition(), "rightup")
 
     def on_magnify_mouse(self, event):
