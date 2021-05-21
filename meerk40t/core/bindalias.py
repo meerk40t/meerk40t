@@ -147,6 +147,7 @@ class BindAlias(Modifier):
 
     def default_keymap(self):
         self.keymap["escape"] = "pause"
+        self.keymap["pause"] = "pause"
         self.keymap["d"] = "+right"
         self.keymap["a"] = "+left"
         self.keymap["w"] = "+up"
@@ -198,7 +199,6 @@ class BindAlias(Modifier):
         self.keymap["control+alt+g"] = "image wizard Gold"
         self.keymap["control+alt+x"] = "image wizard Xin"
         self.keymap["control+alt+s"] = "image wizard Stipo"
-        self.keymap["pause"] = "pause"
         self.keymap["home"] = "home"
         self.keymap["control+z"] = "reset"
         self.keymap["control+alt+shift+escape"] = "reset_bind_alias"
