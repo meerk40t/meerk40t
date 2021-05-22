@@ -113,8 +113,7 @@ class RuidaEmulator(Module):
         self.magic = 0x88  # 0x11 for the 634XG
         # Should automatically shift encoding if wrong.
         # self.magic = 0x38
-        self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
-        self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
+        self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(self.magic)
 
         self.filename = ""
         self.power1_min = 0
@@ -211,6 +210,10 @@ class RuidaEmulator(Module):
         return RuidaEmulator.decode14(data)
 
     @staticmethod
+    def parse_mem(data):
+        return RuidaEmulator.decode14(data)
+
+    @staticmethod
     def parse_filenumber(data):
         return RuidaEmulator.decode14(data)
 
@@ -267,13 +270,11 @@ class RuidaEmulator(Module):
         if len(sent_data) > 3:
             if self.magic != 0x88 and sent_data[2] == 0xD4:
                 self.magic = 0x88
-                self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
-                self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
+                self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(self.magic)
                 self.ruida_channel("Setting magic to 0x88")
             if self.magic != 0x11 and sent_data[2] == 0x4B:
                 self.magic = 0x11
-                self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
-                self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
+                self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(self.magic)
                 self.ruida_channel("Setting magic to 0x11")
 
         if checksum_check == checksum_sum:
@@ -312,6 +313,8 @@ class RuidaEmulator(Module):
         for array in self.parse_commands(data):
             try:
                 self.process(array)
+            except SyntaxError:
+                self.ruida_channel("Process Failure: %s" % str(bytes(array).hex()))
             except Exception as e:
                 self.ruida_channel("Crashed processing: %s" % str(bytes(array).hex()))
                 raise e
@@ -330,10 +333,9 @@ class RuidaEmulator(Module):
         respond_desc = None
         start_x = self.x
         start_y = self.y
-
         if array[0] < 0x80:
             self.ruida_channel("NOT A COMMAND: %d" % array[0])
-            raise ValueError
+            raise SyntaxError
         elif array[0] == 0x80:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:
@@ -345,7 +347,7 @@ class RuidaEmulator(Module):
         elif array[0] == 0x88:  # 0b10001000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            desc = "Move Absolute (%f, %f)" % (self.x, self.y)
+            desc = "Move Absolute (%f mil, %f mil)" % (self.x / um_per_mil, self.y / um_per_mil)
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
                 dx = self.relcoord(array[1:3])
@@ -777,14 +779,20 @@ class RuidaEmulator(Module):
                 self.u += coord
                 desc = "Move %s U: %f (%f,%f)" % (param, coord, self.x, self.y)
             elif array[1] == 0x10:
-                desc = "Home %s XY" % param
-                self.x = 0
-                self.y = 0
+                self.x = self.abscoord(array[3:8])
+                self.y = self.abscoord(array[8:13])
+                desc = "Home %s XY (%f, %f)" % (param, self.x / um_per_mil, self.y / um_per_mil)
+                # self.x = 0
+                # self.y = 0
                 if self.control:
-                    self.context("home\n")
+                    if 'Origin' in param:
+                        self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
+                    else:
+                        self.context("home\n")
         elif array[0] == 0xDA:
             v = 0
             name = None
+            mem = self.parse_mem(array[2:4])
             if array[2] == 0x00:
                 if array[3] == 0x04:
                     name = "IOEnable"
@@ -1040,6 +1048,8 @@ class RuidaEmulator(Module):
                     name = "Card Language"
                 elif 0x01 <= array[3] <= 0x07:
                     name = "PC Lock %d" % array[3]
+                elif array[3] == 0x0f:
+                    name = "Blower"
             elif array[2] == 0x04:
                 if array[3] == 0x00:
                     name = "Machine Status"
@@ -1052,7 +1062,11 @@ class RuidaEmulator(Module):
                     name = "Total Work Number"
                 elif array[3] == 0x05:
                     name = "Total Doc Number"
-                    v = 0
+                    from glob import glob
+                    from os.path import realpath, join
+                    files = [name for name in glob(join(realpath('.'), '*.rd'))]
+                    print(files)
+                    v = len(files)
                 elif array[3] == 0x07:
                     name = "Free Space On System"
                     from shutil import disk_usage
@@ -1094,17 +1108,19 @@ class RuidaEmulator(Module):
             elif array[2] == 0x06:
                 if array[3] == 0x20:
                     name = "?-FileSize-?"
+
             if array[1] == 0x00:
                 if name is None:
                     name = "Unmapped"
-                desc = "Get %02x %02x (%s)" % (array[2], array[3], name)
+                desc = "Get %02x %02x (mem: %04x) (%s)" % (array[2], array[3], mem, name)
                 if isinstance(v, int):
                     v = int(v)
                     vencode = RuidaEmulator.encode32(v)
                     respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = "Respond %02x %02x (%s) = %d (0x%08x)" % (
+                    respond_desc = "Respond %02x %02x (mem: %04x) (%s) = %d (0x%08x)" % (
                         array[2],
                         array[3],
+                        mem,
                         name,
                         v,
                         v,
@@ -1112,9 +1128,10 @@ class RuidaEmulator(Module):
                 else:
                     vencode = v
                     respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = "Respond %02x %02x (%s) = %s" % (
+                    respond_desc = "Respond %02x %02x (mem: %04x) (%s) = %s" % (
                         array[2],
                         array[3],
+                        mem,
                         name,
                         str(vencode),
                     )
@@ -1123,9 +1140,10 @@ class RuidaEmulator(Module):
                 value1 = array[9:14]
                 v0 = self.decodeu35(value0)
                 v1 = self.decodeu35(value1)
-                desc = "Set %02x %02x (%s) = %d (0x%08x) %d (0x%08x)" % (
+                desc = "Set %02x %02x (mem: %04x) (%s) = %d (0x%08x) %d (0x%08x)" % (
                     array[2],
                     array[3],
+                    mem,
                     name,
                     v0,
                     v0,
@@ -1258,8 +1276,9 @@ class RuidaEmulator(Module):
                 desc = "%d, MaxPointEx(%f, %f)" % (part, c_x, c_y)
         elif array[0] == 0xE8:
             if array[1] == 0x00:
-                v1 = self.decodeu35(array[2:7])
-                v2 = self.decodeu35(array[7:12])
+                # e8 00 00 00 00 00
+                v1 = self.parse_filenumber(array[2:4])
+                v2 = self.parse_filenumber(array[4:6])
                 desc = "Delete Document %d %d" % (v1, v2)
             elif array[1] == 0x01:
                 filenumber = self.parse_filenumber(array[2:4])
@@ -1359,21 +1378,45 @@ class RuidaEmulator(Module):
             array.append(self.lut_swizzle[b])
         return bytes(array)
 
-    def swizzle_byte(self, b):
+    @staticmethod
+    def swizzle_byte(b, magic):
         b ^= (b >> 7) & 0xFF
         b ^= (b << 7) & 0xFF
         b ^= (b >> 7) & 0xFF
-        b ^= self.magic
+        b ^= magic
         b = (b + 1) & 0xFF
         return b
 
-    def unswizzle_byte(self, b):
+    @staticmethod
+    def unswizzle_byte(b, magic):
         b = (b - 1) & 0xFF
-        b ^= self.magic
+        b ^= magic
         b ^= (b >> 7) & 0xFF
         b ^= (b << 7) & 0xFF
         b ^= (b >> 7) & 0xFF
         return b
+
+    @staticmethod
+    def swizzles_lut(magic):
+        lut_swizzle = [RuidaEmulator.swizzle_byte(s, magic) for s in range(256)]
+        lut_unswizzle = [RuidaEmulator.unswizzle_byte(s, magic) for s in range(256)]
+        return lut_swizzle, lut_unswizzle
+
+    @staticmethod
+    def decode_bytes(data, magic=0x88):
+        lut_swizzle, lut_unswizzle = RuidaEmulator.swizzles_lut(magic)
+        array = list()
+        for b in data:
+            array.append(lut_unswizzle[b])
+        return bytes(array)
+
+    @staticmethod
+    def encode_bytes(data, magic=0x88):
+        lut_swizzle, lut_unswizzle = RuidaEmulator.swizzles_lut(magic)
+        array = list()
+        for b in data:
+            array.append(lut_swizzle[b])
+        return bytes(array)
 
 
 class RDLoader:
