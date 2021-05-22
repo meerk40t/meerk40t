@@ -1246,6 +1246,24 @@ class RuidaEmulator(Module):
             return "Auto Type Space 5", 0
         if mem == 0x007A:
             return "Auto Type Space 6", 0
+
+        if mem == 0x0C0:
+            return "Offset 8 Start", 0
+        if mem == 0x0C1:
+            return "Offset 8 End", 0
+        if mem == 0x00C2:
+            return "Offset 9 Start", 0
+        if mem == 0x00C3:
+            return "Offset 9 End", 0
+        if mem == 0x00C4:
+            return "Offset 10 Start", 0
+        if mem == 0x00C5:
+            return "Offset 10 End", 0
+        if mem == 0x00C6:
+            return "Offset 7 Start", 0
+        if mem == 0x0C7:
+            return "Offset 7 End", 0
+
         if mem == 0x00C8:
             return "Axis Home Velocity 1", 0
         if mem == 0x00C9:
@@ -1258,6 +1276,20 @@ class RuidaEmulator(Module):
             return "Margin 3", 0
         if mem == 0x00CD:
             return "Margin 4", 0
+        if mem == 0x00CE:
+            return "VWheelRatio", 0
+        if mem == 0x00CF:
+            return "VPunchRatio", 0
+        if mem == 0x00D8:
+            return "VSlotRatio", 0
+        if mem == 0x00D0:
+            return "In Hale Zone", 0
+        if mem == 0x00D9:
+            return "VSlot Share Home Offset", 0
+        if mem == 0x00DA:
+            return "VPunch Share Home Offset", 0
+        if mem == 0x00E7:
+            return "VWheel Share Home Offset", 0
         if mem == 0x0100:
             return "System Settings", 0  #bits 2,2,1,1,1,1,1,1,1,1,1
         if mem == 0x0101:
@@ -1268,6 +1300,10 @@ class RuidaEmulator(Module):
             return "G0 Delay", 0  # 0 ms
         if mem == 0x0104:
             return "Scan Step Factor", 0
+        if mem == 0x0115:
+            return "Dock Point X", 0
+        if mem == 0x0116:
+            return "Dock Point Y", 0
         if mem == 0x0107:
             return "Feed Delay After", 0  # 0 s
         if mem == 0x0108:
@@ -1298,6 +1334,8 @@ class RuidaEmulator(Module):
             return "Rotate Pulse", 0
         if mem == 0x0121:
             return "Rotate D", 0
+        if mem == 0x0122:
+            return "Eng Facula Replay", 0
         if mem == 0x0124:
             return "X Min Eng Velocity", 10000  # 10mm/s
         if mem == 0x0125:
@@ -1315,7 +1353,9 @@ class RuidaEmulator(Module):
         if mem == 0x012C:
             return "U Home Velocity", 0
         if mem == 0x012D:
-            return "U Work Velocity", 0
+            return "U Work Velocity", 0  # Axis Dock Position Other
+        if mem == 0x012E:
+            return "Feed Repay", 0
         if mem == 0x0131:
             return "Manual Fast Speed", 100000  # 100 mm/s
         if mem == 0x0132:
@@ -1331,7 +1371,7 @@ class RuidaEmulator(Module):
         if mem == 0x013D:
             return "User Para 2", 0
         if mem == 0x013F:
-            return "User Para 4", 0
+            return "User Para 4", 0  # Pressure Monitor Delay
         if mem == 0x0140:
             return "Axis Home Velocity 3", 0
         if mem == 0x0141:
@@ -1364,14 +1404,84 @@ class RuidaEmulator(Module):
             return "Z Pen Up Pos", 0  # units 0.001
         if mem == 0x014F:
             return "Z Pen Down Pos", 0  # units 0.001
+        if mem == 0x0150:
+            return "Offset 1 Start", 0
+        if mem == 0x0151:
+            return "Offset 1 End", 0
+        if mem == 0x0152:
+            return "Offset 2 Start", 0
+        if mem == 0x0153:
+            return "Offset 2 End", 0
+        if mem == 0x0154:
+            return "Offset 3 Start", 0
+        if mem == 0x0155:
+            return "Offset 3 End", 0
+        if mem == 0x0156:
+            return "Offset 6 Start", 0
+        if mem == 0x0157:
+            return "Offset 6 End", 0
+        if mem == 0x0158:
+            return "Offset 4 Start", 0
+        if mem == 0x0159:
+            return "Offset 4 End", 0
+        if mem == 0x015A:
+            return "Offset 5 Start", 0
+        if mem == 0x015B:
+            return "Offset 5 End", 0
+        if mem == 0x15C:
+            return "Delay 6 On", 0
+        if mem == 0x15D:
+            return "Delay 6 Off", 0
+        if mem == 0x15E:
+            return "Delay 7 On", 0
+        if mem == 0x15F:
+            return "Delay 7 Off", 0
         if mem == 0x0160:
-            return "Inhale On Delay", 0
+            return "Inhale On Delay", 0  # Delay 8
         if mem == 0x0161:
-            return "Inhale Off Delay", 0
+            return "Inhale Off Delay", 0 # Delay 8
+        if mem == 0x162:
+            return "Delay 5 On", 0
+        if mem == 0x163:
+            return "Delay 5 Off", 0
+        if mem == 0x164:
+            return "Delay 2 On", 0
+        if mem == 0x165:
+            return "Delay 2 Off", 0
+        if mem == 0x0166:
+            return "VSample Distance", 0
+        if mem == 0x016D:
+            return "VUp Angle", 0
+        if mem == 0x016E:
+            return "VRotatePulse", 0
+        if mem == 0x177:
+            return "Delay 9 On", 0
+        if mem == 0x178:
+            return "Delay 9 Off", 0
+        if mem == 0x0169:
+            return "Offset 11 Start", 0
+        if mem == 0x016A:
+            return "Offset 11 End", 0
         if mem == 0x16b:
             return "Tool Up Pos 4", 0
         if mem == 0x16C:
             return "Tool Down Pos 4", 0
+        if mem == 0x170:
+            return "Delay 1 On", 0
+        if mem == 0x171:
+            return "VCorner Precision", 0
+        if mem == 0x172:
+            return "Delay 3 On", 0
+        if mem == 0x173:
+            return "Delay 4 Off", 0
+        if mem == 0x174:
+            return "Delay 4 On", 0
+        if mem == 0x175:
+            return "Delay 1 Off", 0
+        if mem == 0x176:
+            return "Delay 3 Off", 0
+        if mem == 0x0177:
+            return "Idle Long Distance", 0
         if mem == 0x178:
             return "Tool Up Pos 3", 0
         if mem == 0x179:
@@ -1380,8 +1490,14 @@ class RuidaEmulator(Module):
             return "Tool Up Pos 2", 0
         if mem == 0x17B:
             return "Tool Down Pos 2", 0
+        if mem == 0x017C:
+            return "Punch Rotate Delay", 0
         if mem == 0x017D:
             return "VSlot Angle", 0
+        if mem == 0x017F:
+            return "Tool Up Delay", 0
+        if mem == 0x017E:
+            return "VTool Rotate Limit", 0
         if mem == 0x0180:
             return "Card Language", 0
         if 0x181 <= mem <= 0x187:
@@ -1390,6 +1506,34 @@ class RuidaEmulator(Module):
             return "User Key Slow Velocity", 0
         if mem == 0x018f:
             return "Blower", 0
+        if mem == 0x0190:
+            return "Color Mark Head Max Distance", 0
+        if mem == 0x0191:
+            return "Color Mark Head Distance", 0
+        if mem == 0x0192:
+            return "Color Mark Mark Distance", 0
+        if mem == 0x0193:
+            return "Color Mark Camera Distance", 0  # JetOffset = 0x193 to 0x194
+        if mem == 0x0194:
+            return "Color Mark Sensor Offset2", 0
+        if mem == 0x0199:
+            return "Drop Position Start", 0
+        if mem == 0x019A:
+            return "Drop Position End", 0
+        if mem == 0x019B:
+            return "Drop Interval", 0
+        if mem == 0x019C:
+            return "Drop Time", 0
+        if mem == 0x019F:
+            return "Sharpen Time Limit", 0
+        if mem == 0x01A0:
+            return "Sharpen Travel Limit", 0
+        if mem == 0x01A2:
+            return "Color Mark Offset", 0
+        if mem == 0x01A4:
+            return "Wheel Press Compensation", 0  # Protect IO Status
+        if mem == 0x01A5:
+            return "Color Mark Filter Length", 0
         if mem == 0x01AC:
             return "Y U Safe Distance", 0
         if mem == 0x01AD:
@@ -1409,13 +1553,20 @@ class RuidaEmulator(Module):
             print(files)
             v = len(files)
             return "Total Doc Number", v
+        if mem == 0x0206:
+            from shutil import disk_usage
+            from os.path import realpath
+
+            total, used, free = disk_usage(realpath('.'))
+            v = min(total, 100000000)  # Max 100 megs.
+            return "Flash Space", v
         if mem == 0x0207:
             from shutil import disk_usage
             from os.path import realpath
 
             total, used, free = disk_usage(realpath('.'))
             v = min(free, 100000000)  # Max 100 megs.
-            return "Free Space On System", v
+            return "Flash Space", v
         if mem == 0x0208:
             return "Previous Work Time", 0
         if mem == 0x0211:
@@ -1431,14 +1582,20 @@ class RuidaEmulator(Module):
             return "Total Laser Work Time 4", 0
         if mem == 0x021a:
             return "Total Laser Work Time 5", 0
+        if mem == 0x021f:
+            return "Ring Number", 0
         if mem == 0x0221:
             return "Axis Preferred Position 1, Pos X",  int(self.x)
         if mem == 0x0223:
             return "X Total Travel (m)", 0
+        if mem == 0x0224:
+            return "Position Point 0", 0
         if mem == 0x0231:
             return "Axis Preferred Position 2, Pos Y",  int(self.y)
         if mem == 0x0233:
             return "Y Total Travel (m)", 0
+        if mem == 0x0234:
+            return "Position Point 1", 0
         if mem == 0x0241:
             return "Axis Preferred Position 3, Pos Z",  int(self.z)
         if mem == 0x0243:
@@ -1455,6 +1612,8 @@ class RuidaEmulator(Module):
             return "Axis Preferred Position 7, Pos C", int(self.c)
         if mem == 0x025d:
             return "Axis Preferred Position 8, Pos D", int(self.d)
+        if mem == 0x0260:
+            return "DocumentWorkNum",  0
         if mem == 0x02FE:
             return "Card ID",  0x65006500
         if mem == 0x02FF:
@@ -1462,15 +1621,19 @@ class RuidaEmulator(Module):
         if mem == 0x0313:
             return "Material Thickness", 0
         if mem == 0x031C:
-            return "File Fault", 0
+            return "File Fault", 0  # Error counter.
         if mem == 0x0320:
             return "?-FileSize-?", 0
+        if mem == 0x033B:
+            return "ReadProcessFeedLength", 0
         if mem == 0x0340:
             return "Stop Time", 0
         if mem == 0x0591:
             return "Card Lock", 0  # 0x55aaaa55
         if mem == 0x05c0:
             return "Laser Life", 0
+        if 0x05c0 <= mem < 0x600:
+            pass
         return "Unknown", 0
 
     def unswizzle(self, data):
