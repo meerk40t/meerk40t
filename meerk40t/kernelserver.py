@@ -200,7 +200,7 @@ class TCPServer(Module):
                     try:
                         connection.send(bytes(e, "utf-8"))
                         self.data_channel("<-- %s" % str(e))
-                    except ConnectionAbortedError:
+                    except (ConnectionAbortedError, ConnectionResetError):
                         connection.close()
 
             recv = self.context.channel("%s/recv" % self.name)
