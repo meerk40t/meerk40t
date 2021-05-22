@@ -1324,6 +1324,10 @@ class RuidaEmulator(Module):
             return "Go Scale Blank", 0  # 0 mm
         if mem == 0x0117:
             return "Array Feed Repay", 0  # 0mm
+        if mem == 0x0117:
+            return "Rotate On Delay", 0
+        if mem == 0x0119:
+            return "Rotate Off Delay", 0
         if mem == 0x011A:
             return "Acc Ratio", 100  # 100%
         if mem == 0x011B:
@@ -1366,6 +1370,10 @@ class RuidaEmulator(Module):
             return "Y Eng Acc", 3000000  # 3000 mm/s
         if mem == 0x0137:
             return "Eng Acc Ratio", 100  # Engraving factor 100%
+        if mem == 0x0138:
+            return "Sts Ahead Time", 0
+        if mem == 0x0139:
+            return "Repeat Delay", 0
         if mem == 0x013B:
             return "User Para 3", 0
         if mem == 0x013D:
@@ -1534,10 +1542,22 @@ class RuidaEmulator(Module):
             return "Wheel Press Compensation", 0  # Protect IO Status
         if mem == 0x01A5:
             return "Color Mark Filter Length", 0
+        if mem == 0x01A6:
+            return "VBlow Back On Delay", 0
+        if mem == 0x01A7:
+            return "VBlow Back Off Delay", 0
         if mem == 0x01AC:
             return "Y U Safe Distance", 0
         if mem == 0x01AD:
             return "Y U Home Distance", 0
+        if mem == 0x01AE:
+            return "VTool Preset Position X", 0
+        if mem == 0x01AF:
+            return "VTool Preset Position Y", 0
+        if mem == 0x01B1:
+            return "VTool Preset Compensation", 0
+        if mem == 0x01B2:
+            return "VTool Preset Cur Depth", 0
         if mem == 0x0200:
             return "Machine Status", 22
         if mem == 0x0201:
