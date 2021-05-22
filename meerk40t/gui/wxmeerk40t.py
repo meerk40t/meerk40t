@@ -428,7 +428,7 @@ class MeerK40t(MWindow):
 
         # Define Home.
         home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("dev home\n"), home)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
         self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("home"))
 
         # AUI Manager Update.
