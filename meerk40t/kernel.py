@@ -1724,7 +1724,10 @@ class Kernel:
         :return:
         """
         if isinstance(data, bytes):
-            data = data.decode()
+            try:
+                data = data.decode()
+            except UnicodeDecodeError:
+                return
         self._console_buffer += data
         while "\n" in self._console_buffer:
             pos = self._console_buffer.find("\n")
