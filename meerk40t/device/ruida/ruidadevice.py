@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+from typing import Tuple, Union
 
 from ...core.cutcode import CutCode, LaserSettings, LineCut
 from ...kernel import Module
@@ -110,6 +111,11 @@ class RuidaEmulator(Module):
         self.y = 0.0
         self.z = 0.0
         self.u = 0.0
+
+        self.a = 0.0
+        self.b = 0.0
+        self.c = 0.0
+        self.d = 0.0
         self.magic = 0x88  # 0x11 for the 634XG
         # Should automatically shift encoding if wrong.
         # self.magic = 0x38
@@ -790,325 +796,8 @@ class RuidaEmulator(Module):
                     else:
                         self.context("home\n")
         elif array[0] == 0xDA:
-            v = 0
-            name = None
             mem = self.parse_mem(array[2:4])
-            if array[2] == 0x00:
-                if array[3] == 0x04:
-                    name = "IOEnable"
-                elif array[3] == 0x05:
-                    name = "G0 Velocity"
-                    v = 200000  # 200 mm/s
-                elif array[3] == 0x0B:
-                    name = "Eng Facula"
-                    v = 800  # 80%
-                elif array[3] == 0x0C:
-                    name = "Home Velocity"
-                    v = 20000  # 20mm/s
-                elif array[3] == 0x0E:
-                    name = "Eng Vert Velocity"
-                    v = 100000  # 100 mm/s
-                elif array[3] == 0x10:
-                    name = "System Control Mode"
-                elif array[3] == 0x11:
-                    name = "Laser PWM Frequency 1"
-                elif array[3] == 0x12:
-                    name = "Laser Min Power 1"
-                elif array[3] == 0x13:
-                    name = "Laser Max Power 1"
-                elif array[3] == 0x16:
-                    name = "Laser Attenuation"
-                elif array[3] == 0x17:
-                    name = "Laser PWM Frequency 2"
-                elif array[3] == 0x18:
-                    name = "Laser Min Power 2"
-                elif array[3] == 0x19:
-                    name = "Laser Max Power 2"
-                elif array[3] == 0x1A:
-                    name = "Laser Standby Frequency 1"
-                elif array[3] == 0x1B:
-                    name = "Laser Standby Pulse 1"
-                elif array[3] == 0x1C:
-                    name = "Laser Standby Frequency 2"
-                elif array[3] == 0x1D:
-                    name = "Laser Standby Pulse 2"
-                elif array[3] == 0x1E:
-                    name = "Auto Type Space"
-                elif array[3] == 0x20:
-                    name = "Axis Control Para 1"
-                    v = 0x4000  # True
-                elif array[3] == 0x21:
-                    name = "Axis Precision 1"
-                elif array[3] == 0x23:
-                    name = "Axis Max Velocity 1"
-                elif array[3] == 0x24:
-                    name = "Axis Start Velocity 1"
-                elif array[3] == 0x25:
-                    name = "Axis Max Acc 1"
-                elif array[3] == 0x26:
-                    name = "Axis Range 1, Get Frame X"
-                    v = 320000
-                elif array[3] == 0x27:
-                    name = "Axis Btn Start Velocity 1"
-                elif array[3] == 0x28:
-                    name = "Axis Btn Acc 1"
-                elif array[3] == 0x29:
-                    name = "Axis Estp Acc 1"
-                elif array[3] == 0x2A:
-                    name = "Axis Home Offset 1"
-                elif array[3] == 0x2B:
-                    name = "Axis Backlash 1"
-                    v = 0  # 0mm
-
-                elif array[3] == 0x30:
-                    name = "Axis Control Para 2"
-                    v = 0x4000  # True
-                elif array[3] == 0x31:
-                    name = "Axis Precision 2"
-                elif array[3] == 0x33:
-                    name = "Axis Max Velocity 2"
-                elif array[3] == 0x34:
-                    name = "Axis Start Velocity 2"
-                elif array[3] == 0x35:
-                    name = "Axis Max Acc 2"
-                elif array[3] == 0x36:
-                    name = "Axis Range 2, Get Frame Y"
-                    v = 220000
-                elif array[3] == 0x37:
-                    name = "Axis Btn Start Velocity 2"
-                elif array[3] == 0x38:
-                    name = "Axis Btn Acc 2"
-                elif array[3] == 0x39:
-                    name = "Axis Estp Acc 2"
-                elif array[3] == 0x3A:
-                    name = "Axis Home Offset 2"
-                elif array[3] == 0x3B:
-                    name = "Axis Backlash 2"
-                    v = 0  # 0 mm
-
-                elif array[3] == 0x40:
-                    name = "Axis Control Para 3"
-                    v = 0  # False
-                elif array[3] == 0x41:
-                    name = "Axis Precision 3"
-                elif array[3] == 0x43:
-                    name = "Axis Max Velocity 3"
-                elif array[3] == 0x44:
-                    name = "Axis Start Velocity 3"
-                elif array[3] == 0x45:
-                    name = "Axis Max Acc 3"
-                elif array[3] == 0x46:
-                    name = "Axis Range 3, Get Frame Z"
-                elif array[3] == 0x47:
-                    name = "Axis Btn Start Velocity 3"
-                elif array[3] == 0x48:
-                    name = "Axis Btn Acc 3"
-                elif array[3] == 0x49:
-                    name = "Axis Estp Acc 3"
-                elif array[3] == 0x4A:
-                    name = "Axis Home Offset 3"
-                elif array[3] == 0x4B:
-                    name = "Axis Backlash 3"
-
-                elif array[3] == 0x50:
-                    name = "Axis Control Para 4"
-                    v = 0  # False
-                elif array[3] == 0x51:
-                    name = "Axis Precision 4"
-                elif array[3] == 0x53:
-                    name = "Axis Max Velocity 4"
-                elif array[3] == 0x54:
-                    name = "Axis Start Velocity 4"
-                elif array[3] == 0x55:
-                    name = "Axis Max Acc 4"
-                elif array[3] == 0x56:
-                    name = "Axis Range 4, Get Frame U"
-                elif array[3] == 0x57:
-                    name = "Axis Btn Start Velocity 4"
-                elif array[3] == 0x58:
-                    name = "Axis Btn Acc 4"
-                elif array[3] == 0x59:
-                    name = "Axis Estp Acc 4"
-                elif array[3] == 0x5A:
-                    name = "Axis Home Offset 4"
-                elif array[3] == 0x5B:
-                    name = "Axis Backlash 4"
-
-                elif array[3] == 0x60:
-                    name = "Machine Type"
-
-                elif array[3] == 0x63:
-                    name = "Laser Min Power 3"
-                elif array[3] == 0x64:
-                    name = "Laser Max Power 3"
-                elif array[3] == 0x65:
-                    name = "Laser PWM Frequency 3"
-                elif array[3] == 0x66:
-                    name = "Laser Standby Frequency 3"
-                elif array[3] == 0x67:
-                    name = "Laser Standby Pulse 3"
-
-                elif array[3] == 0x68:
-                    name = "Laser Min Power 4"
-                elif array[3] == 0x69:
-                    name = "Laser Max Power 4"
-                elif array[3] == 0x6A:
-                    name = "Laser PWM Frequency 4"
-                elif array[3] == 0x6B:
-                    name = "Laser Standby Frequency 4"
-                elif array[3] == 0x6C:
-                    name = "Laser Standby Pulse 4"
-            elif array[2] == 0x02:
-                if array[3] == 0x00:
-                    name = "System Settings"
-                elif array[3] == 0x01:
-                    name = "Turn Velocity"
-                    v = 20000  # 20 m/s
-                elif array[3] == 0x02:
-                    name = "Syn Acc"
-                    v = 3000000  # 3000 mm/s2
-                elif array[3] == 0x03:
-                    name = "G0 Delay"
-                    v = 0  # 0 ms
-                elif array[3] == 0x07:
-                    name = "Feed Delay After"
-                    v = 0  # 0 s
-                elif array[3] == 0x09:
-                    name = "Turn Acc"
-                    v = 400000  # 400 mm/s
-                elif array[3] == 0x0A:
-                    name = "G0 Acc"
-                    v = 3000000  # 3000 mm/s2
-                elif array[3] == 0x0B:
-                    name = "Feed Delay Prior"
-                    v = 0  # 0 ms
-                elif array[3] == 0x0C:
-                    name = "Manual Distance"
-                elif array[3] == 0x0D:
-                    name = "Shut Down Delay"
-                elif array[3] == 0x0E:
-                    name = "Focus Depth"
-                    v = 5000  # 5mm
-                elif array[3] == 0x0F:
-                    name = "Go Scale Blank"
-                    v = 0  # 0 mm
-                elif array[3] == 0x17:
-                    name = "Array Feed Repay"
-                    v = 0  # 0mm
-                elif array[3] == 0x1A:
-                    name = "Acc Ratio"
-                    v = 100  # 100%
-                elif array[3] == 0x1B:
-                    name = "Turn Ratio"
-                    v = 100  # 100% (speed factor)
-                elif array[3] == 0x1C:
-                    name = "Acc G0 Ratio"
-                    v = 100  # 100%
-                elif array[3] == 0x1F:
-                    name = "Rotate Pulse"
-                elif array[3] == 0x21:
-                    name = "Rotate D"
-                elif array[3] == 0x24:
-                    name = "X Min Eng Velocity"
-                    v = 10000  # 10mm/s
-                elif array[3] == 0x25:
-                    name = "X Eng Acc"
-                    v = 10000000  # 10000 m/s
-                elif array[3] == 0x26:
-                    name = "User Para 1"
-                elif array[3] == 0x28:
-                    name = "Z Home Velocity"
-                elif array[3] == 0x29:
-                    name = "Z Work Velocity"
-                elif array[3] == 0x2A:
-                    name = "Z G0 Velocity"
-                elif array[3] == 0x2B:
-                    name = "Z Pen Up Position"
-                elif array[3] == 0x2C:
-                    name = "U Home Velocity"
-                elif array[3] == 0x2D:
-                    name = "U Work Velocity"
-                elif array[3] == 0x31:
-                    name = "Manual Fast Speed"
-                    v = 100000  # 100 mm/s
-                elif array[3] == 0x32:
-                    name = "Manual Slow Speed"
-                    v = 10000  # 10 mm/s
-                elif array[3] == 0x34:
-                    name = "Y Minimum Eng Velocity"
-                    v = 10000  # 10mm/s
-                elif array[3] == 0x35:
-                    name = "Y Eng Acc"
-                    v = 3000000  # 3000 mm/s
-                elif array[3] == 0x37:
-                    name = "Eng Acc Ratio"
-                    v = 100  # Engraving factor 100%
-            elif array[2] == 0x03:
-                if array[3] == 0x00:
-                    name = "Card Language"
-                elif 0x01 <= array[3] <= 0x07:
-                    name = "PC Lock %d" % array[3]
-                elif array[3] == 0x0f:
-                    name = "Blower"
-            elif array[2] == 0x04:
-                if array[3] == 0x00:
-                    name = "Machine Status"
-                    v = 22
-                elif array[3] == 0x01:
-                    name = "Total Open Time (s)"
-                elif array[3] == 0x02:
-                    name = "Total Work Time (s)"
-                elif array[3] == 0x03:
-                    name = "Total Work Number"
-                elif array[3] == 0x05:
-                    name = "Total Doc Number"
-                    from glob import glob
-                    from os.path import realpath, join
-                    files = [name for name in glob(join(realpath('.'), '*.rd'))]
-                    print(files)
-                    v = len(files)
-                elif array[3] == 0x07:
-                    name = "Free Space On System"
-                    from shutil import disk_usage
-                    from os.path import realpath
-
-                    total, used, free = disk_usage(realpath('.'))
-                    v = min(free, 100000000)  # Max 100 megs.
-                elif array[3] == 0x08:
-                    name = "Previous Work Time"
-                elif array[3] == 0x11:
-                    name = "Total Laser Work Time"
-                elif array[3] == 0x21:
-                    name = "Axis Preferred Position 1, Pos X"
-                    v = int(self.x)
-                elif array[3] == 0x23:
-                    name = "X Total Travel (m)"
-                elif array[3] == 0x31:
-                    name = "Axis Preferred Position 2, Pos Y"
-                    v = int(self.y)
-                elif array[3] == 0x33:
-                    name = "Y Total Travel (m)"
-                elif array[3] == 0x41:
-                    name = "Axis Preferred Position 3, Pos Z"
-                    v = int(self.z)
-                elif array[3] == 0x43:
-                    name = "Z Total Travel (m)"
-                elif array[3] == 0x51:
-                    name = "Axis Preferred Position 3,Pos U"
-                    v = int(self.u)
-                elif array[3] == 0x53:
-                    name = "U Total Travel (m)"
-            elif array[2] == 0x05:
-                if array[3] == 0x7E:
-                    v = 0x65006500
-                    name = "Card ID"
-                if array[3] == 0x7F:
-                    v = b"MEERK40T\x00"
-                    name = "Mainboard Version"
-            elif array[2] == 0x06:
-                if array[3] == 0x20:
-                    name = "?-FileSize-?"
-
+            name, v = self.mem_lookup(mem)
             if array[1] == 0x00:
                 if name is None:
                     name = "Unmapped"
@@ -1365,6 +1054,424 @@ class RuidaEmulator(Module):
         self.ruida_channel("--> %s\t(%s)" % (str(bytes(array).hex()), desc))
         if respond is not None:
             self.reply(respond, desc=respond_desc)
+
+    def mem_lookup(self, mem) -> Tuple[str, Union[int, bytes]]:
+        if mem == 0x0002:
+            return "Laser Info", 0  #
+        if mem == 0x0003:
+            return "Machine Def", 0  #
+        if mem == 0x0004:
+            return "IOEnable", 0  # 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, bits
+        if mem == 0x0005:
+            return "G0 Velocity", 200000  # 200 mm/s
+        if mem == 0x000B:
+            return "Eng Facula", 800  # 80%
+        if mem == 0x000C:
+            return "Home Velocity", 20000  # 20mm/s
+        if mem == 0x000E:
+            return "Eng Vert Velocity", 100000  # 100 mm/s
+        if mem == 0x0010:
+            return "System Control Mode", 0
+        if mem == 0x0011:
+            return "Laser PWM Frequency 1", 0
+        if mem == 0x0012:
+            return "Laser Min Power 1", 0
+        if mem == 0x0013:
+            return "Laser Max Power 1", 0
+        if mem == 0x0016:
+            return "Laser Attenuation", 0
+        if mem == 0x0017:
+            return "Laser PWM Frequency 2", 0
+        if mem == 0x0018:
+            return "Laser Min Power 2", 0
+        if mem == 0x0019:
+            return "Laser Max Power 2", 0
+        if mem == 0x001A:
+            return "Laser Standby Frequency 1", 0
+        if mem == 0x001B:
+            return "Laser Standby Pulse 1", 0
+        if mem == 0x001C:
+            return "Laser Standby Frequency 2", 0
+        if mem == 0x001D:
+            return "Laser Standby Pulse 2", 0
+        if mem == 0x001E:
+            return "Auto Type Space", 0
+        if mem == 0x001F:
+            return "TriColor", 0
+        if mem == 0x0020:
+            return "Axis Control Para 1", 0x4000  # True
+        if mem == 0x0021:
+            return "Axis Precision 1", 0
+        if mem == 0x0023:
+            return "Axis Max Velocity 1", 0
+        if mem == 0x0024:
+            return "Axis Start Velocity 1", 0
+        if mem == 0x0025:
+            return "Axis Max Acc 1", 0
+        if mem == 0x0026:
+            return "Axis Range 1, Get Frame X", 320000
+        if mem == 0x0027:
+            return "Axis Btn Start Velocity 1", 0
+        if mem == 0x0028:
+            return "Axis Btn Acc 1", 0
+        if mem == 0x0029:
+            return "Axis Estp Acc 1", 0
+        if mem == 0x002A:
+            return "Axis Home Offset 1", 0
+        if mem == 0x002B:
+            return "Axis Backlash 1", 0  # 0mm
+
+        if mem == 0x0030:
+            return "Axis Control Para 2", 0x4000  # True
+        if mem == 0x0031:
+            return "Axis Precision 2", 0
+        if mem == 0x0033:
+            return "Axis Max Velocity 2", 0
+        if mem == 0x0034:
+            return "Axis Start Velocity 2", 0
+        if mem == 0x0035:
+            return "Axis Max Acc 2", 0
+        if mem == 0x0036:
+            return "Axis Range 2, Get Frame Y", 220000
+        if mem == 0x0037:
+            return "Axis Btn Start Velocity 2", 0
+        if mem == 0x0038:
+            return "Axis Btn Acc 2", 0
+        if mem == 0x0039:
+            return "Axis Estp Acc 2", 0
+        if mem == 0x003A:
+            return "Axis Home Offset 2", 0
+        if mem == 0x003B:
+            return "Axis Backlash 2", 0  # 0 mm
+
+        if mem == 0x0040:
+            return "Axis Control Para 3", 0  # False
+        if mem == 0x0041:
+            return "Axis Precision 3", 0
+        if mem == 0x0043:
+            return "Axis Max Velocity 3", 0
+        if mem == 0x0044:
+            return "Axis Start Velocity 3", 0
+        if mem == 0x0045:
+            return "Axis Max Acc 3", 0
+        if mem == 0x0046:
+            return "Axis Range 3, Get Frame Z", 0
+        if mem == 0x0047:
+            return "Axis Btn Start Velocity 3", 0
+        if mem == 0x0048:
+            return "Axis Btn Acc 3", 0
+        if mem == 0x0049:
+            return "Axis Estp Acc 3", 0
+        if mem == 0x004A:
+            return "Axis Home Offset 3", 0
+        if mem == 0x004B:
+            return "Axis Backlash 3", 0
+
+        if mem == 0x0050:
+            return "Axis Control Para 4", 0  # False
+        if mem == 0x0051:
+            return "Axis Precision 4", 0
+        if mem == 0x0053:
+            return "Axis Max Velocity 4", 0
+        if mem == 0x0054:
+            return "Axis Start Velocity 4", 0
+        if mem == 0x0055:
+            return "Axis Max Acc 4", 0
+        if mem == 0x0056:
+            return "Axis Range 4, Get Frame U", 0
+        if mem == 0x0057:
+            return "Axis Btn Start Velocity 4", 0
+        if mem == 0x0058:
+            return "Axis Btn Acc 4", 0
+        if mem == 0x0059:
+            return "Axis Estp Acc 4", 0
+        if mem == 0x005A:
+            return "Axis Home Offset 4", 0
+        if mem == 0x005B:
+            return "Axis Backlash 4", 0
+
+        if mem == 0x0060:
+            return "Machine Type", 0
+
+        if mem == 0x0063:
+            return "Laser Min Power 3", 0
+        if mem == 0x0064:
+            return "Laser Max Power 3", 0
+        if mem == 0x0065:
+            return "Laser PWM Frequency 3", 0
+        if mem == 0x0066:
+            return "Laser Standby Frequency 3", 0
+        if mem == 0x0067:
+            return "Laser Standby Pulse 3", 0
+
+        if mem == 0x0068:
+            return "Laser Min Power 4", 0
+        if mem == 0x0069:
+            return "Laser Max Power 4", 0
+        if mem == 0x006A:
+            return "Laser PWM Frequency 4", 0
+        if mem == 0x006B:
+            return "Laser Standby Frequency 4", 0
+        if mem == 0x006C:
+            return "Laser Standby Pulse 4", 0
+
+        if mem == 0x006D:
+            return "Laser Min Power 5", 0
+        if mem == 0x006E:
+            return "Laser Max Power 5", 0
+        if mem == 0x006F:
+            return "Laser PWM Frequency 5", 0
+        if mem == 0x0070:
+            return "Laser Standby Frequency 5", 0
+        if mem == 0x0071:
+            return "Laser Standby Pulse 5", 0
+
+        if mem == 0x0072:
+            return "Laser Min Power 6", 0
+        if mem == 0x0073:
+            return "Laser Max Power 6", 0
+        if mem == 0x0074:
+            return "Laser PWM Frequency 6", 0
+        if mem == 0x0075:
+            return "Laser Standby Frequency 6", 0
+        if mem == 0x0076:
+            return "Laser Standby Pulse 6", 0
+        if mem == 0x0077:
+            return "Auto Type Space 2", 0
+        if mem == 0x0077:
+            return "Auto Type Space 3", 0
+        if mem == 0x0078:
+            return "Auto Type Space 4", 0
+        if mem == 0x0079:
+            return "Auto Type Space 5", 0
+        if mem == 0x007A:
+            return "Auto Type Space 6", 0
+        if mem == 0x00C8:
+            return "Axis Home Velocity 1", 0
+        if mem == 0x00C9:
+            return "Axis Home Velocity 2", 0
+        if mem == 0x00CA:
+            return "Margin 1", 0
+        if mem == 0x00CB:
+            return "Margin 2", 0
+        if mem == 0x00CC:
+            return "Margin 3", 0
+        if mem == 0x00CD:
+            return "Margin 4", 0
+        if mem == 0x0100:
+            return "System Settings", 0  #bits 2,2,1,1,1,1,1,1,1,1,1
+        if mem == 0x0101:
+            return "Turn Velocity", 20000  # 20 m/s
+        if mem == 0x0102:
+            return "Syn Acc", 3000000  # 3000 mm/s2
+        if mem == 0x0103:
+            return "G0 Delay", 0  # 0 ms
+        if mem == 0x0104:
+            return "Scan Step Factor", 0
+        if mem == 0x0107:
+            return "Feed Delay After", 0  # 0 s
+        if mem == 0x0108:
+            return "User Key Fast Velocity", 0
+        if mem == 0x0109:
+            return "Turn Acc", 400000  # 400 mm/s
+        if mem == 0x010A:
+            return "G0 Acc", 3000000  # 3000 mm/s2
+        if mem == 0x010B:
+            return "Feed Delay Prior", 0  # 0 ms
+        if mem == 0x010C:
+            return "Manual Distance", 0
+        if mem == 0x010D:
+            return "Shut Down Delay", 0
+        if mem == 0x010E:
+            return "Focus Depth", 5000  # 5mm
+        if mem == 0x010F:
+            return "Go Scale Blank", 0  # 0 mm
+        if mem == 0x0117:
+            return "Array Feed Repay", 0  # 0mm
+        if mem == 0x011A:
+            return "Acc Ratio", 100  # 100%
+        if mem == 0x011B:
+            return "Turn Ratio", 100  # 100% (speed factor)
+        if mem == 0x011C:
+            return "Acc G0 Ratio", 100  # 100%
+        if mem == 0x011F:
+            return "Rotate Pulse", 0
+        if mem == 0x0121:
+            return "Rotate D", 0
+        if mem == 0x0124:
+            return "X Min Eng Velocity", 10000  # 10mm/s
+        if mem == 0x0125:
+            return "X Eng Acc", 10000000  # 10000 m/s
+        if mem == 0x0126:
+            return "User Para 1", 0
+        if mem == 0x0128:
+            return "Z Home Velocity", 0
+        if mem == 0x0129:
+            return "Z Work Velocity", 0
+        if mem == 0x012A:
+            return "Z G0 Velocity", 0
+        if mem == 0x012B:
+            return "Union Home Distance", 0
+        if mem == 0x012C:
+            return "U Home Velocity", 0
+        if mem == 0x012D:
+            return "U Work Velocity", 0
+        if mem == 0x0131:
+            return "Manual Fast Speed", 100000  # 100 mm/s
+        if mem == 0x0132:
+            return "Manual Slow Speed", 10000  # 10 mm/s
+        if mem == 0x0134:
+            return "Y Minimum Eng Velocity", 10000  # 10mm/s
+        if mem == 0x0135:
+            return "Y Eng Acc", 3000000  # 3000 mm/s
+        if mem == 0x0137:
+            return "Eng Acc Ratio", 100  # Engraving factor 100%
+        if mem == 0x013B:
+            return "User Para 3", 0
+        if mem == 0x013D:
+            return "User Para 2", 0
+        if mem == 0x013F:
+            return "User Para 4", 0
+        if mem == 0x0140:
+            return "Axis Home Velocity 3", 0
+        if mem == 0x0141:
+            return "Axis Work Velocity 3", 0
+        if mem == 0x0142:
+            return "Axis Home Velocity 4", 0
+        if mem == 0x0143:
+            return "Axis Work Velocity 4", 0
+        if mem == 0x0144:
+            return "Axis Home Velocity 5", 0
+        if mem == 0x0145:
+            return "Axis Work Velocity 5", 0
+        if mem == 0x0146:
+            return "Axis Home Velocity 6", 0
+        if mem == 0x0147:
+            return "Axis Work Velocity 6", 0
+        if mem == 0x0148:
+            return "Axis Home Velocity 7", 0
+        if mem == 0x0149:
+            return "Axis Work Velocity 7", 0
+        if mem == 0x014A:
+            return "Axis Home Velocity 8", 0
+        if mem == 0x014B:
+            return "Axis Work Velocity 8", 0
+        if mem == 0x014C:
+            return "Laser Reset Time", 0
+        if mem == 0x014D:
+            return "Laser Start Distance", 0
+        if mem == 0x014E:
+            return "Z Pen Up Pos", 0  # units 0.001
+        if mem == 0x014F:
+            return "Z Pen Down Pos", 0  # units 0.001
+        if mem == 0x0160:
+            return "Inhale On Delay", 0
+        if mem == 0x0161:
+            return "Inhale Off Delay", 0
+        if mem == 0x16b:
+            return "Tool Up Pos 4", 0
+        if mem == 0x16C:
+            return "Tool Down Pos 4", 0
+        if mem == 0x178:
+            return "Tool Up Pos 3", 0
+        if mem == 0x179:
+            return "Tool Down Pos 3", 0
+        if mem == 0x17A:
+            return "Tool Up Pos 2", 0
+        if mem == 0x17B:
+            return "Tool Down Pos 2", 0
+        if mem == 0x017D:
+            return "VSlot Angle", 0
+        if mem == 0x0180:
+            return "Card Language", 0
+        if 0x181 <= mem <= 0x187:
+            return "PC Lock %d" % (mem - 0x181)
+        if mem == 0x0188:
+            return "User Key Slow Velocity", 0
+        if mem == 0x018f:
+            return "Blower", 0
+        if mem == 0x01AC:
+            return "Y U Safe Distance", 0
+        if mem == 0x01AD:
+            return "Y U Home Distance", 0
+        if mem == 0x0200:
+            return "Machine Status", 22
+        if mem == 0x0201:
+            return "Total Open Time (s)", 0
+        if mem == 0x0202:
+            return "Total Work Time (s)", 0
+        if mem == 0x0203:
+            return "Total Work Number", 0
+        if mem == 0x0205:
+            from glob import glob
+            from os.path import realpath, join
+            files = [name for name in glob(join(realpath('.'), '*.rd'))]
+            print(files)
+            v = len(files)
+            return "Total Doc Number", v
+        if mem == 0x0207:
+            from shutil import disk_usage
+            from os.path import realpath
+
+            total, used, free = disk_usage(realpath('.'))
+            v = min(free, 100000000)  # Max 100 megs.
+            return "Free Space On System", v
+        if mem == 0x0208:
+            return "Previous Work Time", 0
+        if mem == 0x0211:
+            return "Total Laser Work Time", 0
+        if mem == 0x0212:
+            return "File Custom Flag / Feed Info", 0
+        if mem == 0x0217:
+            return "Total Laser Work Time 2", 0
+        if mem == 0x0218:
+            # OEM PULSE ENERGY
+            return "Total Laser Work Time 3", 0
+        if mem == 0x0219:
+            return "Total Laser Work Time 4", 0
+        if mem == 0x021a:
+            return "Total Laser Work Time 5", 0
+        if mem == 0x0221:
+            return "Axis Preferred Position 1, Pos X",  int(self.x)
+        if mem == 0x0223:
+            return "X Total Travel (m)", 0
+        if mem == 0x0231:
+            return "Axis Preferred Position 2, Pos Y",  int(self.y)
+        if mem == 0x0233:
+            return "Y Total Travel (m)", 0
+        if mem == 0x0241:
+            return "Axis Preferred Position 3, Pos Z",  int(self.z)
+        if mem == 0x0243:
+            return "Z Total Travel (m)", 0
+        if mem == 0x0251:
+            return "Axis Preferred Position 4, Pos U", int(self.u)
+        if mem == 0x0253:
+            return "U Total Travel (m)", 0
+        if mem == 0x025a:
+            return "Axis Preferred Position 5, Pos A", int(self.a)
+        if mem == 0x025b:
+            return "Axis Preferred Position 6, Pos B", int(self.b)
+        if mem == 0x025c:
+            return "Axis Preferred Position 7, Pos C", int(self.c)
+        if mem == 0x025d:
+            return "Axis Preferred Position 8, Pos D", int(self.d)
+        if mem == 0x02FE:
+            return "Card ID",  0x65006500
+        if mem == 0x02FF:
+            return "Mainboard Version", b"MEERK40T\x00"
+        if mem == 0x0313:
+            return "Material Thickness", 0
+        if mem == 0x031C:
+            return "File Fault", 0
+        if mem == 0x0320:
+            return "?-FileSize-?", 0
+        if mem == 0x0340:
+            return "Stop Time", 0
+        if mem == 0x0591:
+            return "Card Lock", 0  # 0x55aaaa55
+        if mem == 0x05c0:
+            return "Laser Life", 0
+        return "Unknown", 0
 
     def unswizzle(self, data):
         array = list()
