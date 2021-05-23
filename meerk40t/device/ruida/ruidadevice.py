@@ -759,39 +759,39 @@ class RuidaEmulator(Module):
             if array[1] == 0x2E:
                 desc = "FocusZ"
             if array[1] == 0x20:
-                desc = "KeyDown -Y +Left"
+                desc = "KeyDown -X +Left"
             if array[1] == 0x21:
-                desc = "KeyDown +Y +Right"
+                desc = "KeyDown +X +Right"
             if array[1] == 0x22:
-                desc = "KeyDown +X +Top"
+                desc = "KeyDown +Y +Top"
             if array[1] == 0x23:
-                desc = "KeyDown -X +Bottom"
+                desc = "KeyDown -Y +Bottom"
             if array[1] == 0x24:
-                desc = "KeyDown 0x14"
+                desc = "KeyDown +Z"
             if array[1] == 0x25:
-                desc = "KeyDown 0x15"
+                desc = "KeyDown -Z"
             if array[1] == 0x26:
-                desc = "KeyDown 0x16"
+                desc = "KeyDown +U"
             if array[1] == 0x27:
-                desc = "KeyDown 0x17"
+                desc = "KeyDown -U"
             if array[1] == 0x28:
                 desc = "KeyDown 0x21"
             if array[1] == 0x30:
-                desc = "KeyUp -Y +Left"
+                desc = "KeyUp -X +Left"
             if array[1] == 0x31:
-                desc = "KeyUp +Y +Right"
+                desc = "KeyUp +X +Right"
             if array[1] == 0x32:
-                desc = "KeyUp +X +Top"
+                desc = "KeyUp +Y +Top"
             if array[1] == 0x33:
-                desc = "KeyUp -X +Bottom"
+                desc = "KeyUp -Y +Bottom"
             if array[1] == 0x34:
-                desc = "KeyUp 0x04"
+                desc = "KeyUp +Z"
             if array[1] == 0x35:
-                desc = "KeyUp 0x05"
+                desc = "KeyUp -Z"
             if array[1] == 0x36:
-                desc = "KeyUp 0x06"
+                desc = "KeyUp +U"
             if array[1] == 0x37:
-                desc = "KeyUp 0x07"
+                desc = "KeyUp -U"
             if array[1] == 0x38:
                 desc = "KeyUp 0x20"
             if array[1] == 0x39:
