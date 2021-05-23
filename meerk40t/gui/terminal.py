@@ -11,7 +11,7 @@ class Terminal(MWindow):
         super().__init__(581, 410, *args, **kwds)
 
         self.text_main = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY
+            self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_AUTO_URL
         )
         self.text_main.SetFont(
             wx.Font(
@@ -29,6 +29,7 @@ class Terminal(MWindow):
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_entry)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down_main, self.text_main)
+        self.Bind(wx.EVT_TEXT_URL, self.on_text_uri)
         # end wxGlade
         self.command_log = []
         self.command_position = 0
@@ -54,6 +55,15 @@ class Terminal(MWindow):
             self.text_main.AppendText(text)
         except RuntimeError:
             pass
+
+    def on_text_uri(self, event):
+        mouseEvent = event.GetMouseEvent()
+        if mouseEvent.LeftDClick():
+            urlStart = event.GetURLStart()
+            urlEnd = event.GetURLEnd()
+            url = self.text_main.GetRange(urlStart, urlEnd)
+            import webbrowser
+            webbrowser.open_new_tab(url)
 
     def __set_properties(self):
         _icon = wx.NullIcon
