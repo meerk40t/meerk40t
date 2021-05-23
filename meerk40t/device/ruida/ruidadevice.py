@@ -1008,6 +1008,9 @@ class RuidaEmulator(Module):
             elif array[1] == 0x09:
                 v1 = self.decodeu35(array[2:7])
                 desc = "Feed Length %d" % v1
+            elif array[1] == 0x0b:
+                v1 = array[2]
+                desc = "Unknown 1 %d" % v1
             elif array[1] == 0x13:
                 c_x = self.abscoord(array[2:7]) / um_per_mil
                 c_y = self.abscoord(array[7:12]) / um_per_mil
@@ -1023,10 +1026,17 @@ class RuidaEmulator(Module):
             elif array[1] == 0x24:
                 v1 = array[2]
                 desc = "Array Mirror %d" % (v1)
+            elif array[1] == 0x32:
+                v1 = self.decodeu35(array[2:7])
+                v2 = self.decodeu35(array[7:12])
+                desc = "Unknown Preamble %d %d" % (v1, v2)
             elif array[1] == 0x35:
                 v1 = self.decodeu35(array[2:7])
                 v2 = self.decodeu35(array[7:12])
                 desc = "Block X Size %d %d" % (v1, v2)
+            elif array[1] == 0x38:
+                v1 = array[2]
+                desc = "Unknown 2 %d" % v1
             elif array[1] == 0x46:
                 desc = "BY Test 0x11227766"
             elif array[1] == 0x50:
