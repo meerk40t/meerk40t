@@ -533,38 +533,6 @@ class MeerK40t(MWindow):
 
         context.listen("active", self.on_active_change)
 
-        if False:
-            self.scene.Bind(wx.EVT_PAINT, self.widget_scene.on_paint)
-            self.scene.Bind(wx.EVT_ERASE_BACKGROUND, self.widget_scene.on_erase)
-
-            self.scene.Bind(wx.EVT_MOTION, self.widget_scene.on_mouse_move)
-
-            self.scene.Bind(wx.EVT_MOUSEWHEEL, self.widget_scene.on_mousewheel)
-
-            self.scene.Bind(wx.EVT_MIDDLE_DOWN, self.widget_scene.on_mouse_middle_down)
-            self.scene.Bind(wx.EVT_MIDDLE_UP, self.widget_scene.on_mouse_middle_up)
-
-            self.scene.Bind(wx.EVT_LEFT_DCLICK, self.widget_scene.on_mouse_double_click)
-
-            self.scene.Bind(wx.EVT_RIGHT_DOWN, self.widget_scene.on_right_mouse_down)
-            self.scene.Bind(wx.EVT_RIGHT_UP, self.widget_scene.on_right_mouse_up)
-
-            self.scene.Bind(wx.EVT_LEFT_DOWN, self.widget_scene.on_left_mouse_down)
-            self.scene.Bind(wx.EVT_LEFT_UP, self.widget_scene.on_left_mouse_up)
-
-            self.scene.Bind(wx.EVT_SIZE, self.widget_scene.on_size)
-
-            try:
-                self.scene.Bind(wx.EVT_MAGNIFY, self.widget_scene.on_magnify_mouse)
-                self.scene.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
-                self.scene.Bind(wx.EVT_GESTURE_PAN, self.widget_scene.on_gesture)
-                self.scene.Bind(wx.EVT_GESTURE_ZOOM, self.widget_scene.on_gesture)
-                # self.tree.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
-                # self.tree.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
-            except AttributeError:
-                # Not WX 4.1
-                pass
-
         self.widget_scene.add_scenewidget(
             SelectionWidget(self.widget_scene, self.shadow_tree)
         )

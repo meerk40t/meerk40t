@@ -85,9 +85,9 @@ class ScenePanel(wx.Panel):
 
         try:
             self.scene_panel.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
-            self.scene_panel.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
-            self.scene_panel.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
-            self.scene_panel.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
+            # self.scene_panel.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
+            # self.scene_panel.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
+            # self.scene_panel.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
             # self.tree.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
             # self.tree.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
         except AttributeError:
