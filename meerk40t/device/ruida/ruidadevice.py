@@ -930,9 +930,12 @@ class RuidaEmulator(Module):
                 )
             elif array[1] == 0x04:
                 desc = "OEM On/Off, CardIO On/OFF"
-            elif array[1] == 0x05:
-                desc = "RD Positioning Function"
+            elif array[1] == 0x05 or array[1] == 0x54:
+                desc = "Read Run Info"
                 # len: 2
+                # TODO: Requires Response
+            elif array[1] == 0x06 or array[1] == 0x52:
+                desc = "Unknown/System Time."
             elif array[1] == 0x10 or array[1] == 0x53:
                 desc = "Unknown Function--3"
             elif array[1] == 0x60:
@@ -940,6 +943,8 @@ class RuidaEmulator(Module):
                 v = self.decode14(array[2:4])
                 desc = "RD-FUNCTION-UNK1"
         elif array[0] == 0xE5:  # 0xE502
+            if array[1] == 0x00:
+                desc = "Document Page Number"
             if array[1] == 0x02:
                 # len 3
                 desc = "Document Data End"
@@ -1028,8 +1033,7 @@ class RuidaEmulator(Module):
                 desc = "Array Mirror %d" % (v1)
             elif array[1] == 0x32:
                 v1 = self.decodeu35(array[2:7])
-                v2 = self.decodeu35(array[7:12])
-                desc = "Unknown Preamble %d %d" % (v1, v2)
+                desc = "Unknown Preamble %d" % v1
             elif array[1] == 0x35:
                 v1 = self.decodeu35(array[2:7])
                 v2 = self.decodeu35(array[7:12])
@@ -1086,6 +1090,7 @@ class RuidaEmulator(Module):
             elif array[1] == 0x01:
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = "Document Name %d" % (filenumber)
+                # TODO: Requires a response here.
             elif array[1] == 0x02:
                 desc = "File transfer"
             elif array[1] == 0x03:
@@ -1806,7 +1811,7 @@ class RuidaEmulator(Module):
         if mem == 0x0321:
             return "File Progress Len", 0
         if mem == 0x033B:
-            return "ReadProcessFeedLength", 0
+            return "Read Process Feed Length", 0
         if mem == 0x0340:
             return "Stop Time", 0
         if mem == 0x0591:
