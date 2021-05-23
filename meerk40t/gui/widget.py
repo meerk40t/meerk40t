@@ -50,7 +50,7 @@ BUFFER = 10.0
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
 class Scene(Module, Job):
-    def __init__(self, context, path, gui, **kwargs):
+    def __init__(self, context, path, gui, establish_binds=True, **kwargs):
         Module.__init__(self, context, path)
         Job.__init__(self, job_name="refresh_scene%s" % path, process=self.refresh_scene)
         self.gui = gui
@@ -72,7 +72,8 @@ class Scene(Module, Job):
 
         self.background_brush = wx.Brush("Grey")
 
-        self.establish_binds()
+        if establish_binds:
+            self.establish_binds()
 
     def initialize(self, *args, **kwargs):
         context = self.context
