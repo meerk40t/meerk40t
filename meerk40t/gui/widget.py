@@ -85,7 +85,6 @@ class ScenePanel(wx.Panel):
 
         try:
             self.scene_panel.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
-            # self.scene_panel.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
             self.scene_panel.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
             self.scene_panel.Bind(wx.EVT_GESTURE_ZOOM, self.on_gesture)
             # self.tree.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
@@ -427,8 +426,6 @@ class Scene(Module, Job):
                 self.hit_chain.append((current_widget, current_matrix))
 
     def event(self, window_pos, event_type=""):
-        if event_type != 'hover':
-            print(event_type, window_pos)
         if self.last_position is None:
             self.last_position = window_pos
         dx = window_pos[0] - self.last_position[0]
