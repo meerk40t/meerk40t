@@ -754,6 +754,8 @@ class RuidaEmulator(Module):
                 desc = "Home U"
             if array[1] == 0x2E:
                 desc = "FocusZ"
+            if array[1] == 0x51:
+                desc = "Inhale On/Off"
         elif array[0] == 0xD9:
             options = array[2]
             if options == 0x03:
@@ -764,30 +766,32 @@ class RuidaEmulator(Module):
                 param = "Light/Origin"
             else:  # options == 0x00:
                 param = "Origin"
-            if array[1] == 0x00:
+            if array[1] == 0x00 or array[1] == 0x50:
                 coord = self.abscoord(array[3:8])
                 self.x += coord
                 desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
                 if self.control:
                     self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
-            elif array[1] == 0x01:
+            elif array[1] == 0x01 or array[1] == 0x51:
                 coord = self.abscoord(array[3:8])
                 self.y += coord
                 desc = "Move %s Y: %f (%f,%f)" % (param, coord, self.x, self.y)
                 if self.control:
                     self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
-            elif array[1] == 0x02:
+            elif array[1] == 0x02 or array[1] == 0x52:
                 coord = self.abscoord(array[3:8])
                 self.z += coord
                 desc = "Move %s Z: %f (%f,%f)" % (param, coord, self.x, self.y)
-            elif array[1] == 0x03:
+            elif array[1] == 0x03 or array[1] == 0x53:
                 coord = self.abscoord(array[3:8])
                 self.u += coord
                 desc = "Move %s U: %f (%f,%f)" % (param, coord, self.x, self.y)
-            elif array[1] == 0x10:
+            elif array[1] == 0x0F:
+                desc = "Feed Axis Move"
+            elif array[1] == 0x10 or array[1] == 0x60:
                 self.x = self.abscoord(array[3:8])
                 self.y = self.abscoord(array[8:13])
-                desc = "Home %s XY (%f, %f)" % (param, self.x / um_per_mil, self.y / um_per_mil)
+                desc = "Move %s XY (%f, %f)" % (param, self.x / um_per_mil, self.y / um_per_mil)
                 # self.x = 0
                 # self.y = 0
                 if self.control:
@@ -795,6 +799,11 @@ class RuidaEmulator(Module):
                         self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
                     else:
                         self.context("home\n")
+            elif array[1] == 0x30 or array[1] == 0x70:
+                self.x = self.abscoord(array[3:8])
+                self.y = self.abscoord(array[8:13])
+                self.u = self.abscoord(array[13:13+5])
+                desc = "Move %s XYU: %f (%f,%f)" % (self.x / um_per_mil, self.y / um_per_mil, self.u / um_per_mil)
         elif array[0] == 0xDA:
             mem = self.parse_mem(array[2:4])
             name, v = self.mem_lookup(mem)
@@ -839,6 +848,17 @@ class RuidaEmulator(Module):
                     v1,
                     v1,
                 )
+            elif array[1] == 0x04:
+                desc = "OEM On/Off, CardIO On/OFF"
+            elif array[1] == 0x10 or array[1] == 0x53:
+                desc = "Unknown Function--3"
+            elif array[1] == 0x60:
+                # len: 14
+                desc = "Send Work End Signal"
+        elif array[0] == 0xE5:  # 0xE502
+            if array[1] == 0x02:
+                # len 3
+                desc = "Document Data End"
         elif array[0] == 0xE6:
             if array[1] == 0x01:
                 desc = "Set Absolute"
@@ -976,7 +996,7 @@ class RuidaEmulator(Module):
                 desc = "File transfer"
             elif array[1] == 0x03:
                 document = array[2]
-                desc = "Select Document %d" % (document)
+                desc = "Start Select Document %d" % (document)
             elif array[1] == 0x04:
                 desc = "Calculate Document Time"
         elif array[0] == 0xEA:
