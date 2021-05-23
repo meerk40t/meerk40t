@@ -1418,7 +1418,7 @@ class RuidaEmulator(Module):
         if mem == 0x0116:
             return "Dock Point Y", 0
         if mem == 0x0105:
-            return "RD-UNKNOWN 8", 0
+            return "User Para 5", 0
         if mem == 0x0107:
             return "Feed Delay After", 0  # 0 s
         if mem == 0x0108:
@@ -1627,12 +1627,20 @@ class RuidaEmulator(Module):
             return "PC Lock %d" % (mem - 0x181)
         if mem == 0x0188:
             return "User Key Slow Velocity", 0
+        if mem == 0x0189:
+            return "MachineID 2", 0
+        if mem == 0x018A:
+            return "MachineID 3", 0
+        if mem == 0x018B:
+            return "MachineID 4", 0
         if mem == 0x018C:
-            return "RD-UNKNOWN 6a", 0
+            return "Blow On Delay", 0
         if mem == 0x018D:
-            return "RD-UNKNOWN 6b", 0
+            return "Blow Off Delay", 0
         if mem == 0x018f:
-            return "Blower", 0
+            return "User Para 6, Blower", 0
+        if mem == 0x0190:
+            return "Jet Time", 0
         if mem == 0x0190:
             return "Color Mark Head Max Distance", 0
         if mem == 0x0191:
@@ -1644,13 +1652,13 @@ class RuidaEmulator(Module):
         if mem == 0x0194:
             return "Color Mark Sensor Offset2", 0
         if mem == 0x0195:
-            return "RD-UNKNOWN 9a", 0
+            return "Cylinder Down Delay", 0
         if mem == 0x0196:
-            return "RD-UNKNOWN 9b", 0
+            return "Cylinder Up Delay", 0
         if mem == 0x0197:
-            return "RD-UNKNOWN 9c", 0
+            return "Press Down Delay", 0
         if mem == 0x0198:
-            return "RD-UNKNOWN 9d", 0
+            return "Press Up Delay", 0
         if mem == 0x0199:
             return "Drop Position Start", 0
         if mem == 0x019A:
@@ -1659,12 +1667,20 @@ class RuidaEmulator(Module):
             return "Drop Interval", 0
         if mem == 0x019C:
             return "Drop Time", 0
+        if mem == 0x019D:
+            return "Sharpen Delay On", 0
+        if mem == 0x019E:
+            return "Sharpen Delay Off", 0
         if mem == 0x019F:
             return "Sharpen Time Limit", 0
         if mem == 0x01A0:
             return "Sharpen Travel Limit", 0
+        if mem == 0x01A1:
+            return "Work End Time", 0
         if mem == 0x01A2:
             return "Color Mark Offset", 0
+        if mem == 0x01A3:
+            return "Color Mark Count", 0
         if mem == 0x01A4:
             return "Wheel Press Compensation", 0  # Protect IO Status
         if mem == 0x01A5:
@@ -1726,8 +1742,10 @@ class RuidaEmulator(Module):
             # OEM PULSE ENERGY
             return "Total Laser Work Time 3", 0
         if mem == 0x0219:
+            # OEM SET CURRENT
             return "Total Laser Work Time 4", 0
         if mem == 0x021a:
+            # OEM SET FREQUENCY
             return "Total Laser Work Time 5", 0
         if mem == 0x021f:
             return "Ring Number", 0
@@ -1762,7 +1780,11 @@ class RuidaEmulator(Module):
         if mem == 0x0260:
             return "DocumentWorkNum",  0
         if mem == 0x02C4:
-            return "RD-UNKNOWN 1", 0
+            return "Read Scan Backlash Flag", 0
+        if mem == 0x02C5:
+            return "Read Scan Backlash 1", 0
+        if mem == 0x02D5:
+            return "Read Scan Backlash 2", 0
         if mem == 0x02FE:
             return "Card ID",  0x65006500
         if mem == 0x02FF:
@@ -1772,7 +1794,9 @@ class RuidaEmulator(Module):
         if mem == 0x031C:
             return "File Fault", 0  # Error counter.
         if mem == 0x0320:
-            return "?-FileSize-?", 0
+            return "File Total Length", 0
+        if mem == 0x0321:
+            return "File Progress Len", 0
         if mem == 0x033B:
             return "ReadProcessFeedLength", 0
         if mem == 0x0340:
