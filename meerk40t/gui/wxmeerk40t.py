@@ -158,7 +158,7 @@ from .widget import (
     RectSelectWidget,
     ReticleWidget,
     Scene,
-    SelectionWidget,
+    SelectionWidget, ScenePanel,
 )
 
 """
@@ -373,7 +373,8 @@ class MeerK40t(MWindow):
         )
 
         # Define Scene
-        self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
+        self.scene = ScenePanel(self.context, self, style=wx.EXPAND | wx.WANTS_CHARS)
+        self.widget_scene = self.scene.scene
         self.scene.SetDoubleBuffered(True)
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
@@ -456,8 +457,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
-        self.scene.SetFocus()
-        self.widget_scene = None
+        # self.scene.SetFocus()
         self.pipe_state = None
 
         self.shadow_tree = ShadowTree(self.context, self, self.context.elements._tree)
@@ -533,8 +533,7 @@ class MeerK40t(MWindow):
 
         context.listen("active", self.on_active_change)
 
-        self.widget_scene = context.open_as("module/Scene", "Scene", self.scene, False)
-        if True:
+        if False:
             self.scene.Bind(wx.EVT_PAINT, self.widget_scene.on_paint)
             self.scene.Bind(wx.EVT_ERASE_BACKGROUND, self.widget_scene.on_erase)
 
@@ -1642,7 +1641,7 @@ class MeerK40t(MWindow):
 
     def on_background_signal(self, origin, background):
         background = wx.Bitmap.FromBuffer(*background)
-        self.widget_scene.signal("background", background)
+        self.scene.signal("background", background)
         self.request_refresh()
 
     def __set_titlebar(self):
@@ -1883,7 +1882,7 @@ class MeerK40t(MWindow):
         if self.context is None:
             return
         self.Layout()
-        self.widget_scene.signal("guide")
+        self.scene.signal("guide")
         self.request_refresh()
 
     def update_position(self, origin, pos):
@@ -1903,13 +1902,13 @@ class MeerK40t(MWindow):
     def space_changed(self, origin, *args):
         self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
-        self.widget_scene.signal("grid")
-        self.widget_scene.signal("guide")
+        self.scene.signal("grid")
+        self.scene.signal("guide")
         self.request_refresh(origin)
 
     def bed_changed(self, origin, *args):
-        self.widget_scene.signal("grid")
-        # self.widget_scene.signal('guide')
+        self.scene.signal("grid")
+        # self.scene.signal('guide')
         self.request_refresh(origin)
 
     def on_emphasized_elements_changed(self, origin, *args):
