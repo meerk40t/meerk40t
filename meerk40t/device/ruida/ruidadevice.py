@@ -836,8 +836,6 @@ class RuidaEmulator(Module):
                 desc = "KeyUp 0x0F"
             if array[1] == 0x51:
                 desc = "Inhale On/Off"
-
-
         elif array[0] == 0xD9:
             options = array[2]
             if options == 0x03:
@@ -885,7 +883,7 @@ class RuidaEmulator(Module):
                 self.x = self.abscoord(array[3:8])
                 self.y = self.abscoord(array[8:13])
                 self.u = self.abscoord(array[13:13+5])
-                desc = "Move %s XYU: %f (%f,%f)" % (self.x / um_per_mil, self.y / um_per_mil, self.u / um_per_mil)
+                desc = "Move %s XYU: %f (%f,%f)" % (param, self.x / um_per_mil, self.y / um_per_mil, self.u / um_per_mil)
         elif array[0] == 0xDA:
             mem = self.parse_mem(array[2:4])
             name, v = self.mem_lookup(mem)
