@@ -752,10 +752,92 @@ class RuidaEmulator(Module):
             if array[1] == 0x2D:
                 self.u = 0.0
                 desc = "Home U"
+            if array[1] == 0x2A:
+                self.x = 0.0
+                self.y = 0.0
+                desc = "Home XY"
             if array[1] == 0x2E:
                 desc = "FocusZ"
+            if array[1] == 0x20:
+                desc = "KeyDown -Y +Left"
+            if array[1] == 0x21:
+                desc = "KeyDown +Y +Right"
+            if array[1] == 0x22:
+                desc = "KeyDown +X +Top"
+            if array[1] == 0x23:
+                desc = "KeyDown -X +Bottom"
+            if array[1] == 0x24:
+                desc = "KeyDown 0x14"
+            if array[1] == 0x25:
+                desc = "KeyDown 0x15"
+            if array[1] == 0x26:
+                desc = "KeyDown 0x16"
+            if array[1] == 0x27:
+                desc = "KeyDown 0x17"
+            if array[1] == 0x28:
+                desc = "KeyDown 0x21"
+            if array[1] == 0x30:
+                desc = "KeyUp -Y +Left"
+            if array[1] == 0x31:
+                desc = "KeyUp +Y +Right"
+            if array[1] == 0x32:
+                desc = "KeyUp +X +Top"
+            if array[1] == 0x33:
+                desc = "KeyUp -X +Bottom"
+            if array[1] == 0x34:
+                desc = "KeyUp 0x04"
+            if array[1] == 0x35:
+                desc = "KeyUp 0x05"
+            if array[1] == 0x36:
+                desc = "KeyUp 0x06"
+            if array[1] == 0x37:
+                desc = "KeyUp 0x07"
+            if array[1] == 0x38:
+                desc = "KeyUp 0x20"
+            if array[1] == 0x39:
+                desc = "Home A"
+            if array[1] == 0x3A:
+                desc = "Home B"
+            if array[1] == 0x3B:
+                desc = "Home C"
+            if array[1] == 0x3C:
+                desc = "Home D"
+            if array[1] == 0x40:
+                desc = "KeyDown 0x18"
+            if array[1] == 0x41:
+                desc = "KeyDown 0x19"
+            if array[1] == 0x42:
+                desc = "KeyDown 0x1A"
+            if array[1] == 0x43:
+                desc = "KeyDown 0x1B"
+            if array[1] == 0x44:
+                desc = "KeyDown 0x1C"
+            if array[1] == 0x45:
+                desc = "KeyDown 0x1D"
+            if array[1] == 0x46:
+                desc = "KeyDown 0x1E"
+            if array[1] == 0x47:
+                desc = "KeyDown 0x1F"
+            if array[1] == 0x48:
+                desc = "KeyUp 0x08"
+            if array[1] == 0x49:
+                desc = "KeyUp 0x09"
+            if array[1] == 0x4A:
+                desc = "KeyUp 0x0A"
+            if array[1] == 0x4B:
+                desc = "KeyUp 0x0B"
+            if array[1] == 0x4C:
+                desc = "KeyUp 0x0C"
+            if array[1] == 0x4D:
+                desc = "KeyUp 0x0D"
+            if array[1] == 0x4E:
+                desc = "KeyUp 0x0E"
+            if array[1] == 0x4F:
+                desc = "KeyUp 0x0F"
             if array[1] == 0x51:
                 desc = "Inhale On/Off"
+
+
         elif array[0] == 0xD9:
             options = array[2]
             if options == 0x03:
@@ -850,11 +932,15 @@ class RuidaEmulator(Module):
                 )
             elif array[1] == 0x04:
                 desc = "OEM On/Off, CardIO On/OFF"
+            elif array[1] == 0x05:
+                desc = "RD Positioning Function"
+                # len: 2
             elif array[1] == 0x10 or array[1] == 0x53:
                 desc = "Unknown Function--3"
             elif array[1] == 0x60:
                 # len: 14
-                desc = "Send Work End Signal"
+                v = self.decode14(array[2:4])
+                desc = "RD-FUNCTION-UNK1"
         elif array[0] == 0xE5:  # 0xE502
             if array[1] == 0x02:
                 # len 3
@@ -1266,7 +1352,14 @@ class RuidaEmulator(Module):
             return "Auto Type Space 5", 0
         if mem == 0x007A:
             return "Auto Type Space 6", 0
-
+        if mem == 0x0080:
+            return "RD-UNKNOWN 2", 0
+        if mem == 0x0090:
+            return "RD-UNKNOWN 3", 0
+        if mem == 0x00A0:
+            return "RD-UNKNOWN 4", 0
+        if mem == 0x00B0:
+            return "RD-UNKNOWN 5", 0
         if mem == 0x0C0:
             return "Offset 8 Start", 0
         if mem == 0x0C1:
@@ -1324,6 +1417,8 @@ class RuidaEmulator(Module):
             return "Dock Point X", 0
         if mem == 0x0116:
             return "Dock Point Y", 0
+        if mem == 0x0105:
+            return "RD-UNKNOWN 8", 0
         if mem == 0x0107:
             return "Feed Delay After", 0  # 0 s
         if mem == 0x0108:
@@ -1467,7 +1562,7 @@ class RuidaEmulator(Module):
         if mem == 0x0160:
             return "Inhale On Delay", 0  # Delay 8
         if mem == 0x0161:
-            return "Inhale Off Delay", 0 # Delay 8
+            return "Inhale Off Delay", 0  # Delay 8
         if mem == 0x162:
             return "Delay 5 On", 0
         if mem == 0x163:
@@ -1532,6 +1627,10 @@ class RuidaEmulator(Module):
             return "PC Lock %d" % (mem - 0x181)
         if mem == 0x0188:
             return "User Key Slow Velocity", 0
+        if mem == 0x018C:
+            return "RD-UNKNOWN 6a", 0
+        if mem == 0x018D:
+            return "RD-UNKNOWN 6b", 0
         if mem == 0x018f:
             return "Blower", 0
         if mem == 0x0190:
@@ -1544,6 +1643,14 @@ class RuidaEmulator(Module):
             return "Color Mark Camera Distance", 0  # JetOffset = 0x193 to 0x194
         if mem == 0x0194:
             return "Color Mark Sensor Offset2", 0
+        if mem == 0x0195:
+            return "RD-UNKNOWN 9a", 0
+        if mem == 0x0196:
+            return "RD-UNKNOWN 9b", 0
+        if mem == 0x0197:
+            return "RD-UNKNOWN 9c", 0
+        if mem == 0x0198:
+            return "RD-UNKNOWN 9d", 0
         if mem == 0x0199:
             return "Drop Position Start", 0
         if mem == 0x019A:
@@ -1654,6 +1761,8 @@ class RuidaEmulator(Module):
             return "Axis Preferred Position 8, Pos D", int(self.d)
         if mem == 0x0260:
             return "DocumentWorkNum",  0
+        if mem == 0x02C4:
+            return "RD-UNKNOWN 1", 0
         if mem == 0x02FE:
             return "Card ID",  0x65006500
         if mem == 0x02FF:
