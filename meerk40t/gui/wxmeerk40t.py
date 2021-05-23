@@ -147,7 +147,7 @@ from .preferences import Preferences
 from .rasterwizard import RasterWizard
 from .rotarysettings import RotarySettings
 from .settings import Settings
-from .terminal import Terminal
+from .console import Console
 from .textproperty import TextProperty
 from .usbconnect import UsbConnect
 from .widget import (
@@ -231,7 +231,7 @@ ID_SPOOLER = wx.NewId()
 ID_KEYMAP = wx.NewId()
 ID_NOTES = wx.NewId()
 ID_OPERATIONS = wx.NewId()
-ID_TERMINAL = wx.NewId()
+ID_CONSOLE = wx.NewId()
 ID_ROTARY = wx.NewId()
 ID_RASTER = wx.NewId()
 
@@ -287,7 +287,7 @@ ID_MENU_NOTES = wx.NewId()
 ID_MENU_OPERATIONS = wx.NewId()
 ID_MENU_CONTROLLER = wx.NewId()
 ID_MENU_CAMERA = wx.NewId()
-ID_MENU_TERMINAL = wx.NewId()
+ID_MENU_CONSOLE = wx.NewId()
 ID_MENU_USB = wx.NewId()
 ID_MENU_SPOOLER = wx.NewId()
 ID_MENU_WINDOW_RESET = wx.NewId()
@@ -687,7 +687,7 @@ class MeerK40t(MWindow):
 
         windows.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
         windows.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
-        windows.AddButton(ID_TERMINAL, _("Terminal"), icons8_console_50.GetBitmap(), "")
+        windows.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
         windows.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
         windows.AddButton(
             ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
@@ -953,8 +953,8 @@ class MeerK40t(MWindow):
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Terminal\n"),
-            id=ID_TERMINAL,
+            lambda v: self.context.console("window open Console\n"),
+            id=ID_CONSOLE,
         )
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -1187,8 +1187,8 @@ class MeerK40t(MWindow):
             self.main_menubar.camera = wxglade_tmp_menu.Append(
                 ID_MENU_CAMERA, _("Camera"), ""
             )
-        self.main_menubar.terminal = wxglade_tmp_menu.Append(
-            ID_MENU_TERMINAL, _("Terminal"), ""
+        self.main_menubar.console = wxglade_tmp_menu.Append(
+            ID_MENU_CONSOLE, _("Console"), ""
         )
         self.main_menubar.navigation = wxglade_tmp_menu.Append(
             ID_MENU_NAVIGATION, _("Navigation"), ""
@@ -1324,8 +1324,8 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open Terminal\n"),
-            id=ID_MENU_TERMINAL,
+            lambda v: self.context.console("window open Console\n"),
+            id=ID_MENU_CONSOLE,
         )
         self.Bind(
             wx.EVT_MENU,
@@ -3277,7 +3277,8 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/ImageProperty", ImageProperty)
         kernel.register("window/OperationProperty", OperationProperty)
         kernel.register("window/CameraInterface", CameraInterface)
-        kernel.register("window/Terminal", Terminal)
+        kernel.register("window/Terminal", Console)
+        kernel.register("window/Console", Console)
         kernel.register("window/Settings", Settings)
         kernel.register("window/Rotary", RotarySettings)
         kernel.register("window/About", About)

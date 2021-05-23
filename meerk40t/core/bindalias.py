@@ -195,7 +195,7 @@ class BindAlias(Modifier):
         self.keymap["f8"] = "control Path"
         self.keymap["f9"] = "control Transform"
         self.keymap["control+f9"] = "control Flip"
-        self.keymap["f12"] = "window open Terminal"
+        self.keymap["f12"] = "window open Console"
         self.keymap["control+alt+g"] = "image wizard Gold"
         self.keymap["control+alt+x"] = "image wizard Xin"
         self.keymap["control+alt+s"] = "image wizard Stipo"
