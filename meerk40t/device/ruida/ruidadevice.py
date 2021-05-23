@@ -718,7 +718,7 @@ class RuidaEmulator(Module):
             desc = "Keep Alive"
         elif array[0] == 0xD0:
             if array[1] == 0x29:
-                desc = "Unknown Lightburn Command"
+                desc = "Unknown LB Command"
         elif array[0] == 0xD7:
             self.in_file = False
             if self.control:
