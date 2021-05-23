@@ -339,7 +339,11 @@ class MeerK40t(MWindow):
 
     def __init__(self, *args, **kwds):
         super().__init__(1200, 600, *args, **kwds)
-
+        try:
+            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
+        except AttributeError:
+            # Not WX 4.1
+            pass
         context = self.context
         self.root_context = context.root
         context._kernel.run_later = self.run_later
