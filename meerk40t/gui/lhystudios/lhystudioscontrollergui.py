@@ -68,13 +68,13 @@ class LhystudiosControllerGui(MWindow):
             self, wx.ID_ANY, "Mock USB Connection Mode"
         )
         self.text_device_index = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
+        self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
         self.text_device_address = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
+        self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
         self.text_device_bus = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
+        self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
         self.text_device_version = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
@@ -152,22 +152,26 @@ class LhystudiosControllerGui(MWindow):
             "DEBUG. Without a K40 connected continue to process things as if there was one."
         )
         self.text_device_index.SetMinSize((55, 23))
+        self.spin_device_index.SetMinSize((40, 23))
         self.spin_device_index.SetToolTip(
             "Optional: Distinguish between different lasers using the match criteria below.\n"
             "-1 match anything. 0+ match exactly that value."
 
         )
         self.text_device_address.SetMinSize((55, 23))
+        self.spin_device_address.SetMinSize((40, 23))
         self.spin_device_address.SetToolTip(
             "Optional: Distinguish between different lasers using the match criteria below.\n"
             "-1 match anything. 0+ match exactly that value."
         )
         self.text_device_bus.SetMinSize((55, 23))
+        self.spin_device_bus.SetMinSize((40, 23))
         self.spin_device_bus.SetToolTip(
             "Optional: Distinguish between different lasers using the match criteria below.\n"
             "-1 match anything. 0+ match exactly that value."
         )
         self.text_device_version.SetMinSize((55, 23))
+        self.spin_device_version.SetMinSize((40, 23))
         self.spin_device_version.SetToolTip(
             "Optional: Distinguish between different lasers using the match criteria below.\n"
             "-1 match anything. 0+ match exactly that value."
@@ -265,7 +269,7 @@ class LhystudiosControllerGui(MWindow):
         sizer_12.Add(self.text_device_version, 0, 0, 0)
         sizer_12.Add(self.spin_device_version, 0, 0, 0)
         sizer_23.Add(sizer_12, 0, wx.EXPAND, 0)
-        sizer_usb_settings.Add(sizer_23, 1, wx.EXPAND, 0)
+        sizer_usb_settings.Add(sizer_23, 0, wx.EXPAND, 0)
         sizer_1.Add(sizer_usb_settings, 0, wx.EXPAND, 0)
         sizer_controller.Add(self.button_controller_control, 0, wx.EXPAND, 0)
         sizer_controller.Add(self.text_controller_status, 0, wx.EXPAND, 0)

@@ -122,21 +122,25 @@ class MoshiControllerGui(MWindow):
             "DEBUG. Without a K40 connected continue to process things as if there was one."
         )
         self.text_device_index.SetMinSize((55, 23))
+        self.spin_device_index.SetMinSize((40, 23))
         self.spin_device_index.SetToolTip(
             "Optional: Distinguish between different lasers using the match criteria below.\n"
             "-1 match anything. 0+ match exactly that value."
         )
         self.text_device_address.SetMinSize((55, 23))
+        self.spin_device_address.SetMinSize((40, 23))
         self.spin_device_address.SetToolTip(
             "Optional: Distinguish between different lasers using the match criteria below.\n"
             "-1 match anything. 0+ match exactly that value."
         )
         self.text_device_bus.SetMinSize((55, 23))
+        self.spin_device_bus.SetMinSize((40, 23))
         self.spin_device_bus.SetToolTip(
             "Optional: Distinguish between different lasers using the match criteria below.\n"
             "-1 match anything. 0+ match exactly that value."
         )
         self.text_device_version.SetMinSize((55, 23))
+        self.spin_device_version.SetMinSize((40, 23))
         self.spin_device_version.SetToolTip(
             "Optional: Distinguish between different lasers using the match criteria below.\n"
             "-1 match anything. 0+ match exactly that value."
