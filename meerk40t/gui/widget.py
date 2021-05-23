@@ -427,6 +427,8 @@ class Scene(Module, Job):
                 self.hit_chain.append((current_widget, current_matrix))
 
     def event(self, window_pos, event_type=""):
+        if event_type != 'hover':
+            print(event_type, window_pos)
         if self.last_position is None:
             self.last_position = window_pos
         dx = window_pos[0] - self.last_position[0]
