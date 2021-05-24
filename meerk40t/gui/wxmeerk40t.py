@@ -395,6 +395,10 @@ class MeerK40t(MWindow):
         self.stop_pane(self._mgr)
         self.context.register("pane/Stop", self.stop_pane)
 
+        # Define Pause.
+        self.pause_pane(self._mgr)
+        self.context.register("pane/Pause", self.pause_pane)
+
         # Define Home.
         self.home_pane(self._mgr)
         self.context.register("pane/Home", self.home_pane)
@@ -507,6 +511,33 @@ class MeerK40t(MWindow):
         home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
         self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), home)
         self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("home"))
+
+    def pause_pane(self, manager):
+        pane = manager.GetPane('pause')
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                manager.Update()
+            return
+        pause = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_pause_50.GetBitmap()
+        )
+
+        def on_pause_button(e=None):
+            try:
+                self.context("dev pause\n")
+            except AttributeError:
+                pass
+
+        self.Bind(
+            wx.EVT_BUTTON,
+            on_pause_button,
+            pause,
+        )
+        pause.SetBackgroundColour(wx.Colour(255, 255, 0))
+        pause.SetToolTip(_("Pause/Resume the controller"))
+        pause.SetSize(pause.GetBestSize())
+        manager.AddPane(pause, aui.AuiPaneInfo().Bottom().Name("pause"))
 
     def stop_pane(self, manager):
         pane = manager.GetPane('stop')
