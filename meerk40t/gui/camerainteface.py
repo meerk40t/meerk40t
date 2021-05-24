@@ -153,7 +153,6 @@ class CameraInterface(MWindow, Job):
         self.setting.setting(str, "fisheye", "")
         self.setting.setting(str, "perspective", "")
         self.setting.setting(str, "uri", "0")
-        self.setting.setting(bool, "first", True)
 
         self.check_fisheye.SetValue(self.setting.correction_fisheye)
         self.check_perspective.SetValue(self.setting.correction_perspective)
@@ -238,9 +237,9 @@ class CameraInterface(MWindow, Job):
 
     def window_open(self):
         from sys import platform as _platform
-        if _platform == 'darwin' and self.setting.first:
+        if _platform == 'darwin' and not hasattr(self.setting, "_first"):
             self.context("camera%d start -t 1\n" % self.index)
-            self.setting.first = False
+            self.setting._first = False
         else:
             self.context("camera%d start\n" % self.index)
         self.context.schedule(self)
