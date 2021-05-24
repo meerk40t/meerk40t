@@ -1,3 +1,4 @@
+from abc import ABC
 from copy import copy
 
 from meerk40t.tools.rasterplotter import (
@@ -116,8 +117,8 @@ class LaserSettings:
 
 
 class CutCode(list):
-    def __init__(self):
-        list.__init__(self)
+    def __init__(self, seq=()):
+        list.__init__(self, seq)
         self.output = True
         self.operation = "CutCode"
         self.start = None
@@ -175,32 +176,34 @@ class CutCode(list):
         self[j:k] = self[j:k][::-1]
 
     def generate(self):
-        for cutobject in self:
+        for cutobject in self.flat(self):
             yield COMMAND_PLOT, cutobject
         yield COMMAND_PLOT_START
 
+    def correct_empty(self, context=None):
+        if context is None:
+            context = self
+        for index in range(len(context) -1, -1, -1):
+            c = context[index]
+            if not isinstance(c, CutGroup):
+                continue
+            self.correct_empty(c)
+            if len(c) == 0:
+                del context[index]
 
-class CutGroup(list):
-    """
-    Cut groups are effectively constraints. They may contain CutObjects or other
-    CutGroups. However, the CutObjects must be cut *after* the groups within the
-    CutGroup is cut.
-    """
-    def __init__(self, parent: list):
-        list.__init__(self)
-        self.parent = parent
-        self.normal = True  # Normal or Reversed.
-        parent.append(self)
-
-    def start(self):
-        if len(self) == 0:
-            return None
-        return self[0].start if self.normal else self[-1].end
-
-    def end(self):
-        if len(self) == 0:
-            return None
-        return self[-1].end if self.normal else self[0].start
+    def flat(self, context=None):
+        """
+        Index first tree flattener.
+        """
+        if context is None:
+            context = self
+        for index in range(len(context)-1, -1, -1):
+            c = context[index]
+            if not isinstance(c, CutGroup):
+                yield c
+                continue
+            for s in self.flat(c):
+                yield s
 
 
 class CutObject:
@@ -253,6 +256,36 @@ class CutObject:
 
     def generator(self):
         raise NotImplementedError
+
+
+class CutGroup(list, CutObject, ABC):
+    """
+    Cut groups are effectively constraints. They may contain CutObjects or other
+    CutGroups. However, the CutObjects must be cut *after* the groups within the
+    CutGroup is cut.
+    """
+    def __init__(self, parent: list, children=(), settings=None):
+        list.__init__(self, children)
+        CutObject.__init__(self, settings=settings)
+        self.parent = parent
+        self.normal = True  # Normal or Reversed.
+        parent.append(self)
+
+    def __copy__(self):
+        return CutGroup(self.parent, self)
+
+    def __repr__(self):
+        return "CutGroup(children=%s, parent=%s)" % (list.__repr__(self), str(self.parent))
+
+    def start(self):
+        if len(self) == 0:
+            return None
+        return self[0].start() if self.normal else self[-1].end()
+
+    def end(self):
+        if len(self) == 0:
+            return None
+        return self[-1].end() if self.normal else self[0].start()
 
 
 class LineCut(CutObject):

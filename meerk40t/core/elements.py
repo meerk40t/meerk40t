@@ -961,6 +961,7 @@ class LaserOperation(Node):
 
                     context = context.parent
                 context = context.parent
+        blob.correct_empty()
         if len(blob) == 0:
             return None
         return blob
