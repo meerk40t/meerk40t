@@ -1,10 +1,10 @@
 import wx
 
 from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard_50
-from .laserrender import DRAW_MODE_INVERT, DRAW_MODE_FLIPXY, LaserRender
+from .laserrender import LaserRender
 from .mwindow import MWindow
-from .widget import GridWidget, GuideWidget, ReticleWidget, Widget, HITCHAIN_HIT, RESPONSE_DROP, RESPONSE_CONSUME
-from .zmatrix import ZMatrix
+from .widget import GridWidget, GuideWidget, ReticleWidget, Widget, HITCHAIN_HIT, RESPONSE_CONSUME, \
+    ScenePanel
 from ..core.cutcode import CutCode
 from ..svgelements import Matrix
 
@@ -42,7 +42,9 @@ class Simulation(MWindow):
         self.Simulation_menubar.Append(wxglade_tmp_menu, "Optimize")
         self.SetMenuBar(self.Simulation_menubar)
         # Menu Bar end
-        self.view_pane = wx.Panel(self, wx.ID_ANY)
+        self.view_pane = ScenePanel(self.context, self, scene_name="Sim", style=wx.EXPAND | wx.WANTS_CHARS)
+        self.widget_scene = self.view_pane.scene
+
         self.slider_progress = wx.Slider(self, wx.ID_ANY, 0, 0, 10)
         self.text_distance_laser = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
@@ -108,14 +110,11 @@ class Simulation(MWindow):
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         # end wxGlade
 
-        self.widget_scene = self.context.open_as("module/Scene", "SimScene", self.view_pane)
-
         self.widget_scene.add_interfacewidget(SimulationInterfaceWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
-
 
     def __set_properties(self):
         _icon = wx.NullIcon
