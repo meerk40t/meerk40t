@@ -586,7 +586,7 @@ def plugin(kernel, lifecycle=None):
                     element.node.altered()
                 channel(_("Image Quantized to %d colors.") % colors)
             except (IndexError, ValueError):
-                channel(_(""))
+                pass
         return "image", data
 
     @context.console_argument(
