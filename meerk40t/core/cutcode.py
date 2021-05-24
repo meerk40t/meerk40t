@@ -222,6 +222,20 @@ class CutCode(list):
             for s in self.flat(c):
                 yield s
 
+    def closed_groups(self, context=None):
+        """
+        """
+        if context is None:
+            context = self
+        for index in range(len(context)-1, -1, -1):
+            c = context[index]
+            if isinstance(c, CutGroup):
+                if c.closed:
+                    yield c
+                continue
+            for s in self.closed_groups(c):
+                yield s
+
     def optimize(self):
         old_len = self.length_travel()
         new_cutcode = self.short_travel_cutcode()
@@ -244,6 +258,8 @@ class CutCode(list):
 
     def inner_first_cutcode(self):
         ordered = CutCode()
+        for group in self.closed_groups():
+            print(group)
         subpaths = self
         for j in range(len(subpaths)):
             for k in range(j + 1, len(subpaths)):
