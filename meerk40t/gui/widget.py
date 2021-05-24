@@ -148,7 +148,6 @@ class ScenePanel(wx.Panel):
             self.scene.event(event.GetPosition(), "wheeldown")
 
     def on_mouse_middle_down(self, event):
-        self.SetFocus()
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
         self.scene.event(event.GetPosition(), "middledown")
@@ -159,7 +158,6 @@ class ScenePanel(wx.Panel):
         self.scene.event(event.GetPosition(), "middleup")
 
     def on_left_mouse_down(self, event):
-        self.SetFocus()
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
         self.scene.event(event.GetPosition(), "leftdown")
@@ -181,7 +179,6 @@ class ScenePanel(wx.Panel):
             self.scene.event(event.GetPosition(), "move")
 
     def on_right_mouse_down(self, event):
-        self.SetFocus()
         if event.AltDown():
             self.scene.event(event.GetPosition(), "rightdown+alt")
         elif event.ControlDown():
