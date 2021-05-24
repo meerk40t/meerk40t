@@ -52,9 +52,9 @@ BUFFER = 10.0
 
 class ScenePanel(wx.Panel):
     def __init__(self, context, *args, scene_name="Scene", **kwds):
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.WANTS_CHARS
         wx.Panel.__init__(self, *args, **kwds)
-        self.scene_panel = wx.Panel(self, wx.ID_ANY)
+        self.scene_panel = wx.Panel(self, wx.ID_ANY, style=wx.WANTS_CHARS)
         self.scene = context.open_as("module/Scene", scene_name, self)
         self.context = context
         self.scene_panel.SetDoubleBuffered(True)
@@ -149,6 +149,7 @@ class ScenePanel(wx.Panel):
             self.scene.event(event.GetPosition(), "wheeldown")
 
     def on_mouse_middle_down(self, event):
+        self.SetFocus()
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
         self.scene.event(event.GetPosition(), "middledown")
@@ -159,6 +160,7 @@ class ScenePanel(wx.Panel):
         self.scene.event(event.GetPosition(), "middleup")
 
     def on_left_mouse_down(self, event):
+        self.SetFocus()
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
         self.scene.event(event.GetPosition(), "leftdown")
@@ -180,6 +182,7 @@ class ScenePanel(wx.Panel):
             self.scene.event(event.GetPosition(), "move")
 
     def on_right_mouse_down(self, event):
+        self.SetFocus()
         if event.AltDown():
             self.scene.event(event.GetPosition(), "rightdown+alt")
         elif event.ControlDown():
