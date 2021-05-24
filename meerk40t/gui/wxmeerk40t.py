@@ -377,9 +377,8 @@ class MeerK40t(MWindow):
         )
 
         # Define Scene
-        self.scene = ScenePanel(self.context, self, style=wx.EXPAND | wx.WANTS_CHARS)
+        self.scene = ScenePanel(self.context, self, scene_name="Scene", style=wx.EXPAND | wx.WANTS_CHARS)
         self.widget_scene = self.scene.scene
-        self.scene.SetDoubleBuffered(True)
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
         # Define Ribbon.

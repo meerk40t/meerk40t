@@ -149,25 +149,10 @@ class JobPreview(MWindow):
             self.jobadd_interrupt,
             id=self.preview_menu.menu_jobadd_interrupt.GetId(),
         )
-        # self.preview_menu.menu_jobadd_command = wxglade_tmp_menu.Append(
-        #     wx.ID_ANY, "Command", "Add a command"
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     self.jobadd_command,
-        #     id=self.preview_menu.menu_jobadd_command.GetId(),
-        # )
+
         self.preview_menu.Append(wxglade_tmp_menu, "Add")
 
         wxglade_tmp_menu = wx.Menu()
-        # self.preview_menu.menu_jobchange_step_repeat = wxglade_tmp_menu.Append(
-        #     wx.ID_ANY, "Step and Repeat", "Perform Step and Repeat"
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     self.jobchange_step_repeat,
-        #     id=self.preview_menu.menu_jobchange_step_repeat.GetId(),
-        # )
         self.preview_menu.Append(wxglade_tmp_menu, _("Tools"))
 
         self.SetMenuBar(self.preview_menu)
@@ -291,7 +276,6 @@ class JobPreview(MWindow):
         self.check_cut_inner_first.SetToolTip(
             "Reorder elements to cut the inner elements first"
         )
-        self.check_cut_inner_first.Enable(False)
         self.check_reduce_direction_changes.SetToolTip(
             "Reorder to reduce the number of sharp directional changes"
         )

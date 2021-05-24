@@ -18,7 +18,6 @@ from ..kernel import Modifier
 from ..svgelements import Group, Length, Path, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .elements import LaserOperation
-from .optimizer import Optimizer
 
 
 def plugin(kernel, lifecycle=None):
@@ -555,16 +554,6 @@ class Planner(Modifier):
             self.update_gui()
             return data_type, data
 
-        # @self.context.console_command(
-        #     "scale_speed",
-        #     help="plan<?> scale_speed",
-        #     input_type="plan",
-        #     output_type="plan",
-        # )
-        # def plan(command, channel, _, data_type=None, data=None, **kwargs):
-        #     plan, original, commands, name = data
-        #     return data_type, data
-
     def plan(self, **kwargs):
         for item in self._plan:
             yield item
@@ -693,8 +682,9 @@ class Planner(Modifier):
         def optimize_travel():
             for c in plan:
                 if isinstance(c, CutCode):
-                    opt = Optimizer(c)
-                    opt.optimize()
+                    t = c.short_travel_cutcode()
+                    c.clear()
+                    c.extend(t)
 
         plan, original, commands, name = self.default_plan()
         commands.append(optimize_travel)
