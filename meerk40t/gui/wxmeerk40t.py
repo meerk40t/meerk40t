@@ -1215,7 +1215,7 @@ class MeerK40t(MWindow):
             ID_MENU_SPOOLER, _("Job Spooler"), ""
         )
         self.main_menubar.jobpreview = wxglade_tmp_menu.Append(
-            ID_MENU_JOB, _("Execute Job"), ""
+            ID_MENU_JOB, _("Start Job"), ""
         )
         wxglade_tmp_menu.AppendSeparator()
         self.main_menubar.windowreset = wxglade_tmp_menu.Append(
