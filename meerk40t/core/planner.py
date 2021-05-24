@@ -18,7 +18,6 @@ from ..kernel import Modifier
 from ..svgelements import Group, Length, Path, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .elements import LaserOperation
-from .optimizer import Optimizer
 
 
 def plugin(kernel, lifecycle=None):
@@ -683,8 +682,7 @@ class Planner(Modifier):
         def optimize_travel():
             for c in plan:
                 if isinstance(c, CutCode):
-                    opt = Optimizer(c)
-                    opt.optimize()
+                    c.short_travel_cutcode()
 
         plan, original, commands, name = self.default_plan()
         commands.append(optimize_travel)
