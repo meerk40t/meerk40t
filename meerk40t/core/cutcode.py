@@ -1,3 +1,4 @@
+from abc import ABC
 from copy import copy
 
 from meerk40t.tools.rasterplotter import (
@@ -13,7 +14,9 @@ from meerk40t.tools.rasterplotter import (
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
-from ..svgelements import Color, Path, Point
+from ..svgelements import Color, Path, Point, Polygon, Group
+from ..tools.pathtools import VectorMontonizer
+
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
@@ -116,8 +119,8 @@ class LaserSettings:
 
 
 class CutCode(list):
-    def __init__(self):
-        list.__init__(self)
+    def __init__(self, seq=()):
+        list.__init__(self, seq)
         self.output = True
         self.operation = "CutCode"
         self.start = None
@@ -175,12 +178,191 @@ class CutCode(list):
         self[j:k] = self[j:k][::-1]
 
     def generate(self):
-        for cutobject in self:
+        for cutobject in self.flat(self):
             yield COMMAND_PLOT, cutobject
         yield COMMAND_PLOT_START
 
+    def correct_empty(self, context=None):
+        if context is None:
+            context = self
+        for index in range(len(context) -1, -1, -1):
+            c = context[index]
+            if not isinstance(c, CutGroup):
+                continue
+            self.correct_empty(c)
+            if len(c) == 0:
+                del context[index]
+
+    def flat(self, context=None):
+        """
+        Index first tree flattener.
+        """
+        if context is None:
+            context = self
+        for index in range(len(context)-1, -1, -1):
+            c = context[index]
+            if not isinstance(c, CutGroup):
+                yield c
+                continue
+            for s in self.flat(c):
+                yield s
+
+    def candidate(self, context=None):
+        """
+        List of potential Cut code
+        """
+        # TODO: doesn't work yet.
+        if context is None:
+            context = self
+        for index in range(len(context)-1, -1, -1):
+            c = context[index]
+            if not isinstance(c, CutGroup):
+                yield c
+                continue
+            for s in self.flat(c):
+                yield s
+
+    def closed_groups(self, context=None):
+        """
+        """
+        if context is None:
+            context = self
+        for index in range(len(context)-1, -1, -1):
+            c = context[index]
+            if isinstance(c, CutGroup):
+                if c.closed:
+                    yield c
+                continue
+            for s in self.closed_groups(c):
+                yield s
+
+    def optimize(self):
+        old_len = self.length_travel()
+        new_cutcode = self.short_travel_cutcode()
+        new_len = new_cutcode.length_travel()
+        red = new_len - old_len
+        try:
+            print(
+                "%f -> %f reduced %f (%f%%)"
+                % (old_len, new_len, red, 100 * (red / old_len))
+            )
+        except ZeroDivisionError:
+            return self
+        return new_cutcode
+
+    def permit(self, permit, _list=None):
+        if _list is None:
+            _list = self.flat()
+        for c in _list:
+            c.permitted = permit
+
+    def inner_first_cutcode(self):
+        ordered = CutCode()
+        for group in self.closed_groups():
+            print(group)
+        subpaths = self
+        for j in range(len(subpaths)):
+            for k in range(j + 1, len(subpaths)):
+                if self.is_inside(subpaths[k], subpaths[j]):
+                    t = subpaths[j]
+                    subpaths[j] = subpaths[k]
+                    subpaths[k] = t
+
+    def short_travel_cutcode(self):
+        start = self.start
+        if start is None:
+            start = 0
+        else:
+            start = complex(start[0], start[1])
+        self.permit(True, self.flat())
+        ordered = CutCode()
+        while True:
+            closest = None
+            reverse = False
+            distance = float('inf')
+            for cut in self.candidate():
+                if not cut.permitted:
+                    continue
+                s = cut.start()
+                s = complex(s[0], s[1])
+                d = abs(s - start)
+                if d < distance:
+                    distance = d
+                    reverse = False
+                    closest = cut
+                e = cut.end()
+                e = complex(e[0], e[1])
+                d = abs(e - start)
+                if d < distance:
+                    distance = d
+                    reverse = True
+                    closest = cut
+            if closest is None:
+                break
+            closest.permitted = False
+            c = copy(closest)
+            c.reversed = reverse
+            end = c.end()
+            start = complex(end[0], end[1])
+            ordered.append(c)
+        return ordered
+
+    def length_travel(self):
+        cutcode = list(self.flat())
+        distance = 0.0
+        for i in range(1, len(cutcode)):
+            prev = cutcode[i - 1]
+            curr = cutcode[i]
+            distance += Point.distance(prev.end(), curr.start())
+        return distance
+
+    def is_inside(self, inner_path, outer_path):
+        """
+        Test that path1 is inside path2.
+        :param inner_path: inner path
+        :param outer_path: outer path
+        :return: whether path1 is wholly inside path2.
+        """
+        if not hasattr(inner_path, "bounding_box"):
+            inner_path.bounding_box = Group.union_bbox([inner_path])
+        if not hasattr(outer_path, "bounding_box"):
+            outer_path.bounding_box = Group.union_bbox([outer_path])
+        if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
+            # outer minx > inner minx (is not contained)
+            return False
+        if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
+            # outer miny > inner miny (is not contained)
+            return False
+        if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
+            # outer maxx < inner maxx (is not contained)
+            return False
+        if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
+            # outer maxy < inner maxy (is not contained)
+            return False
+        if outer_path.bounding_box == inner_path.bounding_box:
+            if outer_path == inner_path:  # This is the same object.
+                return False
+        if not hasattr(outer_path, "vm"):
+            outer_path = Polygon(
+                [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
+            )
+            vm = VectorMontonizer()
+            vm.add_cluster(outer_path)
+            outer_path.vm = vm
+        for i in range(101):
+            p = inner_path.point(i / 100.0, error=1e4)
+            if not outer_path.vm.is_point_inside(p.x, p.y):
+                return False
+        return True
+
 
 class CutObject:
+    """
+    CutObjects are small vector cuts which have on them a laser settings object.
+    These store the start and end point of the cut. Whether this cut is normal or
+    reversed.
+    """
+
     def __init__(self, start=None, end=None, settings=None):
         if settings is None:
             settings = LaserSettings()
@@ -224,6 +406,37 @@ class CutObject:
 
     def generator(self):
         raise NotImplementedError
+
+
+class CutGroup(list, CutObject, ABC):
+    """
+    Cut groups are effectively constraints. They may contain CutObjects or other
+    CutGroups. However, the CutObjects must be cut *after* the groups within the
+    CutGroup is cut.
+    """
+    def __init__(self, parent: list, children=(), settings=None):
+        list.__init__(self, children)
+        CutObject.__init__(self, settings=settings)
+        self.parent = parent
+        self.normal = True  # Normal or Reversed.
+        parent.append(self)
+        self.closed = False
+
+    def __copy__(self):
+        return CutGroup(self.parent, self)
+
+    def __repr__(self):
+        return "CutGroup(children=%s, parent=%s)" % (list.__repr__(self), str(self.parent))
+
+    def start(self):
+        if len(self) == 0:
+            return None
+        return self[0].start() if self.normal else self[-1].end()
+
+    def end(self):
+        if len(self) == 0:
+            return None
+        return self[-1].end() if self.normal else self[0].start()
 
 
 class LineCut(CutObject):
