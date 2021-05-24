@@ -555,16 +555,6 @@ class Planner(Modifier):
             self.update_gui()
             return data_type, data
 
-        # @self.context.console_command(
-        #     "scale_speed",
-        #     help="plan<?> scale_speed",
-        #     input_type="plan",
-        #     output_type="plan",
-        # )
-        # def plan(command, channel, _, data_type=None, data=None, **kwargs):
-        #     plan, original, commands, name = data
-        #     return data_type, data
-
     def plan(self, **kwargs):
         for item in self._plan:
             yield item

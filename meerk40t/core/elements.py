@@ -46,7 +46,7 @@ from .cutcode import (
     LaserSettings,
     LineCut,
     QuadCut,
-    RasterCut,
+    RasterCut, CutGroup,
 )
 
 
@@ -867,90 +867,103 @@ class LaserOperation(Node):
                 yield COMMAND_LASER_OFF
 
     def as_blob(self):
-        c = CutCode()
+        blob = CutCode()
+        context = blob
         settings = self.settings
-        if self._operation in ("Cut", "Engrave"):
-            for object_path in self.children:
-                object_path = object_path.object
-                if isinstance(object_path, SVGImage):
-                    box = object_path.bbox()
-                    plot = Path(
-                        Polygon(
-                            (box[0], box[1]),
-                            (box[0], box[3]),
-                            (box[2], box[3]),
-                            (box[2], box[1]),
-                        )
-                    )
-                else:
-                    # Is a shape or path.
-                    if not isinstance(object_path, Path):
-                        plot = abs(Path(object_path))
-                    else:
-                        plot = abs(object_path)
-
-                settings.line_color = plot.stroke
-                for seg in plot:
-                    if isinstance(seg, Move):
-                        pass  # Move operations are ignored.
-                    elif isinstance(seg, Close):
-                        c.append(LineCut(seg.start, seg.end, settings=settings))
-                    elif isinstance(seg, Line):
-                        c.append(LineCut(seg.start, seg.end, settings=settings))
-                    elif isinstance(seg, QuadraticBezier):
-                        c.append(
-                            QuadCut(seg.start, seg.control, seg.end, settings=settings)
-                        )
-                    elif isinstance(seg, CubicBezier):
-                        c.append(
-                            CubicCut(
-                                seg.start,
-                                seg.control1,
-                                seg.control2,
-                                seg.end,
-                                settings=settings,
+        for p in range(settings.implicit_passes):
+            if self._operation in ("Cut", "Engrave"):
+                for object_path in self.children:
+                    object_path = object_path.object
+                    if isinstance(object_path, SVGImage):
+                        box = object_path.bbox()
+                        path = Path(
+                            Polygon(
+                                (box[0], box[1]),
+                                (box[0], box[3]),
+                                (box[2], box[3]),
+                                (box[2], box[1]),
                             )
                         )
-                    elif isinstance(seg, Arc):
-                        arc = ArcCut(seg, settings=settings)
-                        c.append(arc)
-        elif self._operation == "Raster":
-            direction = settings.raster_direction
-            settings.crosshatch = False
-            if direction == 4:
-                cross_settings = LaserSettings(settings)
-                cross_settings.crosshatch = True
-                for object_image in self.children:
-                    object_image = object_image.object
-                    c.append(RasterCut(object_image, settings))
-                    c.append(RasterCut(object_image, cross_settings))
-            else:
-                for object_image in self.children:
-                    object_image = object_image.object
-                    c.append(RasterCut(object_image, settings))
-        elif self._operation == "Image":
-            for object_image in self.children:
-                object_image = object_image.object
-                settings = LaserSettings(self.settings)
-                try:
-                    settings.raster_step = int(object_image.values["raster_step"])
-                except KeyError:
-                    settings.raster_step = 1
+                    else:
+                        # Is a shape or path.
+                        if not isinstance(object_path, Path):
+                            path = abs(Path(object_path))
+                        else:
+                            path = abs(object_path)
+
+                    settings.line_color = path.stroke
+                    for subpath in path.as_subpaths():
+                        group = CutGroup(context)
+                        context = group
+                        for seg in subpath:
+                            if isinstance(seg, Move):
+                                pass  # Move operations are ignored.
+                            elif isinstance(seg, Close):
+                                context.append(LineCut(seg.start, seg.end, settings=settings))
+                            elif isinstance(seg, Line):
+                                context.append(LineCut(seg.start, seg.end, settings=settings))
+                            elif isinstance(seg, QuadraticBezier):
+                                context.append(
+                                    QuadCut(seg.start, seg.control, seg.end, settings=settings)
+                                )
+                            elif isinstance(seg, CubicBezier):
+                                context.append(
+                                    CubicCut(
+                                        seg.start,
+                                        seg.control1,
+                                        seg.control2,
+                                        seg.end,
+                                        settings=settings,
+                                    )
+                                )
+                            elif isinstance(seg, Arc):
+                                arc = ArcCut(seg, settings=settings)
+                                context.append(arc)
+                        context = context.parent
+            elif self._operation == "Raster":
                 direction = settings.raster_direction
                 settings.crosshatch = False
+                group = CutGroup(context)
+                context = group
                 if direction == 4:
                     cross_settings = LaserSettings(settings)
                     cross_settings.crosshatch = True
-                    c.append(RasterCut(object_image, settings))
-                    c.append(RasterCut(object_image, cross_settings))
+                    for object_image in self.children:
+                        object_image = object_image.object
+                        context.append(RasterCut(object_image, settings))
+                        context.append(RasterCut(object_image, cross_settings))
                 else:
-                    c.append(RasterCut(object_image, settings))
+                    for object_image in self.children:
+                        object_image = object_image.object
+                        context.append(RasterCut(object_image, settings))
+                context = context.parent
+            elif self._operation == "Image":
+                group = CutGroup(context)
+                context = group
+                for object_image in self.children:
+                    group = CutGroup(context)
+                    context = group
+                    object_image = object_image.object
+                    settings = LaserSettings(self.settings)
+                    try:
+                        settings.raster_step = int(object_image.values["raster_step"])
+                    except KeyError:
+                        settings.raster_step = 1
+                    direction = settings.raster_direction
+                    settings.crosshatch = False
+                    if direction == 4:
+                        cross_settings = LaserSettings(settings)
+                        cross_settings.crosshatch = True
+                        context.append(RasterCut(object_image, settings))
+                        context.append(RasterCut(object_image, cross_settings))
+                    else:
+                        context.append(RasterCut(object_image, settings))
 
-        if settings.passes_custom:
-            c *= settings.passes
-        if len(c) == 0:
+                    context = context.parent
+                context = context.parent
+        if len(blob) == 0:
             return None
-        return c
+        return blob
 
 
 class CutNode(Node):

@@ -180,7 +180,36 @@ class CutCode(list):
         yield COMMAND_PLOT_START
 
 
+class CutGroup(list):
+    """
+    Cut groups are effectively constraints. They may contain CutObjects or other
+    CutGroups. However, the CutObjects must be cut *after* the groups within the
+    CutGroup is cut.
+    """
+    def __init__(self, parent: list):
+        list.__init__(self)
+        self.parent = parent
+        self.normal = True  # Normal or Reversed.
+        parent.append(self)
+
+    def start(self):
+        if len(self) == 0:
+            return None
+        return self[0].start if self.normal else self[-1].end
+
+    def end(self):
+        if len(self) == 0:
+            return None
+        return self[-1].end if self.normal else self[0].start
+
+
 class CutObject:
+    """
+    CutObjects are small vector cuts which have on them a laser settings object.
+    These store the start and end point of the cut. Whether this cut is normal or
+    reversed.
+    """
+
     def __init__(self, start=None, end=None, settings=None):
         if settings is None:
             settings = LaserSettings()
