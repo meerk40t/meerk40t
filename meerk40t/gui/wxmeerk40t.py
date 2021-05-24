@@ -457,7 +457,6 @@ class MeerK40t(MWindow):
             .CaptionVisible(False),
         )
 
-
     def tree_pane(self, manager):
         pane = manager.GetPane('tree')
         if len(pane.name):
@@ -486,8 +485,11 @@ class MeerK40t(MWindow):
                 manager.Update()
             return
         home = Jog(self, wx.ID_ANY, context=self.context)
-        self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("jog"))
-
+        self._mgr.AddPane(home, aui.AuiPaneInfo()
+                          .Right()
+                          .MinSize(200, 200)
+                          .MaxSize(300, 300)
+                          .Name("jog"))
 
     def home_pane(self, manager):
         pane = manager.GetPane('home')
