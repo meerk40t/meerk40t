@@ -8,6 +8,7 @@ import sys
 import traceback
 
 from .file.fileoutput import FileOutput
+from .jog import Jog
 from ..core.cutcode import CutCode
 from .mwindow import MWindow
 from .simulation import Simulation
@@ -392,6 +393,10 @@ class MeerK40t(MWindow):
         self.home_pane(self._mgr)
         self.context.register("pane/Home", self.home_pane)
 
+        # Define Jog.
+        self.jog_pane(self._mgr)
+        self.context.register("pane/Jog", self.jog_pane)
+
         # AUI Manager Update.
         self._mgr.Update()
 
@@ -472,6 +477,17 @@ class MeerK40t(MWindow):
                 .BottomDockable(False)
                 .TopDockable(False),
         )
+
+    def jog_pane(self, manager):
+        pane = manager.GetPane('jog')
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                manager.Update()
+            return
+        home = Jog(self, wx.ID_ANY, context=self.context)
+        self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("jog"))
+
 
     def home_pane(self, manager):
         pane = manager.GetPane('home')
