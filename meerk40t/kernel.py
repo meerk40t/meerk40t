@@ -1,3 +1,4 @@
+import datetime
 import functools
 import inspect
 import re
@@ -725,7 +726,8 @@ class Kernel:
         self._current_directory = "."
         self._console_buffer = ""
         self.queue = []
-        self._console_channel = self.channel("console")
+        self._console_channel = self.channel("console", timestamp=True)
+        self._console_channel.timestamp = True
         self.console_channel_file = None
 
         if config is not None:
@@ -2463,13 +2465,14 @@ class CommandMatchRejected(BaseException):
 
 
 class Channel:
-    def __init__(self, name: str, buffer_size: int = 0, line_end: Optional[str] = None):
+    def __init__(self, name: str, buffer_size: int = 0, line_end: Optional[str] = None, timestamp: bool=False):
         self.watchers = []
         self.greet = None
         self.name = name
         self.buffer_size = buffer_size
         self.line_end = line_end
         self._ = lambda e: e
+        self.timestamp = timestamp
         if buffer_size == 0:
             self.buffer = None
         else:
@@ -2485,6 +2488,9 @@ class Channel:
     def __call__(self, message: Union[str, bytes, bytearray], *args, **kwargs):
         if self.line_end is not None:
             message = message + self.line_end
+        if self.timestamp:
+            ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
+            message = ts + message.replace('\n', '\n%s' % ts)
         for w in self.watchers:
             w(message)
         if self.buffer is not None:
