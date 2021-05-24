@@ -384,6 +384,7 @@ class MeerK40t(MWindow):
 
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
+        self.ribbonbar_hidden = False
 
         if self.is_dark:
             provider = self._ribbon.GetArtProvider()
@@ -632,6 +633,10 @@ class MeerK40t(MWindow):
 
         # After main window is launched run_later actually works.
 
+    def ribbon_bar_toggle(self, event):
+        self._ribbon.Hide()
+        self.ribbonbar_hidden = True
+
     def __set_ribbonbar(self):
         home = RB.RibbonPage(
             self._ribbon,
@@ -649,6 +654,10 @@ class MeerK40t(MWindow):
         self.Bind(
             RB.EVT_RIBBONBAR_HELP_CLICK,
             lambda e: self.context.console("webhelp help\n"),
+        )
+        self.Bind(
+            RB.EVT_RIBBONBAR_TOGGLED,
+            self.ribbon_bar_toggle
         )
         toolbar = RB.RibbonButtonBar(toolbar_panel)
         self.toolbar_button_bar = toolbar
