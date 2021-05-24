@@ -21,7 +21,7 @@ for full details.
 
 """
 
-MEERK40T_VERSION = "0.7.0 Beta-25"
+MEERK40T_VERSION = "0.7.0 Beta-26"
 
 
 def pair(value):
