@@ -635,7 +635,7 @@ class MeerK40t(MWindow):
 
     def ribbon_bar_toggle(self, event):
         self._ribbon.Hide()
-        self.ribbonbar_hidden = True
+        self.ribbonbar_hidden = not self.ribbonbar_hidden
 
     def __set_ribbonbar(self):
         home = RB.RibbonPage(
