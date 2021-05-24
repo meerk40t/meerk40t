@@ -104,7 +104,7 @@ from .icons import (
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
-    icons_evenspace_vert, icons8_laser_beam_hazard_50,
+    icons_evenspace_vert, icons8_laser_beam_hazard_50, icons8_computer_support_50,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -215,7 +215,7 @@ ID_SAVE = wx.NewId()
 ID_NAV = wx.NewId()
 ID_USB = wx.NewId()
 ID_CONTROLLER = wx.NewId()
-ID_PREFERENCES = wx.NewId()
+ID_CONFIGURATION = wx.NewId()
 ID_DEVICES = wx.NewId()
 ID_CAMERA = wx.NewId()
 ID_CAMERA1 = wx.NewId()
@@ -667,7 +667,7 @@ class MeerK40t(MWindow):
         self.toolbar_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
-            _("" if self.is_dark else "Main"),
+            _("" if self.is_dark else "Project"),
             # style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
         )
 
@@ -675,14 +675,15 @@ class MeerK40t(MWindow):
         self.toolbar_button_bar = toolbar
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
         toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
-        toolbar.AddButton(ID_JOB, _("Start Job"), icons8_laser_beam_52.GetBitmap(), "")
-        toolbar.AddButton(ID_SIM, _("Compile & Simulate"), icons8_laser_beam_hazard_50.GetBitmap(), "")
-        toolbar.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
+        toolbar.AddButton(ID_JOB, _("Execute Job"), icons8_laser_beam_52.GetBitmap(), "")
+        toolbar.AddButton(ID_SIM, _("Simulate"), icons8_laser_beam_hazard_50.GetBitmap(), "")
 
         toolbar.AddButton(
             ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
         )
         toolbar.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
+        toolbar.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
+
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(
@@ -696,7 +697,7 @@ class MeerK40t(MWindow):
                 "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
             id=ID_SIM,
         )
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
+
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context.console("window open Notes\n"),
@@ -707,7 +708,11 @@ class MeerK40t(MWindow):
             lambda v: self.context.console("window open RasterWizard\n"),
             id=ID_RASTER,
         )
-
+        toolbar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open Console\n"),
+            id=ID_CONSOLE,
+        )
         # ==========
         # WINDOW PANEL
         # ==========
@@ -730,6 +735,8 @@ class MeerK40t(MWindow):
                 ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), ""
             )
         windows.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
+        windows.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
         windows.AddButton(
             ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), ""
         )
@@ -769,24 +776,23 @@ class MeerK40t(MWindow):
         settings_bar.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
         settings_bar.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
         settings_bar.AddButton(
-            ID_PREFERENCES,
-            _("Preferences"),
-            icons8_administrative_tools_50.GetBitmap(),
+            ID_CONFIGURATION,
+            _("Config"),
+            icons8_computer_support_50.GetBitmap(),
             "",
         )
         settings_bar.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
-        settings_bar.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
-        settings_bar.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
+        # settings_bar.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
 
-        settings_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open UsbConnect\n"),
-            id=ID_USB,
-        )
+        # settings_bar.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda v: self.context("window open UsbConnect\n"),
+        #     id=ID_USB,
+        # )
         settings_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context.console("window open -d Preferences\n"),
-            id=ID_PREFERENCES,
+            id=ID_CONFIGURATION,
         )
         settings_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -807,11 +813,6 @@ class MeerK40t(MWindow):
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context.console("window open Keymap\n"),
             id=ID_KEYMAP,
-        )
-        settings_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Console\n"),
-            id=ID_CONSOLE,
         )
         settings_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -1263,7 +1264,7 @@ class MeerK40t(MWindow):
             ID_MENU_SPOOLER, _("Job Spooler"), ""
         )
         self.main_menubar.jobpreview = wxglade_tmp_menu.Append(
-            ID_MENU_JOB, _("Start Job"), ""
+            ID_MENU_JOB, _("Execute Job"), ""
         )
         wxglade_tmp_menu.AppendSeparator()
         self.main_menubar.windowreset = wxglade_tmp_menu.Append(
