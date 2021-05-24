@@ -101,7 +101,7 @@ from .icons import (
     icons8_system_task_20,
     icons8_type_50,
     icons8_ungroup_objects_50,
-    icons8_usb_connector_50,
+    # icons8_usb_connector_50,
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
@@ -292,6 +292,8 @@ ID_MENU_CAMERA = wx.NewId()
 ID_MENU_CONSOLE = wx.NewId()
 ID_MENU_USB = wx.NewId()
 ID_MENU_SPOOLER = wx.NewId()
+ID_MENU_SIMULATE = wx.NewId()
+ID_MENU_RASTER_WIZARD = wx.NewId()
 ID_MENU_WINDOW_RESET = wx.NewId()
 ID_MENU_JOB = wx.NewId()
 ID_MENU_TREE = wx.NewId()
@@ -1408,6 +1410,12 @@ class MeerK40t(MWindow):
         self.main_menubar.jobpreview = wt_menu.Append(
             ID_MENU_JOB, _("Execute Job"), ""
         )
+        self.main_menubar.rasterwizard = wt_menu.Append(
+            ID_MENU_RASTER_WIZARD, _("RasterWizard"), ""
+        )
+        self.main_menubar.simulate = wt_menu.Append(
+            ID_MENU_SIMULATE, _("Simulate"), ""
+        )
         wt_menu.AppendSeparator()
         self.main_menubar.windowreset = wt_menu.Append(
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
@@ -1601,6 +1609,17 @@ class MeerK40t(MWindow):
             lambda v: self.context("window open JobSpooler\n"),
             id=ID_MENU_SPOOLER,
         )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window open RasterWizard\n"),
+            id=ID_MENU_RASTER_WIZARD,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+            id=ID_MENU_SIMULATE,
+        )
+
         self.Bind(
             wx.EVT_MENU,
             lambda v: self.context("window reset *\n"),
