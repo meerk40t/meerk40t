@@ -3251,7 +3251,7 @@ class Elemental(Modifier):
             self.context.signal("element_property_update", node)
 
         def radio_match(node, passvalue=1, **kwargs):
-            return node.settings.passes == passvalue
+            return node.settings.passes == passvalue and node.settings.passes_custom
 
         @self.tree_submenu(_("Set Operation Passes"))
         @self.tree_radio(radio_match)
