@@ -348,20 +348,32 @@ class MeerK40t(MWindow):
         context = self.context
         self.root_context = context.root
         context._kernel.run_later = self.run_later
-
         self.DragAcceptFiles(True)
-        self._mgr = aui.AuiManager()
-
-        # notify AUI which frame to use
-        self._mgr.SetManagedWindow(self)
 
         self.renderer = LaserRender(context)
         self.working_file = None
+        self._rotary_view = False
+        self.pipe_state = None
+        self.previous_position = None
 
         # Define Tree
         self.wxtree = wx.TreeCtrl(
             self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS
         )
+        self.__set_tree()
+
+        # Define Scene
+        self.scene = ScenePanel(self.context, self, scene_name="Scene", style=wx.EXPAND | wx.WANTS_CHARS)
+        self.widget_scene = self.scene.scene
+
+        # Define Ribbon.
+        self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
+        self.__set_ribbonbar()
+
+        self._mgr = aui.AuiManager()
+
+        # notify AUI which frame to use
+        self._mgr.SetManagedWindow(self)
 
         self._mgr.AddPane(
             self.wxtree,
@@ -377,27 +389,8 @@ class MeerK40t(MWindow):
             .TopDockable(False),
         )
 
-        # Define Scene
-        self.scene = ScenePanel(self.context, self, scene_name="Scene", style=wx.EXPAND | wx.WANTS_CHARS)
-        self.widget_scene = self.scene.scene
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
-        # Define Ribbon.
-        self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
-        self.ribbonbar_hidden = False
-
-        if self.is_dark:
-            provider = self._ribbon.GetArtProvider()
-            _update_ribbon_artprovider_for_dark_mode(provider)
-        self.ribbon_position_aspect_ratio = True
-        self.ribbon_position_ignore_update = False
-        self.ribbon_position_x = 0.0
-        self.ribbon_position_y = 0.0
-        self.ribbon_position_h = 0.0
-        self.ribbon_position_w = 0.0
-        self.ribbon_position_units = 0
-        self.ribbon_position_name = None
-        self.__set_ribbonbar()
         self._mgr.AddPane(
             self._ribbon,
             aui.AuiPaneInfo()
@@ -434,7 +427,7 @@ class MeerK40t(MWindow):
 
         # Define Home.
         home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), home)
         self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("home"))
 
         # AUI Manager Update.
@@ -446,57 +439,29 @@ class MeerK40t(MWindow):
 
         self.main_statusbar = self.CreateStatusBar(3)
 
-        # end wxGlade
-
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
 
-        self.previous_position = None
         self.__set_properties()
         self.__do_layout()
 
-        self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-
         self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-
-        # self.scene.SetFocus()
-        self.pipe_state = None
-
-        self.shadow_tree = ShadowTree(self.context, self, self.context.elements._tree)
-        self.Bind(
-            wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
-        )
-        self.Bind(
-            wx.EVT_TREE_END_DRAG, self.shadow_tree.on_drag_end_handler, self.wxtree
-        )
-        self.Bind(
-            wx.EVT_TREE_ITEM_ACTIVATED, self.shadow_tree.on_item_activated, self.wxtree
-        )
-        self.Bind(
-            wx.EVT_TREE_SEL_CHANGED,
-            self.shadow_tree.on_item_selection_changed,
-            self.wxtree,
-        )
-        self.Bind(
-            wx.EVT_TREE_ITEM_RIGHT_CLICK,
-            self.shadow_tree.on_item_right_click,
-            self.wxtree,
-        )
 
         self.__set_titlebar()
         self.__kernel_initialize(context)
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
-        self._rotary_view = False
         self.CenterOnScreen()
 
         self.context.setting(str, "perspective")
         if self.context.perspective is not None:
             self._mgr.LoadPerspective(self.context.perspective)
+
         self.on_rebuild_tree_request()
 
     @property
@@ -633,6 +598,29 @@ class MeerK40t(MWindow):
 
         # After main window is launched run_later actually works.
 
+    def __set_tree(self):
+        self.shadow_tree = ShadowTree(self.context, self, self.context.elements._tree)
+        self.Bind(
+            wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
+        )
+        self.Bind(
+            wx.EVT_TREE_END_DRAG, self.shadow_tree.on_drag_end_handler, self.wxtree
+        )
+        self.Bind(
+            wx.EVT_TREE_ITEM_ACTIVATED, self.shadow_tree.on_item_activated, self.wxtree
+        )
+        self.Bind(
+            wx.EVT_TREE_SEL_CHANGED,
+            self.shadow_tree.on_item_selection_changed,
+            self.wxtree,
+        )
+        self.Bind(
+            wx.EVT_TREE_ITEM_RIGHT_CLICK,
+            self.shadow_tree.on_item_right_click,
+            self.wxtree,
+        )
+
+
     def ribbon_bar_toggle(self, event):
         if not self.ribbonbar_hidden:
             self.toolbar_panel.Hide()
@@ -645,6 +633,21 @@ class MeerK40t(MWindow):
         self.ribbonbar_hidden = not self.ribbonbar_hidden
 
     def __set_ribbonbar(self):
+        self.ribbonbar_hidden = False
+
+        if self.is_dark:
+            provider = self._ribbon.GetArtProvider()
+            _update_ribbon_artprovider_for_dark_mode(provider)
+        self.ribbon_position_aspect_ratio = True
+        self.ribbon_position_ignore_update = False
+        self.ribbon_position_x = 0.0
+        self.ribbon_position_y = 0.0
+        self.ribbon_position_h = 0.0
+        self.ribbon_position_w = 0.0
+        self.ribbon_position_units = 0
+        self.ribbon_position_name = None
+
+
         home = RB.RibbonPage(
             self._ribbon,
             wx.ID_ANY,
@@ -653,7 +656,7 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             RB.EVT_RIBBONBAR_HELP_CLICK,
-            lambda e: self.context.console("webhelp help\n"),
+            lambda e: self.context("webhelp help\n"),
         )
         self.Bind(
             RB.EVT_RIBBONBAR_TOGGLED,
@@ -688,29 +691,29 @@ class MeerK40t(MWindow):
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open JobPreview 0\n"),
+            lambda v: self.context("window open JobPreview 0\n"),
             id=ID_JOB,
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console(
+            lambda v: self.context(
                 "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
             id=ID_SIM,
         )
 
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Notes\n"),
+            lambda v: self.context("window open Notes\n"),
             id=ID_NOTES,
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open RasterWizard\n"),
+            lambda v: self.context("window open RasterWizard\n"),
             id=ID_RASTER,
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Console\n"),
+            lambda v: self.context("window open Console\n"),
             id=ID_CONSOLE,
         )
         # ==========
@@ -743,19 +746,19 @@ class MeerK40t(MWindow):
         #
         # windows.Bind(
         #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda v: self.context.console("window open -o Controller\n"),
+        #     lambda v: self.context("window open -o Controller\n"),
         #     id=ID_CONTROLLER,
         # )
         #
         # windows.Bind(
         #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda v: self.context.console("window open JobSpooler\n"),
+        #     lambda v: self.context("window open JobSpooler\n"),
         #     id=ID_SPOOLER,
         # )
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA)
         windows.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Navigation\n"),
+            lambda v: self.context("window open Navigation\n"),
             id=ID_NAV,
         )
 
@@ -786,22 +789,22 @@ class MeerK40t(MWindow):
         )
         devices_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open DeviceManager\n"),
+            lambda v: self.context("window open DeviceManager\n"),
             id=ID_DEVICES,
         )
         devices_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -o Controller\n"),
+            lambda v: self.context("window open -o Controller\n"),
             id=ID_CONTROLLER,
         )
         devices_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open JobSpooler\n"),
+            lambda v: self.context("window open JobSpooler\n"),
             id=ID_SPOOLER,
         )
         devices_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -d Preferences\n"),
+            lambda v: self.context("window open -d Preferences\n"),
             id=ID_CONFIGURATION,
         )
 
@@ -837,32 +840,32 @@ class MeerK40t(MWindow):
         # )
         # settings_bar.Bind(
         #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda v: self.context.console("window open -d Preferences\n"),
+        #     lambda v: self.context("window open -d Preferences\n"),
         #     id=ID_CONFIGURATION,
         # )
         settings_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window -p rotary/1 open Rotary\n"),
+            lambda v: self.context("window -p rotary/1 open Rotary\n"),
             id=ID_ROTARY,
         )
         # settings_bar.Bind(
         #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda v: self.context.console("window open DeviceManager\n"),
+        #     lambda v: self.context("window open DeviceManager\n"),
         #     id=ID_DEVICES,
         # )
         settings_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Settings\n"),
+            lambda v: self.context("window open Settings\n"),
             id=ID_SETTING,
         )
         settings_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Keymap\n"),
+            lambda v: self.context("window open Keymap\n"),
             id=ID_KEYMAP,
         )
         settings_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Operations\n"),
+            lambda v: self.context("window open Operations\n"),
             id=ID_OPERATIONS,
         )
 
@@ -1005,92 +1008,92 @@ class MeerK40t(MWindow):
 
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("align left\n"),
+            lambda e: self.context("align left\n"),
             id=ID_ALIGN_LEFT,
         )
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("align right\n"),
+            lambda e: self.context("align right\n"),
             id=ID_ALIGN_RIGHT,
         )
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("align top\n"),
+            lambda e: self.context("align top\n"),
             id=ID_ALIGN_TOP,
         )
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("align bottom\n"),
+            lambda e: self.context("align bottom\n"),
             id=ID_ALIGN_BOTTOM,
         )
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("align center\n"),
+            lambda e: self.context("align center\n"),
             id=ID_ALIGN_CENTER,
         )
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("align spacev\n"),
+            lambda e: self.context("align spacev\n"),
             id=ID_ALIGN_SPACE_V,
         )
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("align spaceh\n"),
+            lambda e: self.context("align spaceh\n"),
             id=ID_ALIGN_SPACE_H,
         )
         flip.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("scale 1 -1\n"),
+            lambda e: self.context("scale 1 -1\n"),
             id=ID_FLIP_HORIZONTAL,
         )
         flip.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("scale -1 1\n"),
+            lambda e: self.context("scale -1 1\n"),
             id=ID_FLIP_VERTICAL,
         )
         group.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("group\n"),
+            lambda e: self.context("group\n"),
             id=ID_GROUP,
         )
         group.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("ungroup\n"),
+            lambda e: self.context("ungroup\n"),
             id=ID_UNGROUP,
         )
         tool.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("tool position\n"),
+            lambda e: self.context("tool position\n"),
             id=ID_TOOL_POSITION,
         )
         tool.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("tool oval\n"),
+            lambda e: self.context("tool oval\n"),
             id=ID_TOOL_OVAL,
         )
         tool.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("tool circle\n"),
+            lambda e: self.context("tool circle\n"),
             id=ID_TOOL_CIRCLE,
         )
         tool.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("tool polygon\n"),
+            lambda e: self.context("tool polygon\n"),
             id=ID_TOOL_POLYGON,
         )
         tool.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("tool polyline\n"),
+            lambda e: self.context("tool polyline\n"),
             id=ID_TOOL_POLYLINE,
         )
         tool.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("tool rect\n"),
+            lambda e: self.context("tool rect\n"),
             id=ID_TOOL_RECT,
         )
         tool.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context.console("tool text\n"),
+            lambda e: self.context("tool text\n"),
             id=ID_TOOL_TEXT,
         )
         # ==========
@@ -1210,126 +1213,129 @@ class MeerK40t(MWindow):
             self.context.camera_default = 5
 
         v = self.context.camera_default
-        self.context.console("camwin %d\n" % v)
+        self.context("camwin %d\n" % v)
 
     def __set_menubar(self):
-        wxglade_tmp_menu = wx.Menu()
+        wt_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(wx.ID_NEW, _("New\tCtrl-N"), "")
-        wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project\tCtrl-O"), "")
+        wt_menu.Append(wx.ID_NEW, _("New\tCtrl-N"), "")
+        wt_menu.Append(wx.ID_OPEN, _("Open Project\tCtrl-O"), "")
         self.recent_file_menu = wx.Menu()
-        wxglade_tmp_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
-        wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
-        wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save\tCtrl-S"), "")
-        wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As\tCtrl-Shift-S"), "")
-        wxglade_tmp_menu.AppendSeparator()
+        wt_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
+        wt_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
+        wt_menu.AppendSeparator()
+        wt_menu.Append(wx.ID_SAVE, _("Save\tCtrl-S"), "")
+        wt_menu.Append(wx.ID_SAVEAS, _("Save As\tCtrl-Shift-S"), "")
+        wt_menu.AppendSeparator()
 
-        wxglade_tmp_menu.Append(wx.ID_EXIT, _("Exit"), "")
-        self.main_menubar.Append(wxglade_tmp_menu, _("File"))
-        wxglade_tmp_menu = wx.Menu()
+        wt_menu.Append(wx.ID_EXIT, _("Exit"), "")
+        self.main_menubar.Append(wt_menu, _("File"))
 
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out\tCtrl--"), "")
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In\tCtrl-+"), "")
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
-        wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(
+        wt_menu = wx.Menu()
+
+        wt_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out\tCtrl--"), "")
+        wt_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In\tCtrl-+"), "")
+        wt_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
+        wt_menu.AppendSeparator()
+
+        wt_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
+        wt_menu.Append(
             ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(
+        wt_menu.Append(
             ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_TEXT, _("Hide Text"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_FILLS, _("Hide Fills"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(
+        wt_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_HIDE_TEXT, _("Hide Text"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_HIDE_FILLS, _("Hide Fills"), "", wx.ITEM_CHECK)
+        wt_menu.Append(
             ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(
+        wt_menu.Append(
             ID_MENU_HIDE_LINEWIDTH, _("Hide Stroke-Width"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(
+        wt_menu.Append(
             ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(
+        wt_menu.Append(
             ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(
+        wt_menu.Append(
             ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_ICONS, _("Hide Icons"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_TREE, _("Hide Tree"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(
+        wt_menu.Append(ID_MENU_HIDE_ICONS, _("Hide Icons"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_HIDE_TREE, _("Hide Tree"), "", wx.ITEM_CHECK)
+        wt_menu.Append(
             ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(
+        wt_menu.Append(
             ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(
+        wt_menu.Append(
             ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK
         )
-        wxglade_tmp_menu.Append(ID_MENU_SCREEN_INVERT, _("Invert"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_SCREEN_FLIPXY, _("Flip XY"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_SCREEN_INVERT, _("Invert"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_SCREEN_FLIPXY, _("Flip XY"), "", wx.ITEM_CHECK)
 
-        self.main_menubar.Append(wxglade_tmp_menu, _("View"))
-        wxglade_tmp_menu = wx.Menu()
-        self.main_menubar.view = wxglade_tmp_menu
-        self.main_menubar.preferences = wxglade_tmp_menu.Append(
+        self.main_menubar.Append(wt_menu, _("View"))
+
+        wt_menu = wx.Menu()
+        self.main_menubar.view = wt_menu
+        self.main_menubar.preferences = wt_menu.Append(
             wx.ID_PREFERENCES, _("Preferences"), ""
         )
-        self.main_menubar.settings = wxglade_tmp_menu.Append(
+        self.main_menubar.settings = wt_menu.Append(
             ID_MENU_SETTINGS, _("Settings"), ""
         )
-        self.main_menubar.rotary = wxglade_tmp_menu.Append(
+        self.main_menubar.rotary = wt_menu.Append(
             ID_MENU_ROTARY, _("Rotary Settings"), ""
         )
-        self.main_menubar.keymap = wxglade_tmp_menu.Append(
+        self.main_menubar.keymap = wt_menu.Append(
             ID_MENU_KEYMAP, _("Keymap Settings"), ""
         )
-        self.main_menubar.devices = wxglade_tmp_menu.Append(
+        self.main_menubar.devices = wt_menu.Append(
             ID_MENU_DEVICE_MANAGER, _("Device Manager"), ""
         )
         if self.context.has_feature("modifier/Camera"):
-            self.main_menubar.camera = wxglade_tmp_menu.Append(
+            self.main_menubar.camera = wt_menu.Append(
                 ID_MENU_CAMERA, _("Camera"), ""
             )
-        self.main_menubar.console = wxglade_tmp_menu.Append(
+        self.main_menubar.console = wt_menu.Append(
             ID_MENU_CONSOLE, _("Console"), ""
         )
-        self.main_menubar.navigation = wxglade_tmp_menu.Append(
+        self.main_menubar.navigation = wt_menu.Append(
             ID_MENU_NAVIGATION, _("Navigation"), ""
         )
-        self.main_menubar.controller = wxglade_tmp_menu.Append(
+        self.main_menubar.controller = wt_menu.Append(
             ID_MENU_CONTROLLER, _("Controller"), ""
         )
-        self.main_menubar.notes = wxglade_tmp_menu.Append(ID_MENU_NOTES, _("Notes"), "")
-        self.main_menubar.usb = wxglade_tmp_menu.Append(ID_MENU_USB, _("USB"), "")
-        self.main_menubar.jobspooler = wxglade_tmp_menu.Append(
+        self.main_menubar.notes = wt_menu.Append(ID_MENU_NOTES, _("Notes"), "")
+        self.main_menubar.usb = wt_menu.Append(ID_MENU_USB, _("USB"), "")
+        self.main_menubar.jobspooler = wt_menu.Append(
             ID_MENU_SPOOLER, _("Job Spooler"), ""
         )
-        self.main_menubar.jobpreview = wxglade_tmp_menu.Append(
+        self.main_menubar.jobpreview = wt_menu.Append(
             ID_MENU_JOB, _("Execute Job"), ""
         )
-        wxglade_tmp_menu.AppendSeparator()
-        self.main_menubar.windowreset = wxglade_tmp_menu.Append(
+        wt_menu.AppendSeparator()
+        self.main_menubar.windowreset = wt_menu.Append(
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
         )
 
-        self.main_menubar.Append(wxglade_tmp_menu, _("Tools"))
+        self.main_menubar.Append(wt_menu, _("Tools"))
 
         from sys import platform
 
         if platform == "darwin":
-            wxglade_tmp_menu = wx.Menu()
-            self.main_menubar.Append(wxglade_tmp_menu, "Window")
+            wt_menu = wx.Menu()
+            self.main_menubar.Append(wt_menu, "Window")
 
-        wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_HELP, _("Help"), "")
-        wxglade_tmp_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
-        wxglade_tmp_menu.Append(wx.ID_ABOUT, _("About"), "")
-        self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
+        wt_menu = wx.Menu()
+        wt_menu.Append(wx.ID_HELP, _("Help"), "")
+        wt_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
+        wt_menu.Append(wx.ID_ABOUT, _("About"), "")
+        self.main_menubar.Append(wt_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
         # Menu Bar end
@@ -1427,86 +1433,86 @@ class MeerK40t(MWindow):
 
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open About\n"),
+            lambda v: self.context("window open About\n"),
             id=wx.ID_ABOUT,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open Console\n"),
+            lambda v: self.context("window open Console\n"),
             id=ID_MENU_CONSOLE,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open DeviceManager\n"),
+            lambda v: self.context("window open DeviceManager\n"),
             id=ID_MENU_DEVICE_MANAGER,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open Keymap\n"),
+            lambda v: self.context("window open Keymap\n"),
             id=ID_MENU_KEYMAP,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open Settings\n"),
+            lambda v: self.context("window open Settings\n"),
             id=ID_MENU_SETTINGS,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open Notes\n"),
+            lambda v: self.context("window open Notes\n"),
             id=ID_MENU_NOTES,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open Navigation\n"),
+            lambda v: self.context("window open Navigation\n"),
             id=ID_MENU_NAVIGATION,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open JobPreview 0\n"),
+            lambda v: self.context("window open JobPreview 0\n"),
             id=ID_MENU_JOB,
         )
         if self.context.has_feature("modifier/Camera"):
             self.Bind(
                 wx.EVT_MENU,
-                lambda v: self.context.console("window open CameraInterface\n"),
+                lambda v: self.context("window open CameraInterface\n"),
                 id=ID_MENU_CAMERA,
             )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -d Preferences\n"),
+            lambda v: self.context("window open -d Preferences\n"),
             id=wx.ID_PREFERENCES,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window -p rotary/1 open Rotary\n"),
+            lambda v: self.context("window -p rotary/1 open Rotary\n"),
             id=ID_MENU_ROTARY,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open -o Controller\n"),
+            lambda v: self.context("window open -o Controller\n"),
             id=ID_MENU_CONTROLLER,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open UsbConnect\n"),
+            lambda v: self.context("window open UsbConnect\n"),
             id=ID_MENU_USB,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window open JobSpooler\n"),
+            lambda v: self.context("window open JobSpooler\n"),
             id=ID_MENU_SPOOLER,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context.console("window reset *\n"),
+            lambda v: self.context("window reset *\n"),
             id=ID_MENU_WINDOW_RESET,
         )
         self.Bind(
-            wx.EVT_MENU, lambda e: self.context.console("webhelp help\n"), id=wx.ID_HELP
+            wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context.console("webhelp main\n"),
+            lambda e: self.context("webhelp main\n"),
             id=ID_HOMEPAGE,
         )
 
@@ -1612,7 +1618,7 @@ class MeerK40t(MWindow):
 
         context.unlisten("active", self.on_active_change)
 
-        self.context.console("quit\n")
+        self.context("quit\n")
 
     def on_element_update(self, origin, *args):
         """
@@ -1923,7 +1929,7 @@ class MeerK40t(MWindow):
             if results:
                 self.save_recent(pathname)
                 if n != self.context.elements.note and self.context.auto_note:
-                    self.context.console("window open Notes\n")
+                    self.context("window open Notes\n")
                 try:
                     if self.context.uniform_svg and pathname.lower().endswith("svg"):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
@@ -2003,7 +2009,7 @@ class MeerK40t(MWindow):
         self.update_ribbon_position()
 
     def on_focus_lost(self, event):
-        self.context.console("-laser\nend\n")
+        self.context("-laser\nend\n")
         # event.Skip()
 
     def on_key_down(self, event):
@@ -2011,7 +2017,7 @@ class MeerK40t(MWindow):
         keymap = self.context.keymap
         if keyvalue in keymap:
             action = keymap[keyvalue]
-            self.context.console(action + "\n")
+            self.context(action + "\n")
         else:
             event.Skip()
 
@@ -2023,7 +2029,7 @@ class MeerK40t(MWindow):
             if action.startswith("+"):
                 # Keyup commands only trigger if the down command started with +
                 action = "-" + action[1:]
-                self.context.console(action + "\n")
+                self.context(action + "\n")
         else:
             event.Skip()
 
@@ -2150,7 +2156,7 @@ class MeerK40t(MWindow):
             h = float(self.text_h.GetValue())
             self.ribbon_position_w = w
             self.ribbon_position_h = h
-        self.context.console(
+        self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
                 self.ribbon_position_x,
@@ -2176,7 +2182,7 @@ class MeerK40t(MWindow):
             y = float(self.text_y.GetValue())
             self.ribbon_position_x = x
             self.ribbon_position_y = y
-        self.context.console(
+        self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
                 self.ribbon_position_x,
@@ -2216,7 +2222,7 @@ class MeerK40t(MWindow):
             self.load(pathname)
 
     def on_click_pause(self, event):
-        self.context.console("pause\n")
+        self.context("pause\n")
 
     def on_click_save(self, event):
         if self.working_file is None:
@@ -2456,7 +2462,7 @@ class MeerK40t(MWindow):
         if pathname is None:
             return
         with wx.BusyInfo(_("Loading File...")):
-            self.context.console("egv_import %s\n" % pathname)
+            self.context("egv_import %s\n" % pathname)
             return
 
     def egv_export(self):
@@ -2471,7 +2477,7 @@ class MeerK40t(MWindow):
         if pathname is None:
             return
         with wx.BusyInfo(_("Saving File...")):
-            self.context.console("egv_export %s\n" % pathname)
+            self.context("egv_export %s\n" % pathname)
             return
 
     def apply_rotary_scale(self):
@@ -3328,7 +3334,7 @@ class wxMeerK40t(wx.App, Module):
     def on_app_close(self, event):
         try:
             if self.context is not None:
-                self.context.console("quit\n")
+                self.context("quit\n")
         except AttributeError:
             pass
 
