@@ -21,6 +21,12 @@ class Simulation(MWindow):
         else:
             plan_name = 0
         self.plan_name = plan_name
+        self.operations, original, commands, plan_name = self.context.root.default_plan()
+        self.cutcode = CutCode()
+        for c in self.operations:
+            if isinstance(c, CutCode):
+                self.cutcode.extend(c)
+        self.max = len(self.cutcode)
 
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
@@ -45,7 +51,7 @@ class Simulation(MWindow):
         self.view_pane = ScenePanel(self.context, self, scene_name="Sim", style=wx.EXPAND | wx.WANTS_CHARS)
         self.widget_scene = self.view_pane.scene
 
-        self.slider_progress = wx.Slider(self, wx.ID_ANY, 0, 0, 10)
+        self.slider_progress = wx.Slider(self, wx.ID_ANY, 0, 0, self.max)
         self.text_distance_laser = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
@@ -111,10 +117,10 @@ class Simulation(MWindow):
         # end wxGlade
 
         self.widget_scene.add_interfacewidget(SimulationInterfaceWidget(self.widget_scene))
-        self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
-        self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
+        # self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -249,8 +255,8 @@ class Simulation(MWindow):
         event.Skip()
 
     def on_slider_progress(self, event):  # wxGlade: Simulation.<event_handler>
-        print("Event handler 'on_slider_progress' not implemented!")
-        event.Skip()
+        self.max = self.slider_progress.GetValue()
+        self.context.signal("refresh_scene")
 
     def on_button_play(self, event):  # wxGlade: Simulation.<event_handler>
         print("Event handler 'on_button_play' not implemented!")
@@ -280,16 +286,13 @@ class Simulation(MWindow):
 
 
 class SimulationWidget(Widget):
-    def __init__(self, scene):
+    def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
         self.renderer = LaserRender(self.scene.context)
+        self.sim = sim
 
     def process_draw(self, gc):
-        context = self.scene.context
-        operations, original, commands, plan_name = context.root.default_plan()
-        for op in reversed(operations):
-            if isinstance(op, CutCode):
-                self.renderer.draw_cutcode(op, gc, 0, 0)
+        self.renderer.draw_cutcode(self.sim.cutcode[:self.sim.max], gc, 0, 0)
 
 
 class SimulationInterfaceWidget(Widget):
@@ -299,6 +302,7 @@ class SimulationInterfaceWidget(Widget):
 
     def process_draw(self, gc):
         font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+        gc.SetBrush(wx.TRANSPARENT_BRUSH)
         gc.SetFont(font, wx.BLACK)
         gc.DrawText(_("Simulating Burn..."), self.left, self.top)
         gc.SetPen(wx.BLACK_PEN)
