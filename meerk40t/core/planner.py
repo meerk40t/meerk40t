@@ -682,7 +682,9 @@ class Planner(Modifier):
         def optimize_travel():
             for c in plan:
                 if isinstance(c, CutCode):
-                    c.short_travel_cutcode()
+                    t = c.short_travel_cutcode()
+                    c.clear()
+                    c.extend(t)
 
         plan, original, commands, name = self.default_plan()
         commands.append(optimize_travel)

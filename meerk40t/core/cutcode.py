@@ -299,6 +299,7 @@ class CutCode(list):
                     closest = cut
             if closest is None:
                 break
+            closest.permitted = False
             c = copy(closest)
             c.reversed = reverse
             ordered.append(c)
