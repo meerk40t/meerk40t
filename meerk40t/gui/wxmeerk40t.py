@@ -648,13 +648,6 @@ class MeerK40t(MWindow):
             _("Home"),
             icons8_opened_folder_50.GetBitmap(),
         )
-
-        self.toolbar_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("" if self.is_dark else "Main"),
-            style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
-        )
         self.Bind(
             RB.EVT_RIBBONBAR_HELP_CLICK,
             lambda e: self.context.console("webhelp help\n"),
@@ -663,13 +656,25 @@ class MeerK40t(MWindow):
             RB.EVT_RIBBONBAR_TOGGLED,
             self.ribbon_bar_toggle
         )
+        self.toolbar_panel = RB.RibbonPanel(
+            home,
+            wx.ID_ANY,
+            _("" if self.is_dark else "Main"),
+            style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
+        )
+
         toolbar = RB.RibbonButtonBar(self.toolbar_panel)
         self.toolbar_button_bar = toolbar
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
         toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
         toolbar.AddButton(ID_JOB, _("Start Job"), icons8_laser_beam_52.GetBitmap(), "")
-        toolbar.AddButton(ID_SIM, _("Compile & Sim"), icons8_laser_beam_hazard_50.GetBitmap(), "")
+        toolbar.AddButton(ID_SIM, _("Compile & Simulate"), icons8_laser_beam_hazard_50.GetBitmap(), "")
         toolbar.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
+
+        toolbar.AddButton(
+            ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
+        )
+        toolbar.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
 
         self.windows_panel = RB.RibbonPanel(
             home,
@@ -680,31 +685,43 @@ class MeerK40t(MWindow):
         )
         windows = RB.RibbonButtonBar(self.windows_panel)
         self.window_button_bar = windows
+        # So Navigation, Camera, Spooler, Controller, Terminal in one group,
+        # Settings, Keymap, Devices, Preferences, Rotary, USB in another.
+        # Raster Wizard and Notes should IMO be in the Main Group.
         windows.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
-        windows.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
+        if self.context.has_feature("modifier/Camera"):
+            windows.AddHybridButton(
+                ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), ""
+            )
         windows.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
         windows.AddButton(
             ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), ""
         )
+
+        self.windows_panel = RB.RibbonPanel(
+            home,
+            wx.ID_ANY,
+            _("" if self.is_dark else "Settings"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
+        windows = RB.RibbonButtonBar(self.windows_panel)
+        self.window_button_bar = windows
+
+
+        windows.AddButton(ID_KEYMAP, _("Settings"), icons8_administrative_tools_50.GetBitmap(), "")
+        windows.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
+        windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
         windows.AddButton(
             ID_PREFERENCES,
             _("Preferences"),
             icons8_administrative_tools_50.GetBitmap(),
             "",
         )
-        windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
-        if self.context.has_feature("modifier/Camera"):
-            windows.AddHybridButton(
-                ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), ""
-            )
-
-        windows.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
-        windows.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
-        windows.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
         windows.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
-        windows.AddButton(
-            ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
-        )
+        windows.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
+        windows.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
+
         home = RB.RibbonPage(
             self._ribbon,
             wx.ID_ANY,
