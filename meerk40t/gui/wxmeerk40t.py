@@ -355,6 +355,7 @@ class MeerK40t(MWindow):
         self._rotary_view = False
         self.pipe_state = None
         self.previous_position = None
+        self.ribbonbar_caption_visible = False
 
         # Define Tree
         self.wxtree = wx.TreeCtrl(
@@ -375,60 +376,21 @@ class MeerK40t(MWindow):
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
 
-        self._mgr.AddPane(
-            self.wxtree,
-            aui.AuiPaneInfo()
-            .Name("tree")
-            .CloseButton(False)
-            .Left()
-            .MinSize(200, -1)
-            .MaxSize(275, -1)
-            .LeftDockable()
-            .RightDockable()
-            .BottomDockable(False)
-            .TopDockable(False),
-        )
+        self.tree_pane(self._mgr)
+        self.context.register("pane/Tree", self.tree_pane)
 
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
-        self._mgr.AddPane(
-            self._ribbon,
-            aui.AuiPaneInfo()
-            .Name("ribbon")
-            .Top()
-            .TopDockable()
-            .BottomDockable()
-            .RightDockable(False)
-            .LeftDockable(False)
-            .MinSize(-1, 150)
-            .CaptionVisible(False),
-        )
+        self.ribbon_pane(self._mgr)
+        self.context.register("pane/Ribbon", self.ribbon_pane)
 
         # Define Stop.
-        stop = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
-        )
-
-        def on_stop_button(e=None):
-            try:
-                self.context("dev estop\n")
-            except AttributeError:
-                pass
-
-        self.Bind(
-            wx.EVT_BUTTON,
-            on_stop_button,
-            stop,
-        )
-        stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-        stop.SetToolTip(_("Emergency stop/reset the controller."))
-        stop.SetSize(stop.GetBestSize())
-        self._mgr.AddPane(stop, aui.AuiPaneInfo().Bottom().Name("stop"))
+        self.stop_pane(self._mgr)
+        self.context.register("pane/Stop", self.stop_pane)
 
         # Define Home.
-        home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), home)
-        self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("home"))
+        self.home_pane(self._mgr)
+        self.context.register("pane/Home", self.home_pane)
 
         # AUI Manager Update.
         self._mgr.Update()
@@ -463,6 +425,91 @@ class MeerK40t(MWindow):
             self._mgr.LoadPerspective(self.context.perspective)
 
         self.on_rebuild_tree_request()
+
+    def aui_open_pane(self, pane):
+        pane_init = self.context.registered["pane/%s" % pane]
+        pane_init(self._mgr)
+
+    def ribbon_pane(self, manager):
+        pane = manager.GetPane('ribbon')
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                pane.CaptionVisible(False)
+                self.ribbonbar_caption_visible = False
+                manager.Update()
+            return
+        self._mgr.AddPane(
+            self._ribbon,
+            aui.AuiPaneInfo()
+            .Name("ribbon")
+            .Top()
+            .TopDockable()
+            .BottomDockable()
+            .RightDockable(False)
+            .LeftDockable(False)
+            .MinSize(-1, 150)
+            .CaptionVisible(False),
+        )
+
+
+    def tree_pane(self, manager):
+        pane = manager.GetPane('tree')
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                manager.Update()
+            return
+        self._mgr.AddPane(
+            self.wxtree,
+            aui.AuiPaneInfo()
+                .Name("tree")
+                .Left()
+                .MinSize(200, -1)
+                .MaxSize(275, -1)
+                .LeftDockable()
+                .RightDockable()
+                .BottomDockable(False)
+                .TopDockable(False),
+        )
+
+    def home_pane(self, manager):
+        pane = manager.GetPane('home')
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                manager.Update()
+            return
+        home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), home)
+        self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("home"))
+
+    def stop_pane(self, manager):
+        pane = manager.GetPane('stop')
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                manager.Update()
+            return
+        stop = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
+        )
+
+        def on_stop_button(e=None):
+            try:
+                self.context("dev estop\n")
+            except AttributeError:
+                pass
+
+        self.Bind(
+            wx.EVT_BUTTON,
+            on_stop_button,
+            stop,
+        )
+        stop.SetBackgroundColour(wx.Colour(127, 0, 0))
+        stop.SetToolTip(_("Emergency stop/reset the controller."))
+        stop.SetSize(stop.GetBestSize())
+        manager.AddPane(stop, aui.AuiPaneInfo().Bottom().Name("stop"))
 
     @property
     def is_dark(self):
@@ -620,20 +667,15 @@ class MeerK40t(MWindow):
             self.wxtree,
         )
 
-
     def ribbon_bar_toggle(self, event):
-        if not self.ribbonbar_hidden:
-            self.toolbar_panel.Hide()
-            self.windows_panel.Hide()
-            self.settings_panel.Hide()
-        else:
-            self.toolbar_panel.Show()
-            self.windows_panel.Show()
-            self.settings_panel.Show()
-        self.ribbonbar_hidden = not self.ribbonbar_hidden
+        pane = self._mgr.GetPane('ribbon')
+        if pane.name == 'ribbon':
+            self.ribbonbar_caption_visible = not self.ribbonbar_caption_visible
+            pane.CaptionVisible(self.ribbonbar_caption_visible)
+            self._mgr.Update()
 
     def __set_ribbonbar(self):
-        self.ribbonbar_hidden = False
+        self.ribbonbar_caption_visible = False
 
         if self.is_dark:
             provider = self._ribbon.GetArtProvider()
@@ -1217,6 +1259,9 @@ class MeerK40t(MWindow):
 
     def __set_menubar(self):
         wt_menu = wx.Menu()
+        # ==========
+        # FILE MENU
+        # ==========
 
         wt_menu.Append(wx.ID_NEW, _("New\tCtrl-N"), "")
         wt_menu.Append(wx.ID_OPEN, _("Open Project\tCtrl-O"), "")
@@ -1231,6 +1276,9 @@ class MeerK40t(MWindow):
         wt_menu.Append(wx.ID_EXIT, _("Exit"), "")
         self.main_menubar.Append(wt_menu, _("File"))
 
+        # ==========
+        # VIEW MENU
+        # ==========
         wt_menu = wx.Menu()
 
         wt_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out\tCtrl--"), "")
@@ -1280,7 +1328,27 @@ class MeerK40t(MWindow):
 
         self.main_menubar.Append(wt_menu, _("View"))
 
+        # ==========
+        # TOOL MENU
+        # ==========
         wt_menu = wx.Menu()
+        self.panes_menu = wx.Menu()
+        def open_pane(p):
+            def open(event):
+                self.aui_open_pane(p)
+
+            return open
+
+        for p in self.context.match("pane/.*", suffix=True):
+            id_new = wx.NewId()
+            self.panes_menu.Append(id_new, p, "")
+            self.Bind(
+                wx.EVT_MENU,
+                open_pane(p),
+                id=id_new,
+            )
+        wt_menu.AppendSubMenu(self.panes_menu, _("Panes"))
+        wt_menu.AppendSeparator()
         self.main_menubar.view = wt_menu
         self.main_menubar.preferences = wt_menu.Append(
             wx.ID_PREFERENCES, _("Config"), ""
@@ -1325,12 +1393,18 @@ class MeerK40t(MWindow):
 
         self.main_menubar.Append(wt_menu, _("Tools"))
 
+        # ==========
+        # OSX-ONLY WINDOW MENU
+        # ==========
         from sys import platform
 
         if platform == "darwin":
             wt_menu = wx.Menu()
             self.main_menubar.Append(wt_menu, "Window")
 
+        # ==========
+        # HELP MENU
+        # ==========
         wt_menu = wx.Menu()
         wt_menu.Append(wx.ID_HELP, _("Help"), "")
         wt_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
@@ -1340,6 +1414,9 @@ class MeerK40t(MWindow):
         self.SetMenuBar(self.main_menubar)
         # Menu Bar end
 
+        # ==========
+        # BINDS
+        # ==========
         self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_IMPORT)
