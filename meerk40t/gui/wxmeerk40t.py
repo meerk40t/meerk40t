@@ -105,7 +105,7 @@ from .icons import (
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
-    icons_evenspace_vert, icons8_laser_beam_hazard_50, icons8_computer_support_50,
+    icons_evenspace_vert, icons8_laser_beam_hazard_50, icons8_computer_support_50, icons8_play_50,
 )
 from .imageproperty import ImageProperty
 from .jobpreview import JobPreview
@@ -363,6 +363,7 @@ class MeerK40t(MWindow):
         self.pipe_state = None
         self.previous_position = None
         self.ribbonbar_caption_visible = False
+        self.is_paused = False
 
         # Define Tree
         self.wxtree = wx.TreeCtrl(
@@ -526,6 +527,10 @@ class MeerK40t(MWindow):
         def on_pause_button(e=None):
             try:
                 self.context("dev pause\n")
+                if self.pipe_state == 1:
+                    pause.SetBitmap(icons8_play_50.GetBitmap())
+                else:
+                    pause.SetBitmap(icons8_pause_50.GetBitmap())
             except AttributeError:
                 pass
 
