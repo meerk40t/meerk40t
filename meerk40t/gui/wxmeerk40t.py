@@ -633,7 +633,12 @@ class MeerK40t(MWindow):
         # After main window is launched run_later actually works.
 
     def ribbon_bar_toggle(self, event):
-        self._ribbon.Hide()
+        if not self.ribbonbar_hidden:
+            self.toolbar_panel.Hide()
+            self.windows_panel.Hide()
+        else:
+            self.toolbar_panel.Show()
+            self.windows_panel.Show()
         self.ribbonbar_hidden = not self.ribbonbar_hidden
 
     def __set_ribbonbar(self):
@@ -644,7 +649,7 @@ class MeerK40t(MWindow):
             icons8_opened_folder_50.GetBitmap(),
         )
 
-        toolbar_panel = RB.RibbonPanel(
+        self.toolbar_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
             _("" if self.is_dark else "Main"),
@@ -658,7 +663,7 @@ class MeerK40t(MWindow):
             RB.EVT_RIBBONBAR_TOGGLED,
             self.ribbon_bar_toggle
         )
-        toolbar = RB.RibbonButtonBar(toolbar_panel)
+        toolbar = RB.RibbonButtonBar(self.toolbar_panel)
         self.toolbar_button_bar = toolbar
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
         toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
@@ -666,14 +671,14 @@ class MeerK40t(MWindow):
         toolbar.AddButton(ID_SIM, _("Compile & Sim"), icons8_laser_beam_hazard_50.GetBitmap(), "")
         toolbar.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
 
-        windows_panel = RB.RibbonPanel(
+        self.windows_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
             _("" if self.is_dark else "Windows"),
             icons8_opened_folder_50.GetBitmap(),
             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
-        windows = RB.RibbonButtonBar(windows_panel)
+        windows = RB.RibbonButtonBar(self.windows_panel)
         self.window_button_bar = windows
         windows.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
         windows.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
