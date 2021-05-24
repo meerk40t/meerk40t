@@ -53,6 +53,7 @@ class Settings(MWindow):
             (_("Invert MouseWheel Zoom"), _("Invert MouseWheel Zoom"),"mouse_zoom_invert", False),
             (_("Default Operation Empty"), _("Default Operation Empty"), "operation_default_empty", True),
             (_("Reverse SVG Element Load"), _("Inkscape saves SVG files in reverse order, so this loads them into MeerK40t in the same order as the Inkscape object list"),"svg_reverse", False),
+            (_("Disable ToolTips"), _("Globally disable ToolTips (like this one) on start-up\nNote: Takes effect when MeerK40t starts"), "disable_tool_tips", False),
         ]
         self.checklist_options = wx.Panel(self, wx.ID_ANY)
         pos_y = 0
@@ -64,7 +65,6 @@ class Settings(MWindow):
             self.context.setting(bool, choice, default)
             cb.SetValue(getattr(self.context,choice))
             cb.Bind(wx.EVT_CHECKBOX, lambda e: setattr(self.context,choice,cb.GetValue()))
-
         from .wxmeerk40t import supported_languages
 
         choices = [

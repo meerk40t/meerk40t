@@ -347,6 +347,10 @@ class MeerK40t(MWindow):
             # Not WX 4.1
             pass
         context = self.context
+        self.context.setting(bool, "disable_tool_tips", False)
+        if self.context.disable_tool_tips:
+            wx.ToolTip.Enable(False)
+
         self.root_context = context.root
         context._kernel.run_later = self.run_later
         self.DragAcceptFiles(True)
