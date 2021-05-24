@@ -41,22 +41,29 @@ class Settings(MWindow):
         # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
         self.choices = [
-            (_("Save Window Positions"), "windows_save", True),
-            (_("Print Shutdown"), "print_shutdown", False),
-            (_("SVG Uniform Save"), "uniform_svg", False),
-            (_("Image DPI Scaling"), "image_dpi", True),
-            (_("DXF Centering"), "dxf_center", True),
-            (_("Show Negative Guide"), "show_negative_guide", True),
-            (_("Launch Spooler JobStart"), "auto_spooler", True),
-            (_("MouseWheel Pan"), "mouse_wheel_pan", False),
-            (_("Invert MouseWheel Pan"), "mouse_pan_invert", False),
-            (_("Invert MouseWheel Zoom"), "mouse_zoom_invert", False),
-            (_("Default Operation Empty"), "operation_default_empty", True),
-            (_("Reverse SVG Element Load"), "svg_reverse", False),
+            (_("Save Window Positions"), _("Save Window Positions"),"windows_save", True),
+            (_("Print Shutdown"), _("Print Shutdown"),"print_shutdown", False),
+            (_("SVG Uniform Save"), _("SVG Uniform Save"),"uniform_svg", False),
+            (_("Image DPI Scaling"), _("Image DPI Scaling"),"image_dpi", True),
+            (_("DXF Centering"), _("DXF Centering"),"dxf_center", True),
+            (_("Show Negative Guide"), _("Show Negative Guide"),"show_negative_guide", True),
+            (_("Launch Spooler JobStart"), _("Launch Spooler JobStart"),"auto_spooler", True),
+            (_("MouseWheel Pan"), _("MouseWheel Pan"), "mouse_wheel_pan", False),
+            (_("Invert MouseWheel Pan"), _("Invert MouseWheel Pan"), "mouse_pan_invert", False),
+            (_("Invert MouseWheel Zoom"), _("Invert MouseWheel Zoom"),"mouse_zoom_invert", False),
+            (_("Default Operation Empty"), _("Default Operation Empty"), "operation_default_empty", True),
+            (_("Reverse SVG Element Load"), _("Inkscape saves SVG files in reverse order, so this loads them into MeerK40t in the same order as the Inkscape object list"),"svg_reverse", False),
         ]
-        self.checklist_options = wx.CheckListBox(
-            self, wx.ID_ANY, choices=[c[0] for c in self.choices]
-        )
+        self.checklist_options = wx.Panel(self, wx.ID_ANY)
+        pos_y = 0
+        for i, c in enumerate(self.choices):
+            name, tip, choice, default = c
+            cb = wx.CheckBox(self.checklist_options, label=c[0], pos=(10, pos_y))
+            cb.SetToolTip(tip)
+            pos_y += 20
+            self.context.setting(bool, choice, default)
+            cb.SetValue(getattr(self.context,choice))
+            cb.Bind(wx.EVT_CHECKBOX, lambda e: setattr(self.context,choice,cb.GetValue()))
 
         from .wxmeerk40t import supported_languages
 
@@ -76,9 +83,6 @@ class Settings(MWindow):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_svg_ppi, self.combo_svg_ppi)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_svg_ppi, self.text_svg_ppi)
         self.Bind(wx.EVT_TEXT, self.on_text_svg_ppi, self.text_svg_ppi)
-        self.Bind(
-            wx.EVT_CHECKLISTBOX, self.on_checklist_settings, self.checklist_options
-        )
 
     def window_open(self):
         context_root = self.context.root
@@ -86,18 +90,10 @@ class Settings(MWindow):
         context_root.setting(float, "svg_ppi", 96.0)
         self.text_svg_ppi.SetValue(str(context_root.svg_ppi))
 
-        for name, choice, default in self.choices:
-            self.context.setting(bool, choice, default)
-
         self.context.setting(int, "language", 0)
         self.context.setting(str, "units_name", "mm")
         self.context.setting(int, "units_marks", 10)
         self.context.setting(int, "units_index", 0)
-
-        for i, c in enumerate(self.choices):
-            name, choice, default = c
-            if getattr(self.context, choice):
-                self.checklist_options.Check(i, True)
         self.radio_units.SetSelection(self.context.units_index)
         self.combo_language.SetSelection(self.context.language)
 
@@ -182,11 +178,6 @@ class Settings(MWindow):
             if self.combo_svg_ppi.GetSelection() != 3:
                 self.combo_svg_ppi.SetSelection(3)
         context_root.svg_ppi = svg_ppi
-
-    def on_checklist_settings(self, event):  # wxGlade: Settings.<event_handler>
-        for i, c in enumerate(self.choices):
-            name, choice, default = c
-            setattr(self.context, choice, self.checklist_options.IsChecked(i))
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()
