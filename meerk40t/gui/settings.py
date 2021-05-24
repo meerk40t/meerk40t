@@ -58,7 +58,7 @@ class Settings(MWindow):
         pos_y = 0
         for i, c in enumerate(self.choices):
             name, tip, choice, default = c
-            cb = wx.CheckBox(self.checklist_options, label=c[0], pos=(10, pos_y))
+            cb = wx.CheckBox(self.checklist_options, label=name, pos=(10, pos_y))
             cb.SetToolTip(tip)
             pos_y += 20
             self.context.setting(bool, choice, default)

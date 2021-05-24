@@ -708,7 +708,6 @@ class MeerK40t(MWindow):
         windows = RB.RibbonButtonBar(self.windows_panel)
         self.window_button_bar = windows
 
-
         windows.AddButton(ID_KEYMAP, _("Settings"), icons8_administrative_tools_50.GetBitmap(), "")
         windows.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
         windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
