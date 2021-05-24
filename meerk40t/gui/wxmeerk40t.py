@@ -1283,7 +1283,7 @@ class MeerK40t(MWindow):
         wt_menu = wx.Menu()
         self.main_menubar.view = wt_menu
         self.main_menubar.preferences = wt_menu.Append(
-            wx.ID_PREFERENCES, _("Preferences"), ""
+            wx.ID_PREFERENCES, _("Config"), ""
         )
         self.main_menubar.settings = wt_menu.Append(
             ID_MENU_SETTINGS, _("Settings"), ""
