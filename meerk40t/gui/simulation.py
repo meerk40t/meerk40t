@@ -48,10 +48,11 @@ class Simulation(MWindow):
         self.Simulation_menubar.Append(wxglade_tmp_menu, "Optimize")
         self.SetMenuBar(self.Simulation_menubar)
         # Menu Bar end
-        self.view_pane = ScenePanel(self.context, self, scene_name="Sim", style=wx.EXPAND | wx.WANTS_CHARS)
+        self.view_pane = ScenePanel(self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.WANTS_CHARS)
         self.widget_scene = self.view_pane.scene
 
-        self.slider_progress = wx.Slider(self, wx.ID_ANY, 0, 0, self.max)
+        m = max(self.max, 10)
+        self.slider_progress = wx.Slider(self, wx.ID_ANY, m, 0, m)
         self.text_distance_laser = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )

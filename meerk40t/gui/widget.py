@@ -267,8 +267,8 @@ class Scene(Module, Job):
             context.fps = 60
         self.interval = 1.0 / float(context.fps)
 
-    def restore(self, *args, **kwargs):
-        pass
+    def restore(self, gui, **kwargs):
+        self.gui = gui
 
     def finalize(self, *args, **kwargs):
         self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
