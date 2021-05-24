@@ -229,6 +229,7 @@ ID_PAUSE = wx.NewId()
 
 ID_SPOOLER = wx.NewId()
 ID_KEYMAP = wx.NewId()
+ID_SETTING = wx.NewId()
 ID_NOTES = wx.NewId()
 ID_OPERATIONS = wx.NewId()
 ID_CONSOLE = wx.NewId()
@@ -636,9 +637,11 @@ class MeerK40t(MWindow):
         if not self.ribbonbar_hidden:
             self.toolbar_panel.Hide()
             self.windows_panel.Hide()
+            self.settings_panel.Hide()
         else:
             self.toolbar_panel.Show()
             self.windows_panel.Show()
+            self.settings_panel.Show()
         self.ribbonbar_hidden = not self.ribbonbar_hidden
 
     def __set_ribbonbar(self):
@@ -656,11 +659,16 @@ class MeerK40t(MWindow):
             RB.EVT_RIBBONBAR_TOGGLED,
             self.ribbon_bar_toggle
         )
+
+        # ==========
+        # TOOLBAR PANEL
+        # ==========
+
         self.toolbar_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
             _("" if self.is_dark else "Main"),
-            style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
+            # style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
         )
 
         toolbar = RB.RibbonButtonBar(self.toolbar_panel)
@@ -675,13 +683,41 @@ class MeerK40t(MWindow):
             ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
         )
         toolbar.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
+        toolbar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open JobPreview 0\n"),
+            id=ID_JOB,
+        )
+        toolbar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console(
+                "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+            id=ID_SIM,
+        )
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
+        toolbar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open Notes\n"),
+            id=ID_NOTES,
+        )
+        toolbar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open RasterWizard\n"),
+            id=ID_RASTER,
+        )
+
+        # ==========
+        # WINDOW PANEL
+        # ==========
 
         self.windows_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
             _("" if self.is_dark else "Windows"),
             icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
         windows = RB.RibbonButtonBar(self.windows_panel)
         self.window_button_bar = windows
@@ -698,33 +734,111 @@ class MeerK40t(MWindow):
             ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), ""
         )
 
-        self.windows_panel = RB.RibbonPanel(
+        windows.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open -o Controller\n"),
+            id=ID_CONTROLLER,
+        )
+
+        windows.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open JobSpooler\n"),
+            id=ID_SPOOLER,
+        )
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA)
+        windows.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open Navigation\n"),
+            id=ID_NAV,
+        )
+
+        # ==========
+        # SETTINGS PANEL
+        # ==========
+        self.settings_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
             _("" if self.is_dark else "Settings"),
             icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
-        windows = RB.RibbonButtonBar(self.windows_panel)
-        self.window_button_bar = windows
+        settings_bar = RB.RibbonButtonBar(self.settings_panel)
+        self.window_button_bar2 = settings_bar
 
-        windows.AddButton(ID_KEYMAP, _("Settings"), icons8_administrative_tools_50.GetBitmap(), "")
-        windows.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
-        windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
-        windows.AddButton(
+        settings_bar.AddButton(ID_SETTING, _("Settings"), icons8_administrative_tools_50.GetBitmap(), "")
+        settings_bar.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
+        settings_bar.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
+        settings_bar.AddButton(
             ID_PREFERENCES,
             _("Preferences"),
             icons8_administrative_tools_50.GetBitmap(),
             "",
         )
-        windows.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
-        windows.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
-        windows.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
+        settings_bar.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
+        settings_bar.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
+        settings_bar.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
 
+        settings_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context("window open UsbConnect\n"),
+            id=ID_USB,
+        )
+        settings_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open -d Preferences\n"),
+            id=ID_PREFERENCES,
+        )
+        settings_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window -p rotary/1 open Rotary\n"),
+            id=ID_ROTARY,
+        )
+        settings_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open DeviceManager\n"),
+            id=ID_DEVICES,
+        )
+        settings_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open Settings\n"),
+            id=ID_SETTING,
+        )
+        settings_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open Keymap\n"),
+            id=ID_KEYMAP,
+        )
+        settings_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open Console\n"),
+            id=ID_CONSOLE,
+        )
+        settings_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context.console("window open Operations\n"),
+            id=ID_OPERATIONS,
+        )
+
+        if self.context.has_feature("modifier/Camera"):
+            windows.Bind(
+                RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
+                self.on_camera_dropdown,
+                id=ID_CAMERA,
+            )
+
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
+
+        # ==========
+        # TOOLBOX PAGE
+        # ==========
         home = RB.RibbonPage(
             self._ribbon,
             wx.ID_ANY,
-            _("Tools"),
+            _("Toolbox"),
             icons8_opened_folder_50.GetBitmap(),
         )
 
@@ -841,172 +955,7 @@ class MeerK40t(MWindow):
         tool.EnableButton(ID_TOOL_RECT, False)
         tool.EnableButton(ID_TOOL_TEXT, False)
 
-        home = RB.RibbonPage(
-            self._ribbon,
-            wx.ID_ANY,
-            _("Position"),
-            icons8_opened_folder_50.GetBitmap(),
-        )
-        position_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("Position"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
 
-        self.text_x = wx.TextCtrl(
-            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
-        self.text_y = wx.TextCtrl(
-            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
-        self.text_w = wx.TextCtrl(
-            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
-        self.button_aspect_ratio = wx.BitmapButton(
-            position_panel, wx.ID_ANY, icons8_lock_50.GetBitmap()
-        )
-        self.text_h = wx.TextCtrl(
-            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
-        self.combo_box_units = wx.ComboBox(
-            position_panel,
-            wx.ID_ANY,
-            choices=["mm", "cm", "inch", "mil", "%"],
-            style=wx.CB_DROPDOWN | wx.CB_READONLY,
-        )
-
-        self.button_aspect_ratio.SetSize(self.button_aspect_ratio.GetBestSize())
-        self.combo_box_units.SetSelection(0)
-
-        sizer_panel = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_units = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "Units:"), wx.HORIZONTAL
-        )
-        sizer_h = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "H:"), wx.HORIZONTAL
-        )
-        sizer_w = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "W:"), wx.HORIZONTAL
-        )
-        sizer_y = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "Y:"), wx.HORIZONTAL
-        )
-        sizer_x = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "X:"), wx.HORIZONTAL
-        )
-        sizer_x.Add(self.text_x, 1, 0, 0)
-        sizer_panel.Add(sizer_x, 0, 0, 0)
-        sizer_y.Add(self.text_y, 1, 0, 0)
-        sizer_panel.Add(sizer_y, 0, 0, 0)
-        sizer_w.Add(self.text_w, 1, 0, 0)
-        sizer_panel.Add(sizer_w, 0, 0, 0)
-        sizer_panel.Add(self.button_aspect_ratio, 0, 0, 0)
-        sizer_h.Add(self.text_h, 1, 0, 0)
-        sizer_panel.Add(sizer_h, 0, 0, 0)
-        sizer_units.Add(self.combo_box_units, 0, 0, 0)
-        sizer_panel.Add(sizer_units, 0, 0, 0)
-        position_panel.SetSizer(sizer_panel)
-        self._ribbon.Realize()
-
-        self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_y)
-        self.Bind(wx.EVT_TEXT, self.on_text_w, self.text_w)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_w)
-        self.Bind(wx.EVT_BUTTON, self.on_button_aspect_ratio, self.button_aspect_ratio)
-        self.Bind(wx.EVT_TEXT, self.on_text_h, self.text_h)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
-
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open JobPreview 0\n"),
-            id=ID_JOB,
-        )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
-            id=ID_SIM,
-        )
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open UsbConnect\n"),
-            id=ID_USB,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -o Controller\n"),
-            id=ID_CONTROLLER,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open -d Preferences\n"),
-            id=ID_PREFERENCES,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window -p rotary/1 open Rotary\n"),
-            id=ID_ROTARY,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open JobSpooler\n"),
-            id=ID_SPOOLER,
-        )
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA)
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Navigation\n"),
-            id=ID_NAV,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open DeviceManager\n"),
-            id=ID_DEVICES,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Keymap\n"),
-            id=ID_KEYMAP,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Notes\n"),
-            id=ID_NOTES,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Console\n"),
-            id=ID_CONSOLE,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open Operations\n"),
-            id=ID_OPERATIONS,
-        )
-        windows.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context.console("window open RasterWizard\n"),
-            id=ID_RASTER,
-        )
-        if self.context.has_feature("modifier/Camera"):
-            windows.Bind(
-                RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                self.on_camera_dropdown,
-                id=ID_CAMERA,
-            )
-
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
         align.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda e: self.context.console("align left\n"),
@@ -1097,6 +1046,89 @@ class MeerK40t(MWindow):
             lambda e: self.context.console("tool text\n"),
             id=ID_TOOL_TEXT,
         )
+        # ==========
+        # POSITION PAGE
+        # ==========
+        home = RB.RibbonPage(
+            self._ribbon,
+            wx.ID_ANY,
+            _("Position"),
+            icons8_opened_folder_50.GetBitmap(),
+        )
+        position_panel = RB.RibbonPanel(
+            home,
+            wx.ID_ANY,
+            _("Position"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
+
+        self.text_x = wx.TextCtrl(
+            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_y = wx.TextCtrl(
+            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_w = wx.TextCtrl(
+            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        )
+        self.button_aspect_ratio = wx.BitmapButton(
+            position_panel, wx.ID_ANY, icons8_lock_50.GetBitmap()
+        )
+        self.text_h = wx.TextCtrl(
+            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        )
+        self.combo_box_units = wx.ComboBox(
+            position_panel,
+            wx.ID_ANY,
+            choices=["mm", "cm", "inch", "mil", "%"],
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+
+        self.button_aspect_ratio.SetSize(self.button_aspect_ratio.GetBestSize())
+        self.combo_box_units.SetSelection(0)
+
+        sizer_panel = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_units = wx.StaticBoxSizer(
+            wx.StaticBox(position_panel, wx.ID_ANY, "Units:"), wx.HORIZONTAL
+        )
+        sizer_h = wx.StaticBoxSizer(
+            wx.StaticBox(position_panel, wx.ID_ANY, "H:"), wx.HORIZONTAL
+        )
+        sizer_w = wx.StaticBoxSizer(
+            wx.StaticBox(position_panel, wx.ID_ANY, "W:"), wx.HORIZONTAL
+        )
+        sizer_y = wx.StaticBoxSizer(
+            wx.StaticBox(position_panel, wx.ID_ANY, "Y:"), wx.HORIZONTAL
+        )
+        sizer_x = wx.StaticBoxSizer(
+            wx.StaticBox(position_panel, wx.ID_ANY, "X:"), wx.HORIZONTAL
+        )
+        sizer_x.Add(self.text_x, 1, 0, 0)
+        sizer_panel.Add(sizer_x, 0, 0, 0)
+        sizer_y.Add(self.text_y, 1, 0, 0)
+        sizer_panel.Add(sizer_y, 0, 0, 0)
+        sizer_w.Add(self.text_w, 1, 0, 0)
+        sizer_panel.Add(sizer_w, 0, 0, 0)
+        sizer_panel.Add(self.button_aspect_ratio, 0, 0, 0)
+        sizer_h.Add(self.text_h, 1, 0, 0)
+        sizer_panel.Add(sizer_h, 0, 0, 0)
+        sizer_units.Add(self.combo_box_units, 0, 0, 0)
+        sizer_panel.Add(sizer_units, 0, 0, 0)
+        position_panel.SetSizer(sizer_panel)
+        self._ribbon.Realize()
+
+        self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_x)
+        self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_y)
+        self.Bind(wx.EVT_TEXT, self.on_text_w, self.text_w)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_w)
+        self.Bind(wx.EVT_BUTTON, self.on_button_aspect_ratio, self.button_aspect_ratio)
+        self.Bind(wx.EVT_TEXT, self.on_text_h, self.text_h)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
+
         self.context.setting(int, "units_index", 0)
         self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
