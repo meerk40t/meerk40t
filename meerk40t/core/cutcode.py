@@ -302,6 +302,8 @@ class CutCode(list):
             closest.permitted = False
             c = copy(closest)
             c.reversed = reverse
+            end = c.end()
+            start = complex(end[0], end[1])
             ordered.append(c)
         return ordered
 
