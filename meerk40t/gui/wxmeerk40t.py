@@ -527,7 +527,7 @@ class MeerK40t(MWindow):
         def on_pause_button(e=None):
             try:
                 self.context("dev pause\n")
-                if self.pipe_state == 1:
+                if self.pipe_state != 3:
                     pause.SetBitmap(icons8_play_50.GetBitmap())
                 else:
                     pause.SetBitmap(icons8_pause_50.GetBitmap())
