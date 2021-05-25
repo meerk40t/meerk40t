@@ -217,19 +217,9 @@ class Simulation(MWindow):
         self.context.setting(int, "units_index", 0)
         self.context.listen("refresh_scene", self.on_refresh_scene)
 
-        smin_x = min([c.start()[0] for c in self.cutcode])
-        smax_x = max([c.start()[0] for c in self.cutcode])
-        smin_y = min([c.start()[1] for c in self.cutcode])
-        smax_y = max([c.start()[1] for c in self.cutcode])
-
-        emin_x = min([c.end()[0] for c in self.cutcode])
-        emax_x = max([c.end()[0] for c in self.cutcode])
-        emin_y = min([c.end()[1] for c in self.cutcode])
-        emax_y = max([c.end()[1] for c in self.cutcode])
-
-        # bbox = (0, 0, self.bed_dim.bed_width * MILS_PER_MM, self.bed_dim.bed_height * MILS_PER_MM)
+        bbox = (0, 0, self.bed_dim.bed_width * MILS_PER_MM, self.bed_dim.bed_height * MILS_PER_MM)
         self.widget_scene.widget_root.focus_viewport_scene(
-            (min(smin_x,emin_x), min(smin_y, emin_x), max(smax_x, emax_x), max(smax_y,emax_y)), self.view_pane.Size, 0.1
+            bbox, self.view_pane.Size, 0.1
         )
 
     def window_close(self):
