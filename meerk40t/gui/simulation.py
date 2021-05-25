@@ -59,6 +59,15 @@ class Simulation(MWindow, Job):
         self.view_pane = ScenePanel(self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.WANTS_CHARS)
         self.widget_scene = self.view_pane.scene
 
+        self.widget_scene.starts = list()
+        self.widget_scene.ends = list()
+        last = None
+        for c in self.cutcode:
+            if last is not None:
+                self.widget_scene.starts.append(wx.Point2D(*last.end()))
+                self.widget_scene.ends.append(wx.Point2D(*c.start()))
+            last = c
+
         m = max(self.max, 10)
         self.slider_progress = wx.Slider(self, wx.ID_ANY, m, 0, m)
         self.text_distance_laser = wx.TextCtrl(
@@ -331,13 +340,16 @@ class SimulationWidget(Widget):
         self.renderer = LaserRender(self.scene.context)
         self.sim = sim
 
-    def process_draw(self, gc):
+    def process_draw(self, gc: wx.GraphicsContext):
         sim_cut = self.sim.cutcode[:self.sim.max]
         try:
             self.sim.reticle.set_pos(sim_cut[-1].end())
         except IndexError:
             self.sim.reticle.set_pos((0, 0))
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
+        if self.sim.max >= 2:
+            gc.SetPen(wx.BLACK_DASHED_PEN)
+            gc.StrokeLineSegments(self.scene.starts[:self.sim.max-1], self.scene.ends[:self.sim.max-1])
 
 
 # class SimulationInterfaceWidget(Widget):
