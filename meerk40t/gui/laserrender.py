@@ -193,7 +193,6 @@ class LaserRender:
         p = gc.CreatePath()
         color = None
         for cut in reversed(cutcode):
-            print(cut)
             # c = cut.settings.line_color
             # if c is not color:
             #     gc.SetPen(wx.Pen(wx.Colour(c.red, c.green, c.blue)))
