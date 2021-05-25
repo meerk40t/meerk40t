@@ -229,7 +229,7 @@ class Simulation(MWindow):
 
         # bbox = (0, 0, self.bed_dim.bed_width * MILS_PER_MM, self.bed_dim.bed_height * MILS_PER_MM)
         self.widget_scene.widget_root.focus_viewport_scene(
-            (min(smin_x,emin_x), min(smin_y, emin_x), max(smax_x, emax_x), max(smax_y,emax_y)), self.view_pane.Size, 0.1
+            (min(smin_x,emin_x), min(smin_y, emin_y), max(smax_x, emax_x), max(smax_y,emax_y)), self.view_pane.Size, 0.1
         )
 
     def window_close(self):
