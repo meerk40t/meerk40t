@@ -311,8 +311,6 @@ class Scene(Module, Job):
 
     def _refresh_in_ui(self):
         """Called by refresh_scene() in the UI thread."""
-        if self.context is None:
-            return
         self.update_buffer_ui_thread()
         self.gui.Refresh()
         self.gui.Update()
