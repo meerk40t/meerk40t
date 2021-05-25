@@ -1,5 +1,6 @@
 from abc import ABC
 from copy import copy
+from typing import Union
 
 from meerk40t.tools.rasterplotter import (
     BOTTOM,
@@ -30,8 +31,8 @@ properties for that cuts may need or use. Or which may be used by the CutPlanner
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
 
-
 MILS_PER_MM = 39.3701
+
 
 class LaserSettings:
     def __init__(self, *args, **kwargs):
@@ -127,6 +128,7 @@ class CutCode(list):
         self.output = True
         self.operation = "CutCode"
         self.start = None
+        self.mode = None
 
     def __str__(self):
         parts = list()
@@ -225,32 +227,33 @@ class CutCode(list):
             for s in self.flat(c):
                 yield s
 
-    def closed_groups(self, context=None):
+    def extract_closed_groups(self, context=None):
         """
+        yields all closed groups within the current cutcode.
+        Removing those groups from this cutcode.
         """
         if context is None:
             context = self
-        for index in range(len(context)-1, -1, -1):
+        index = len(context)-1
+        while index != -1:
             c = context[index]
             if isinstance(c, CutGroup):
                 if c.closed:
+                    del context[index]
                     yield c
+                index -= 1
                 continue
-            for s in self.closed_groups(c):
+            for s in self.extract_closed_groups(c):
                 yield s
+            index -= 1
 
     def optimize(self):
-        old_len = self.length_travel()
-        new_cutcode = self.short_travel_cutcode()
-        new_len = new_cutcode.length_travel()
-        red = new_len - old_len
-        try:
-            print(
-                "%f -> %f reduced %f (%f%%)"
-                % (old_len, new_len, red, 100 * (red / old_len))
-            )
-        except ZeroDivisionError:
-            return self
+        if self.mode not in ("constrained", "optimized"):
+            cutcode = CutCode(self.flat())
+        else:
+            cutcode = self
+        new_cutcode = cutcode.short_travel_cutcode()
+        new_cutcode.mode = "optimized"
         return new_cutcode
 
     def permit(self, permit, _list=None):
@@ -261,15 +264,21 @@ class CutCode(list):
 
     def inner_first_cutcode(self):
         ordered = CutCode()
-        for group in self.closed_groups():
-            print(group)
-        subpaths = self
-        for j in range(len(subpaths)):
-            for k in range(j + 1, len(subpaths)):
-                if self.is_inside(subpaths[k], subpaths[j]):
-                    t = subpaths[j]
-                    subpaths[j] = subpaths[k]
-                    subpaths[k] = t
+        ordered.extend(self.extract_closed_groups())
+        ordered.extend(self.flat())
+        for j in range(len(ordered)):
+            if ordered[j] is None:
+                continue
+            for k in range(j + 1, len(ordered)):
+                if ordered[k] is None:
+                    continue
+                if self.is_inside(ordered[k], ordered[j]):
+                    # If is inside, put it inside.
+                    o = ordered[k]
+                    ordered[k] = None
+                    ordered[j].append(o)
+        ordered.mode = "constrained"
+        return ordered
 
     def short_travel_cutcode(self):
         start = self.start
@@ -343,6 +352,10 @@ class CutCode(list):
         :param outer_path: outer path
         :return: whether path1 is wholly inside path2.
         """
+        if hasattr(inner_path, "path"):
+            inner_path = inner_path.path
+        if hasattr(outer_path, "path"):
+            outer_path = outer_path.path
         if not hasattr(inner_path, "bounding_box"):
             inner_path.bounding_box = Group.union_bbox([inner_path])
         if not hasattr(outer_path, "bounding_box"):
@@ -391,6 +404,9 @@ class CutObject:
         self._end = end
         self.normal = True  # Normal or Reversed.
 
+    def reversible(self):
+        return True
+
     def start(self):
         return self._start if self.normal else self._end
 
@@ -437,19 +453,22 @@ class CutGroup(list, CutObject, ABC):
     CutGroups. However, the CutObjects must be cut *after* the groups within the
     CutGroup is cut.
     """
-    def __init__(self, parent: list, children=(), settings=None):
+    def __init__(self, parent: Union[CutObject, CutCode], children=(), settings=None, constrained=False, closed=False):
         list.__init__(self, children)
         CutObject.__init__(self, settings=settings)
         self.parent = parent
-        self.normal = True  # Normal or Reversed.
         parent.append(self)
-        self.closed = False
+        self.closed = closed
+        self.constrained = constrained
 
     def __copy__(self):
         return CutGroup(self.parent, self)
 
     def __repr__(self):
         return "CutGroup(children=%s, parent=%s)" % (list.__repr__(self), str(self.parent))
+
+    def reversible(self):
+        return False
 
     def start(self):
         if len(self) == 0:
@@ -645,6 +664,9 @@ class RasterCut(CutObject):
             data, width, height, traverse, 0, overscan, tx, ty, step, image_filter
         )
 
+    def reversible(self):
+        return False
+
     def start(self):
         return Point(self.plot.initial_position_in_scene())
 
@@ -678,6 +700,9 @@ class RawCut(CutObject):
 
     def plot(self, plot):
         self.plot.extend(plot)
+
+    def reversible(self):
+        return False
 
     def start(self):
         try:

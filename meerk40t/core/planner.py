@@ -457,8 +457,6 @@ class Planner(Modifier):
             plan, original, commands, name = data
             if self.context.opt_reduce_travel:
                 self.conditional_jobadd_optimize_travel()
-            if self.context.opt_inner_first:
-                self.conditional_jobadd_optimize_cuts()
             if self.context.opt_reduce_directions:
                 pass
             if self.context.opt_remove_overlap:
@@ -992,29 +990,3 @@ class Planner(Modifier):
             if not outer_path.vm.is_point_inside(p.x, p.y):
                 return False
         return True
-
-    @staticmethod
-    def optimize_cut_inside(paths):
-        optimized = Path()
-        if isinstance(paths, Path):
-            paths = [paths]
-        subpaths = []
-        for path in paths:
-            subpaths.extend([abs(Path(s)) for s in path.as_subpaths()])
-        for j in range(len(subpaths)):
-            for k in range(j + 1, len(subpaths)):
-                if Planner.is_inside(subpaths[k], subpaths[j]):
-                    t = subpaths[j]
-                    subpaths[j] = subpaths[k]
-                    subpaths[k] = t
-        for p in subpaths:
-            optimized += p
-            try:
-                del p.vm
-            except AttributeError:
-                pass
-            try:
-                del p.bounding_box
-            except AttributeError:
-                pass
-        return optimized
