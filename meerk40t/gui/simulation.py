@@ -122,7 +122,8 @@ class Simulation(MWindow):
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
-        self.widget_scene.add_interfacewidget(SimReticleWidget(self.widget_scene))
+        self.reticle = SimReticleWidget(self.widget_scene)
+        self.widget_scene.add_interfacewidget(self.reticle)
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -294,7 +295,12 @@ class SimulationWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc):
-        self.renderer.draw_cutcode(self.sim.cutcode[:self.sim.max], gc, 0, 0)
+        sim_cut = self.sim.cutcode[:self.sim.max]
+        try:
+            self.sim.reticle.set_pos(sim_cut[-1].end())
+        except IndexError:
+            self.sim.reticle.set_pos((0,0))
+        self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
 
 
 class SimulationInterfaceWidget(Widget):
@@ -327,19 +333,22 @@ class SimulationInterfaceWidget(Widget):
 class SimReticleWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
+        self.x = 0
+        self.y = 0
+
+    def set_pos(self, pos):
+        self.x = pos[0]
+        self.y = pos[1]
 
     def process_draw(self, gc):
         context = self.scene.context
         try:
             # Draw Reticle
-            gc.SetPen(wx.RED_PEN)
+            gc.SetPen(wx.GREEN_PEN)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x = context._reticle_x
-            y = context._reticle_y
-            if x is None or y is None:
-                x = 0
-                y = 0
-            x, y = self.scene.convert_scene_to_window([x, y])
+            x, y = self.scene.convert_scene_to_window([self.x, self.y])
             gc.DrawEllipse(x - 5, y - 5, 10, 10)
+            gc.DrawEllipse(x - 10, y - 10, 20, 20)
+            gc.DrawEllipse(x - 20, y - 20, 40, 40)
         except AttributeError:
             pass
