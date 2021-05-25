@@ -21,6 +21,7 @@ from .icons import (
 
 MILS_IN_MM = 39.3701
 
+
 class Jog(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Jog.__init__
@@ -253,8 +254,8 @@ class MovePanel(wx.Panel):
         try:
             width = self.bed_dim.bed_width * MILS_IN_MM
             height = self.bed_dim.bed_height * MILS_IN_MM
-            x = Length(self.text_position_x.GetValue()).value(ppi=1000.0, width=width, height=height)
-            y = Length(self.text_position_y.GetValue()).value(ppi=1000.0, width=width, height=height)
+            x = Length(self.text_position_x.GetValue()).value(ppi=1000.0, relative_length=width)
+            y = Length(self.text_position_y.GetValue()).value(ppi=1000.0, relative_length=height)
             if x > width or y > height or x < 0 or y < 0:
                 dlg = wx.MessageDialog(
                     None,
