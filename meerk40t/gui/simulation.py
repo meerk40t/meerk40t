@@ -30,10 +30,11 @@ class Simulation(MWindow, Job):
         self.plan_name = plan_name
         self.operations, original, commands, plan_name = self.context.root.default_plan()
         self.cutcode = CutCode()
+
         for c in self.operations:
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
-        self.cutcode = list(reversed(list(self.cutcode.flat())))
+        self.cutcode = CutCode(reversed(list(self.cutcode.flat())))
         self.max = len(self.cutcode)
 
         self.bed_dim = self.context.root
@@ -128,7 +129,6 @@ class Simulation(MWindow, Job):
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(SimulationTravelWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
-        # self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.reticle = SimReticleWidget(self.widget_scene)
         self.widget_scene.add_interfacewidget(self.reticle)
         self.running = False
@@ -231,6 +231,13 @@ class Simulation(MWindow, Job):
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
+        travel = self.cutcode.length_travel()
+        cuts = self.cutcode.length_cut()
+        travel /= MILS_PER_MM
+        cuts /= MILS_PER_MM
+        self.text_distance_travel.SetValue("%.2fmm" % travel)
+        self.text_distance_laser.SetValue("%.2fmm" % cuts)
+        self.text_distance_total.SetValue("%.2fmm" % (travel + cuts))
 
     def window_close(self):
         self.context.unlisten("refresh_scene", self.on_refresh_scene)

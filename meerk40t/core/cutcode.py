@@ -309,11 +309,20 @@ class CutCode(list):
 
     def length_travel(self):
         cutcode = list(self.flat())
-        distance = 0.0
+        distance = 0
         for i in range(1, len(cutcode)):
             prev = cutcode[i - 1]
             curr = cutcode[i]
-            distance += Point.distance(prev.end(), curr.start())
+            delta = Point.distance(prev.end(), curr.start())
+            distance += delta
+        return distance
+
+    def length_cut(self):
+        cutcode = list(self.flat())
+        distance = 0
+        for i in range(0, len(cutcode)):
+            curr = cutcode[i]
+            distance += curr.length()
         return distance
 
     def is_inside(self, inner_path, outer_path):
@@ -376,6 +385,9 @@ class CutObject:
 
     def end(self):
         return self._end if self.normal else self._start
+
+    def length(self):
+        return Point.distance(self.start(), self.end())
 
     def major_axis(self):
         start = self.start()
@@ -459,6 +471,9 @@ class QuadCut(CutObject):
     def c(self):
         return self._control
 
+    def length(self):
+        return Point.distance(self.start(), self.c()) + Point.distance(self.c(), self.end())
+
     def generator(self):
         start = self.start()
         c = self.c()
@@ -486,6 +501,9 @@ class CubicCut(CutObject):
     def c2(self):
         return self._control2 if self.normal else self._control1
 
+    def length(self):
+        return Point.distance(self.start(), self.c1()) + Point.distance(self.c1(), self.c2()) + Point.distance(self.c2(), self.end())
+
     def generator(self):
         start = self.start()
         c1 = self.c1()
@@ -509,6 +527,9 @@ class ArcCut(CutObject):
         settings.raster_step = 0
         self.arc = arc
 
+    def length(self):
+        return self.arc.length(error=1e2, depth=2)
+
     def start(self):
         return self.arc.start
 
@@ -528,6 +549,7 @@ class RasterCut(CutObject):
         CutObject.__init__(self, settings=settings)
         self.image = image
         step = self.settings.raster_step
+        self.step = step
         direction = self.settings.raster_direction
         traverse = 0
         if direction == 0:
@@ -551,6 +573,8 @@ class RasterCut(CutObject):
         svgimage = self.image
         image = svgimage.image
         width, height = image.size
+        self.width = width
+        self.height = height
         mode = image.mode
 
         if (
@@ -603,6 +627,7 @@ class RasterCut(CutObject):
                 overscan = int(overscan)
             except ValueError:
                 overscan = 20
+        self.overscan = overscan
         tx = m.value_trans_x()
         ty = m.value_trans_y()
         self.plot = RasterPlotter(
@@ -614,6 +639,9 @@ class RasterCut(CutObject):
 
     def end(self):
         return Point(self.plot.final_position_in_scene())
+
+    def length(self):
+        return self.width * self.height + (self.overscan * self.height) + (self.height * self.step)
 
     def major_axis(self):
         return 0 if self.plot.horizontal else 1
