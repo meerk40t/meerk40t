@@ -424,17 +424,17 @@ class Planner(Modifier):
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
             plan, original, commands, name = data
 
+            first_index = None
+            blob = CutCode()
             for i, c in enumerate(plan):
-                first_index = None
-                blob = CutCode()
                 try:
                     if c.operation == "Dots":
                         continue
-                    b = c.as_blob()
+                    b = c.as_blob(cut_inner_first=self.context.opt_inner_first)
                     if b is not None:
                         blob.extend(b)
-                        if first_index is None:
-                            first_index = i
+                    if first_index is None:
+                        first_index = i
                     plan[i] = None
                     c.settings.jog_distance = self.context.opt_jog_minimum
                     c.settings.jog_enable = self.context.opt_rapid_between
