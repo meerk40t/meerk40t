@@ -1,11 +1,12 @@
 import wx
 
-from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard_50
+from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard_50, icons8_pause_50
 from .laserrender import LaserRender
 from .mwindow import MWindow
 from .widget import GridWidget, GuideWidget, ReticleWidget, Widget, HITCHAIN_HIT, RESPONSE_CONSUME, \
-    ScenePanel
+    ScenePanel, RESPONSE_DROP
 from ..core.cutcode import CutCode
+from ..kernel import Job
 from ..svgelements import Matrix
 
 _ = wx.GetTranslation
@@ -13,13 +14,19 @@ _ = wx.GetTranslation
 MILS_PER_MM = 39.3701
 
 
-class Simulation(MWindow):
+class Simulation(MWindow, Job):
     def __init__(self, *args, **kwds):
         super().__init__(706, 755, *args, **kwds)
         if len(args) >= 4:
             plan_name = args[3]
         else:
             plan_name = 0
+        Job.__init__(self)
+        self.job_name = "simulate"
+        self.run_main = True
+        self.process = self.animate_sim
+        self.interval = 0.1
+
         self.plan_name = plan_name
         self.operations, original, commands, plan_name = self.context.root.default_plan()
         self.cutcode = CutCode()
@@ -118,12 +125,14 @@ class Simulation(MWindow):
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         # end wxGlade
 
-        self.widget_scene.add_interfacewidget(SimulationInterfaceWidget(self.widget_scene))
+        # self.widget_scene.add_interfacewidget(SimulationInterfaceWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.reticle = SimReticleWidget(self.widget_scene)
         self.widget_scene.add_interfacewidget(self.reticle)
+        self.thread = None
+        self.shutdown = False
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -228,6 +237,7 @@ class Simulation(MWindow):
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
         self.context("plan%s clear\n" % self.plan_name)
         self.context.close("SimScene")
+        self.context.unschedule(self)
 
     def on_refresh_scene(self, origin, *args):
         """
@@ -257,17 +267,33 @@ class Simulation(MWindow):
         print("Event handler 'on_optimize_travel_twoop' not implemented!")
         event.Skip()
 
-    def on_slider_progress(self, event):  # wxGlade: Simulation.<event_handler>
+    def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.max = self.slider_progress.GetValue()
         self.context.signal("refresh_scene")
 
     def on_button_play(self, event):  # wxGlade: Simulation.<event_handler>
-        print("Event handler 'on_button_play' not implemented!")
-        event.Skip()
+        progress = self.slider_progress.GetValue()
+        max = self.slider_progress.GetMax()
+        if progress >= max:
+            self.slider_progress.SetValue(0)
+            self.on_slider_progress(None)
+        self.button_play.SetBitmap(icons8_pause_50.GetBitmap())
+        self.context.schedule(self)
+
+    def animate_sim(self, event=None):
+        progress = self.slider_progress.GetValue()
+        max = self.slider_progress.GetMax()
+        if progress >= max:
+            self.context.unschedule(self)
+            self.button_play.SetBitmap(icons8_play_50.GetBitmap())
+        else:
+            progress += 1
+            self.slider_progress.SetValue(progress)
+            self.on_slider_progress(None)
 
     def on_slider_playback(self, event):  # wxGlade: Simulation.<event_handler>
-        print("Event handler 'on_sldier_playback' not implemented!")
-        event.Skip()
+        self.interval = 0.1 * 100.0 / float(self.slider_playbackspeed.GetValue())
+        self.text_playback_speed.SetValue("%d%%" % self.slider_playbackspeed.GetValue())
 
     def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
         self.available_devices = [
@@ -303,31 +329,31 @@ class SimulationWidget(Widget):
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
 
 
-class SimulationInterfaceWidget(Widget):
-    def __init__(self, scene):
-        Widget.__init__(self, scene, 40, 40, 200, 70)
-        self.selected = False
-
-    def process_draw(self, gc):
-        font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetBrush(wx.TRANSPARENT_BRUSH)
-        gc.SetFont(font, wx.BLACK)
-        gc.DrawText(_("Simulating Burn..."), self.left, self.top)
-        gc.SetPen(wx.BLACK_PEN)
-        gc.DrawRectangle(self.left, self.top, self.width, self.height)
-
-    def hit(self):
-        return HITCHAIN_HIT
-
-    def event(self, window_pos=None, space_pos=None, event_type=None):
-        if event_type == "leftdown":
-            self.selected = True
-        if event_type == "move":
-            self.translate_self(window_pos[4], window_pos[5])
-            self.scene.context.signal("refresh_scene")
-        if event_type == "leftup":
-            self.selected = False
-        return RESPONSE_CONSUME
+# class SimulationInterfaceWidget(Widget):
+#     def __init__(self, scene):
+#         Widget.__init__(self, scene, 40, 40, 200, 70)
+#         self.selected = False
+#
+#     def process_draw(self, gc):
+#         font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+#         gc.SetBrush(wx.TRANSPARENT_BRUSH)
+#         gc.SetFont(font, wx.BLACK)
+#         gc.DrawText(_("Simulating Burn..."), self.left, self.top)
+#         gc.SetPen(wx.BLACK_PEN)
+#         gc.DrawRectangle(self.left, self.top, self.width, self.height)
+#
+#     def hit(self):
+#         return HITCHAIN_HIT
+#
+#     def event(self, window_pos=None, space_pos=None, event_type=None):
+#         if event_type == "leftdown":
+#             self.selected = True
+#         if event_type == "move":
+#             self.translate_self(window_pos[4], window_pos[5])
+#             self.scene.context.signal("refresh_scene")
+#         if event_type == "leftup":
+#             self.selected = False
+#         return RESPONSE_CONSUME
 
 
 class SimReticleWidget(Widget):
@@ -341,10 +367,10 @@ class SimReticleWidget(Widget):
         self.y = pos[1]
 
     def process_draw(self, gc):
-        context = self.scene.context
         try:
             # Draw Reticle
-            gc.SetPen(wx.GREEN_PEN)
+            gc.SetPen(wx.Pen(wx.Colour(0, 255, 0, alpha=127)))
+            # gc.SetPen(wx.GREEN_PEN)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             x, y = self.scene.convert_scene_to_window([self.x, self.y])
             gc.DrawEllipse(x - 5, y - 5, 10, 10)
