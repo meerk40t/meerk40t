@@ -3,8 +3,7 @@ import wx
 from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard_50, icons8_pause_50
 from .laserrender import LaserRender
 from .mwindow import MWindow
-from .widget import GridWidget, GuideWidget, ReticleWidget, Widget, HITCHAIN_HIT, RESPONSE_CONSUME, \
-    ScenePanel, RESPONSE_DROP
+from .widget import GridWidget, Widget, ScenePanel
 from ..core.cutcode import CutCode
 from ..kernel import Job
 from ..svgelements import Matrix
@@ -238,6 +237,25 @@ class Simulation(MWindow, Job):
         self.text_distance_travel.SetValue("%.2fmm" % travel)
         self.text_distance_laser.SetValue("%.2fmm" % cuts)
         self.text_distance_total.SetValue("%.2fmm" % (travel + cuts))
+
+        try:
+            time_travel = travel / self.cutcode.travel_speed
+            t_hours = time_travel // 3600
+            t_mins = (time_travel % 3600) // 60
+            t_seconds = time_travel % 60
+            self.text_time_travel.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
+            time_cuts = self.cutcode.duration_cut()
+            t_hours = time_cuts // 3600
+            t_mins = (time_cuts % 3600) // 60
+            t_seconds = time_cuts % 60
+            self.text_time_laser.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
+            time_total = (time_travel + time_cuts)
+            t_hours = time_total // 3600
+            t_mins = (time_total % 3600) // 60
+            t_seconds = time_total % 60
+            self.text_time_total.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
+        except ZeroDivisionError:
+            pass
 
     def window_close(self):
         self.context.unlisten("refresh_scene", self.on_refresh_scene)

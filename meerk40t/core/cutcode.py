@@ -31,6 +31,8 @@ are references to settings which may be shared by all CutObjects created by a La
 """
 
 
+MILS_PER_MM = 39.3701
+
 class LaserSettings:
     def __init__(self, *args, **kwargs):
         self.line_color = None
@@ -121,6 +123,7 @@ class LaserSettings:
 class CutCode(list):
     def __init__(self, seq=()):
         list.__init__(self, seq)
+        self.travel_speed = 20.0
         self.output = True
         self.operation = "CutCode"
         self.start = None
@@ -323,6 +326,14 @@ class CutCode(list):
         for i in range(0, len(cutcode)):
             curr = cutcode[i]
             distance += curr.length()
+        return distance
+
+    def duration_cut(self):
+        cutcode = list(self.flat())
+        distance = 0
+        for i in range(0, len(cutcode)):
+            curr = cutcode[i]
+            distance += (curr.length() / MILS_PER_MM) / curr.settings.speed
         return distance
 
     def is_inside(self, inner_path, outer_path):
