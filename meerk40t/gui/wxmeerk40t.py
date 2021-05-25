@@ -42,7 +42,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT,
     COMMAND_WAIT_FINISH,
 )
-from ..kernel import STATE_BUSY, Job, Module
+from ..kernel import STATE_BUSY, Module
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -101,7 +101,6 @@ from .icons import (
     icons8_system_task_20,
     icons8_type_50,
     icons8_ungroup_objects_50,
-    # icons8_usb_connector_50,
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
@@ -295,6 +294,7 @@ ID_MENU_SPOOLER = wx.NewId()
 ID_MENU_SIMULATE = wx.NewId()
 ID_MENU_RASTER_WIZARD = wx.NewId()
 ID_MENU_WINDOW_RESET = wx.NewId()
+ID_MENU_PANE_RESET = wx.NewId()
 ID_MENU_JOB = wx.NewId()
 ID_MENU_TREE = wx.NewId()
 
@@ -443,6 +443,7 @@ class MeerK40t(MWindow):
 
         self.CenterOnScreen()
 
+        self.default_perspective = self._mgr.SavePerspective()
         self.context.setting(str, "perspective")
         if self.context.perspective is not None:
             self._mgr.LoadPerspective(self.context.perspective)
@@ -1454,6 +1455,7 @@ class MeerK40t(MWindow):
         def open_pane(p):
             def open(event):
                 self.aui_open_pane(p)
+                self._mgr.Update()
 
             return open
 
@@ -1513,6 +1515,10 @@ class MeerK40t(MWindow):
         wt_menu.AppendSeparator()
         self.main_menubar.windowreset = wt_menu.Append(
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
+        )
+        wt_menu.AppendSeparator()
+        self.main_menubar.panereset = wt_menu.Append(
+            ID_MENU_PANE_RESET, _("Reset Panes"), ""
         )
 
         self.main_menubar.Append(wt_menu, _("Tools"))
@@ -1718,6 +1724,11 @@ class MeerK40t(MWindow):
             wx.EVT_MENU,
             lambda v: self.context("window reset *\n"),
             id=ID_MENU_WINDOW_RESET,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self._mgr.LoadPerspective(self.default_perspective, update=True),
+            id=ID_MENU_PANE_RESET,
         )
         self.Bind(
             wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP
