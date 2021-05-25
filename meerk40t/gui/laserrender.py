@@ -195,7 +195,7 @@ class LaserRender:
         for cut in reversed(cutcode):
             c = cut.settings.line_color
             if c is not color:
-                gc.SetPen(wx.Pen(wx.Colour(c.red, c.green, c.blue)))
+                self.set_pen(gc, c, width=2.0)
             start = cut.start()
             end = cut.end()
             if last_point != start:
