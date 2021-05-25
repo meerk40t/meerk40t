@@ -725,11 +725,17 @@ class MeerK40t(MWindow):
         # After main window is launched run_later actually works.
 
         context.register("tool/draw", DrawTool)
+
         @context.console_argument("tool", help="tool to use.")
         @context.console_command("tool", help="sets a particular tool for the scene")
-        def tool(tool=None, **kwargs):
+        def tool(command, channel, _, tool=None, **kwargs):
             if tool is None:
-                raise SyntaxError
+                channel(_("Tools:"))
+                channel("none")
+                for t in context.match("tool/", suffix=True):
+                    channel(t)
+                channel(_("-------"))
+                return
             try:
                 if tool == "none":
                     self.tool_container.set_tool(None)
@@ -737,7 +743,6 @@ class MeerK40t(MWindow):
                     self.tool_container.set_tool(tool.lower())
             except AttributeError:
                 raise SyntaxError
-            self.apply_rotary_scale()
 
     def __set_tree(self):
         self.shadow_tree = ShadowTree(self.context, self, self.context.elements._tree)
