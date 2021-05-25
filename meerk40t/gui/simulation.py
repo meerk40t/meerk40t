@@ -26,6 +26,7 @@ class Simulation(MWindow):
         for c in self.operations:
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
+        self.cutcode = self.cutcode.flat()
         self.max = len(self.cutcode)
 
         self.bed_dim = self.context.root
@@ -293,8 +294,7 @@ class SimulationWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc):
-        cutcode = list(self.sim.cutcode.flat())
-        self.renderer.draw_cutcode(cutcode[:self.sim.max], gc, 0, 0)
+        self.renderer.draw_cutcode(self.sim.cutcode[:self.sim.max], gc, 0, 0)
 
 
 class SimulationInterfaceWidget(Widget):
