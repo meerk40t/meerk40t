@@ -122,7 +122,7 @@ class Simulation(MWindow):
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
-        # self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
+        self.widget_scene.add_interfacewidget(SimReticleWidget(self.widget_scene))
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -322,3 +322,24 @@ class SimulationInterfaceWidget(Widget):
         if event_type == "leftup":
             self.selected = False
         return RESPONSE_CONSUME
+
+
+class SimReticleWidget(Widget):
+    def __init__(self, scene):
+        Widget.__init__(self, scene, all=False)
+
+    def process_draw(self, gc):
+        context = self.scene.context
+        try:
+            # Draw Reticle
+            gc.SetPen(wx.RED_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            x = context._reticle_x
+            y = context._reticle_y
+            if x is None or y is None:
+                x = 0
+                y = 0
+            x, y = self.scene.convert_scene_to_window([x, y])
+            gc.DrawEllipse(x - 5, y - 5, 10, 10)
+        except AttributeError:
+            pass
