@@ -26,7 +26,7 @@ class Simulation(MWindow):
         for c in self.operations:
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
-        self.cutcode = self.cutcode.flat()
+        self.cutcode = list(self.cutcode.flat())
         self.max = len(self.cutcode)
 
         self.bed_dim = self.context.root
