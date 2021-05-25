@@ -250,6 +250,8 @@ class LaserRender:
         gc.FillPath(p)
         gc.DrawRectangle(0,0,500,500)
 
+        del p
+
     def draw_group_node(self, node, gc, draw_mode, zoomscale=1.0):
         pass
 
