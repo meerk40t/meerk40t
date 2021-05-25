@@ -245,10 +245,6 @@ class LaserRender:
             last_point = end
         print("Stroking the path...")
         gc.StrokePath(p)
-        gc.SetPen(wx.BLACK_PEN)
-        gc.SetBrush(wx.BLACK_BRUSH)
-        gc.DrawRectangle(0,0,500,500)
-
         del p
 
     def draw_group_node(self, node, gc, draw_mode, zoomscale=1.0):
