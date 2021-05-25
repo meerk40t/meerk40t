@@ -252,7 +252,6 @@ class Scene(Module, Job):
         self.distance = None
 
         self.screen_refresh_is_requested = False
-        self.screen_refresh_is_running = False
         self.background_brush = wx.Brush("Grey")
 
     def initialize(self, *args, **kwargs):
@@ -301,16 +300,14 @@ class Scene(Module, Job):
 
     def refresh_scene(self):
         """Called by the Scheduler at a given the specified framerate."""
-        if self.screen_refresh_is_requested and not self.screen_refresh_is_running:
-            self.screen_refresh_is_running = True
-            if self.screen_refresh_lock.acquire(timeout=1):
+        if self.screen_refresh_is_requested and not self.screen_refresh_lock.locked():
+            if self.screen_refresh_lock.acquire(timeout=0.5):
                 if not wx.IsMainThread():
                     wx.CallAfter(self._refresh_in_ui)
                 else:
                     self._refresh_in_ui()
             else:
                 self.screen_refresh_is_requested = False
-                self.screen_refresh_is_running = False
 
     def _refresh_in_ui(self):
         """Called by refresh_scene() in the UI thread."""
@@ -320,7 +317,6 @@ class Scene(Module, Job):
         self.gui.Refresh()
         self.gui.Update()
         self.screen_refresh_is_requested = False
-        self.screen_refresh_is_running = False
         self.screen_refresh_lock.release()
 
     def update_buffer_ui_thread(self):
