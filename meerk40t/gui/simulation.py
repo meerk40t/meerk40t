@@ -119,9 +119,9 @@ class Simulation(MWindow):
 
         self.widget_scene.add_interfacewidget(SimulationInterfaceWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
-        self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
-        self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
-        self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
+        # self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
+        # self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+        # self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
     def __set_properties(self):
         _icon = wx.NullIcon
