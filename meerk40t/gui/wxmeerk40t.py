@@ -159,7 +159,7 @@ from .widget import (
     RectSelectWidget,
     ReticleWidget,
     Scene,
-    SelectionWidget, ScenePanel, ToolContainer, DrawTool,
+    SelectionWidget, ScenePanel, ToolContainer, DrawTool, RectTool,
 )
 
 """
@@ -725,6 +725,7 @@ class MeerK40t(MWindow):
         # After main window is launched run_later actually works.
 
         context.register("tool/draw", DrawTool)
+        context.register("tool/rect", RectTool)
 
         @context.console_argument("tool", help="tool to use.")
         @context.console_command("tool", help="sets a particular tool for the scene")
@@ -741,7 +742,7 @@ class MeerK40t(MWindow):
                     self.tool_container.set_tool(None)
                 else:
                     self.tool_container.set_tool(tool.lower())
-            except AttributeError:
+            except (KeyError, AttributeError):
                 raise SyntaxError
 
     def __set_tree(self):
