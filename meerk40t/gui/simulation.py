@@ -131,8 +131,7 @@ class Simulation(MWindow, Job):
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.reticle = SimReticleWidget(self.widget_scene)
         self.widget_scene.add_interfacewidget(self.reticle)
-        self.thread = None
-        self.shutdown = False
+        self.running = False
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -238,6 +237,7 @@ class Simulation(MWindow, Job):
         self.context("plan%s clear\n" % self.plan_name)
         self.context.close("SimScene")
         self.context.unschedule(self)
+        self.running = False
 
     def on_refresh_scene(self, origin, *args):
         """
@@ -271,25 +271,36 @@ class Simulation(MWindow, Job):
         self.max = self.slider_progress.GetValue()
         self.context.signal("refresh_scene")
 
+    def _start(self):
+        self.button_play.SetBitmap(icons8_pause_50.GetBitmap())
+        self.context.schedule(self)
+        self.running = True
+
+    def _stop(self):
+        self.button_play.SetBitmap(icons8_play_50.GetBitmap())
+        self.context.unschedule(self)
+        self.running = False
+
     def on_button_play(self, event):  # wxGlade: Simulation.<event_handler>
         progress = self.slider_progress.GetValue()
         max = self.slider_progress.GetMax()
+        if self.running:
+            self._stop()
+            return
         if progress >= max:
             self.slider_progress.SetValue(0)
             self.on_slider_progress(None)
-        self.button_play.SetBitmap(icons8_pause_50.GetBitmap())
-        self.context.schedule(self)
+        self._start()
 
     def animate_sim(self, event=None):
         progress = self.slider_progress.GetValue()
         max = self.slider_progress.GetMax()
         if progress >= max:
-            self.context.unschedule(self)
-            self.button_play.SetBitmap(icons8_play_50.GetBitmap())
-        else:
-            progress += 1
-            self.slider_progress.SetValue(progress)
-            self.on_slider_progress(None)
+            self._stop()
+            return
+        progress += 1
+        self.slider_progress.SetValue(progress)
+        self.on_slider_progress(None)
 
     def on_slider_playback(self, event):  # wxGlade: Simulation.<event_handler>
         self.interval = 0.1 * 100.0 / float(self.slider_playbackspeed.GetValue())
