@@ -192,7 +192,7 @@ class LaserRender:
         last_point = None
         p = gc.CreatePath()
         color = None
-        for cut in reversed(cutcode):
+        for cut in cutcode:
             c = cut.settings.line_color
             if c is not color:
                 self.set_pen(gc, c, width=7.0)
