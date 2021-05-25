@@ -243,6 +243,7 @@ class LaserRender:
                 gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
                 gc.PopState()
             last_point = end
+        print("Stroking the path...")
         gc.StrokePath(p)
         del p
 
