@@ -41,21 +41,21 @@ class Simulation(MWindow, Job):
         self.bed_dim.setting(int, "bed_height", 210)
 
         # Menu Bar
-        self.Simulation_menubar = wx.MenuBar()
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Travel Moves", "", wx.ITEM_CHECK)
-        self.Bind(wx.EVT_MENU, self.on_view_travel, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Background", "", wx.ITEM_CHECK)
-        self.Bind(wx.EVT_MENU, self.on_view_background, id=item.GetId())
-        self.Simulation_menubar.Append(wxglade_tmp_menu, "View")
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Optimize Travel (Greedy)", "")
-        self.Bind(wx.EVT_MENU, self.on_optimize_travel_greedy, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Optimize Travel (Two-Opt)", "")
-        self.Bind(wx.EVT_MENU, self.on_optimize_travel_twoop, id=item.GetId())
-        self.Simulation_menubar.Append(wxglade_tmp_menu, "Optimize")
-        self.SetMenuBar(self.Simulation_menubar)
-        # Menu Bar end
+        # self.Simulation_menubar = wx.MenuBar()
+        # wxglade_tmp_menu = wx.Menu()
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, "Travel Moves", "", wx.ITEM_CHECK)
+        # self.Bind(wx.EVT_MENU, self.on_view_travel, id=item.GetId())
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, "Background", "", wx.ITEM_CHECK)
+        # self.Bind(wx.EVT_MENU, self.on_view_background, id=item.GetId())
+        # self.Simulation_menubar.Append(wxglade_tmp_menu, "View")
+        # wxglade_tmp_menu = wx.Menu()
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, "Optimize Travel (Greedy)", "")
+        # self.Bind(wx.EVT_MENU, self.on_optimize_travel_greedy, id=item.GetId())
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, "Optimize Travel (Two-Opt)", "")
+        # self.Bind(wx.EVT_MENU, self.on_optimize_travel_twoop, id=item.GetId())
+        # self.Simulation_menubar.Append(wxglade_tmp_menu, "Optimize")
+        # self.SetMenuBar(self.Simulation_menubar)
+        # # Menu Bar end
         self.view_pane = ScenePanel(self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.WANTS_CHARS)
         self.widget_scene = self.view_pane.scene
 
@@ -275,22 +275,22 @@ class Simulation(MWindow, Job):
 
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)
-
-    def on_view_travel(self, event):  # wxGlade: Simulation.<event_handler>
-        print("Event handler 'on_view_travel' not implemented!")
-        event.Skip()
-
-    def on_view_background(self, event):  # wxGlade: Simulation.<event_handler>
-        print("Event handler 'on_view_background' not implemented!")
-        event.Skip()
-
-    def on_optimize_travel_greedy(self, event):  # wxGlade: Simulation.<event_handler>
-        print("Event handler 'on_optimize_travel_greedy' not implemented!")
-        event.Skip()
-
-    def on_optimize_travel_twoop(self, event):  # wxGlade: Simulation.<event_handler>
-        print("Event handler 'on_optimize_travel_twoop' not implemented!")
-        event.Skip()
+    #
+    # def on_view_travel(self, event):  # wxGlade: Simulation.<event_handler>
+    #     print("Event handler 'on_view_travel' not implemented!")
+    #     event.Skip()
+    #
+    # def on_view_background(self, event):  # wxGlade: Simulation.<event_handler>
+    #     print("Event handler 'on_view_background' not implemented!")
+    #     event.Skip()
+    #
+    # def on_optimize_travel_greedy(self, event):  # wxGlade: Simulation.<event_handler>
+    #     print("Event handler 'on_optimize_travel_greedy' not implemented!")
+    #     event.Skip()
+    #
+    # def on_optimize_travel_twoop(self, event):  # wxGlade: Simulation.<event_handler>
+    #     print("Event handler 'on_optimize_travel_twoop' not implemented!")
+    #     event.Skip()
 
     def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.max = self.slider_progress.GetValue()
