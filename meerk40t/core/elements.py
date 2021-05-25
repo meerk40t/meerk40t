@@ -3983,16 +3983,19 @@ class Elemental(Modifier):
             items.append(op)
         return items
 
-    def add_elem(self, element):
+    def add_elem(self, element, classify=False):
         """
         Add an element. Wraps it within a node, and appends it to the tree.
 
         :param element:
+        :param classify: Should this element be automatically classified.
         :return:
         """
         element_branch = self._tree.get(type="branch elems")
         node = element_branch.add(element, type="elem")
         self.context.signal("element_added", element)
+        if classify:
+            self.classify([element])
         return node
 
     def add_elems(self, adding_elements):

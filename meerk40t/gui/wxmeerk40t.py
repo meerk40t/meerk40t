@@ -159,7 +159,7 @@ from .widget import (
     RectSelectWidget,
     ReticleWidget,
     Scene,
-    SelectionWidget, ScenePanel,
+    SelectionWidget, ScenePanel, ToolContainer, DrawTool,
 )
 
 """
@@ -631,6 +631,8 @@ class MeerK40t(MWindow):
         self.widget_scene.add_scenewidget(
             SelectionWidget(self.widget_scene, self.shadow_tree)
         )
+        self.tool_container = ToolContainer(self.widget_scene)
+        self.widget_scene.add_scenewidget(self.tool_container)
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
         self.laserpath_widget = LaserPathWidget(self.widget_scene)
         self.widget_scene.add_scenewidget(self.laserpath_widget)
@@ -720,8 +722,22 @@ class MeerK40t(MWindow):
 
         # Registers the render-op make_raster. This is used to do cut planning.
         context.register("render-op/make_raster", self.renderer.make_raster)
-
         # After main window is launched run_later actually works.
+
+        context.register("tool/draw", DrawTool)
+        @context.console_argument("tool", help="tool to use.")
+        @context.console_command("tool", help="sets a particular tool for the scene")
+        def tool(tool=None, **kwargs):
+            if tool is None:
+                raise SyntaxError
+            try:
+                if tool == "none":
+                    self.tool_container.set_tool(None)
+                else:
+                    self.tool_container.set_tool(tool.lower())
+            except AttributeError:
+                raise SyntaxError
+            self.apply_rotary_scale()
 
     def __set_tree(self):
         self.shadow_tree = ShadowTree(self.context, self, self.context.elements._tree)

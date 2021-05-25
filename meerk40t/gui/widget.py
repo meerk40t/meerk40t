@@ -11,7 +11,7 @@ except ImportError:
 import wx
 
 from ..kernel import Module, Job
-from ..svgelements import Matrix, Point
+from ..svgelements import Matrix, Point, Polyline, Path, Color
 from .laserrender import (
     DRAW_MODE_BACKGROUND,
     DRAW_MODE_GRID,
@@ -510,7 +510,10 @@ class Scene(Module, Job):
 
 
 class Widget(list):
-    def __init__(self, scene, left=None, top=None, right=None, bottom=None, all=False):
+    def __init__(self, scene: Scene, left: float=None, top: float=None, right: float=None, bottom: float=None, all: bool=False):
+        """
+        All is whether this sends all points.
+        """
         list.__init__(self)
         self.matrix = Matrix()
         self.scene = scene
@@ -1506,6 +1509,100 @@ class GuideWidget(Widget):
             pass
 
 
+class ToolContainer(Widget):
+    def __init__(self, scene):
+        Widget.__init__(self, scene, all=False)
+
+    def signal(self, signal, *args, **kwargs):
+        if signal == "tool":
+            tool = args[0]
+            self.set_tool(tool)
+
+    def set_tool(self, tool):
+        self.remove_all_widgets()
+        if tool is None:
+            return
+        new_tool = self.scene.context.registered["tool/%s" % tool]
+        self.add_widget(0, new_tool(self.scene))
+
+
+class CircleBrush:
+    def __init__(self):
+        self.tool_size = 100
+        self.pos = 0 + 0j
+        self.scale = 1.0
+        self.range = self.tool_size * self.scale
+        self.brush_fill = wx.Brush(wx.Colour(alpha=64, red=0, green=255, blue=0))
+        self.using = False
+
+    def set_location(self, x: float, y: float):
+        self.pos = complex(x,y)
+
+    def contains(self, x: float, y: float) -> bool:
+        c = complex(x, y)
+        return abs(self.pos - c) < self.range
+
+    def draw(self, gc: wx.GraphicsContext):
+        if self.using:
+            self.drawBrush(gc)
+
+    def drawBrush(self, gc: wx.GraphicsContext):
+        gc.SetBrush(self.brush_fill)
+        gc.DrawEllipse(self.pos.real - self.tool_size/2.0, self.pos.imag- self.tool_size/2.0, self.tool_size, self.tool_size)
+
+
+class ToolWidget(Widget):
+    def __init__(self, scene: Scene):
+        Widget.__init__(self, scene, all=True)
+        self.brush = CircleBrush()
+
+    def hit(self):
+        return HITCHAIN_HIT
+
+    def process_draw(self, gc):
+        self.brush.draw(gc)
+
+
+class DrawTool(ToolWidget):
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self.preferred_length = 50
+        self.series = None
+        self.last_position = None
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.series is not None:
+            gc.StrokeLines(self.series)
+
+    def add_point(self, point):
+        if len(self.series):
+            last = self.series[-1]
+            if Point.distance(last, point) < self.preferred_length:
+                return
+            self.scene.gui.Update()
+        self.series.append(point)
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if self.series is None:
+            self.series = []
+        if event_type == "leftdown":
+            self.add_point(space_pos[:2])
+        elif event_type == "move":
+            if self.series is None:
+                return RESPONSE_DROP
+            self.add_point(space_pos[:2])
+        elif event_type == "leftup":
+            try:
+                t = Path(stroke="blue")
+                t.move(self.series[0])
+                for m in self.series:
+                    t.line(m)
+                self.scene.context.root.elements.add_elem(t, classify=True)
+            except IndexError:
+                pass
+            self.series = None
+
+
 class SceneSpaceWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
@@ -1707,3 +1804,36 @@ class SceneSpaceWidget(Widget):
             if scale_x != 0 and scale_y != 0:
                 self.scene_widget.matrix.post_scale(scale_x, scale_y)
         self.scene_widget.matrix.post_translate(window_width / 2.0, window_height / 2.0)
+
+
+class ButtonWidget(Widget):
+    def __init__(self, scene, left, top, right, bottom, bitmap):
+        Widget.__init__(self, scene, left, top, right, bottom)
+        self.bitmap = bitmap
+        self.background_brush = None
+        self.enabled = True
+
+    def hit(self):
+        if self.enabled:
+            return HITCHAIN_HIT
+        else:
+            return HITCHAIN_DELEGATE
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        gc.PushState()
+        gc.SetTransform(ZMatrix(self.matrix))
+        if self.background_brush is not None:
+            gc.SetBrush(self.background_brush)
+            gc.DrawRectangle(0, 0, self.width, self.height)
+        gc.DrawBitmap(self.bitmap)
+        gc.PopState()
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftdown":
+            self.clicked(window_pos=None, space_pos=None)
+        return RESPONSE_ABORT
+
+    def clicked(self, window_pos=None, space_pos=None):
+        pass
+
+
