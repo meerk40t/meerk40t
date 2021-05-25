@@ -59,15 +59,6 @@ class Simulation(MWindow, Job):
         self.view_pane = ScenePanel(self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.WANTS_CHARS)
         self.widget_scene = self.view_pane.scene
 
-        self.widget_scene.starts = list()
-        self.widget_scene.ends = list()
-        last = None
-        for c in self.cutcode:
-            if last is not None:
-                self.widget_scene.starts.append(wx.Point2D(*last.end()))
-                self.widget_scene.ends.append(wx.Point2D(*c.start()))
-            last = c
-
         m = max(self.max, 10)
         self.slider_progress = wx.Slider(self, wx.ID_ANY, m, 0, m)
         self.text_distance_laser = wx.TextCtrl(
@@ -134,10 +125,10 @@ class Simulation(MWindow, Job):
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         # end wxGlade
 
-        # self.widget_scene.add_interfacewidget(SimulationInterfaceWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
+        self.widget_scene.add_scenewidget(SimulationTravelWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
-        self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+        # self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.reticle = SimReticleWidget(self.widget_scene)
         self.widget_scene.add_interfacewidget(self.reticle)
         self.running = False
@@ -347,10 +338,25 @@ class SimulationWidget(Widget):
         except IndexError:
             self.sim.reticle.set_pos((0, 0))
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
+
+
+class SimulationTravelWidget(Widget):
+    def __init__(self, scene, sim):
+        Widget.__init__(self, scene, all=False)
+        self.sim = sim
+        self.starts = list()
+        self.ends = list()
+        last = None
+        for c in self.sim.cutcode:
+            if last is not None:
+                self.starts.append(wx.Point2D(*last.end()))
+                self.ends.append(wx.Point2D(*c.start()))
+            last = c
+
+    def process_draw(self, gc: wx.GraphicsContext):
         if self.sim.max >= 2:
             gc.SetPen(wx.BLACK_DASHED_PEN)
-            gc.StrokeLineSegments(self.scene.starts[:self.sim.max-1], self.scene.ends[:self.sim.max-1])
-
+            gc.StrokeLineSegments(self.starts[:self.sim.max-1], self.ends[:self.sim.max-1])
 
 # class SimulationInterfaceWidget(Widget):
 #     def __init__(self, scene):
