@@ -1,5 +1,7 @@
 import wx
 
+from ..svgelements import Length
+
 _ = wx.GetTranslation
 
 
@@ -17,6 +19,7 @@ from .icons import (
     icons8_up_right_50, icons8_center_of_gravity_50,
 )
 
+MILS_IN_MM = 39.3701
 
 class Jog(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -205,14 +208,17 @@ class MovePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.button_navigate_move_to = wx.BitmapButton(self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap())
-        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, "0")
-        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, "0")
+        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, "0in")
+        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, "0in")
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to)
         # end wxGlade
+        self.bed_dim = context.root
+        self.bed_dim.setting(int, "bed_width", 310)  # Default Value
+        self.bed_dim.setting(int, "bed_height", 210)  # Default Value
 
     def __set_properties(self):
         # begin wxGlade: MovePanel.__set_properties
@@ -245,8 +251,20 @@ class MovePanel(wx.Panel):
 
     def on_button_navigate_move_to(self, event):  # wxGlade: Navigation.<event_handler>
         try:
-            x = int(self.text_position_x.GetValue())
-            y = int(self.text_position_y.GetValue())
+            width = self.bed_dim.bed_width * MILS_IN_MM
+            height = self.bed_dim.bed_height * MILS_IN_MM
+            x = Length(self.text_position_x.GetValue()).value(ppi=1000.0, width=width, height=height)
+            y = Length(self.text_position_y.GetValue()).value(ppi=1000.0, width=width, height=height)
+            if x > width or y > height or x < 0 or y < 0:
+                dlg = wx.MessageDialog(
+                    None,
+                    _("Cannot Move Outside Bed Dimensions"),
+                    _("Error"),
+                    wx.ICON_WARNING,
+                )
+                dlg.ShowModal()
+                dlg.Destroy()
+                return
             self.context("move %d %d\n" % (x, y))
         except ValueError:
             return

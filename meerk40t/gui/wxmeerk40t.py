@@ -8,7 +8,7 @@ import sys
 import traceback
 
 from .file.fileoutput import FileOutput
-from .jog import Jog
+from .jog import Jog, MovePanel
 from ..core.cutcode import CutCode
 from .mwindow import MWindow
 from .simulation import Simulation
@@ -492,7 +492,6 @@ class MeerK40t(MWindow):
                 .TopDockable(False),
         )
 
-
     def move_pane(self, manager):
         pane = manager.GetPane('move')
         if len(pane.name):
@@ -500,11 +499,11 @@ class MeerK40t(MWindow):
                 pane.Show()
                 manager.Update()
             return
-        panel = Jog(self, wx.ID_ANY, context=self.context)
+        panel = MovePanel(self, wx.ID_ANY, context=self.context)
         self._mgr.AddPane(panel, aui.AuiPaneInfo()
                           .Right()
-                          .MinSize(200, 200)
-                          .MaxSize(300, 300)
+                          .MinSize(150, 75)
+                          .MaxSize(200, 100)
                           .Name("move"))
 
     def jog_pane(self, manager):
