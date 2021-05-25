@@ -293,7 +293,8 @@ class SimulationWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc):
-        self.renderer.draw_cutcode(self.sim.cutcode[:self.sim.max], gc, 0, 0)
+        cutcode = list(self.sim.cutcode.flat())
+        self.renderer.draw_cutcode(cutcode[:self.sim.max], gc, 0, 0)
 
 
 class SimulationInterfaceWidget(Widget):
