@@ -376,7 +376,7 @@ class MeerK40t(MWindow):
         self.widget_scene = self.scene.scene
 
         # Define Ribbon.
-        self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
+        self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE | RB.RIBBON_BAR_SHOW_PANEL_MINIMISE_BUTTONS)
         self.__set_ribbonbar()
 
         self._mgr = aui.AuiManager()
@@ -384,10 +384,13 @@ class MeerK40t(MWindow):
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
 
+        # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
+        # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
+        # self.notebook.AddPage(self.scene, "scene")
+        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
+
         self.tree_pane(self._mgr)
         self.context.register("pane/Tree", self.tree_pane)
-
-        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
         self.ribbon_pane(self._mgr)
         self.context.register("pane/Ribbon", self.ribbon_pane)
@@ -468,7 +471,9 @@ class MeerK40t(MWindow):
             .BottomDockable()
             .RightDockable(False)
             .LeftDockable(False)
-            .MinSize(-1, 150)
+            .MinSize(150, 150)
+            .FloatingSize((400,150))
+            .Caption("Ribbon")
             .CaptionVisible(False),
         )
 
@@ -489,7 +494,8 @@ class MeerK40t(MWindow):
                 .LeftDockable()
                 .RightDockable()
                 .BottomDockable(False)
-                .TopDockable(False),
+                .Caption("Tree")
+                .TopDockable(False)
         )
 
     def move_pane(self, manager):
@@ -504,6 +510,7 @@ class MeerK40t(MWindow):
                           .Right()
                           .MinSize(150, 75)
                           .MaxSize(200, 100)
+                          .Caption("Move")
                           .Name("move"))
 
     def jog_pane(self, manager):
@@ -518,6 +525,7 @@ class MeerK40t(MWindow):
                           .Right()
                           .MinSize(200, 200)
                           .MaxSize(300, 300)
+                          .Caption("Navigate-Jog")
                           .Name("jog"))
 
     def home_pane(self, manager):
@@ -529,7 +537,11 @@ class MeerK40t(MWindow):
             return
         panel = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
         self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), panel)
-        self._mgr.AddPane(panel, aui.AuiPaneInfo().Bottom().Name("home"))
+        self._mgr.AddPane(panel, aui.AuiPaneInfo()
+                          .Bottom()
+                          .Caption("Home")
+                          .Name("home")
+                          )
 
     def pause_pane(self, manager):
         pane = manager.GetPane('pause')
@@ -560,7 +572,10 @@ class MeerK40t(MWindow):
         pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         pause.SetToolTip(_("Pause/Resume the controller"))
         pause.SetSize(pause.GetBestSize())
-        manager.AddPane(pause, aui.AuiPaneInfo().Bottom().Name("pause"))
+        manager.AddPane(pause, aui.AuiPaneInfo()
+                        .Caption("Pause")
+                        .Bottom()
+                        .Name("pause"))
 
     def stop_pane(self, manager):
         pane = manager.GetPane('stop')
@@ -587,7 +602,10 @@ class MeerK40t(MWindow):
         stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         stop.SetToolTip(_("Emergency stop/reset the controller."))
         stop.SetSize(stop.GetBestSize())
-        manager.AddPane(stop, aui.AuiPaneInfo().Bottom().Name("stop"))
+        manager.AddPane(stop, aui.AuiPaneInfo()
+                        .Bottom()
+                        .Caption("Stop")
+                        .Name("stop"))
 
     @property
     def is_dark(self):
