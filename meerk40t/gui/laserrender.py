@@ -244,8 +244,7 @@ class LaserRender:
                 gc.PopState()
             last_point = end
         print("Stroking the path...")
-        gc.SetPen(wx.BLACK_PEN)
-        gc.SetBrush(wx.BLACK_BRUSH)
+        self.set_pen(gc, Color('green'), width=2)
         gc.StrokePath(p)
         gc.FillPath(p)
         gc.DrawRectangle(0,0,500,500)
