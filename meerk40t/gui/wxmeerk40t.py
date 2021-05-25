@@ -408,6 +408,10 @@ class MeerK40t(MWindow):
         self.jog_pane(self._mgr)
         self.context.register("pane/Jog", self.jog_pane)
 
+        # Define Jog.
+        self.move_pane(self._mgr)
+        self.context.register("pane/Move", self.move_pane)
+
         # AUI Manager Update.
         self._mgr.Update()
 
@@ -488,6 +492,21 @@ class MeerK40t(MWindow):
                 .TopDockable(False),
         )
 
+
+    def move_pane(self, manager):
+        pane = manager.GetPane('move')
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                manager.Update()
+            return
+        panel = Jog(self, wx.ID_ANY, context=self.context)
+        self._mgr.AddPane(panel, aui.AuiPaneInfo()
+                          .Right()
+                          .MinSize(200, 200)
+                          .MaxSize(300, 300)
+                          .Name("move"))
+
     def jog_pane(self, manager):
         pane = manager.GetPane('jog')
         if len(pane.name):
@@ -495,8 +514,8 @@ class MeerK40t(MWindow):
                 pane.Show()
                 manager.Update()
             return
-        home = Jog(self, wx.ID_ANY, context=self.context)
-        self._mgr.AddPane(home, aui.AuiPaneInfo()
+        panel = Jog(self, wx.ID_ANY, context=self.context)
+        self._mgr.AddPane(panel, aui.AuiPaneInfo()
                           .Right()
                           .MinSize(200, 200)
                           .MaxSize(300, 300)
@@ -509,9 +528,9 @@ class MeerK40t(MWindow):
                 pane.Show()
                 manager.Update()
             return
-        home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), home)
-        self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom().Name("home"))
+        panel = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), panel)
+        self._mgr.AddPane(panel, aui.AuiPaneInfo().Bottom().Name("home"))
 
     def pause_pane(self, manager):
         pane = manager.GetPane('pause')
