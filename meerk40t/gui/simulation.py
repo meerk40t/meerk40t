@@ -299,7 +299,7 @@ class SimulationWidget(Widget):
         try:
             self.sim.reticle.set_pos(sim_cut[-1].end())
         except IndexError:
-            self.sim.reticle.set_pos((0,0))
+            self.sim.reticle.set_pos((0, 0))
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
 
 

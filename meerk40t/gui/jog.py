@@ -14,7 +14,7 @@ from .icons import (
     icons8_right_50,
     icons8_up_50,
     icons8_up_left_50,
-    icons8_up_right_50,
+    icons8_up_right_50, icons8_center_of_gravity_50,
 )
 
 
@@ -196,3 +196,57 @@ class Jog(wx.Panel):
 
     def on_button_navigate_lock(self, event):  # wxGlade: Navigation.<event_handler>
         self.context("lock\n")
+
+
+class MovePanel(wx.Panel):
+    def __init__(self, *args, context=None,**kwds):
+        # begin wxGlade: MovePanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.button_navigate_move_to = wx.BitmapButton(self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap())
+        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, "0")
+        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, "0")
+
+        self.__set_properties()
+        self.__do_layout()
+
+        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to)
+        # end wxGlade
+
+    def __set_properties(self):
+        # begin wxGlade: MovePanel.__set_properties
+        self.button_navigate_move_to.SetToolTip("Move to the set position")
+        self.button_navigate_move_to.SetSize(self.button_navigate_move_to.GetBestSize())
+        self.text_position_x.SetToolTip("Set X value for the Move To")
+        self.text_position_y.SetToolTip("Set Y value for the Move To")
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: MovePanel.__do_layout
+        sizer_12 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Move To"), wx.HORIZONTAL)
+        sizer_13 = wx.BoxSizer(wx.VERTICAL)
+        sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_12.Add(self.button_navigate_move_to, 0, 0, 0)
+        label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
+        sizer_14.Add(label_9, 0, 0, 0)
+        sizer_14.Add(self.text_position_x, 0, 0, 0)
+        sizer_13.Add(sizer_14, 0, wx.EXPAND, 0)
+        label_10 = wx.StaticText(self, wx.ID_ANY, "Y:")
+        sizer_15.Add(label_10, 0, 0, 0)
+        sizer_15.Add(self.text_position_y, 0, 0, 0)
+        sizer_13.Add(sizer_15, 0, wx.EXPAND, 0)
+        sizer_12.Add(sizer_13, 0, wx.EXPAND, 0)
+        self.SetSizer(sizer_12)
+        sizer_12.Fit(self)
+        self.Layout()
+        # end wxGlade
+
+    def on_button_navigate_move_to(self, event):  # wxGlade: Navigation.<event_handler>
+        try:
+            x = int(self.text_position_x.GetValue())
+            y = int(self.text_position_y.GetValue())
+            self.context("move %d %d\n" % (x, y))
+        except ValueError:
+            return
