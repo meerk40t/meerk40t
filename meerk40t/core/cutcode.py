@@ -224,7 +224,7 @@ class CutCode(list):
             if not isinstance(c, CutGroup):
                 yield c
                 continue
-            for s in self.flat(c):
+            for s in self.candidate(c):
                 yield s
 
     def extract_closed_groups(self, context=None):
@@ -360,6 +360,11 @@ class CutCode(list):
             inner_path.bounding_box = Group.union_bbox([inner_path])
         if not hasattr(outer_path, "bounding_box"):
             outer_path.bounding_box = Group.union_bbox([outer_path])
+
+        if outer_path.bounding_box is None:
+            return False
+        if inner_path.bounding_box is None:
+            return False
         if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
             # outer minx > inner minx (is not contained)
             return False
