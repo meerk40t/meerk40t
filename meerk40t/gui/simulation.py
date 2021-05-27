@@ -128,7 +128,7 @@ class Simulation(MWindow, Job):
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(SimulationTravelWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
-        self.reticle = SimReticleWidget(self.widget_scene)
+        self.reticle = SimReticleWidget(self.widget_scene, self)
         self.widget_scene.add_interfacewidget(self.reticle)
         self.running = False
 
@@ -358,10 +358,6 @@ class SimulationWidget(Widget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         sim_cut = self.sim.cutcode[:self.sim.max]
-        try:
-            self.sim.reticle.set_pos(sim_cut[-1].end())
-        except IndexError:
-            self.sim.reticle.set_pos((0, 0))
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
 
 
@@ -383,6 +379,8 @@ class SimulationTravelWidget(Widget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         max = self.sim.max - 1
+        if max == -1:
+            return
         pos = self.pos[max]
         if pos == 0:
             return
@@ -393,22 +391,24 @@ class SimulationTravelWidget(Widget):
 
 
 class SimReticleWidget(Widget):
-    def __init__(self, scene):
+    def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
-        self.x = 0
-        self.y = 0
-
-    def set_pos(self, pos):
-        self.x = pos[0]
-        self.y = pos[1]
+        self.sim = sim
 
     def process_draw(self, gc):
+        if self.sim.max == 0:
+            x = 0
+            y = 0
+        else:
+            pos = self.sim.cutcode[self.sim.max - 1].end()
+            x = pos[0]
+            y = pos[1]
         try:
             # Draw Reticle
             gc.SetPen(wx.Pen(wx.Colour(0, 255, 0, alpha=127)))
             # gc.SetPen(wx.GREEN_PEN)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x, y = self.scene.convert_scene_to_window([self.x, self.y])
+            x, y = self.scene.convert_scene_to_window([x, y])
             gc.DrawEllipse(x - 5, y - 5, 10, 10)
             gc.DrawEllipse(x - 10, y - 10, 20, 20)
             gc.DrawEllipse(x - 20, y - 20, 40, 40)
