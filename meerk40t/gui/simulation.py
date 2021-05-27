@@ -373,25 +373,25 @@ class SimulationTravelWidget(Widget):
         self.sim = sim
         self.starts = list()
         self.ends = list()
+        self.pos = list()
         last = None
-        for c in self.sim.cutcode:
+        for i, c in enumerate(list(self.sim.cutcode)):
             if last is not None:
-                self.starts.append(wx.Point2D(*last.end()))
-                self.ends.append(wx.Point2D(*c.start()))
+                if last.end() != c.start():
+                    self.starts.append(wx.Point2D(*last.end()))
+                    self.ends.append(wx.Point2D(*c.start()))
+            self.pos.append(len(self.starts))
             last = c
 
     def process_draw(self, gc: wx.GraphicsContext):
         max = self.sim.max - 1
-        if self.sim.max >= 3:
-            starts = self.starts[:max]
-            ends = self.ends[:max]
-            print(starts)
-            print(ends)
-            gc.SetPen(wx.BLACK_DASHED_PEN)
-            print("strokestart %s" % str(self))
-            gc.StrokeLineSegments(starts, ends)
-            print("strokeend %s" % str(self))
-        print("end2 %s" % str(self))
+        pos = self.pos[max]
+        if pos == 0:
+            return
+        starts = self.starts[:pos]
+        ends = self.ends[:pos]
+        gc.SetPen(wx.BLACK_DASHED_PEN)
+        gc.StrokeLineSegments(starts, ends)
 
 # class SimulationInterfaceWidget(Widget):
 #     def __init__(self, scene):
