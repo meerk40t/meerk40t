@@ -204,6 +204,8 @@ class LaserRender:
                 self.set_pen(gc, c, width=7.0)
             start = cut.start()
             end = cut.end()
+            if p is None:
+                p = gc.CreatePath()
             if last_point != start:
                 p.MoveToPoint(start[0] + x, start[1] + y)
             if isinstance(cut, LineCut):
