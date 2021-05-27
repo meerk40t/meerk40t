@@ -429,7 +429,8 @@ class Planner(Modifier):
                     if c.operation == "Dots":
                         continue
                     plan[i] = c.as_blob(cut_inner_first=self.context.opt_inner_first)
-
+                    if plan[i] is None:
+                        continue
                     if i != 0 and isinstance(plan[i-1], CutCode):
                         plan[i-1].extend(plan[i])
                         if plan[i].mode == 'constrained':
