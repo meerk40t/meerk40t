@@ -1,6 +1,5 @@
 from abc import ABC
 from copy import copy
-from typing import Union
 
 from meerk40t.tools.rasterplotter import (
     BOTTOM,
@@ -121,12 +120,148 @@ class LaserSettings:
         return self.passes
 
 
-class CutCode(list):
+class CutObject:
+    """
+    CutObjects are small vector cuts which have on them a laser settings object.
+    These store the start and end point of the cut. Whether this cut is normal or
+    reversed.
+    """
+
+    def __init__(self, start=None, end=None, settings=None, parent=None):
+        if settings is None:
+            settings = LaserSettings()
+        self.settings = settings
+        self._start = start
+        self._end = end
+        self.normal = True  # Normal or Reversed.
+        self.parent = parent
+        self.inside = None
+        self.contains = None
+        self.permitted = True
+
+    def reversible(self):
+        return True
+
+    def start(self):
+        return self._start if self.normal else self._end
+
+    def end(self):
+        return self._end if self.normal else self._start
+
+    def length(self):
+        return Point.distance(self.start(), self.end())
+
+    def major_axis(self):
+        start = self.start()
+        end = self.end()
+        if abs(start.x - end.x) > abs(start.y - end.y):
+            return 0  # X-Axis
+        else:
+            return 1  # Y-Axis
+
+    def x_dir(self):
+        start = self.start()
+        end = self.end()
+        if start.x < end.x:
+            return 1
+        else:
+            return -1
+
+    def y_dir(self):
+        start = self.start()
+        end = self.end()
+        if start.y < end.y:
+            return 1
+        else:
+            return -1
+
+    def reverse(self):
+        self.normal = not self.normal
+
+    def generator(self):
+        raise NotImplementedError
+
+    def _contains_uncut_objects(self):
+        if self.contains is None:
+            return False
+        for c in self.contains:
+            for pp in c.flat():
+                if pp.permitted:
+                    return True
+        return False
+
+    def flat(self):
+        yield self
+
+    def candidate(self):
+        if self.permitted:
+            yield self
+
+
+class CutGroup(list, CutObject, ABC):
+    """
+    Cut groups are effectively constraints. They may contain CutObjects or other
+    CutGroups. However, the CutObjects must be cut *after* the groups within the
+    CutGroup is cut.
+    """
+    def __init__(self, parent, children=(), settings=None, constrained=False, closed=False):
+        list.__init__(self, children)
+        CutObject.__init__(self, parent=parent, settings=settings)
+        self.closed = closed
+        self.constrained = constrained
+
+    def __copy__(self):
+        return CutGroup(self.parent, self)
+
+    def __repr__(self):
+        return "CutGroup(children=%s, parent=%s)" % (list.__repr__(self), str(self.parent))
+
+    def reversible(self):
+        return False
+
+    def start(self):
+        if len(self) == 0:
+            return None
+        return self[0].start() if self.normal else self[-1].end()
+
+    def end(self):
+        if len(self) == 0:
+            return None
+        return self[-1].end() if self.normal else self[0].start()
+
+    def flat(self):
+        for index in range(len(self)-1, -1, -1):
+            c = self[index]
+            if not isinstance(c, CutGroup):
+                yield c
+                continue
+            for s in c.flat():
+                yield s
+
+    def candidate(self):
+        """
+        Candidates are permitted cutobjects permitted to be cut, this is any cut object that
+        is not itself containing another constrained cutcode object. Which is to say that the
+        inner-most non-containing cutcode are the only candidates for cutting.
+        """
+        for index in range(len(self) - 1, -1, -1):
+            c = self[index]
+            if c._contains_uncut_objects():
+                continue
+            for s in c.flat():
+                if s is None:
+                    continue
+                if s.permitted:
+                    yield s
+
+
+class CutCode(CutGroup):
     def __init__(self, seq=()):
-        list.__init__(self, seq)
-        self.travel_speed = 20.0
+        CutGroup.__init__(self, None, seq)
         self.output = True
         self.operation = "CutCode"
+
+        self.travel_speed = 20.0
         self.start = None
         self.mode = None
 
@@ -183,7 +318,7 @@ class CutCode(list):
         self[j:k] = self[j:k][::-1]
 
     def generate(self):
-        for cutobject in self.flat(self):
+        for cutobject in self.flat():
             yield COMMAND_PLOT, cutobject
         yield COMMAND_PLOT_START
 
@@ -197,40 +332,6 @@ class CutCode(list):
             self.correct_empty(c)
             if len(c) == 0:
                 del context[index]
-
-    def flat(self, context=None):
-        """
-        Index first tree flattener.
-        """
-        if context is None:
-            context = self
-        for index in range(len(context)-1, -1, -1):
-            c = context[index]
-            if not isinstance(c, CutGroup):
-                yield c
-                continue
-            for s in self.flat(c):
-                yield s
-
-    def candidate(self, context=None):
-        """
-        List of potential Cut code
-        """
-        if context is None:
-            context = self
-        has_group = False
-        for c in context:
-            if isinstance(c, CutGroup):
-                has_group = True
-                break
-        for index in range(len(context)-1, -1, -1):
-            c = context[index]
-            if not isinstance(c, CutGroup):
-                if not has_group:
-                    yield c
-                continue
-            for s in self.candidate(c):
-                yield s
 
     def extract_closed_groups(self, context=None):
         """
@@ -252,15 +353,6 @@ class CutCode(list):
                 yield s
             index -= 1
 
-    def optimize(self):
-        if self.mode not in ("constrained", "optimized"):
-            cutcode = CutCode(self.flat())
-        else:
-            cutcode = self
-        new_cutcode = cutcode.short_travel_cutcode()
-        new_cutcode.mode = "optimized"
-        return new_cutcode
-
     def permit(self, permit, _list=None):
         if _list is None:
             _list = self.flat()
@@ -269,10 +361,12 @@ class CutCode(list):
 
     def inner_first_cutcode(self):
         ordered = CutCode()
-        ordered.extend(self.extract_closed_groups())
+        closed_groups = list(self.extract_closed_groups())
+        if len(closed_groups):
+            ordered.contains = closed_groups
+            ordered.extend(closed_groups)
         ordered.extend(self.flat())
-        for o in ordered:
-            o.parent = None
+        self.clear()
         for j in range(len(ordered)):
             oj = ordered[j]
             if oj is None:
@@ -282,17 +376,23 @@ class CutCode(list):
                 if ok is None:
                     continue
                 if self.is_inside(ok, oj):
-                    # If is inside, put it inside.
-                    if ok.parent is not None:
-                        ok.parent.remove(ok)
-                    oj.append(ok)
-                    ok.parent = oj
+                    if ok.inside is None:
+                        ok.inside = list()
+                    if oj.contains is None:
+                        oj.contains = list()
+                    ok.inside.append(oj)
+                    oj.contains.append(ok)
+        # for j, c in enumerate(ordered):
+        #     if c.contains is not None:
+        #         for k, q in enumerate(c.contains):
+        #             assert q in ordered
+        #             assert q is not c
+        #     if c.inside is not None:
+        #         for m, q in enumerate(c.inside):
+        #             assert q in ordered
+        #             assert q is not c
+
         ordered.mode = "constrained"
-        c = [o for o in ordered if o.parent is None]
-        ordered.clear()
-        ordered.extend(c)
-        for o in ordered:
-            o.parent = ordered
         return ordered
 
     def short_travel_cutcode(self, cc):
@@ -308,8 +408,6 @@ class CutCode(list):
             reverse = False
             distance = float('inf')
             for cut in cc.candidate():
-                if not cut.permitted:
-                    continue
                 s = cut.start()
                 s = complex(s[0], s[1])
                 d = abs(s - start)
@@ -407,98 +505,6 @@ class CutCode(list):
             if not outer_path.vm.is_point_inside(p.x, p.y):
                 return False
         return True
-
-
-class CutObject:
-    """
-    CutObjects are small vector cuts which have on them a laser settings object.
-    These store the start and end point of the cut. Whether this cut is normal or
-    reversed.
-    """
-
-    def __init__(self, start=None, end=None, settings=None):
-        if settings is None:
-            settings = LaserSettings()
-        self.settings = settings
-        self._start = start
-        self._end = end
-        self.normal = True  # Normal or Reversed.
-
-    def reversible(self):
-        return True
-
-    def start(self):
-        return self._start if self.normal else self._end
-
-    def end(self):
-        return self._end if self.normal else self._start
-
-    def length(self):
-        return Point.distance(self.start(), self.end())
-
-    def major_axis(self):
-        start = self.start()
-        end = self.end()
-        if abs(start.x - end.x) > abs(start.y - end.y):
-            return 0  # X-Axis
-        else:
-            return 1  # Y-Axis
-
-    def x_dir(self):
-        start = self.start()
-        end = self.end()
-        if start.x < end.x:
-            return 1
-        else:
-            return -1
-
-    def y_dir(self):
-        start = self.start()
-        end = self.end()
-        if start.y < end.y:
-            return 1
-        else:
-            return -1
-
-    def reverse(self):
-        self.normal = not self.normal
-
-    def generator(self):
-        raise NotImplementedError
-
-
-class CutGroup(list, CutObject, ABC):
-    """
-    Cut groups are effectively constraints. They may contain CutObjects or other
-    CutGroups. However, the CutObjects must be cut *after* the groups within the
-    CutGroup is cut.
-    """
-    def __init__(self, parent: Union[CutObject, CutCode], children=(), settings=None, constrained=False, closed=False):
-        list.__init__(self, children)
-        CutObject.__init__(self, settings=settings)
-        self.parent = parent
-        parent.append(self)
-        self.closed = closed
-        self.constrained = constrained
-
-    def __copy__(self):
-        return CutGroup(self.parent, self)
-
-    def __repr__(self):
-        return "CutGroup(children=%s, parent=%s)" % (list.__repr__(self), str(self.parent))
-
-    def reversible(self):
-        return False
-
-    def start(self):
-        if len(self) == 0:
-            return None
-        return self[0].start() if self.normal else self[-1].end()
-
-    def end(self):
-        if len(self) == 0:
-            return None
-        return self[-1].end() if self.normal else self[0].start()
 
 
 class LineCut(CutObject):

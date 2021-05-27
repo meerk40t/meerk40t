@@ -900,6 +900,7 @@ class LaserOperation(Node):
                         if closed and constrained:
                             requires_constraint = True
                         group = CutGroup(context, constrained=constrained, closed=closed)
+                        context.append(group)
                         group.path = Path(subpath)
 
                         context = group
@@ -932,6 +933,7 @@ class LaserOperation(Node):
                 direction = settings.raster_direction
                 settings.crosshatch = False
                 group = CutGroup(context)
+                context.append(group)
                 context = group
                 if direction == 4:
                     cross_settings = LaserSettings(settings)
@@ -947,9 +949,11 @@ class LaserOperation(Node):
                 context = context.parent
             elif self._operation == "Image":
                 group = CutGroup(context)
+                context.append(group)
                 context = group
                 for object_image in self.children:
                     group = CutGroup(context)
+                    context.append(group)
                     context = group
                     object_image = object_image.object
                     settings = LaserSettings(self.settings)
