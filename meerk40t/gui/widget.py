@@ -238,7 +238,11 @@ class ScenePanel(wx.Panel):
 class Scene(Module, Job):
     def __init__(self, context, path, gui, **kwargs):
         Module.__init__(self, context, path)
-        Job.__init__(self, job_name="Scene-%s" % path, process=self.refresh_scene)
+        Job.__init__(self, job_name="Scene-%s" % path,
+                     process=self.refresh_scene,
+                     conditional=lambda: self.screen_refresh_is_requested,
+                     run_main=True
+                     )
         self.gui = gui
         self.matrix = Matrix()
         self.hittable_elements = list()
@@ -251,7 +255,7 @@ class Scene(Module, Job):
         self.time = None
         self.distance = None
 
-        self.screen_refresh_is_requested = False
+        self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
 
     def initialize(self, *args, **kwargs):
@@ -294,28 +298,29 @@ class Scene(Module, Job):
         try:
             if self.context.draw_mode & DRAW_MODE_REFRESH == 0:
                 self.screen_refresh_is_requested = True
-                self.refresh_scene()
         except AttributeError:
             pass
 
-    def refresh_scene(self):
-        """Called by the Scheduler at a given the specified framerate."""
-        if self.screen_refresh_is_requested and not self.screen_refresh_lock.locked():
-            if self.screen_refresh_lock.acquire(timeout=0.5):
-                if not wx.IsMainThread():
-                    wx.CallAfter(self._refresh_in_ui)
-                else:
-                    self._refresh_in_ui()
-            else:
-                self.screen_refresh_is_requested = False
+    def refresh_scene(self, *args, **kwargs):
+        """
+        Called by the Scheduler at a given the specified framerate.
+        Called by in the UI thread.
+        """
+        if self.screen_refresh_is_requested:
+            self.update_buffer_ui_thread()
+            self.gui.Refresh()
+            self.gui.Update()
+            self.screen_refresh_is_requested = False
+            # self.screen_refresh_lock.release()
 
-    def _refresh_in_ui(self):
-        """Called by refresh_scene() in the UI thread."""
-        self.update_buffer_ui_thread()
-        self.gui.Refresh()
-        self.gui.Update()
-        self.screen_refresh_is_requested = False
-        self.screen_refresh_lock.release()
+            # if self.screen_refresh_lock.acquire(timeout=0.2):
+            #     self.update_buffer_ui_thread()
+            #     self.gui.Refresh()
+            #     self.gui.Update()
+            #     self.screen_refresh_is_requested = False
+            #     self.screen_refresh_lock.release()
+            # else:
+            #     self.screen_refresh_is_requested = False
 
     def update_buffer_ui_thread(self):
         """Performs the redraw of the data in the UI thread."""
@@ -337,9 +342,7 @@ class Scene(Module, Job):
 
         font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
-
         self.draw(gc)
-
         if dm & DRAW_MODE_INVERT != 0:
             dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()

@@ -357,12 +357,14 @@ class SimulationWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc: wx.GraphicsContext):
+        print("Start %s" % str(self))
         sim_cut = self.sim.cutcode[:self.sim.max]
         try:
             self.sim.reticle.set_pos(sim_cut[-1].end())
         except IndexError:
             self.sim.reticle.set_pos((0, 0))
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
+        print("End %s" % str(self))
 
 
 class SimulationTravelWidget(Widget):
@@ -379,9 +381,17 @@ class SimulationTravelWidget(Widget):
             last = c
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if self.sim.max >= 2:
+        max = self.sim.max - 1
+        if self.sim.max >= 3:
+            starts = self.starts[:max]
+            ends = self.ends[:max]
+            print(starts)
+            print(ends)
             gc.SetPen(wx.BLACK_DASHED_PEN)
-            gc.StrokeLineSegments(self.starts[:self.sim.max-1], self.ends[:self.sim.max-1])
+            print("strokestart %s" % str(self))
+            gc.StrokeLineSegments(starts, ends)
+            print("strokeend %s" % str(self))
+        print("end2 %s" % str(self))
 
 # class SimulationInterfaceWidget(Widget):
 #     def __init__(self, scene):
