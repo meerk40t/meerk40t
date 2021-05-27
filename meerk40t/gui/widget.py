@@ -307,20 +307,14 @@ class Scene(Module, Job):
         Called by in the UI thread.
         """
         if self.screen_refresh_is_requested:
-            self.update_buffer_ui_thread()
-            self.gui.Refresh()
-            self.gui.Update()
-            self.screen_refresh_is_requested = False
-            # self.screen_refresh_lock.release()
-
-            # if self.screen_refresh_lock.acquire(timeout=0.2):
-            #     self.update_buffer_ui_thread()
-            #     self.gui.Refresh()
-            #     self.gui.Update()
-            #     self.screen_refresh_is_requested = False
-            #     self.screen_refresh_lock.release()
-            # else:
-            #     self.screen_refresh_is_requested = False
+            if self.screen_refresh_lock.acquire(timeout=0.2):
+                self.update_buffer_ui_thread()
+                self.gui.Refresh()
+                self.gui.Update()
+                self.screen_refresh_is_requested = False
+                self.screen_refresh_lock.release()
+            else:
+                self.screen_refresh_is_requested = False
 
     def update_buffer_ui_thread(self):
         """Performs the redraw of the data in the UI thread."""
