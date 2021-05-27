@@ -11,16 +11,14 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-# begin wxGlade: dependencies
-# end wxGlade
-
-
 class Settings(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(490, 280, *args, **kwds)
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
+        self.bed_dim.setting(float, "scale_x", 1.000)
+        self.bed_dim.setting(float, "scale_y", 1.000)
 
         self.radio_units = wx.RadioBox(
             self,
@@ -58,6 +56,8 @@ class Settings(MWindow):
             (_("Reverse SVG Element Load"), _("Inkscape saves SVG files in reverse order, so this loads them into MeerK40t in the same order as the Inkscape object list"),"svg_reverse", False),
             (_("Disable ToolTips"), _("Globally disable ToolTips (like this one) on start-up\nNote: Takes effect when MeerK40t starts"), "disable_tool_tips", False),
         ]
+        self.text_scale_x = wx.TextCtrl(self, wx.ID_ANY, "1.000")
+        self.text_scale_y = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.checklist_options = wx.Panel(self, wx.ID_ANY)
         pos_y = 0
         for i, c in enumerate(self.choices):
@@ -97,6 +97,10 @@ class Settings(MWindow):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_svg_ppi, self.combo_svg_ppi)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_svg_ppi, self.text_svg_ppi)
         self.Bind(wx.EVT_TEXT, self.on_text_svg_ppi, self.text_svg_ppi)
+        self.Bind(wx.EVT_TEXT, self.on_text_x_scale, self.text_scale_x)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_x_scale, self.text_scale_x)
+        self.Bind(wx.EVT_TEXT, self.on_text_y_scale, self.text_scale_y)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_scale, self.text_scale_y)
 
     def window_open(self):
         context_root = self.context.root
@@ -112,6 +116,8 @@ class Settings(MWindow):
         self.combo_language.SetSelection(self.context.language)
         self.spin_bedwidth.SetValue(self.bed_dim.bed_width)
         self.spin_bedheight.SetValue(self.bed_dim.bed_height)
+        self.text_scale_x.SetValue("%.3f" % self.bed_dim.scale_x)
+        self.text_scale_y.SetValue("%.3f" % self.bed_dim.scale_y)
 
     def window_close(self):
         pass
@@ -137,6 +143,10 @@ class Settings(MWindow):
         self.spin_bedwidth.SetToolTip(_("Width of the laser bed."))
         self.spin_bedheight.SetMinSize((80, 23))
         self.spin_bedheight.SetToolTip(_("Height of the laser bed."))
+        self.text_scale_x.SetToolTip(_("Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"))
+        self.text_scale_y.SetToolTip(_("Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"))
+        self.text_scale_x.Enable(False)
+        self.text_scale_y.Enable(False)
         # end wxGlade
 
     def __do_layout(self):
@@ -144,6 +154,9 @@ class Settings(MWindow):
         sizer_settings = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gui_options = wx.BoxSizer(wx.VERTICAL)
         sizer_bed = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL)
+        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_7 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Y Scale Factor")), wx.HORIZONTAL)
+        sizer_4 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("X Scale Factor")), wx.HORIZONTAL)
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.StaticBoxSizer(
@@ -172,6 +185,11 @@ class Settings(MWindow):
         sizer_6.Add(label_18, 0, 0, 0)
         sizer_bed.Add(sizer_6, 1, 0, 0)
         sizer_gui_options.Add(sizer_bed, 0, 0, 0)
+        sizer_4.Add(self.text_scale_x, 1, 0, 0)
+        sizer_1.Add(sizer_4, 1, wx.EXPAND, 0)
+        sizer_7.Add(self.text_scale_y, 1, 0, 0)
+        sizer_1.Add(sizer_7, 1, wx.EXPAND, 0)
+        sizer_gui_options.Add(sizer_1, 0, wx.EXPAND, 0)
         sizer_settings.Add(sizer_gui_options, 0, wx.EXPAND, 0)
         sizer_settings.Add(self.checklist_options, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_settings)
@@ -287,3 +305,23 @@ class Settings(MWindow):
         self.context.signal(
             "bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height)
         )
+
+    def on_text_x_scale(self, event):  # wxGlade: Settings.<event_handler>
+        try:
+            self.bed_dim.scale_x = float(self.text_scale_x.GetValue())
+            self.bed_dim.scale_y = float(self.text_scale_y.GetValue())
+            self.context.signal(
+                "scale_step", (self.bed_dim.scale_x, self.bed_dim.scale_y)
+            )
+        except ValueError:
+            pass
+
+    def on_text_y_scale(self, event):  # wxGlade: Settings.<event_handler>
+        try:
+            self.bed_dim.scale_x = float(self.text_scale_x.GetValue())
+            self.bed_dim.scale_y = float(self.text_scale_y.GetValue())
+            self.context.signal(
+                "scale_step", (self.bed_dim.scale_x, self.bed_dim.scale_y)
+            )
+        except ValueError:
+            pass
