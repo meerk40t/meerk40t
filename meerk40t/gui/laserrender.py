@@ -196,6 +196,7 @@ class LaserRender:
             c = cut.settings.line_color
             if c is not color:
                 color = c
+                last_point = None
                 if p is not None:
                     gc.StrokePath(p)
                     del p

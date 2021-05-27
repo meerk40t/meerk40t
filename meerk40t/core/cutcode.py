@@ -371,7 +371,9 @@ class CutCode(CutGroup):
             oj = ordered[j]
             if oj is None:
                 continue
-            for k in range(j + 1, len(ordered)):
+            for k in range(len(ordered)):
+                if k == j:
+                    continue
                 ok = ordered[k]
                 if ok is None:
                     continue
