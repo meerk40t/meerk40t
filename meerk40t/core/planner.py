@@ -680,7 +680,7 @@ class Planner(Modifier):
                 if isinstance(c, CutCode):
                     if c.mode == "constrained":
                         plan[i] = c.inner_first_cutcode()
-                    plan[i] = c.short_travel_cutcode()
+                    plan[i] = c.short_travel_cutcode(plan[i])
 
         plan, original, commands, name = self.default_plan()
         commands.append(optimize_travel)

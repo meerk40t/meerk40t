@@ -216,13 +216,18 @@ class CutCode(list):
         """
         List of potential Cut code
         """
-        # TODO: doesn't work yet.
         if context is None:
             context = self
+        has_group = False
+        for c in context:
+            if isinstance(c, CutGroup):
+                has_group = True
+                break
         for index in range(len(context)-1, -1, -1):
             c = context[index]
             if not isinstance(c, CutGroup):
-                yield c
+                if not has_group:
+                    yield c
                 continue
             for s in self.candidate(c):
                 yield s
@@ -266,33 +271,43 @@ class CutCode(list):
         ordered = CutCode()
         ordered.extend(self.extract_closed_groups())
         ordered.extend(self.flat())
+        for o in ordered:
+            o.parent = None
         for j in range(len(ordered)):
-            if ordered[j] is None:
+            oj = ordered[j]
+            if oj is None:
                 continue
             for k in range(j + 1, len(ordered)):
-                if ordered[k] is None:
+                ok = ordered[k]
+                if ok is None:
                     continue
-                if self.is_inside(ordered[k], ordered[j]):
+                if self.is_inside(ok, oj):
                     # If is inside, put it inside.
-                    o = ordered[k]
-                    ordered[k] = None
-                    ordered[j].append(o)
+                    if ok.parent is not None:
+                        ok.parent.remove(ok)
+                    oj.append(ok)
+                    ok.parent = oj
         ordered.mode = "constrained"
+        c = [o for o in ordered if o.parent is None]
+        ordered.clear()
+        ordered.extend(c)
+        for o in ordered:
+            o.parent = ordered
         return ordered
 
-    def short_travel_cutcode(self):
-        start = self.start
+    def short_travel_cutcode(self, cc):
+        start = cc.start
         if start is None:
             start = 0
         else:
             start = complex(start[0], start[1])
-        self.permit(True, self.flat())
+        self.permit(True, cc.flat())
         ordered = CutCode()
         while True:
             closest = None
             reverse = False
             distance = float('inf')
-            for cut in self.candidate():
+            for cut in cc.candidate():
                 if not cut.permitted:
                     continue
                 s = cut.start()
