@@ -391,6 +391,32 @@ class SimulationTravelWidget(Widget):
         gc.SetPen(wx.BLACK_DASHED_PEN)
         gc.StrokeLineSegments(starts, ends)
 
+
+class SimReticleWidget(Widget):
+    def __init__(self, scene):
+        Widget.__init__(self, scene, all=False)
+        self.x = 0
+        self.y = 0
+
+    def set_pos(self, pos):
+        self.x = pos[0]
+        self.y = pos[1]
+
+    def process_draw(self, gc):
+        try:
+            # Draw Reticle
+            gc.SetPen(wx.Pen(wx.Colour(0, 255, 0, alpha=127)))
+            # gc.SetPen(wx.GREEN_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            x, y = self.scene.convert_scene_to_window([self.x, self.y])
+            gc.DrawEllipse(x - 5, y - 5, 10, 10)
+            gc.DrawEllipse(x - 10, y - 10, 20, 20)
+            gc.DrawEllipse(x - 20, y - 20, 40, 40)
+        except AttributeError:
+            pass
+
+
+
 # class SimulationInterfaceWidget(Widget):
 #     def __init__(self, scene):
 #         Widget.__init__(self, scene, 40, 40, 200, 70)
@@ -416,27 +442,3 @@ class SimulationTravelWidget(Widget):
 #         if event_type == "leftup":
 #             self.selected = False
 #         return RESPONSE_CONSUME
-
-
-class SimReticleWidget(Widget):
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=False)
-        self.x = 0
-        self.y = 0
-
-    def set_pos(self, pos):
-        self.x = pos[0]
-        self.y = pos[1]
-
-    def process_draw(self, gc):
-        try:
-            # Draw Reticle
-            gc.SetPen(wx.Pen(wx.Colour(0, 255, 0, alpha=127)))
-            # gc.SetPen(wx.GREEN_PEN)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x, y = self.scene.convert_scene_to_window([self.x, self.y])
-            gc.DrawEllipse(x - 5, y - 5, 10, 10)
-            gc.DrawEllipse(x - 10, y - 10, 20, 20)
-            gc.DrawEllipse(x - 20, y - 20, 40, 40)
-        except AttributeError:
-            pass

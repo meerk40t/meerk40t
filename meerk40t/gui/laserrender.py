@@ -189,12 +189,17 @@ class LaserRender:
     def draw_cutcode(
         self, cutcode: CutCode, gc: wx.GraphicsContext, x: int = 0, y: int = 0
     ):
+        p = None
         last_point = None
-        p = gc.CreatePath()
         color = None
         for cut in cutcode:
             c = cut.settings.line_color
             if c is not color:
+                color = c
+                if p is not None:
+                    gc.StrokePath(p)
+                    del p
+                p = gc.CreatePath()
                 self.set_pen(gc, c, width=7.0)
             start = cut.start()
             end = cut.end()
@@ -234,15 +239,15 @@ class LaserRender:
                 if cache_id != id(image.image):
                     cache = None
                 if cache is None:
-                    # max_allowed = 2048
                     cut.c_width, cut.c_height = image.image.size
                     cut.cache = self.make_thumbnail(image.image, dewhite=True)
                     cut.cache_id = id(image.image)
                 gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
                 gc.PopState()
             last_point = end
-        gc.StrokePath(p)
-        del p
+        if p is not None:
+            gc.StrokePath(p)
+            del p
 
     def draw_group_node(self, node, gc, draw_mode, zoomscale=1.0):
         pass
