@@ -18,6 +18,9 @@ _ = wx.GetTranslation
 class Settings(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(490, 280, *args, **kwds)
+        self.bed_dim = self.context.root
+        self.bed_dim.setting(int, "bed_width", 310)
+        self.bed_dim.setting(int, "bed_height", 210)
 
         self.radio_units = wx.RadioBox(
             self,
@@ -74,10 +77,21 @@ class Settings(MWindow):
         self.combo_language = wx.ComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN
         )
-
+        self.spin_bedwidth = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "330.0", min=1.0, max=1000.0
+        )
+        self.spin_bedheight = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "230.0", min=1.0, max=1000.0
+        )
         self.__set_properties()
         self.__do_layout()
 
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_bedwidth, self.spin_bedwidth)
+        self.Bind(wx.EVT_TEXT, self.spin_on_bedwidth, self.spin_bedwidth)
+        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_bedwidth, self.spin_bedwidth)
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_bedheight, self.spin_bedheight)
+        self.Bind(wx.EVT_TEXT, self.spin_on_bedheight, self.spin_bedheight)
+        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_bedheight, self.spin_bedheight)
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_units, self.radio_units)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_language, self.combo_language)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_svg_ppi, self.combo_svg_ppi)
@@ -96,6 +110,8 @@ class Settings(MWindow):
         self.context.setting(int, "units_index", 0)
         self.radio_units.SetSelection(self.context.units_index)
         self.combo_language.SetSelection(self.context.language)
+        self.spin_bedwidth.SetValue(self.bed_dim.bed_width)
+        self.spin_bedheight.SetValue(self.bed_dim.bed_height)
 
     def window_close(self):
         pass
@@ -117,12 +133,19 @@ class Settings(MWindow):
         self.text_svg_ppi.SetToolTip(
             _("Custom Pixels Per Inch to use when loading an SVG file")
         )
+        self.spin_bedwidth.SetMinSize((80, 23))
+        self.spin_bedwidth.SetToolTip(_("Width of the laser bed."))
+        self.spin_bedheight.SetMinSize((80, 23))
+        self.spin_bedheight.SetToolTip(_("Height of the laser bed."))
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: Settings.__do_layout
         sizer_settings = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gui_options = wx.BoxSizer(wx.VERTICAL)
+        sizer_bed = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL)
+        sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("SVG Pixel Per Inch")), wx.HORIZONTAL
         )
@@ -136,6 +159,19 @@ class Settings(MWindow):
         sizer_3.Add((20, 20), 0, 0, 0)
         sizer_3.Add(self.text_svg_ppi, 1, 0, 0)
         sizer_gui_options.Add(sizer_3, 0, wx.EXPAND, 0)
+        label_2 = wx.StaticText(self, wx.ID_ANY, _("Width"))
+        sizer_5.Add(label_2, 0, 0, 0)
+        sizer_5.Add(self.spin_bedwidth, 0, 0, 0)
+        label_17 = wx.StaticText(self, wx.ID_ANY, _("mm"))
+        sizer_5.Add(label_17, 0, 0, 0)
+        sizer_bed.Add(sizer_5, 1, 0, 0)
+        label_3 = wx.StaticText(self, wx.ID_ANY, _("Height"))
+        sizer_6.Add(label_3, 0, 0, 0)
+        sizer_6.Add(self.spin_bedheight, 0, 0, 0)
+        label_18 = wx.StaticText(self, wx.ID_ANY, _("mm"))
+        sizer_6.Add(label_18, 0, 0, 0)
+        sizer_bed.Add(sizer_6, 1, 0, 0)
+        sizer_gui_options.Add(sizer_bed, 0, 0, 0)
         sizer_settings.Add(sizer_gui_options, 0, wx.EXPAND, 0)
         sizer_settings.Add(self.checklist_options, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_settings)
@@ -237,3 +273,17 @@ class Settings(MWindow):
             0,
         )
         p.signal("units")
+
+    def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
+        self.bed_dim.bed_width = int(self.spin_bedwidth.GetValue())
+        self.bed_dim.bed_height = int(self.spin_bedheight.GetValue())
+        self.context.signal(
+            "bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height)
+        )
+
+    def spin_on_bedheight(self, event):  # wxGlade: Preferences.<event_handler>
+        self.bed_dim.bed_width = int(self.spin_bedwidth.GetValue())
+        self.bed_dim.bed_height = int(self.spin_bedheight.GetValue())
+        self.context.signal(
+            "bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height)
+        )
