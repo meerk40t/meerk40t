@@ -24,7 +24,7 @@ class Settings(MWindow):
             self,
             wx.ID_ANY,
             _("Units"),
-            choices=["mm", "cm", "inch", "mils"],
+            choices=["mm", "cm", "inch", "steps"],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
@@ -66,8 +66,14 @@ class Settings(MWindow):
             cb.SetToolTip(tip)
             pos_y += 20
             self.context.setting(bool, choice, default)
-            cb.SetValue(getattr(self.context,choice))
-            cb.Bind(wx.EVT_CHECKBOX, lambda e: setattr(self.context,choice,cb.GetValue()))
+            cb.SetValue(getattr(self.context, choice))
+
+            def on_checkbox_check(param, checkbox):
+                def check(e=None):
+                    v = checkbox.GetValue()
+                    setattr(self.context, param, v)
+                return check
+            cb.Bind(wx.EVT_CHECKBOX, on_checkbox_check(choice, cb))
         from .wxmeerk40t import supported_languages
 
         choices = [
