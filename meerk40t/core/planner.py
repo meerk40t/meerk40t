@@ -423,25 +423,23 @@ class Planner(Modifier):
         )
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
             plan, original, commands, name = data
-
-            for i, c in enumerate(plan):
-                first_index = None
-                blob = CutCode()
+            for i in range(len(plan)):
+                c = plan[i]
                 try:
                     if c.operation == "Dots":
                         continue
-                    b = c.as_blob()
-                    if b is not None:
-                        blob.extend(b)
-                        if first_index is None:
-                            first_index = i
-                    plan[i] = None
+                    plan[i] = c.as_blob(cut_inner_first=self.context.opt_inner_first)
+
+                    if i != 0 and isinstance(plan[i-1], CutCode):
+                        plan[i-1].extend(plan[i])
+                        if plan[i].mode == 'constrained':
+                            plan[i-1].mode = 'constrained'
+                        plan[i] = plan[i-1]
+                        plan[i-1] = None
                     c.settings.jog_distance = self.context.opt_jog_minimum
                     c.settings.jog_enable = self.context.opt_rapid_between
                 except AttributeError:
                     pass
-                if first_index is not None:
-                    plan.insert(first_index, blob)
             for i in range(len(plan) - 1, -1, -1):
                 c = plan[i]
                 if c is None:
@@ -459,8 +457,6 @@ class Planner(Modifier):
             plan, original, commands, name = data
             if self.context.opt_reduce_travel:
                 self.conditional_jobadd_optimize_travel()
-            if self.context.opt_inner_first:
-                self.conditional_jobadd_optimize_cuts()
             if self.context.opt_reduce_directions:
                 pass
             if self.context.opt_remove_overlap:
@@ -680,11 +676,11 @@ class Planner(Modifier):
 
     def jobadd_optimize_travel(self):
         def optimize_travel():
-            for c in plan:
+            for i, c in enumerate(plan):
                 if isinstance(c, CutCode):
-                    t = c.short_travel_cutcode()
-                    c.clear()
-                    c.extend(t)
+                    if c.mode == "constrained":
+                        plan[i] = c.inner_first_cutcode()
+                    plan[i] = c.short_travel_cutcode(plan[i])
 
         plan, original, commands, name = self.default_plan()
         commands.append(optimize_travel)
@@ -994,29 +990,3 @@ class Planner(Modifier):
             if not outer_path.vm.is_point_inside(p.x, p.y):
                 return False
         return True
-
-    @staticmethod
-    def optimize_cut_inside(paths):
-        optimized = Path()
-        if isinstance(paths, Path):
-            paths = [paths]
-        subpaths = []
-        for path in paths:
-            subpaths.extend([abs(Path(s)) for s in path.as_subpaths()])
-        for j in range(len(subpaths)):
-            for k in range(j + 1, len(subpaths)):
-                if Planner.is_inside(subpaths[k], subpaths[j]):
-                    t = subpaths[j]
-                    subpaths[j] = subpaths[k]
-                    subpaths[k] = t
-        for p in subpaths:
-            optimized += p
-            try:
-                del p.vm
-            except AttributeError:
-                pass
-            try:
-                del p.bounding_box
-            except AttributeError:
-                pass
-        return optimized

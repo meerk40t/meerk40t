@@ -2059,7 +2059,7 @@ class Kernel:
                     channel(context_name)
             return
 
-        @self.console_option("path", "p", type=str, help="Path of variables to set.")
+        @self.console_option("path", "p", type=str, default="/", help="Path of variables to set.")
         @self.console_command("set", help="set [<key> <value>]")
         def set(channel, _, path=None, args=tuple(), **kwargs):
             relevant_context = None

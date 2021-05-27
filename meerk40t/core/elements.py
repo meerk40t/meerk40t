@@ -866,8 +866,10 @@ class LaserOperation(Node):
                 yield COMMAND_WAIT, (self.settings.speed / 1000.0)
                 yield COMMAND_LASER_OFF
 
-    def as_blob(self):
+    def as_blob(self, cut_inner_first=True):
+        requires_constraint = False
         blob = CutCode()
+        blob.mode = "grouped"
         context = blob
         settings = self.settings
         for p in range(settings.implicit_passes):
@@ -893,7 +895,14 @@ class LaserOperation(Node):
 
                     settings.line_color = path.stroke
                     for subpath in path.as_subpaths():
-                        group = CutGroup(context)
+                        closed = isinstance(subpath[-1], Close)
+                        constrained = self._operation == "Cut" and cut_inner_first
+                        if closed and constrained:
+                            requires_constraint = True
+                        group = CutGroup(context, constrained=constrained, closed=closed)
+                        context.append(group)
+                        group.path = Path(subpath)
+
                         context = group
                         for seg in subpath:
                             if isinstance(seg, Move):
@@ -924,6 +933,7 @@ class LaserOperation(Node):
                 direction = settings.raster_direction
                 settings.crosshatch = False
                 group = CutGroup(context)
+                context.append(group)
                 context = group
                 if direction == 4:
                     cross_settings = LaserSettings(settings)
@@ -939,9 +949,11 @@ class LaserOperation(Node):
                 context = context.parent
             elif self._operation == "Image":
                 group = CutGroup(context)
+                context.append(group)
                 context = group
                 for object_image in self.children:
                     group = CutGroup(context)
+                    context.append(group)
                     context = group
                     object_image = object_image.object
                     settings = LaserSettings(self.settings)
@@ -964,6 +976,8 @@ class LaserOperation(Node):
         blob.correct_empty()
         if len(blob) == 0:
             return None
+        if requires_constraint:
+            blob.mode = "constrained"
         return blob
 
 
