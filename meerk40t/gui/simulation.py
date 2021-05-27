@@ -357,14 +357,12 @@ class SimulationWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc: wx.GraphicsContext):
-        print("Start %s" % str(self))
         sim_cut = self.sim.cutcode[:self.sim.max]
         try:
             self.sim.reticle.set_pos(sim_cut[-1].end())
         except IndexError:
             self.sim.reticle.set_pos((0, 0))
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
-        print("End %s" % str(self))
 
 
 class SimulationTravelWidget(Widget):
