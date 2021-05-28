@@ -1410,6 +1410,8 @@ class MeerK40t(MWindow):
         # TOOL MENU
         # ==========
         wt_menu = wx.Menu()
+        self.main_menubar.view = wt_menu
+
         self.panes_menu = wx.Menu()
         def open_pane(p):
             def open(event):
@@ -1432,59 +1434,62 @@ class MeerK40t(MWindow):
         )
 
         wt_menu.AppendSubMenu(self.panes_menu, _("Panes"))
-        wt_menu.AppendSeparator()
-        self.main_menubar.view = wt_menu
+        # wt_menu.AppendSeparator()
 
-        self.main_menubar.executejob = wt_menu.Append(
+        self.window_menu = wx.Menu()
+
+        self.window_menu.executejob = self.window_menu.Append(
             ID_MENU_JOB, _("Execute Job"), ""
         )
-        self.main_menubar.simulate = wt_menu.Append(
+        self.window_menu.simulate = self.window_menu.Append(
             ID_MENU_SIMULATE, _("Simulate"), ""
         )
-        self.main_menubar.rasterwizard = wt_menu.Append(
+        self.window_menu.rasterwizard = self.window_menu.Append(
             ID_MENU_RASTER_WIZARD, _("RasterWizard"), ""
         )
-        self.main_menubar.notes = wt_menu.Append(ID_MENU_NOTES, _("Notes"), "")
-        self.main_menubar.console = wt_menu.Append(
+        self.window_menu.notes = self.window_menu.Append(ID_MENU_NOTES, _("Notes"), "")
+        self.window_menu.console = self.window_menu.Append(
             ID_MENU_CONSOLE, _("Console"), ""
         )
 
-        self.main_menubar.navigation = wt_menu.Append(
+        self.window_menu.navigation = self.window_menu.Append(
             ID_MENU_NAVIGATION, _("Navigation"), ""
         )
         if self.context.has_feature("modifier/Camera"):
-            self.main_menubar.camera = wt_menu.Append(
+            self.window_menu.camera = self.window_menu.Append(
                 ID_MENU_CAMERA, _("Camera"), ""
             )
-        self.main_menubar.jobspooler = wt_menu.Append(
+        self.window_menu.jobspooler = self.window_menu.Append(
             ID_MENU_SPOOLER, _("Spooler"), ""
         )
 
-        self.main_menubar.controller = wt_menu.Append(
+        self.window_menu.controller = self.window_menu.Append(
             ID_MENU_CONTROLLER, _("Controller"), ""
         )
-        self.main_menubar.devices = wt_menu.Append(
+        self.window_menu.devices = self.window_menu.Append(
             ID_MENU_DEVICE_MANAGER, _("Devices"), ""
         )
-        self.main_menubar.preferences = wt_menu.Append(
+        self.window_menu.preferences = self.window_menu.Append(
             wx.ID_PREFERENCES, _("Config"), ""
         )
-        self.main_menubar.settings = wt_menu.Append(
+        self.window_menu.settings = self.window_menu.Append(
             ID_MENU_SETTINGS, _("Settings"), ""
         )
 
-        self.main_menubar.keymap = wt_menu.Append(
+        self.window_menu.keymap = self.window_menu.Append(
             ID_MENU_KEYMAP, _("Keymap"), ""
         )
-        self.main_menubar.rotary = wt_menu.Append(
+        self.window_menu.rotary = self.window_menu.Append(
             ID_MENU_ROTARY, _("Rotary"), ""
         )
-        self.main_menubar.usb = wt_menu.Append(ID_MENU_USB, _("USB"), "")
+        self.window_menu.usb = self.window_menu.Append(ID_MENU_USB, _("USB"), "")
 
-        wt_menu.AppendSeparator()
-        self.main_menubar.windowreset = wt_menu.Append(
+        self.window_menu.AppendSeparator()
+        self.window_menu.windowreset = self.window_menu.Append(
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
         )
+
+        wt_menu.AppendSubMenu(self.window_menu, _("Windows"))
 
         self.main_menubar.Append(wt_menu, _("Tools"))
 
@@ -2093,6 +2098,7 @@ class MeerK40t(MWindow):
                 id=ID_MENU_FILE9,
             )
         if self.recent_file_menu.MenuItemCount != 0:
+            self.recent_file_menu.AppendSeparator()
             self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
             self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
 
