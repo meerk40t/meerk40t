@@ -303,6 +303,15 @@ class Node:
                 node = self
             self._root.notify_update(node=node, **kwargs)
 
+    def notify_focus(self, node=None, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_focus(node=node, **kwargs)
+
+    def focus(self):
+        self.notify_focus(self)
+
     def modified(self):
         """
         The matrix transformation was changed.
@@ -1175,6 +1184,13 @@ class RootNode(Node):
         for listen in self.listeners:
             if hasattr(listen, "update"):
                 listen.update(node, **kwargs)
+
+    def notify_focus(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "focus"):
+                listen.focus(node, **kwargs)
 
 
 class Elemental(Modifier):

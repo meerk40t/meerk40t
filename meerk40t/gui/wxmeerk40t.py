@@ -2929,6 +2929,14 @@ class ShadowTree:
         self.set_icon(node)
         self.on_element_update(node)
 
+    def focus(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
+        self.wxtree.EnsureVisible(item)
+        self.wxtree.SelectItem(item)
+        self.wxtree.ScrollTo(item)
+
     def on_element_update(self, *args):
         element = args[0]
         if hasattr(element, "node"):

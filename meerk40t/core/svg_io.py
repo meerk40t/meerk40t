@@ -284,6 +284,7 @@ class SVGLoader:
         basename = os.path.basename(pathname)
         file_node = context_node.add(type="file", name=basename)
         file_node.filepath = pathname
+        file_node.focus()
         return SVGLoader.parse(
             svg, elements_modifier, file_node, pathname, scale_factor, reverse
         )
