@@ -1422,6 +1422,11 @@ class MeerK40t(MWindow):
                 open_pane(p),
                 id=id_new,
             )
+        self.panes_menu.AppendSeparator()
+        self.main_menubar.panereset = self.panes_menu.Append(
+            ID_MENU_PANE_RESET, _("Reset Panes"), ""
+        )
+
         wt_menu.AppendSubMenu(self.panes_menu, _("Panes"))
         wt_menu.AppendSeparator()
         self.main_menubar.view = wt_menu
@@ -1470,10 +1475,6 @@ class MeerK40t(MWindow):
         wt_menu.AppendSeparator()
         self.main_menubar.windowreset = wt_menu.Append(
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
-        )
-        wt_menu.AppendSeparator()
-        self.main_menubar.panereset = wt_menu.Append(
-            ID_MENU_PANE_RESET, _("Reset Panes"), ""
         )
 
         self.main_menubar.Append(wt_menu, _("Tools"))
