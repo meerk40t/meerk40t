@@ -255,7 +255,7 @@ class JobPreview(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Preview Job")
+        self.SetTitle("Execute Job")
         self.combo_device.SetToolTip(
             "Select the device to which to send the current job"
         )
