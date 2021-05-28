@@ -1418,7 +1418,7 @@ class MeerK40t(MWindow):
             ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK
         )
         wt_menu.Append(
-            ID_MENU_HIDE_LINEWIDTH, _("Hide Stroke-Width"), "", wx.ITEM_CHECK
+            ID_MENU_HIDE_LINEWIDTH, _("No Stroke-Width Render"), "", wx.ITEM_CHECK
         )
         wt_menu.Append(
             ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK
