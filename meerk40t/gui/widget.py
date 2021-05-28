@@ -1619,6 +1619,8 @@ class RectTool(ToolWidget):
             self.scene.gui.Refresh()
         elif event_type == "leftup":
             try:
+                if self.p1 is None:
+                    return
                 self.p2 = complex(space_pos[0], space_pos[1])
                 x0 = min(self.p1.real, self.p2.real)
                 y0 = min(self.p1.imag, self.p2.imag)
@@ -1626,7 +1628,10 @@ class RectTool(ToolWidget):
                 y1 = max(self.p1.imag, self.p2.imag)
                 rect = Rect(x0, y0, x1 - x0, y1 - y0, stroke="blue")
                 t = Path(rect)
-                self.scene.context.root.elements.add_elem(t, classify=True)
+                if len(t) != 0:
+                    self.scene.context.root.elements.add_elem(t, classify=True)
+                self.p1 = None
+                self.p2 = None
             except IndexError:
                 pass
 
