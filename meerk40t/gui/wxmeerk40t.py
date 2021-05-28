@@ -3317,6 +3317,10 @@ class ShadowTree:
         self.elements.set_emphasis(selected)
         self.refresh_tree()
         self.gui.request_refresh()
+        # self.do_not_select = True
+        # for s in self.wxtree.GetSelections():
+        #     self.wxtree.SelectItem(s, False)
+        # self.do_not_select = False
         event.Allow()
 
     def select_in_tree_by_emphasis(self):
