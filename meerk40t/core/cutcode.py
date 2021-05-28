@@ -600,7 +600,7 @@ class ArcCut(CutObject):
         self.arc = arc
 
     def length(self):
-        return self.arc.length(error=1e2, depth=2)
+        return self.arc.length(error=1e2, min_depth=2)
 
     def start(self):
         return self.arc.start
