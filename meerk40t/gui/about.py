@@ -53,11 +53,15 @@ class About(MWindow):
         meerk40t_about_text_header = wx.StaticText(
             self,
             wx.ID_ANY,
-            "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\nParticipation in the project is highly encouraged. Past participation, and continuing \nparticipation is graciously thanked. This program is mostly the brainchild of \nTatarize, who sincerely hopes his contributions will be but the barest trickle \nthat becomes a raging river.",
+            "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\n"
+            "Participation in the project is highly encouraged. Past participation, and \n"
+            "continuing participation is graciously thanked. This program is mostly the\n"
+            "brainchild of Tatarize, who sincerely hopes his contributions will be but \n"
+            "the barest trickle that becomes a raging river.",
         )
         meerk40t_about_text_header.SetFont(
             wx.Font(
-                12,
+                10,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -70,7 +74,16 @@ class About(MWindow):
         meerk40t_about_text = wx.StaticText(
             self,
             wx.ID_ANY,
-            "Thanks.\nLi Huiyu for their controller. \nScorch for lighting our path.\nAlois Zingl for his wonderful Bresenham plotting algorithms.\n@joerlane and all the MeerKittens, past and present, great and small.\n\nIcon8 for their great icons ( https://icons8.com/ ) used throughout the project.\nThe works of countless developers who made everything possible.\nRegebro for his svg.path module.\nThe SVG Working Group.\nHackers (in the general sense).",
+            "Thanks go out to.\n"
+            "* Li Huiyu for their controller. \n"
+            "* Scorch for lighting our path.\n"
+            "* Alois Zingl for his wonderful Bresenham plotting algorithms.\n"
+            "* @joerlane and all the MeerKittens, past and present, great and small.\n\n"
+            "* Icon8 for their great icons ( https://icons8.com/ ) used throughout the project.\n"
+            "* The works of countless developers who made everything possible.\n"
+            "* Regebro for his svg.path module.\n"
+            "* The SVG Working Group.\n"
+            "* Hackers (in the general sense).",
         )
         meerk40t_about_text.SetFont(
             wx.Font(
