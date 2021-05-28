@@ -801,7 +801,7 @@ class LaserOperation(Node):
 
     def deep_copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="elem")
+            self.add(copy(element.object), type="elem")
 
     @property
     def operation(self):
@@ -3497,7 +3497,6 @@ class Elemental(Modifier):
         )
         def duplicate_operation(node, **kwargs):
             copy_op = LaserOperation(node)
-            copy_op.copy_children(node)
             self.add_op(copy_op)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
