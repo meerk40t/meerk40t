@@ -398,6 +398,10 @@ class CutCode(CutGroup):
         return ordered
 
     def short_travel_cutcode(self, cc):
+        """
+        Selects cutcode from candidate cutcode permitted, optimizing with greedy/brute for
+        shortest distances optimizations.
+        """
         start = cc.start
         if start is None:
             start = 0
@@ -432,6 +436,21 @@ class CutCode(CutGroup):
             end = c.end()
             start = complex(end[0], end[1])
             ordered.append(c)
+        return ordered
+
+    def inner_selection_cutcode(self, cc):
+        """
+        Selects cutcode from candidate cutcode permitted but does nothing to optimize byond
+        finding a valid solution.
+        """
+        self.permit(True, cc.flat())
+        ordered = CutCode()
+        while True:
+            c = list(cc.candidate())
+            if len(c) == 0:
+                break
+            ordered.extend(c)
+            self.permit(False, ordered.flat())
         return ordered
 
     def length_travel(self):

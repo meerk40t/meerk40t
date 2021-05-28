@@ -458,6 +458,8 @@ class Planner(Modifier):
             plan, original, commands, name = data
             if self.context.opt_reduce_travel:
                 self.conditional_jobadd_optimize_travel()
+            elif self.context.opt_inner_first:
+                self.conditional_jobadd_optimize_cuts()
             if self.context.opt_reduce_directions:
                 pass
             if self.context.opt_remove_overlap:
@@ -690,7 +692,7 @@ class Planner(Modifier):
         plan, original, commands, name = self.default_plan()
         for op in plan:
             try:
-                if op.operation in ("Cut"):
+                if op.operation == "CutCode":
                     self.jobadd_optimize_cuts()
                     return
             except AttributeError:
@@ -698,15 +700,11 @@ class Planner(Modifier):
 
     def jobadd_optimize_cuts(self):
         def optimize_cuts():
-            plan, original, commands, name = self.default_plan()
-            for op in plan:
-                try:
-                    if op.operation in ("Cut"):
-                        op_cuts = self.optimize_cut_inside(op)
-                        op.clear()
-                        op.append(op_cuts)
-                except AttributeError:
-                    pass
+            for i, c in enumerate(plan):
+                if isinstance(c, CutCode):
+                    if c.mode == "constrained":
+                        plan[i] = c.inner_first_cutcode()
+                    plan[i] = c.inner_selection_cutcode(plan[i])
 
         plan, original, commands, name = self.default_plan()
         commands.append(optimize_cuts)
