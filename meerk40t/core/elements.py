@@ -562,7 +562,8 @@ class Node:
         """
         Replace this node's object with a new object.
         """
-        del self.object.node
+        if hasattr(self.object, "node"):
+            del self.object.node
         for ref in list(self._references):
             ref.object = new_object
             ref.altered()

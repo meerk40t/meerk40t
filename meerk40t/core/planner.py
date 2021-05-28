@@ -769,10 +769,11 @@ class Planner(Modifier):
             plan, original, commands, name = self.default_plan()
             for o in plan:
                 if isinstance(o, LaserOperation):
-                    for e in o.children:
-                        e = e.object
+                    for node in o.children:
+                        e = node.object
                         try:
-                            e *= scale_str
+                            ne = e * scale_str
+                            node.replace_object(ne)
                         except AttributeError:
                             pass
             self.conditional_jobadd_actualize_image()
