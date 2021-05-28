@@ -238,6 +238,10 @@ ID_ROTARY = wx.NewId()
 ID_RASTER = wx.NewId()
 
 ID_HOMEPAGE = wx.NewId()
+ID_RELEASES = wx.NewId()
+ID_FACEBOOK = wx.NewId()
+ID_MAKERS_FORUM = wx.NewId()
+ID_IRC = wx.NewId()
 
 ID_SELECT = wx.NewId()
 
@@ -1493,7 +1497,12 @@ class MeerK40t(MWindow):
         # ==========
         wt_menu = wx.Menu()
         wt_menu.Append(wx.ID_HELP, _("Help"), "")
-        wt_menu.Append(ID_HOMEPAGE, _("Webpage"), "")
+        wt_menu.Append(ID_HOMEPAGE, _("Github"), "")
+        wt_menu.Append(ID_RELEASES, _("Releases"), "")
+        wt_menu.Append(ID_FACEBOOK, _("Facebook"), "")
+        wt_menu.Append(ID_MAKERS_FORUM, _("Makers Forum"), "")
+        wt_menu.Append(ID_IRC, _("IRC"), "")
+        wt_menu.AppendSeparator()
         wt_menu.Append(wx.ID_ABOUT, _("About"), "")
         self.main_menubar.Append(wt_menu, _("Help"))
 
@@ -1693,6 +1702,26 @@ class MeerK40t(MWindow):
             wx.EVT_MENU,
             lambda e: self.context("webhelp main\n"),
             id=ID_HOMEPAGE,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp releases\n"),
+            id=ID_RELEASES,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp makers\n"),
+            id=ID_MAKERS_FORUM,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp facebook\n"),
+            id=ID_FACEBOOK,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp irc\n"),
+            id=ID_IRC,
         )
 
         self.add_language_menu()
