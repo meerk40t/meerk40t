@@ -33,7 +33,7 @@ class Simulation(MWindow, Job):
         for c in self.operations:
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
-        self.cutcode = CutCode(reversed(list(self.cutcode.flat())))
+        self.cutcode = CutCode(self.cutcode.flat())
         self.max = len(self.cutcode)
 
         self.bed_dim = self.context.root
@@ -368,14 +368,14 @@ class SimulationTravelWidget(Widget):
         self.starts = list()
         self.ends = list()
         self.pos = list()
-        last = None
-        for i, c in enumerate(list(self.sim.cutcode)):
-            if last is not None:
-                if last.end() != c.start():
-                    self.starts.append(wx.Point2D(*last.end()))
-                    self.ends.append(wx.Point2D(*c.start()))
+        prev = None
+        for i, curr in enumerate(list(self.sim.cutcode)):
+            if prev is not None:
+                if prev.end() != curr.start():
+                    self.starts.append(wx.Point2D(*prev.end()))
+                    self.ends.append(wx.Point2D(*curr.start()))
             self.pos.append(len(self.starts))
-            last = c
+            prev = curr
 
     def process_draw(self, gc: wx.GraphicsContext):
         max = self.sim.max - 1

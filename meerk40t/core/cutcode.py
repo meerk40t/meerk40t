@@ -230,8 +230,7 @@ class CutGroup(list, CutObject, ABC):
         return self[-1].end() if self.normal else self[0].start()
 
     def flat(self):
-        for index in range(len(self)-1, -1, -1):
-            c = self[index]
+        for c in self:
             if not isinstance(c, CutGroup):
                 yield c
                 continue
@@ -244,8 +243,7 @@ class CutGroup(list, CutObject, ABC):
         is not itself containing another constrained cutcode object. Which is to say that the
         inner-most non-containing cutcode are the only candidates for cutting.
         """
-        for index in range(len(self) - 1, -1, -1):
-            c = self[index]
+        for c in self:
             if c._contains_uncut_objects():
                 continue
             for s in c.flat():
@@ -323,6 +321,9 @@ class CutCode(CutGroup):
         yield COMMAND_PLOT_START
 
     def correct_empty(self, context=None):
+        """
+        Iterates through backwards deleting any entries that empty.
+        """
         if context is None:
             context = self
         for index in range(len(context) -1, -1, -1):
@@ -367,15 +368,9 @@ class CutCode(CutGroup):
             ordered.extend(closed_groups)
         ordered.extend(self.flat())
         self.clear()
-        for j in range(len(ordered)):
-            oj = ordered[j]
-            if oj is None:
-                continue
-            for k in range(len(ordered)):
-                if k == j:
-                    continue
-                ok = ordered[k]
-                if ok is None:
+        for oj in ordered:
+            for ok in ordered:
+                if oj is ok:
                     continue
                 if self.is_inside(ok, oj):
                     if ok.inside is None:
