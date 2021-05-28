@@ -1441,13 +1441,13 @@ class MeerK40t(MWindow):
             ID_MENU_SETTINGS, _("Settings"), ""
         )
         self.main_menubar.rotary = wt_menu.Append(
-            ID_MENU_ROTARY, _("Rotary Settings"), ""
+            ID_MENU_ROTARY, _("Rotary"), ""
         )
         self.main_menubar.keymap = wt_menu.Append(
-            ID_MENU_KEYMAP, _("Keymap Settings"), ""
+            ID_MENU_KEYMAP, _("Keymap"), ""
         )
         self.main_menubar.devices = wt_menu.Append(
-            ID_MENU_DEVICE_MANAGER, _("Device Manager"), ""
+            ID_MENU_DEVICE_MANAGER, _("Devices"), ""
         )
         if self.context.has_feature("modifier/Camera"):
             self.main_menubar.camera = wt_menu.Append(
@@ -1465,7 +1465,7 @@ class MeerK40t(MWindow):
         self.main_menubar.notes = wt_menu.Append(ID_MENU_NOTES, _("Notes"), "")
         self.main_menubar.usb = wt_menu.Append(ID_MENU_USB, _("USB"), "")
         self.main_menubar.jobspooler = wt_menu.Append(
-            ID_MENU_SPOOLER, _("Job Spooler"), ""
+            ID_MENU_SPOOLER, _("Spooler"), ""
         )
         self.main_menubar.executejob = wt_menu.Append(
             ID_MENU_JOB, _("Execute Job"), ""
