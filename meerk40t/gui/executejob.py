@@ -294,7 +294,6 @@ class ExecuteJob(MWindow):
             )
         )
         self.button_start.SetForegroundColour(wx.BLACK)
-        self.button_start.SetToolTip("Start the Laser Job")
         self.button_start.SetBitmap(icons8_laser_beam_52.GetBitmap())
         # end wxGlade
 
@@ -637,22 +636,29 @@ class ExecuteJob(MWindow):
         if self.stage == 0:
             self.button_start.SetLabelText(_("Copy"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 255, 102))
+            self.button_start.SetToolTip("Copy Operations from Tree Operations")
         elif self.stage == 1:
             self.button_start.SetLabelText(_("Preprocess Operations"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 255, 255))
+            self.button_start.SetToolTip("Determine what needs to be done validate these operations.")
         elif self.stage == 2:
             self.button_start.SetLabelText(_("Validate"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 102, 255))
+            self.button_start.SetToolTip("Run the commands to make these operations valid.")
         elif self.stage == 3:
             self.button_start.SetLabelText(_("Blob"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 102, 255))
+            self.button_start.SetToolTip("Turn this set of operations into Cutcode")
         elif self.stage == 4:
             self.button_start.SetLabelText(_("Preprocess Optimizations"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 102, 102))
+            self.button_start.SetToolTip("Determine what needs to be done to optimize this cutcode.")
         elif self.stage == 5:
             self.button_start.SetLabelText(_("Optimize"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 255, 102))
+            self.button_start.SetToolTip("Run the commands to optimize this cutcode")
         elif self.stage == 6:
             self.button_start.SetLabelText(_("Spool"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 255, 255))
+            self.button_start.SetToolTip("Send this data to the spooler")
         self.Refresh()
