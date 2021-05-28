@@ -59,7 +59,7 @@ class Settings(MWindow):
         self.text_scale_x = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.text_scale_y = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.checklist_options = wx.Panel(self, wx.ID_ANY)
-        pos_y = 0
+        pos_y = 10
         for i, c in enumerate(self.choices):
             name, tip, choice, default = c
             cb = wx.CheckBox(self.checklist_options, label=name, pos=(10, pos_y))
