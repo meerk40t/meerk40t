@@ -399,6 +399,7 @@ class CameraInterface(MWindow, Job):
                 self.camera.perspective[3][1],
             )
             gc.SetPen(wx.BLUE_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
             for p in self.camera.perspective:
                 half = CORNER_SIZE / 2
                 gc.StrokeLine(p[0] - half, p[1], p[0] + half, p[1])
