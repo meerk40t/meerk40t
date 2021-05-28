@@ -59,7 +59,7 @@ class Simulation(MWindow, Job):
         self.view_pane = ScenePanel(self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.WANTS_CHARS)
         self.widget_scene = self.view_pane.scene
 
-        m = max(self.max, 10)
+        m = max(self.max, 1)
         self.slider_progress = wx.Slider(self, wx.ID_ANY, m, 0, m)
         self.text_distance_laser = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
@@ -293,7 +293,7 @@ class Simulation(MWindow, Job):
     #     event.Skip()
 
     def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
-        self.max = self.slider_progress.GetValue()
+        self.max = min(self.slider_progress.GetValue(), len(self.cutcode))
         self.context.signal("refresh_scene")
 
     def _start(self):
