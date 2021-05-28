@@ -1616,7 +1616,7 @@ class RectTool(ToolWidget):
             self.p1 = complex(space_pos[0],space_pos[1])
         elif event_type == "move":
             self.p2 = complex(space_pos[0],space_pos[1])
-            self.scene.gui.Refresh()
+            self.scene.gui.signal("refresh_scene")
         elif event_type == "leftup":
             try:
                 if self.p1 is None:
