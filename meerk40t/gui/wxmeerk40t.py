@@ -3038,7 +3038,7 @@ class ShadowTree:
         tree.SetItemBackgroundColour(node_item, None)
         try:
             if node.highlighted:
-                tree.SetItemBackgroundColour(node_item, wx.YELLOW)
+                tree.SetItemBackgroundColour(node_item, wx.LIGHT_GREY)
             elif node.emphasized:
                 tree.SetItemBackgroundColour(node_item, wx.CYAN)
             elif node.targeted:
