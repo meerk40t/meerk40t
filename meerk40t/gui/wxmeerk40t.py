@@ -1044,217 +1044,217 @@ class MeerK40t(MWindow):
         # ==========
         # TOOLBOX PAGE
         # ==========
-        home = RB.RibbonPage(
-            self._ribbon,
-            wx.ID_ANY,
-            _("Toolbox"),
-            icons8_opened_folder_50.GetBitmap(),
-        )
-
-        align_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("Align"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-        align = RB.RibbonButtonBar(align_panel)
-        align.AddButton(
-            ID_ALIGN_LEFT, _("Align Left"), icons8_align_left_50.GetBitmap(), ""
-        )
-        align.AddButton(
-            ID_ALIGN_RIGHT, _("Align Right"), icons8_align_right_50.GetBitmap(), ""
-        )
-        align.AddButton(
-            ID_ALIGN_TOP, _("Align Top"), icons8_align_top_50.GetBitmap(), ""
-        )
-        align.AddButton(
-            ID_ALIGN_BOTTOM, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), ""
-        )
-        align.AddButton(
-            ID_ALIGN_CENTER, _("Align Center"), icons_centerize.GetBitmap(), ""
-        )
-        align.AddButton(
-            ID_ALIGN_SPACE_V, _("Space Vertical"), icons_evenspace_vert.GetBitmap(), ""
-        )
-        align.AddButton(
-            ID_ALIGN_SPACE_H,
-            _("Space Horizontal"),
-            icons_evenspace_horiz.GetBitmap(),
-            "",
-        )
-
-        # TODO: Fix and reenable.
-        align.EnableButton(ID_ALIGN_LEFT, False)
-        align.EnableButton(ID_ALIGN_RIGHT, False)
-        align.EnableButton(ID_ALIGN_TOP, False)
-        align.EnableButton(ID_ALIGN_BOTTOM, False)
-        align.EnableButton(ID_ALIGN_CENTER, False)
-        align.EnableButton(ID_ALIGN_SPACE_V, False)
-        align.EnableButton(ID_ALIGN_SPACE_H, False)
-
-        flip_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("Flip"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-        flip = RB.RibbonButtonBar(flip_panel)
-
-        flip.AddButton(
-            ID_FLIP_HORIZONTAL,
-            _("Flip Horizontal"),
-            icons8_flip_horizontal_50.GetBitmap(),
-            "",
-        )
-        flip.AddButton(
-            ID_FLIP_VERTICAL,
-            _("Flip Vertical"),
-            icons8_flip_vertical_50.GetBitmap(),
-            "",
-        )
-
-        group_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("Group"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-
-        group = RB.RibbonButtonBar(group_panel)
-        group.AddButton(ID_GROUP, _("Group"), icons8_group_objects_50.GetBitmap(), "")
-        group.AddButton(
-            ID_UNGROUP, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), ""
-        )
-
-        # TODO: Fix and Reenable.
-        group.EnableButton(ID_GROUP, False)
-        group.EnableButton(ID_UNGROUP, False)
-
-        tool_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("Tools"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-        tool = RB.RibbonButtonBar(tool_panel)
-        tool.AddButton(
-            ID_TOOL_POSITION, _("Set Position"), icons8_place_marker_50.GetBitmap(), ""
-        )
-        tool.AddButton(ID_TOOL_OVAL, _("Oval"), icons8_oval_50.GetBitmap(), "")
-        tool.AddButton(ID_TOOL_CIRCLE, _("Circle"), icons8_circle_50.GetBitmap(), "")
-        tool.AddButton(ID_TOOL_POLYGON, _("Polygon"), icons8_polygon_50.GetBitmap(), "")
-        tool.AddButton(
-            ID_TOOL_POLYLINE, _("Polyline"), icons8_polyline_50.GetBitmap(), ""
-        )
-        tool.AddButton(
-            ID_TOOL_RECT, _("Rectangle"), icons8_rectangular_50.GetBitmap(), ""
-        )
-        tool.AddButton(ID_TOOL_TEXT, _("Text"), icons8_type_50.GetBitmap(), "")
-
-        # TODO: Fix and Reenable
-        tool.EnableButton(ID_TOOL_POSITION, False)
-        tool.EnableButton(ID_TOOL_OVAL, False)
-        tool.EnableButton(ID_TOOL_CIRCLE, False)
-        tool.EnableButton(ID_TOOL_POLYLINE, False)
-        tool.EnableButton(ID_TOOL_POLYGON, False)
-        tool.EnableButton(ID_TOOL_RECT, False)
-        tool.EnableButton(ID_TOOL_TEXT, False)
-
-
-        align.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("align left\n"),
-            id=ID_ALIGN_LEFT,
-        )
-        align.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("align right\n"),
-            id=ID_ALIGN_RIGHT,
-        )
-        align.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("align top\n"),
-            id=ID_ALIGN_TOP,
-        )
-        align.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("align bottom\n"),
-            id=ID_ALIGN_BOTTOM,
-        )
-        align.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("align center\n"),
-            id=ID_ALIGN_CENTER,
-        )
-        align.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("align spacev\n"),
-            id=ID_ALIGN_SPACE_V,
-        )
-        align.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("align spaceh\n"),
-            id=ID_ALIGN_SPACE_H,
-        )
-        flip.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("scale 1 -1\n"),
-            id=ID_FLIP_HORIZONTAL,
-        )
-        flip.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("scale -1 1\n"),
-            id=ID_FLIP_VERTICAL,
-        )
-        group.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("group\n"),
-            id=ID_GROUP,
-        )
-        group.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("ungroup\n"),
-            id=ID_UNGROUP,
-        )
-        tool.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("tool position\n"),
-            id=ID_TOOL_POSITION,
-        )
-        tool.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("tool oval\n"),
-            id=ID_TOOL_OVAL,
-        )
-        tool.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("tool circle\n"),
-            id=ID_TOOL_CIRCLE,
-        )
-        tool.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("tool polygon\n"),
-            id=ID_TOOL_POLYGON,
-        )
-        tool.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("tool polyline\n"),
-            id=ID_TOOL_POLYLINE,
-        )
-        tool.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("tool rect\n"),
-            id=ID_TOOL_RECT,
-        )
-        tool.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context("tool text\n"),
-            id=ID_TOOL_TEXT,
-        )
+        # home = RB.RibbonPage(
+        #     self._ribbon,
+        #     wx.ID_ANY,
+        #     _("Toolbox"),
+        #     icons8_opened_folder_50.GetBitmap(),
+        # )
+        #
+        # align_panel = RB.RibbonPanel(
+        #     home,
+        #     wx.ID_ANY,
+        #     _("Align"),
+        #     icons8_opened_folder_50.GetBitmap(),
+        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        # )
+        # align = RB.RibbonButtonBar(align_panel)
+        # align.AddButton(
+        #     ID_ALIGN_LEFT, _("Align Left"), icons8_align_left_50.GetBitmap(), ""
+        # )
+        # align.AddButton(
+        #     ID_ALIGN_RIGHT, _("Align Right"), icons8_align_right_50.GetBitmap(), ""
+        # )
+        # align.AddButton(
+        #     ID_ALIGN_TOP, _("Align Top"), icons8_align_top_50.GetBitmap(), ""
+        # )
+        # align.AddButton(
+        #     ID_ALIGN_BOTTOM, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), ""
+        # )
+        # align.AddButton(
+        #     ID_ALIGN_CENTER, _("Align Center"), icons_centerize.GetBitmap(), ""
+        # )
+        # align.AddButton(
+        #     ID_ALIGN_SPACE_V, _("Space Vertical"), icons_evenspace_vert.GetBitmap(), ""
+        # )
+        # align.AddButton(
+        #     ID_ALIGN_SPACE_H,
+        #     _("Space Horizontal"),
+        #     icons_evenspace_horiz.GetBitmap(),
+        #     "",
+        # )
+        #
+        # # TODO: Fix and reenable.
+        # align.EnableButton(ID_ALIGN_LEFT, False)
+        # align.EnableButton(ID_ALIGN_RIGHT, False)
+        # align.EnableButton(ID_ALIGN_TOP, False)
+        # align.EnableButton(ID_ALIGN_BOTTOM, False)
+        # align.EnableButton(ID_ALIGN_CENTER, False)
+        # align.EnableButton(ID_ALIGN_SPACE_V, False)
+        # align.EnableButton(ID_ALIGN_SPACE_H, False)
+        #
+        # flip_panel = RB.RibbonPanel(
+        #     home,
+        #     wx.ID_ANY,
+        #     _("Flip"),
+        #     icons8_opened_folder_50.GetBitmap(),
+        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        # )
+        # flip = RB.RibbonButtonBar(flip_panel)
+        #
+        # flip.AddButton(
+        #     ID_FLIP_HORIZONTAL,
+        #     _("Flip Horizontal"),
+        #     icons8_flip_horizontal_50.GetBitmap(),
+        #     "",
+        # )
+        # flip.AddButton(
+        #     ID_FLIP_VERTICAL,
+        #     _("Flip Vertical"),
+        #     icons8_flip_vertical_50.GetBitmap(),
+        #     "",
+        # )
+        #
+        # group_panel = RB.RibbonPanel(
+        #     home,
+        #     wx.ID_ANY,
+        #     _("Group"),
+        #     icons8_opened_folder_50.GetBitmap(),
+        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        # )
+        #
+        # group = RB.RibbonButtonBar(group_panel)
+        # group.AddButton(ID_GROUP, _("Group"), icons8_group_objects_50.GetBitmap(), "")
+        # group.AddButton(
+        #     ID_UNGROUP, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), ""
+        # )
+        #
+        # # TODO: Fix and Reenable.
+        # group.EnableButton(ID_GROUP, False)
+        # group.EnableButton(ID_UNGROUP, False)
+        #
+        # tool_panel = RB.RibbonPanel(
+        #     home,
+        #     wx.ID_ANY,
+        #     _("Tools"),
+        #     icons8_opened_folder_50.GetBitmap(),
+        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        # )
+        # tool = RB.RibbonButtonBar(tool_panel)
+        # tool.AddButton(
+        #     ID_TOOL_POSITION, _("Set Position"), icons8_place_marker_50.GetBitmap(), ""
+        # )
+        # tool.AddButton(ID_TOOL_OVAL, _("Oval"), icons8_oval_50.GetBitmap(), "")
+        # tool.AddButton(ID_TOOL_CIRCLE, _("Circle"), icons8_circle_50.GetBitmap(), "")
+        # tool.AddButton(ID_TOOL_POLYGON, _("Polygon"), icons8_polygon_50.GetBitmap(), "")
+        # tool.AddButton(
+        #     ID_TOOL_POLYLINE, _("Polyline"), icons8_polyline_50.GetBitmap(), ""
+        # )
+        # tool.AddButton(
+        #     ID_TOOL_RECT, _("Rectangle"), icons8_rectangular_50.GetBitmap(), ""
+        # )
+        # tool.AddButton(ID_TOOL_TEXT, _("Text"), icons8_type_50.GetBitmap(), "")
+        #
+        # # TODO: Fix and Reenable
+        # tool.EnableButton(ID_TOOL_POSITION, False)
+        # tool.EnableButton(ID_TOOL_OVAL, False)
+        # tool.EnableButton(ID_TOOL_CIRCLE, False)
+        # tool.EnableButton(ID_TOOL_POLYLINE, False)
+        # tool.EnableButton(ID_TOOL_POLYGON, False)
+        # tool.EnableButton(ID_TOOL_RECT, False)
+        # tool.EnableButton(ID_TOOL_TEXT, False)
+        #
+        #
+        # align.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("align left\n"),
+        #     id=ID_ALIGN_LEFT,
+        # )
+        # align.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("align right\n"),
+        #     id=ID_ALIGN_RIGHT,
+        # )
+        # align.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("align top\n"),
+        #     id=ID_ALIGN_TOP,
+        # )
+        # align.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("align bottom\n"),
+        #     id=ID_ALIGN_BOTTOM,
+        # )
+        # align.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("align center\n"),
+        #     id=ID_ALIGN_CENTER,
+        # )
+        # align.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("align spacev\n"),
+        #     id=ID_ALIGN_SPACE_V,
+        # )
+        # align.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("align spaceh\n"),
+        #     id=ID_ALIGN_SPACE_H,
+        # )
+        # flip.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("scale 1 -1\n"),
+        #     id=ID_FLIP_HORIZONTAL,
+        # )
+        # flip.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("scale -1 1\n"),
+        #     id=ID_FLIP_VERTICAL,
+        # )
+        # group.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("group\n"),
+        #     id=ID_GROUP,
+        # )
+        # group.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("ungroup\n"),
+        #     id=ID_UNGROUP,
+        # )
+        # tool.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("tool position\n"),
+        #     id=ID_TOOL_POSITION,
+        # )
+        # tool.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("tool oval\n"),
+        #     id=ID_TOOL_OVAL,
+        # )
+        # tool.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("tool circle\n"),
+        #     id=ID_TOOL_CIRCLE,
+        # )
+        # tool.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("tool polygon\n"),
+        #     id=ID_TOOL_POLYGON,
+        # )
+        # tool.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("tool polyline\n"),
+        #     id=ID_TOOL_POLYLINE,
+        # )
+        # tool.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("tool rect\n"),
+        #     id=ID_TOOL_RECT,
+        # )
+        # tool.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #     lambda e: self.context("tool text\n"),
+        #     id=ID_TOOL_TEXT,
+        # )
         # ==========
         # POSITION PAGE
         # ==========
