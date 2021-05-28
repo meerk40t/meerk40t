@@ -4,6 +4,7 @@ MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 MEERK40T_RELEASES = "https://github.com/meerk40t/meerk40t/releases"
 FACEBOOK_MEERK40t = "https://www.facebook.com/groups/716000085655097"
 MAKERS_FORUM_MEERK40T = "https://forum.makerforums.info/c/k40/meerk40t/120"
+IRC_CLIENT = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
 
 
 def plugin(kernel, lifecycle):
@@ -47,3 +48,4 @@ def plugin(kernel, lifecycle):
         kernel.register("webhelp/releases", MEERK40T_RELEASES)
         kernel.register("webhelp/facebook", FACEBOOK_MEERK40t)
         kernel.register("webhelp/makers", MAKERS_FORUM_MEERK40T)
+        kernel.register("webhelp/irc", IRC_CLIENT)
