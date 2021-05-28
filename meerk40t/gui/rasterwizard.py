@@ -188,9 +188,9 @@ class RasterWizard(MWindow):
                 return
             self.context.signal("RasterWizard-Refresh")
         if self.pil_image is not None and self.needs_centering:
-            self.focus_viewport_scene(
-                self.pil_image.getbbox(), self._preview_panel_buffer.Size
-            )
+            box = self.pil_image.getbbox()
+            if box is not None:
+                self.focus_viewport_scene(box, self._preview_panel_buffer.Size)
             self.needs_centering = False
         with self.thread_update_lock:
             self.wizard_thread = None
