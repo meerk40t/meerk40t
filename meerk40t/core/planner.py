@@ -855,6 +855,11 @@ class Planner(Modifier):
         matrix.reset()
 
         box = pil_image.getbbox()
+        if box is None:
+            matrix.post_scale(step_level, step_level)
+            matrix.post_translate(tx, ty)
+            image_element.image = pil_image
+            return
         width = box[2] - box[0]
         height = box[3] - box[1]
         if width != element_width and height != element_height:
