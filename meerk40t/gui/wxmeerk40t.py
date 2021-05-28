@@ -2934,6 +2934,8 @@ class ShadowTree:
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.wxtree.EnsureVisible(item)
+        for s in self.wxtree.GetSelections():
+            self.wxtree.SelectItem(s, False)
         self.wxtree.SelectItem(item)
         self.wxtree.ScrollTo(item)
 
