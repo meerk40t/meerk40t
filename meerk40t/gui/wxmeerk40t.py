@@ -872,12 +872,16 @@ class MeerK40t(MWindow):
             id=ID_CONSOLE,
         )
 
+        def open_simulator(v=None):
+            with wx.BusyInfo(_("Processing Simulation...")):
+                self.context(
+                    "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context(
-                "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+            open_simulator,
             id=ID_SIM,
         )
         # ==========
@@ -1689,9 +1693,15 @@ class MeerK40t(MWindow):
             lambda v: self.context("window open RasterWizard\n"),
             id=ID_MENU_RASTER_WIZARD,
         )
+
+        def open_simulator(v=None):
+            with wx.BusyInfo(_("Processing Simulation...")):
+                self.context(
+                    "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+            open_simulator,
             id=ID_MENU_SIMULATE,
         )
 
