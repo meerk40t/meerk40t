@@ -1434,48 +1434,53 @@ class MeerK40t(MWindow):
         wt_menu.AppendSubMenu(self.panes_menu, _("Panes"))
         wt_menu.AppendSeparator()
         self.main_menubar.view = wt_menu
+
+        self.main_menubar.executejob = wt_menu.Append(
+            ID_MENU_JOB, _("Execute Job"), ""
+        )
+        self.main_menubar.simulate = wt_menu.Append(
+            ID_MENU_SIMULATE, _("Simulate"), ""
+        )
+        self.main_menubar.rasterwizard = wt_menu.Append(
+            ID_MENU_RASTER_WIZARD, _("RasterWizard"), ""
+        )
+        self.main_menubar.notes = wt_menu.Append(ID_MENU_NOTES, _("Notes"), "")
+        self.main_menubar.console = wt_menu.Append(
+            ID_MENU_CONSOLE, _("Console"), ""
+        )
+
+        self.main_menubar.navigation = wt_menu.Append(
+            ID_MENU_NAVIGATION, _("Navigation"), ""
+        )
+        if self.context.has_feature("modifier/Camera"):
+            self.main_menubar.camera = wt_menu.Append(
+                ID_MENU_CAMERA, _("Camera"), ""
+            )
+        self.main_menubar.jobspooler = wt_menu.Append(
+            ID_MENU_SPOOLER, _("Spooler"), ""
+        )
+
+        self.main_menubar.controller = wt_menu.Append(
+            ID_MENU_CONTROLLER, _("Controller"), ""
+        )
+        self.main_menubar.devices = wt_menu.Append(
+            ID_MENU_DEVICE_MANAGER, _("Devices"), ""
+        )
         self.main_menubar.preferences = wt_menu.Append(
             wx.ID_PREFERENCES, _("Config"), ""
         )
         self.main_menubar.settings = wt_menu.Append(
             ID_MENU_SETTINGS, _("Settings"), ""
         )
-        self.main_menubar.rotary = wt_menu.Append(
-            ID_MENU_ROTARY, _("Rotary"), ""
-        )
+
         self.main_menubar.keymap = wt_menu.Append(
             ID_MENU_KEYMAP, _("Keymap"), ""
         )
-        self.main_menubar.devices = wt_menu.Append(
-            ID_MENU_DEVICE_MANAGER, _("Devices"), ""
+        self.main_menubar.rotary = wt_menu.Append(
+            ID_MENU_ROTARY, _("Rotary"), ""
         )
-        if self.context.has_feature("modifier/Camera"):
-            self.main_menubar.camera = wt_menu.Append(
-                ID_MENU_CAMERA, _("Camera"), ""
-            )
-        self.main_menubar.console = wt_menu.Append(
-            ID_MENU_CONSOLE, _("Console"), ""
-        )
-        self.main_menubar.navigation = wt_menu.Append(
-            ID_MENU_NAVIGATION, _("Navigation"), ""
-        )
-        self.main_menubar.controller = wt_menu.Append(
-            ID_MENU_CONTROLLER, _("Controller"), ""
-        )
-        self.main_menubar.notes = wt_menu.Append(ID_MENU_NOTES, _("Notes"), "")
         self.main_menubar.usb = wt_menu.Append(ID_MENU_USB, _("USB"), "")
-        self.main_menubar.jobspooler = wt_menu.Append(
-            ID_MENU_SPOOLER, _("Spooler"), ""
-        )
-        self.main_menubar.executejob = wt_menu.Append(
-            ID_MENU_JOB, _("Execute Job"), ""
-        )
-        self.main_menubar.rasterwizard = wt_menu.Append(
-            ID_MENU_RASTER_WIZARD, _("RasterWizard"), ""
-        )
-        self.main_menubar.simulate = wt_menu.Append(
-            ID_MENU_SIMULATE, _("Simulate"), ""
-        )
+
         wt_menu.AppendSeparator()
         self.main_menubar.windowreset = wt_menu.Append(
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
