@@ -858,7 +858,7 @@ class MeerK40t(MWindow):
         toolbar.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open Notes\n"),
+            lambda v: self.context("window toggle Notes\n"),
             id=ID_NOTES,
         )
         toolbar.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
@@ -3620,7 +3620,7 @@ class wxMeerK40t(wx.App, Module):
             help="Context Path at which to open the window",
         )
         @kernel.console_command(
-            "window", output_type="window", help="wxMeerK40 window information"
+            "window", output_type="window", help="Base window command"
         )
         def window(channel, _, path=None, remainder=None, **kwargs):
             """
@@ -3658,7 +3658,7 @@ class wxMeerK40t(wx.App, Module):
             "list",
             input_type="window",
             output_type="window",
-            help="wxMeerK40 window information",
+            help="List available windows.",
         )
         def window(channel, _, data, **kwargs):
             channel(_("----------"))
@@ -3693,12 +3693,13 @@ class wxMeerK40t(wx.App, Module):
             help="Load Source Specific Window",
         )
         @kernel.console_argument(
-            "window", type=str, help="window to apply subcommand to"
+            "window", type=str, help="window to be opened"
         )
         @kernel.console_command(
-            "open", input_type="window", help="wxMeerK40 window information"
+            ("open","toggle"), input_type="window", help="open/toggle the supplied window"
         )
         def window(
+            command,
             channel,
             _,
             data,
@@ -3741,21 +3742,40 @@ class wxMeerK40t(wx.App, Module):
                 if window_uri not in context.registered:
                     window_uri = "window/%s/%s" % ('default', window)
 
-            if window_uri in context.registered:
-                kernel.run_later(lambda e: path.open(window_uri, parent, *args), None)
-                channel(_("Window Opened."))
+            def window_open(*a, **k):
+                path.open(window_uri, parent, *args)
+
+            def window_close(*a, **k):
+                path.close(window_uri, *args)
+
+            if command == 'open':
+                if window_uri in context.registered:
+                    kernel.run_later(window_open, None)
+                    channel(_("Window Opened."))
+                else:
+                    channel(_("No such window as %s" % window))
+                    raise SyntaxError
             else:
-                channel(_("No such window as %s" % window))
-                raise SyntaxError
+                if window_uri in context.registered:
+                    try:
+                        w = path.opened[window_uri]
+                        kernel.run_later(window_close, None)
+                        channel(_("Window Closed."))
+                    except KeyError:
+                        kernel.run_later(window_open, None)
+                        channel(_("Window Opened."))
+                else:
+                    channel(_("No such window as %s" % window))
+                    raise SyntaxError
 
         @kernel.console_argument(
-            "window", type=str, help="window to apply subcommand to"
+            "window", type=str, help="window to be closed"
         )
         @kernel.console_command(
             "close",
             input_type="window",
             output_type="window",
-            help="wxMeerK40 window information",
+            help="close the supplied window",
         )
         def window(channel, _, data, window=None, args=(), **kwargs):
             path = data
@@ -3769,13 +3789,13 @@ class wxMeerK40t(wx.App, Module):
                 raise SyntaxError
 
         @kernel.console_argument(
-            "window", type=str, help="window to apply subcommand to"
+            "window", type=str, help="window to be reset"
         )
         @kernel.console_command(
             "reset",
             input_type="window",
             output_type="window",
-            help="wxMeerK40 window information",
+            help="reset the supplied window, or '*' for all windows",
         )
         def window(channel, _, data, window=None, **kwargs):
             if kernel._config is not None:
@@ -3784,12 +3804,11 @@ class wxMeerK40t(wx.App, Module):
                         del kernel.contexts[context]
                 kernel._config.DeleteGroup("window")
 
-        @kernel.console_command("refresh", help="wxMeerK40 refresh")
+        @kernel.console_command("refresh", help="Refresh the main wxMeerK40 window")
         def refresh(command, channel, _, args=tuple(), **kwargs):
             context.signal("refresh_scene")
             context.signal("rebuild_tree")
             channel(_("Refreshed."))
-            return
 
     def initialize(self, *args, **kwargs):
         context = self.context
