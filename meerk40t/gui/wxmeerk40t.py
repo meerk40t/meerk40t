@@ -107,7 +107,7 @@ from .icons import (
     icons_evenspace_vert, icons8_laser_beam_hazard_50, icons8_computer_support_50, icons8_play_50,
 )
 from .imageproperty import ImageProperty
-from .jobpreview import JobPreview
+from .executejob import ExecuteJob
 from .jobspooler import JobSpooler
 from .keymap import Keymap
 from .laserrender import (
@@ -841,7 +841,7 @@ class MeerK40t(MWindow):
         toolbar.AddButton(ID_JOB, _("Execute Job"), icons8_laser_beam_52.GetBitmap(), "")
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open JobPreview 0\n"),
+            lambda v: self.context("window open ExecuteJob 0\n"),
             id=ID_JOB,
         )
         toolbar.AddButton(ID_SIM, _("Simulate"), icons8_laser_beam_hazard_50.GetBitmap(), "")
@@ -1458,7 +1458,7 @@ class MeerK40t(MWindow):
         self.main_menubar.jobspooler = wt_menu.Append(
             ID_MENU_SPOOLER, _("Job Spooler"), ""
         )
-        self.main_menubar.jobpreview = wt_menu.Append(
+        self.main_menubar.executejob = wt_menu.Append(
             ID_MENU_JOB, _("Execute Job"), ""
         )
         self.main_menubar.rasterwizard = wt_menu.Append(
@@ -1630,7 +1630,7 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open JobPreview 0\n"),
+            lambda v: self.context("window open ExecuteJob 0\n"),
             id=ID_MENU_JOB,
         )
         if self.context.has_feature("modifier/Camera"):
@@ -3593,7 +3593,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
         kernel.register("window/JobSpooler", JobSpooler)
-        kernel.register("window/JobPreview", JobPreview)
+        kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/Simulation", Simulation)

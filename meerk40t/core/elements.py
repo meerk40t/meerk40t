@@ -3313,10 +3313,10 @@ class Elemental(Modifier):
             help="Execute Job for the particular element.",
         )
         def execute_job(node, **kwargs):
-            # self.context.open("window/JobPreview", self.gui, "0", selected=True)
+            # self.context.open("window/ExecuteJob", self.gui, "0", selected=True)
             node.emphasized = True
             self.context("plan0 copy-selected\n")
-            self.context("window open JobPreview 0\n")
+            self.context("window open ExecuteJob 0\n")
 
         @self.tree_separator_after()
         @self.tree_operation(
