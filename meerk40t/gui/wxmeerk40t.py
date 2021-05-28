@@ -226,6 +226,7 @@ ID_CAMERA5 = wx.NewId()
 ID_JOB = wx.NewId()
 ID_SIM = wx.NewId()
 ID_PAUSE = wx.NewId()
+ID_STOP = wx.NewId()
 
 ID_SPOOLER = wx.NewId()
 ID_KEYMAP = wx.NewId()
@@ -823,7 +824,7 @@ class MeerK40t(MWindow):
         )
 
         # ==========
-        # TOOLBAR PANEL
+        # PROJECT PANEL
         # ==========
 
         self.toolbar_panel = RB.RibbonPanel(
@@ -838,134 +839,112 @@ class MeerK40t(MWindow):
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
         toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
         toolbar.AddButton(ID_JOB, _("Execute Job"), icons8_laser_beam_52.GetBitmap(), "")
-        toolbar.AddButton(ID_SIM, _("Simulate"), icons8_laser_beam_hazard_50.GetBitmap(), "")
-
-        toolbar.AddButton(
-            ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
-        )
-        toolbar.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
-        toolbar.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
-
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open JobPreview 0\n"),
             id=ID_JOB,
         )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context(
-                "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
-            id=ID_SIM,
-        )
+        toolbar.AddButton(ID_SIM, _("Simulate"), icons8_laser_beam_hazard_50.GetBitmap(), "")
 
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open Notes\n"),
-            id=ID_NOTES,
+        toolbar.AddButton(
+            ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open RasterWizard\n"),
             id=ID_RASTER,
         )
+
+        toolbar.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
+        toolbar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context("window open Notes\n"),
+            id=ID_NOTES,
+        )
+        toolbar.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open Console\n"),
             id=ID_CONSOLE,
         )
+
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
+        toolbar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context(
+                "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+            id=ID_SIM,
+        )
         # ==========
-        # WINDOW PANEL
+        # CONTROL PANEL
         # ==========
 
         self.windows_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
-            _("" if self.is_dark else "Windows"),
+            _("" if self.is_dark else "Control"),
             icons8_opened_folder_50.GetBitmap(),
             # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
-        windows = RB.RibbonButtonBar(self.windows_panel)
-        self.window_button_bar = windows
+        button_bar = RB.RibbonButtonBar(self.windows_panel)
+        self.window_button_bar = button_bar
         # So Navigation, Camera, Spooler, Controller, Terminal in one group,
         # Settings, Keymap, Devices, Preferences, Rotary, USB in another.
         # Raster Wizard and Notes should IMO be in the Main Group.
-        windows.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
-        if self.context.has_feature("modifier/Camera"):
-            windows.AddHybridButton(
-                ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), ""
-            )
-        # windows.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
-        # windows.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
-        # windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
-        # windows.AddButton(
-        #     ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), ""
-        # )
-        #
-        # windows.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda v: self.context("window open -o Controller\n"),
-        #     id=ID_CONTROLLER,
-        # )
-        #
-        # windows.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda v: self.context("window open JobSpooler\n"),
-        #     id=ID_SPOOLER,
-        # )
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA)
-        windows.Bind(
+        button_bar.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
+        button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open Navigation\n"),
             id=ID_NAV,
         )
+        if self.context.has_feature("modifier/Camera"):
+            button_bar.AddHybridButton(
+                ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), ""
+            )
+            button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA)
+            button_bar.Bind(
+                RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
+                self.on_camera_dropdown,
+                id=ID_CAMERA,
+            )
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
 
-        # ==========
-        # DEVICES PANEL
-        # ==========
-        self.devices_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("" if self.is_dark else "Devices"),
-            icons8_opened_folder_50.GetBitmap(),
-            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-        devices_bar = RB.RibbonButtonBar(self.devices_panel)
-        self.devices_button_bar = devices_bar
-        devices_bar.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
-        devices_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
-        devices_bar.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
-        devices_bar.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
-        devices_bar.AddButton(
-            ID_CONFIGURATION,
-            _("Config"),
-            icons8_computer_support_50.GetBitmap(),
-            "",
-        )
-        devices_bar.AddButton(
-            ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), ""
-        )
-        devices_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open DeviceManager\n"),
-            id=ID_DEVICES,
-        )
-        devices_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open -o Controller\n"),
-            id=ID_CONTROLLER,
-        )
-        devices_bar.Bind(
+        button_bar.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
+        button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open JobSpooler\n"),
             id=ID_SPOOLER,
         )
-        devices_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open -d Preferences\n"),
-            id=ID_CONFIGURATION,
+        button_bar.AddButton(
+            ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), ""
         )
+        button_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context("window open -o Controller\n"),
+            id=ID_CONTROLLER,
+        )
+        button_bar.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
+        button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
+        button_bar.AddButton(ID_STOP, _("Stop"), icons8_emergency_stop_button_50.GetBitmap(), "")
+        button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_stop, id=ID_STOP)
+
+        # ==========
+        # DEVICES PANEL
+        # ==========
+        # self.devices_panel = RB.RibbonPanel(
+        #     home,
+        #     wx.ID_ANY,
+        #     _("" if self.is_dark else "Devices"),
+        #     icons8_opened_folder_50.GetBitmap(),
+        #     # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        # )
+        # button_bar = RB.RibbonButtonBar(self.devices_panel)
+        # self.devices_button_bar = button_bar
 
         # ==========
         # SETTINGS PANEL
@@ -973,73 +952,51 @@ class MeerK40t(MWindow):
         self.settings_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
-            _("" if self.is_dark else "Settings"),
+            _("" if self.is_dark else "Preferences"),
             icons8_opened_folder_50.GetBitmap(),
             # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
-        settings_bar = RB.RibbonButtonBar(self.settings_panel)
-        self.setting_button_bar = settings_bar
+        button_bar = RB.RibbonButtonBar(self.settings_panel)
+        self.setting_button_bar = button_bar
 
-        settings_bar.AddButton(ID_SETTING, _("Settings"), icons8_administrative_tools_50.GetBitmap(), "")
-        settings_bar.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
-        # settings_bar.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
-        # settings_bar.AddButton(
-        #     ID_CONFIGURATION,
-        #     _("Config"),
-        #     icons8_computer_support_50.GetBitmap(),
-        #     "",
-        # )
-        settings_bar.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
-        # settings_bar.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
-
-        # settings_bar.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda v: self.context("window open UsbConnect\n"),
-        #     id=ID_USB,
-        # )
-        # settings_bar.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda v: self.context("window open -d Preferences\n"),
-        #     id=ID_CONFIGURATION,
-        # )
-        settings_bar.Bind(
+        button_bar.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
+        button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window -p rotary/1 open Rotary\n"),
-            id=ID_ROTARY,
+            lambda v: self.context("window open DeviceManager\n"),
+            id=ID_DEVICES,
         )
-        # settings_bar.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda v: self.context("window open DeviceManager\n"),
-        #     id=ID_DEVICES,
-        # )
-        settings_bar.Bind(
+
+        button_bar.AddButton(
+            ID_CONFIGURATION,
+            _("Config"),
+            icons8_computer_support_50.GetBitmap(),
+            "",
+        )
+        button_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED,
+            lambda v: self.context("window open -d Preferences\n"),
+            id=ID_CONFIGURATION,
+        )
+
+        button_bar.AddButton(ID_SETTING, _("Settings"), icons8_administrative_tools_50.GetBitmap(), "")
+        button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open Settings\n"),
             id=ID_SETTING,
         )
-        settings_bar.Bind(
+
+        button_bar.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
+        button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open Keymap\n"),
             id=ID_KEYMAP,
         )
-        settings_bar.Bind(
+        button_bar.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
+        button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open Operations\n"),
-            id=ID_OPERATIONS,
+            lambda v: self.context("window -p rotary/1 open Rotary\n"),
+            id=ID_ROTARY,
         )
-
-        if self.context.has_feature("modifier/Camera"):
-            windows.Bind(
-                RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                self.on_camera_dropdown,
-                id=ID_CAMERA,
-            )
-
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
 
         # ==========
         # TOOLBOX PAGE
@@ -2441,6 +2398,9 @@ class MeerK40t(MWindow):
                 return  # the user changed their mind
             pathname = fileDialog.GetPath()
             self.load(pathname)
+
+    def on_click_stop(self, event):
+        self.context("estop\n")
 
     def on_click_pause(self, event):
         self.context("pause\n")
