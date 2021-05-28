@@ -365,7 +365,7 @@ class MeerK40t(MWindow):
 
         # Define Tree
         self.wxtree = wx.TreeCtrl(
-            self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS
+            self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT
         )
         self.__set_tree()
 
