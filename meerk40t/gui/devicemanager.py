@@ -212,10 +212,10 @@ class DeviceManager(MWindow):
 
             port = None
             if ":" in address:
-                port = address.split(':')[-1]
+                port = address.split(":")[-1]
                 try:
                     port = int(port)
-                    address = address.split(':')[0]
+                    address = address.split(":")[0]
                 except ValueError:
                     port = None
 

@@ -237,7 +237,8 @@ class CameraInterface(MWindow, Job):
 
     def window_open(self):
         from sys import platform as _platform
-        if _platform == 'darwin' and not hasattr(self.setting, "_first"):
+
+        if _platform == "darwin" and not hasattr(self.setting, "_first"):
             self.context("camera%d start -t 1\n" % self.index)
             self.setting._first = False
         else:

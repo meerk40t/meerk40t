@@ -24,16 +24,23 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/ruida", RuidaEmulator)
 
         @kernel.console_option(
-            "silent", "s", type=bool, action="store_true", help="do not watch server channels"
+            "silent",
+            "s",
+            type=bool,
+            action="store_true",
+            help="do not watch server channels",
         )
-
         @kernel.console_option(
-            "quit", "q", type=bool, action="store_true", help="shutdown current lhyserver"
+            "quit",
+            "q",
+            type=bool,
+            action="store_true",
+            help="shutdown current lhyserver",
         )
-        @kernel.console_command(("ruidacontrol", "ruidadesign"), help="activate the ruidaserver.")
-        def ruidaserver(
-            command, channel, _, silent=False, quit=False, **kwargs
-        ):
+        @kernel.console_command(
+            ("ruidacontrol", "ruidadesign"), help="activate the ruidaserver."
+        )
+        def ruidaserver(command, channel, _, silent=False, quit=False, **kwargs):
             """
             The ruidaserver emulation methods provide a simulation of a ruida device.
             this interprets ruida devices in order to be compatible with software that
@@ -72,10 +79,14 @@ def plugin(kernel, lifecycle=None):
                 root.channel("ruidajog/recv").watch(emulator.realtime_write)
 
                 root.channel("ruida_reply").watch(root.channel("ruidaserver/send"))
-                root.channel("ruida_reply_realtime").watch(root.channel("ruidajog/send"))
+                root.channel("ruida_reply_realtime").watch(
+                    root.channel("ruidajog/send")
+                )
 
                 try:
-                    spooler, input_driver, output = kernel.registered["device/%s" % kernel.root.active]
+                    spooler, input_driver, output = kernel.registered[
+                        "device/%s" % kernel.root.active
+                    ]
                 except (KeyError, ValueError):
                     channel(_("Must run with a correct active device"))
                     return
@@ -276,11 +287,15 @@ class RuidaEmulator(Module):
         if len(sent_data) > 3:
             if self.magic != 0x88 and sent_data[2] == 0xD4:
                 self.magic = 0x88
-                self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(self.magic)
+                self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(
+                    self.magic
+                )
                 self.ruida_channel("Setting magic to 0x88")
             if self.magic != 0x11 and sent_data[2] == 0x4B:
                 self.magic = 0x11
-                self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(self.magic)
+                self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(
+                    self.magic
+                )
                 self.ruida_channel("Setting magic to 0x11")
 
         if checksum_check == checksum_sum:
@@ -353,7 +368,10 @@ class RuidaEmulator(Module):
         elif array[0] == 0x88:  # 0b10001000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            desc = "Move Absolute (%f mil, %f mil)" % (self.x / um_per_mil, self.y / um_per_mil)
+            desc = "Move Absolute (%f mil, %f mil)" % (
+                self.x / um_per_mil,
+                self.y / um_per_mil,
+            )
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
                 dx = self.relcoord(array[1:3])
@@ -851,13 +869,17 @@ class RuidaEmulator(Module):
                 self.x += coord
                 desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
                 if self.control:
-                    self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
+                    self.context(
+                        "move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil)
+                    )
             elif array[1] == 0x01 or array[1] == 0x51:
                 coord = self.abscoord(array[3:8])
                 self.y += coord
                 desc = "Move %s Y: %f (%f,%f)" % (param, coord, self.x, self.y)
                 if self.control:
-                    self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
+                    self.context(
+                        "move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil)
+                    )
             elif array[1] == 0x02 or array[1] == 0x52:
                 coord = self.abscoord(array[3:8])
                 self.z += coord
@@ -871,37 +893,56 @@ class RuidaEmulator(Module):
             elif array[1] == 0x10 or array[1] == 0x60:
                 self.x = self.abscoord(array[3:8])
                 self.y = self.abscoord(array[8:13])
-                desc = "Move %s XY (%f, %f)" % (param, self.x / um_per_mil, self.y / um_per_mil)
+                desc = "Move %s XY (%f, %f)" % (
+                    param,
+                    self.x / um_per_mil,
+                    self.y / um_per_mil,
+                )
                 # self.x = 0
                 # self.y = 0
                 if self.control:
-                    if 'Origin' in param:
-                        self.context("move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil))
+                    if "Origin" in param:
+                        self.context(
+                            "move %f %f\n" % (self.x / um_per_mil, self.y / um_per_mil)
+                        )
                     else:
                         self.context("home\n")
             elif array[1] == 0x30 or array[1] == 0x70:
                 self.x = self.abscoord(array[3:8])
                 self.y = self.abscoord(array[8:13])
-                self.u = self.abscoord(array[13:13+5])
-                desc = "Move %s XYU: %f (%f,%f)" % (param, self.x / um_per_mil, self.y / um_per_mil, self.u / um_per_mil)
+                self.u = self.abscoord(array[13 : 13 + 5])
+                desc = "Move %s XYU: %f (%f,%f)" % (
+                    param,
+                    self.x / um_per_mil,
+                    self.y / um_per_mil,
+                    self.u / um_per_mil,
+                )
         elif array[0] == 0xDA:
             mem = self.parse_mem(array[2:4])
             name, v = self.mem_lookup(mem)
             if array[1] == 0x00:
                 if name is None:
                     name = "Unmapped"
-                desc = "Get %02x %02x (mem: %04x) (%s)" % (array[2], array[3], mem, name)
+                desc = "Get %02x %02x (mem: %04x) (%s)" % (
+                    array[2],
+                    array[3],
+                    mem,
+                    name,
+                )
                 if isinstance(v, int):
                     v = int(v)
                     vencode = RuidaEmulator.encode32(v)
                     respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = "Respond %02x %02x (mem: %04x) (%s) = %d (0x%08x)" % (
-                        array[2],
-                        array[3],
-                        mem,
-                        name,
-                        v,
-                        v,
+                    respond_desc = (
+                        "Respond %02x %02x (mem: %04x) (%s) = %d (0x%08x)"
+                        % (
+                            array[2],
+                            array[3],
+                            mem,
+                            name,
+                            v,
+                            v,
+                        )
                     )
                 else:
                     vencode = v
@@ -1013,7 +1054,7 @@ class RuidaEmulator(Module):
             elif array[1] == 0x09:
                 v1 = self.decodeu35(array[2:7])
                 desc = "Feed Length %d" % v1
-            elif array[1] == 0x0b:
+            elif array[1] == 0x0B:
                 v1 = array[2]
                 desc = "Unknown 1 %d" % v1
             elif array[1] == 0x13:
@@ -1091,14 +1132,15 @@ class RuidaEmulator(Module):
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = "Document Name %d" % (filenumber)
                 from glob import glob
-                from os.path import realpath, join
-                files = [name for name in glob(join(realpath('.'), '*.rd'))]
-                name = files[filenumber-1]
+                from os.path import join, realpath
+
+                files = [name for name in glob(join(realpath("."), "*.rd"))]
+                name = files[filenumber - 1]
                 name = os.path.split(name)[-1]
-                name = name.split('.')[0]
+                name = name.split(".")[0]
                 name = name.upper()[:8]
 
-                respond = bytes(array[:4]) + bytes(name, 'utf8') + b'\00'
+                respond = bytes(array[:4]) + bytes(name, "utf8") + b"\00"
                 # respond_desc = "Document %d Named: %s" % (filenumber, name)
             elif array[1] == 0x02:
                 desc = "File transfer"
@@ -1426,7 +1468,7 @@ class RuidaEmulator(Module):
         if mem == 0x00E7:
             return "VWheel Share Home Offset", 0
         if mem == 0x0100:
-            return "System Settings", 0  #bits 2,2,1,1,1,1,1,1,1,1,1
+            return "System Settings", 0  # bits 2,2,1,1,1,1,1,1,1,1,1
         if mem == 0x0101:
             return "Turn Velocity", 20000  # 20 m/s
         if mem == 0x0102:
@@ -1607,7 +1649,7 @@ class RuidaEmulator(Module):
             return "Offset 11 Start", 0
         if mem == 0x016A:
             return "Offset 11 End", 0
-        if mem == 0x16b:
+        if mem == 0x16B:
             return "Tool Up Pos 4", 0
         if mem == 0x16C:
             return "Tool Down Pos 4", 0
@@ -1659,7 +1701,7 @@ class RuidaEmulator(Module):
             return "Blow On Delay", 0
         if mem == 0x018D:
             return "Blow Off Delay", 0
-        if mem == 0x018f:
+        if mem == 0x018F:
             return "User Para 6, Blower", 0
         if mem == 0x0190:
             return "Jet Time", 0
@@ -1733,23 +1775,24 @@ class RuidaEmulator(Module):
             return "Total Work Number", 0
         if mem == 0x0205:
             from glob import glob
-            from os.path import realpath, join
-            files = [name for name in glob(join(realpath('.'), '*.rd'))]
+            from os.path import join, realpath
+
+            files = [name for name in glob(join(realpath("."), "*.rd"))]
             print(files)
             v = len(files)
             return "Total Doc Number", v
         if mem == 0x0206:
-            from shutil import disk_usage
             from os.path import realpath
+            from shutil import disk_usage
 
-            total, used, free = disk_usage(realpath('.'))
+            total, used, free = disk_usage(realpath("."))
             v = min(total, 100000000)  # Max 100 megs.
             return "Flash Space", v
         if mem == 0x0207:
-            from shutil import disk_usage
             from os.path import realpath
+            from shutil import disk_usage
 
-            total, used, free = disk_usage(realpath('.'))
+            total, used, free = disk_usage(realpath("."))
             v = min(free, 100000000)  # Max 100 megs.
             return "Flash Space", v
         if mem == 0x0208:
@@ -1766,41 +1809,41 @@ class RuidaEmulator(Module):
         if mem == 0x0219:
             # OEM SET CURRENT
             return "Total Laser Work Time 4", 0
-        if mem == 0x021a:
+        if mem == 0x021A:
             # OEM SET FREQUENCY
             return "Total Laser Work Time 5", 0
-        if mem == 0x021f:
+        if mem == 0x021F:
             return "Ring Number", 0
         if mem == 0x0221:
-            return "Axis Preferred Position 1, Pos X",  int(self.x)
+            return "Axis Preferred Position 1, Pos X", int(self.x)
         if mem == 0x0223:
             return "X Total Travel (m)", 0
         if mem == 0x0224:
             return "Position Point 0", 0
         if mem == 0x0231:
-            return "Axis Preferred Position 2, Pos Y",  int(self.y)
+            return "Axis Preferred Position 2, Pos Y", int(self.y)
         if mem == 0x0233:
             return "Y Total Travel (m)", 0
         if mem == 0x0234:
             return "Position Point 1", 0
         if mem == 0x0241:
-            return "Axis Preferred Position 3, Pos Z",  int(self.z)
+            return "Axis Preferred Position 3, Pos Z", int(self.z)
         if mem == 0x0243:
             return "Z Total Travel (m)", 0
         if mem == 0x0251:
             return "Axis Preferred Position 4, Pos U", int(self.u)
         if mem == 0x0253:
             return "U Total Travel (m)", 0
-        if mem == 0x025a:
+        if mem == 0x025A:
             return "Axis Preferred Position 5, Pos A", int(self.a)
-        if mem == 0x025b:
+        if mem == 0x025B:
             return "Axis Preferred Position 6, Pos B", int(self.b)
-        if mem == 0x025c:
+        if mem == 0x025C:
             return "Axis Preferred Position 7, Pos C", int(self.c)
-        if mem == 0x025d:
+        if mem == 0x025D:
             return "Axis Preferred Position 8, Pos D", int(self.d)
         if mem == 0x0260:
-            return "DocumentWorkNum",  0
+            return "DocumentWorkNum", 0
         if mem == 0x02C4:
             return "Read Scan Backlash Flag", 0
         if mem == 0x02C5:
@@ -1808,7 +1851,7 @@ class RuidaEmulator(Module):
         if mem == 0x02D5:
             return "Read Scan Backlash 2", 0
         if mem == 0x02FE:
-            return "Card ID",  0x65006500
+            return "Card ID", 0x65006500
         if mem == 0x02FF:
             return "Mainboard Version", b"MEERK40T\x00"
         if mem == 0x0313:
@@ -1824,12 +1867,12 @@ class RuidaEmulator(Module):
         if mem == 0x0340:
             return "Stop Time", 0
         if 0x0391 <= mem < 0x0420:
-            return "Time for File %d to Run" % (mem-0x00390), 100
+            return "Time for File %d to Run" % (mem - 0x00390), 100
         if mem == 0x0591:
             return "Card Lock", 0  # 0x55aaaa55
-        if mem == 0x05c0:
+        if mem == 0x05C0:
             return "Laser Life", 0
-        if 0x05c0 <= mem < 0x600:
+        if 0x05C0 <= mem < 0x600:
             pass
         return "Unknown", 0
 
@@ -1895,9 +1938,7 @@ class RDLoader:
     def load(kernel, elements_modifier, pathname, **kwargs):
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            ruidaemulator = kernel.root.open_as(
-                "emulator/ruida", basename
-            )
+            ruidaemulator = kernel.root.open_as("emulator/ruida", basename)
             ruidaemulator.elements = elements_modifier
             ruidaemulator.write(BytesIO(ruidaemulator.unswizzle(f.read())))
             return True

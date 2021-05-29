@@ -17,7 +17,6 @@ class ExecuteJob(MWindow):
             plan_name = 0
         self.plan_name = plan_name
 
-
         # ==========
         # MENU BAR
         # ==========
@@ -285,9 +284,7 @@ class ExecuteJob(MWindow):
         # self.text_time_laser.SetToolTip("Time Estimate: Lasering Time")
         # self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
         # self.text_time_total.SetToolTip("Time Estimate: Total Time")
-        self.check_rapid_moves_between.SetToolTip(
-            "Rapid Moves between Objects."
-        )
+        self.check_rapid_moves_between.SetToolTip("Rapid Moves between Objects.")
         self.check_reduce_travel_time.SetToolTip(
             "Reduce the travel time by optimizing the order of the elements"
         )
@@ -662,11 +659,15 @@ class ExecuteJob(MWindow):
         elif self.stage == 1:
             self.button_start.SetLabelText(_("Preprocess Operations"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 255, 255))
-            self.button_start.SetToolTip("Determine what needs to be done validate these operations.")
+            self.button_start.SetToolTip(
+                "Determine what needs to be done validate these operations."
+            )
         elif self.stage == 2:
             self.button_start.SetLabelText(_("Validate"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 102, 255))
-            self.button_start.SetToolTip("Run the commands to make these operations valid.")
+            self.button_start.SetToolTip(
+                "Run the commands to make these operations valid."
+            )
         elif self.stage == 3:
             self.button_start.SetLabelText(_("Blob"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 102, 255))
@@ -674,7 +675,9 @@ class ExecuteJob(MWindow):
         elif self.stage == 4:
             self.button_start.SetLabelText(_("Preprocess Optimizations"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 102, 102))
-            self.button_start.SetToolTip("Determine what needs to be done to optimize this cutcode.")
+            self.button_start.SetToolTip(
+                "Determine what needs to be done to optimize this cutcode."
+            )
         elif self.stage == 5:
             self.button_start.SetLabelText(_("Optimize"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 255, 102))

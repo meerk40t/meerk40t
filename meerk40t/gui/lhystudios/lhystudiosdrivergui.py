@@ -309,7 +309,9 @@ class LhystudiosDriverGui(MWindow):
 
     def on_button_set_home_current(self, event):  # wxGlade: Preferences.<event_handler>
         x, y = self.calc_home_position()
-        spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
+        spooler, input_driver, output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
         current_x = input_driver.current_x - x
         current_y = input_driver.current_y - y
         self.context.home_adjust_x = int(current_x)

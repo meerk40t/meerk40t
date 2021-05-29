@@ -3,10 +3,7 @@ import wx
 _ = wx.GetTranslation
 
 
-from .icons import (
-    icons8_lock_50,
-    icons8_padlock_50,
-)
+from .icons import icons8_lock_50, icons8_padlock_50
 
 
 class PositionPanel(wx.Panel):
@@ -19,10 +16,17 @@ class PositionPanel(wx.Panel):
         self.text_y = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_w = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_h = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.button_aspect_ratio = wx.BitmapButton(self, wx.ID_ANY, icons8_lock_50.GetBitmap())
-        self.combo_box_units = wx.ComboBox(self, wx.ID_ANY, choices=["mm", "cm", "inch", "mil", "%"], style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.button_aspect_ratio = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_lock_50.GetBitmap()
+        )
+        self.combo_box_units = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=["mm", "cm", "inch", "mil", "%"],
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
         self.combo_box_units.SetSelection(0)
-        
+
         self.__set_properties()
         self.__do_layout()
 
@@ -53,13 +57,13 @@ class PositionPanel(wx.Panel):
         self.context.listen("units", self.space_changed)
         self.context.listen("emphasized", self._update_position)
         self.context.listen("modified", self._update_position)
-        self.context._kernel.listen("lifecycle;shutdown", '', self.finalize)
+        self.context._kernel.listen("lifecycle;shutdown", "", self.finalize)
 
     def finalize(self, *args):
         self.context.unlisten("units", self.space_changed)
         self.context.unlisten("emphasized", self._update_position)
         self.context.unlisten("modified", self._update_position)
-        self.context._kernel.unlisten("lifecycle;shutdown", '', self.finalize)
+        self.context._kernel.unlisten("lifecycle;shutdown", "", self.finalize)
 
     def __set_properties(self):
         # begin wxGlade: PositionPanel.__set_properties
@@ -70,7 +74,9 @@ class PositionPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
         sizer_panel = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_units = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Units:"), wx.HORIZONTAL)
+        sizer_units = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Units:"), wx.HORIZONTAL
+        )
         sizer_h = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "H:"), wx.HORIZONTAL)
         sizer_w = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "W:"), wx.HORIZONTAL)
         sizer_y = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Y:"), wx.HORIZONTAL)
@@ -200,9 +206,7 @@ class PositionPanel(wx.Panel):
             else:
                 if self.position_aspect_ratio:
                     self.position_ignore_update = True
-                    self.text_w.SetValue(
-                        "%.2f" % (self.position_w * (new / old))
-                    )
+                    self.text_w.SetValue("%.2f" % (self.position_w * (new / old)))
                     self.position_ignore_update = False
         except (ValueError, ZeroDivisionError):
             pass
@@ -264,4 +268,3 @@ class PositionPanel(wx.Panel):
             return
         self.position_units = self.combo_box_units.GetSelection()
         self._update_position()
-

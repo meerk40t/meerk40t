@@ -7,11 +7,11 @@ import os
 import sys
 import traceback
 
+from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
 from .jog import Jog, MovePanel
-from .position import PositionPanel
-from ..core.cutcode import CutCode
 from .mwindow import MWindow
+from .position import PositionPanel
 from .simulation import Simulation
 
 try:
@@ -58,8 +58,10 @@ from ..svgelements import (
 from .about import About
 from .bufferview import BufferView
 from .camerainteface import CameraInterface
+from .console import Console
 from .controller import Controller
 from .devicemanager import DeviceManager
+from .executejob import ExecuteJob
 from .icons import (
     icon_meerk40t,
     icons8_administrative_tools_50,
@@ -70,6 +72,7 @@ from .icons import (
     icons8_camera_50,
     icons8_circle_50,
     icons8_comments_50,
+    icons8_computer_support_50,
     icons8_connected_50,
     icons8_console_50,
     icons8_direction_20,
@@ -84,6 +87,7 @@ from .icons import (
     icons8_keyboard_50,
     icons8_laser_beam_20,
     icons8_laser_beam_52,
+    icons8_laser_beam_hazard2_50,
     icons8_lock_50,
     icons8_manager_50,
     icons8_move_50,
@@ -92,6 +96,7 @@ from .icons import (
     icons8_padlock_50,
     icons8_pause_50,
     icons8_place_marker_50,
+    icons8_play_50,
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
@@ -106,18 +111,13 @@ from .icons import (
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_laser_beam_hazard2_50,
-    icons8_computer_support_50,
-    icons8_play_50,
 )
 from .imageproperty import ImageProperty
-from .executejob import ExecuteJob
 from .jobspooler import JobSpooler
 from .keymap import Keymap
 from .laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_BACKGROUND,
-    DRAW_MODE_LINEWIDTH,
     DRAW_MODE_CACHE,
     DRAW_MODE_FILLS,
     DRAW_MODE_FLIPXY,
@@ -127,6 +127,7 @@ from .laserrender import (
     DRAW_MODE_IMAGE,
     DRAW_MODE_INVERT,
     DRAW_MODE_LASERPATH,
+    DRAW_MODE_LINEWIDTH,
     DRAW_MODE_PATH,
     DRAW_MODE_REFRESH,
     DRAW_MODE_RETICLE,
@@ -140,7 +141,6 @@ from .laserrender import (
 from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
 from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
-from .tcp.tcpcontroller import TCPController
 from .moshi.moshicontrollergui import MoshiControllerGui
 from .moshi.moshidrivergui import MoshiDriverGui
 from .navigation import Navigation
@@ -151,22 +151,22 @@ from .preferences import Preferences
 from .rasterwizard import RasterWizard
 from .rotarysettings import RotarySettings
 from .settings import Settings
-from .console import Console
+from .tcp.tcpcontroller import TCPController
 from .textproperty import TextProperty
 from .usbconnect import UsbConnect
 from .widget import (
+    DrawTool,
     ElementsWidget,
     GridWidget,
     GuideWidget,
     LaserPathWidget,
     RectSelectWidget,
+    RectTool,
     ReticleWidget,
     Scene,
-    SelectionWidget,
     ScenePanel,
+    SelectionWidget,
     ToolContainer,
-    DrawTool,
-    RectTool,
 )
 
 """
@@ -510,7 +510,8 @@ class MeerK40t(MWindow):
                 self.on_pane_reshow(pane)
                 manager.Update()
             return
-        pane = (aui.AuiPaneInfo()
+        pane = (
+            aui.AuiPaneInfo()
             .Name("ribbon")
             .Top()
             .TopDockable()
@@ -520,7 +521,8 @@ class MeerK40t(MWindow):
             .MinSize(150, 150)
             .FloatingSize((400, 150))
             .Caption("Ribbon")
-            .CaptionVisible(False))
+            .CaptionVisible(False)
+        )
         pane.dock_proportion = 8
         self._mgr.AddPane(
             self._ribbon,
@@ -535,7 +537,8 @@ class MeerK40t(MWindow):
                 self.on_pane_reshow(pane)
                 manager.Update()
             return
-        pane = (aui.AuiPaneInfo()
+        pane = (
+            aui.AuiPaneInfo()
             .Name("tree")
             .Left()
             .MinSize(200, -1)
@@ -544,7 +547,8 @@ class MeerK40t(MWindow):
             .RightDockable()
             .BottomDockable(False)
             .Caption("Tree")
-            .TopDockable(False))
+            .TopDockable(False)
+        )
         pane.dock_proportion = 5
         self._mgr.AddPane(
             self.wxtree,
@@ -560,12 +564,14 @@ class MeerK40t(MWindow):
                 manager.Update()
             return
         panel = PositionPanel(self, wx.ID_ANY, context=self.context)
-        pane = (aui.AuiPaneInfo()
+        pane = (
+            aui.AuiPaneInfo()
             .Bottom()
             .MinSize(-1, -1)
             .MaxSize(600, 75)
             .Caption("Position")
-            .Name("position"))
+            .Name("position")
+        )
         pane.dock_proportion = 4
         self._mgr.AddPane(
             panel,
@@ -627,9 +633,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), panel)
         pane = aui.AuiPaneInfo().Bottom().Caption("Home").Name("home")
         pane.dock_proportion = 1
-        self._mgr.AddPane(
-            panel, pane
-        )
+        self._mgr.AddPane(panel, pane)
 
     def pause_pane(self, manager):
         pane = manager.GetPane("pause")
@@ -661,9 +665,7 @@ class MeerK40t(MWindow):
         pause.SetSize(pause.GetBestSize())
         pane = aui.AuiPaneInfo().Caption("Pause").Bottom().Name("pause")
         pane.dock_proportion = 1
-        manager.AddPane(
-            pause, pane
-        )
+        manager.AddPane(pause, pane)
 
     def stop_pane(self, manager):
         pane = manager.GetPane("stop")

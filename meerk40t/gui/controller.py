@@ -5,7 +5,7 @@
 
 import wx
 
-from .icons import ( icons8_connected_50)
+from .icons import icons8_connected_50
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -15,7 +15,12 @@ class Controller(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(423, 131, *args, **kwds)
 
-        self.text_controller_message = wx.TextCtrl(self, wx.ID_ANY, "The output of the selected device is not a controller, or provides no graphical user interface.", style=wx.TE_CENTRE | wx.TE_MULTILINE | wx.TE_READONLY)
+        self.text_controller_message = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            "The output of the selected device is not a controller, or provides no graphical user interface.",
+            style=wx.TE_CENTRE | wx.TE_MULTILINE | wx.TE_READONLY,
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -26,7 +31,16 @@ class Controller(MWindow):
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle("Controller")
-        self.text_controller_message.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        self.text_controller_message.SetFont(
+            wx.Font(
+                14,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
         # end wxGlade
 
     def __do_layout(self):

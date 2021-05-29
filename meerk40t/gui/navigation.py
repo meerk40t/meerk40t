@@ -594,7 +594,9 @@ class Navigation(MWindow):
             self.text_f.SetValue(str(matrix.f))
 
     def on_position_update(self, origin, *args):
-        spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
+        spooler, input_driver, output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
         self.text_position_x.SetValue(str(input_driver.current_x))
         self.text_position_y.SetValue(str(input_driver.current_y))
 
@@ -818,7 +820,9 @@ class Navigation(MWindow):
 
     def on_scale_down(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 19.0 / 20.0
-        spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
+        spooler, input_driver, output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
         self.context(
             "scale %f %f %f %f\n"
             % (
@@ -832,7 +836,9 @@ class Navigation(MWindow):
 
     def on_scale_up(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
-        spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
+        spooler, input_driver, output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
         self.context(
             "scale %f %f %f %f\n"
             % (
@@ -873,13 +879,22 @@ class Navigation(MWindow):
         self.matrix_updated()
 
     def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
-        spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
-        self.context("rotate %fdeg %f %f\n" % (-5, input_driver.current_x, input_driver.current_y))
+        spooler, input_driver, output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
+        self.context(
+            "rotate %fdeg %f %f\n"
+            % (-5, input_driver.current_x, input_driver.current_y)
+        )
         self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
-        spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
-        self.context("rotate %fdeg %f %f\n" % (5, input_driver.current_x, input_driver.current_y))
+        spooler, input_driver, output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
+        self.context(
+            "rotate %fdeg %f %f\n" % (5, input_driver.current_x, input_driver.current_y)
+        )
         self.matrix_updated()
 
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>

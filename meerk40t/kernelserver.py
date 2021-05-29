@@ -12,15 +12,25 @@ def plugin(kernel, lifecycle=None):
             "port", "p", type=int, default=23, help="port to listen on."
         )
         @kernel.console_option(
-            "silent", "s", type=bool, action="store_true", help="do not watch server channels"
+            "silent",
+            "s",
+            type=bool,
+            action="store_true",
+            help="do not watch server channels",
         )
         @kernel.console_option(
-            "quit", "q", type=bool, action="store_true", help="shutdown current lhyserver"
+            "quit",
+            "q",
+            type=bool,
+            action="store_true",
+            help="shutdown current lhyserver",
         )
         @kernel.console_command(
             "consoleserver", help="starts a console_server on port 23 (telnet)"
         )
-        def server_console(command, channel, _, port=23, silent=False, quit=False, **kwargs):
+        def server_console(
+            command, channel, _, port=23, silent=False, quit=False, **kwargs
+        ):
             root = kernel.root
             try:
                 server = root.open_as("module/TCPServer", "console-server", port=port)
@@ -36,11 +46,12 @@ def plugin(kernel, lifecycle=None):
 
                 recv = root.channel("console-server/recv")
                 recv.watch(root.console)
-                channel(_("%s %s console server on port: %d" % (
-                    kernel.name,
-                    kernel.version,
-                    port
-                )))
+                channel(
+                    _(
+                        "%s %s console server on port: %d"
+                        % (kernel.name, kernel.version, port)
+                    )
+                )
 
                 if not silent:
                     console = root.channel("console")

@@ -14,9 +14,8 @@ from meerk40t.tools.rasterplotter import (
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
-from ..svgelements import Color, Path, Point, Polygon, Group
+from ..svgelements import Color, Group, Path, Point, Polygon
 from ..tools.pathtools import VectorMontonizer
-
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
@@ -204,7 +203,10 @@ class CutGroup(list, CutObject, ABC):
     CutGroups. However, the CutObjects must be cut *after* the groups within the
     CutGroup is cut.
     """
-    def __init__(self, parent, children=(), settings=None, constrained=False, closed=False):
+
+    def __init__(
+        self, parent, children=(), settings=None, constrained=False, closed=False
+    ):
         list.__init__(self, children)
         CutObject.__init__(self, parent=parent, settings=settings)
         self.closed = closed
@@ -214,7 +216,10 @@ class CutGroup(list, CutObject, ABC):
         return CutGroup(self.parent, self)
 
     def __repr__(self):
-        return "CutGroup(children=%s, parent=%s)" % (list.__repr__(self), str(self.parent))
+        return "CutGroup(children=%s, parent=%s)" % (
+            list.__repr__(self),
+            str(self.parent),
+        )
 
     def reversible(self):
         return False
@@ -326,7 +331,7 @@ class CutCode(CutGroup):
         """
         if context is None:
             context = self
-        for index in range(len(context) -1, -1, -1):
+        for index in range(len(context) - 1, -1, -1):
             c = context[index]
             if not isinstance(c, CutGroup):
                 continue
@@ -341,7 +346,7 @@ class CutCode(CutGroup):
         """
         if context is None:
             context = self
-        index = len(context)-1
+        index = len(context) - 1
         while index != -1:
             c = context[index]
             if isinstance(c, CutGroup):
@@ -407,7 +412,7 @@ class CutCode(CutGroup):
         while True:
             closest = None
             reverse = False
-            distance = float('inf')
+            distance = float("inf")
             for cut in cc.candidate():
                 s = cut.start()
                 s = complex(s[0], s[1])
@@ -544,7 +549,9 @@ class QuadCut(CutObject):
         return self._control
 
     def length(self):
-        return Point.distance(self.start(), self.c()) + Point.distance(self.c(), self.end())
+        return Point.distance(self.start(), self.c()) + Point.distance(
+            self.c(), self.end()
+        )
 
     def generator(self):
         start = self.start()
@@ -574,7 +581,11 @@ class CubicCut(CutObject):
         return self._control2 if self.normal else self._control1
 
     def length(self):
-        return Point.distance(self.start(), self.c1()) + Point.distance(self.c1(), self.c2()) + Point.distance(self.c2(), self.end())
+        return (
+            Point.distance(self.start(), self.c1())
+            + Point.distance(self.c1(), self.c2())
+            + Point.distance(self.c2(), self.end())
+        )
 
     def generator(self):
         start = self.start()
@@ -716,7 +727,11 @@ class RasterCut(CutObject):
         return Point(self.plot.final_position_in_scene())
 
     def length(self):
-        return self.width * self.height + (self.overscan * self.height) + (self.height * self.step)
+        return (
+            self.width * self.height
+            + (self.overscan * self.height)
+            + (self.height * self.step)
+        )
 
     def major_axis(self):
         return 0 if self.plot.horizontal else 1

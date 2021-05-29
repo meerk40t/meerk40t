@@ -1,5 +1,5 @@
-import threading
 import socket
+import threading
 import time
 
 from ..kernel import Modifier
@@ -13,9 +13,7 @@ def plugin(kernel, lifecycle=None):
         kernel_root = kernel.root
         kernel_root.activate("modifier/Outputs")
 
-        @kernel.console_argument(
-            "port", type=int, help="Port of TCPOutput to change."
-        )
+        @kernel.console_argument("port", type=int, help="Port of TCPOutput to change.")
         @kernel.console_command(
             "port",
             help="change the port of the tcpdevice",
@@ -41,7 +39,9 @@ class FileOutput:
         return True
 
     def write(self, data):
-        with open(self.filename, "ab" if isinstance(data, (bytes, bytearray)) else "a") as stream:
+        with open(
+            self.filename, "ab" if isinstance(data, (bytes, bytearray)) else "a"
+        ) as stream:
             stream.write(data)
             stream.flush()
 
@@ -102,7 +102,9 @@ class TCPOutput:
 
     def _start(self):
         if self.thread is None:
-            self.thread = self.context.threaded(self._sending, thread_name="sender-%d" % self.port, result=self._stop)
+            self.thread = self.context.threaded(
+                self._sending, thread_name="sender-%d" % self.port, result=self._stop
+            )
 
     def _stop(self, *args):
         self.thread = None

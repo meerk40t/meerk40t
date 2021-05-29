@@ -874,7 +874,7 @@ class Kernel:
             name="kernel.signals",
             interval=0.005,
             run_main=True,
-            conditional=lambda: not self._is_queue_processing
+            conditional=lambda: not self._is_queue_processing,
         )
         self.bootstrap("boot")
         self.register("control/Debug Device", self._start_debugging)
@@ -1051,10 +1051,10 @@ class Kernel:
         def decor(func):
             kwargs["name"] = name
             kwargs["short"] = short
-            if 'action' in kwargs:
+            if "action" in kwargs:
                 kwargs["type"] = bool
-            elif 'type' not in kwargs:
-                kwargs['type'] = str
+            elif "type" not in kwargs:
+                kwargs["type"] = str
             func.options.insert(0, kwargs)
             return func
 
@@ -1064,8 +1064,8 @@ class Kernel:
     def console_argument(name: str, **kwargs) -> Callable:
         def decor(func):
             kwargs["name"] = name
-            if 'type' not in kwargs:
-                kwargs['type'] = str
+            if "type" not in kwargs:
+                kwargs["type"] = str
             func.arguments.insert(0, kwargs)
             return func
 
@@ -1555,7 +1555,7 @@ class Kernel:
         interval: float = 1.0,
         times: int = None,
         run_main: bool = False,
-        conditional: Callable = None
+        conditional: Callable = None,
     ) -> "Job":
         """
         Adds a job to the scheduler.
@@ -1566,14 +1566,27 @@ class Kernel:
         :param times: limit on number of executions.
         :return: Reference to the job added.
         """
-        job = Job(job_name=name, process=run, args=args, interval=interval, times=times, run_main=run_main, conditional=conditional)
+        job = Job(
+            job_name=name,
+            process=run,
+            args=args,
+            interval=interval,
+            times=times,
+            run_main=run_main,
+            conditional=conditional,
+        )
         return self.schedule(job)
 
     def remove_job(self, job: "Job") -> "Job":
         return self.unschedule(job)
 
     def set_timer(
-        self, command: str, name: str = None, times: int = 1, interval: float = 1.0, run_main: bool=False
+        self,
+        command: str,
+        name: str = None,
+        times: int = 1,
+        interval: float = 1.0,
+        run_main: bool = False,
     ):
         if name is None or len(name) == 0:
             i = 1
@@ -1591,7 +1604,7 @@ class Kernel:
                 interval=interval,
                 times=times,
                 job_name=name,
-                run_main=run_main
+                run_main=run_main,
             )
         )
 
@@ -1961,14 +1974,36 @@ class Kernel:
             else:
                 self._untick_command(" ".join(args))
 
-        @self.console_option("off", "o", action="store_true", help="Turn this timer off")
-        @self.console_option("gui", "g", action="store_true", help="Run this timer in the gui-thread")
-        @self.console_argument("times", help="Number of times this timer should execute.")
-        @self.console_argument("duration", type=float, help="How long in seconds between/before should this be run.")
-        @self.console_command(
-            "timer.*", regex=True, help="run the command a given number of times with a given duration between."
+        @self.console_option(
+            "off", "o", action="store_true", help="Turn this timer off"
         )
-        def timer(command, channel, _, times=None, duration=None, off=False, gui=False, remainder=None, **kwargs):
+        @self.console_option(
+            "gui", "g", action="store_true", help="Run this timer in the gui-thread"
+        )
+        @self.console_argument(
+            "times", help="Number of times this timer should execute."
+        )
+        @self.console_argument(
+            "duration",
+            type=float,
+            help="How long in seconds between/before should this be run.",
+        )
+        @self.console_command(
+            "timer.*",
+            regex=True,
+            help="run the command a given number of times with a given duration between.",
+        )
+        def timer(
+            command,
+            channel,
+            _,
+            times=None,
+            duration=None,
+            off=False,
+            gui=False,
+            remainder=None,
+            **kwargs
+        ):
             if times == "off":
                 off = True
                 times = None
@@ -2029,7 +2064,7 @@ class Kernel:
                     name=name,
                     times=times,
                     interval=duration,
-                    run_main=gui
+                    run_main=gui,
                 )
             except ValueError:
                 channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
@@ -2059,7 +2094,9 @@ class Kernel:
                     channel(context_name)
             return
 
-        @self.console_option("path", "p", type=str, default="/", help="Path of variables to set.")
+        @self.console_option(
+            "path", "p", type=str, default="/", help="Path of variables to set."
+        )
         @self.console_command("set", help="set [<key> <value>]")
         def set(channel, _, path=None, args=tuple(), **kwargs):
             relevant_context = None
@@ -2105,9 +2142,7 @@ class Kernel:
         @self.console_command("control", help="control [<executive>]")
         def control(channel, _, path=None, remainder=None, **kwargs):
             if remainder is None:
-                for control_name in self.root.match(
-                    "[0-9]+/control", suffix=True
-                ):
+                for control_name in self.root.match("[0-9]+/control", suffix=True):
                     channel(control_name)
                 return
 
@@ -2465,7 +2500,13 @@ class CommandMatchRejected(BaseException):
 
 
 class Channel:
-    def __init__(self, name: str, buffer_size: int = 0, line_end: Optional[str] = None, timestamp: bool=False):
+    def __init__(
+        self,
+        name: str,
+        buffer_size: int = 0,
+        line_end: Optional[str] = None,
+        timestamp: bool = False,
+    ):
         self.watchers = []
         self.greet = None
         self.name = name
@@ -2490,7 +2531,7 @@ class Channel:
             message = message + self.line_end
         if self.timestamp:
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
-            message = ts + message.replace('\n', '\n%s' % ts)
+            message = ts + message.replace("\n", "\n%s" % ts)
         for w in self.watchers:
             w(message)
         if self.buffer is not None:
@@ -2539,7 +2580,7 @@ class Job:
         times: Optional[int] = None,
         job_name: Optional[str] = None,
         run_main: bool = False,
-        conditional: Callable = None
+        conditional: Callable = None,
     ):
         self.job_name = job_name
         self.state = STATE_INITIALIZE
@@ -2567,7 +2608,11 @@ class Job:
 
     @property
     def scheduled(self) -> bool:
-        return self._next_run is not None and time.time() >= self._next_run and (self.conditional is None or self.conditional())
+        return (
+            self._next_run is not None
+            and time.time() >= self._next_run
+            and (self.conditional is None or self.conditional())
+        )
 
     def cancel(self) -> None:
         self.times = -1
@@ -2582,9 +2627,11 @@ class ConsoleFunction(Job):
         times: Optional[int] = None,
         job_name: Optional[str] = None,
         run_main: bool = False,
-        conditional: Callable = None
+        conditional: Callable = None,
     ):
-        Job.__init__(self, self.__call__, None, interval, times, job_name, run_main, conditional)
+        Job.__init__(
+            self, self.__call__, None, interval, times, job_name, run_main, conditional
+        )
         self.context = context
         self.data = data
 

@@ -1012,7 +1012,7 @@ class MoshiController(Module):
             self._thread = self.context.threaded(
                 self._thread_data_send,
                 thread_name="MoshiPipe(%s)" % (self.context._path),
-                result=self.stop
+                result=self.stop,
             )
             self.update_state(STATE_INITIALIZE)
 

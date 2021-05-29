@@ -1,4 +1,3 @@
-
 import wx
 
 from meerk40t.gui.icons import icons8_file_50
@@ -10,10 +9,21 @@ _ = wx.GetTranslation
 class FileOutput(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(312, 155, *args, **kwds)
-        self.spooler, self.input_driver, self.output = self.context.registered["device/%s" % self.context.root.active]
+        self.spooler, self.input_driver, self.output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
         self.text_filename = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.radio_file = wx.RadioBox(self, wx.ID_ANY, "File", choices=["File Overwrite", "File Append", "File Increment"], majorDimension=1, style=wx.RA_SPECIFY_COLS)
-        self.text_info = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY)
+        self.radio_file = wx.RadioBox(
+            self,
+            wx.ID_ANY,
+            "File",
+            choices=["File Overwrite", "File Append", "File Increment"],
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
+        )
+        self.text_info = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
+        )
 
         self.__set_properties()
         self.__do_layout()

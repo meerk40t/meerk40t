@@ -11,7 +11,14 @@ class Console(MWindow):
         super().__init__(581, 410, *args, **kwds)
 
         self.text_main = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_AUTO_URL
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_BESTWRAP
+            | wx.TE_MULTILINE
+            | wx.TE_READONLY
+            | wx.TE_RICH2
+            | wx.TE_AUTO_URL,
         )
         self.text_main.SetFont(
             wx.Font(
@@ -63,6 +70,7 @@ class Console(MWindow):
             urlEnd = event.GetURLEnd()
             url = self.text_main.GetRange(urlStart, urlEnd)
             import webbrowser
+
             webbrowser.open_new_tab(url)
 
     def __set_properties(self):

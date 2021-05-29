@@ -15,7 +15,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
 )
 from ..kernel import Modifier
-from ..svgelements import Group, Length, Path, Polygon, SVGElement, SVGImage, SVGText
+from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .elements import LaserOperation
 
@@ -437,12 +437,12 @@ class Planner(Modifier):
                     plan[i] = c.as_blob(cut_inner_first=self.context.opt_inner_first)
                     if plan[i] is None:
                         continue
-                    if i != 0 and isinstance(plan[i-1], CutCode):
-                        plan[i-1].extend(plan[i])
-                        if plan[i].mode == 'constrained':
-                            plan[i-1].mode = 'constrained'
-                        plan[i] = plan[i-1]
-                        plan[i-1] = None
+                    if i != 0 and isinstance(plan[i - 1], CutCode):
+                        plan[i - 1].extend(plan[i])
+                        if plan[i].mode == "constrained":
+                            plan[i - 1].mode = "constrained"
+                        plan[i] = plan[i - 1]
+                        plan[i - 1] = None
                     c.settings.jog_distance = self.context.opt_jog_minimum
                     c.settings.jog_enable = self.context.opt_rapid_between
                 except AttributeError:
@@ -763,7 +763,9 @@ class Planner(Modifier):
     def jobadd_scale_rotary(self):
         def scale_for_rotary():
             r = self.context.get_context("rotary/1")
-            spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
+            spooler, input_driver, output = self.context.registered[
+                "device/%s" % self.context.root.active
+            ]
             scale_str = "scale(%f,%f,%f,%f)" % (
                 r.scale_x,
                 r.scale_y,

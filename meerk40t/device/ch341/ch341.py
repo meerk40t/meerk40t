@@ -10,6 +10,7 @@ class Connection:
     """
     A single connection to an CH341 device.
     """
+
     def __init__(self, channel, state):
         self.channel = channel
         self.state = state
@@ -85,6 +86,7 @@ class Handler:
     """
     Handlers provide an implementation of a particular backend tasked with providing connections.
     """
+
     def __init__(self, channel, status):
         self.channel = channel
         self.status = status

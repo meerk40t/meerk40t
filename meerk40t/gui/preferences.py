@@ -11,7 +11,12 @@ _ = wx.GetTranslation
 class Preferences(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(423, 110, *args, **kwds)
-        self.text_controller_message = wx.TextCtrl(self, wx.ID_ANY, "The  input/driver properties of the selected device provides no graphical user interface.", style=wx.TE_CENTRE | wx.TE_MULTILINE | wx.TE_READONLY)
+        self.text_controller_message = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            "The  input/driver properties of the selected device provides no graphical user interface.",
+            style=wx.TE_CENTRE | wx.TE_MULTILINE | wx.TE_READONLY,
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -23,7 +28,16 @@ class Preferences(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
-        self.text_controller_message.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        self.text_controller_message.SetFont(
+            wx.Font(
+                14,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
         # end wxGlade
 
     def __do_layout(self):
@@ -44,7 +58,6 @@ class Preferences(MWindow):
         if origin == self.context._path:
             return
         self.Close()
-
 
 
 # class Preferences(MWindow):

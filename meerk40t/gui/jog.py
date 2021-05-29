@@ -6,6 +6,7 @@ _ = wx.GetTranslation
 
 
 from .icons import (
+    icons8_center_of_gravity_50,
     icons8_down_50,
     icons8_down_left_50,
     icons8_down_right_50,
@@ -16,7 +17,7 @@ from .icons import (
     icons8_right_50,
     icons8_up_50,
     icons8_up_left_50,
-    icons8_up_right_50, icons8_center_of_gravity_50,
+    icons8_up_right_50,
 )
 
 MILS_IN_MM = 39.3701
@@ -203,19 +204,23 @@ class Jog(wx.Panel):
 
 
 class MovePanel(wx.Panel):
-    def __init__(self, *args, context=None,**kwds):
+    def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: MovePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.button_navigate_move_to = wx.BitmapButton(self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap())
+        self.button_navigate_move_to = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap()
+        )
         self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, "0in")
         self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, "0in")
 
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to
+        )
         # end wxGlade
         self.bed_dim = context.root
         self.bed_dim.setting(int, "bed_width", 310)  # Default Value
@@ -231,7 +236,9 @@ class MovePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: MovePanel.__do_layout
-        sizer_12 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Move To"), wx.HORIZONTAL)
+        sizer_12 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Move To"), wx.HORIZONTAL
+        )
         sizer_13 = wx.BoxSizer(wx.VERTICAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
@@ -254,8 +261,12 @@ class MovePanel(wx.Panel):
         try:
             width = self.bed_dim.bed_width * MILS_IN_MM
             height = self.bed_dim.bed_height * MILS_IN_MM
-            x = Length(self.text_position_x.GetValue()).value(ppi=1000.0, relative_length=width)
-            y = Length(self.text_position_y.GetValue()).value(ppi=1000.0, relative_length=height)
+            x = Length(self.text_position_x.GetValue()).value(
+                ppi=1000.0, relative_length=width
+            )
+            y = Length(self.text_position_y.GetValue()).value(
+                ppi=1000.0, relative_length=height
+            )
             if x > width or y > height or x < 0 or y < 0:
                 dlg = wx.MessageDialog(
                     None,

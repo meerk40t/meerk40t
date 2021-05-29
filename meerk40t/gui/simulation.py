@@ -1,12 +1,17 @@
 import wx
 
-from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard2_50, icons8_pause_50
-from .laserrender import LaserRender
-from .mwindow import MWindow
-from .widget import GridWidget, Widget, ScenePanel
 from ..core.cutcode import CutCode
 from ..kernel import Job
 from ..svgelements import Matrix
+from .icons import (
+    icons8_laser_beam_hazard2_50,
+    icons8_pause_50,
+    icons8_play_50,
+    icons8_route_50,
+)
+from .laserrender import LaserRender
+from .mwindow import MWindow
+from .widget import GridWidget, ScenePanel, Widget
 
 _ = wx.GetTranslation
 
@@ -27,7 +32,12 @@ class Simulation(MWindow, Job):
         self.interval = 0.1
 
         self.plan_name = plan_name
-        self.operations, original, commands, plan_name = self.context.root.default_plan()
+        (
+            self.operations,
+            original,
+            commands,
+            plan_name,
+        ) = self.context.root.default_plan()
         self.cutcode = CutCode()
 
         for c in self.operations:
@@ -56,7 +66,9 @@ class Simulation(MWindow, Job):
         # self.Simulation_menubar.Append(wxglade_tmp_menu, "Optimize")
         # self.SetMenuBar(self.Simulation_menubar)
         # # Menu Bar end
-        self.view_pane = ScenePanel(self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.WANTS_CHARS)
+        self.view_pane = ScenePanel(
+            self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.WANTS_CHARS
+        )
         self.widget_scene = self.view_pane.scene
 
         m = max(self.max, 1)
@@ -126,7 +138,9 @@ class Simulation(MWindow, Job):
         # end wxGlade
 
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
-        self.widget_scene.add_scenewidget(SimulationTravelWidget(self.widget_scene, self))
+        self.widget_scene.add_scenewidget(
+            SimulationTravelWidget(self.widget_scene, self)
+        )
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.reticle = SimReticleWidget(self.widget_scene, self)
         self.widget_scene.add_interfacewidget(self.reticle)
@@ -226,7 +240,12 @@ class Simulation(MWindow, Job):
         self.context.setting(int, "units_index", 0)
         self.context.listen("refresh_scene", self.on_refresh_scene)
 
-        bbox = (0, 0, self.bed_dim.bed_width * MILS_PER_MM, self.bed_dim.bed_height * MILS_PER_MM)
+        bbox = (
+            0,
+            0,
+            self.bed_dim.bed_width * MILS_PER_MM,
+            self.bed_dim.bed_height * MILS_PER_MM,
+        )
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
@@ -243,13 +262,15 @@ class Simulation(MWindow, Job):
             t_hours = time_travel // 3600
             t_mins = (time_travel % 3600) // 60
             t_seconds = time_travel % 60
-            self.text_time_travel.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
+            self.text_time_travel.SetValue(
+                "%d:%02d:%02d" % (t_hours, t_mins, t_seconds)
+            )
             time_cuts = self.cutcode.duration_cut()
             t_hours = time_cuts // 3600
             t_mins = (time_cuts % 3600) // 60
             t_seconds = time_cuts % 60
             self.text_time_laser.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
-            time_total = (time_travel + time_cuts)
+            time_total = time_travel + time_cuts
             t_hours = time_total // 3600
             t_mins = (time_total % 3600) // 60
             t_seconds = time_total % 60
@@ -275,6 +296,7 @@ class Simulation(MWindow, Job):
 
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)
+
     #
     # def on_view_travel(self, event):  # wxGlade: Simulation.<event_handler>
     #     print("Event handler 'on_view_travel' not implemented!")
@@ -357,7 +379,7 @@ class SimulationWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc: wx.GraphicsContext):
-        sim_cut = self.sim.cutcode[:self.sim.max]
+        sim_cut = self.sim.cutcode[: self.sim.max]
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
 
 
@@ -414,7 +436,6 @@ class SimReticleWidget(Widget):
             gc.DrawEllipse(x - 20, y - 20, 40, 40)
         except AttributeError:
             pass
-
 
 
 # class SimulationInterfaceWidget(Widget):

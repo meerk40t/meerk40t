@@ -42,21 +42,100 @@ class Settings(MWindow):
         # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
         self.choices = [
-            (_("Save Window Positions"), _("Open Windows at the same place they were last closed"),"windows_save", True),
-            (_("Print Shutdown"), _("Print shutdown log when Meerk40t is closed."),"print_shutdown", False),
-            (_("SVG Uniform Save"), _("Do not treat overwriting SVG differently if they are MeerK40t files"),"uniform_svg", False),
-            (_("Image DPI Scaling"), _("Set: Use the DPI setting saved in the image to scale the image to the correct size. Unset: Use the image as if it were 1000 pixels per inch."),"image_dpi", True),
-            (_("DXF Centering"), _("Fit (scale down if necessary) and center a DXF file within the bed"),"dxf_center", True),
-            (_("Show Negative Guide"), _("Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"),"show_negative_guide", True),
-            (_("Launch Spooler JobStart"), _("Open the Spooler window automatically when you Execute a Job"),"auto_spooler", True),
-            (_("MouseWheel Pan"), _("Default MouseWheel is Zoom (and horizontal pan with Shift key) - this changes MouseWheel to pan, and zoom with Ctrl key"), "mouse_wheel_pan", False),
-            (_("Invert MouseWheel Pan"), _("Reverses the direction of the MouseWheel for horizontal & vertical pan"), "mouse_pan_invert", False),
-            (_("Invert MouseWheel Zoom"), _("Reverses the direction of the MouseWheel for zoom"),"mouse_zoom_invert", False),
-            (_("Default Operation Empty"), _("Sets Operations to Other/Red/Blue if loaded with no operations."), "operation_default_empty", True),
-            (_("Reverse SVG Element Load"), _("Inkscape saves SVG files in reverse order, so this loads them into MeerK40t in the same order as the Inkscape object list"),"svg_reverse", False),
-            (_("Disable ToolTips"), _("If you do not want to see tooltips like this one, check this box.\n"
-                                      "Particularly useful if you have a touch screen.\n"
-                                      "Note: Takes effect when MeerK40t starts"), "disable_tool_tips", False),
+            (
+                _("Save Window Positions"),
+                _("Open Windows at the same place they were last closed"),
+                "windows_save",
+                True,
+            ),
+            (
+                _("Print Shutdown"),
+                _("Print shutdown log when Meerk40t is closed."),
+                "print_shutdown",
+                False,
+            ),
+            (
+                _("SVG Uniform Save"),
+                _(
+                    "Do not treat overwriting SVG differently if they are MeerK40t files"
+                ),
+                "uniform_svg",
+                False,
+            ),
+            (
+                _("Image DPI Scaling"),
+                _(
+                    "Set: Use the DPI setting saved in the image to scale the image to the correct size. Unset: Use the image as if it were 1000 pixels per inch."
+                ),
+                "image_dpi",
+                True,
+            ),
+            (
+                _("DXF Centering"),
+                _("Fit (scale down if necessary) and center a DXF file within the bed"),
+                "dxf_center",
+                True,
+            ),
+            (
+                _("Show Negative Guide"),
+                _(
+                    "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
+                ),
+                "show_negative_guide",
+                True,
+            ),
+            (
+                _("Launch Spooler JobStart"),
+                _("Open the Spooler window automatically when you Execute a Job"),
+                "auto_spooler",
+                True,
+            ),
+            (
+                _("MouseWheel Pan"),
+                _(
+                    "Default MouseWheel is Zoom (and horizontal pan with Shift key) - this changes MouseWheel to pan, and zoom with Ctrl key"
+                ),
+                "mouse_wheel_pan",
+                False,
+            ),
+            (
+                _("Invert MouseWheel Pan"),
+                _(
+                    "Reverses the direction of the MouseWheel for horizontal & vertical pan"
+                ),
+                "mouse_pan_invert",
+                False,
+            ),
+            (
+                _("Invert MouseWheel Zoom"),
+                _("Reverses the direction of the MouseWheel for zoom"),
+                "mouse_zoom_invert",
+                False,
+            ),
+            (
+                _("Default Operation Empty"),
+                _("Sets Operations to Other/Red/Blue if loaded with no operations."),
+                "operation_default_empty",
+                True,
+            ),
+            (
+                _("Reverse SVG Element Load"),
+                _(
+                    "Inkscape saves SVG files in reverse order, so this loads them into MeerK40t in the same order as the Inkscape object list"
+                ),
+                "svg_reverse",
+                False,
+            ),
+            (
+                _("Disable ToolTips"),
+                _(
+                    "If you do not want to see tooltips like this one, check this box.\n"
+                    "Particularly useful if you have a touch screen.\n"
+                    "Note: Takes effect when MeerK40t starts"
+                ),
+                "disable_tool_tips",
+                False,
+            ),
         ]
         self.text_scale_x = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.text_scale_y = wx.TextCtrl(self, wx.ID_ANY, "1.000")
@@ -74,7 +153,9 @@ class Settings(MWindow):
                 def check(e=None):
                     v = checkbox.GetValue()
                     setattr(self.context, param, v)
+
                 return check
+
             cb.Bind(wx.EVT_CHECKBOX, on_checkbox_check(choice, cb))
         from .wxmeerk40t import supported_languages
 
@@ -151,8 +232,16 @@ class Settings(MWindow):
         self.spin_bedwidth.SetToolTip(_("Width of the laser bed."))
         self.spin_bedheight.SetMinSize((80, 23))
         self.spin_bedheight.SetToolTip(_("Height of the laser bed."))
-        self.text_scale_x.SetToolTip(_("Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"))
-        self.text_scale_y.SetToolTip(_("Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"))
+        self.text_scale_x.SetToolTip(
+            _(
+                "Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+            )
+        )
+        self.text_scale_y.SetToolTip(
+            _(
+                "Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+            )
+        )
         self.text_scale_x.Enable(False)
         self.text_scale_y.Enable(False)
         # end wxGlade
@@ -161,10 +250,16 @@ class Settings(MWindow):
         # begin wxGlade: Settings.__do_layout
         sizer_settings = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gui_options = wx.BoxSizer(wx.VERTICAL)
-        sizer_bed = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL)
+        sizer_bed = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL
+        )
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_7 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Y Scale Factor")), wx.HORIZONTAL)
-        sizer_4 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("X Scale Factor")), wx.HORIZONTAL)
+        sizer_7 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Y Scale Factor")), wx.HORIZONTAL
+        )
+        sizer_4 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("X Scale Factor")), wx.HORIZONTAL
+        )
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.StaticBoxSizer(

@@ -1,3 +1,5 @@
+from meerk40t.tools.zinglplotter import ZinglPlotter
+
 from ..device.basedevice import (
     PLOT_AXIS,
     PLOT_DIRECTION,
@@ -6,7 +8,6 @@ from ..device.basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
 )
-from meerk40t.tools.zinglplotter import ZinglPlotter
 
 """
 
@@ -238,7 +239,7 @@ class PlotPlanner:
                 continue
             x, y, on = event
             power = self.settings.power
-            #TODO: REENABLE WHEN SETTINGS.PPI CAN BE SET.
+            # TODO: REENABLE WHEN SETTINGS.PPI CAN BE SET.
             # if not self.settings.ppi_enabled:
             #     power = 1000
             self.ppi_total += power * on

@@ -87,7 +87,10 @@ parser.add_argument(
     help="Specify a default boot device type",
 )
 parser.add_argument(
-    "-p", "--no-plugins", action="store_true", help="Do not load meerk40t.plugins entrypoints"
+    "-p",
+    "--no-plugins",
+    action="store_true",
+    help="Do not load meerk40t.plugins entrypoints",
 )
 
 

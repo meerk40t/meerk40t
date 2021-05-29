@@ -40,16 +40,20 @@ def plugin(kernel, lifecycle=None):
 
         root.device = device
 
-        @kernel.console_option("out", "o", action="store_true", help="match on output rather than driver")
+        @kernel.console_option(
+            "out", "o", action="store_true", help="match on output rather than driver"
+        )
         @kernel.console_command(
             "dev",
             help="delegate commands to currently selected device by input/driver",
             output_type="dev",
-            hidden=True
+            hidden=True,
         )
         def dev(channel, _, remainder=None, out=False, **kwargs):
             try:
-                spooler, input_driver, output = root.registered["device/%s" % root.active]
+                spooler, input_driver, output = root.registered[
+                    "device/%s" % root.active
+                ]
             except (KeyError, ValueError):
                 return
             if remainder is None:
@@ -78,7 +82,9 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(".+", regex=True, hidden=True)
         def virtual_dev(command, channel, _, remainder=None, **kwargs):
             try:
-                spooler, input_driver, output = root.registered["device/%s" % root.active]
+                spooler, input_driver, output = root.registered[
+                    "device/%s" % root.active
+                ]
             except (KeyError, ValueError, AttributeError):
                 raise CommandMatchRejected("No device selected.")
 
@@ -98,7 +104,7 @@ def plugin(kernel, lifecycle=None):
                     pass
             if output is not None:
                 try:
-                    t = output.type + 'out'
+                    t = output.type + "out"
                     match = "command/%s/%s" % (str(t), command)
                     for command_name in root.match(match):
                         command_funct = root.registered[command_name]
@@ -162,9 +168,7 @@ def plugin(kernel, lifecycle=None):
             channel("----------")
             return "device", data
 
-        @kernel.console_argument(
-            "index", type=int, help="Index of device deleted"
-        )
+        @kernel.console_argument("index", type=int, help="Index of device deleted")
         @kernel.console_command(
             "delete",
             help="delete <index>",

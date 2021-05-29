@@ -1,10 +1,10 @@
 import os
 import time
 
-from .plotplanner import PlotPlanner
 from ..core.cutcode import LaserSettings
 from ..device.lasercommandconstants import *
 from ..kernel import Modifier
+from .plotplanner import PlotPlanner
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
@@ -79,16 +79,17 @@ class Driver:
         self.rapid_override_speed_y = 50.0
         self._thread = None
         self._shutdown = False
-        self.context._kernel.listen("lifecycle;ready", '', self.start_driver)
-        self.context._kernel.listen("lifecycle;shutdown", '', self.shutdown)
+        self.context._kernel.listen("lifecycle;ready", "", self.start_driver)
+        self.context._kernel.listen("lifecycle;shutdown", "", self.shutdown)
 
     def shutdown(self, *args, **kwargs):
-        self.context._kernel.unlisten("lifecycle;ready", '', self.start_driver)
-        self.context._kernel.unlisten("lifecycle;shutdown", '', self.shutdown)
+        self.context._kernel.unlisten("lifecycle;ready", "", self.start_driver)
+        self.context._kernel.unlisten("lifecycle;shutdown", "", self.shutdown)
         self._shutdown = True
 
     def start_driver(self, origin=None, *args):
         if self._thread is None:
+
             def clear_thread(*args):
                 self._shutdown = True
 

@@ -259,7 +259,7 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
-        context.root.setting(bool, 'svg_reverse', False)
+        context.root.setting(bool, "svg_reverse", False)
         reverse = context.root.svg_reverse
         bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)
@@ -340,7 +340,12 @@ class SVGLoader:
             elif isinstance(element, Group):
                 new_context = context_node.add(type="group", name=element.id)
                 SVGLoader.parse(
-                    element, elements_modifier, new_context, pathname, scale_factor, reverse
+                    element,
+                    elements_modifier,
+                    new_context,
+                    pathname,
+                    scale_factor,
+                    reverse,
                 )
                 continue
             elif isinstance(element, SVGElement):

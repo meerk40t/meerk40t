@@ -1,4 +1,3 @@
-
 import wx
 
 from meerk40t.core.output import TCPOutput
@@ -11,7 +10,9 @@ _ = wx.GetTranslation
 class TCPController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
-        self.spooler, self.input_driver, self.output = self.context.registered["device/%s" % self.context.root.active]
+        self.spooler, self.input_driver, self.output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
         self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_ip_host = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -23,7 +24,9 @@ class TCPController(MWindow):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect
+        )
         # end wxGlade
         self.max = 0
         self.state = None
@@ -35,14 +38,27 @@ class TCPController(MWindow):
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
-        self.button_device_connect.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.button_device_connect.SetToolTip("Force connection/disconnection from the device.")
+        self.button_device_connect.SetFont(
+            wx.Font(
+                12,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
+        self.button_device_connect.SetToolTip(
+            "Force connection/disconnection from the device."
+        )
         self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
         self.text_status.SetToolTip("Connection status")
         self.text_ip_host.SetToolTip("IP/Host if the server computer")
         self.text_port.SetToolTip("Port for tcp connection on the server computer")
         self.text_buffer_length.SetMinSize((165, 23))
-        self.text_buffer_length.SetToolTip("Current number of bytes in the write buffer.")
+        self.text_buffer_length.SetToolTip(
+            "Current number of bytes in the write buffer."
+        )
         self.text_buffer_max.SetMinSize((165, 23))
         self.text_buffer_max.SetToolTip("Current number of bytes in the write buffer.")
         # end wxGlade
@@ -88,8 +104,8 @@ class TCPController(MWindow):
         self.context.listen("tcp;buffer", self.on_tcp_buffer)
         self.text_ip_host.SetValue(str(self.output.address))
         self.text_port.SetValue(str(self.output.port))
-        self.text_buffer_max.SetValue('0')
-        self.text_buffer_length.SetValue('0')
+        self.text_buffer_max.SetValue("0")
+        self.text_buffer_length.SetValue("0")
         self.context.listen("active", self.on_active_change)
 
     def window_close(self):

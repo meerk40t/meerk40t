@@ -10,15 +10,20 @@ except ImportError:
 
 import wx
 
-from ..kernel import Module, Job
-from ..svgelements import Matrix, Point, Polyline, Path, Color, Rect
+from ..kernel import Job, Module
+from ..svgelements import Matrix, Path, Point, Rect
 from .laserrender import (
+    DRAW_MODE_ANIMATE,
     DRAW_MODE_BACKGROUND,
+    DRAW_MODE_FLIPXY,
     DRAW_MODE_GRID,
     DRAW_MODE_GUIDES,
+    DRAW_MODE_INVERT,
     DRAW_MODE_LASERPATH,
+    DRAW_MODE_REFRESH,
     DRAW_MODE_RETICLE,
-    DRAW_MODE_SELECTION, DRAW_MODE_REFRESH, DRAW_MODE_ANIMATE, DRAW_MODE_FLIPXY, DRAW_MODE_INVERT, swizzlecolor
+    DRAW_MODE_SELECTION,
+    swizzlecolor,
 )
 from .zmatrix import ZMatrix
 
@@ -238,11 +243,13 @@ class ScenePanel(wx.Panel):
 class Scene(Module, Job):
     def __init__(self, context, path, gui, **kwargs):
         Module.__init__(self, context, path)
-        Job.__init__(self, job_name="Scene-%s" % path,
-                     process=self.refresh_scene,
-                     conditional=lambda: self.screen_refresh_is_requested,
-                     run_main=True
-                     )
+        Job.__init__(
+            self,
+            job_name="Scene-%s" % path,
+            process=self.refresh_scene,
+            conditional=lambda: self.screen_refresh_is_requested,
+            run_main=True,
+        )
         self.gui = gui
         self.matrix = Matrix()
         self.hittable_elements = list()
@@ -501,7 +508,15 @@ class Scene(Module, Job):
 
 
 class Widget(list):
-    def __init__(self, scene: Scene, left: float=None, top: float=None, right: float=None, bottom: float=None, all: bool=False):
+    def __init__(
+        self,
+        scene: Scene,
+        left: float = None,
+        top: float = None,
+        right: float = None,
+        bottom: float = None,
+        all: bool = False,
+    ):
         """
         All is whether this sends all points.
         """
@@ -1527,7 +1542,7 @@ class CircleBrush:
         self.using = False
 
     def set_location(self, x: float, y: float):
-        self.pos = complex(x,y)
+        self.pos = complex(x, y)
 
     def contains(self, x: float, y: float) -> bool:
         c = complex(x, y)
@@ -1539,7 +1554,12 @@ class CircleBrush:
 
     def drawBrush(self, gc: wx.GraphicsContext):
         gc.SetBrush(self.brush_fill)
-        gc.DrawEllipse(self.pos.real - self.tool_size/2.0, self.pos.imag- self.tool_size/2.0, self.tool_size, self.tool_size)
+        gc.DrawEllipse(
+            self.pos.real - self.tool_size / 2.0,
+            self.pos.imag - self.tool_size / 2.0,
+            self.tool_size,
+            self.tool_size,
+        )
 
 
 class ToolWidget(Widget):
@@ -1613,9 +1633,9 @@ class RectTool(ToolWidget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftdown":
-            self.p1 = complex(space_pos[0],space_pos[1])
+            self.p1 = complex(space_pos[0], space_pos[1])
         elif event_type == "move":
-            self.p2 = complex(space_pos[0],space_pos[1])
+            self.p2 = complex(space_pos[0], space_pos[1])
             self.scene.gui.signal("refresh_scene")
         elif event_type == "leftup":
             try:
@@ -1868,5 +1888,3 @@ class ButtonWidget(Widget):
 
     def clicked(self, window_pos=None, space_pos=None):
         pass
-
-

@@ -87,11 +87,7 @@ class Ch341LibusbDriver:
             device = devices[index]
         except IndexError:
             if self.backend_error_code == LIBUSB_ERROR_ACCESS:
-                self.channel(
-                    _(
-                        "Your OS does not give you permissions to access USB."
-                    )
-                )
+                self.channel(_("Your OS does not give you permissions to access USB."))
                 raise PermissionError
             elif self.backend_error_code == LIBUSB_ERROR_NOT_FOUND:
                 self.channel(

@@ -3,7 +3,6 @@ import re
 
 from ...core.drivers import Driver
 from ...kernel import Module
-from ..lasercommandconstants import *
 from ..basedevice import (
     PLOT_AXIS,
     PLOT_DIRECTION,
@@ -12,6 +11,8 @@ from ..basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
 )
+from ..lasercommandconstants import *
+
 MILS_PER_MM = 39.3701
 
 """
@@ -29,39 +30,53 @@ def plugin(kernel, lifecycle=None):
             "grbl", type=int, help="run grbl-emulator on given port."
         )
         @kernel.console_option(
-            "flip_x","X", type=bool, action="store_true", help="grbl x-flip"
+            "flip_x", "X", type=bool, action="store_true", help="grbl x-flip"
         )
         @kernel.console_option(
-            "flip_y","Y",  type=bool, action="store_true", help="grbl y-flip"
+            "flip_y", "Y", type=bool, action="store_true", help="grbl y-flip"
         )
-        @kernel.console_option("adjust_x", "x", type=int, help="adjust grbl home_x position")
-        @kernel.console_option("adjust_y", "y", type=int, help="adjust grbl home_y position")
+        @kernel.console_option(
+            "adjust_x", "x", type=int, help="adjust grbl home_x position"
+        )
+        @kernel.console_option(
+            "adjust_y", "y", type=int, help="adjust grbl home_y position"
+        )
         @kernel.console_option(
             "port", "p", type=int, default=23, help="port to listen on."
         )
         @kernel.console_option(
-            "silent", "s", type=bool, action="store_true", help="do not watch server channels"
+            "silent",
+            "s",
+            type=bool,
+            action="store_true",
+            help="do not watch server channels",
         )
         @kernel.console_option(
             "watch", "w", type=bool, action="store_true", help="watch send/recv data"
         )
         @kernel.console_option(
-            "quit", "q", type=bool, action="store_true", help="shutdown current lhyserver"
+            "quit",
+            "q",
+            type=bool,
+            action="store_true",
+            help="shutdown current lhyserver",
         )
         @kernel.console_command("grblserver", help="activate the grblserver.")
-        def grblserver(command,
-                       channel,
-                       _,
-                       port=23,
-                       path=None,
-                       flip_x=False,
-                       flip_y=False,
-                       adjust_x=0,
-                       adjust_y=0,
-                       silent=False,
-                       watch=False,
-                       quit=False,
-                       **kwargs):
+        def grblserver(
+            command,
+            channel,
+            _,
+            port=23,
+            path=None,
+            flip_x=False,
+            flip_y=False,
+            adjust_x=0,
+            adjust_y=0,
+            silent=False,
+            watch=False,
+            quit=False,
+            **kwargs
+        ):
             ctx = kernel.get_context(path if path is not None else "/")
             if ctx is None:
                 return
@@ -81,7 +96,6 @@ def plugin(kernel, lifecycle=None):
                     server.events_channel.watch(console)
                     if watch:
                         server.events_channel.watch(console)
-
 
                 emulator.flip_x = flip_x
                 emulator.flip_y = flip_y
@@ -224,7 +238,9 @@ class GRBLEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
 
-        self.spooler, self.input_driver, self.output = context.registered["device/%s" % context.root.active]
+        self.spooler, self.input_driver, self.output = context.registered[
+            "device/%s" % context.root.active
+        ]
 
         self.home_adjust = None
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
@@ -431,7 +447,9 @@ class GRBLEmulator(Module):
                 self.spooler.job(COMMAND_HOME)
                 if self.home_adjust is not None:
                     self.spooler.job(COMMAND_MODE_RAPID)
-                    self.spooler.job(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
+                    self.spooler.job(
+                        COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                    )
                 return 0
                 # return 5  # Homing cycle not enabled by settings.
             return 3  # GRBL '$' system command was not recognized or supported.

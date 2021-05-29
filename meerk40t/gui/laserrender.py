@@ -461,7 +461,9 @@ class LaserRender:
             return bmp
         return image
 
-    def make_thumbnail(self, pil_data, maximum=None, width=None, height=None, dewhite=False):
+    def make_thumbnail(
+        self, pil_data, maximum=None, width=None, height=None, dewhite=False
+    ):
         """Resizes the given pil image into wx.Bitmap object that fits the constraints."""
         image_width, image_height = pil_data.size
         if width is not None and height is None:
@@ -482,7 +484,7 @@ class LaserRender:
         else:
             pil_data = pil_data.copy()
         if dewhite:
-            img = pil_data.convert('L')
+            img = pil_data.convert("L")
             black = Image.new("L", img.size, color="black")
             img = img.point(lambda e: 255 - e)
             black.putalpha(img)

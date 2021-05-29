@@ -383,10 +383,16 @@ def plugin(kernel, lifecycle=None):
             "watch", "w", type=bool, action="store_true", help="watch send/recv data"
         )
         @kernel.console_option(
-            "quit", "q", type=bool, action="store_true", help="shutdown current lhyserver"
+            "quit",
+            "q",
+            type=bool,
+            action="store_true",
+            help="shutdown current lhyserver",
         )
         @kernel.console_command("lhyserver", help="activate the lhyserver.")
-        def lhyserver(channel, _, port=23, silent=False, watch=False, quit=False, **kwargs):
+        def lhyserver(
+            channel, _, port=23, silent=False, watch=False, quit=False, **kwargs
+        ):
             root = kernel.root
             try:
                 spooler, input_driver, output = root.registered[
@@ -1512,9 +1518,7 @@ class LhystudiosController:
         self.start()
 
     def finalize(self, *args, **kwargs):
-        self.context.root.unlisten(
-            "lifecycle;ready", self.on_controller_ready
-        )
+        self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
         if self._thread is not None:
             self.write(b"\x18\n")
 
@@ -1585,7 +1589,9 @@ class LhystudiosController:
         """
         if self._thread is None or not self._thread.is_alive():
             self._thread = self.context.threaded(
-                self._thread_data_send, thread_name="LhyPipe(%s)" % (self.context._path), result=self.stop
+                self._thread_data_send,
+                thread_name="LhyPipe(%s)" % (self.context._path),
+                result=self.stop,
             )
             self._thread.stop = self.stop
             self.update_state(STATE_INITIALIZE)

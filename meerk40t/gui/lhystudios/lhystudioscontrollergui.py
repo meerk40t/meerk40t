@@ -156,7 +156,6 @@ class LhystudiosControllerGui(MWindow):
         self.spin_device_index.SetToolTip(
             "Optional: Distinguish between different lasers using the match criteria below.\n"
             "-1 match anything. 0+ match exactly that value."
-
         )
         self.text_device_address.SetMinSize((55, 23))
         self.spin_device_address.SetMinSize((40, 23))

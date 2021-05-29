@@ -43,10 +43,11 @@ from .cutcode import (
     ArcCut,
     CubicCut,
     CutCode,
+    CutGroup,
     LaserSettings,
     LineCut,
     QuadCut,
-    RasterCut, CutGroup,
+    RasterCut,
 )
 
 
@@ -912,7 +913,9 @@ class LaserOperation(Node):
                         constrained = self._operation == "Cut" and cut_inner_first
                         if closed and constrained:
                             requires_constraint = True
-                        group = CutGroup(context, constrained=constrained, closed=closed)
+                        group = CutGroup(
+                            context, constrained=constrained, closed=closed
+                        )
                         context.append(group)
                         group.path = Path(subpath)
 
@@ -921,12 +924,21 @@ class LaserOperation(Node):
                             if isinstance(seg, Move):
                                 pass  # Move operations are ignored.
                             elif isinstance(seg, Close):
-                                context.append(LineCut(seg.start, seg.end, settings=settings))
+                                context.append(
+                                    LineCut(seg.start, seg.end, settings=settings)
+                                )
                             elif isinstance(seg, Line):
-                                context.append(LineCut(seg.start, seg.end, settings=settings))
+                                context.append(
+                                    LineCut(seg.start, seg.end, settings=settings)
+                                )
                             elif isinstance(seg, QuadraticBezier):
                                 context.append(
-                                    QuadCut(seg.start, seg.control, seg.end, settings=settings)
+                                    QuadCut(
+                                        seg.start,
+                                        seg.control,
+                                        seg.end,
+                                        settings=settings,
+                                    )
                                 )
                             elif isinstance(seg, CubicBezier):
                                 context.append(
@@ -1473,7 +1485,7 @@ class Elemental(Modifier):
         def save(command, channel, _, data=None, name=None, **kwargs):
             if name is None:
                 raise SyntaxError
-            if '/' in name:
+            if "/" in name:
                 raise SyntaxError
             self.save_persistent_operations(name)
             return "ops", list(self.ops())
@@ -1488,7 +1500,7 @@ class Elemental(Modifier):
         def save(command, channel, _, data=None, name=None, **kwargs):
             if name is None:
                 raise SyntaxError
-            if '/' in name:
+            if "/" in name:
                 raise SyntaxError
             self.load_persistent_operations(name)
             return "ops", list(self.ops())
@@ -1914,7 +1926,9 @@ class Elemental(Modifier):
         )
         def align(command, channel, _, data=None, align=None, remainder=None, **kwargs):
             if align is None:
-                channel("top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n<any valid svg:Preserve Aspect Ratio, eg xminymin>")
+                channel(
+                    "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n<any valid svg:Preserve Aspect Ratio, eg xminymin>"
+                )
                 return
             if data is None:
                 elem_branch = self.get(type="branch elems")
@@ -2047,8 +2061,8 @@ class Elemental(Modifier):
                 for e in data:
                     bw = bed_dim.bed_width
                     bh = bed_dim.bed_height
-                    dx = (bw*MILS_IN_MM - left_edge - right_edge) / 2.0
-                    dy = (bh*MILS_IN_MM - top_edge - bottom_edge) / 2.0
+                    dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
+                    dy = (bh * MILS_IN_MM - top_edge - bottom_edge) / 2.0
                     matrix = "translate(%f, %f)" % (dx, dy)
                     for q in e.flat(types=("elem", "group", "file")):
                         obj = q.object
@@ -2056,49 +2070,52 @@ class Elemental(Modifier):
                             obj *= matrix
                         q.modified()
                 self.context.signal("refresh_scene")
-            elif align in ("xminymin",
-                           "xmidymin",
-                           "xmaxymin",
-                           "xminymid",
-                           "xmidymid",
-                           "xmaxymid",
-                           "xminymax",
-                           "xmidymax",
-                           "xmaxymax",
-                           "xminymin meet",
-                           "xmidymin meet",
-                           "xmaxymin meet",
-                           "xminymid meet",
-                           "xmidymid meet",
-                           "xmaxymid meet",
-                           "xminymax meet",
-                           "xmidymax meet",
-                           "xmaxymax meet",
-                           "xminymin slice",
-                           "xmidymin slice",
-                           "xmaxymin slice",
-                           "xminymid slice",
-                           "xmidymid slice",
-                           "xmaxymid slice",
-                           "xminymax slice",
-                           "xmidymax slice",
-                           "xmaxymax slice",
-                            "none",
-                           ):
+            elif align in (
+                "xminymin",
+                "xmidymin",
+                "xmaxymin",
+                "xminymid",
+                "xmidymid",
+                "xmaxymid",
+                "xminymax",
+                "xmidymax",
+                "xmaxymax",
+                "xminymin meet",
+                "xmidymin meet",
+                "xmaxymin meet",
+                "xminymid meet",
+                "xmidymid meet",
+                "xmaxymid meet",
+                "xminymax meet",
+                "xmidymax meet",
+                "xmaxymax meet",
+                "xminymin slice",
+                "xmidymin slice",
+                "xmaxymin slice",
+                "xminymid slice",
+                "xmidymid slice",
+                "xmaxymid slice",
+                "xminymax slice",
+                "xmidymax slice",
+                "xmaxymax slice",
+                "none",
+            ):
                 for e in data:
                     bw = bed_dim.bed_width
                     bh = bed_dim.bed_height
                     from ..svgelements import Viewbox
 
-                    matrix = Viewbox.viewbox_transform(0,
-                                                       0,
-                                                       bw*MILS_IN_MM,
-                                                       bh*MILS_IN_MM,
-                                                       left_edge,
-                                                       top_edge,
-                                                       right_edge-left_edge,
-                                                       bottom_edge-top_edge,
-                                                       align)
+                    matrix = Viewbox.viewbox_transform(
+                        0,
+                        0,
+                        bw * MILS_IN_MM,
+                        bh * MILS_IN_MM,
+                        left_edge,
+                        top_edge,
+                        right_edge - left_edge,
+                        bottom_edge - top_edge,
+                        align,
+                    )
                     for q in e.flat(types=("elem", "group", "file")):
                         obj = q.object
                         if obj is not None:
@@ -2874,9 +2891,7 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def resize(
-            command, x_pos, y_pos, width, height, data=None, **kwargs
-        ):
+        def resize(command, x_pos, y_pos, width, height, data=None, **kwargs):
             if height is None:
                 raise SyntaxError
             try:
@@ -3489,10 +3504,26 @@ class Elemental(Modifier):
             elements.classify(list(elements.elems()))
             self.context.signal("rebuild_tree", 0)
 
-        materials = ["Wood", "Acrylic", "Foam", "Leather", "Cardboard", "Cork", "Textiles", "Paper", "Save-1", "Save-2", "Save-3"]
+        materials = [
+            "Wood",
+            "Acrylic",
+            "Foam",
+            "Leather",
+            "Cardboard",
+            "Cork",
+            "Textiles",
+            "Paper",
+            "Save-1",
+            "Save-2",
+            "Save-3",
+        ]
 
         def union_materials_saved():
-            union = [d for d in self.context.get_context("operations").derivable() if d not in materials and d != "previous"]
+            union = [
+                d
+                for d in self.context.get_context("operations").derivable()
+                if d not in materials and d != "previous"
+            ]
             union.extend(materials)
             return union
 
@@ -3500,33 +3531,23 @@ class Elemental(Modifier):
         @self.tree_values(
             "opname", values=self.context.get_context("operations").derivable
         )
-        @self.tree_operation(
-            _("Load: {opname}"), node_type="branch ops", help=""
-        )
+        @self.tree_operation(_("Load: {opname}"), node_type="branch ops", help="")
         def load_ops(node, opname, **kwargs):
             self.context("operation load %s\n" % opname)
 
         @self.tree_submenu(_("Use"))
-        @self.tree_operation(
-            _("Other/Blue/Red"), node_type="branch ops", help=""
-        )
+        @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
         def default_classifications(node, **kwargs):
             self.context.elements.load_default()
 
         @self.tree_submenu(_("Use"))
-        @self.tree_operation(
-            _("Basic"), node_type="branch ops", help=""
-        )
+        @self.tree_operation(_("Basic"), node_type="branch ops", help="")
         def basic_classifications(node, **kwargs):
             self.context.elements.load_default2()
 
         @self.tree_submenu(_("Save"))
-        @self.tree_values(
-            "opname", values=union_materials_saved
-        )
-        @self.tree_operation(
-            _("{opname}"), node_type="branch ops", help=""
-        )
+        @self.tree_values("opname", values=union_materials_saved)
+        @self.tree_operation(_("{opname}"), node_type="branch ops", help="")
         def save_ops(node, opname="saved", **kwargs):
             self.context("operation save %s\n" % opname)
 
@@ -4189,7 +4210,9 @@ class Elemental(Modifier):
 
     def validate_selected_area(self):
         boundary_points = []
-        for e in self.elem_branch.flat(types=("elem", "file", "group"), emphasized=True):
+        for e in self.elem_branch.flat(
+            types=("elem", "file", "group"), emphasized=True
+        ):
             if e.bounds is None:
                 continue
             box = e.bounds
