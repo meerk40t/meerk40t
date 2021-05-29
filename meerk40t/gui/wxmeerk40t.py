@@ -105,7 +105,10 @@ from .icons import (
     icons8_vector_20,
     icons_centerize,
     icons_evenspace_horiz,
-    icons_evenspace_vert, icons8_laser_beam_hazard_50, icons8_computer_support_50, icons8_play_50,
+    icons_evenspace_vert,
+    icons8_laser_beam_hazard_50,
+    icons8_computer_support_50,
+    icons8_play_50,
 )
 from .imageproperty import ImageProperty
 from .executejob import ExecuteJob
@@ -159,7 +162,11 @@ from .widget import (
     RectSelectWidget,
     ReticleWidget,
     Scene,
-    SelectionWidget, ScenePanel, ToolContainer, DrawTool, RectTool,
+    SelectionWidget,
+    ScenePanel,
+    ToolContainer,
+    DrawTool,
+    RectTool,
 )
 
 """
@@ -326,12 +333,14 @@ ID_TOOL_RECT = wx.NewId()
 ID_TOOL_TEXT = wx.NewId()
 
 _ = wx.GetTranslation
-supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
-                       ('it', u'italiano', wx.LANGUAGE_ITALIAN),
-                       ('fr', u'français', wx.LANGUAGE_FRENCH),
-                       ('de', u'Deutsch', wx.LANGUAGE_GERMAN),
-                       ('es', u'español', wx.LANGUAGE_SPANISH),
-                       ('zh', u'Chinese', wx.LANGUAGE_CHINESE))
+supported_languages = (
+    ("en", u"English", wx.LANGUAGE_ENGLISH),
+    ("it", u"italiano", wx.LANGUAGE_ITALIAN),
+    ("fr", u"français", wx.LANGUAGE_FRENCH),
+    ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
+    ("es", u"español", wx.LANGUAGE_SPANISH),
+    ("zh", u"Chinese", wx.LANGUAGE_CHINESE),
+)
 
 
 def resource_path(relative_path):
@@ -376,11 +385,17 @@ class MeerK40t(MWindow):
         self.__set_tree()
 
         # Define Scene
-        self.scene = ScenePanel(self.context, self, scene_name="Scene", style=wx.EXPAND | wx.WANTS_CHARS)
+        self.scene = ScenePanel(
+            self.context, self, scene_name="Scene", style=wx.EXPAND | wx.WANTS_CHARS
+        )
         self.widget_scene = self.scene.scene
 
         # Define Ribbon.
-        self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE | RB.RIBBON_BAR_SHOW_PANEL_MINIMISE_BUTTONS)
+        self._ribbon = RB.RibbonBar(
+            self,
+            style=RB.RIBBON_BAR_DEFAULT_STYLE
+            | RB.RIBBON_BAR_SHOW_PANEL_MINIMISE_BUTTONS,
+        )
         self.__set_ribbonbar()
 
         self._mgr = aui.AuiManager()
@@ -459,26 +474,26 @@ class MeerK40t(MWindow):
             self._mgr.LoadPerspective(self.context.perspective)
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
-                if hasattr(pane.window, 'initialize'):
+                if hasattr(pane.window, "initialize"):
                     pane.window.initialize()
             else:
-                if hasattr(pane.window, 'noninitialize'):
+                if hasattr(pane.window, "noninitialize"):
                     pane.window.noninitialize()
         self.on_rebuild_tree_request()
 
     def on_pane_active(self, event):
         pane = event.GetPane()
-        if hasattr(pane.window, 'active'):
+        if hasattr(pane.window, "active"):
             pane.window.active()
 
     def on_pane_closed(self, event):
         pane = event.GetPane()
         if pane.IsShown():
-            if hasattr(pane.window, 'finalize'):
+            if hasattr(pane.window, "finalize"):
                 pane.window.finalize()
 
     def on_pane_reshow(self, pane):
-        if hasattr(pane.window, 'initialize'):
+        if hasattr(pane.window, "initialize"):
             pane.window.initialize()
 
     def aui_open_pane(self, pane):
@@ -486,7 +501,7 @@ class MeerK40t(MWindow):
         pane_init(self._mgr)
 
     def ribbon_pane(self, manager):
-        pane = manager.GetPane('ribbon')
+        pane = manager.GetPane("ribbon")
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
@@ -495,9 +510,7 @@ class MeerK40t(MWindow):
                 self.on_pane_reshow(pane)
                 manager.Update()
             return
-        self._mgr.AddPane(
-            self._ribbon,
-            aui.AuiPaneInfo()
+        pane = (aui.AuiPaneInfo()
             .Name("ribbon")
             .Top()
             .TopDockable()
@@ -505,35 +518,41 @@ class MeerK40t(MWindow):
             .RightDockable(False)
             .LeftDockable(False)
             .MinSize(150, 150)
-            .FloatingSize((400,150))
+            .FloatingSize((400, 150))
             .Caption("Ribbon")
-            .CaptionVisible(False),
+            .CaptionVisible(False))
+        pane.dock_proportion = 8
+        self._mgr.AddPane(
+            self._ribbon,
+            pane,
         )
 
     def tree_pane(self, manager):
-        pane = manager.GetPane('tree')
+        pane = manager.GetPane("tree")
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
                 self.on_pane_reshow(pane)
                 manager.Update()
             return
+        pane = (aui.AuiPaneInfo()
+            .Name("tree")
+            .Left()
+            .MinSize(200, -1)
+            .MaxSize(275, -1)
+            .LeftDockable()
+            .RightDockable()
+            .BottomDockable(False)
+            .Caption("Tree")
+            .TopDockable(False))
+        pane.dock_proportion = 5
         self._mgr.AddPane(
             self.wxtree,
-            aui.AuiPaneInfo()
-                .Name("tree")
-                .Left()
-                .MinSize(200, -1)
-                .MaxSize(275, -1)
-                .LeftDockable()
-                .RightDockable()
-                .BottomDockable(False)
-                .Caption("Tree")
-                .TopDockable(False)
+            pane,
         )
 
     def position_pane(self, manager):
-        pane = manager.GetPane('position')
+        pane = manager.GetPane("position")
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
@@ -541,15 +560,20 @@ class MeerK40t(MWindow):
                 manager.Update()
             return
         panel = PositionPanel(self, wx.ID_ANY, context=self.context)
-        self._mgr.AddPane(panel, aui.AuiPaneInfo()
-                          .Float()
-                          .MinSize(-1, -1)
-                          .MaxSize(600, 75)
-                          .Caption("Position")
-                          .Name("position"))
+        pane = (aui.AuiPaneInfo()
+            .Float()
+            .MinSize(-1, -1)
+            .MaxSize(600, 75)
+            .Caption("Position")
+            .Name("position"))
+        pane.dock_proportion = 4
+        self._mgr.AddPane(
+            panel,
+            pane,
+        )
 
     def move_pane(self, manager):
-        pane = manager.GetPane('move')
+        pane = manager.GetPane("move")
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
@@ -557,15 +581,22 @@ class MeerK40t(MWindow):
                 manager.Update()
             return
         panel = MovePanel(self, wx.ID_ANY, context=self.context)
-        self._mgr.AddPane(panel, aui.AuiPaneInfo()
-                          .Right()
-                          .MinSize(150, 75)
-                          .MaxSize(200, 100)
-                          .Caption("Move")
-                          .Name("move"))
+        pane = (
+            aui.AuiPaneInfo()
+            .Right()
+            .MinSize(150, 75)
+            .MaxSize(200, 100)
+            .Caption("Move")
+            .Name("move")
+        )
+        pane.dock_proportion = 1
+        self._mgr.AddPane(
+            panel,
+            pane,
+        )
 
     def jog_pane(self, manager):
-        pane = manager.GetPane('jog')
+        pane = manager.GetPane("jog")
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
@@ -573,15 +604,19 @@ class MeerK40t(MWindow):
                 manager.Update()
             return
         panel = Jog(self, wx.ID_ANY, context=self.context)
-        self._mgr.AddPane(panel, aui.AuiPaneInfo()
-                          .Right()
-                          .MinSize(200, 200)
-                          .MaxSize(300, 300)
-                          .Caption("Navigate-Jog")
-                          .Name("jog"))
+        pane = (
+            aui.AuiPaneInfo()
+            .Right()
+            .MinSize(200, 200)
+            .MaxSize(300, 300)
+            .Caption("Navigate-Jog")
+            .Name("jog")
+        )
+        pane.dock_proportion = 3
+        self._mgr.AddPane(panel, pane)
 
     def home_pane(self, manager):
-        pane = manager.GetPane('home')
+        pane = manager.GetPane("home")
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
@@ -590,23 +625,21 @@ class MeerK40t(MWindow):
             return
         panel = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
         self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), panel)
-        self._mgr.AddPane(panel, aui.AuiPaneInfo()
-                          .Bottom()
-                          .Caption("Home")
-                          .Name("home")
-                          )
+        pane = aui.AuiPaneInfo().Bottom().Caption("Home").Name("home")
+        pane.dock_proportion = 1
+        self._mgr.AddPane(
+            panel, pane
+        )
 
     def pause_pane(self, manager):
-        pane = manager.GetPane('pause')
+        pane = manager.GetPane("pause")
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
                 self.on_pane_reshow(pane)
                 manager.Update()
             return
-        pause = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_pause_50.GetBitmap()
-        )
+        pause = wx.BitmapButton(self, wx.ID_ANY, icons8_pause_50.GetBitmap())
 
         def on_pause_button(e=None):
             try:
@@ -626,13 +659,14 @@ class MeerK40t(MWindow):
         pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         pause.SetToolTip(_("Pause/Resume the controller"))
         pause.SetSize(pause.GetBestSize())
-        manager.AddPane(pause, aui.AuiPaneInfo()
-                        .Caption("Pause")
-                        .Bottom()
-                        .Name("pause"))
+        pane = aui.AuiPaneInfo().Caption("Pause").Bottom().Name("pause")
+        pane.dock_proportion = 1
+        manager.AddPane(
+            pause, pane
+        )
 
     def stop_pane(self, manager):
-        pane = manager.GetPane('stop')
+        pane = manager.GetPane("stop")
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
@@ -657,10 +691,9 @@ class MeerK40t(MWindow):
         stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         stop.SetToolTip(_("Emergency stop/reset the controller."))
         stop.SetSize(stop.GetBestSize())
-        manager.AddPane(stop, aui.AuiPaneInfo()
-                        .Bottom()
-                        .Caption("Stop")
-                        .Name("stop"))
+        pane = aui.AuiPaneInfo().Bottom().Caption("Stop").Name("stop")
+        pane.dock_proportion = 1
+        manager.AddPane(stop, pane)
 
     @property
     def is_dark(self):
@@ -743,7 +776,9 @@ class MeerK40t(MWindow):
             context.threaded(foo)
 
         context.register("control/Crash Thread", test_crash_in_thread)
-        context.register("control/Clear Laserpath", self.laserpath_widget.clear_laserpath)
+        context.register(
+            "control/Clear Laserpath", self.laserpath_widget.clear_laserpath
+        )
         context.register("control/egv export", self.egv_export)
         context.register("control/egv import", self.egv_import)
 
@@ -843,8 +878,8 @@ class MeerK40t(MWindow):
         )
 
     def ribbon_bar_toggle(self, event):
-        pane = self._mgr.GetPane('ribbon')
-        if pane.name == 'ribbon':
+        pane = self._mgr.GetPane("ribbon")
+        if pane.name == "ribbon":
             self.ribbonbar_caption_visible = not self.ribbonbar_caption_visible
             pane.CaptionVisible(self.ribbonbar_caption_visible)
             self._mgr.Update()
@@ -874,10 +909,7 @@ class MeerK40t(MWindow):
             RB.EVT_RIBBONBAR_HELP_CLICK,
             lambda e: self.context("webhelp help\n"),
         )
-        self.Bind(
-            RB.EVT_RIBBONBAR_TOGGLED,
-            self.ribbon_bar_toggle
-        )
+        self.Bind(RB.EVT_RIBBONBAR_TOGGLED, self.ribbon_bar_toggle)
 
         # ==========
         # PROJECT PANEL
@@ -894,13 +926,17 @@ class MeerK40t(MWindow):
         self.toolbar_button_bar = toolbar
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
         toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
-        toolbar.AddButton(ID_JOB, _("Execute Job"), icons8_laser_beam_52.GetBitmap(), "")
+        toolbar.AddButton(
+            ID_JOB, _("Execute Job"), icons8_laser_beam_52.GetBitmap(), ""
+        )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open ExecuteJob 0\n"),
             id=ID_JOB,
         )
-        toolbar.AddButton(ID_SIM, _("Simulate"), icons8_laser_beam_hazard_50.GetBitmap(), "")
+        toolbar.AddButton(
+            ID_SIM, _("Simulate"), icons8_laser_beam_hazard_50.GetBitmap(), ""
+        )
 
         toolbar.AddButton(
             ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
@@ -927,7 +963,8 @@ class MeerK40t(MWindow):
         def open_simulator(v=None):
             with wx.BusyInfo(_("Processing Simulation...")):
                 self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+                    "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"
+                ),
 
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
@@ -962,7 +999,9 @@ class MeerK40t(MWindow):
             button_bar.AddHybridButton(
                 ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), ""
             )
-            button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA)
+            button_bar.Bind(
+                RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA
+            )
             button_bar.Bind(
                 RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
                 self.on_camera_dropdown,
@@ -988,9 +1027,15 @@ class MeerK40t(MWindow):
             lambda v: self.context("window open -o Controller\n"),
             id=ID_CONTROLLER,
         )
-        button_bar.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
-        button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
-        button_bar.AddButton(ID_STOP, _("Stop"), icons8_emergency_stop_button_50.GetBitmap(), "")
+        button_bar.AddToggleButton(
+            ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), ""
+        )
+        button_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE
+        )
+        button_bar.AddButton(
+            ID_STOP, _("Stop"), icons8_emergency_stop_button_50.GetBitmap(), ""
+        )
         button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_stop, id=ID_STOP)
 
         # ==========
@@ -1019,7 +1064,9 @@ class MeerK40t(MWindow):
         button_bar = RB.RibbonButtonBar(self.settings_panel)
         self.setting_button_bar = button_bar
 
-        button_bar.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
+        button_bar.AddButton(
+            ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), ""
+        )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open DeviceManager\n"),
@@ -1038,7 +1085,9 @@ class MeerK40t(MWindow):
             id=ID_CONFIGURATION,
         )
 
-        button_bar.AddButton(ID_SETTING, _("Settings"), icons8_administrative_tools_50.GetBitmap(), "")
+        button_bar.AddButton(
+            ID_SETTING, _("Settings"), icons8_administrative_tools_50.GetBitmap(), ""
+        )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window open Settings\n"),
@@ -1421,42 +1470,26 @@ class MeerK40t(MWindow):
         wt_menu.AppendSeparator()
 
         wt_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
-        wt_menu.Append(
-            ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK
-        )
-        wt_menu.Append(
-            ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK
-        )
+        wt_menu.Append(ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK)
         wt_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
         wt_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
         wt_menu.Append(ID_MENU_HIDE_TEXT, _("Hide Text"), "", wx.ITEM_CHECK)
         wt_menu.Append(ID_MENU_HIDE_FILLS, _("Hide Fills"), "", wx.ITEM_CHECK)
-        wt_menu.Append(
-            ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK
-        )
+        wt_menu.Append(ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK)
         wt_menu.Append(
             ID_MENU_HIDE_LINEWIDTH, _("No Stroke-Width Render"), "", wx.ITEM_CHECK
         )
-        wt_menu.Append(
-            ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK
-        )
-        wt_menu.Append(
-            ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK
-        )
-        wt_menu.Append(
-            ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK
-        )
+        wt_menu.Append(ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK)
         wt_menu.Append(ID_MENU_HIDE_ICONS, _("Hide Icons"), "", wx.ITEM_CHECK)
         wt_menu.Append(ID_MENU_HIDE_TREE, _("Hide Tree"), "", wx.ITEM_CHECK)
         wt_menu.Append(
             ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK
         )
-        wt_menu.Append(
-            ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK
-        )
-        wt_menu.Append(
-            ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK
-        )
+        wt_menu.Append(ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK)
+        wt_menu.Append(ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK)
         wt_menu.Append(ID_MENU_SCREEN_INVERT, _("Invert"), "", wx.ITEM_CHECK)
         wt_menu.Append(ID_MENU_SCREEN_FLIPXY, _("Flip XY"), "", wx.ITEM_CHECK)
 
@@ -1469,6 +1502,7 @@ class MeerK40t(MWindow):
         self.main_menubar.view = wt_menu
 
         self.panes_menu = wx.Menu()
+
         def open_pane(p):
             def open(event):
                 self.aui_open_pane(p)
@@ -1749,7 +1783,8 @@ class MeerK40t(MWindow):
         def open_simulator(v=None):
             with wx.BusyInfo(_("Processing Simulation...")):
                 self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"),
+                    "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"
+                ),
 
         self.Bind(
             wx.EVT_MENU,
@@ -1767,9 +1802,7 @@ class MeerK40t(MWindow):
             lambda v: self._mgr.LoadPerspective(self.default_perspective, update=True),
             id=ID_MENU_PANE_RESET,
         )
-        self.Bind(
-            wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP
-        )
+        self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp main\n"),
@@ -1877,7 +1910,6 @@ class MeerK40t(MWindow):
             context.channel("shutdown").watch(print)
 
         self.context.close("module/Scene")
-
 
         context.unlisten("emphasized", self.on_emphasized_elements_changed)
         context.unlisten("modified", self.on_element_modified)
@@ -2023,10 +2055,17 @@ class MeerK40t(MWindow):
             active = self.context.active
             _spooler, _input_driver, _output = self.context.registered[
                 "device/%s" % active
-                ]
-            self.SetTitle(_("%s v%s      (%s -> %s -> %s)") % (
-                device_name, device_version, _spooler.name,
-                _input_driver.type, _output.type))
+            ]
+            self.SetTitle(
+                _("%s v%s      (%s -> %s -> %s)")
+                % (
+                    device_name,
+                    device_version,
+                    _spooler.name,
+                    _input_driver.type,
+                    _output.type,
+                )
+            )
         except (KeyError, AttributeError):
             self.SetTitle(_("%s v%s") % (device_name, device_version))
 
@@ -2625,7 +2664,9 @@ class MeerK40t(MWindow):
         dlg.SetValue("")
 
         if dlg.ShowModal() == wx.ID_OK:
-            spooler, input_driver, output = self.context.registered["device/%s" % self.context.root.active]
+            spooler, input_driver, output = self.context.registered[
+                "device/%s" % self.context.root.active
+            ]
             root_context = self.context.root
             bed_dim = self.context.root
             m = str(dlg.GetValue())
@@ -2773,7 +2814,10 @@ class MeerK40t(MWindow):
         sy = r.scale_y
         spooler, input_driver, output = self.context.root.device()
 
-        mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, input_driver.current_x, input_driver.current_y))
+        mx = Matrix(
+            "scale(%f, %f, %f, %f)"
+            % (sx, sy, input_driver.current_x, input_driver.current_y)
+        )
         for element in self.context.root.elements.elems():
             try:
                 element *= mx
@@ -3803,11 +3847,11 @@ class wxMeerK40t(wx.App, Module):
             action="store_true",
             help="Load Source Specific Window",
         )
-        @kernel.console_argument(
-            "window", type=str, help="window to be opened"
-        )
+        @kernel.console_argument("window", type=str, help="window to be opened")
         @kernel.console_command(
-            ("open","toggle"), input_type="window", help="open/toggle the supplied window"
+            ("open", "toggle"),
+            input_type="window",
+            help="open/toggle the supplied window",
         )
         def window(
             command,
@@ -3851,7 +3895,7 @@ class wxMeerK40t(wx.App, Module):
                 path = context.get_context(m)
                 window_uri = "window/%s/%s" % (t, window)
                 if window_uri not in context.registered:
-                    window_uri = "window/%s/%s" % ('default', window)
+                    window_uri = "window/%s/%s" % ("default", window)
 
             def window_open(*a, **k):
                 path.open(window_uri, parent, *args)
@@ -3859,7 +3903,7 @@ class wxMeerK40t(wx.App, Module):
             def window_close(*a, **k):
                 path.close(window_uri, *args)
 
-            if command == 'open':
+            if command == "open":
                 if window_uri in context.registered:
                     kernel.run_later(window_open, None)
                     channel(_("Window Opened."))
@@ -3879,9 +3923,7 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
 
-        @kernel.console_argument(
-            "window", type=str, help="window to be closed"
-        )
+        @kernel.console_argument("window", type=str, help="window to be closed")
         @kernel.console_command(
             "close",
             input_type="window",
@@ -3891,17 +3933,17 @@ class wxMeerK40t(wx.App, Module):
         def window(channel, _, data, window=None, args=(), **kwargs):
             path = data
             try:
-                parent = context.gui if hasattr(context,'gui') else None
-                kernel.run_later(lambda e: path.close("window/%s" % window, parent, *args), None)
+                parent = context.gui if hasattr(context, "gui") else None
+                kernel.run_later(
+                    lambda e: path.close("window/%s" % window, parent, *args), None
+                )
                 channel(_("Window closed."))
             except (KeyError, ValueError):
                 channel(_("No such window as %s" % window))
             except IndexError:
                 raise SyntaxError
 
-        @kernel.console_argument(
-            "window", type=str, help="window to be reset"
-        )
+        @kernel.console_argument("window", type=str, help="window to be reset")
         @kernel.console_command(
             "reset",
             input_type="window",
