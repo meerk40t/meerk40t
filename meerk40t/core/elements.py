@@ -3921,7 +3921,7 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply Raster Script"))
         @self.tree_values(
-            "script", values=self.context.match("raster_script", suffix=True)
+            "script", values=list(self.context.match("raster_script", suffix=True))
         )
         @self.tree_operation(_("Apply: {script}"), node_type="elem", help="")
         def image_rasterwizard_apply(node, script=None, **kwargs):
