@@ -62,6 +62,8 @@ def plugin(kernel, lifecycle=None):
         context.signal("refresh_tree")
 
 
+MILS_IN_MM = 39.3701
+
 """
 The elements modifier stores all the element types in a bootstrapped tree. Specific node types added to the tree become
 particular class types and the interactions between these types and functions applied are registered in the kernel.
@@ -1909,9 +1911,11 @@ class Elemental(Modifier):
             "align",
             help="align elements",
             input_type=("elements", None),
-            output_type="elements",
         )
-        def align(command, channel, _, data=None, align=None, args=tuple(), **kwargs):
+        def align(command, channel, _, data=None, align=None, remainder=None, **kwargs):
+            if align is None:
+                channel("top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n<any valid svg:Preserve Aspect Ratio, eg xminymin>")
+                return
             if data is None:
                 elem_branch = self.get(type="branch elems")
                 data = list(
@@ -1919,9 +1923,13 @@ class Elemental(Modifier):
                         types=("elems", "file", "group"), cascade=False, depth=1
                     )
                 )
+                if len(data) == 0:
+                    channel(_("Nothing to align."))
+                    return
+                for d in data:
+                    channel("Aligning: %s" % str(d))
             boundary_points = []
             for d in data:
-                # d._bounds_dirty = True
                 boundary_points.append(d.bounds)
             if not len(boundary_points):
                 return
@@ -1933,66 +1941,93 @@ class Elemental(Modifier):
                 for e in data:
                     subbox = e.bounds
                     top = subbox[1] - top_edge
+                    matrix = "translate(0, %f)" % -top
                     if top != 0:
-                        for q in e.flat(types="elem"):
-                            q.object *= "translate(0, %f)" % -top
+                        for q in e.flat(types=("elem", "group", "file")):
+                            obj = q.object
+                            if obj is not None:
+                                obj *= matrix
                             q.modified()
             elif align == "bottom":
                 for e in data:
                     subbox = e.bounds
                     bottom = subbox[3] - bottom_edge
+                    matrix = "translate(0, %f)" % -bottom
                     if bottom != 0:
-                        for q in e.flat(types="elem"):
-                            q.object *= "translate(0, %f)" % -bottom
+                        for q in e.flat(types=("elem", "group", "file")):
+                            obj = q.object
+                            if obj is not None:
+                                obj *= matrix
                             q.modified()
             elif align == "left":
                 for e in data:
                     subbox = e.bounds
                     left = subbox[0] - left_edge
+                    matrix = "translate(%f, 0)" % -left
                     if left != 0:
-                        for q in e.flat(types="elem"):
-                            q.object *= "translate(%f, 0)" % -left
+                        for q in e.flat(types=("elem", "group", "file")):
+                            obj = q.object
+                            if obj is not None:
+                                obj *= matrix
                             q.modified()
             elif align == "right":
                 for e in data:
                     subbox = e.bounds
                     right = subbox[2] - right_edge
+                    matrix = "translate(%f, 0)" % -right
                     if right != 0:
-                        for q in e.flat(types="elem"):
-                            q.object *= "translate(%f, 0)" % -right
+                        for q in e.flat(types=("elem", "group", "file")):
+                            obj = q.object
+                            if obj is not None:
+                                obj *= matrix
                             q.modified()
             elif align == "center":
                 for e in data:
                     subbox = e.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                    for q in e.flat(types="elem"):
-                        q.object *= "translate(%f, %f)" % (-dx, -dy)
+                    matrix = "translate(%f, %f)" % (-dx, -dy)
+                    for q in e.flat(types=("elem", "group", "file")):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
                         q.modified()
             elif align == "centerv":
                 for e in data:
                     subbox = e.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                    for q in e.flat(types="elem"):
-                        q.object *= "translate(%f, 0)" % -dx
+                    matrix = "translate(%f, 0)" % -dx
+                    for q in e.flat(types=("elem", "group", "file")):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
                         q.modified()
             elif align == "centerh":
                 for e in data:
                     subbox = e.bounds
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                    for q in e.flat(types="elem"):
-                        q.object *= "translate(0, %f)" % -dy
+                    matrix = "translate(0, %f)" % -dy
+                    for q in e.flat(types=("elem", "group", "file")):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
                         q.modified()
             elif align == "spaceh":
+                if len(data) <= 1:
+                    channel(_("Cannot spacial align fewer than 2 elements."))
+                    return
                 distance = right_edge - left_edge
                 step = distance / (len(data) - 1)
                 for e in data:
                     subbox = e.bounds
                     left = subbox[0] - left_edge
                     left_edge += step
+                    matrix = "translate(%f, 0)" % -left
                     if left != 0:
-                        for q in e.flat(types="elem"):
-                            q.object *= "translate(%f, 0)" % -left
+                        for q in e.flat(types=("elem", "group", "file")):
+                            obj = q.object
+                            if obj is not None:
+                                obj *= matrix
                             q.modified()
             elif align == "spacev":
                 distance = bottom_edge - top_edge
@@ -2001,10 +2036,75 @@ class Elemental(Modifier):
                     subbox = e.bounds
                     top = subbox[1] - top_edge
                     top_edge += step
+                    matrix = "translate(0, %f)" % -top
                     if top != 0:
-                        for q in e.flat(types="elem"):
-                            q.object *= "translate(0, %f)" % -top
+                        for q in e.flat(types=("elem", "group", "file")):
+                            obj = q.object
+                            if obj is not None:
+                                obj *= matrix
                             q.modified()
+            elif align == "bedcenter":
+                for e in data:
+                    bw = bed_dim.bed_width
+                    bh = bed_dim.bed_height
+                    dx = (bw*MILS_IN_MM - left_edge - right_edge) / 2.0
+                    dy = (bh*MILS_IN_MM - top_edge - bottom_edge) / 2.0
+                    matrix = "translate(%f, %f)" % (dx, dy)
+                    for q in e.flat(types=("elem", "group", "file")):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+                self.context.signal("refresh_scene")
+            elif align in ("xminymin",
+                           "xmidymin",
+                           "xmaxymin",
+                           "xminymid",
+                           "xmidymid",
+                           "xmaxymid",
+                           "xminymax",
+                           "xmidymax",
+                           "xmaxymax",
+                           "xminymin meet",
+                           "xmidymin meet",
+                           "xmaxymin meet",
+                           "xminymid meet",
+                           "xmidymid meet",
+                           "xmaxymid meet",
+                           "xminymax meet",
+                           "xmidymax meet",
+                           "xmaxymax meet",
+                           "xminymin slice",
+                           "xmidymin slice",
+                           "xmaxymin slice",
+                           "xminymid slice",
+                           "xmidymid slice",
+                           "xmaxymid slice",
+                           "xminymax slice",
+                           "xmidymax slice",
+                           "xmaxymax slice",
+                            "none",
+                           ):
+                for e in data:
+                    bw = bed_dim.bed_width
+                    bh = bed_dim.bed_height
+                    from ..svgelements import Viewbox
+
+                    matrix = Viewbox.viewbox_transform(0,
+                                                       0,
+                                                       bw*MILS_IN_MM,
+                                                       bh*MILS_IN_MM,
+                                                       left_edge,
+                                                       top_edge,
+                                                       right_edge-left_edge,
+                                                       bottom_edge-top_edge,
+                                                       align)
+                    for q in e.flat(types=("elem", "group", "file")):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+                self.context.signal("refresh_scene")
             return "elements", data
 
         @context.console_argument("c", type=int, help="number of columns")
@@ -4089,7 +4189,7 @@ class Elemental(Modifier):
 
     def validate_selected_area(self):
         boundary_points = []
-        for e in self.elems_nodes(emphasized=True):
+        for e in self.elem_branch.flat(types=("elem", "file", "group"), emphasized=True):
             if e.bounds is None:
                 continue
             box = e.bounds
