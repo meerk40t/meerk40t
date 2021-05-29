@@ -338,7 +338,7 @@ class SVGLoader:
             elif isinstance(element, SVG):
                 continue
             elif isinstance(element, Group):
-                new_context = context_node.add(type="group", name=element.id)
+                new_context = context_node.add(element, type="group")
                 SVGLoader.parse(
                     element,
                     elements_modifier,
