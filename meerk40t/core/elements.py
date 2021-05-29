@@ -3720,8 +3720,15 @@ class Elemental(Modifier):
                 threshold_max = threshold_min + band
                 self.context("image threshold %f %f\n" % (threshold_min, threshold_max))
 
+        def is_locked(node):
+            try:
+                obj = node.object
+                return obj.lock
+            except AttributeError:
+                return False
+
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional_try(lambda node: node.object.lock)
+        @self.tree_conditional(is_locked)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Unlock Manipulations"), node_type="elem", help="")
         def image_unlock_manipulations(node, **kwargs):
