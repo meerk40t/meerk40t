@@ -384,6 +384,8 @@ class MeerK40t(MWindow):
         self.__set_ribbonbar()
 
         self._mgr = aui.AuiManager()
+        self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
+        self._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.on_pane_active)
 
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
@@ -421,7 +423,7 @@ class MeerK40t(MWindow):
 
         # Define Position.
         self.position_pane(self._mgr)
-        self.context.register("pane/Move", self.position_pane)
+        self.context.register("pane/Position", self.position_pane)
 
         # AUI Manager Update.
         self._mgr.Update()
@@ -455,8 +457,29 @@ class MeerK40t(MWindow):
         self.context.setting(str, "perspective")
         if self.context.perspective is not None:
             self._mgr.LoadPerspective(self.context.perspective)
-
+        for pane in self._mgr.GetAllPanes():
+            if pane.IsShown():
+                if hasattr(pane.window, 'initialize'):
+                    pane.window.initialize()
+            else:
+                if hasattr(pane.window, 'noninitialize'):
+                    pane.window.noninitialize()
         self.on_rebuild_tree_request()
+
+    def on_pane_active(self, event):
+        pane = event.GetPane()
+        if hasattr(pane.window, 'active'):
+            pane.window.active()
+
+    def on_pane_closed(self, event):
+        pane = event.GetPane()
+        if pane.IsShown():
+            if hasattr(pane.window, 'finalize'):
+                pane.window.finalize()
+
+    def on_pane_reshow(self, pane):
+        if hasattr(pane.window, 'initialize'):
+            pane.window.initialize()
 
     def aui_open_pane(self, pane):
         pane_init = self.context.registered["pane/%s" % pane]
@@ -469,6 +492,7 @@ class MeerK40t(MWindow):
                 pane.Show()
                 pane.CaptionVisible(False)
                 self.ribbonbar_caption_visible = False
+                self.on_pane_reshow(pane)
                 manager.Update()
             return
         self._mgr.AddPane(
@@ -491,6 +515,7 @@ class MeerK40t(MWindow):
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
+                self.on_pane_reshow(pane)
                 manager.Update()
             return
         self._mgr.AddPane(
@@ -512,6 +537,7 @@ class MeerK40t(MWindow):
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
+                self.on_pane_reshow(pane)
                 manager.Update()
             return
         panel = PositionPanel(self, wx.ID_ANY, context=self.context)
@@ -527,6 +553,7 @@ class MeerK40t(MWindow):
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
+                self.on_pane_reshow(pane)
                 manager.Update()
             return
         panel = MovePanel(self, wx.ID_ANY, context=self.context)
@@ -542,6 +569,7 @@ class MeerK40t(MWindow):
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
+                self.on_pane_reshow(pane)
                 manager.Update()
             return
         panel = Jog(self, wx.ID_ANY, context=self.context)
@@ -557,6 +585,7 @@ class MeerK40t(MWindow):
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
+                self.on_pane_reshow(pane)
                 manager.Update()
             return
         panel = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
@@ -572,6 +601,7 @@ class MeerK40t(MWindow):
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
+                self.on_pane_reshow(pane)
                 manager.Update()
             return
         pause = wx.BitmapButton(
@@ -606,6 +636,7 @@ class MeerK40t(MWindow):
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
+                self.on_pane_reshow(pane)
                 manager.Update()
             return
         stop = wx.BitmapButton(

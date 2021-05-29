@@ -47,12 +47,13 @@ class PositionPanel(wx.Panel):
         self.position_name = None
         self.context.setting(int, "units_index", 0)
         self.position_units = self.context.units_index
-        context.listen("units", self.space_changed)
-        context.listen("emphasized", self._update_position)
-        context.listen("modified", self._update_position)
-        context._kernel.listen("lifecycle;shutdown", '', self.finalize)
-
         self._update_position()
+
+    def initialize(self, *args):
+        self.context.listen("units", self.space_changed)
+        self.context.listen("emphasized", self._update_position)
+        self.context.listen("modified", self._update_position)
+        self.context._kernel.listen("lifecycle;shutdown", '', self.finalize)
 
     def finalize(self, *args):
         self.context.unlisten("units", self.space_changed)
