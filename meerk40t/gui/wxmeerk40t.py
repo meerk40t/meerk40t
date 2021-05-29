@@ -732,6 +732,7 @@ class MeerK40t(MWindow):
         context.listen("driver;position", self.update_position)
         context.listen("driver;mode", self.on_driver_mode)
         context.listen("bed_size", self.bed_changed)
+        context.listen("warning", self.on_warning_signal)
         bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)  # Default Value
         bed_dim.setting(int, "bed_height", 210)  # Default Value
@@ -1932,6 +1933,7 @@ class MeerK40t(MWindow):
         context.unlisten("driver;position", self.update_position)
         context.unlisten("driver;mode", self.on_driver_mode)
         context.unlisten("bed_size", self.bed_changed)
+        context.unlisten("warning", self.on_warning_signal)
 
         context.unlisten("active", self.on_active_change)
 
@@ -1983,6 +1985,16 @@ class MeerK40t(MWindow):
         :return:
         """
         self.request_refresh()
+
+    def on_warning_signal(self, origin, message, caption, style):
+        dlg = wx.MessageDialog(
+            None,
+            message,
+            caption,
+            style,
+        )
+        dlg.ShowModal()
+        dlg.Destroy()
 
     def on_device_noactive(self, origin, value):
         dlg = wx.MessageDialog(

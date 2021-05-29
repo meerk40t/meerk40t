@@ -686,7 +686,7 @@ class CameraInterface(MWindow, Job):
         :param event:
         :return:
         """
-        self.context.console("camera%d fisheye detect\n" % self.index)
+        self.context.console("camera%d fisheye capture\n" % self.index)
 
 
 class CameraURI(MWindow):
