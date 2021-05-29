@@ -561,7 +561,7 @@ class MeerK40t(MWindow):
             return
         panel = PositionPanel(self, wx.ID_ANY, context=self.context)
         pane = (aui.AuiPaneInfo()
-            .Float()
+            .Bottom()
             .MinSize(-1, -1)
             .MaxSize(600, 75)
             .Caption("Position")
