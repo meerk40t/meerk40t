@@ -46,7 +46,7 @@ class Simulation(MWindow, Job):
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
-        self.max = max(len(self.cutcode),1)
+        self.max = max(len(self.cutcode), 1)
         self.progress = self.max - 1
 
         self.bed_dim = self.context.root
@@ -401,10 +401,16 @@ class SimulationTravelWidget(Widget):
                     d = abs(s - e)
                     if d >= 100:
                         m = (s + e) / 2.0
-                        ang = math.atan2((s-e).imag, (s-e).real)
+                        ang = math.atan2((s - e).imag, (s - e).real)
                         q = d / 10.0
-                        m0 = m + complex(math.cos(ang + math.tau / 10)* q,math.sin(ang+ math.tau/10)*q)
-                        m1 = m + complex(math.cos(ang - math.tau / 10) * q, math.sin(ang - math.tau / 10) * q)
+                        m0 = m + complex(
+                            math.cos(ang + math.tau / 10) * q,
+                            math.sin(ang + math.tau / 10) * q,
+                        )
+                        m1 = m + complex(
+                            math.cos(ang - math.tau / 10) * q,
+                            math.sin(ang - math.tau / 10) * q,
+                        )
                         m = wx.Point2D(m.real, m.imag)
                         self.starts.append(m)
                         self.ends.append(wx.Point2D(m0.real, m0.imag))
