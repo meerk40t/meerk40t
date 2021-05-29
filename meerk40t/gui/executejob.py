@@ -17,10 +17,17 @@ class ExecuteJob(MWindow):
             plan_name = 0
         self.plan_name = plan_name
 
-        # Menu Bar
+
+        # ==========
+        # MENU BAR
+        # ==========
         self.preview_menu = wx.MenuBar()
-        wxglade_tmp_menu = wx.Menu()
+        wx_menu = wx.Menu()
         wxglade_tmp_menu_sub = wx.Menu()
+
+        # ==========
+        # AUTO/BEFORE MENU
+        # ==========
         self.preview_menu.menu_prehome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
             "Home",
@@ -44,8 +51,13 @@ class ExecuteJob(MWindow):
             id=self.preview_menu.menu_prephysicalhome.GetId(),
         )
 
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Before", wxglade_tmp_menu_sub, "")
+        wx_menu.Append(wx.ID_ANY, "Before", wxglade_tmp_menu_sub, "")
         wxglade_tmp_menu_sub = wx.Menu()
+
+
+        # ==========
+        # AUTO/AFTER MENU
+        # ==========
 
         self.preview_menu.menu_autohome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
@@ -80,6 +92,17 @@ class ExecuteJob(MWindow):
             self.on_check_origin_after,
             id=self.preview_menu.menu_autoorigin.GetId(),
         )
+        self.preview_menu.menu_autounlock = wxglade_tmp_menu_sub.Append(
+            wx.ID_ANY,
+            "Unlock",
+            "Automatically unlock the rail after all jobs",
+            wx.ITEM_CHECK,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.on_check_unlock_after,
+            id=self.preview_menu.menu_autounlock.GetId(),
+        )
         self.preview_menu.menu_autobeep = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY, "Beep", "Automatically add a beep after all jobs", wx.ITEM_CHECK
         )
@@ -100,28 +123,20 @@ class ExecuteJob(MWindow):
             id=self.preview_menu.menu_autointerrupt.GetId(),
         )
 
-        self.preview_menu.menu_autounlock = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY,
-            "Unlock",
-            "Automatically unlock the rail after all jobs",
-            wx.ITEM_CHECK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_check_unlock_after,
-            id=self.preview_menu.menu_autounlock.GetId(),
-        )
+        wx_menu.Append(wx.ID_ANY, "After", wxglade_tmp_menu_sub, "")
+        self.preview_menu.Append(wx_menu, "Automatic")
+        wx_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(wx.ID_ANY, "After", wxglade_tmp_menu_sub, "")
-        self.preview_menu.Append(wxglade_tmp_menu, "Automatic")
-        wxglade_tmp_menu = wx.Menu()
-        self.preview_menu.menu_jobadd_home = wxglade_tmp_menu.Append(
+        # ==========
+        # ADD MENU
+        # ==========
+        self.preview_menu.menu_jobadd_home = wx_menu.Append(
             wx.ID_ANY, "Home", "Add a home"
         )
         self.Bind(
             wx.EVT_MENU, self.jobadd_home, id=self.preview_menu.menu_jobadd_home.GetId()
         )
-        self.preview_menu.menu_jobadd_autophysicalhome = wxglade_tmp_menu.Append(
+        self.preview_menu.menu_jobadd_autophysicalhome = wx_menu.Append(
             wx.ID_ANY, "Physical Home", "Add a physicalhome"
         )
         self.Bind(
@@ -129,19 +144,19 @@ class ExecuteJob(MWindow):
             self.jobadd_physicalhome,
             id=self.preview_menu.menu_jobadd_autophysicalhome.GetId(),
         )
-        self.preview_menu.menu_jobadd_wait = wxglade_tmp_menu.Append(
+        self.preview_menu.menu_jobadd_wait = wx_menu.Append(
             wx.ID_ANY, "Wait", "Add a wait"
         )
         self.Bind(
             wx.EVT_MENU, self.jobadd_wait, id=self.preview_menu.menu_jobadd_wait.GetId()
         )
-        self.preview_menu.menu_jobadd_beep = wxglade_tmp_menu.Append(
+        self.preview_menu.menu_jobadd_beep = wx_menu.Append(
             wx.ID_ANY, "Beep", "Add a beep"
         )
         self.Bind(
             wx.EVT_MENU, self.jobadd_beep, id=self.preview_menu.menu_jobadd_beep.GetId()
         )
-        self.preview_menu.menu_jobadd_interrupt = wxglade_tmp_menu.Append(
+        self.preview_menu.menu_jobadd_interrupt = wx_menu.Append(
             wx.ID_ANY, "Interrupt", "Add an interrupt"
         )
         self.Bind(
@@ -150,13 +165,15 @@ class ExecuteJob(MWindow):
             id=self.preview_menu.menu_jobadd_interrupt.GetId(),
         )
 
-        self.preview_menu.Append(wxglade_tmp_menu, "Add")
+        self.preview_menu.Append(wx_menu, "Add")
 
-        wxglade_tmp_menu = wx.Menu()
-        self.preview_menu.Append(wxglade_tmp_menu, _("Tools"))
+        wx_menu = wx.Menu()
+        self.preview_menu.Append(wx_menu, _("Tools"))
 
         self.SetMenuBar(self.preview_menu)
-        # Menu Bar end
+        # ==========
+        # MENUBAR END
+        # ==========
 
         self.available_devices = [
             self.context.registered[i] for i in self.context.match("device")
@@ -188,15 +205,15 @@ class ExecuteJob(MWindow):
         self.combo_device.SetSelection(index)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
-        self.slider_progress = wx.Slider(self, wx.ID_ANY, 10000, 0, 10000)
+        # self.slider_progress = wx.Slider(self, wx.ID_ANY, 10000, 0, 10000)
         self.panel_operation = wx.Panel(self, wx.ID_ANY)
-        self.text_operation_name = wx.TextCtrl(
-            self.panel_operation, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.gauge_operation = wx.Gauge(self.panel_operation, wx.ID_ANY, 10)
-        self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        # self.text_operation_name = wx.TextCtrl(
+        #     self.panel_operation, wx.ID_ANY, "", style=wx.TE_READONLY
+        # )
+        # self.gauge_operation = wx.Gauge(self.panel_operation, wx.ID_ANY, 10)
+        # self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        # self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        # self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.check_rapid_moves_between = wx.CheckBox(
             self, wx.ID_ANY, "Rapid Moves Between Objects"
         )
@@ -261,12 +278,12 @@ class ExecuteJob(MWindow):
         )
         self.list_operations.SetToolTip("Operations being added to the current job")
         self.list_command.SetToolTip("Commands being applied to the current job")
-        self.slider_progress.SetToolTip("Preview slider to set progress position")
-        self.text_operation_name.SetToolTip("Current Operation Being Processed")
-        self.gauge_operation.SetToolTip("Gauge of Operation Progress")
-        self.text_time_laser.SetToolTip("Time Estimate: Lasering Time")
-        self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
-        self.text_time_total.SetToolTip("Time Estimate: Total Time")
+        # self.slider_progress.SetToolTip("Preview slider to set progress position")
+        # self.text_operation_name.SetToolTip("Current Operation Being Processed")
+        # self.gauge_operation.SetToolTip("Gauge of Operation Progress")
+        # self.text_time_laser.SetToolTip("Time Estimate: Lasering Time")
+        # self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
+        # self.text_time_total.SetToolTip("Time Estimate: Total Time")
         self.check_rapid_moves_between.SetToolTip(
             "Perform rapid moves between the objects"
         )
@@ -304,34 +321,34 @@ class ExecuteJob(MWindow):
         sizer_optimizations = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Optimizations"), wx.VERTICAL
         )
-        sizer_time = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_total_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL
-        )
-        sizer_travel_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL
-        )
-        sizer_laser_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL
-        )
-        sizer_operation = wx.BoxSizer(wx.HORIZONTAL)
+        # sizer_time = wx.BoxSizer(wx.HORIZONTAL)
+        # sizer_total_time = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL
+        # )
+        # sizer_travel_time = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL
+        # )
+        # sizer_laser_time = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL
+        # )
+        # sizer_operation = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
         sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_operations, 2, wx.EXPAND, 0)
         sizer_main.Add(self.list_command, 2, wx.EXPAND, 0)
         sizer_frame.Add(sizer_main, 1, wx.EXPAND, 0)
-        sizer_frame.Add(self.slider_progress, 0, wx.EXPAND, 0)
-        sizer_operation.Add(self.text_operation_name, 2, 0, 0)
-        sizer_operation.Add(self.gauge_operation, 7, wx.EXPAND, 0)
-        self.panel_operation.SetSizer(sizer_operation)
+        # sizer_frame.Add(self.slider_progress, 0, wx.EXPAND, 0)
+        # sizer_operation.Add(self.text_operation_name, 2, 0, 0)
+        # sizer_operation.Add(self.gauge_operation, 7, wx.EXPAND, 0)
+        # self.panel_operation.SetSizer(sizer_operation)
         sizer_frame.Add(self.panel_operation, 0, wx.EXPAND, 0)
-        sizer_laser_time.Add(self.text_time_laser, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_laser_time, 1, wx.EXPAND, 0)
-        sizer_travel_time.Add(self.text_time_travel, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_travel_time, 1, wx.EXPAND, 0)
-        sizer_total_time.Add(self.text_time_total, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_total_time, 1, wx.EXPAND, 0)
-        sizer_frame.Add(sizer_time, 0, wx.EXPAND, 0)
+        # sizer_laser_time.Add(self.text_time_laser, 0, wx.EXPAND, 0)
+        # sizer_time.Add(sizer_laser_time, 1, wx.EXPAND, 0)
+        # sizer_travel_time.Add(self.text_time_travel, 0, wx.EXPAND, 0)
+        # sizer_time.Add(sizer_travel_time, 1, wx.EXPAND, 0)
+        # sizer_total_time.Add(self.text_time_total, 0, wx.EXPAND, 0)
+        # sizer_time.Add(sizer_total_time, 1, wx.EXPAND, 0)
+        # sizer_frame.Add(sizer_time, 0, wx.EXPAND, 0)
         sizer_optimizations.Add(self.check_rapid_moves_between, 0, 0, 0)
         sizer_optimizations.Add(self.check_reduce_travel_time, 0, 0, 0)
         sizer_optimizations.Add(self.check_cut_inner_first, 0, 0, 0)
