@@ -3735,50 +3735,48 @@ class Elemental(Modifier):
             self.context("image unlock\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_conditional(is_locked)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Dither to 1 bit"), node_type="elem", help="")
         def image_dither(node, **kwargs):
             self.context("image dither\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_conditional(is_locked)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Invert Image"), node_type="elem", help="")
         def image_invert(node, **kwargs):
             self.context("image invert\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_conditional(is_locked)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Mirror Horizontal"), node_type="elem", help="")
         def image_mirror(node, **kwargs):
             context("image mirror\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_conditional(is_locked)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Flip Vertical"), node_type="elem", help="")
         def image_flip(node, **kwargs):
             self.context("image flip\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_conditional(is_locked)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate CW"), node_type="elem", help="")
         def image_cw(node, **kwargs):
             self.context("image cw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_conditional(is_locked)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate CCW"), node_type="elem", help="")
         def image_ccw(node, **kwargs):
             self.context("image ccw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Save output.png"), node_type="elem", help="")
         def image_save(node, **kwargs):
             self.context("image save output.png\n")
@@ -3795,7 +3793,7 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply Raster Script"))
         @self.tree_values(
-            "script", values=list(self.context.match("raster_script", suffix=True))
+            "script", values=self.context.match("raster_script", suffix=True)
         )
         @self.tree_operation(_("Apply: {script}"), node_type="elem", help="")
         def image_rasterwizard_apply(node, script=None, **kwargs):
