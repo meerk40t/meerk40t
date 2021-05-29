@@ -14,7 +14,7 @@ class Notes(MWindow):
             self, wx.ID_ANY, _("Automatically Open Notes")
         )
         self.text_notes = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP
+            self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP | wx.TE_RICH
         )
 
         self.__set_properties()
