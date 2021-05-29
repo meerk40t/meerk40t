@@ -9,6 +9,7 @@ import traceback
 
 from .file.fileoutput import FileOutput
 from .jog import Jog, MovePanel
+from .position import PositionPanel
 from ..core.cutcode import CutCode
 from .mwindow import MWindow
 from .simulation import Simulation
@@ -414,9 +415,13 @@ class MeerK40t(MWindow):
         self.jog_pane(self._mgr)
         self.context.register("pane/Jog", self.jog_pane)
 
-        # Define Jog.
+        # Define Move.
         self.move_pane(self._mgr)
         self.context.register("pane/Move", self.move_pane)
+
+        # Define Position.
+        self.position_pane(self._mgr)
+        self.context.register("pane/Move", self.position_pane)
 
         # AUI Manager Update.
         self._mgr.Update()
@@ -501,6 +506,21 @@ class MeerK40t(MWindow):
                 .Caption("Tree")
                 .TopDockable(False)
         )
+
+    def position_pane(self, manager):
+        pane = manager.GetPane('position')
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                manager.Update()
+            return
+        panel = PositionPanel(self, wx.ID_ANY, context=self.context)
+        self._mgr.AddPane(panel, aui.AuiPaneInfo()
+                          .Float()
+                          .MinSize(-1, -1)
+                          .MaxSize(600, 75)
+                          .Caption("Position")
+                          .Name("position"))
 
     def move_pane(self, manager):
         pane = manager.GetPane('move')
@@ -629,6 +649,8 @@ class MeerK40t(MWindow):
 
         context.listen("units", self.space_changed)
 
+        context.listen("emphasized", self.on_emphasized_elements_changed)
+        context.listen("modified", self.on_element_modified)
         context.listen("export-image", self.on_export_signal)
         context.listen("background", self.on_background_signal)
         context.listen("rebuild_tree", self.on_rebuild_tree_signal)
@@ -810,7 +832,6 @@ class MeerK40t(MWindow):
         self.ribbon_position_w = 0.0
         self.ribbon_position_units = 0
         self.ribbon_position_name = None
-
 
         home = RB.RibbonPage(
             self._ribbon,
@@ -1826,6 +1847,9 @@ class MeerK40t(MWindow):
 
         self.context.close("module/Scene")
 
+
+        context.unlisten("emphasized", self.on_emphasized_elements_changed)
+        context.unlisten("modified", self.on_element_modified)
         context.unlisten("units", self.space_changed)
 
         context.unlisten("export-image", self.on_export_signal)
