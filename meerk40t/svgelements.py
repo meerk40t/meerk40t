@@ -8147,6 +8147,7 @@ class SVG(Group):
                 # All class and attribute properties are compiled.
 
                 values.update(attributes)
+                values[SVG_STRUCT_ATTRIB] = attributes
                 if (
                     SVG_ATTR_DISPLAY in values
                     and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE

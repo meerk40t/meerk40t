@@ -37,7 +37,7 @@ from ..svgelements import (
     SimpleLine,
     SVGElement,
     SVGImage,
-    SVGText,
+    SVGText, SVG_STRUCT_ATTRIB,
 )
 from .cutcode import (
     ArcCut,
@@ -425,12 +425,14 @@ class Node:
         node str. If something else provides a superior name it should be added in here.
         """
         try:
-            return node.object.values["label"]
+            attribs = node.object.values[SVG_STRUCT_ATTRIB]
+            return attribs['label']
         except (AttributeError, KeyError):
             pass
 
         try:
-            return node.object.values[
+            attribs = node.object.values[SVG_STRUCT_ATTRIB]
+            return attribs[
                 "{http://www.inkscape.org/namespaces/inkscape}label"
             ]
         except (AttributeError, KeyError):
