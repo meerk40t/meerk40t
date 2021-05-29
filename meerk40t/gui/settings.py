@@ -42,19 +42,21 @@ class Settings(MWindow):
         # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
         self.choices = [
-            (_("Save Window Positions"), _("Save Window Positions"),"windows_save", True),
-            (_("Print Shutdown"), _("Print Shutdown"),"print_shutdown", False),
-            (_("SVG Uniform Save"), _("SVG Uniform Save"),"uniform_svg", False),
-            (_("Image DPI Scaling"), _("Image DPI Scaling"),"image_dpi", True),
-            (_("DXF Centering"), _("DXF Centering"),"dxf_center", True),
-            (_("Show Negative Guide"), _("Show Negative Guide"),"show_negative_guide", True),
-            (_("Launch Spooler JobStart"), _("Launch Spooler JobStart"),"auto_spooler", True),
-            (_("MouseWheel Pan"), _("MouseWheel Pan"), "mouse_wheel_pan", False),
-            (_("Invert MouseWheel Pan"), _("Invert MouseWheel Pan"), "mouse_pan_invert", False),
-            (_("Invert MouseWheel Zoom"), _("Invert MouseWheel Zoom"),"mouse_zoom_invert", False),
-            (_("Default Operation Empty"), _("Default Operation Empty"), "operation_default_empty", True),
+            (_("Save Window Positions"), _("Open Windows at the same place they were last closed"),"windows_save", True),
+            (_("Print Shutdown"), _("Print shutdown log when Meerk40t is closed."),"print_shutdown", False),
+            (_("SVG Uniform Save"), _("Do not treat overwriting SVG differently if they are MeerK40t files"),"uniform_svg", False),
+            (_("Image DPI Scaling"), _("Set: Use the DPI setting saved in the image to scale the image to the correct size. Unset: Use the image as if it were 1000 pixels per inch."),"image_dpi", True),
+            (_("DXF Centering"), _("Fit (scale down if necessary) and center a DXF file within the bed"),"dxf_center", True),
+            (_("Show Negative Guide"), _("Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"),"show_negative_guide", True),
+            (_("Launch Spooler JobStart"), _("Open the Spooler window automatically when you Execute a Job"),"auto_spooler", True),
+            (_("MouseWheel Pan"), _("Default MouseWheel is Zoom (and horizontal pan with Shift key) ? this changes MouseWheel to pan, and zoom with Ctrl key"), "mouse_wheel_pan", False),
+            (_("Invert MouseWheel Pan"), _("Reverses the direction of the MouseWheel for horizontal & vertical pan"), "mouse_pan_invert", False),
+            (_("Invert MouseWheel Zoom"), _("Reverses the direction of the MouseWheel for zoom"),"mouse_zoom_invert", False),
+            (_("Default Operation Empty"), _("Sets Operations to Other/Red/Blue if loaded with no operations."), "operation_default_empty", True),
             (_("Reverse SVG Element Load"), _("Inkscape saves SVG files in reverse order, so this loads them into MeerK40t in the same order as the Inkscape object list"),"svg_reverse", False),
-            (_("Disable ToolTips"), _("Globally disable ToolTips (like this one) on start-up\nNote: Takes effect when MeerK40t starts"), "disable_tool_tips", False),
+            (_("Disable ToolTips"), _("If you do not want to see tooltips like this one, check this box.\n"
+                                      "Particularly useful if you have a touch screen.\n"
+                                      "Note: Takes effect when MeerK40t starts"), "disable_tool_tips", False),
         ]
         self.text_scale_x = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.text_scale_y = wx.TextCtrl(self, wx.ID_ANY, "1.000")
