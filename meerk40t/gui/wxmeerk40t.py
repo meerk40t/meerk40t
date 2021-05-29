@@ -931,7 +931,7 @@ class MeerK40t(MWindow):
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open ExecuteJob 0\n"),
+            lambda v: self.context("window toggle ExecuteJob 0\n"),
             id=ID_JOB,
         )
         toolbar.AddButton(
@@ -943,7 +943,7 @@ class MeerK40t(MWindow):
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open RasterWizard\n"),
+            lambda v: self.context("window toggle RasterWizard\n"),
             id=ID_RASTER,
         )
 
@@ -956,14 +956,14 @@ class MeerK40t(MWindow):
         toolbar.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open Console\n"),
+            lambda v: self.context("window toggle Console\n"),
             id=ID_CONSOLE,
         )
 
         def open_simulator(v=None):
             with wx.BusyInfo(_("Processing Simulation...")):
                 self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"
+                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
                 ),
 
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
@@ -992,7 +992,7 @@ class MeerK40t(MWindow):
         button_bar.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open Navigation\n"),
+            lambda v: self.context("window toggle Navigation\n"),
             id=ID_NAV,
         )
         if self.context.has_feature("modifier/Camera"):
@@ -1016,7 +1016,7 @@ class MeerK40t(MWindow):
         button_bar.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open JobSpooler\n"),
+            lambda v: self.context("window toggle JobSpooler\n"),
             id=ID_SPOOLER,
         )
         button_bar.AddButton(
@@ -1024,7 +1024,7 @@ class MeerK40t(MWindow):
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open -o Controller\n"),
+            lambda v: self.context("window toggle -o Controller\n"),
             id=ID_CONTROLLER,
         )
         button_bar.AddToggleButton(
@@ -1069,7 +1069,7 @@ class MeerK40t(MWindow):
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open DeviceManager\n"),
+            lambda v: self.context("window toggle DeviceManager\n"),
             id=ID_DEVICES,
         )
 
@@ -1081,7 +1081,7 @@ class MeerK40t(MWindow):
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open -d Preferences\n"),
+            lambda v: self.context("window toggle -d Preferences\n"),
             id=ID_CONFIGURATION,
         )
 
@@ -1090,20 +1090,20 @@ class MeerK40t(MWindow):
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open Settings\n"),
+            lambda v: self.context("window toggle Settings\n"),
             id=ID_SETTING,
         )
 
         button_bar.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window open Keymap\n"),
+            lambda v: self.context("window toggle Keymap\n"),
             id=ID_KEYMAP,
         )
         button_bar.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window -p rotary/1 open Rotary\n"),
+            lambda v: self.context("window -p rotary/1 toggle Rotary\n"),
             id=ID_ROTARY,
         )
 
@@ -1705,53 +1705,53 @@ class MeerK40t(MWindow):
 
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open About\n"),
+            lambda v: self.context("window toggle About\n"),
             id=wx.ID_ABOUT,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open Console\n"),
+            lambda v: self.context("window toggle Console\n"),
             id=ID_MENU_CONSOLE,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open DeviceManager\n"),
+            lambda v: self.context("window toggle DeviceManager\n"),
             id=ID_MENU_DEVICE_MANAGER,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open Keymap\n"),
+            lambda v: self.context("window toggle Keymap\n"),
             id=ID_MENU_KEYMAP,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open Settings\n"),
+            lambda v: self.context("window toggle Settings\n"),
             id=ID_MENU_SETTINGS,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open Notes\n"),
+            lambda v: self.context("window toggle Notes\n"),
             id=ID_MENU_NOTES,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open Navigation\n"),
+            lambda v: self.context("window toggle Navigation\n"),
             id=ID_MENU_NAVIGATION,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open ExecuteJob 0\n"),
+            lambda v: self.context("window toggle ExecuteJob 0\n"),
             id=ID_MENU_JOB,
         )
         if self.context.has_feature("modifier/Camera"):
             self.Bind(
                 wx.EVT_MENU,
-                lambda v: self.context("window open CameraInterface\n"),
+                lambda v: self.context("window toggle CameraInterface\n"),
                 id=ID_MENU_CAMERA,
             )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open -d Preferences\n"),
+            lambda v: self.context("window toggle -d Preferences\n"),
             id=wx.ID_PREFERENCES,
         )
         self.Bind(
@@ -1761,29 +1761,29 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open -o Controller\n"),
+            lambda v: self.context("window toggle -o Controller\n"),
             id=ID_MENU_CONTROLLER,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open UsbConnect\n"),
+            lambda v: self.context("window toggle UsbConnect\n"),
             id=ID_MENU_USB,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open JobSpooler\n"),
+            lambda v: self.context("window toggle JobSpooler\n"),
             id=ID_MENU_SPOOLER,
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window open RasterWizard\n"),
+            lambda v: self.context("window toggle RasterWizard\n"),
             id=ID_MENU_RASTER_WIZARD,
         )
 
         def open_simulator(v=None):
             with wx.BusyInfo(_("Processing Simulation...")):
                 self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow open Simulation 0\n"
+                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
                 ),
 
         self.Bind(
@@ -2252,7 +2252,7 @@ class MeerK40t(MWindow):
             if results:
                 self.save_recent(pathname)
                 if n != self.context.elements.note and self.context.auto_note:
-                    self.context("window open Notes\n")
+                    self.context("window open Notes\n")  # open/not toggle.
                 try:
                     if self.context.uniform_svg and pathname.lower().endswith("svg"):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
