@@ -136,6 +136,9 @@ class Node:
                 drop_index = drop_node.parent.children.index(drop_node)
                 drop_node.parent.add(drag_node.object, type="opnode", pos=drop_index)
                 return True
+            elif drop_node.type == "group":
+                drop_node.append_child(drag_node)
+                return True
         elif drag_node.type == "opnode":
             if drop_node.type == "op":
                 drop_node.append_child(drag_node)
@@ -154,6 +157,13 @@ class Node:
             elif drop_node.type == "branch ops":
                 # Dragging operation to op branch.
                 drop_node.append_child(drag_node)
+        elif drag_node.type == "group":
+            if drop_node.type == "elem":
+                drop_node.insert_sibling(drag_node)
+                return True
+            elif drop_node.type == "group" or drop_node.type == "file":
+                drop_node.append_child(drag_node)
+                return True
 
     def reverse(self):
         self._children.reverse()
