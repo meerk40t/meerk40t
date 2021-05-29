@@ -286,20 +286,20 @@ class ExecuteJob(MWindow):
         # self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
         # self.text_time_total.SetToolTip("Time Estimate: Total Time")
         self.check_rapid_moves_between.SetToolTip(
-            "Perform rapid moves between the objects"
+            "Rapid Moves between Objects."
         )
         self.check_reduce_travel_time.SetToolTip(
             "Reduce the travel time by optimizing the order of the elements"
         )
         self.check_cut_inner_first.SetToolTip(
-            "Reorder elements to cut the inner elements first"
+            "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
         )
         self.check_reduce_direction_changes.SetToolTip(
             "Reorder to reduce the number of sharp directional changes"
         )
-        self.check_reduce_direction_changes.Enable(False)
+        self.check_reduce_direction_changes.Hide()
         self.check_remove_overlap_cuts.SetToolTip("Remove elements of overlapped cuts")
-        self.check_remove_overlap_cuts.Enable(False)
+        self.check_remove_overlap_cuts.Hide()
         self.button_start.SetBackgroundColour(wx.Colour(0, 255, 0))
         self.button_start.SetFont(
             wx.Font(
