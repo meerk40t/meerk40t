@@ -1,3 +1,5 @@
+import math
+
 import wx
 
 from ..core.cutcode import CutCode
@@ -45,7 +47,7 @@ class Simulation(MWindow, Job):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
         self.max = max(len(self.cutcode),1)
-        self.progress = self.max-1
+        self.progress = self.max - 1
 
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
@@ -315,7 +317,7 @@ class Simulation(MWindow, Job):
     #     event.Skip()
 
     def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
-        self.progress = min(self.slider_progress.GetValue(), len(self.cutcode))
+        self.progress = min(self.slider_progress.GetValue(), self.max) - 1
         self.context.signal("refresh_scene")
 
     def _start(self):
@@ -338,11 +340,10 @@ class Simulation(MWindow, Job):
         self._start()
 
     def animate_sim(self, event=None):
+        self.progress += 1
         if self.progress >= self.max - 1:
             self.progress = self.max - 1
             self._stop()
-            return
-        self.progress += 1
         self.slider_progress.SetValue(self.progress)
         self.context.signal("refresh_scene")
 
@@ -391,8 +392,25 @@ class SimulationTravelWidget(Widget):
         for i, curr in enumerate(list(self.sim.cutcode)):
             if prev is not None:
                 if prev.end() != curr.start():
-                    self.starts.append(wx.Point2D(*prev.end()))
-                    self.ends.append(wx.Point2D(*curr.start()))
+                    start = wx.Point2D(*prev.end())
+                    end = wx.Point2D(*curr.start())
+                    self.starts.append(start)
+                    self.ends.append(end)
+                    s = complex(start[0], start[1])
+                    e = complex(end[0], end[1])
+                    d = abs(s - e)
+                    if d >= 100:
+                        m = (s + e) / 2.0
+                        ang = math.atan2((s-e).imag, (s-e).real)
+                        q = d / 10.0
+                        m0 = m + complex(math.cos(ang + math.tau / 10)* q,math.sin(ang+ math.tau/10)*q)
+                        m1 = m + complex(math.cos(ang - math.tau / 10) * q, math.sin(ang - math.tau / 10) * q)
+                        m = wx.Point2D(m.real, m.imag)
+                        self.starts.append(m)
+                        self.ends.append(wx.Point2D(m0.real, m0.imag))
+                        self.starts.append(m)
+                        self.ends.append(wx.Point2D(m1.real, m1.imag))
+
             self.pos.append(len(self.starts))
             prev = curr
 
