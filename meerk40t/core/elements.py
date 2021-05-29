@@ -317,9 +317,9 @@ class Node:
         The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
         data.
         """
-        self.notify_modified(self)
         self._bounds_dirty = True
         self._bounds = None
+        self.notify_modified(self)
 
     def altered(self):
         """
@@ -3872,7 +3872,6 @@ class Elemental(Modifier):
                 ops.append(op)
         self.add_ops([o for o in ops if o is not None])
         self.classify(list(self.elems()))
-
 
     def emphasized(self, *args):
         self._emphasized_bounds_dirty = True

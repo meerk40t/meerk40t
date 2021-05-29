@@ -2929,6 +2929,7 @@ class ShadowTree:
             self.set_color(node, c)
         except AttributeError:
             pass
+        self.context.signal("modified", node)
 
     def altered(self, node):
         item = node.item
