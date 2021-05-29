@@ -118,6 +118,8 @@ class RasterWizard(MWindow):
         )
         self.context.listen("RasterWizard-Image", self.on_raster_wizard_image_signal)
         self.context.signal("RasterWizard-Image")
+        if self.list_operation.GetCount() > 0:
+            self.list_operation.SetSelection(0)
 
     def window_close(self):
         context_root = self.context.root
