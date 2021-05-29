@@ -106,7 +106,7 @@ from .icons import (
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_laser_beam_hazard_50,
+    icons8_laser_beam_hazard2_50,
     icons8_computer_support_50,
     icons8_play_50,
 )
@@ -935,7 +935,7 @@ class MeerK40t(MWindow):
             id=ID_JOB,
         )
         toolbar.AddButton(
-            ID_SIM, _("Simulate"), icons8_laser_beam_hazard_50.GetBitmap(), ""
+            ID_SIM, _("Simulate"), icons8_laser_beam_hazard2_50.GetBitmap(), ""
         )
 
         toolbar.AddButton(

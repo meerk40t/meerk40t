@@ -1,6 +1,6 @@
 import wx
 
-from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard_50, icons8_pause_50
+from .icons import icons8_play_50, icons8_route_50, icons8_laser_beam_hazard2_50, icons8_pause_50
 from .laserrender import LaserRender
 from .mwindow import MWindow
 from .widget import GridWidget, Widget, ScenePanel
@@ -134,7 +134,7 @@ class Simulation(MWindow, Job):
 
     def __set_properties(self):
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_laser_beam_hazard_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle("Simulation")
         self.text_distance_laser.SetToolTip("Time Estimate: Lasering Time")

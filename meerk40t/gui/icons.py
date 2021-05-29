@@ -1430,6 +1430,31 @@ icons8_laser_beam_hazard_50 = PyEmbeddedImage(
     b"QgcuV/BA2Sq9G5yV/jGzEK6zeMcMXoebNGnSpEmTifgXBxu98dH6sbAAAAAASUVORK5CYII="
 )
 
+icons8_laser_beam_hazard2_50 = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE'
+    b'WUlEQVRoge3YWYjVdRQH8I9LLrhNmaZCIGUGFUVE0EMPLVBSYqmUlLb4UBhKaRYYvlgYVE8+'
+    b'RDRWPggVGi0+FEVFRdIuiuWSLRCVuaSR6Tg5zkwP59zu9XqvznJnRuF+4XAv5/f9nd85v+X8'
+    b'zu9PHXXUUUcdfYB+PWz/fCzI/8/ipx4er0dwLprQntKUutMO60UAL6W0p+60wtVoxV+4Htfl'
+    b'/9ZsOy3QHzvRhrloTpmbup3JqSkG1NogHsDt+AGDcYlIKs0YhInYg697YOyaYQQO4SimixV4'
+    b'DEvy//RsO4RRfeRjh/CiONRvYCP24QwMzP+b8HpyVvWRjyfFeWjBYdwpnL2ppP2G1M1JTgsu'
+    b'6GUfO4SvhKNPiNnfXIGzOdseT+43tRq8VtnjWlyB/TiCM3FbBd6MbGsRAV2OG2vkQ7cxALvF'
+    b'YZ4jAnn1BPxXknOvuFf2iDPU51gkgtiCNfgXDSXtE1MKaEjOa/hObLHFveLpCdAgaqgWzBQB'
+    b'lTv1BT4v0y1O7szs2+TY4HsdL4sZXSNm90/Hb5NNKaUYgL3YLrZhe9rqE0xWnM2705lbs20s'
+    b'vsUYxUDGpG5scqZln3sUV3VyL/l+DDalI0tFQbghHVqJYdglDn8hkDtSNwyNyd2QfZemrfKV'
+    b'63FMERlnr7gT2jBJHPx2EcwqHMTPKQdTtzI5i7JPW9rYmzan9FYQA8VZaMVssSVWYQLGlQTz'
+    b'a/62pZTqFiV3QvZtEavXqvI56xEsSWc24k1R1Y7E+/gH72FbOjUfQ1LmZ0Db8G5yP8i+zXgr'
+    b'bbbnGD2KsxTrpBk56PxsG4prxDlox8MV+j+SbbvFY2to6hekvpCOD+dYPYa1OeBqfJ9OP4Nf'
+    b'SqQQyOgK/UeLVWmuIK1pc3X2X9sZxzpTa10kVuEwPhKpsvCA+rFEfk/+oAo2BotHVquY+VJp'
+    b'Spuf5BgzcsyaY4uYzYVi5spv6/GYJ2a3HSsq2FiRbc3iJTm+rP0z/I1HFcuemmJaGt6FW8RK'
+    b'DC7jrM/25diaDjfiwpTnU7cVTyb30zIbE8VqPZXtbTl2TTBIlOetmCW2wdMVeEPEa7BwT3yp'
+    b'+E2rvUy3MrmVtt9zOcasHHN/FV6nsazEieXiYhtehduoeE+sFm+O7Sn7Ule4Zxqr2Bguzss7'
+    b'ioEv624QY8R+bhFbqgVXVuH2E2+Lh0QlewBTFUuUqWISRiVnj+qfbO93bDpuTl+6jHVp8AVc'
+    b'KlJiR74XN4jLcoRiICNS15FyvR9+E6VN4YPGuk76/j8uVvx0M7KrRlQu4zuCq0QA94mVPIrL'
+    b'uuLADpE15nWlcwk+FKVIV/CxCGJh+rKjGrFacTZVVKZ/iBWp9EWkoyhknK7YGJZyTvoyCTfj'
+    b'7XJitZt9ttinD+r+Z9UjKV3BIfEY2yYSRD/xrjkO1Q7uHJEqD4qL6VTAOJGa79KJZ3F/UY4f'
+    b'EZfSqSBHRPlfcRedLJWerXsZq5Y4IB5dddRRRx11nDr4D2aAfaSIazOLAAAAAElFTkSuQmCC')
+
+
 icons8_about_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
     b"cElEQVRogd3aaahVVRQH8N+7ms/qORSvjMih8EkWFWI2SoVlUERBaBEFCpFgZUESBRVaRBF9"
