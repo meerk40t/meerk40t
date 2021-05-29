@@ -2330,6 +2330,7 @@ class MeerK40t(MWindow):
 
     def on_element_modified(self, *args):
         self.update_ribbon_position()
+        self.widget_scene.request_refresh(*args)
 
     def on_focus_lost(self, event):
         self.context("-laser\nend\n")
