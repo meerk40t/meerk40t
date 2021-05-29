@@ -3466,6 +3466,7 @@ class Elemental(Modifier):
         @self.tree_operation(_("Clear All"), node_type="branch elems", help="")
         def clear_all_ops(node, **kwargs):
             self.context("element* delete\n")
+            self.elem_branch.remove_all_children()
 
         @self.tree_operation(
             _("Remove: {name}"),
