@@ -378,8 +378,9 @@ class Planner(Modifier):
                     plan.insert(0, self.context.registered["plan/home"])
                 else:
                     plan.insert(0, _("Home Before: Disabled (Rotary On)"))
-            if self.context.autobeep:
-                plan.append(self.context.registered["plan/beep"])
+            # ==========
+            # BEFORE/AFTER
+            # ==========
             if self.context.autohome:
                 if not rotary_context.rotary:
                     plan.append(self.context.registered["plan/home"])
@@ -394,6 +395,10 @@ class Planner(Modifier):
                 plan.append(self.context.registered["plan/origin"])
             if self.context.postunlock:
                 plan.append(self.context.registered["plan/unlock"])
+            if self.context.autobeep:
+                plan.append(self.context.registered["plan/beep"])
+            if self.context.autointerrupt:
+                plan.append(self.context.registered["plan/interrupt"])
             # divide
             self.conditional_jobadd_strip_text()
             if rotary_context.rotary:

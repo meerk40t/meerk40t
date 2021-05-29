@@ -54,11 +54,9 @@ class ExecuteJob(MWindow):
         wx_menu.Append(wx.ID_ANY, "Before", wxglade_tmp_menu_sub, "")
         wxglade_tmp_menu_sub = wx.Menu()
 
-
         # ==========
         # AUTO/AFTER MENU
         # ==========
-
         self.preview_menu.menu_autohome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
             "Home",
