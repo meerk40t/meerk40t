@@ -964,7 +964,7 @@ class MeerK40t(MWindow):
         )
 
         def open_simulator(v=None):
-            with wx.BusyInfo(_("Processing Simulation...")):
+            with wx.BusyInfo(_("Preparing simulation...")):
                 self.context(
                     "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
                 ),
@@ -1784,7 +1784,7 @@ class MeerK40t(MWindow):
         )
 
         def open_simulator(v=None):
-            with wx.BusyInfo(_("Processing Simulation...")):
+            with wx.BusyInfo(_("Preparing simulation...")):
                 self.context(
                     "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
                 ),
