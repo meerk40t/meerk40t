@@ -599,6 +599,10 @@ class ExecuteJob(MWindow):
         self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
         self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
 
+        operations, original, commands, plan_name = self.context.default_plan()
+        if len(operations) == 0 and len(commands) == 0:
+            self.context("plan%s copy preprocess\n" % self.plan_name)
+
         self.update_gui()
 
     def window_close(self):
