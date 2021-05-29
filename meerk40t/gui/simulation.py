@@ -44,7 +44,8 @@ class Simulation(MWindow, Job):
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
-        self.max = len(self.cutcode)
+        self.max = max(len(self.cutcode),1)
+        self.progress = self.max-1
 
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
@@ -71,8 +72,7 @@ class Simulation(MWindow, Job):
         )
         self.widget_scene = self.view_pane.scene
 
-        m = max(self.max, 1)
-        self.slider_progress = wx.Slider(self, wx.ID_ANY, m, 0, m)
+        self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
         self.text_distance_laser = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
@@ -315,7 +315,7 @@ class Simulation(MWindow, Job):
     #     event.Skip()
 
     def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
-        self.max = min(self.slider_progress.GetValue(), len(self.cutcode))
+        self.progress = min(self.slider_progress.GetValue(), len(self.cutcode))
         self.context.signal("refresh_scene")
 
     def _start(self):
@@ -329,25 +329,22 @@ class Simulation(MWindow, Job):
         self.running = False
 
     def on_button_play(self, event):  # wxGlade: Simulation.<event_handler>
-        progress = self.slider_progress.GetValue()
-        max = self.slider_progress.GetMax()
         if self.running:
             self._stop()
             return
-        if progress >= max:
-            self.slider_progress.SetValue(0)
-            self.on_slider_progress(None)
+        if self.progress >= self.max - 1:
+            self.progress = 0
+            self.slider_progress.SetValue(self.progress)
         self._start()
 
     def animate_sim(self, event=None):
-        progress = self.slider_progress.GetValue()
-        max = self.slider_progress.GetMax()
-        if progress >= max:
+        if self.progress >= self.max - 1:
+            self.progress = self.max - 1
             self._stop()
             return
-        progress += 1
-        self.slider_progress.SetValue(progress)
-        self.on_slider_progress(None)
+        self.progress += 1
+        self.slider_progress.SetValue(self.progress)
+        self.context.signal("refresh_scene")
 
     def on_slider_playback(self, event):  # wxGlade: Simulation.<event_handler>
         self.interval = 0.1 * 100.0 / float(self.slider_playbackspeed.GetValue())
@@ -379,7 +376,7 @@ class SimulationWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc: wx.GraphicsContext):
-        sim_cut = self.sim.cutcode[: self.sim.max]
+        sim_cut = self.sim.cutcode[: self.sim.progress]
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
 
 
@@ -400,10 +397,7 @@ class SimulationTravelWidget(Widget):
             prev = curr
 
     def process_draw(self, gc: wx.GraphicsContext):
-        max = self.sim.max - 1
-        if max == -1:
-            return
-        pos = self.pos[max]
+        pos = self.pos[self.sim.progress]
         if pos == 0:
             return
         starts = self.starts[:pos]
@@ -422,13 +416,12 @@ class SimReticleWidget(Widget):
             x = 0
             y = 0
         else:
-            pos = self.sim.cutcode[self.sim.max - 1].end()
+            pos = self.sim.cutcode[self.sim.progress].end()
             x = pos[0]
             y = pos[1]
         try:
             # Draw Reticle
             gc.SetPen(wx.Pen(wx.Colour(0, 255, 0, alpha=127)))
-            # gc.SetPen(wx.GREEN_PEN)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             x, y = self.scene.convert_scene_to_window([x, y])
             gc.DrawEllipse(x - 5, y - 5, 10, 10)
