@@ -2057,6 +2057,17 @@ class Elemental(Modifier):
                             if obj is not None:
                                 obj *= matrix
                             q.modified()
+            elif align == "topleft":
+                for e in data:
+                    dx = -left_edge
+                    dy = -top_edge
+                    matrix = "translate(%f, %f)" % (dx, dy)
+                    for q in e.flat(types=("elem", "group", "file")):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+                self.context.signal("refresh_scene")
             elif align == "bedcenter":
                 for e in data:
                     bw = bed_dim.bed_width
