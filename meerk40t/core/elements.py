@@ -314,7 +314,8 @@ class Node:
 
     def modified(self):
         """
-        The matrix transformation was changed.
+        The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
+        data.
         """
         self.notify_modified(self)
         self._bounds_dirty = True
@@ -322,7 +323,7 @@ class Node:
 
     def altered(self):
         """
-        The data structure was changed.
+        The data structure was changed. Any assumptions about what this object is/was are void.
         """
         try:
             self.cache.UnGetNativePath(self.object.cache.NativePath)

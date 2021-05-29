@@ -27,15 +27,15 @@ class PositionPanel(wx.Panel):
         self.__do_layout()
 
         self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_x, self.text_x)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_x)
         self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_y, self.text_y)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_y)
         self.Bind(wx.EVT_TEXT, self.on_text_w, self.text_w)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_w, self.text_w)
-        self.Bind(wx.EVT_BUTTON, self.on_button_aspect_ratio, self.button_aspect_ratio)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_w)
         self.Bind(wx.EVT_TEXT, self.on_text_h, self.text_h)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_h, self.text_h)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
+        self.Bind(wx.EVT_BUTTON, self.on_button_aspect_ratio, self.button_aspect_ratio)
         # end wxGlade
         self.position_aspect_ratio = True
         self.position_ignore_update = False
