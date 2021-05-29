@@ -165,8 +165,11 @@ class ExecuteJob(MWindow):
 
         self.preview_menu.Append(wx_menu, "Add")
 
-        wx_menu = wx.Menu()
-        self.preview_menu.Append(wx_menu, _("Tools"))
+        # ==========
+        # Tools Menu
+        # ==========
+        # wx_menu = wx.Menu()
+        # self.preview_menu.Append(wx_menu, _("Tools"))
 
         self.SetMenuBar(self.preview_menu)
         # ==========
