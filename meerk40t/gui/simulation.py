@@ -47,7 +47,7 @@ class Simulation(MWindow, Job):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
         self.max = max(len(self.cutcode), 1)
-        self.progress = self.max - 1
+        self.progress = self.max
 
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
@@ -317,7 +317,7 @@ class Simulation(MWindow, Job):
     #     event.Skip()
 
     def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
-        self.progress = min(self.slider_progress.GetValue(), self.max) - 1
+        self.progress = min(self.slider_progress.GetValue(), self.max)
         self.context.signal("refresh_scene")
 
     def _start(self):
@@ -334,18 +334,19 @@ class Simulation(MWindow, Job):
         if self.running:
             self._stop()
             return
-        if self.progress >= self.max - 1:
+        if self.progress >= self.max:
             self.progress = 0
             self.slider_progress.SetValue(self.progress)
         self._start()
 
     def animate_sim(self, event=None):
         self.progress += 1
-        if self.progress >= self.max - 1:
-            self.progress = self.max - 1
+        if self.progress >= self.max:
+            self.progress = self.max
             self._stop()
+        else:
+            self.context.signal("refresh_scene")
         self.slider_progress.SetValue(self.progress)
-        self.context.signal("refresh_scene")
 
     def on_slider_playback(self, event):  # wxGlade: Simulation.<event_handler>
         self.interval = 0.1 * 100.0 / float(self.slider_playbackspeed.GetValue())
@@ -377,7 +378,10 @@ class SimulationWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc: wx.GraphicsContext):
-        sim_cut = self.sim.cutcode[: self.sim.progress]
+        if self.sim.progress == self.sim.max:
+            sim_cut = self.sim.cutcode
+        else:
+            sim_cut = self.sim.cutcode[: self.sim.progress]
         self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
 
 
@@ -416,18 +420,19 @@ class SimulationTravelWidget(Widget):
                         self.ends.append(wx.Point2D(m0.real, m0.imag))
                         self.starts.append(m)
                         self.ends.append(wx.Point2D(m1.real, m1.imag))
-
             self.pos.append(len(self.starts))
             prev = curr
 
     def process_draw(self, gc: wx.GraphicsContext):
-        pos = self.pos[self.sim.progress]
-        if pos == 0:
-            return
-        starts = self.starts[:pos]
-        ends = self.ends[:pos]
-        gc.SetPen(wx.BLACK_DASHED_PEN)
-        gc.StrokeLineSegments(starts, ends)
+        if self.sim.progress == self.sim.max:
+            pos = self.pos[-1]
+        else:
+            pos = self.pos[self.sim.progress]
+        if pos > 1:
+            starts = self.starts[:pos]
+            ends = self.ends[:pos]
+            gc.SetPen(wx.BLACK_DASHED_PEN)
+            gc.StrokeLineSegments(starts, ends)
 
 
 class SimReticleWidget(Widget):
@@ -440,7 +445,10 @@ class SimReticleWidget(Widget):
             x = 0
             y = 0
         else:
-            pos = self.sim.cutcode[self.sim.progress].end()
+            if self.sim.progress == self.sim.max:
+                pos = self.sim.cutcode[self.sim.progress-1].end()
+            else:
+                pos = self.sim.cutcode[self.sim.progress].start()
             x = pos[0]
             y = pos[1]
         try:
