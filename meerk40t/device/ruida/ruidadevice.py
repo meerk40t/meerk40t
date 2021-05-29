@@ -1090,7 +1090,16 @@ class RuidaEmulator(Module):
             elif array[1] == 0x01:
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = "Document Name %d" % (filenumber)
-                # TODO: Requires a response here.
+                from glob import glob
+                from os.path import realpath, join
+                files = [name for name in glob(join(realpath('.'), '*.rd'))]
+                name = files[filenumber-1]
+                name = os.path.split(name)[-1]
+                name = name.split('.')[0]
+                name = name.upper()[:8]
+
+                respond = bytes(array[:4]) + bytes(name, 'utf8') + b'\00'
+                # respond_desc = "Document %d Named: %s" % (filenumber, name)
             elif array[1] == 0x02:
                 desc = "File transfer"
             elif array[1] == 0x03:
@@ -1814,6 +1823,8 @@ class RuidaEmulator(Module):
             return "Read Process Feed Length", 0
         if mem == 0x0340:
             return "Stop Time", 0
+        if 0x0391 <= mem < 0x0420:
+            return "Time for File %d to Run" % (mem-0x00390), 100
         if mem == 0x0591:
             return "Card Lock", 0  # 0x55aaaa55
         if mem == 0x05c0:
