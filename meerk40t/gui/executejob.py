@@ -284,7 +284,7 @@ class ExecuteJob(MWindow):
         # self.text_time_laser.SetToolTip("Time Estimate: Lasering Time")
         # self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
         # self.text_time_total.SetToolTip("Time Estimate: Total Time")
-        self.check_rapid_moves_between.SetToolTip("Rapid Moves between Objects.")
+        self.check_rapid_moves_between.SetToolTip("Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed")
         self.check_reduce_travel_time.SetToolTip(
             "Reduce the travel time by optimizing the order of the elements"
         )
