@@ -92,6 +92,7 @@ class Planner(Modifier):
         self.context.setting(bool, "autophysicalhome", False)
         self.context.setting(bool, "autoorigin", False)
         self.context.setting(bool, "autobeep", True)
+        self.context.setting(bool, "autointerrupt", False)
         self.context.setting(bool, "opt_reduce_travel", True)
         self.context.setting(bool, "opt_inner_first", True)
         self.context.setting(bool, "opt_reduce_directions", False)
