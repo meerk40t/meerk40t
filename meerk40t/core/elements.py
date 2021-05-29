@@ -4044,6 +4044,7 @@ class Elemental(Modifier):
             element.stroke = Color(stroke)
         node = context_root.elements.add_elem(element)
         context_root.elements.set_emphasis([element])
+        node.focus()
         return node
 
     def load_default(self):
