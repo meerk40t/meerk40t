@@ -49,7 +49,7 @@ class Settings(MWindow):
             (_("DXF Centering"), _("Fit (scale down if necessary) and center a DXF file within the bed"),"dxf_center", True),
             (_("Show Negative Guide"), _("Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"),"show_negative_guide", True),
             (_("Launch Spooler JobStart"), _("Open the Spooler window automatically when you Execute a Job"),"auto_spooler", True),
-            (_("MouseWheel Pan"), _("Default MouseWheel is Zoom (and horizontal pan with Shift key) ? this changes MouseWheel to pan, and zoom with Ctrl key"), "mouse_wheel_pan", False),
+            (_("MouseWheel Pan"), _("Default MouseWheel is Zoom (and horizontal pan with Shift key) - this changes MouseWheel to pan, and zoom with Ctrl key"), "mouse_wheel_pan", False),
             (_("Invert MouseWheel Pan"), _("Reverses the direction of the MouseWheel for horizontal & vertical pan"), "mouse_pan_invert", False),
             (_("Invert MouseWheel Zoom"), _("Reverses the direction of the MouseWheel for zoom"),"mouse_zoom_invert", False),
             (_("Default Operation Empty"), _("Sets Operations to Other/Red/Blue if loaded with no operations."), "operation_default_empty", True),
@@ -168,7 +168,7 @@ class Settings(MWindow):
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("SVG Pixel Per Inch")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("SVG Pixels Per Inch")), wx.HORIZONTAL
         )
         sizer_2 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Language")), wx.HORIZONTAL
