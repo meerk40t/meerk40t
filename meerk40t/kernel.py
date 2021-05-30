@@ -2529,7 +2529,7 @@ class Channel:
     def __call__(self, message: Union[str, bytes, bytearray], *args, **kwargs):
         if self.line_end is not None:
             message = message + self.line_end
-        if self.timestamp:
+        if self.timestamp and not isinstance(message, (bytes,bytearray)):
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
             message = ts + message.replace("\n", "\n%s" % ts)
         for w in self.watchers:
