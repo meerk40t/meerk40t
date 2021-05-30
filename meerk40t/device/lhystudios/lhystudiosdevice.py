@@ -1665,9 +1665,12 @@ class LhystudiosController:
 
     def stop(self, *args):
         self.abort()
-        if self._thread is not None:
-            self._thread.join()  # Wait until stop completes before continuing.
-        self._thread = None
+        try:
+            if self._thread is not None:
+                self._thread.join()  # Wait until stop completes before continuing.
+            self._thread = None
+        except RuntimeError:
+            pass # Stop called by current thread.
 
     def update_state(self, state):
         if state == self.state:
