@@ -273,7 +273,7 @@ class SVGLoader:
         scale_factor = 1000.0 / ppi
         svg = SVG.parse(
             source=pathname,
-            reify=False,
+            reify=True,
             width="%fmm" % (bed_dim.bed_width),
             height="%fmm" % (bed_dim.bed_height),
             ppi=ppi,
