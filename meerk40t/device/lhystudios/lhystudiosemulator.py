@@ -33,7 +33,8 @@ class LhystudiosEmulator(Module):
         self.context.setting(bool, "fix_speeds", False)
         self.process = self.state_default
 
-        send = context.channel("pipe/usb_send")
+        active = self.context.root.active
+        send = context.channel("%s/usb_send" % active)
         send.watch(self.write_packet)
 
         self.channel = self.context.channel("lhy")
@@ -235,21 +236,28 @@ class LhystudiosEmulator(Module):
             self.left = False
             self.x_on = True
             self.y_on = False
+            self.channel("Right")
         elif c == "T":
             self.left = True
             self.x_on = True
             self.y_on = False
+            self.channel("Left")
         elif c == "R":
             self.top = False
             self.x_on = False
             self.y_on = True
+            self.channel("Bottom")
         elif c == "L":
             self.top = True
             self.x_on = False
             self.y_on = True
+            self.channel("Top")
         elif c == "M":
             self.x_on = True
             self.y_on = True
+            a = "Top" if self.top else "Bottom"
+            b = "Left" if self.left else "Right"
+            self.channel("Diagonal %s %s" % (a, b))
 
     def state_default(self, b, c):
         if self.state_distance(b, c):
@@ -286,18 +294,22 @@ class LhystudiosEmulator(Module):
             self.left = False
             self.x_on = True
             self.y_on = False
+            self.channel("Right")
         elif c == "T":
             self.left = True
             self.x_on = True
             self.y_on = False
+            self.channel("Left")
         elif c == "R":
             self.top = False
             self.x_on = False
             self.y_on = True
+            self.channel("Bottom")
         elif c == "L":
             self.top = True
             self.x_on = False
             self.y_on = True
+            self.channel("Top")
 
 
 class EgvLoader:

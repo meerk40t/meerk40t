@@ -418,6 +418,23 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Server cannot be attached to any device."))
             return
 
+        @kernel.console_command("lhyemulator", help="activate the lhyemulator.")
+        def lhyemulator(
+            channel, _, **kwargs
+        ):
+            root = kernel.root
+            name = root.active
+            driver_context = kernel.get_context("lhystudios/driver/%s" % name)
+            try:
+                spooler, input_driver, output = root.registered[
+                    "device/%s" % name
+                ]
+                emulator = driver_context.open_as("emulator/lhystudios", "lhyemulator%s" % name)
+                channel(_("Lhystudios Emulator attached to %s" % str(driver_context)))
+            except KeyError:
+                channel(_("Emulator cannot be attached to any device."))
+            return
+
 
 distance_lookup = [
     b"",
