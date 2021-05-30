@@ -231,7 +231,8 @@ class LaserRender:
                     matrix = Matrix()
                 matrix.post_translate(x, y)
                 gc.PushState()
-                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+                if matrix is not None and not matrix.is_identity():
+                    gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
                 cache = None
                 cache_id = -1
                 try:
@@ -262,13 +263,14 @@ class LaserRender:
             matrix = shape.transform
             width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
-            matrix = Matrix()
+            matrix = None
             width_scale = 1.0
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_path(gc, Path(shape))
             node.cache = cache
         gc.PushState()
-        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, shape, zoomscale=zoomscale, width_scale=width_scale)
         self.set_element_brush(gc, shape)
         if draw_mode & DRAW_MODE_FILLS == 0 and shape.fill is not None:
@@ -284,13 +286,14 @@ class LaserRender:
             matrix = path.transform
             width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
-            matrix = Matrix()
+            matrix = None
             width_scale = 1.0
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_path(gc, path)
             node.cache = cache
         gc.PushState()
-        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, path, zoomscale=zoomscale, width_scale=width_scale)
         if draw_mode & DRAW_MODE_LINEWIDTH:
             self.set_pen(gc, path.stroke, width=1)
@@ -307,7 +310,7 @@ class LaserRender:
             matrix = text.transform
             width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
-            matrix = Matrix()
+            matrix = None
             width_scale = 1.0
         if hasattr(node, "wxfont"):
             font = node.wxfont
@@ -334,7 +337,8 @@ class LaserRender:
             node.wxfont = font
 
         gc.PushState()
-        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, text, zoomscale=zoomscale, width_scale=width_scale)
         self.set_element_brush(gc, text)
 
@@ -363,9 +367,10 @@ class LaserRender:
         try:
             matrix = image.transform
         except AttributeError:
-            matrix = Matrix()
+            matrix = None
         gc.PushState()
-        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_CACHE == 0:
             cache = None
             try:
@@ -443,7 +448,8 @@ class LaserRender:
         gc = wx.GraphicsContext.Create(dc)
         gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
         gc.PushState()
-        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if not isinstance(elements, (list, tuple)):
             elements = [elements]
         gc.SetBrush(wx.WHITE_BRUSH)

@@ -615,9 +615,10 @@ class Widget(list):
 
     def draw(self, gc):
         # Concat if this is a thing.
-        m = self.matrix
+        matrix = self.matrix
         gc.PushState()
-        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(m)))
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.process_draw(gc)
         for i in range(len(self) - 1, -1, -1):
             widget = self[i]
