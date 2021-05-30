@@ -43,7 +43,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.5.2"
+SVGELEMENTS_VERSION = "1.5.3"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -1055,7 +1055,7 @@ class Color(object):
         if "blue" in kwargs:
             self.blue = kwargs["blue"]
         if "alpha" in kwargs:
-            self.blue = kwargs["alpha"]
+            self.alpha = kwargs["alpha"]
         if "opacity" in kwargs:
             self.opacity = kwargs["opacity"]
         if "r" in kwargs:
@@ -1562,6 +1562,49 @@ class Color(object):
         else:
             opacity = 1
         return Color.hsl_to_int(h, s, l, opacity)
+
+    @classmethod
+    def distinct(cls, index):
+        """
+        Produces a deterministic distinct color for the given index.
+        """
+
+        def _pattern(pattern: int):
+            n = int(pattern ** (1.0 / 3.0))
+            pattern -= n * n * n
+            p = [n] * 3
+            if pattern == 0:
+                return p
+            pattern -= 1
+
+            v = int(pattern % 3)
+            pattern = int(pattern // 3)
+            if pattern < n:
+                p[v] = pattern % n
+                return p
+            pattern -= n
+
+            p[v] = pattern // n
+            v += 1
+            p[v % 3] = pattern % n
+            return p
+
+        def _8bit_reverse(r: int):
+            value = r - 1
+            v = 0
+            for i in range(0, 8):
+                v = v | (value & 1)
+                v <<= 1
+                value >>= 1
+            v >>= 1
+            return v & 0xFF
+
+        p = _pattern(index)
+        return Color(
+            _8bit_reverse(p[0]),
+            _8bit_reverse(p[1]),
+            _8bit_reverse(p[2]),
+        )
 
     @property
     def rgb(self):
@@ -4413,7 +4456,7 @@ class CubicBezier(Curve):
         """Calculate the length of the path up to a certain position"""
         try:
             return self._length_scipy(error)
-        except ImportError:
+        except:  # The code works but fall back for *any* reason
             return self._length_default(error, min_depth)
 
     def is_smooth_from(self, previous):
@@ -4887,7 +4930,7 @@ class Arc(Curve):
             return abs(self.rx * self.sweep)
         try:
             return self._exact_length()
-        except ImportError:
+        except:  # Fallback code for *any* reason
             return self._line_length(error=error, min_depth=min_depth)
 
     def _svg_complex_parameterize(
@@ -6234,7 +6277,7 @@ class Rect(Shape):
         scale_x = self.transform.value_scale_x()
         scale_y = self.transform.value_scale_y()
         if scale_x * scale_y < 0:
-            return self # No reification of negative values, gives negative dims.
+            return self  # No reification of negative values, gives negative dims.
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if (
@@ -8147,6 +8190,7 @@ class SVG(Group):
                 # All class and attribute properties are compiled.
 
                 values.update(attributes)
+                values[SVG_STRUCT_ATTRIB] = attributes
                 if (
                     SVG_ATTR_DISPLAY in values
                     and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE
@@ -8276,7 +8320,7 @@ class SVG(Group):
                     SVG_TAG_STYLE,
                 ):
                     attributes = elem.attrib
-                    if SVG_ATTR_ID in values and root is not None:
+                    if SVG_ATTR_ID in attributes and root is not None:
                         root.objects[attributes[SVG_ATTR_ID]] = s
                 if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN):
                     s = SVGText(values, text=elem.text)
@@ -8295,13 +8339,13 @@ class SVG(Group):
                     for key, value in assignments:
                         key = key.strip()
                         value = value.strip()
-                        for selector in key.split(","): # Can comma select subitems.
+                        for selector in key.split(","):  # Can comma select subitems.
                             sel = selector.strip()
                             if sel not in styles:
                                 styles[sel] = value
                             else:
-                                if not styles[sel].endswith(';'):
-                                    styles[sel] += ';'
+                                if not styles[sel].endswith(";"):
+                                    styles[sel] += ";"
                                 styles[sel] += value
                 elif SVG_TAG_CLIPPATH == tag:
                     clip -= 1
