@@ -43,7 +43,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.5.2"
+SVGELEMENTS_VERSION = "1.5.3"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -1055,7 +1055,7 @@ class Color(object):
         if "blue" in kwargs:
             self.blue = kwargs["blue"]
         if "alpha" in kwargs:
-            self.blue = kwargs["alpha"]
+            self.alpha = kwargs["alpha"]
         if "opacity" in kwargs:
             self.opacity = kwargs["opacity"]
         if "r" in kwargs:
@@ -1562,6 +1562,49 @@ class Color(object):
         else:
             opacity = 1
         return Color.hsl_to_int(h, s, l, opacity)
+
+    @classmethod
+    def distinct(cls, index):
+        """
+        Produces a deterministic distinct color for the given index.
+        """
+
+        def _pattern(pattern: int):
+            n = int(pattern ** (1.0 / 3.0))
+            pattern -= n * n * n
+            p = [n] * 3
+            if pattern == 0:
+                return p
+            pattern -= 1
+
+            v = int(pattern % 3)
+            pattern = int(pattern // 3)
+            if pattern < n:
+                p[v] = pattern % n
+                return p
+            pattern -= n
+
+            p[v] = pattern // n
+            v += 1
+            p[v % 3] = pattern % n
+            return p
+
+        def _8bit_reverse(r: int):
+            value = r - 1
+            v = 0
+            for i in range(0, 8):
+                v = v | (value & 1)
+                v <<= 1
+                value >>= 1
+            v >>= 1
+            return v & 0xFF
+
+        p = _pattern(index)
+        return Color(
+            _8bit_reverse(p[0]),
+            _8bit_reverse(p[1]),
+            _8bit_reverse(p[2]),
+        )
 
     @property
     def rgb(self):
