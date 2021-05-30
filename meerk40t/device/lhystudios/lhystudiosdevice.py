@@ -1670,7 +1670,7 @@ class LhystudiosController:
                 self._thread.join()  # Wait until stop completes before continuing.
             self._thread = None
         except RuntimeError:
-            pass # Stop called by current thread.
+            pass  # Stop called by current thread.
 
     def update_state(self, state):
         if state == self.state:
@@ -1687,10 +1687,9 @@ class LhystudiosController:
             self.context.signal("pipe;buffer", len(self))
 
     def update_packet(self, packet):
-        if self.context is not None:
-            self.context.signal("pipe;packet", convert_to_list_bytes(packet))
-            self.context.signal("pipe;packet_text", packet)
-            self.usb_send_channel(packet)
+        self.context.signal("pipe;packet", convert_to_list_bytes(packet))
+        self.context.signal("pipe;packet_text", packet)
+        self.usb_send_channel(packet)
 
     def _thread_data_send(self):
         """
@@ -1860,7 +1859,9 @@ class LhystudiosController:
             # We have a sendable packet.
             if not self.pre_ok:
                 self.wait_until_accepting_packets()
-            self.send_packet(packet)
+            packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
+            self.connection.write(packet)
+            self.pre_ok = False
 
             # Packet is sent, trying to confirm.
             status = 0
@@ -1912,6 +1913,9 @@ class LhystudiosController:
             del self._realtime_buffer[:length]
         else:
             del self._buffer[:length]
+        if len(packet) != 0:
+            # Packet was completed and sent. Only then update the channel.
+            self.update_packet(packet)
         self.update_buffer()
 
         if post_send_command is not None:
@@ -1922,12 +1926,6 @@ class LhystudiosController:
                 # We should have already sent the packet. So this should be fine.
                 pass
         return True  # A packet was prepped and sent correctly.
-
-    def send_packet(self, packet):
-        packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
-        self.connection.write(packet)
-        self.update_packet(packet)
-        self.pre_ok = False
 
     def update_status(self):
         try:
