@@ -11,7 +11,7 @@ except ImportError:
 import wx
 
 from ..kernel import Job, Module
-from ..svgelements import Matrix, Path, Point, Rect
+from ..svgelements import Matrix, Path, Point, Rect, Color
 from .laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_BACKGROUND,
@@ -268,6 +268,7 @@ class Scene(Module, Job):
     def initialize(self, *args, **kwargs):
         context = self.context
         context.schedule(self)
+        context.listen("driver;position", self.on_update_position)
         context.setting(int, "draw_mode", 0)
         context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "mouse_pan_invert", False)
@@ -276,15 +277,45 @@ class Scene(Module, Job):
         if context.fps <= 0:
             context.fps = 60
         self.interval = 1.0 / float(context.fps)
+        self.commit()
+
+    def on_update_position(self, origin, pos):
+        self.request_refresh_for_animation()
+
+    def commit(self):
+        context = self.context
+        self._init_widget(self.widget_root, context)
 
     def restore(self, gui, **kwargs):
         self.gui = gui
 
     def finalize(self, *args, **kwargs):
+        self._final_widget(self.widget_root, self.context)
+        self.context.unlisten("driver;position", self.on_update_position)
         self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
         self.context.unschedule(self)
         for e in self.context.elements._tree.flat():
             e.unregister()
+
+    def _init_widget(self, widget, context):
+        try:
+            widget.init(context)
+        except AttributeError:
+            pass
+        for w in widget:
+            if w is None:
+                continue
+            self._init_widget(w, context)
+
+    def _final_widget(self, widget, context):
+        try:
+            widget.final(context)
+        except AttributeError:
+            pass
+        for w in widget:
+            if w is None:
+                continue
+            self._final_widget(w, context)
 
     def set_fps(self, fps):
         if fps == 0:
@@ -374,6 +405,27 @@ class Scene(Module, Job):
             self._signal_widget(w, *args, **kwargs)
 
     def animate_tick(self):
+        pass
+
+    def notify_added_to_parent(self, parent):
+        pass
+
+    def notify_added_child(self, child):
+        try:
+            child.init(self.context)
+        except AttributeError:
+            pass
+
+    def notify_removed_from_parent(self, parent):
+        pass
+
+    def notify_removed_child(self, child):
+        try:
+            child.final(self.context)
+        except AttributeError:
+            pass
+
+    def notify_moved_child(self, child):
         pass
 
     def draw(self, canvas):
@@ -585,19 +637,19 @@ class Widget(list):
         return RESPONSE_CHAIN
 
     def notify_added_to_parent(self, parent):
-        pass
+        self.scene.notify_added_to_parent(parent)
 
     def notify_added_child(self, child):
-        pass
+        self.scene.notify_added_child(child)
 
     def notify_removed_from_parent(self, parent):
-        pass
+        self.scene.notify_removed_from_parent(parent)
 
     def notify_removed_child(self, child):
-        pass
+        self.scene.notify_removed_child(child)
 
     def notify_moved_child(self, child):
-        pass
+        self.scene.notify_moved_child(child)
 
     def add_widget(self, index=-1, widget=None, properties=0):
         if len(self) == 0:
@@ -1310,21 +1362,41 @@ class RectSelectWidget(Widget):
 class ReticleWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
+        self.reticles = {}
+        self.pen = wx.Pen()
+
+    def init(self, context):
+        context.listen("driver;position", self.on_update_driver)
+        context.listen("emulator;position", self.on_update_emulator)
+
+    def final(self, context):
+        context.unlisten("driver;position", self.on_update_driver)
+        context.unlisten("emulator;position", self.on_update_emulator)
+
+    def on_update_driver(self, origin, pos):
+        self.reticles["d" + origin] = pos[2], pos[3]
+        # self.request_refresh_for_animation()
+
+    def on_update_emulator(self, origin, pos):
+        self.reticles["e" + origin] = pos[2], pos[3]
 
     def process_draw(self, gc):
         context = self.scene.context
         try:
             if context.draw_mode & DRAW_MODE_RETICLE == 0:
-                # Draw Reticle
-                gc.SetPen(wx.RED_PEN)
+                # Draw Reticles
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
-                x = context._reticle_x
-                y = context._reticle_y
-                if x is None or y is None:
-                    x = 0
-                    y = 0
-                x, y = self.scene.convert_scene_to_window([x, y])
-                gc.DrawEllipse(x - 5, y - 5, 10, 10)
+                for index, ret in enumerate(self.reticles):
+                    r = self.reticles[ret]
+                    self.pen.SetColour(Color.distinct(index+2).hex)
+                    gc.SetPen(self.pen)
+                    x = r[0]
+                    y = r[1]
+                    if x is None or y is None:
+                        x = 0
+                        y = 0
+                    x, y = self.scene.convert_scene_to_window([x, y])
+                    gc.DrawEllipse(x - 5, y - 5, 10, 10)
         except AttributeError:
             pass
 
@@ -1334,6 +1406,25 @@ class LaserPathWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
+
+    def init(self, context):
+        context.listen("driver;position", self.on_update)
+        context.listen("emulator;position", self.on_update)
+
+    def final(self, context):
+        context.unlisten("driver;position", self.on_update)
+        context.unlisten("emulator;position", self.on_update)
+
+    def on_update(self, origin, pos):
+        laserpath = self.laserpath
+        index = self.laserpath_index
+        laserpath[0][index][0] = pos[0]
+        laserpath[0][index][1] = pos[1]
+        laserpath[1][index][0] = pos[2]
+        laserpath[1][index][1] = pos[3]
+        index += 1
+        index %= len(laserpath[0])
+        self.laserpath_index = index
 
     def clear_laserpath(self):
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]

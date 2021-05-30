@@ -729,7 +729,6 @@ class MeerK40t(MWindow):
         context.listen("pipe;usb_status", self.on_usb_state_text)
         context.listen("pipe;thread", self.on_pipe_state)
         context.listen("spooler;thread", self.on_spooler_state)
-        context.listen("driver;position", self.update_position)
         context.listen("driver;mode", self.on_driver_mode)
         context.listen("bed_size", self.bed_changed)
         context.listen("warning", self.on_warning_signal)
@@ -1930,7 +1929,6 @@ class MeerK40t(MWindow):
         context.unlisten("pipe;usb_status", self.on_usb_state_text)
         context.unlisten("pipe;thread", self.on_pipe_state)
         context.unlisten("spooler;thread", self.on_spooler_state)
-        context.unlisten("driver;position", self.update_position)
         context.unlisten("driver;mode", self.on_driver_mode)
         context.unlisten("bed_size", self.bed_changed)
         context.unlisten("warning", self.on_warning_signal)
@@ -2307,20 +2305,6 @@ class MeerK40t(MWindow):
         self.Layout()
         self.scene.signal("guide")
         self.request_refresh()
-
-    def update_position(self, origin, pos):
-        laserpath = self.laserpath_widget.laserpath
-        index = self.laserpath_widget.laserpath_index
-        laserpath[0][index][0] = pos[0]
-        laserpath[0][index][1] = pos[1]
-        laserpath[1][index][0] = pos[2]
-        laserpath[1][index][1] = pos[3]
-        self.context._reticle_x = pos[2]
-        self.context._reticle_y = pos[3]
-        index += 1
-        index %= len(laserpath[0])
-        self.laserpath_widget.laserpath_index = index
-        self.widget_scene.request_refresh_for_animation()
 
     def space_changed(self, origin, *args):
         self.ribbon_position_units = self.context.units_index
