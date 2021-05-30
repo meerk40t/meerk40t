@@ -106,7 +106,7 @@ class LhystudiosEmulator(Module):
     def state_pop(self, b, c):
         if c == "P":
             # Home sequence triggered.
-            self.context.signal("driver;position", (self.x, self.y, 0, 0))
+            self.context.signal("emulator;position", (self.x, self.y, 0, 0))
             self.x = 0
             self.y = 0
             self.process = self.state_default
@@ -196,7 +196,7 @@ class LhystudiosEmulator(Module):
             self.distance_y = 0
 
             self.context.signal(
-                "driver;position", (self.x, self.y, self.x + dx, self.y + dy)
+                "emulator;position", (self.x, self.y, self.x + dx, self.y + dy)
             )
             self.x += dx
             self.y += dy
