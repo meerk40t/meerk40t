@@ -174,7 +174,7 @@ class AUIRibbonFrame(wx.Frame):
 
         panel.SetSizer(s)
         self.panel = panel
-        info1 = wx.aui.AuiPaneInfo().Float()
+        info1 = wx.aui.AuiPaneInfo().FloatingSize(300,150).Float()
         self.mgr.AddPane(panel, info1)
 
         self.BindEvents(selection, shapes, provider_bar, toolbar_panel)
