@@ -550,26 +550,33 @@ class ExecuteJob(MWindow):
 
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
-            self.context("plan%s copy preprocess\n" % self.plan_name)
-            operations, original, commands, name = self.context.default_plan()
-            if len(commands) == 0:
-                self.context("plan%s validate\n" % self.plan_name)
+            with wx.BusyInfo(_("Preprocessing...")):
+                self.context("plan%s copy preprocess\n" % self.plan_name)
+                operations, original, commands, name = self.context.default_plan()
+                if len(commands) == 0:
+                    self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 1:
-            self.context("plan%s preprocess\n" % self.plan_name)
-            operations, original, commands, name = self.context.default_plan()
-            if len(commands) == 0:
-                self.context("plan%s validate\n" % self.plan_name)
+            with wx.BusyInfo(_("Determining validity of operations...")):
+                self.context("plan%s preprocess\n" % self.plan_name)
+                operations, original, commands, name = self.context.default_plan()
+                if len(commands) == 0:
+                    self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 2:
-            self.context("plan%s validate\n" % self.plan_name)
+            with wx.BusyInfo(_("Validating operation data...")):
+                self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 3:
-            self.context("plan%s blob preopt\n" % self.plan_name)
+            with wx.BusyInfo(_("Compiling cuts...")):
+                self.context("plan%s blob preopt\n" % self.plan_name)
         elif self.stage == 4:
-            self.context("plan%s preopt\n" % self.plan_name)
+            with wx.BusyInfo(_("Determining optimizations to perform...")):
+                self.context("plan%s preopt\n" % self.plan_name)
         elif self.stage == 5:
-            self.context("plan%s optimize\n" % self.plan_name)
+            with wx.BusyInfo(_("Performing Optimizations...")):
+                self.context("plan%s optimize\n" % self.plan_name)
         elif self.stage == 6:
-            self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
-            self.Close()
+            with wx.BusyInfo(_("Sending data to laser...")):
+                self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
+                self.Close()
         self.update_gui()
 
     def window_open(self):
