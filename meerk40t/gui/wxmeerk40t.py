@@ -394,7 +394,6 @@ class MeerK40t(MWindow):
         self._ribbon = RB.RibbonBar(
             self,
             style=RB.RIBBON_BAR_DEFAULT_STYLE
-            | RB.RIBBON_BAR_SHOW_PANEL_MINIMISE_BUTTONS,
         )
         self.__set_ribbonbar()
 
@@ -514,12 +513,10 @@ class MeerK40t(MWindow):
             aui.AuiPaneInfo()
             .Name("ribbon")
             .Top()
-            .TopDockable()
-            .BottomDockable()
             .RightDockable(False)
             .LeftDockable(False)
-            .MinSize(150, 150)
-            .FloatingSize((400, 150))
+            .MinSize(300, 150)
+            .FloatingSize(640, 150)
             .Caption("Ribbon")
             .CaptionVisible(False)
         )
@@ -921,7 +918,7 @@ class MeerK40t(MWindow):
             home,
             wx.ID_ANY,
             _("" if self.is_dark else "Project"),
-            # style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
+            style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
         )
 
         toolbar = RB.RibbonButtonBar(self.toolbar_panel)
@@ -984,7 +981,7 @@ class MeerK40t(MWindow):
             wx.ID_ANY,
             _("" if self.is_dark else "Control"),
             icons8_opened_folder_50.GetBitmap(),
-            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
         button_bar = RB.RibbonButtonBar(self.windows_panel)
         self.window_button_bar = button_bar
@@ -1061,7 +1058,7 @@ class MeerK40t(MWindow):
             wx.ID_ANY,
             _("" if self.is_dark else "Preferences"),
             icons8_opened_folder_50.GetBitmap(),
-            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
         button_bar = RB.RibbonButtonBar(self.settings_panel)
         self.setting_button_bar = button_bar

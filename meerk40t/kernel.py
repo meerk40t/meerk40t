@@ -2416,7 +2416,7 @@ class Kernel:
             default="/",
             help="Path that should be flushed to disk.",
         )
-        @self.console_command("flush", help="flush")
+        @self.console_command("flush", help="flush current settings to disk")
         def flush(channel, _, path=None, **kwargs):
             if path is not None:
                 path_context = self.get_context(path)
