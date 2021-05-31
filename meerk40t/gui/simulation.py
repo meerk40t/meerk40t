@@ -424,15 +424,16 @@ class SimulationTravelWidget(Widget):
             prev = curr
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if self.sim.progress == self.sim.max:
-            pos = self.pos[-1]
-        else:
-            pos = self.pos[self.sim.progress]
-        if pos > 1:
-            starts = self.starts[:pos]
-            ends = self.ends[:pos]
-            gc.SetPen(wx.BLACK_DASHED_PEN)
-            gc.StrokeLineSegments(starts, ends)
+        if len(self.pos):
+            if self.sim.progress == self.sim.max:
+                pos = self.pos[-1]
+            else:
+                pos = self.pos[self.sim.progress]
+            if pos > 1:
+                starts = self.starts[:pos]
+                ends = self.ends[:pos]
+                gc.SetPen(wx.BLACK_DASHED_PEN)
+                gc.StrokeLineSegments(starts, ends)
 
 
 class SimReticleWidget(Widget):
@@ -441,26 +442,27 @@ class SimReticleWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc):
-        if self.sim.max == 0:
-            x = 0
-            y = 0
-        else:
-            if self.sim.progress == self.sim.max:
-                pos = self.sim.cutcode[self.sim.progress-1].end()
+        if self.sim.cutcode:
+            if self.sim.max == 0:
+                x = 0
+                y = 0
             else:
-                pos = self.sim.cutcode[self.sim.progress].start()
-            x = pos[0]
-            y = pos[1]
-        try:
-            # Draw Reticle
-            gc.SetPen(wx.Pen(wx.Colour(0, 255, 0, alpha=127)))
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x, y = self.scene.convert_scene_to_window([x, y])
-            gc.DrawEllipse(x - 5, y - 5, 10, 10)
-            gc.DrawEllipse(x - 10, y - 10, 20, 20)
-            gc.DrawEllipse(x - 20, y - 20, 40, 40)
-        except AttributeError:
-            pass
+                if self.sim.progress == self.sim.max:
+                    pos = self.sim.cutcode[self.sim.progress-1].end()
+                else:
+                    pos = self.sim.cutcode[self.sim.progress].start()
+                x = pos[0]
+                y = pos[1]
+            try:
+                # Draw Reticle
+                gc.SetPen(wx.Pen(wx.Colour(0, 255, 0, alpha=127)))
+                gc.SetBrush(wx.TRANSPARENT_BRUSH)
+                x, y = self.scene.convert_scene_to_window([x, y])
+                gc.DrawEllipse(x - 5, y - 5, 10, 10)
+                gc.DrawEllipse(x - 10, y - 10, 20, 20)
+                gc.DrawEllipse(x - 20, y - 20, 40, 40)
+            except AttributeError:
+                pass
 
 
 # class SimulationInterfaceWidget(Widget):
