@@ -950,6 +950,12 @@ class Kernel:
             context.flush()
             del self.contexts[context_name]
             channel(_("Context Shutdown Finished: '%s'") % str(context))
+        try:
+            del self._config
+            channel(_("Destroying persistence object"))
+        except AttributeError:
+            channel(_("Could not destroy persistence object"))
+            pass
         channel(_("Shutting down."))
 
         # Stop/Wait for all threads
@@ -2419,6 +2425,10 @@ class Kernel:
 
             if path_context is not None:
                 path_context.flush()
+                try:
+                    self._config.Flush()
+                except AttributeError:
+                    pass
                 channel(_("Persistent settings force saved."))
             else:
                 channel(_("No relevant context found."))
