@@ -340,9 +340,6 @@ class Driver:
     def data_output(self, e):
         self.output.write(e)
 
-    def realtime_data_output(self, e):
-        self.output.realtime_write(e)
-
     def hold(self):
         """
         Holds are criteria to use to pause the data interpretation. These halt the production of new data until the

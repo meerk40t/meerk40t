@@ -831,17 +831,17 @@ class LhystudiosDriver(Driver):
         return False
 
     def pause(self, *values):
-        self.realtime_data_output(b"PN!\n")
+        self.data_output(b"~PN!\n~")
         self.is_paused = True
 
     def resume(self, *values):
-        self.realtime_data_output(b"PN&\n")
+        self.data_output(b"~PN&\n~")
         self.is_paused = False
 
     def reset(self):
         Driver.reset(self)
         self.context.signal("pipe;buffer", 0)
-        self.realtime_data_output(b"I*\n")
+        self.data_output(b"~I*\n~")
         self.laser = False
         self.properties = 0
         self.state = DRIVER_STATE_RAPID
