@@ -285,7 +285,6 @@ class Navigation(MWindow):
         )
         # end wxGlade
         self.elements = None
-        self.console = None
         self.design_locked = False
         self.drag_ready(False)
         self.select_ready(False)
@@ -572,11 +571,11 @@ class Navigation(MWindow):
         self.context.unlisten("driver;position", self.on_position_update)
 
     def on_emphasized_elements_changed(self, origin, elements):
-        self.select_ready(self.elements.has_emphasis())
+        self.select_ready(self.context.elements.has_emphasis())
         self.update_matrix_text()
 
     def update_matrix_text(self):
-        f = self.elements.first_element(emphasized=True)
+        f = self.context.elements.first_element(emphasized=True)
         v = f is not None
         self.text_a.Enable(v)
         self.text_b.Enable(v)
