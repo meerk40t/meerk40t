@@ -59,6 +59,7 @@ class Ch341LibusbDriver:
         self.interface = {}
         self.channel = channel
         self.backend_error_code = None
+        self.timeout = 500
 
     def find_device(self, index=0):
         _ = self.channel._
@@ -286,7 +287,7 @@ class Ch341LibusbDriver:
                 wValue=value,
                 wIndex=0,
                 data_or_wLength=0,
-                timeout=500,
+                timeout=self.timeout,
             )
             # 0x40, 177, 0x8800, 0, 0
         except usb.core.USBError as e:
@@ -306,7 +307,7 @@ class Ch341LibusbDriver:
                 wValue=value,
                 wIndex=index,
                 data_or_wLength=mode << 8 | mode,
-                timeout=500,
+                timeout=self.timeout,
             )
             # 0x40, 154, 0x2525, 257, 0
         except usb.core.USBError as e:
@@ -326,7 +327,10 @@ class Ch341LibusbDriver:
                     packet = [mCH341_PARA_CMD_W1] + data[:31]
                 data = data[31:]
                 try:
-                    device.write(BULK_WRITE_ENDPOINT, packet, 200)
+                    # endpoint, data, timeout
+                    device.write(
+                        endpoint=BULK_WRITE_ENDPOINT, data=packet, timeout=self.timeout
+                    )
                 except usb.core.USBError as e:
                     self.backend_error_code = e.backend_error_code
 
@@ -335,7 +339,9 @@ class Ch341LibusbDriver:
 
     def CH341EppRead(self, index=0, buffer=None, length=0, pipe=0):
         try:
-            return self.devices[index].read(BULK_READ_ENDPOINT, length, 200)
+            return self.devices[index].read(
+                endpoint=BULK_READ_ENDPOINT, size_or_buffer=length, timeout=self.timeout
+            )
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
 
@@ -346,8 +352,15 @@ class Ch341LibusbDriver:
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: datas, 15: addrs"""
         device = self.devices[index]
         try:
-            device.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 200)
-            status[0] = device.read(BULK_READ_ENDPOINT, 6, 200)
+            device.write(
+                endpoint=BULK_WRITE_ENDPOINT,
+                data=[mCH341_PARA_CMD_STS],
+                timeout=self.timeout,
+            )
+            # read(self, endpoint, size_or_buffer, timeout = None)
+            status[0] = device.read(
+                endpoint=BULK_READ_ENDPOINT, size_or_buffer=6, timeout=self.timeout
+            )
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
 
@@ -365,7 +378,7 @@ class Ch341LibusbDriver:
                 wValue=0,
                 wIndex=0,
                 data_or_wLength=2,
-                timeout=200,
+                timeout=self.timeout,
             )
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
