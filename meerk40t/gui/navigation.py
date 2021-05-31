@@ -714,7 +714,7 @@ class Navigation(MWindow):
         self.context("lock\n")
 
     def on_button_align_center(self, event):  # wxGlade: Navigation.<event_handler>
-        elements = self.elements
+        elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
         if bbox is None:
@@ -725,7 +725,7 @@ class Navigation(MWindow):
         self.drag_ready(True)
 
     def on_button_align_corner_tl(self, event):  # wxGlade: Navigation.<event_handler>
-        elements = self.elements
+        elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
         if bbox is None:
