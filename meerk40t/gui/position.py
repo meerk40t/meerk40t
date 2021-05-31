@@ -16,6 +16,10 @@ class PositionPanel(wx.Panel):
         self.text_y = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_w = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_h = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_x.SetMinSize((70, 23))
+        self.text_y.SetMinSize((70, 23))
+        self.text_w.SetMinSize((70, 23))
+        self.text_h.SetMinSize((70, 23))
         self.button_aspect_ratio = wx.BitmapButton(
             self, wx.ID_ANY, icons8_lock_50.GetBitmap()
         )
