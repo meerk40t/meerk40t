@@ -2769,6 +2769,7 @@ class MeerK40t(MWindow):
         if self.working_file is None:
             self.on_click_save_as(event)
         else:
+            self.save_recent(self.working_file)
             self.context.save(self.working_file)
 
     def on_click_save_as(self, event):
@@ -2786,6 +2787,7 @@ class MeerK40t(MWindow):
                 pathname += ".svg"
             self.context.save(pathname)
             self.working_file = pathname
+            self.save_recent(self.working_file)
 
     def on_click_exit(self, event):  # wxGlade: MeerK40t.<event_handler>
         try:
