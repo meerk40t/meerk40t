@@ -1496,6 +1496,7 @@ class LhystudiosController:
         self.connection_errors = 0
         self.count = 0
         self.pre_ok = False
+        self.realtime = False
 
         self.abort_waiting = False
         self.pipe_channel = context.channel("%s/events" % name)
@@ -1575,6 +1576,26 @@ class LhystudiosController:
         :param bytes_to_write: data to write to the queue.
         :return:
         """
+        f = bytes_to_write.find(b'~')
+        if f != -1:
+            # ~ was found in bytes. We are in a realtime exception.
+            self.realtime = True
+
+            # All code prior to ~ is sent to normal write.
+            queue_bytes = bytes_to_write[:f]
+            if queue_bytes:
+                self.write(queue_bytes)
+
+            # All code after ~ is sent to realtime write.
+            preempt_bytes = bytes_to_write[f + 1:]
+            if preempt_bytes:
+                self.realtime_write(preempt_bytes)
+            return self
+        if self.realtime:
+            # We are in a realtime exception that has not been terminated.
+            self.realtime_write(bytes_to_write)
+            return self
+
         self.pipe_channel("write(%s)" % str(bytes_to_write))
         self._queue_lock.acquire(True)
         self._queue += bytes_to_write
@@ -1591,6 +1612,21 @@ class LhystudiosController:
         :param bytes_to_write: data to write to the front of the queue.
         :return:
         """
+        f = bytes_to_write.find(b'~')
+        if f != -1:
+            # ~ was found in bytes. We are leaving realtime exception.
+            self.realtime = False
+
+            # All date prior to the ~ is sent to realtime write.
+            preempt_bytes = bytes_to_write[:f]
+            if preempt_bytes:
+                self.realtime_write(preempt_bytes)
+
+            # All data after ~ is sent back to normal write.
+            queue_bytes = bytes_to_write[f + 1:]
+            if queue_bytes:
+                self.write(queue_bytes)
+            return self
         self.pipe_channel("realtime_write(%s)" % str(bytes_to_write))
         self._preempt_lock.acquire(True)
         self._preempt = bytearray(bytes_to_write) + self._preempt
@@ -1773,11 +1809,14 @@ class LhystudiosController:
 
         Buffer will not be changed unless packet is successfully sent, or pipe commands are processed.
 
-        - : tells the system to require wait finish at the end of the queue processing.
-        * : tells the system to clear the buffers, and abort the thread.
-        ! : tells the system to pause.
-        & : tells the system to resume.
-        \x18 : tells the system to quit.
+        The following are meta commands for the controller
+        - : require wait finish at the end of the queue processing.
+        * : clear the buffers, and abort the thread.
+        ! : pause.
+        & : resume.
+        ~ : begin/end realtime exception (Note, these characters would be consumed during
+                the write process and should not exist in the queue)
+        \x18 : quit.
 
         :return: queue process success.
         """
