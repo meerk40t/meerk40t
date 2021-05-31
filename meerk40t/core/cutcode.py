@@ -421,14 +421,14 @@ class CutCode(CutGroup):
                     distance = d
                     backwards = False
                     closest = cut
-
-                e = cut.end()
-                e = complex(e[0], e[1])
-                d = abs(e - curr)
-                if d < distance:
-                    distance = d
-                    backwards = True
-                    closest = cut
+                if cut.reversible():
+                    e = cut.end()
+                    e = complex(e[0], e[1])
+                    d = abs(e - curr)
+                    if d < distance:
+                        distance = d
+                        backwards = True
+                        closest = cut
             if closest is None:
                 break
             closest.permitted = False
