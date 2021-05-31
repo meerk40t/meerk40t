@@ -593,6 +593,7 @@ class MeerK40t(MWindow):
             .Right()
             .MinSize(150, 75)
             .MaxSize(200, 100)
+            .Layer(1)
             .Caption("Move")
             .Name("move")
         )
@@ -617,6 +618,7 @@ class MeerK40t(MWindow):
             .MinSize(200, 200)
             .MaxSize(300, 300)
             .Caption("Navigate-Jog")
+            .Layer(1)
             .Name("jog")
         )
         pane.dock_proportion = 3
@@ -636,6 +638,7 @@ class MeerK40t(MWindow):
             .Right()
             .MinSize(200, 200)
             .MaxSize(300, 300)
+            .Layer(1)
             .Caption("Navigate-Drag")
             .Name("drag")
         )
