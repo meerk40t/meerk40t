@@ -9,7 +9,8 @@ import traceback
 
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
-from .jog import Jog, MovePanel, Drag, Transform, JogDistancePanel, PulsePanel, NotePanel, SpoolerPanel, ConsolePanel
+from .jog import Jog, MovePanel, Drag, Transform, JogDistancePanel, PulsePanel, NotePanel, SpoolerPanel, ConsolePanel, \
+    DevicesPanel
 from .mwindow import MWindow
 from .position import PositionPanel
 from .simulation import Simulation
@@ -467,6 +468,10 @@ class MeerK40t(MWindow):
         self.console_pane(self._mgr)
         self.context.register("pane/Console", self.console_pane)
 
+        # Define Devices.
+        self.devices_pane(self._mgr)
+        self.context.register("pane/Devices", self.devices_pane)
+
         # AUI Manager Update.
         self._mgr.Update()
 
@@ -803,6 +808,28 @@ class MeerK40t(MWindow):
             .FloatingSize(600, 230)
             .Caption("Console")
             .Name("console")
+            .Hide()
+        )
+        pane.dock_proportion = 5
+        self._mgr.AddPane(panel, pane)
+
+    def devices_pane(self, manager):
+        pane = manager.GetPane("devices")
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                self.on_pane_reshow(pane)
+                manager.Update()
+            return
+        panel = DevicesPanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+            .Bottom()
+            .Layer(2)
+            .MinSize(600, 100)
+            .FloatingSize(600, 230)
+            .Caption("Devices")
+            .Name("devices")
             .Hide()
         )
         pane.dock_proportion = 5
