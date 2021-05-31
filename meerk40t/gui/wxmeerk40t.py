@@ -573,7 +573,7 @@ class MeerK40t(MWindow):
             .Caption("Position")
             .Name("position")
         )
-        pane.dock_proportion = 4
+        pane.dock_proportion = 8
         self._mgr.AddPane(
             panel,
             pane,
@@ -592,6 +592,7 @@ class MeerK40t(MWindow):
             aui.AuiPaneInfo()
             .Right()
             .MinSize(150, 75)
+            .FloatingSize(150, 75)
             .MaxSize(200, 100)
             .Layer(1)
             .Caption("Move")
