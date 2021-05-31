@@ -1470,65 +1470,64 @@ class MeerK40t(MWindow):
         self.context("camwin %d\n" % v)
 
     def __set_menubar(self):
-        wt_menu = wx.Menu()
+        self.file_menu = wx.Menu()
         # ==========
         # FILE MENU
         # ==========
 
-        wt_menu.Append(wx.ID_NEW, _("New\tCtrl-N"), "")
-        wt_menu.Append(wx.ID_OPEN, _("Open Project\tCtrl-O"), "")
+        self.file_menu.Append(wx.ID_NEW, _("New\tCtrl-N"), "")
+        self.file_menu.Append(wx.ID_OPEN, _("Open Project\tCtrl-O"), "")
         self.recent_file_menu = wx.Menu()
-        wt_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
-        wt_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
-        wt_menu.AppendSeparator()
-        wt_menu.Append(wx.ID_SAVE, _("Save\tCtrl-S"), "")
-        wt_menu.Append(wx.ID_SAVEAS, _("Save As\tCtrl-Shift-S"), "")
-        wt_menu.AppendSeparator()
+        self.file_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
+        self.file_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
+        self.file_menu.AppendSeparator()
+        self.file_menu.Append(wx.ID_SAVE, _("Save\tCtrl-S"), "")
+        self.file_menu.Append(wx.ID_SAVEAS, _("Save As\tCtrl-Shift-S"), "")
+        self.file_menu.AppendSeparator()
 
-        wt_menu.Append(wx.ID_EXIT, _("Exit"), "")
-        self.main_menubar.Append(wt_menu, _("File"))
+        self.file_menu.Append(wx.ID_EXIT, _("Exit"), "")
+        self.main_menubar.Append(self.file_menu, _("File"))
 
         # ==========
         # VIEW MENU
         # ==========
-        wt_menu = wx.Menu()
+        self.view_menu = wx.Menu()
 
-        wt_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out\tCtrl--"), "")
-        wt_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In\tCtrl-+"), "")
-        wt_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
-        wt_menu.AppendSeparator()
+        self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out\tCtrl--"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In\tCtrl-+"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
+        self.view_menu.AppendSeparator()
 
-        wt_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_TEXT, _("Hide Text"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_FILLS, _("Hide Fills"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK)
-        wt_menu.Append(
+        self.view_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_TEXT, _("Hide Text"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_FILLS, _("Hide Fills"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(
             ID_MENU_HIDE_LINEWIDTH, _("No Stroke-Width Render"), "", wx.ITEM_CHECK
         )
-        wt_menu.Append(ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_ICONS, _("Hide Icons"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_HIDE_TREE, _("Hide Tree"), "", wx.ITEM_CHECK)
-        wt_menu.Append(
+        self.view_menu.Append(ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_ICONS, _("Hide Icons"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_HIDE_TREE, _("Hide Tree"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(
             ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK
         )
-        wt_menu.Append(ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_SCREEN_INVERT, _("Invert"), "", wx.ITEM_CHECK)
-        wt_menu.Append(ID_MENU_SCREEN_FLIPXY, _("Flip XY"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_SCREEN_INVERT, _("Invert"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(ID_MENU_SCREEN_FLIPXY, _("Flip XY"), "", wx.ITEM_CHECK)
 
-        self.main_menubar.Append(wt_menu, _("View"))
+        self.main_menubar.Append(self.view_menu, _("View"))
+
 
         # ==========
-        # TOOL MENU
+        # PANE MENU
         # ==========
-        wt_menu = wx.Menu()
-        self.main_menubar.view = wt_menu
 
         self.panes_menu = wx.Menu()
 
@@ -1551,9 +1550,11 @@ class MeerK40t(MWindow):
         self.main_menubar.panereset = self.panes_menu.Append(
             ID_MENU_PANE_RESET, _("Reset Panes"), ""
         )
+        self.main_menubar.Append(self.panes_menu, _("Panes"))
 
-        wt_menu.AppendSubMenu(self.panes_menu, _("Panes"))
-        # wt_menu.AppendSeparator()
+        # ==========
+        # TOOL MENU
+        # ==========
 
         self.window_menu = wx.Menu()
 
@@ -1608,9 +1609,7 @@ class MeerK40t(MWindow):
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
         )
 
-        wt_menu.AppendSubMenu(self.window_menu, _("Windows"))
-
-        self.main_menubar.Append(wt_menu, _("Tools"))
+        self.main_menubar.Append(self.window_menu, _("Tools"))
 
         # ==========
         # OSX-ONLY WINDOW MENU
@@ -1624,16 +1623,16 @@ class MeerK40t(MWindow):
         # ==========
         # HELP MENU
         # ==========
-        wt_menu = wx.Menu()
-        wt_menu.Append(wx.ID_HELP, _("Help"), "")
-        wt_menu.Append(ID_HOMEPAGE, _("Github"), "")
-        wt_menu.Append(ID_RELEASES, _("Releases"), "")
-        wt_menu.Append(ID_FACEBOOK, _("Facebook"), "")
-        wt_menu.Append(ID_MAKERS_FORUM, _("Makers Forum"), "")
-        wt_menu.Append(ID_IRC, _("IRC"), "")
-        wt_menu.AppendSeparator()
-        wt_menu.Append(wx.ID_ABOUT, _("About"), "")
-        self.main_menubar.Append(wt_menu, _("Help"))
+        self.help_menu = wx.Menu()
+        self.help_menu.Append(wx.ID_HELP, _("Help"), "")
+        self.help_menu.Append(ID_HOMEPAGE, _("Github"), "")
+        self.help_menu.Append(ID_RELEASES, _("Releases"), "")
+        self.help_menu.Append(ID_FACEBOOK, _("Facebook"), "")
+        self.help_menu.Append(ID_MAKERS_FORUM, _("Makers Forum"), "")
+        self.help_menu.Append(ID_IRC, _("IRC"), "")
+        self.help_menu.AppendSeparator()
+        self.help_menu.Append(wx.ID_ABOUT, _("About"), "")
+        self.main_menubar.Append(self.help_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
         # Menu Bar end
