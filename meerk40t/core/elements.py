@@ -4236,7 +4236,8 @@ class Elemental(Modifier):
     def validate_selected_area(self):
         boundary_points = []
         for e in self.elem_branch.flat(
-            types=("elem", "file", "group"), emphasized=True
+            types="elem", emphasized=True  # "file", "group"
+            # Reverted from https://github.com/meerk40t/meerk40t/commit/ac613d9f5a8eb24fa98f6de6ce7eb0570bd5e348
         ):
             if e.bounds is None:
                 continue
