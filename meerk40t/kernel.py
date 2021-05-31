@@ -2558,6 +2558,9 @@ class Channel:
     def __isub__(self, other):
         self.unwatch(monitor_function=other)
 
+    def __bool__(self):
+        return bool(self.watchers)
+
     def watch(self, monitor_function: Callable):
         for q in self.watchers:
             if q is monitor_function:
