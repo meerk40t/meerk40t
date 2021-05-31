@@ -615,7 +615,8 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
             .Right()
-            .MinSize(200, 200)
+            .MinSize(170, 230)
+            .FloatingSize(170, 230)
             .MaxSize(300, 300)
             .Caption("Navigate-Jog")
             .Layer(1)
@@ -636,7 +637,8 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
             .Right()
-            .MinSize(200, 200)
+            .MinSize(170, 230)
+            .FloatingSize(170, 230)
             .MaxSize(300, 300)
             .Layer(1)
             .Caption("Navigate-Drag")
