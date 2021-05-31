@@ -9,7 +9,7 @@ import traceback
 
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
-from .jog import Jog, MovePanel, Drag
+from .jog import Jog, MovePanel, Drag, Transform
 from .mwindow import MWindow
 from .position import PositionPanel
 from .simulation import Simulation
@@ -435,6 +435,10 @@ class MeerK40t(MWindow):
         self.drag_pane(self._mgr)
         self.context.register("pane/Drag", self.drag_pane)
 
+        # Define Transform.
+        self.transform_pane(self._mgr)
+        self.context.register("pane/Transform", self.transform_pane)
+
         # Define Move.
         self.move_pane(self._mgr)
         self.context.register("pane/Move", self.move_pane)
@@ -622,6 +626,7 @@ class MeerK40t(MWindow):
             .Caption("Navigate-Jog")
             .Layer(1)
             .Name("jog")
+            .Hide()
         )
         pane.dock_proportion = 3
         self._mgr.AddPane(panel, pane)
@@ -644,6 +649,29 @@ class MeerK40t(MWindow):
             .Layer(1)
             .Caption("Navigate-Drag")
             .Name("drag")
+        )
+        pane.dock_proportion = 3
+        self._mgr.AddPane(panel, pane)
+
+    def transform_pane(self, manager):
+        pane = manager.GetPane("transform")
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                self.on_pane_reshow(pane)
+                manager.Update()
+            return
+        panel = Transform(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+            .Right()
+            .MinSize(170, 230)
+            .FloatingSize(170, 230)
+            .MaxSize(300, 300)
+            .Layer(1)
+            .Caption("Navigate-Transform")
+            .Name("transform")
+            .Hide()
         )
         pane.dock_proportion = 3
         self._mgr.AddPane(panel, pane)
