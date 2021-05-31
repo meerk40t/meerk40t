@@ -9,7 +9,7 @@ import traceback
 
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
-from .jog import Jog, MovePanel
+from .jog import Jog, MovePanel, Drag
 from .mwindow import MWindow
 from .position import PositionPanel
 from .simulation import Simulation
@@ -431,6 +431,10 @@ class MeerK40t(MWindow):
         self.jog_pane(self._mgr)
         self.context.register("pane/Jog", self.jog_pane)
 
+        # Define Drag.
+        self.drag_pane(self._mgr)
+        self.context.register("pane/Drag", self.drag_pane)
+
         # Define Move.
         self.move_pane(self._mgr)
         self.context.register("pane/Move", self.move_pane)
@@ -614,6 +618,26 @@ class MeerK40t(MWindow):
             .MaxSize(300, 300)
             .Caption("Navigate-Jog")
             .Name("jog")
+        )
+        pane.dock_proportion = 3
+        self._mgr.AddPane(panel, pane)
+
+    def drag_pane(self, manager):
+        pane = manager.GetPane("drag")
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                self.on_pane_reshow(pane)
+                manager.Update()
+            return
+        panel = Drag(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+            .Right()
+            .MinSize(200, 200)
+            .MaxSize(300, 300)
+            .Caption("Navigate-Drag")
+            .Name("drag")
         )
         pane.dock_proportion = 3
         self._mgr.AddPane(panel, pane)
