@@ -402,39 +402,41 @@ class CutCode(CutGroup):
         Selects cutcode from candidate cutcode permitted, optimizing with greedy/brute for
         shortest distances optimizations.
         """
-        start = cc.start
-        if start is None:
-            start = 0
+        curr = cc.start
+        if curr is None:
+            curr = 0
         else:
-            start = complex(start[0], start[1])
+            curr = complex(curr[0], curr[1])
         self.permit(True, cc.flat())
         ordered = CutCode()
         while True:
             closest = None
-            reverse = False
+            backwards = False
             distance = float("inf")
             for cut in cc.candidate():
                 s = cut.start()
                 s = complex(s[0], s[1])
-                d = abs(s - start)
+                d = abs(s - curr)
                 if d < distance:
                     distance = d
-                    reverse = False
+                    backwards = False
                     closest = cut
+
                 e = cut.end()
                 e = complex(e[0], e[1])
-                d = abs(e - start)
+                d = abs(e - curr)
                 if d < distance:
                     distance = d
-                    reverse = True
+                    backwards = True
                     closest = cut
             if closest is None:
                 break
             closest.permitted = False
             c = copy(closest)
-            c.reversed = reverse
+            if backwards:
+                c.reverse()
             end = c.end()
-            start = complex(end[0], end[1])
+            curr = complex(end[0], end[1])
             ordered.append(c)
         return ordered
 
