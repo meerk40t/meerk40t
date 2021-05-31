@@ -24,7 +24,6 @@ from .icons import (
     icons8_left_50,
     icons8_level_1_50,
     icons8_lock_50,
-    icons8_move_50,
     icons8_padlock_50,
     icons8_pentagon_50,
     icons8_pentagon_square_50,

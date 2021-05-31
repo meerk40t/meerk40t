@@ -1727,12 +1727,15 @@ class MeerK40t(MWindow):
 
         for p in self.context.match("pane/.*", suffix=True):
             id_new = wx.NewId()
-            self.panes_menu.Append(id_new, p, "")
+            menu_item = self.panes_menu.Append(id_new, p, "", wx.ITEM_CHECK)
+            # pane = self.aui_get_pane(p)
             self.Bind(
                 wx.EVT_MENU,
                 open_pane(p),
                 id=id_new,
             )
+            # TODO: Must check menu items for shown panes.
+            # menu_item.Check(pane.IsShown())
         self.panes_menu.AppendSeparator()
         self.main_menubar.panereset = self.panes_menu.Append(
             ID_MENU_PANE_RESET, _("Reset Panes"), ""
