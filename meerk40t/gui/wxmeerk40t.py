@@ -9,7 +9,7 @@ import traceback
 
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
-from .jog import Jog, MovePanel, Drag, Transform
+from .jog import Jog, MovePanel, Drag, Transform, JogDistancePanel, PulsePanel
 from .mwindow import MWindow
 from .position import PositionPanel
 from .simulation import Simulation
@@ -439,6 +439,14 @@ class MeerK40t(MWindow):
         self.transform_pane(self._mgr)
         self.context.register("pane/Transform", self.transform_pane)
 
+        # Define Jog Distance.
+        self.jog_distance_pane(self._mgr)
+        self.context.register("pane/JogSettings", self.jog_distance_pane)
+
+        # Define Jog Distance.
+        self.pulse_pane(self._mgr)
+        self.context.register("pane/Pulse", self.pulse_pane)
+
         # Define Move.
         self.move_pane(self._mgr)
         self.context.register("pane/Move", self.move_pane)
@@ -577,32 +585,7 @@ class MeerK40t(MWindow):
             .Caption("Position")
             .Name("position")
         )
-        pane.dock_proportion = 8
-        self._mgr.AddPane(
-            panel,
-            pane,
-        )
-
-    def move_pane(self, manager):
-        pane = manager.GetPane("move")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = MovePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(150, 75)
-            .FloatingSize(150, 75)
-            .MaxSize(200, 100)
-            .Layer(1)
-            .Caption("Move")
-            .Name("move")
-        )
-        pane.dock_proportion = 1
+        pane.dock_proportion = 4
         self._mgr.AddPane(
             panel,
             pane,
@@ -624,9 +607,7 @@ class MeerK40t(MWindow):
             .FloatingSize(170, 230)
             .MaxSize(300, 300)
             .Caption("Navigate-Jog")
-            .Layer(1)
             .Name("jog")
-            .Hide()
         )
         pane.dock_proportion = 3
         self._mgr.AddPane(panel, pane)
@@ -646,9 +627,9 @@ class MeerK40t(MWindow):
             .MinSize(170, 230)
             .FloatingSize(170, 230)
             .MaxSize(300, 300)
-            .Layer(1)
             .Caption("Navigate-Drag")
             .Name("drag")
+            .Hide()
         )
         pane.dock_proportion = 3
         self._mgr.AddPane(panel, pane)
@@ -668,13 +649,86 @@ class MeerK40t(MWindow):
             .MinSize(170, 230)
             .FloatingSize(170, 230)
             .MaxSize(300, 300)
-            .Layer(1)
             .Caption("Navigate-Transform")
             .Name("transform")
             .Hide()
         )
         pane.dock_proportion = 3
         self._mgr.AddPane(panel, pane)
+
+    def move_pane(self, manager):
+        pane = manager.GetPane("move")
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                self.on_pane_reshow(pane)
+                manager.Update()
+            return
+        panel = MovePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+            .Right()
+            .MinSize(150, 75)
+            .FloatingSize(150, 75)
+            .MaxSize(200, 100)
+            .Caption("Move")
+            .Name("move")
+        )
+        pane.dock_proportion = 1
+        self._mgr.AddPane(
+            panel,
+            pane,
+        )
+
+    def jog_distance_pane(self, manager):
+        pane = manager.GetPane("jogdist")
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                self.on_pane_reshow(pane)
+                manager.Update()
+            return
+        panel = JogDistancePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+            .Float()
+            .MinSize(300, 75)
+            .FloatingSize(300, 75)
+            .MaxSize(200, 100)
+            .Hide()
+            .Caption("Navigate-Distances")
+            .Name("jogdist")
+        )
+        pane.dock_proportion = 1
+        self._mgr.AddPane(
+            panel,
+            pane,
+        )
+
+    def pulse_pane(self, manager):
+        pane = manager.GetPane("pulse")
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                self.on_pane_reshow(pane)
+                manager.Update()
+            return
+        panel = PulsePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+            .Right()
+            .MinSize(150, 75)
+            .FloatingSize(150, 75)
+            .MaxSize(200, 100)
+            .Hide()
+            .Caption("Pulse")
+            .Name("pulse")
+        )
+        pane.dock_proportion = 1
+        self._mgr.AddPane(
+            panel,
+            pane,
+        )
 
     def home_pane(self, manager):
         pane = manager.GetPane("home")
