@@ -9,7 +9,7 @@ import traceback
 
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
-from .jog import Jog, MovePanel, Drag, Transform, JogDistancePanel, PulsePanel
+from .jog import Jog, MovePanel, Drag, Transform, JogDistancePanel, PulsePanel, NotePanel
 from .mwindow import MWindow
 from .position import PositionPanel
 from .simulation import Simulation
@@ -455,6 +455,11 @@ class MeerK40t(MWindow):
         self.position_pane(self._mgr)
         self.context.register("pane/Position", self.position_pane)
 
+        # Define Notes.
+        self.notes_pane(self._mgr)
+        self.context.register("pane/Notes", self.notes_pane)
+
+
         # AUI Manager Update.
         self._mgr.Update()
 
@@ -729,6 +734,28 @@ class MeerK40t(MWindow):
             panel,
             pane,
         )
+
+    def notes_pane(self, manager):
+        pane = manager.GetPane("notes")
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                self.on_pane_reshow(pane)
+                manager.Update()
+            return
+        panel = NotePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+            .Float()
+            .MinSize(170, 230)
+            .FloatingSize(170, 230)
+            .MaxSize(300, 300)
+            .Caption("Notes")
+            .Name("notes")
+            .Hide()
+        )
+        pane.dock_proportion = 3
+        self._mgr.AddPane(panel, pane)
 
     def home_pane(self, manager):
         pane = manager.GetPane("home")
