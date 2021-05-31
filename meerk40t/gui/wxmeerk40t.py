@@ -9,7 +9,7 @@ import traceback
 
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
-from .jog import Jog, MovePanel, Drag, Transform, JogDistancePanel, PulsePanel, NotePanel, SpoolerPanel
+from .jog import Jog, MovePanel, Drag, Transform, JogDistancePanel, PulsePanel, NotePanel, SpoolerPanel, ConsolePanel
 from .mwindow import MWindow
 from .position import PositionPanel
 from .simulation import Simulation
@@ -463,6 +463,10 @@ class MeerK40t(MWindow):
         self.spooler_pane(self._mgr)
         self.context.register("pane/Spooler", self.spooler_pane)
 
+        # Define Spooler.
+        self.console_pane(self._mgr)
+        self.context.register("pane/Console", self.console_pane)
+
         # AUI Manager Update.
         self._mgr.Update()
 
@@ -777,6 +781,28 @@ class MeerK40t(MWindow):
             .FloatingSize(600, 230)
             .Caption("Spooler")
             .Name("spooler")
+            .Hide()
+        )
+        pane.dock_proportion = 5
+        self._mgr.AddPane(panel, pane)
+
+    def console_pane(self, manager):
+        pane = manager.GetPane("console")
+        if len(pane.name):
+            if not pane.IsShown():
+                pane.Show()
+                self.on_pane_reshow(pane)
+                manager.Update()
+            return
+        panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+            .Bottom()
+            .Layer(2)
+            .MinSize(600, 100)
+            .FloatingSize(600, 230)
+            .Caption("Console")
+            .Name("console")
             .Hide()
         )
         pane.dock_proportion = 5
