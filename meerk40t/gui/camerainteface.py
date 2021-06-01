@@ -145,7 +145,7 @@ class CameraInterface(MWindow, Job):
             self.camera.perspective = eval(self.setting.perspective)
         else:
             self.camera.perspective = None
-
+        self.widget_scene.widget_root.set_aspect(self.setting.aspect)
         self.slider_fps.SetValue(self.setting.fps)
         self.on_slider_fps()
 
@@ -253,9 +253,17 @@ class CameraInterface(MWindow, Job):
         bed_height = self.bed_dim.bed_height * 2
 
         self.image_height, self.image_width = frame.shape[:2]
+        if not self.frame_bitmap:
+            # Initial set.
+            self.widget_scene.widget_root.set_view(
+                0,
+                0,
+                self.image_width,
+                self.image_height,
+                self.setting.preserve_aspect
+            )
         self.frame_bitmap = wx.Bitmap.FromBuffer(
             self.image_width, self.image_height, frame
-
         )
         if self.camera.perspective is None:
             self.camera.perspective = (
@@ -380,27 +388,18 @@ class CamInterfaceWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def aspect_matrix(self):
-        if self.cam.setting.aspect:
-            v = Viewbox(
-                "0 0 %d %d" % (self.cam.image_width, self.cam.image_height),
-                self.cam.setting.preserve_aspect,
-            )
-            w, h = self.cam.display_camera.GetSize()
-            v2 = Viewbox("0 0 %d %d" % (w, h))
-            matrix = Matrix(v.transform(v2))
-            self.scene.widget_root.scene_widget.matrix = matrix
-
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "rightdown":
             def enable_aspect(*args):
                 self.cam.setting.aspect = not self.cam.setting.aspect
-                self.aspect_matrix()
+                self.scene.widget_root.set_aspect(self.cam.setting.aspect)
+                self.scene.widget_root.set_view(0, 0, self.cam.image_width, self.cam.image_height, self.cam.setting.preserve_aspect)
 
             def set_aspect(aspect):
                 def asp(e):
                     self.cam.setting.preserve_aspect = aspect
-                    self.aspect_matrix()
+                    self.scene.widget_root.set_aspect(self.cam.setting.aspect)
+                    self.scene.widget_root.set_view(0, 0, self.cam.image_width, self.cam.image_height, self.cam.setting.preserve_aspect)
 
                 return asp
 

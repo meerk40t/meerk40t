@@ -5,7 +5,7 @@ import wx
 
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
-from meerk40t.svgelements import Matrix, Point
+from meerk40t.svgelements import Matrix, Point, Viewbox
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,
@@ -112,7 +112,8 @@ class ScenePanel(wx.Panel):
     def on_size(self, event):
         if self.context is None:
             return
-        # self.Layout()
+        w, h = self.Size
+        self.scene.widget_root.set_frame(0, 0, w, h)
         self.signal("guide")
         self.scene.request_refresh()
 
@@ -879,6 +880,10 @@ class Widget(list):
 class SceneSpaceWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
+        self._view = None
+        self._frame = None
+        self.aspect = False
+
         self.interface_widget = Widget(scene)
         self.scene_widget = Widget(scene)
         self.add_widget(-1, self.interface_widget)
@@ -894,6 +899,8 @@ class SceneSpaceWidget(Widget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "hover":
             return RESPONSE_CHAIN
+        if self.aspect:
+            return RESPONSE_CONSUME
         if event_type == "wheelup" and self.scene.context.mouse_wheel_pan:
             if self.scene.context.mouse_pan_invert:
                 self.scene_widget.matrix.post_translate(0, 25)
@@ -1021,6 +1028,25 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
             self.scene.context.signal("refresh_scene", 0)
         return RESPONSE_CONSUME
+
+    def set_view(self, x, y, w, h, preserve_aspect=None):
+        self._view = Viewbox(
+            "%d %d %d %d" % (x, y, w, h),
+            preserve_aspect,
+        )
+        self.aspect_matrix()
+
+    def set_frame(self, x, y, w, h):
+        self._frame = Viewbox("%d %d %d %d" % (x, y, w, h))
+        self.aspect_matrix()
+
+    def set_aspect(self, aspect=True):
+        self.aspect = aspect
+        self.aspect_matrix()
+
+    def aspect_matrix(self):
+        if self._frame and self._view and self.aspect:
+            self.scene_widget.matrix = Matrix(self._view.transform(self._frame))
 
     def focus_position_scene(self, scene_point, scene_size):
         window_width, window_height = self.scene.ClientSize
