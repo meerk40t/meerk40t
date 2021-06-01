@@ -751,17 +751,19 @@ class MeerK40t(MWindow):
         if pane.IsShown():
             if hasattr(pane.window, "finalize"):
                 pane.window.finalize()
-        self.on_pane_changed()
+        wx.CallAfter(self.on_pane_changed, None)
 
     def on_pane_reshow(self, pane):
         if hasattr(pane.window, "initialize"):
             pane.window.initialize()
-        self.on_pane_changed()
+        wx.CallAfter(self.on_pane_changed, None)
 
-    def on_pane_changed(self):
+    def on_pane_changed(self, *args):
         for pane in self._mgr.GetAllPanes():
             try:
-                pane.window.check(pane.IsShown())
+                shown = pane.IsShown()
+                check = pane.window.check
+                check(shown)
             except AttributeError:
                 pass
 
