@@ -27,7 +27,8 @@ class CameraInterface(MWindow, Job):
             index = 0
         self.index = index
         Job.__init__(self, job_name="Camera%d" % self.index)
-        self.process = self.update_view
+        self.process = self.update_camera_frame
+        self.run_main = True
 
         self.camera = None
         self.last_frame_index = -1
@@ -99,16 +100,7 @@ class CameraInterface(MWindow, Job):
 
         self.image_width = -1
         self.image_height = -1
-        self._Buffer = None
-
         self.frame_bitmap = None
-
-        self.previous_window_position = None
-        self.previous_scene_position = None
-
-        self.corner_drag = None
-
-        self.matrix = Matrix()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
         self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
@@ -120,16 +112,8 @@ class CameraInterface(MWindow, Job):
         self.SetDoubleBuffered(True)
         # end wxGlade
 
-        self.display_camera.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
-
         self.setting.setting(bool, "aspect", False)
         self.setting.setting(str, "preserve_aspect", "xMinYMin meet")
-
-        self.Bind(wx.EVT_SIZE, self.on_size, self)
-        self.on_size()
-
-        self.on_update_buffer()
-
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
@@ -157,8 +141,8 @@ class CameraInterface(MWindow, Job):
         self.on_slider_fps()
 
         self.widget_scene.add_scenewidget(CamSceneWidget(self.widget_scene, self))
-        self.widget_scene.add_scenewidget(CamBackground(self.widget_scene, self))
-        self.widget_scene.add_interfacewidget(CamWidget(self.widget_scene, self))
+        self.widget_scene.add_scenewidget(CamImageWidget(self.widget_scene, self))
+        self.widget_scene.add_interfacewidget(CamInterfaceWidget(self.widget_scene, self))
 
     def swap_camera(self, uri):
         def swap(event=None):
@@ -223,14 +207,6 @@ class CameraInterface(MWindow, Job):
             except KeyError:
                 pass
 
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
-
     def window_open(self):
         from sys import platform as _platform
 
@@ -247,26 +223,10 @@ class CameraInterface(MWindow, Job):
         self.context.unschedule(self)
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
 
-    def on_refresh_scene(self, *args):
+    def on_refresh_scene(self, origin, *args):
         self.widget_scene.request_refresh(*args)
 
-    def on_size(self, event=None):
-        self.Layout()
-        width, height = self.ClientSize
-        if width <= 0:
-            width = 1
-        if height <= 0:
-            height = 1
-        self._Buffer = wx.Bitmap(width, height)
-        self.aspect_matrix()
-        self.on_update_buffer()
-        try:
-            self.Refresh(True)
-            self.Update()
-        except RuntimeError:
-            pass
-
-    def update_view(self):
+    def update_camera_frame(self, event=None):
         if self.camera is None:
             return
 
@@ -275,18 +235,10 @@ class CameraInterface(MWindow, Job):
         else:
             self.last_frame_index = self.camera.frame_index
 
-        if not wx.IsMainThread():
-            wx.CallAfter(self._guithread_update_view)
-        else:
-            self._guithread_update_view()
-
-    def _guithread_update_view(self):
+        self.widget_scene.request_refresh()
         frame = self.camera.get_frame()
         if frame is None:
             return
-        else:
-            if self.frame_bitmap is None:
-                wx.CallAfter(self.on_size, None)
         bed_width = self.bed_dim.bed_width * 2
         bed_height = self.bed_dim.bed_height * 2
 
@@ -294,18 +246,10 @@ class CameraInterface(MWindow, Job):
         self.frame_bitmap = wx.Bitmap.FromBuffer(
             self.image_width, self.image_height, frame
         )
-
         if self.setting.correction_perspective:
             if bed_width != self.image_width or bed_height != self.image_height:
                 self.image_width = bed_width
                 self.image_height = bed_height
-                self.display_camera.SetSize((self.image_width, self.image_height))
-        self.on_update_buffer()
-        try:
-            self.Refresh(True)
-            self.Update()
-        except RuntimeError:
-            pass
 
     def reset_perspective(self, event):
         """
@@ -327,130 +271,6 @@ class CameraInterface(MWindow, Job):
         self.fisheye_k = None
         self.fisheye_d = None
         self.setting.fisheye = ""
-
-    def on_update_buffer(self, event=None):
-        """
-        Draw Camera view.
-
-        :param event:
-        :return:
-        """
-        dm = self.context.draw_mode
-        dc = wx.MemoryDC()
-        dc.SelectObject(self._Buffer)
-        dc.Clear()
-        gc = wx.GraphicsContext.Create(dc)
-        w, h = self._Buffer.GetSize()
-        # dc.SetBackground(wx.WHITE_BRUSH)
-        gc.SetBrush(wx.WHITE_BRUSH)
-        gc.DrawRectangle(0, 0, w, h)
-        if self.frame_bitmap is None:
-            font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
-            gc.SetFont(font, wx.BLACK)
-            if self.camera is None:
-                gc.DrawText(
-                    _("Camera backend failure...\nCannot attempt camera connection."),
-                    0,
-                    0,
-                )
-            else:
-                gc.DrawText(_("Fetching Frame..."), 0, 0)
-            gc.Destroy()
-            self.matrix.reset()
-            return
-        if dm & DRAW_MODE_FLIPXY != 0:
-            dc.SetUserScale(-1, -1)
-            dc.SetLogicalOrigin(w, h)
-
-        gc.PushState()
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
-        gc.DrawBitmap(self.frame_bitmap, 0, 0, self.image_width, self.image_height)
-        if not self.setting.correction_perspective and not self.setting.aspect:
-            if self.camera.perspective is None:
-                self.camera.perspective = (
-                    [0, 0],
-                    [self.image_width, 0],
-                    [self.image_width, self.image_height],
-                    [0, self.image_height],
-                )
-            gc.SetPen(wx.BLACK_DASHED_PEN)
-            gc.StrokeLines(self.camera.perspective)
-            gc.StrokeLine(
-                self.camera.perspective[0][0],
-                self.camera.perspective[0][1],
-                self.camera.perspective[3][0],
-                self.camera.perspective[3][1],
-            )
-            gc.SetPen(wx.BLUE_PEN)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            for p in self.camera.perspective:
-                half = CORNER_SIZE / 2
-                gc.StrokeLine(p[0] - half, p[1], p[0] + half, p[1])
-                gc.StrokeLine(p[0], p[1] - half, p[0], p[1] + half)
-                gc.DrawEllipse(p[0] - half, p[1] - half, CORNER_SIZE, CORNER_SIZE)
-        gc.PopState()
-        if dm & DRAW_MODE_INVERT != 0:
-            dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
-        gc.Destroy()
-        del dc
-
-    def aspect_matrix(self):
-        if self.setting.aspect:
-            v = Viewbox(
-                "0 0 %d %d" % (self.image_width, self.image_height),
-                self.setting.preserve_aspect,
-            )
-            w, h = self.display_camera.GetSize()
-            v2 = Viewbox("0 0 %d %d" % (w, h))
-            self.matrix = Matrix(v.transform(v2))
-
-    def on_mouse_right_down(self, event):
-        def enable_aspect(*args):
-            self.setting.aspect = not self.setting.aspect
-            self.aspect_matrix()
-            self.on_update_buffer()
-
-        def set_aspect(aspect):
-            def asp(e):
-                self.setting.preserve_aspect = aspect
-                self.aspect_matrix()
-                self.on_update_buffer()
-
-            return asp
-
-        menu = wx.Menu()
-        sub_menu = wx.Menu()
-        center = menu.Append(wx.ID_ANY, "Aspect", "", wx.ITEM_CHECK)
-        if self.setting.aspect:
-            center.Check(True)
-        self.Bind(wx.EVT_MENU, enable_aspect, center)
-        self.Bind(
-            wx.EVT_MENU,
-            set_aspect("xMinYMin meet"),
-            sub_menu.Append(wx.ID_ANY, "xMinYMin meet", "", wx.ITEM_NORMAL),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            set_aspect("xMidYMid meet"),
-            sub_menu.Append(wx.ID_ANY, "xMidYMid meet", "", wx.ITEM_NORMAL),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            set_aspect("xMidYMid slice"),
-            sub_menu.Append(wx.ID_ANY, "xMidYMid slice", "", wx.ITEM_NORMAL),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            set_aspect("none"),
-            sub_menu.Append(wx.ID_ANY, "none", "", wx.ITEM_NORMAL),
-        )
-
-        menu.Append(
-            wx.ID_ANY, _("Preserve: %s") % self.setting.preserve_aspect, sub_menu
-        )
-        if menu.MenuItemCount != 0:
-            self.PopupMenu(menu)
-            menu.Destroy()
 
     def on_check_perspective(self, event):
         """
@@ -519,18 +339,8 @@ class CameraInterface(MWindow, Job):
         self.context.console("camera%d fisheye capture\n" % self.index)
 
 
-class CamBackground(Widget):
-    def __init__(self, scene, camera):
-        Widget.__init__(self, scene, all=False)
-        self.cam = camera
 
-    def process_draw(self, gc: wx.GraphicsContext):
-        w, h = gc.GetSize()
-        gc.SetBrush(wx.WHITE_BRUSH)
-        gc.DrawRectangle(0, 0, w, h)
-
-
-class CamWidget(Widget):
+class CamInterfaceWidget(Widget):
     def __init__(self, scene, camera):
         Widget.__init__(self, scene, all=True)
         self.cam = camera
@@ -547,23 +357,31 @@ class CamWidget(Widget):
                 )
             else:
                 gc.DrawText(_("Fetching Frame..."), 0, 0)
-            # self.matrix.reset()
 
     def hit(self):
         return HITCHAIN_HIT
+
+    def aspect_matrix(self):
+        if self.cam.setting.aspect:
+            v = Viewbox(
+                "0 0 %d %d" % (self.cam.image_width, self.cam.image_height),
+                self.cam.setting.preserve_aspect,
+            )
+            w, h = self.cam.display_camera.GetSize()
+            v2 = Viewbox("0 0 %d %d" % (w, h))
+            matrix = Matrix(v.transform(v2))
+            # TODO: set matrix to scene widget.
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "rightdown":
             def enable_aspect(*args):
                 self.cam.setting.aspect = not self.cam.setting.aspect
-                self.cam.aspect_matrix()
-                self.cam.on_update_buffer()
+                self.aspect_matrix()
 
             def set_aspect(aspect):
                 def asp(e):
                     self.cam.setting.preserve_aspect = aspect
-                    self.cam.aspect_matrix()
-                    self.cam.on_update_buffer()
+                    self.aspect_matrix()
 
                 return asp
 
@@ -623,7 +441,7 @@ class CamPerspectiveWidget(Widget):
             self.translate_self(space_pos[4], space_pos[5])
             self.perspective[self.index][0] += space_pos[4]
             self.perspective[self.index][1] += space_pos[5]
-            self.cam.context.signal("refresh_scene",1)
+            self.cam.context.signal("refresh_scene", 1)
 
 
 class CamSceneWidget(Widget):
@@ -638,13 +456,9 @@ class CamSceneWidget(Widget):
                 [0, self.cam.image_height],
             )
         for i in range(4):
-            self.add_widget(-1,CamPerspectiveWidget(scene, self.cam, self.cam.camera.perspective, i))
+            self.add_widget(-1, CamPerspectiveWidget(scene, self.cam, self.cam.camera.perspective, i))
 
     def process_draw(self, gc):
-        if self.cam.frame_bitmap is None:
-            return
-        gc.PushState()
-        gc.DrawBitmap(self.cam.frame_bitmap, 0, 0, self.cam.image_width, self.cam.image_height)
         if not self.cam.setting.correction_perspective and not self.cam.setting.aspect:
             gc.SetPen(wx.BLACK_DASHED_PEN)
             gc.StrokeLines(self.cam.camera.perspective)
@@ -661,7 +475,17 @@ class CamSceneWidget(Widget):
                 gc.StrokeLine(p[0] - half, p[1], p[0] + half, p[1])
                 gc.StrokeLine(p[0], p[1] - half, p[0], p[1] + half)
                 gc.DrawEllipse(p[0] - half, p[1] - half, CORNER_SIZE, CORNER_SIZE)
-        gc.PopState()
+
+
+class CamImageWidget(Widget):
+    def __init__(self, scene, camera):
+        Widget.__init__(self, scene, all=False)
+        self.cam = camera
+
+    def process_draw(self, gc):
+        if self.cam.frame_bitmap is None:
+            return
+        gc.DrawBitmap(self.cam.frame_bitmap, 0, 0, self.cam.image_width, self.cam.image_height)
 
 
 class CameraURI(MWindow):
