@@ -442,15 +442,28 @@ class CamInterfaceWidget(Widget):
 
 
 class CamPerspectiveWidget(Widget):
-    def __init__(self, scene, camera, index):
+    def __init__(self, scene, camera, index, mid=False):
         self.cam = camera
-        perspective = self.cam.camera.perspective
-        pos = perspective[index]
-        half = CORNER_SIZE / 2.0
-        Widget.__init__(self, scene, pos[0]-half, pos[1]-half, pos[0]+half, pos[1]+half)
+        self.mid = mid
         self.index = index
+        half = CORNER_SIZE / 2.0
+        Widget.__init__(self, scene, -half, -half, half, half)
+        self.update()
         c = Color.distinct(self.index + 1)
         self.pen = wx.Pen(wx.Colour(c.red, c.green, c.blue))
+
+    def update(self):
+        half = CORNER_SIZE / 2.0
+        perspective = self.cam.camera.perspective
+        pos = perspective[self.index]
+        if not self.mid:
+            self.set_position(pos[0]-half, pos[1]-half)
+        else:
+            center_x = sum([e[0] for e in perspective]) / len(perspective)
+            center_y = sum([e[1] for e in perspective]) / len(perspective)
+            x = (center_x + pos[0]) / 2.0
+            y = (center_y + pos[1]) / 2.0
+            self.set_position(x - half, y - half)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -482,11 +495,17 @@ class CamPerspectiveWidget(Widget):
         if event_type == "leftdown":
             return RESPONSE_CONSUME
         if event_type == "move":
-            self.translate_self(space_pos[4], space_pos[5])
+            # self.translate_self(space_pos[4], space_pos[5])
             perspective = self.cam.camera.perspective
             if perspective:
                 perspective[self.index][0] += space_pos[4]
                 perspective[self.index][1] += space_pos[5]
+                if self.mid:
+                    perspective[self.index][0] += space_pos[4]
+                    perspective[self.index][1] += space_pos[5]
+                for w in self.parent:
+                    if isinstance(w, CamPerspectiveWidget):
+                        w.update()
                 self.cam.setting.perspective = repr(perspective)
                 self.cam.context.signal("refresh_scene", 1)
             return RESPONSE_CONSUME
@@ -502,7 +521,9 @@ class CamSceneWidget(Widget):
             if self.cam.camera.perspective:
                 if not len(self):
                     for i in range(4):
-                        self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i))
+                        self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i, False))
+                    for i in range(4):
+                        self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i, True))
                 gc.SetPen(wx.BLACK_DASHED_PEN)
                 gc.StrokeLines(self.cam.camera.perspective)
                 gc.StrokeLine(
