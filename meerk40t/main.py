@@ -276,13 +276,17 @@ def run():
         pass
 
     if not args.gui_suppress:
-        try:
-            from .gui import wxmeerk40t
+        # try:
+        from .gui import wxmeerk40t
 
-            kernel.add_plugin(wxmeerk40t.plugin)
-        except ImportError:
-            # This module cannot be loaded. wxPython missing.
-            args.no_gui = True
+        kernel.add_plugin(wxmeerk40t.plugin)
+
+        from .gui.scene import scene
+
+        kernel.add_plugin(scene.plugin)
+        # except ImportError:
+        #     # This module cannot be loaded. wxPython missing.
+        #     args.no_gui = True
     else:
         # Complete Gui Suppress implies no-gui.
         args.no_gui = True

@@ -16,6 +16,10 @@ from .panes.notespanel import NotePanel
 from .panes.pulsepanel import PulsePanel
 from .panes.spoolerpanel import SpoolerPanel
 from .panes.transformpanel import Transform
+from .scene.scene import Scene, ScenePanel
+from .scene.scenewidgets import SelectionWidget, RectSelectWidget, LaserPathWidget, ElementsWidget, GridWidget, \
+    GuideWidget, ReticleWidget
+from .scene.toolwidgets import ToolContainer, DrawTool, RectTool
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
 from meerk40t.gui.panes.jog import Jog
@@ -145,20 +149,6 @@ from .settings import Settings
 from .tcp.tcpcontroller import TCPController
 from .textproperty import TextProperty
 from .usbconnect import UsbConnect
-from .widget import (
-    DrawTool,
-    ElementsWidget,
-    GridWidget,
-    GuideWidget,
-    LaserPathWidget,
-    RectSelectWidget,
-    RectTool,
-    ReticleWidget,
-    Scene,
-    ScenePanel,
-    SelectionWidget,
-    ToolContainer,
-)
 
 """
 Laser software for the Stock-LIHUIYU laserboard.
@@ -3937,7 +3927,6 @@ class wxMeerK40t(wx.App, Module):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register("module/Scene", Scene)
         kernel.register("window/MeerK40t", MeerK40t)
         kernel.register("window/PathProperty", PathProperty)
         kernel.register("window/TextProperty", TextProperty)
