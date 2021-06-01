@@ -1,3 +1,5 @@
+import re
+
 import wx
 
 from .scene.scene import ScenePanel, Widget, RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_CHAIN, HITCHAIN_HIT
@@ -61,6 +63,9 @@ class CameraInterface(MWindow, Job):
         )
         self.widget_scene = self.display_camera.scene
 
+        # ==========
+        # MENU BAR
+        # ==========
         self.CameraInterface_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
@@ -108,34 +113,43 @@ class CameraInterface(MWindow, Job):
         self.SetDoubleBuffered(True)
         # end wxGlade
 
-        self.setting.setting(bool, "aspect", False)
-        self.setting.setting(str, "preserve_aspect", "xMinYMin meet")
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
 
-        try:
-            self.camera = self.setting.activate("modifier/Camera")
-        except ValueError:
-            pass
-
+        self.setting.setting(bool, "aspect", False)
+        self.setting.setting(str, "preserve_aspect", "xMinYMin meet")
         self.setting.setting(int, "index", 0)
         self.setting.setting(int, "fps", 1)
         self.setting.setting(bool, "correction_fisheye", False)
-        self.setting.setting(bool, "correction_perspective", False)
         self.setting.setting(str, "fisheye", "")
+        self.setting.setting(bool, "correction_perspective", False)
         self.setting.setting(str, "perspective", "")
         self.setting.setting(str, "uri", "0")
+
+        try:
+            self.camera = self.setting.activate("modifier/Camera")
+        except ValueError:
+
+            return
 
         self.check_fisheye.SetValue(self.setting.correction_fisheye)
         self.check_perspective.SetValue(self.setting.correction_perspective)
         if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.setting.fisheye)
+        else:
+            self.fisheye_k = None
+            self.fisheye_d = None
+
         if self.setting.perspective is not None and len(self.setting.perspective) != 0:
-            self.perspective = eval(self.setting.perspective)
+            self.camera.perspective = eval(self.setting.perspective)
+        else:
+            self.camera.perspective = None
+
         self.slider_fps.SetValue(self.setting.fps)
         self.on_slider_fps()
 
+        self.widget_scene.background_brush = wx.WHITE_BRUSH
         self.widget_scene.add_scenewidget(CamSceneWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(CamImageWidget(self.widget_scene, self))
         self.widget_scene.add_interfacewidget(CamInterfaceWidget(self.widget_scene, self))
@@ -218,6 +232,7 @@ class CameraInterface(MWindow, Job):
         self.context("camera%d stop\n" % self.index)
         self.context.unschedule(self)
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
+        self.context.close("Camera%s" % str(self.index))
 
     def on_refresh_scene(self, origin, *args):
         self.widget_scene.request_refresh(*args)
@@ -231,7 +246,6 @@ class CameraInterface(MWindow, Job):
         else:
             self.last_frame_index = self.camera.frame_index
 
-        self.widget_scene.request_refresh()
         frame = self.camera.get_frame()
         if frame is None:
             return
@@ -241,11 +255,21 @@ class CameraInterface(MWindow, Job):
         self.image_height, self.image_width = frame.shape[:2]
         self.frame_bitmap = wx.Bitmap.FromBuffer(
             self.image_width, self.image_height, frame
+
         )
+        if self.camera.perspective is None:
+            self.camera.perspective = (
+                [0, 0],
+                [self.image_width, 0],
+                [self.image_width, self.image_height],
+                [0, self.image_height],
+            )
         if self.setting.correction_perspective:
             if bed_width != self.image_width or bed_height != self.image_height:
                 self.image_width = bed_width
                 self.image_height = bed_height
+
+        self.widget_scene.request_refresh()
 
     def reset_perspective(self, event):
         """
@@ -254,7 +278,7 @@ class CameraInterface(MWindow, Job):
         :param event:
         :return:
         """
-        self.perspective = None
+        self.camera.perspective = None
         self.setting.perspective = ""
 
     def reset_fisheye(self, event):
@@ -420,18 +444,10 @@ class CamInterfaceWidget(Widget):
 class CamPerspectiveWidget(Widget):
     def __init__(self, scene, camera, index):
         self.cam = camera
-        if self.cam.camera.perspective is None:
-            self.cam.camera.perspective = (
-                [0, 0],
-                [self.cam.image_width, 0],
-                [self.cam.image_width, self.cam.image_height],
-                [0, self.cam.image_height],
-            )
         perspective = self.cam.camera.perspective
         pos = perspective[index]
-        half = CORNER_SIZE / 2
+        half = CORNER_SIZE / 2.0
         Widget.__init__(self, scene, pos[0]-half, pos[1]-half, pos[0]+half, pos[1]+half)
-        self.perspective = perspective
         self.index = index
         c = Color.distinct(self.index + 1)
         self.pen = wx.Pen(wx.Colour(c.red, c.green, c.blue))
@@ -440,7 +456,7 @@ class CamPerspectiveWidget(Widget):
         return HITCHAIN_HIT
 
     def process_draw(self, gc):
-        if not self.cam.setting.correction_perspective and self.cam.camera.perspective:
+        if not self.cam.setting.correction_perspective and self.cam.camera.perspective and not self.cam.setting.aspect:
             gc.SetPen(self.pen)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             gc.StrokeLine(
@@ -452,7 +468,7 @@ class CamPerspectiveWidget(Widget):
             gc.StrokeLine(
                 self.left + self.width / 2.0,
                 self.top,
-                self.right- self.width / 2.0,
+                self.right - self.width / 2.0,
                 self.bottom
             )
             gc.DrawEllipse(
@@ -467,9 +483,12 @@ class CamPerspectiveWidget(Widget):
             return RESPONSE_CONSUME
         if event_type == "move":
             self.translate_self(space_pos[4], space_pos[5])
-            self.perspective[self.index][0] += space_pos[4]
-            self.perspective[self.index][1] += space_pos[5]
-            self.cam.context.signal("refresh_scene", 1)
+            perspective = self.cam.camera.perspective
+            if perspective:
+                perspective[self.index][0] += space_pos[4]
+                perspective[self.index][1] += space_pos[5]
+                self.cam.setting.perspective = repr(perspective)
+                self.cam.context.signal("refresh_scene", 1)
             return RESPONSE_CONSUME
 
 
@@ -477,26 +496,24 @@ class CamSceneWidget(Widget):
     def __init__(self, scene, camera):
         Widget.__init__(self, scene, all=True)
         self.cam = camera
-        if self.cam.camera.perspective is None:
-            self.cam.camera.perspective = (
-                [0, 0],
-                [self.cam.image_width, 0],
-                [self.cam.image_width, self.cam.image_height],
-                [0, self.cam.image_height],
-            )
-        for i in range(4):
-            self.add_widget(-1, CamPerspectiveWidget(scene, self.cam, i))
 
     def process_draw(self, gc):
         if not self.cam.setting.correction_perspective and not self.cam.setting.aspect:
-            gc.SetPen(wx.BLACK_DASHED_PEN)
-            gc.StrokeLines(self.cam.camera.perspective)
-            gc.StrokeLine(
-                self.cam.camera.perspective[0][0],
-                self.cam.camera.perspective[0][1],
-                self.cam.camera.perspective[3][0],
-                self.cam.camera.perspective[3][1],
-            )
+            if self.cam.camera.perspective:
+                if not len(self):
+                    for i in range(4):
+                        self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i))
+                gc.SetPen(wx.BLACK_DASHED_PEN)
+                gc.StrokeLines(self.cam.camera.perspective)
+                gc.StrokeLine(
+                    self.cam.camera.perspective[0][0],
+                    self.cam.camera.perspective[0][1],
+                    self.cam.camera.perspective[3][0],
+                    self.cam.camera.perspective[3][1],
+                )
+        else:
+            if len(self):
+                self.remove_all_widgets()
 
 
 class CamImageWidget(Widget):
