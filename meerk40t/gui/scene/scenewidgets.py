@@ -1,6 +1,3 @@
-import threading
-import time
-
 from meerk40t.gui.scene.widget import Widget
 
 try:
@@ -12,22 +9,16 @@ except ImportError:
 
 import wx
 
-from meerk40t.kernel import Job, Module
-from meerk40t.svgelements import Matrix, Path, Point, Rect, Color
+from meerk40t.svgelements import Color
 from meerk40t.gui.laserrender import (
-    DRAW_MODE_ANIMATE,
     DRAW_MODE_BACKGROUND,
-    DRAW_MODE_FLIPXY,
     DRAW_MODE_GRID,
     DRAW_MODE_GUIDES,
-    DRAW_MODE_INVERT,
     DRAW_MODE_LASERPATH,
-    DRAW_MODE_REFRESH,
     DRAW_MODE_RETICLE,
     DRAW_MODE_SELECTION,
     swizzlecolor,
 )
-from meerk40t.gui.zmatrix import ZMatrix
 
 MILS_IN_MM = 39.3701
 
