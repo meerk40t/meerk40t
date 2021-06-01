@@ -1,19 +1,15 @@
 import wx
 
-from .scene.scene import ScenePanel
-from .scene.scenewidgets import GridWidget
-from .scene.widget import Widget, RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_CHAIN, HITCHAIN_DELEGATE, HITCHAIN_HIT
-from ..kernel import Job, Module
-from ..svgelements import Matrix, Point, Viewbox, Color
+from .scene.scene import ScenePanel, Widget, RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_CHAIN, HITCHAIN_HIT
+from ..kernel import Job
+from ..svgelements import Matrix, Viewbox, Color
 from .icons import (
     icons8_camera_50,
     icons8_connected_50,
     icons8_detective_50,
     icons8_picture_in_picture_alternative_50,
 )
-from .laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
 from .mwindow import MWindow
-from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
 
@@ -369,7 +365,7 @@ class CamInterfaceWidget(Widget):
             w, h = self.cam.display_camera.GetSize()
             v2 = Viewbox("0 0 %d %d" % (w, h))
             matrix = Matrix(v.transform(v2))
-            # TODO: set matrix to scene widget.
+            self.scene.widget_root.scene_widget.matrix = matrix
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "rightdown":

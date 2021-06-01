@@ -1,6 +1,5 @@
 
-from .scene import Scene
-from .widget import Widget
+from .scene import Scene, Widget
 
 try:
     from math import tau

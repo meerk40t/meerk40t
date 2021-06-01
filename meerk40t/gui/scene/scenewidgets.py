@@ -1,4 +1,4 @@
-from meerk40t.gui.scene.widget import Widget
+from meerk40t.gui.scene.scene import Widget
 
 try:
     from math import tau
