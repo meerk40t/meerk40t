@@ -56,7 +56,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT,
     COMMAND_WAIT_FINISH,
 )
-from ..kernel import STATE_BUSY, Module
+from ..kernel import STATE_BUSY, Module, ConsoleFunction
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -385,75 +385,7 @@ class MeerK40t(MWindow):
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
 
-        # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
-        # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
-        # self.notebook.AddPage(self.scene, "scene")
-        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
-
-        self.tree_pane(self._mgr)
-        self.context.register("pane/Tree", self.tree_pane)
-
-        self.ribbon_pane(self._mgr)
-        self.context.register("pane/Ribbon", self.ribbon_pane)
-
-        # Define Stop.
-        self.stop_pane(self._mgr)
-        self.context.register("pane/Stop", self.stop_pane)
-
-        # Define Pause.
-        self.pause_pane(self._mgr)
-        self.context.register("pane/Pause", self.pause_pane)
-
-        # Define Home.
-        self.home_pane(self._mgr)
-        self.context.register("pane/Home", self.home_pane)
-
-        # Define Jog.
-        self.jog_pane(self._mgr)
-        self.context.register("pane/Jog", self.jog_pane)
-
-        # Define Drag.
-        self.drag_pane(self._mgr)
-        self.context.register("pane/Drag", self.drag_pane)
-
-        # Define Transform.
-        self.transform_pane(self._mgr)
-        self.context.register("pane/Transform", self.transform_pane)
-
-        # Define Jog Distance.
-        self.jog_distance_pane(self._mgr)
-        self.context.register("pane/JogSettings", self.jog_distance_pane)
-
-        # Define Jog Distance.
-        self.pulse_pane(self._mgr)
-        self.context.register("pane/Pulse", self.pulse_pane)
-
-        # Define Move.
-        self.move_pane(self._mgr)
-        self.context.register("pane/Move", self.move_pane)
-
-        # Define Position.
-        self.position_pane(self._mgr)
-        self.context.register("pane/Position", self.position_pane)
-
-        # Define Notes.
-        self.notes_pane(self._mgr)
-        self.context.register("pane/Notes", self.notes_pane)
-
-        # Define Spooler.
-        self.spooler_pane(self._mgr)
-        self.context.register("pane/Spooler", self.spooler_pane)
-
-        # Define Spooler.
-        self.console_pane(self._mgr)
-        self.context.register("pane/Console", self.console_pane)
-
-        # Define Devices.
-        self.devices_pane(self._mgr)
-        self.context.register("pane/Devices", self.devices_pane)
-
-        # AUI Manager Update.
-        self._mgr.Update()
+        self.__set_panes()
 
         # Menu Bar
         self.main_menubar = wx.MenuBar()
@@ -480,363 +412,82 @@ class MeerK40t(MWindow):
 
         self.CenterOnScreen()
 
-        self.default_perspective = self._mgr.SavePerspective()
-        self.context.setting(str, "perspective")
-        if self.context.perspective is not None:
-            self._mgr.LoadPerspective(self.context.perspective)
-        for pane in self._mgr.GetAllPanes():
-            if pane.IsShown():
-                if hasattr(pane.window, "initialize"):
-                    pane.window.initialize()
-            else:
-                if hasattr(pane.window, "noninitialize"):
-                    pane.window.noninitialize()
         self.on_rebuild_tree_request()
 
-    def on_pane_active(self, event):
-        pane = event.GetPane()
-        if hasattr(pane.window, "active"):
-            pane.window.active()
+    def __set_panes(self):
+        # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
+        # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
+        # self.notebook.AddPage(self.scene, "scene")
+        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
-    def on_pane_closed(self, event):
-        pane = event.GetPane()
-        if pane.IsShown():
-            if hasattr(pane.window, "finalize"):
-                pane.window.finalize()
-
-    def on_pane_reshow(self, pane):
-        if hasattr(pane.window, "initialize"):
-            pane.window.initialize()
-
-    def aui_open_pane(self, pane):
-        pane_init = self.context.registered["pane/%s" % pane]
-        pane_init(self._mgr)
-
-    def ribbon_pane(self, manager):
-        pane = manager.GetPane("ribbon")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                pane.CaptionVisible(False)
-                self.ribbonbar_caption_visible = False
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
         pane = (
             aui.AuiPaneInfo()
-            .Name("ribbon")
-            .Top()
-            .RightDockable(False)
-            .LeftDockable(False)
-            .MinSize(300, 150)
-            .FloatingSize(640, 150)
-            .Caption("Ribbon")
-            .CaptionVisible(False)
+                .Name("tree")
+                .Left()
+                .MinSize(200, -1)
+                .MaxSize(275, -1)
+                .LeftDockable()
+                .RightDockable()
+                .BottomDockable(False)
+                .Caption("Tree")
+                .TopDockable(False)
         )
-        pane.dock_proportion = 8
-        self._mgr.AddPane(
-            self._ribbon,
-            pane,
-        )
+        pane.submenu = "Tree"
+        pane.control = self.wxtree
+        self.on_pane_add(pane)
+        self.context.register("pane/tree", pane)
 
-    def tree_pane(self, manager):
-        pane = manager.GetPane("tree")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
         pane = (
             aui.AuiPaneInfo()
-            .Name("tree")
-            .Left()
-            .MinSize(200, -1)
-            .MaxSize(275, -1)
-            .LeftDockable()
-            .RightDockable()
-            .BottomDockable(False)
-            .Caption("Tree")
-            .TopDockable(False)
-        )
-        pane.dock_proportion = 5
-        self._mgr.AddPane(
-            self.wxtree,
-            pane,
-        )
-
-    def position_pane(self, manager):
-        pane = manager.GetPane("position")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = PositionPanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .MinSize(-1, -1)
-            .MaxSize(600, 75)
-            .Caption("Position")
-            .Name("position")
+                .Bottom()
+                .MinSize(-1, -1)
+                .MaxSize(600, 75)
+                .Caption("Position")
+                .Name("position")
         )
         pane.dock_proportion = 4
-        self._mgr.AddPane(
-            panel,
-            pane,
-        )
+        pane.control = PositionPanel(self, wx.ID_ANY, context=self.context)
 
-    def jog_pane(self, manager):
-        pane = manager.GetPane("jog")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = Jog(self, wx.ID_ANY, context=self.context)
+        self.on_pane_add(pane)
+        self.context.register("pane/position", pane)
+
         pane = (
             aui.AuiPaneInfo()
-            .Right()
-            .MinSize(170, 230)
-            .FloatingSize(170, 230)
-            .MaxSize(300, 300)
-            .Caption("Navigate-Jog")
-            .Name("jog")
+                .Name("ribbon")
+                .Top()
+                .RightDockable(False)
+                .LeftDockable(False)
+                .MinSize(300, 150)
+                .FloatingSize(640, 150)
+                .Caption("Ribbon")
+                .CaptionVisible(False)
         )
-        pane.dock_proportion = 3
-        self._mgr.AddPane(panel, pane)
+        pane.dock_proportion = 8
+        pane.control = self._ribbon
 
-    def drag_pane(self, manager):
-        pane = manager.GetPane("drag")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = Drag(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(170, 230)
-            .FloatingSize(170, 230)
-            .MaxSize(300, 300)
-            .Caption("Navigate-Drag")
-            .Name("drag")
-            .Hide()
-        )
-        pane.dock_proportion = 3
-        self._mgr.AddPane(panel, pane)
+        self.on_pane_add(pane)
+        self.context.register("pane/ribbon", pane)
 
-    def transform_pane(self, manager):
-        pane = manager.GetPane("transform")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = Transform(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(170, 230)
-            .FloatingSize(170, 230)
-            .MaxSize(300, 300)
-            .Caption("Navigate-Transform")
-            .Name("transform")
-            .Hide()
+        # Define Stop.
+        stop = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
         )
-        pane.dock_proportion = 3
-        self._mgr.AddPane(panel, pane)
-
-    def move_pane(self, manager):
-        pane = manager.GetPane("move")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = MovePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(150, 75)
-            .FloatingSize(150, 75)
-            .MaxSize(200, 100)
-            .Caption("Move")
-            .Name("move")
+        self.Bind(
+            wx.EVT_BUTTON,
+            ConsoleFunction(self.context, "dev estop\n"),
+            stop,
         )
+        stop.SetBackgroundColour(wx.Colour(127, 0, 0))
+        stop.SetToolTip(_("Emergency stop/reset the controller."))
+        stop.SetSize(stop.GetBestSize())
+        pane = aui.AuiPaneInfo().Bottom().Caption("Stop").Name("stop")
         pane.dock_proportion = 1
-        self._mgr.AddPane(
-            panel,
-            pane,
-        )
+        pane.control = stop
 
-    def jog_distance_pane(self, manager):
-        pane = manager.GetPane("jogdist")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = JogDistancePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Float()
-            .MinSize(300, 75)
-            .FloatingSize(300, 75)
-            .MaxSize(200, 100)
-            .Hide()
-            .Caption("Navigate-Distances")
-            .Name("jogdist")
-        )
-        pane.dock_proportion = 1
-        self._mgr.AddPane(
-            panel,
-            pane,
-        )
+        self.on_pane_add(pane)
+        self.context.register("pane/stop", pane)
 
-    def pulse_pane(self, manager):
-        pane = manager.GetPane("pulse")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = PulsePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(150, 75)
-            .FloatingSize(150, 75)
-            .MaxSize(200, 100)
-            .Hide()
-            .Caption("Pulse")
-            .Name("pulse")
-        )
-        pane.dock_proportion = 1
-        self._mgr.AddPane(
-            panel,
-            pane,
-        )
-
-    def notes_pane(self, manager):
-        pane = manager.GetPane("notes")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = NotePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Float()
-            .MinSize(170, 230)
-            .FloatingSize(170, 230)
-            .MaxSize(300, 300)
-            .Caption("Notes")
-            .Name("notes")
-            .Hide()
-        )
-        pane.dock_proportion = 3
-        self._mgr.AddPane(panel, pane)
-
-    def spooler_pane(self, manager):
-        pane = manager.GetPane("spooler")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = SpoolerPanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .Layer(1)
-            .MinSize(600, 100)
-            .FloatingSize(600, 230)
-            .Caption("Spooler")
-            .Name("spooler")
-            .Hide()
-        )
-        pane.dock_proportion = 5
-        self._mgr.AddPane(panel, pane)
-
-    def console_pane(self, manager):
-        pane = manager.GetPane("console")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .Layer(2)
-            .MinSize(600, 100)
-            .FloatingSize(600, 230)
-            .Caption("Console")
-            .Name("console")
-            .Hide()
-        )
-        pane.dock_proportion = 5
-        self._mgr.AddPane(panel, pane)
-
-    def devices_pane(self, manager):
-        pane = manager.GetPane("devices")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = DevicesPanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .Layer(2)
-            .MinSize(600, 100)
-            .FloatingSize(600, 230)
-            .Caption("Devices")
-            .Name("devices")
-            .Hide()
-        )
-        pane.dock_proportion = 5
-        self._mgr.AddPane(panel, pane)
-
-    def home_pane(self, manager):
-        pane = manager.GetPane("home")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
-        panel = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), panel)
-        pane = aui.AuiPaneInfo().Bottom().Caption("Home").Name("home")
-        pane.dock_proportion = 1
-        self._mgr.AddPane(panel, pane)
-
-    def pause_pane(self, manager):
-        pane = manager.GetPane("pause")
-        if len(pane.name):
-            if not pane.IsShown():
-                pane.Show()
-                self.on_pane_reshow(pane)
-                manager.Update()
-            return
+        # Define Pause.
         pause = wx.BitmapButton(self, wx.ID_ANY, icons8_pause_50.GetBitmap())
 
         def on_pause_button(e=None):
@@ -859,37 +510,260 @@ class MeerK40t(MWindow):
         pause.SetSize(pause.GetBestSize())
         pane = aui.AuiPaneInfo().Caption("Pause").Bottom().Name("pause")
         pane.dock_proportion = 1
-        manager.AddPane(pause, pane)
+        pane.control = pause
 
-    def stop_pane(self, manager):
-        pane = manager.GetPane("stop")
+        self.on_pane_add(pane)
+        self.context.register("pane/pause", pane)
+
+        # Define Home.
+        panel = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), panel)
+        pane = aui.AuiPaneInfo().Bottom().Caption("Home").Name("home")
+        pane.dock_proportion = 1
+        pane.control = panel
+        self.on_pane_add(pane)
+        self.context.register("pane/home", pane)
+
+        # Define Jog.
+        panel = Jog(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(170, 230)
+                .FloatingSize(170, 230)
+                .MaxSize(300, 300)
+                .Caption("Navigate-Jog")
+                .Name("jog")
+        )
+        pane.dock_proportion = 3
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/jog", pane)
+
+        # Define Drag.
+        panel = Drag(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(170, 230)
+                .FloatingSize(170, 230)
+                .MaxSize(300, 300)
+                .Caption("Navigate-Drag")
+                .Name("drag")
+                .Hide()
+        )
+        pane.dock_proportion = 3
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/drag", pane)
+
+        # Define Transform.
+        panel = Transform(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(170, 230)
+                .FloatingSize(170, 230)
+                .MaxSize(300, 300)
+                .Caption("Navigate-Transform")
+                .Name("transform")
+                .Hide()
+        )
+        pane.dock_proportion = 3
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/transform", pane)
+
+        # Define Jog Distance.
+        panel = JogDistancePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Float()
+                .MinSize(300, 75)
+                .FloatingSize(300, 75)
+                .MaxSize(200, 100)
+                .Hide()
+                .Caption("Navigate-Distances")
+                .Name("jogdist")
+        )
+        pane.dock_proportion = 1
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/jogdist", pane)
+
+        # Define Pulse.
+        panel = PulsePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(150, 75)
+                .FloatingSize(150, 75)
+                .MaxSize(200, 100)
+                .Hide()
+                .Caption("Pulse")
+                .Name("pulse")
+        )
+        pane.dock_proportion = 1
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/pulse", pane)
+
+        # Define Move.
+        panel = MovePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(150, 75)
+                .FloatingSize(150, 75)
+                .MaxSize(200, 100)
+                .Caption("Move")
+                .Name("move")
+        )
+        pane.dock_proportion = 1
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/move", pane)
+
+        # Define Notes.
+        panel = NotePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Float()
+                .MinSize(170, 230)
+                .FloatingSize(170, 230)
+                .MaxSize(300, 300)
+                .Caption("Notes")
+                .Name("notes")
+                .Hide()
+        )
+        pane.dock_proportion = 3
+        pane.control = panel
+
+        self.on_pane_add(pane)
+        self.context.register("pane/notes", pane)
+
+        # Define Spooler.
+        panel = SpoolerPanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Bottom()
+                .Layer(1)
+                .MinSize(600, 100)
+                .FloatingSize(600, 230)
+                .Caption("Spooler")
+                .Name("spooler")
+                .Hide()
+        )
+        pane.dock_proportion = 5
+        pane.control = panel
+
+        self.on_pane_add(pane)
+        self.context.register("pane/spooler", pane)
+
+        # Define Console.
+        panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Bottom()
+                .Layer(2)
+                .MinSize(600, 100)
+                .FloatingSize(600, 230)
+                .Caption("Console")
+                .Name("console")
+                .Hide()
+        )
+        pane.dock_proportion = 5
+        pane.control = panel
+
+        self.on_pane_add(pane)
+        self.context.register("pane/console", pane)
+
+        # Define Devices.
+        panel = DevicesPanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Bottom()
+                .Layer(2)
+                .MinSize(600, 100)
+                .FloatingSize(600, 230)
+                .Caption("Devices")
+                .Name("devices")
+                .Hide()
+        )
+        pane.dock_proportion = 5
+        pane.control = panel
+
+        self.on_pane_add(pane)
+        self.context.register("pane/devices", pane)
+
+        # AUI Manager Update.
+        self._mgr.Update()
+
+        self.default_perspective = self._mgr.SavePerspective()
+        self.context.setting(str, "perspective")
+        if self.context.perspective is not None:
+            self._mgr.LoadPerspective(self.context.perspective)
+
+        for pane in self._mgr.GetAllPanes():
+            if pane.IsShown():
+                if hasattr(pane.window, "initialize"):
+                    pane.window.initialize()
+            else:
+                if hasattr(pane.window, "noninitialize"):
+                    pane.window.noninitialize()
+
+    def aui_open_pane(self, pane):
+        pane_init = self.context.registered["pane/%s" % pane]
+        self.on_pane_add(pane_init)
+
+    def on_pane_add(self, paneinfo: aui.AuiPaneInfo):
+        pane = self._mgr.GetPane(paneinfo.name)
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
                 self.on_pane_reshow(pane)
-                manager.Update()
+                self._mgr.Update()
             return
-        stop = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
+        self._mgr.AddPane(
+            paneinfo.control,
+            paneinfo,
         )
 
-        def on_stop_button(e=None):
+    def on_pane_active(self, event):
+        pane = event.GetPane()
+        if hasattr(pane.window, "active"):
+            pane.window.active()
+
+    def on_pane_closed(self, event):
+        pane = event.GetPane()
+        if pane.IsShown():
+            if hasattr(pane.window, "finalize"):
+                pane.window.finalize()
+        self.on_pane_changed()
+
+    def on_pane_reshow(self, pane):
+        if hasattr(pane.window, "initialize"):
+            pane.window.initialize()
+        self.on_pane_changed()
+
+    def on_pane_changed(self):
+        for pane in self._mgr.GetAllPanes():
             try:
-                self.context("dev estop\n")
+                pane.window.check(pane.IsShown())
             except AttributeError:
                 pass
-
-        self.Bind(
-            wx.EVT_BUTTON,
-            on_stop_button,
-            stop,
-        )
-        stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-        stop.SetToolTip(_("Emergency stop/reset the controller."))
-        stop.SetSize(stop.GetBestSize())
-        pane = aui.AuiPaneInfo().Bottom().Caption("Stop").Name("stop")
-        pane.dock_proportion = 1
-        manager.AddPane(stop, pane)
 
     @property
     def is_dark(self):
@@ -1705,17 +1579,44 @@ class MeerK40t(MWindow):
 
             return open
 
-        for p in self.context.match("pane/.*", suffix=True):
+        submenus = {}
+        for p in self.context.match("pane/.*"):
+            pane = self.context.registered[p]
+            submenu = None
+            try:
+                submenu_name = pane.submenu
+                if submenu_name in submenus:
+                    submenu = submenus[submenu_name]
+                elif submenu_name is not None:
+                    submenu = wx.Menu()
+                    self.panes_menu.AppendSubMenu(submenu, submenu_name)
+                    submenus[submenu_name] = submenu
+            except AttributeError:
+                pass
+            menu_context = submenu if submenu is not None else self.panes_menu
+            try:
+                pane_name = pane.name
+            except AttributeError:
+                pane_name = p.split('/')[-1]
+
+            try:
+                pane_caption = pane.caption
+            except AttributeError:
+                pane_caption = pane_name[0].upper() + pane_name[1:] + "."
+
             id_new = wx.NewId()
-            menu_item = self.panes_menu.Append(id_new, p, "") #  wx.ITEM_CHECK
-            # pane = self.aui_get_pane(p)
+            menu_item = menu_context.Append(id_new, pane_caption, "", wx.ITEM_CHECK)
             self.Bind(
                 wx.EVT_MENU,
-                open_pane(p),
+                open_pane(pane_name),
                 id=id_new,
             )
-            # TODO: Must check menu items for shown panes.
-            # menu_item.Check(pane.IsShown())
+            pane = self._mgr.GetPane(pane.name)
+            try:
+                menu_item.Check(pane.IsShown())
+                pane.window.check = menu_item.Check
+            except AttributeError:
+                pass
         self.panes_menu.AppendSeparator()
         self.main_menubar.panereset = self.panes_menu.Append(
             ID_MENU_PANE_RESET, _("Reset Panes"), ""
