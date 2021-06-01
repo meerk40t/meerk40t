@@ -3839,7 +3839,7 @@ class Elemental(Modifier):
             if hasattr(element, "node"):
                 element.node.modified()
             self.context.signal("element_property_update", node.object)
-            self.context.gui.request_refresh()
+            self.context.signal("refresh_scene")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)

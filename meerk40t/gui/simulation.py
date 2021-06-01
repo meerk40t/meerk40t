@@ -2,9 +2,8 @@ import math
 
 import wx
 
-from .scene.scene import ScenePanel
+from .scene.scene import ScenePanel, Widget
 from .scene.scenewidgets import GridWidget
-from .scene.widget import Widget
 from ..core.cutcode import CutCode
 from ..kernel import Job
 from ..svgelements import Matrix
