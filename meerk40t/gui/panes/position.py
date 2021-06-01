@@ -3,7 +3,7 @@ import wx
 _ = wx.GetTranslation
 
 
-from .icons import icons8_lock_50, icons8_padlock_50
+from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 
 
 class PositionPanel(wx.Panel):

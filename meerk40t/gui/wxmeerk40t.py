@@ -7,12 +7,20 @@ import os
 import sys
 import traceback
 
+from .panes.consolepanel import ConsolePanel
+from .panes.devicespanel import DevicesPanel
+from .panes.dragpanel import Drag
+from .panes.jogdistancepanel import JogDistancePanel
+from .panes.movepanel import MovePanel
+from .panes.notespanel import NotePanel
+from .panes.pulsepanel import PulsePanel
+from .panes.spoolerpanel import SpoolerPanel
+from .panes.transformpanel import Transform
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
-from .jog import Jog, MovePanel, Drag, Transform, JogDistancePanel, PulsePanel, NotePanel, SpoolerPanel, ConsolePanel, \
-    DevicesPanel
+from meerk40t.gui.panes.jog import Jog
 from .mwindow import MWindow
-from .position import PositionPanel
+from meerk40t.gui.panes.position import PositionPanel
 from .simulation import Simulation
 
 try:
@@ -66,12 +74,7 @@ from .executejob import ExecuteJob
 from .icons import (
     icon_meerk40t,
     icons8_administrative_tools_50,
-    icons8_align_bottom_50,
-    icons8_align_left_50,
-    icons8_align_right_50,
-    icons8_align_top_50,
     icons8_camera_50,
-    icons8_circle_50,
     icons8_comments_50,
     icons8_computer_support_50,
     icons8_connected_50,
@@ -80,10 +83,7 @@ from .icons import (
     icons8_emergency_stop_button_50,
     icons8_fantasy_50,
     icons8_file_20,
-    icons8_flip_horizontal_50,
-    icons8_flip_vertical_50,
     icons8_group_objects_20,
-    icons8_group_objects_50,
     icons8_home_filled_50,
     icons8_keyboard_50,
     icons8_laser_beam_20,
@@ -93,25 +93,15 @@ from .icons import (
     icons8_manager_50,
     icons8_move_50,
     icons8_opened_folder_50,
-    icons8_oval_50,
     icons8_padlock_50,
     icons8_pause_50,
-    icons8_place_marker_50,
     icons8_play_50,
-    icons8_polygon_50,
-    icons8_polyline_50,
-    icons8_rectangular_50,
     icons8_roll_50,
     icons8_route_50,
     icons8_save_50,
     icons8_scatter_plot_20,
     icons8_system_task_20,
-    icons8_type_50,
-    icons8_ungroup_objects_50,
     icons8_vector_20,
-    icons_centerize,
-    icons_evenspace_horiz,
-    icons_evenspace_vert,
 )
 from .imageproperty import ImageProperty
 from .jobspooler import JobSpooler
