@@ -4,7 +4,7 @@ from .scene.scene import ScenePanel
 from .scene.scenewidgets import GridWidget
 from .scene.widget import Widget, RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_CHAIN, HITCHAIN_DELEGATE, HITCHAIN_HIT
 from ..kernel import Job, Module
-from ..svgelements import Matrix, Point, Viewbox
+from ..svgelements import Matrix, Point, Viewbox, Color
 from .icons import (
     icons8_camera_50,
     icons8_connected_50,
@@ -339,7 +339,6 @@ class CameraInterface(MWindow, Job):
         self.context.console("camera%d fisheye capture\n" % self.index)
 
 
-
 class CamInterfaceWidget(Widget):
     def __init__(self, scene, camera):
         Widget.__init__(self, scene, all=True)
@@ -423,16 +422,49 @@ class CamInterfaceWidget(Widget):
 
 
 class CamPerspectiveWidget(Widget):
-    def __init__(self, scene, camera, perspective, index):
+    def __init__(self, scene, camera, index):
         self.cam = camera
+        if self.cam.camera.perspective is None:
+            self.cam.camera.perspective = (
+                [0, 0],
+                [self.cam.image_width, 0],
+                [self.cam.image_width, self.cam.image_height],
+                [0, self.cam.image_height],
+            )
+        perspective = self.cam.camera.perspective
         pos = perspective[index]
         half = CORNER_SIZE / 2
         Widget.__init__(self, scene, pos[0]-half, pos[1]-half, pos[0]+half, pos[1]+half)
         self.perspective = perspective
         self.index = index
+        c = Color.distinct(self.index + 1)
+        self.pen = wx.Pen(wx.Colour(c.red, c.green, c.blue))
 
     def hit(self):
         return HITCHAIN_HIT
+
+    def process_draw(self, gc):
+        if not self.cam.setting.correction_perspective and self.cam.camera.perspective:
+            gc.SetPen(self.pen)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            gc.StrokeLine(
+                self.left,
+                self.top + self.height / 2.0,
+                self.right,
+                self.bottom - self.height/2.0
+            )
+            gc.StrokeLine(
+                self.left + self.width / 2.0,
+                self.top,
+                self.right- self.width / 2.0,
+                self.bottom
+            )
+            gc.DrawEllipse(
+                self.left,
+                self.top,
+                self.width,
+                self.height
+            )
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftdown":
@@ -442,6 +474,7 @@ class CamPerspectiveWidget(Widget):
             self.perspective[self.index][0] += space_pos[4]
             self.perspective[self.index][1] += space_pos[5]
             self.cam.context.signal("refresh_scene", 1)
+            return RESPONSE_CONSUME
 
 
 class CamSceneWidget(Widget):
@@ -456,7 +489,7 @@ class CamSceneWidget(Widget):
                 [0, self.cam.image_height],
             )
         for i in range(4):
-            self.add_widget(-1, CamPerspectiveWidget(scene, self.cam, self.cam.camera.perspective, i))
+            self.add_widget(-1, CamPerspectiveWidget(scene, self.cam, i))
 
     def process_draw(self, gc):
         if not self.cam.setting.correction_perspective and not self.cam.setting.aspect:
@@ -468,13 +501,6 @@ class CamSceneWidget(Widget):
                 self.cam.camera.perspective[3][0],
                 self.cam.camera.perspective[3][1],
             )
-            gc.SetPen(wx.BLUE_PEN)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            for p in self.cam.camera.perspective:
-                half = CORNER_SIZE / 2
-                gc.StrokeLine(p[0] - half, p[1], p[0] + half, p[1])
-                gc.StrokeLine(p[0], p[1] - half, p[0], p[1] + half)
-                gc.DrawEllipse(p[0] - half, p[1] - half, CORNER_SIZE, CORNER_SIZE)
 
 
 class CamImageWidget(Widget):
