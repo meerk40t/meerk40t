@@ -108,7 +108,7 @@ class Transform(wx.Panel):
         self.text_b.SetToolTip("Transform: Skew X")
         self.text_d.SetMinSize((58, 23))
         self.text_d.SetToolTip("Transform: Scale Y")
-        self.text_f.SetMinSize((60, 23))
+        self.text_f.SetMinSize((58, 23))
         self.text_f.SetToolTip("Transform: Translate Y")
         # end wxGlade
 

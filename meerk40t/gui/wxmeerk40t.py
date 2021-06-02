@@ -432,7 +432,6 @@ class MeerK40t(MWindow):
                 .Caption("Tree")
                 .TopDockable(False)
         )
-        pane.submenu = "Tree"
         pane.control = self.wxtree
         self.on_pane_add(pane)
         self.context.register("pane/tree", pane)
@@ -532,7 +531,7 @@ class MeerK40t(MWindow):
                 .MinSize(170, 230)
                 .FloatingSize(170, 230)
                 .MaxSize(300, 300)
-                .Caption("Navigate-Jog")
+                .Caption("Jog")
                 .Name("jog")
         )
         pane.dock_proportion = 3
@@ -550,7 +549,7 @@ class MeerK40t(MWindow):
                 .MinSize(170, 230)
                 .FloatingSize(170, 230)
                 .MaxSize(300, 300)
-                .Caption("Navigate-Drag")
+                .Caption("Drag")
                 .Name("drag")
                 .Hide()
         )
@@ -566,10 +565,10 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
                 .Right()
-                .MinSize(170, 230)
-                .FloatingSize(170, 230)
+                .MinSize(170, 220)
+                .FloatingSize(170, 220)
                 .MaxSize(300, 300)
-                .Caption("Navigate-Transform")
+                .Caption("Transform")
                 .Name("transform")
                 .Hide()
         )
@@ -589,7 +588,7 @@ class MeerK40t(MWindow):
                 .FloatingSize(300, 75)
                 .MaxSize(200, 100)
                 .Hide()
-                .Caption("Navigate-Distances")
+                .Caption("Distances")
                 .Name("jogdist")
         )
         pane.dock_proportion = 1
