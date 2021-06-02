@@ -13,6 +13,7 @@ from .panes.dragpanel import Drag
 from .panes.jogdistancepanel import JogDistancePanel
 from .panes.movepanel import MovePanel
 from .panes.notespanel import NotePanel
+from .panes.projecttoolbar import ProjectToolBar
 from .panes.pulsepanel import PulsePanel
 from .panes.spoolerpanel import SpoolerPanel
 from .panes.transformpanel import Transform
@@ -588,6 +589,26 @@ class MeerK40t(MWindow):
 
         self.on_pane_add(pane)
         self.context.register("pane/ribbon", pane)
+
+        pane = (
+            aui.AuiPaneInfo()
+            .Name("project_toolbar")
+            .Top()
+            .RightDockable(False)
+            .LeftDockable(False)
+            .MinSize(300, 58)
+            .MaxSize(-1, 58)
+            .FloatingSize(640, 58)
+            .Layer(1)
+            .Caption("Project")
+            .Hide()
+        )
+        pane.dock_proportion = 5
+        pane.control = ProjectToolBar(self, wx.ID_ANY, context=self.context, gui=self)
+        pane.submenu = "Toolbars"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/project_toolbar", pane)
 
         # Define Stop.
         stop = wx.BitmapButton(
