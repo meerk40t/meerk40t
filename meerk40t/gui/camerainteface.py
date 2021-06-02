@@ -518,8 +518,8 @@ class CamSceneWidget(Widget):
                 if not len(self):
                     for i in range(4):
                         self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i, False))
-                    for i in range(4):
-                        self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i, True))
+                    # for i in range(4):
+                    #     self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i, True))
                 gc.SetPen(wx.BLACK_DASHED_PEN)
                 gc.StrokeLines(self.cam.camera.perspective)
                 gc.StrokeLine(
