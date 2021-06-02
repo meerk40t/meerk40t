@@ -42,6 +42,7 @@ class RasterWizard(MWindow):
         self.script = script
         self.selected_op = None
         self.wizard_thread = None
+        self.focus_factor = None
         self.needs_centering = True
         self.needs_update = True
 
@@ -118,6 +119,7 @@ class RasterWizard(MWindow):
         )
         self.context.listen("RasterWizard-Image", self.on_raster_wizard_image_signal)
         self.context.signal("RasterWizard-Image")
+        self.context.listen("RasterWizard-Refocus", self.on_raster_wizard_refocus_signal)
         if self.list_operation.GetCount() > 0:
             self.list_operation.SetSelection(0)
 
@@ -128,6 +130,7 @@ class RasterWizard(MWindow):
             "RasterWizard-Refresh", self.on_raster_wizard_refresh_signal
         )
         self.context.unlisten("RasterWizard-Image", self.on_raster_wizard_image_signal)
+        self.context.unlisten("RasterWizard-Refocus", self.on_raster_wizard_refocus_signal)
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -189,6 +192,15 @@ class RasterWizard(MWindow):
                     self.wizard_thread = None
                 return
             self.context.signal("RasterWizard-Refresh")
+        if self.focus_factor is not None:
+            scale = self.focus_factor
+            self.scene_post_scale(
+                scale,
+                scale,
+                self.matrix.value_trans_x(),
+                self.matrix.value_trans_y()
+            )
+            self.focus_factor = None
         if self.pil_image is not None and self.needs_centering:
             box = self.pil_image.getbbox()
             if box is not None:
@@ -446,6 +458,11 @@ class RasterWizard(MWindow):
     def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
         self.matrix.post_scale(sx, sy, ax, ay)
         self.context.signal("RasterWizard-Refresh")
+
+    def on_raster_wizard_refocus_signal(self, origin, factor, *args):
+        """Processes the image signal but flags this as needing refocusing."""
+        self.focus_factor = factor
+        self.on_raster_wizard_image_signal(origin, *args)
 
     def on_raster_wizard_image_signal(self, origin, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
@@ -874,12 +891,16 @@ class ResamplePanel(wx.Panel):
         self.refresh_dims()
 
     def on_combo_resample_step(self, event):  # wxGlade: ResamplePanel.<event_handler>
-        if self.combo_resample_step.GetSelection() != self.op["step"] + 1:
+        selected = self.combo_resample_step.GetSelection() + 1
+        current = self.op["step"]
+        if selected != current:
             self.combo_resample_dpi.SetSelection(
                 self.combo_resample_step.GetSelection()
             )
             self.op["step"] = self.combo_resample_step.GetSelection() + 1
-            self.context.signal("RasterWizard-Image")
+            if current == 0:
+                current = 1
+            self.context.signal("RasterWizard-Refocus", float(selected) / float(current))
 
     def on_combo_resample_dpi(self, event):  # wxGlade: ResamplePanel.<event_handler>
         if (
