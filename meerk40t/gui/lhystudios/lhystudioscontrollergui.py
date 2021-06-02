@@ -29,7 +29,7 @@ _ = wx.GetTranslation
 
 _simple_width = 500
 _advanced_width = 952
-_default_height = 565
+_default_height = 584
 
 
 class LhystudiosControllerGui(MWindow):
