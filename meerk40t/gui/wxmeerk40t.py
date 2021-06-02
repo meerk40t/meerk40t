@@ -420,6 +420,119 @@ class MeerK40t(MWindow):
         # self.notebook.AddPage(self.scene, "scene")
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
+
+        # Define Jog.
+        panel = Jog(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(174, 230)
+                .FloatingSize(174, 230)
+                .MaxSize(300, 300)
+                .Caption("Jog")
+                .Name("jog")
+        )
+        pane.dock_proportion = 3
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/jog", pane)
+
+        # Define Drag.
+        panel = Drag(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(174, 230)
+                .FloatingSize(174, 230)
+                .MaxSize(300, 300)
+                .Caption("Drag")
+                .Name("drag")
+                .Hide()
+        )
+        pane.dock_proportion = 3
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/drag", pane)
+
+        # Define Transform.
+        panel = Transform(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(174, 220)
+                .FloatingSize(174, 220)
+                .MaxSize(300, 300)
+                .Caption("Transform")
+                .Name("transform")
+                .Hide()
+        )
+        pane.dock_proportion = 3
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/transform", pane)
+
+        # Define Jog Distance.
+        panel = JogDistancePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Float()
+                .MinSize(300, 75)
+                .FloatingSize(300, 75)
+                .MaxSize(200, 100)
+                .Hide()
+                .Caption("Distances")
+                .Name("jogdist")
+        )
+        pane.dock_proportion = 1
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/jogdist", pane)
+
+        # Define Pulse.
+        panel = PulsePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(150, 75)
+                .FloatingSize(150, 75)
+                .MaxSize(200, 100)
+                .Hide()
+                .Caption("Pulse")
+                .Name("pulse")
+        )
+        pane.dock_proportion = 1
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/pulse", pane)
+
+        # Define Move.
+        panel = MovePanel(self, wx.ID_ANY, context=self.context)
+        pane = (
+            aui.AuiPaneInfo()
+                .Right()
+                .MinSize(150, 75)
+                .FloatingSize(150, 75)
+                .MaxSize(200, 100)
+                .Caption("Move")
+                .Name("move")
+        )
+        pane.dock_proportion = 1
+        pane.control = panel
+        pane.submenu = "Navigate"
+
+        self.on_pane_add(pane)
+        self.context.register("pane/move", pane)
+
         pane = (
             aui.AuiPaneInfo()
                 .Name("tree")
@@ -522,118 +635,6 @@ class MeerK40t(MWindow):
         pane.control = panel
         self.on_pane_add(pane)
         self.context.register("pane/home", pane)
-
-        # Define Jog.
-        panel = Jog(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-                .Right()
-                .MinSize(170, 230)
-                .FloatingSize(170, 230)
-                .MaxSize(300, 300)
-                .Caption("Jog")
-                .Name("jog")
-        )
-        pane.dock_proportion = 3
-        pane.control = panel
-        pane.submenu = "Navigate"
-
-        self.on_pane_add(pane)
-        self.context.register("pane/jog", pane)
-
-        # Define Drag.
-        panel = Drag(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-                .Right()
-                .MinSize(170, 230)
-                .FloatingSize(170, 230)
-                .MaxSize(300, 300)
-                .Caption("Drag")
-                .Name("drag")
-                .Hide()
-        )
-        pane.dock_proportion = 3
-        pane.control = panel
-        pane.submenu = "Navigate"
-
-        self.on_pane_add(pane)
-        self.context.register("pane/drag", pane)
-
-        # Define Transform.
-        panel = Transform(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-                .Right()
-                .MinSize(170, 220)
-                .FloatingSize(170, 220)
-                .MaxSize(300, 300)
-                .Caption("Transform")
-                .Name("transform")
-                .Hide()
-        )
-        pane.dock_proportion = 3
-        pane.control = panel
-        pane.submenu = "Navigate"
-
-        self.on_pane_add(pane)
-        self.context.register("pane/transform", pane)
-
-        # Define Jog Distance.
-        panel = JogDistancePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-                .Float()
-                .MinSize(300, 75)
-                .FloatingSize(300, 75)
-                .MaxSize(200, 100)
-                .Hide()
-                .Caption("Distances")
-                .Name("jogdist")
-        )
-        pane.dock_proportion = 1
-        pane.control = panel
-        pane.submenu = "Navigate"
-
-        self.on_pane_add(pane)
-        self.context.register("pane/jogdist", pane)
-
-        # Define Pulse.
-        panel = PulsePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-                .Right()
-                .MinSize(150, 75)
-                .FloatingSize(150, 75)
-                .MaxSize(200, 100)
-                .Hide()
-                .Caption("Pulse")
-                .Name("pulse")
-        )
-        pane.dock_proportion = 1
-        pane.control = panel
-        pane.submenu = "Navigate"
-
-        self.on_pane_add(pane)
-        self.context.register("pane/pulse", pane)
-
-        # Define Move.
-        panel = MovePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-                .Right()
-                .MinSize(150, 75)
-                .FloatingSize(150, 75)
-                .MaxSize(200, 100)
-                .Caption("Move")
-                .Name("move")
-        )
-        pane.dock_proportion = 1
-        pane.control = panel
-        pane.submenu = "Navigate"
-
-        self.on_pane_add(pane)
-        self.context.register("pane/move", pane)
 
         # Define Notes.
         panel = NotePanel(self, wx.ID_ANY, context=self.context)
