@@ -374,7 +374,7 @@ class MeerK40t(MWindow):
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
             self,
-            style=RB.RIBBON_BAR_DEFAULT_STYLE
+            style=RB.RIBBON_BAR_DEFAULT_STYLE | RB.RIBBON_BAR_ALWAYS_SHOW_TABS
         )
         self.__set_ribbonbar()
 
@@ -419,7 +419,6 @@ class MeerK40t(MWindow):
         # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
         # self.notebook.AddPage(self.scene, "scene")
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
-
 
         # Define Jog.
         panel = Jog(self, wx.ID_ANY, context=self.context)
@@ -1396,89 +1395,89 @@ class MeerK40t(MWindow):
         # ==========
         # POSITION PAGE
         # ==========
-        home = RB.RibbonPage(
-            self._ribbon,
-            wx.ID_ANY,
-            _("Position"),
-            icons8_opened_folder_50.GetBitmap(),
-        )
-        position_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("Position"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-
-        self.text_x = wx.TextCtrl(
-            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
-        self.text_y = wx.TextCtrl(
-            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
-        self.text_w = wx.TextCtrl(
-            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
-        self.button_aspect_ratio = wx.BitmapButton(
-            position_panel, wx.ID_ANY, icons8_lock_50.GetBitmap()
-        )
-        self.text_h = wx.TextCtrl(
-            position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
-        self.combo_box_units = wx.ComboBox(
-            position_panel,
-            wx.ID_ANY,
-            choices=["mm", "cm", "inch", "mil", "%"],
-            style=wx.CB_DROPDOWN | wx.CB_READONLY,
-        )
-
-        self.button_aspect_ratio.SetSize(self.button_aspect_ratio.GetBestSize())
-        self.combo_box_units.SetSelection(0)
-
-        sizer_panel = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_units = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "Units:"), wx.HORIZONTAL
-        )
-        sizer_h = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "H:"), wx.HORIZONTAL
-        )
-        sizer_w = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "W:"), wx.HORIZONTAL
-        )
-        sizer_y = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "Y:"), wx.HORIZONTAL
-        )
-        sizer_x = wx.StaticBoxSizer(
-            wx.StaticBox(position_panel, wx.ID_ANY, "X:"), wx.HORIZONTAL
-        )
-        sizer_x.Add(self.text_x, 1, 0, 0)
-        sizer_panel.Add(sizer_x, 0, 0, 0)
-        sizer_y.Add(self.text_y, 1, 0, 0)
-        sizer_panel.Add(sizer_y, 0, 0, 0)
-        sizer_w.Add(self.text_w, 1, 0, 0)
-        sizer_panel.Add(sizer_w, 0, 0, 0)
-        sizer_panel.Add(self.button_aspect_ratio, 0, 0, 0)
-        sizer_h.Add(self.text_h, 1, 0, 0)
-        sizer_panel.Add(sizer_h, 0, 0, 0)
-        sizer_units.Add(self.combo_box_units, 0, 0, 0)
-        sizer_panel.Add(sizer_units, 0, 0, 0)
-        position_panel.SetSizer(sizer_panel)
+        # home = RB.RibbonPage(
+        #     self._ribbon,
+        #     wx.ID_ANY,
+        #     _("Position"),
+        #     icons8_opened_folder_50.GetBitmap(),
+        # )
+        # position_panel = RB.RibbonPanel(
+        #     home,
+        #     wx.ID_ANY,
+        #     _("Position"),
+        #     icons8_opened_folder_50.GetBitmap(),
+        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        # )
+        #
+        # self.text_x = wx.TextCtrl(
+        #     position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        # )
+        # self.text_y = wx.TextCtrl(
+        #     position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        # )
+        # self.text_w = wx.TextCtrl(
+        #     position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        # )
+        # self.button_aspect_ratio = wx.BitmapButton(
+        #     position_panel, wx.ID_ANY, icons8_lock_50.GetBitmap()
+        # )
+        # self.text_h = wx.TextCtrl(
+        #     position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        # )
+        # self.combo_box_units = wx.ComboBox(
+        #     position_panel,
+        #     wx.ID_ANY,
+        #     choices=["mm", "cm", "inch", "mil", "%"],
+        #     style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        # )
+        #
+        # self.button_aspect_ratio.SetSize(self.button_aspect_ratio.GetBestSize())
+        # self.combo_box_units.SetSelection(0)
+        #
+        # sizer_panel = wx.BoxSizer(wx.HORIZONTAL)
+        # sizer_units = wx.StaticBoxSizer(
+        #     wx.StaticBox(position_panel, wx.ID_ANY, "Units:"), wx.HORIZONTAL
+        # )
+        # sizer_h = wx.StaticBoxSizer(
+        #     wx.StaticBox(position_panel, wx.ID_ANY, "H:"), wx.HORIZONTAL
+        # )
+        # sizer_w = wx.StaticBoxSizer(
+        #     wx.StaticBox(position_panel, wx.ID_ANY, "W:"), wx.HORIZONTAL
+        # )
+        # sizer_y = wx.StaticBoxSizer(
+        #     wx.StaticBox(position_panel, wx.ID_ANY, "Y:"), wx.HORIZONTAL
+        # )
+        # sizer_x = wx.StaticBoxSizer(
+        #     wx.StaticBox(position_panel, wx.ID_ANY, "X:"), wx.HORIZONTAL
+        # )
+        # sizer_x.Add(self.text_x, 1, 0, 0)
+        # sizer_panel.Add(sizer_x, 0, 0, 0)
+        # sizer_y.Add(self.text_y, 1, 0, 0)
+        # sizer_panel.Add(sizer_y, 0, 0, 0)
+        # sizer_w.Add(self.text_w, 1, 0, 0)
+        # sizer_panel.Add(sizer_w, 0, 0, 0)
+        # sizer_panel.Add(self.button_aspect_ratio, 0, 0, 0)
+        # sizer_h.Add(self.text_h, 1, 0, 0)
+        # sizer_panel.Add(sizer_h, 0, 0, 0)
+        # sizer_units.Add(self.combo_box_units, 0, 0, 0)
+        # sizer_panel.Add(sizer_units, 0, 0, 0)
+        # position_panel.SetSizer(sizer_panel)
         self._ribbon.Realize()
-
-        self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_y)
-        self.Bind(wx.EVT_TEXT, self.on_text_w, self.text_w)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_w)
-        self.Bind(wx.EVT_BUTTON, self.on_button_aspect_ratio, self.button_aspect_ratio)
-        self.Bind(wx.EVT_TEXT, self.on_text_h, self.text_h)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
-
-        self.context.setting(int, "units_index", 0)
-        self.ribbon_position_units = self.context.units_index
-        self.update_ribbon_position()
+        #
+        # self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_x)
+        # self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_y)
+        # self.Bind(wx.EVT_TEXT, self.on_text_w, self.text_w)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_w)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_aspect_ratio, self.button_aspect_ratio)
+        # self.Bind(wx.EVT_TEXT, self.on_text_h, self.text_h)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
+        # self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
+        #
+        # self.context.setting(int, "units_index", 0)
+        # self.ribbon_position_units = self.context.units_index
+        # self.update_ribbon_position()
 
     def run_later(self, command, *args):
         if wx.IsMainThread():
@@ -2455,47 +2454,48 @@ class MeerK40t(MWindow):
             event.Skip()
 
     def update_ribbon_position(self):
-        p = self.context
-        elements = p.elements
-        bounds = elements.selected_area()
-        self.text_w.Enable(bounds is not None)
-        self.text_h.Enable(bounds is not None)
-        self.text_x.Enable(bounds is not None)
-        self.text_y.Enable(bounds is not None)
-        self.button_aspect_ratio.Enable(bounds is not None)
-        if bounds is None:
-            self.ribbon_position_ignore_update = True
-            self.combo_box_units.SetSelection(self.ribbon_position_units)
-            self.ribbon_position_ignore_update = False
-            return
-        x0, y0, x1, y1 = bounds
-        conversion, name, index = (39.37, "mm", 0)
-        if self.ribbon_position_units == 2:
-            conversion, name, index = (1000.0, "in", 2)
-        elif self.ribbon_position_units == 3:
-            conversion, name, index = (1.0, "mil", 3)
-        elif self.ribbon_position_units == 1:
-            conversion, name, index = (393.7, "cm", 1)
-        elif self.ribbon_position_units == 0:
-            conversion, name, index = (39.37, "mm", 0)
-        self.ribbon_position_name = name
-        self.ribbon_position_x = x0 / conversion
-        self.ribbon_position_y = y0 / conversion
-        self.ribbon_position_w = (x1 - x0) / conversion
-        self.ribbon_position_h = (y1 - y0) / conversion
-        self.ribbon_position_ignore_update = True
-        if self.ribbon_position_units != 4:
-            self.text_x.SetValue("%.2f" % self.ribbon_position_x)
-            self.text_y.SetValue("%.2f" % self.ribbon_position_y)
-            self.text_w.SetValue("%.2f" % self.ribbon_position_w)
-            self.text_h.SetValue("%.2f" % self.ribbon_position_h)
-        else:
-            self.text_x.SetValue("%.2f" % 100)
-            self.text_y.SetValue("%.2f" % 100)
-            self.text_w.SetValue("%.2f" % 100)
-            self.text_h.SetValue("%.2f" % 100)
-        self.combo_box_units.SetSelection(self.ribbon_position_units)
-        self.ribbon_position_ignore_update = False
+        pass
+        # p = self.context
+        # elements = p.elements
+        # bounds = elements.selected_area()
+        # self.text_w.Enable(bounds is not None)
+        # self.text_h.Enable(bounds is not None)
+        # self.text_x.Enable(bounds is not None)
+        # self.text_y.Enable(bounds is not None)
+        # self.button_aspect_ratio.Enable(bounds is not None)
+        # if bounds is None:
+        #     self.ribbon_position_ignore_update = True
+        #     self.combo_box_units.SetSelection(self.ribbon_position_units)
+        #     self.ribbon_position_ignore_update = False
+        #     return
+        # x0, y0, x1, y1 = bounds
+        # conversion, name, index = (39.37, "mm", 0)
+        # if self.ribbon_position_units == 2:
+        #     conversion, name, index = (1000.0, "in", 2)
+        # elif self.ribbon_position_units == 3:
+        #     conversion, name, index = (1.0, "mil", 3)
+        # elif self.ribbon_position_units == 1:
+        #     conversion, name, index = (393.7, "cm", 1)
+        # elif self.ribbon_position_units == 0:
+        #     conversion, name, index = (39.37, "mm", 0)
+        # self.ribbon_position_name = name
+        # self.ribbon_position_x = x0 / conversion
+        # self.ribbon_position_y = y0 / conversion
+        # self.ribbon_position_w = (x1 - x0) / conversion
+        # self.ribbon_position_h = (y1 - y0) / conversion
+        # self.ribbon_position_ignore_update = True
+        # if self.ribbon_position_units != 4:
+        #     self.text_x.SetValue("%.2f" % self.ribbon_position_x)
+        #     self.text_y.SetValue("%.2f" % self.ribbon_position_y)
+        #     self.text_w.SetValue("%.2f" % self.ribbon_position_w)
+        #     self.text_h.SetValue("%.2f" % self.ribbon_position_h)
+        # else:
+        #     self.text_x.SetValue("%.2f" % 100)
+        #     self.text_y.SetValue("%.2f" % 100)
+        #     self.text_w.SetValue("%.2f" % 100)
+        #     self.text_h.SetValue("%.2f" % 100)
+        # self.combo_box_units.SetSelection(self.ribbon_position_units)
+        # self.ribbon_position_ignore_update = False
 
     def on_text_x(self, event):  # wxGlade: MyFrame.<event_handler>
         if self.ribbon_position_ignore_update:
