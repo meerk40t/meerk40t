@@ -2713,6 +2713,7 @@ class MeerK40t(MWindow):
                 bed_dim.bed_height * MILS_IN_MM,
             )
         self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize)
+        self.request_refresh()
 
     def toggle_draw_mode(self, bits):
         """
