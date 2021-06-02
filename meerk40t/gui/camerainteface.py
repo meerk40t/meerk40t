@@ -4,7 +4,7 @@ import wx
 
 from .scene.scene import ScenePanel, Widget, RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_CHAIN, HITCHAIN_HIT
 from ..kernel import Job
-from ..svgelements import Matrix, Viewbox, Color
+from ..svgelements import Color
 from .icons import (
     icons8_camera_50,
     icons8_connected_50,
@@ -117,6 +117,8 @@ class CameraInterface(MWindow, Job):
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
 
+        self.setting.setting(int, "width", 640)
+        self.setting.setting(int, "height", 480)
         self.setting.setting(bool, "aspect", False)
         self.setting.setting(str, "preserve_aspect", "xMinYMin meet")
         self.setting.setting(int, "index", 0)
@@ -249,8 +251,6 @@ class CameraInterface(MWindow, Job):
         frame = self.camera.get_frame()
         if frame is None:
             return
-        bed_width = self.bed_dim.bed_width * 2
-        bed_height = self.bed_dim.bed_height * 2
 
         self.image_height, self.image_width = frame.shape[:2]
         if not self.frame_bitmap:
@@ -268,14 +268,14 @@ class CameraInterface(MWindow, Job):
         if self.camera.perspective is None:
             self.camera.perspective = (
                 [0, 0],
-                [self.image_width, 0],
-                [self.image_width, self.image_height],
-                [0, self.image_height],
+                [self.setting.width, 0],
+                [self.setting.width, self.setting.height],
+                [0, self.setting.height],
             )
         if self.setting.correction_perspective:
-            if bed_width != self.image_width or bed_height != self.image_height:
-                self.image_width = bed_width
-                self.image_height = bed_height
+            if self.setting.width != self.image_width or self.setting.height != self.image_height:
+                self.image_width = self.setting.width
+                self.image_height = self.setting.height
 
         self.widget_scene.request_refresh()
 
@@ -286,8 +286,7 @@ class CameraInterface(MWindow, Job):
         :param event:
         :return:
         """
-        self.camera.perspective = None
-        self.setting.perspective = ""
+        self.context("camera%d perspective reset\n" % self.index)
 
     def reset_fisheye(self, event):
         """
@@ -296,9 +295,7 @@ class CameraInterface(MWindow, Job):
         :param event:
         :return:
         """
-        self.fisheye_k = None
-        self.fisheye_d = None
-        self.setting.fisheye = ""
+        self.context("camera%d fisheye reset\n" % self.index)
 
     def on_check_perspective(self, event):
         """
