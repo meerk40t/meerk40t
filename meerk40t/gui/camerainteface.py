@@ -445,7 +445,7 @@ class CamPerspectiveWidget(Widget):
         half = CORNER_SIZE / 2.0
         Widget.__init__(self, scene, -half, -half, half, half)
         self.update()
-        c = Color.distinct(self.index + 1)
+        c = Color.distinct(self.index + 2)
         self.pen = wx.Pen(wx.Colour(c.red, c.green, c.blue))
 
     def update(self):
