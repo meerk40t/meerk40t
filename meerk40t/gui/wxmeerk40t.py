@@ -17,8 +17,15 @@ from .panes.pulsepanel import PulsePanel
 from .panes.spoolerpanel import SpoolerPanel
 from .panes.transformpanel import Transform
 from .scene.scene import Scene, ScenePanel
-from .scene.scenewidgets import SelectionWidget, RectSelectWidget, LaserPathWidget, ElementsWidget, GridWidget, \
-    GuideWidget, ReticleWidget
+from .scene.scenewidgets import (
+    SelectionWidget,
+    RectSelectWidget,
+    LaserPathWidget,
+    ElementsWidget,
+    GridWidget,
+    GuideWidget,
+    ReticleWidget,
+)
 from .scene.toolwidgets import ToolContainer, DrawTool, RectTool
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
@@ -374,7 +381,11 @@ class MeerK40t(MWindow):
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
             self,
-            style=RB.RIBBON_BAR_DEFAULT_STYLE | RB.RIBBON_BAR_ALWAYS_SHOW_TABS
+            style=RB.RIBBON_BAR_FLOW_HORIZONTAL
+            | RB.RIBBON_BAR_SHOW_PAGE_LABELS
+            | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS
+            | RB.RIBBON_BAR_SHOW_TOGGLE_BUTTON
+            | RB.RIBBON_BAR_SHOW_HELP_BUTTON,
         )
         self.__set_ribbonbar()
 
@@ -424,12 +435,12 @@ class MeerK40t(MWindow):
         panel = Jog(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Right()
-                .MinSize(174, 230)
-                .FloatingSize(174, 230)
-                .MaxSize(300, 300)
-                .Caption("Jog")
-                .Name("jog")
+            .Right()
+            .MinSize(174, 230)
+            .FloatingSize(174, 230)
+            .MaxSize(300, 300)
+            .Caption("Jog")
+            .Name("jog")
         )
         pane.dock_proportion = 3
         pane.control = panel
@@ -442,13 +453,13 @@ class MeerK40t(MWindow):
         panel = Drag(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Right()
-                .MinSize(174, 230)
-                .FloatingSize(174, 230)
-                .MaxSize(300, 300)
-                .Caption("Drag")
-                .Name("drag")
-                .Hide()
+            .Right()
+            .MinSize(174, 230)
+            .FloatingSize(174, 230)
+            .MaxSize(300, 300)
+            .Caption("Drag")
+            .Name("drag")
+            .Hide()
         )
         pane.dock_proportion = 3
         pane.control = panel
@@ -461,13 +472,13 @@ class MeerK40t(MWindow):
         panel = Transform(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Right()
-                .MinSize(174, 220)
-                .FloatingSize(174, 220)
-                .MaxSize(300, 300)
-                .Caption("Transform")
-                .Name("transform")
-                .Hide()
+            .Right()
+            .MinSize(174, 220)
+            .FloatingSize(174, 220)
+            .MaxSize(300, 300)
+            .Caption("Transform")
+            .Name("transform")
+            .Hide()
         )
         pane.dock_proportion = 3
         pane.control = panel
@@ -480,13 +491,13 @@ class MeerK40t(MWindow):
         panel = JogDistancePanel(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Float()
-                .MinSize(300, 75)
-                .FloatingSize(300, 75)
-                .MaxSize(200, 100)
-                .Hide()
-                .Caption("Distances")
-                .Name("jogdist")
+            .Float()
+            .MinSize(300, 75)
+            .FloatingSize(300, 75)
+            .MaxSize(200, 100)
+            .Hide()
+            .Caption("Distances")
+            .Name("jogdist")
         )
         pane.dock_proportion = 1
         pane.control = panel
@@ -499,13 +510,13 @@ class MeerK40t(MWindow):
         panel = PulsePanel(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Right()
-                .MinSize(150, 75)
-                .FloatingSize(150, 75)
-                .MaxSize(200, 100)
-                .Hide()
-                .Caption("Pulse")
-                .Name("pulse")
+            .Right()
+            .MinSize(150, 75)
+            .FloatingSize(150, 75)
+            .MaxSize(200, 100)
+            .Hide()
+            .Caption("Pulse")
+            .Name("pulse")
         )
         pane.dock_proportion = 1
         pane.control = panel
@@ -518,12 +529,12 @@ class MeerK40t(MWindow):
         panel = MovePanel(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Right()
-                .MinSize(150, 75)
-                .FloatingSize(150, 75)
-                .MaxSize(200, 100)
-                .Caption("Move")
-                .Name("move")
+            .Right()
+            .MinSize(150, 75)
+            .FloatingSize(150, 75)
+            .MaxSize(200, 100)
+            .Caption("Move")
+            .Name("move")
         )
         pane.dock_proportion = 1
         pane.control = panel
@@ -534,15 +545,15 @@ class MeerK40t(MWindow):
 
         pane = (
             aui.AuiPaneInfo()
-                .Name("tree")
-                .Left()
-                .MinSize(200, -1)
-                .MaxSize(275, -1)
-                .LeftDockable()
-                .RightDockable()
-                .BottomDockable(False)
-                .Caption("Tree")
-                .TopDockable(False)
+            .Name("tree")
+            .Left()
+            .MinSize(200, -1)
+            .MaxSize(275, -1)
+            .LeftDockable()
+            .RightDockable()
+            .BottomDockable(False)
+            .Caption("Tree")
+            .TopDockable(False)
         )
         pane.control = self.wxtree
         self.on_pane_add(pane)
@@ -550,11 +561,11 @@ class MeerK40t(MWindow):
 
         pane = (
             aui.AuiPaneInfo()
-                .Bottom()
-                .MinSize(-1, -1)
-                .MaxSize(600, 75)
-                .Caption("Position")
-                .Name("position")
+            .Bottom()
+            .MinSize(-1, -1)
+            .MaxSize(600, 75)
+            .Caption("Position")
+            .Name("position")
         )
         pane.dock_proportion = 4
         pane.control = PositionPanel(self, wx.ID_ANY, context=self.context)
@@ -564,14 +575,13 @@ class MeerK40t(MWindow):
 
         pane = (
             aui.AuiPaneInfo()
-                .Name("ribbon")
-                .Top()
-                .RightDockable(False)
-                .LeftDockable(False)
-                .MinSize(300, 150)
-                .FloatingSize(640, 150)
-                .Caption("Ribbon")
-                .CaptionVisible(False)
+            .Name("ribbon")
+            .Top()
+            .RightDockable(False)
+            .LeftDockable(False)
+            .MinSize(300, 120)
+            .FloatingSize(640, 120)
+            .Caption("Ribbon")
         )
         pane.dock_proportion = 8
         pane.control = self._ribbon
@@ -639,13 +649,13 @@ class MeerK40t(MWindow):
         panel = NotePanel(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Float()
-                .MinSize(170, 230)
-                .FloatingSize(170, 230)
-                .MaxSize(300, 300)
-                .Caption("Notes")
-                .Name("notes")
-                .Hide()
+            .Float()
+            .MinSize(170, 230)
+            .FloatingSize(170, 230)
+            .MaxSize(300, 300)
+            .Caption("Notes")
+            .Name("notes")
+            .Hide()
         )
         pane.dock_proportion = 3
         pane.control = panel
@@ -657,13 +667,13 @@ class MeerK40t(MWindow):
         panel = SpoolerPanel(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Bottom()
-                .Layer(1)
-                .MinSize(600, 100)
-                .FloatingSize(600, 230)
-                .Caption("Spooler")
-                .Name("spooler")
-                .Hide()
+            .Bottom()
+            .Layer(1)
+            .MinSize(600, 100)
+            .FloatingSize(600, 230)
+            .Caption("Spooler")
+            .Name("spooler")
+            .Hide()
         )
         pane.dock_proportion = 5
         pane.control = panel
@@ -675,13 +685,13 @@ class MeerK40t(MWindow):
         panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Bottom()
-                .Layer(2)
-                .MinSize(600, 100)
-                .FloatingSize(600, 230)
-                .Caption("Console")
-                .Name("console")
-                .Hide()
+            .Bottom()
+            .Layer(2)
+            .MinSize(600, 100)
+            .FloatingSize(600, 230)
+            .Caption("Console")
+            .Name("console")
+            .Hide()
         )
         pane.dock_proportion = 5
         pane.control = panel
@@ -693,13 +703,13 @@ class MeerK40t(MWindow):
         panel = DevicesPanel(self, wx.ID_ANY, context=self.context)
         pane = (
             aui.AuiPaneInfo()
-                .Bottom()
-                .Layer(2)
-                .MinSize(600, 100)
-                .FloatingSize(600, 230)
-                .Caption("Devices")
-                .Name("devices")
-                .Hide()
+            .Bottom()
+            .Layer(2)
+            .MinSize(600, 100)
+            .FloatingSize(600, 230)
+            .Caption("Devices")
+            .Name("devices")
+            .Hide()
         )
         pane.dock_proportion = 5
         pane.control = panel
@@ -1541,31 +1551,44 @@ class MeerK40t(MWindow):
         self.view_menu.AppendSeparator()
 
         self.view_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(
+            ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK
+        )
         self.view_menu.Append(ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK)
         self.view_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
         self.view_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
         self.view_menu.Append(ID_MENU_HIDE_TEXT, _("Hide Text"), "", wx.ITEM_CHECK)
         self.view_menu.Append(ID_MENU_HIDE_FILLS, _("Hide Fills"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(
+            ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK
+        )
         self.view_menu.Append(
             ID_MENU_HIDE_LINEWIDTH, _("No Stroke-Width Render"), "", wx.ITEM_CHECK
         )
-        self.view_menu.Append(ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(
+            ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK
+        )
+        self.view_menu.Append(
+            ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK
+        )
+        self.view_menu.Append(
+            ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK
+        )
         self.view_menu.Append(ID_MENU_HIDE_ICONS, _("Hide Icons"), "", wx.ITEM_CHECK)
         self.view_menu.Append(ID_MENU_HIDE_TREE, _("Hide Tree"), "", wx.ITEM_CHECK)
         self.view_menu.Append(
             ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK
         )
-        self.view_menu.Append(ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(
+            ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK
+        )
+        self.view_menu.Append(
+            ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK
+        )
         self.view_menu.Append(ID_MENU_SCREEN_INVERT, _("Invert"), "", wx.ITEM_CHECK)
         self.view_menu.Append(ID_MENU_SCREEN_FLIPXY, _("Flip XY"), "", wx.ITEM_CHECK)
 
         self.main_menubar.Append(self.view_menu, _("View"))
-
 
         # ==========
         # PANE MENU
@@ -1598,7 +1621,7 @@ class MeerK40t(MWindow):
             try:
                 pane_name = pane.name
             except AttributeError:
-                pane_name = p.split('/')[-1]
+                pane_name = p.split("/")[-1]
 
             try:
                 pane_caption = pane.caption
