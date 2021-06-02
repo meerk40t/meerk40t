@@ -775,6 +775,10 @@ class MeerK40t(MWindow):
         pane_init = self.context.registered["pane/%s" % pane]
         self.on_pane_add(pane_init)
 
+    def on_pane_reset(self, event=None):
+        self._mgr.LoadPerspective(self.default_perspective, update=True)
+        wx.CallAfter(self.on_pane_changed, None)
+
     def on_pane_unlock(self, event=None, lock=None):
         if lock is None:
             self.context.pane_lock = not self.context.pane_lock
@@ -1977,7 +1981,7 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self._mgr.LoadPerspective(self.default_perspective, update=True),
+            self.on_pane_reset,
             id=ID_MENU_PANE_RESET,
         )
         self.Bind(
