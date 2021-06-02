@@ -1,5 +1,7 @@
 import wx
 
+from meerk40t.gui.panes.jog import MILS_IN_MM
+
 _ = wx.GetTranslation
 
 
