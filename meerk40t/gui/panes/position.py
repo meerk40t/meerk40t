@@ -176,22 +176,23 @@ class PositionPanel(wx.Panel):
         event.Skip()
         original = self.position_w
 
-        try:
-            w = float(self.text_w.GetValue())
-        except ValueError:
-            if self.position_units == 0:
-                w = Length(self.text_w.GetValue()).to_mm(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM)
-            elif self.position_units == 1:
-                w = Length(self.text_w.GetValue()).to_cm(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM).amount
-            elif self.position_units == 2:
-                w = Length(self.text_w.GetValue()).to_inch(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM).amount
-            elif self.position_units == 3:
-                w = Length(self.text_w.GetValue()).value(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM).amount
-            elif self.position_units == 4:
-                ratio_w = float(self.text_w.GetValue()) / 100.0
-                w = self.position_w * ratio_w
-            else:
-                return
+        if self.position_units == 4:
+            ratio_w = float(self.text_w.GetValue()) / 100.0
+            w = self.position_w * ratio_w
+        else:
+            try:
+                w = float(self.text_w.GetValue())
+            except ValueError:
+                if self.position_units == 0:
+                    w = Length(self.text_w.GetValue()).to_mm(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM)
+                elif self.position_units == 1:
+                    w = Length(self.text_w.GetValue()).to_cm(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM).amount
+                elif self.position_units == 2:
+                    w = Length(self.text_w.GetValue()).to_inch(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM).amount
+                elif self.position_units == 3:
+                    w = Length(self.text_w.GetValue()).value(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM).amount
+                else:
+                    return
         if abs(w) < 1e-8:
             self.text_w.SetValue(str(self.position_w))
             return
@@ -220,23 +221,23 @@ class PositionPanel(wx.Panel):
     def on_text_h_enter(self, event):
         event.Skip()
         original = self.position_h
-
-        try:
-            h = float(self.text_h.GetValue())
-        except ValueError:
-            if self.position_units == 0:
-                h = Length(self.text_h.GetValue()).to_mm(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM).amount
-            elif self.position_units == 1:
-                h = Length(self.text_h.GetValue()).to_cm(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM).amount
-            elif self.position_units == 2:
-                h = Length(self.text_h.GetValue()).to_inch(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM).amount
-            elif self.position_units == 3:
-                h = Length(self.text_h.GetValue()).value(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM)
-            elif self.position_units == 4:
-                ratio_w = float(self.text_h.GetValue()) / 100.0
-                h = self.position_h * ratio_w
-            else:
-                return
+        if self.position_units == 4:
+            ratio_w = float(self.text_h.GetValue()) / 100.0
+            h = self.position_h * ratio_w
+        else:
+            try:
+                h = float(self.text_h.GetValue())
+            except ValueError:
+                if self.position_units == 0:
+                    h = Length(self.text_h.GetValue()).to_mm(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM).amount
+                elif self.position_units == 1:
+                    h = Length(self.text_h.GetValue()).to_cm(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM).amount
+                elif self.position_units == 2:
+                    h = Length(self.text_h.GetValue()).to_inch(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM).amount
+                elif self.position_units == 3:
+                    h = Length(self.text_h.GetValue()).value(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM)
+                else:
+                    return
         if abs(h) < 1e-8:
             self.text_h.SetValue(str(self.position_h))
             return
