@@ -4221,7 +4221,7 @@ class wxMeerK40t(wx.App, Module):
         )  # Default Locale, prepended. Check this first.
 
         kernel.translation = wx.GetTranslation
-        kernel.set_config(wx.Config(kernel.profile))
+        kernel.set_config(wx.FileConfig(kernel.profile))
         context.app = self  # Registers self as kernel.app
 
         context.setting(int, "language", None)
