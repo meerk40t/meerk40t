@@ -3,15 +3,15 @@ import time
 
 import wx
 
-from meerk40t.gui.zmatrix import ZMatrix
-from meerk40t.kernel import Job, Module
-from meerk40t.svgelements import Matrix, Point, Viewbox
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
+from meerk40t.gui.zmatrix import ZMatrix
+from meerk40t.kernel import Job, Module
+from meerk40t.svgelements import Matrix, Point, Viewbox
 
 try:
     from math import tau
@@ -46,6 +46,7 @@ BUFFER = 10.0
 
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -560,7 +561,7 @@ class Scene(Module, Job):
 class Widget(list):
     def __init__(
         self,
-        scene: 'Scene',
+        scene: "Scene",
         left: float = None,
         top: float = None,
         right: float = None,
@@ -1103,5 +1104,3 @@ class SceneSpaceWidget(Widget):
             if scale_x != 0 and scale_y != 0:
                 self.scene_widget.matrix.post_scale(scale_x, scale_y)
         self.scene_widget.matrix.post_translate(window_width / 2.0, window_height / 2.0)
-
-

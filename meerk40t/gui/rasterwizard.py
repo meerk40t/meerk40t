@@ -119,7 +119,9 @@ class RasterWizard(MWindow):
         )
         self.context.listen("RasterWizard-Image", self.on_raster_wizard_image_signal)
         self.context.signal("RasterWizard-Image")
-        self.context.listen("RasterWizard-Refocus", self.on_raster_wizard_refocus_signal)
+        self.context.listen(
+            "RasterWizard-Refocus", self.on_raster_wizard_refocus_signal
+        )
         if self.list_operation.GetCount() > 0:
             self.list_operation.SetSelection(0)
 
@@ -130,7 +132,9 @@ class RasterWizard(MWindow):
             "RasterWizard-Refresh", self.on_raster_wizard_refresh_signal
         )
         self.context.unlisten("RasterWizard-Image", self.on_raster_wizard_image_signal)
-        self.context.unlisten("RasterWizard-Refocus", self.on_raster_wizard_refocus_signal)
+        self.context.unlisten(
+            "RasterWizard-Refocus", self.on_raster_wizard_refocus_signal
+        )
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -195,10 +199,7 @@ class RasterWizard(MWindow):
         if self.focus_factor is not None:
             scale = self.focus_factor
             self.scene_post_scale(
-                scale,
-                scale,
-                self.matrix.value_trans_x(),
-                self.matrix.value_trans_y()
+                scale, scale, self.matrix.value_trans_x(), self.matrix.value_trans_y()
             )
             self.focus_factor = None
         if self.pil_image is not None and self.needs_centering:
@@ -900,7 +901,9 @@ class ResamplePanel(wx.Panel):
             self.op["step"] = self.combo_resample_step.GetSelection() + 1
             if current == 0:
                 current = 1
-            self.context.signal("RasterWizard-Refocus", float(selected) / float(current))
+            self.context.signal(
+                "RasterWizard-Refocus", float(selected) / float(current)
+            )
 
     def on_combo_resample_dpi(self, event):  # wxGlade: ResamplePanel.<event_handler>
         if (

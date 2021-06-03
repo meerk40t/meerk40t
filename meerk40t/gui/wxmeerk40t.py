@@ -7,34 +7,35 @@ import os
 import sys
 import traceback
 
+from meerk40t.gui.panes.jog import Jog
+from meerk40t.gui.panes.position import PositionPanel
+
+from ..core.cutcode import CutCode
+from .file.fileoutput import FileOutput
+from .mwindow import MWindow
 from .panes.consolepanel import ConsolePanel
 from .panes.devicespanel import DevicesPanel
 from .panes.dragpanel import Drag
 from .panes.jogdistancepanel import JogDistancePanel
 from .panes.movepanel import MovePanel
 from .panes.notespanel import NotePanel
+from .panes.pulsepanel import PulsePanel
+from .panes.spoolerpanel import SpoolerPanel
 from .panes.toolbarcontrol import ControlToolBar, ControlTools
 from .panes.toolbarpreferences import PreferencesToolBar, PreferencesTools
 from .panes.toolbarproject import ProjectToolBar, ProjectTools
-from .panes.pulsepanel import PulsePanel
-from .panes.spoolerpanel import SpoolerPanel
 from .panes.transformpanel import Transform
 from .scene.scene import Scene, ScenePanel
 from .scene.scenewidgets import (
-    SelectionWidget,
-    RectSelectWidget,
-    LaserPathWidget,
     ElementsWidget,
     GridWidget,
     GuideWidget,
+    LaserPathWidget,
+    RectSelectWidget,
     ReticleWidget,
+    SelectionWidget,
 )
-from .scene.toolwidgets import ToolContainer, DrawTool, RectTool
-from ..core.cutcode import CutCode
-from .file.fileoutput import FileOutput
-from meerk40t.gui.panes.jog import Jog
-from .mwindow import MWindow
-from meerk40t.gui.panes.position import PositionPanel
+from .scene.toolwidgets import DrawTool, RectTool, ToolContainer
 from .simulation import Simulation
 
 try:
@@ -66,7 +67,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT,
     COMMAND_WAIT_FINISH,
 )
-from ..kernel import STATE_BUSY, Module, ConsoleFunction
+from ..kernel import STATE_BUSY, ConsoleFunction, Module
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -430,7 +431,7 @@ class MeerK40t(MWindow):
         self.on_rebuild_tree_request()
 
     def __set_panes(self):
-        self.context.setting(bool, 'pane_lock', True)
+        self.context.setting(bool, "pane_lock", True)
         # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
         # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
         # self.notebook.AddPage(self.scene, "scene")
@@ -703,7 +704,13 @@ class MeerK40t(MWindow):
         pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         pause.SetToolTip(_("Pause/Resume the controller"))
         pause.SetSize(pause.GetBestSize())
-        pane = aui.AuiPaneInfo().Caption("Pause").Bottom().Name("pause").CaptionVisible(self.context.pane_lock)
+        pane = (
+            aui.AuiPaneInfo()
+            .Caption("Pause")
+            .Bottom()
+            .Name("pause")
+            .CaptionVisible(self.context.pane_lock)
+        )
         pane.dock_proportion = 1
         pane.control = pause
 
@@ -713,7 +720,13 @@ class MeerK40t(MWindow):
         # Define Home.
         panel = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
         self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), panel)
-        pane = aui.AuiPaneInfo().Bottom().Caption("Home").Name("home").CaptionVisible(self.context.pane_lock)
+        pane = (
+            aui.AuiPaneInfo()
+            .Bottom()
+            .Caption("Home")
+            .Name("home")
+            .CaptionVisible(self.context.pane_lock)
+        )
         pane.dock_proportion = 1
         pane.control = panel
         self.on_pane_add(pane)

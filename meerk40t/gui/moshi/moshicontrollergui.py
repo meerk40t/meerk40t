@@ -112,7 +112,9 @@ class MoshiControllerGui(MWindow):
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
-        self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap(use_theme=False))
+        self.button_device_connect.SetBitmap(
+            icons8_disconnected_50.GetBitmap(use_theme=False)
+        )
         self.button_device_connect.SetFont(
             wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
         )
@@ -347,27 +349,37 @@ class MoshiControllerGui(MWindow):
             usb_status = self.context.last_signal("pipe;usb_status")
             if usb_status is not None:
                 self.button_device_connect.SetLabel(str(usb_status[0]))
-            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap(use_theme=False))
+            self.button_device_connect.SetBitmap(
+                icons8_disconnected_50.GetBitmap(use_theme=False)
+            )
             self.button_device_connect.Enable()
         elif state == "STATE_UNINITIALIZED" or state == "STATE_USB_DISCONNECTED":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
-            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap(use_theme=False))
+            self.button_device_connect.SetBitmap(
+                icons8_connected_50.GetBitmap(use_theme=False)
+            )
             self.button_device_connect.Enable()
         elif state == "STATE_USB_SET_DISCONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Disconnecting..."))
-            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap(use_theme=False))
+            self.button_device_connect.SetBitmap(
+                icons8_disconnected_50.GetBitmap(use_theme=False)
+            )
             self.button_device_connect.Disable()
         elif state == "STATE_USB_CONNECTED" or state == "STATE_CONNECTED":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
-            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap(use_theme=False))
+            self.button_device_connect.SetBitmap(
+                icons8_connected_50.GetBitmap(use_theme=False)
+            )
             self.button_device_connect.Enable()
         elif state == "STATE_CONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connecting..."))
-            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap(use_theme=False))
+            self.button_device_connect.SetBitmap(
+                icons8_connected_50.GetBitmap(use_theme=False)
+            )
             self.button_device_connect.Disable()
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>

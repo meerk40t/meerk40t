@@ -2,7 +2,6 @@ import re
 
 import wx
 
-from .scene.scene import ScenePanel, Widget, RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_CHAIN, HITCHAIN_HIT
 from ..kernel import Job
 from ..svgelements import Color
 from .icons import (
@@ -12,6 +11,14 @@ from .icons import (
     icons8_picture_in_picture_alternative_50,
 )
 from .mwindow import MWindow
+from .scene.scene import (
+    HITCHAIN_HIT,
+    RESPONSE_ABORT,
+    RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+    ScenePanel,
+    Widget,
+)
 
 _ = wx.GetTranslation
 
@@ -59,7 +66,10 @@ class CameraInterface(MWindow, Job):
             self, wx.ID_ANY, icons8_detective_50.GetBitmap()
         )
         self.display_camera = ScenePanel(
-            self.context, self, scene_name="Camera%s" % str(self.index), style=wx.EXPAND | wx.WANTS_CHARS
+            self.context,
+            self,
+            scene_name="Camera%s" % str(self.index),
+            style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.widget_scene = self.display_camera.scene
 
@@ -154,7 +164,9 @@ class CameraInterface(MWindow, Job):
         self.widget_scene.background_brush = wx.WHITE_BRUSH
         self.widget_scene.add_scenewidget(CamSceneWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(CamImageWidget(self.widget_scene, self))
-        self.widget_scene.add_interfacewidget(CamInterfaceWidget(self.widget_scene, self))
+        self.widget_scene.add_interfacewidget(
+            CamInterfaceWidget(self.widget_scene, self)
+        )
 
     def swap_camera(self, uri):
         def swap(event=None):
@@ -256,11 +268,7 @@ class CameraInterface(MWindow, Job):
         if not self.frame_bitmap:
             # Initial set.
             self.widget_scene.widget_root.set_view(
-                0,
-                0,
-                self.image_width,
-                self.image_height,
-                self.setting.preserve_aspect
+                0, 0, self.image_width, self.image_height, self.setting.preserve_aspect
             )
         self.frame_bitmap = wx.Bitmap.FromBuffer(
             self.image_width, self.image_height, frame
@@ -273,7 +281,10 @@ class CameraInterface(MWindow, Job):
                 [0, self.setting.height],
             )
         if self.setting.correction_perspective:
-            if self.setting.width != self.image_width or self.setting.height != self.image_height:
+            if (
+                self.setting.width != self.image_width
+                or self.setting.height != self.image_height
+            ):
                 self.image_width = self.setting.width
                 self.image_height = self.setting.height
 
@@ -387,16 +398,29 @@ class CamInterfaceWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "rightdown":
+
             def enable_aspect(*args):
                 self.cam.setting.aspect = not self.cam.setting.aspect
                 self.scene.widget_root.set_aspect(self.cam.setting.aspect)
-                self.scene.widget_root.set_view(0, 0, self.cam.image_width, self.cam.image_height, self.cam.setting.preserve_aspect)
+                self.scene.widget_root.set_view(
+                    0,
+                    0,
+                    self.cam.image_width,
+                    self.cam.image_height,
+                    self.cam.setting.preserve_aspect,
+                )
 
             def set_aspect(aspect):
                 def asp(e):
                     self.cam.setting.preserve_aspect = aspect
                     self.scene.widget_root.set_aspect(self.cam.setting.aspect)
-                    self.scene.widget_root.set_view(0, 0, self.cam.image_width, self.cam.image_height, self.cam.setting.preserve_aspect)
+                    self.scene.widget_root.set_view(
+                        0,
+                        0,
+                        self.cam.image_width,
+                        self.cam.image_height,
+                        self.cam.setting.preserve_aspect,
+                    )
 
                 return asp
 
@@ -428,7 +452,9 @@ class CamInterfaceWidget(Widget):
             )
 
             menu.Append(
-                wx.ID_ANY, _("Preserve: %s") % self.cam.setting.preserve_aspect, sub_menu
+                wx.ID_ANY,
+                _("Preserve: %s") % self.cam.setting.preserve_aspect,
+                sub_menu,
             )
             if menu.MenuItemCount != 0:
                 self.cam.PopupMenu(menu)
@@ -453,7 +479,7 @@ class CamPerspectiveWidget(Widget):
         perspective = self.cam.camera.perspective
         pos = perspective[self.index]
         if not self.mid:
-            self.set_position(pos[0]-half, pos[1]-half)
+            self.set_position(pos[0] - half, pos[1] - half)
         else:
             center_x = sum([e[0] for e in perspective]) / len(perspective)
             center_y = sum([e[1] for e in perspective]) / len(perspective)
@@ -465,27 +491,26 @@ class CamPerspectiveWidget(Widget):
         return HITCHAIN_HIT
 
     def process_draw(self, gc):
-        if not self.cam.setting.correction_perspective and self.cam.camera.perspective and not self.cam.setting.aspect:
+        if (
+            not self.cam.setting.correction_perspective
+            and self.cam.camera.perspective
+            and not self.cam.setting.aspect
+        ):
             gc.SetPen(self.pen)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             gc.StrokeLine(
                 self.left,
                 self.top + self.height / 2.0,
                 self.right,
-                self.bottom - self.height/2.0
+                self.bottom - self.height / 2.0,
             )
             gc.StrokeLine(
                 self.left + self.width / 2.0,
                 self.top,
                 self.right - self.width / 2.0,
-                self.bottom
+                self.bottom,
             )
-            gc.DrawEllipse(
-                self.left,
-                self.top,
-                self.width,
-                self.height
-            )
+            gc.DrawEllipse(self.left, self.top, self.width, self.height)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftdown":
@@ -517,7 +542,9 @@ class CamSceneWidget(Widget):
             if self.cam.camera.perspective:
                 if not len(self):
                     for i in range(4):
-                        self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i, False))
+                        self.add_widget(
+                            -1, CamPerspectiveWidget(self.scene, self.cam, i, False)
+                        )
                     # for i in range(4):
                     #     self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i, True))
                 gc.SetPen(wx.BLACK_DASHED_PEN)
@@ -541,7 +568,9 @@ class CamImageWidget(Widget):
     def process_draw(self, gc):
         if self.cam.frame_bitmap is None:
             return
-        gc.DrawBitmap(self.cam.frame_bitmap, 0, 0, self.cam.image_width, self.cam.image_height)
+        gc.DrawBitmap(
+            self.cam.frame_bitmap, 0, 0, self.cam.image_width, self.cam.image_height
+        )
 
 
 class CameraURI(MWindow):

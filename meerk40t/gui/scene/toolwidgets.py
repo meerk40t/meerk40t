@@ -1,4 +1,3 @@
-
 from .scene import Scene, Widget
 
 try:

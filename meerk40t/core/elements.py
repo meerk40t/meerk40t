@@ -15,6 +15,7 @@ from ..device.lasercommandconstants import (
 )
 from ..kernel import Modifier
 from ..svgelements import (
+    SVG_STRUCT_ATTRIB,
     Angle,
     Circle,
     Close,
@@ -36,7 +37,7 @@ from ..svgelements import (
     SimpleLine,
     SVGElement,
     SVGImage,
-    SVGText, SVG_STRUCT_ATTRIB,
+    SVGText,
 )
 from .cutcode import (
     CubicCut,
@@ -424,15 +425,13 @@ class Node:
         """
         try:
             attribs = node.object.values[SVG_STRUCT_ATTRIB]
-            return attribs['label']
+            return attribs["label"]
         except (AttributeError, KeyError):
             pass
 
         try:
             attribs = node.object.values[SVG_STRUCT_ATTRIB]
-            return attribs[
-                "{http://www.inkscape.org/namespaces/inkscape}label"
-            ]
+            return attribs["{http://www.inkscape.org/namespaces/inkscape}label"]
         except (AttributeError, KeyError):
             pass
 
@@ -4237,7 +4236,8 @@ class Elemental(Modifier):
     def validate_selected_area(self):
         boundary_points = []
         for e in self.elem_branch.flat(
-            types="elem", emphasized=True  # "file", "group"
+            types="elem",
+            emphasized=True  # "file", "group"
             # Reverted from https://github.com/meerk40t/meerk40t/commit/ac613d9f5a8eb24fa98f6de6ce7eb0570bd5e348
         ):
             if e.bounds is None:

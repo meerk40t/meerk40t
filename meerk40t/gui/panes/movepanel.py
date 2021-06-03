@@ -1,9 +1,7 @@
 import wx
 
+from meerk40t.gui.icons import icons8_center_of_gravity_50
 from meerk40t.svgelements import Length
-from meerk40t.gui.icons import (
-    icons8_center_of_gravity_50,
-)
 
 MILS_IN_MM = 39.3701
 

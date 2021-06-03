@@ -1,8 +1,6 @@
 import wx
 
-from meerk40t.gui.icons import (
-    icons8_laser_beam_52,
-)
+from meerk40t.gui.icons import icons8_laser_beam_52
 
 MILS_IN_MM = 39.3701
 

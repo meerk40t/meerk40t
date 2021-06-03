@@ -51,12 +51,16 @@ class JogDistancePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: JogDistancePanel.__do_layout
-        sizer_6 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Jog Distance"), wx.HORIZONTAL)
+        sizer_6 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Jog Distance"), wx.HORIZONTAL
+        )
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
         sizer_9 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "cm"), wx.VERTICAL)
         sizer_8 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "mm"), wx.VERTICAL)
         sizer_3 = wx.BoxSizer(wx.VERTICAL)
-        sizer_10 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "inches"), wx.VERTICAL)
+        sizer_10 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "inches"), wx.VERTICAL
+        )
         sizer_7 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "steps"), wx.VERTICAL)
         sizer_7.Add(self.spin_jog_mils, 0, 0, 0)
         sizer_3.Add(sizer_7, 0, wx.EXPAND, 0)

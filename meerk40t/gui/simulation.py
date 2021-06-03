@@ -2,8 +2,6 @@ import math
 
 import wx
 
-from .scene.scene import ScenePanel, Widget
-from .scene.scenewidgets import GridWidget
 from ..core.cutcode import CutCode
 from ..kernel import Job
 from ..svgelements import Matrix
@@ -15,6 +13,8 @@ from .icons import (
 )
 from .laserrender import LaserRender
 from .mwindow import MWindow
+from .scene.scene import ScenePanel, Widget
+from .scene.scenewidgets import GridWidget
 
 _ = wx.GetTranslation
 
@@ -449,7 +449,7 @@ class SimReticleWidget(Widget):
                 y = 0
             else:
                 if self.sim.progress == self.sim.max:
-                    pos = self.sim.cutcode[self.sim.progress-1].end()
+                    pos = self.sim.cutcode[self.sim.progress - 1].end()
                 else:
                     pos = self.sim.cutcode[self.sim.progress].start()
                 x = pos[0]

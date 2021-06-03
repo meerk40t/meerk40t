@@ -9,7 +9,6 @@ except ImportError:
 
 import wx
 
-from meerk40t.svgelements import Color
 from meerk40t.gui.laserrender import (
     DRAW_MODE_BACKGROUND,
     DRAW_MODE_GRID,
@@ -19,6 +18,7 @@ from meerk40t.gui.laserrender import (
     DRAW_MODE_SELECTION,
     swizzlecolor,
 )
+from meerk40t.svgelements import Color
 
 MILS_IN_MM = 39.3701
 
@@ -555,7 +555,7 @@ class ReticleWidget(Widget):
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
                 for index, ret in enumerate(self.reticles):
                     r = self.reticles[ret]
-                    self.pen.SetColour(Color.distinct(index+2).hex)
+                    self.pen.SetColour(Color.distinct(index + 2).hex)
                     gc.SetPen(self.pen)
                     x = r[0]
                     y = r[1]

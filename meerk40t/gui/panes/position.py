@@ -1,8 +1,7 @@
 import wx
 
-from meerk40t.svgelements import Length
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
-
+from meerk40t.svgelements import Length
 
 _ = wx.GetTranslation
 
@@ -83,11 +82,17 @@ class PositionPanel(wx.Panel):
         # begin wxGlade: PositionPanel.__do_layout
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_6 = wx.BoxSizer(wx.VERTICAL)
-        sizer_7 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Units"), wx.HORIZONTAL)
+        sizer_7 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Units"), wx.HORIZONTAL
+        )
         sizer_panel = wx.BoxSizer(wx.VERTICAL)
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Height:"), wx.HORIZONTAL)
-        sizer_w = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Width:"), wx.HORIZONTAL)
+        sizer_h = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Height:"), wx.HORIZONTAL
+        )
+        sizer_w = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Width:"), wx.HORIZONTAL
+        )
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_y = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Y:"), wx.HORIZONTAL)
         sizer_x = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "X:"), wx.HORIZONTAL)
@@ -184,13 +189,36 @@ class PositionPanel(wx.Panel):
                 w = float(self.text_w.GetValue())
             except ValueError:
                 if self.position_units == 0:
-                    w = Length(self.text_w.GetValue()).to_mm(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM)
+                    w = Length(self.text_w.GetValue()).to_mm(
+                        ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
+                    )
                 elif self.position_units == 1:
-                    w = Length(self.text_w.GetValue()).to_cm(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM).amount
+                    w = (
+                        Length(self.text_w.GetValue())
+                        .to_cm(
+                            ppi=1000,
+                            relative_length=self.bed_dim.bed_width * MILS_IN_MM,
+                        )
+                        .amount
+                    )
                 elif self.position_units == 2:
-                    w = Length(self.text_w.GetValue()).to_inch(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM).amount
+                    w = (
+                        Length(self.text_w.GetValue())
+                        .to_inch(
+                            ppi=1000,
+                            relative_length=self.bed_dim.bed_width * MILS_IN_MM,
+                        )
+                        .amount
+                    )
                 elif self.position_units == 3:
-                    w = Length(self.text_w.GetValue()).value(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM).amount
+                    w = (
+                        Length(self.text_w.GetValue())
+                        .value(
+                            ppi=1000,
+                            relative_length=self.bed_dim.bed_width * MILS_IN_MM,
+                        )
+                        .amount
+                    )
                 else:
                     return
         if abs(w) < 1e-8:
@@ -229,13 +257,36 @@ class PositionPanel(wx.Panel):
                 h = float(self.text_h.GetValue())
             except ValueError:
                 if self.position_units == 0:
-                    h = Length(self.text_h.GetValue()).to_mm(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM).amount
+                    h = (
+                        Length(self.text_h.GetValue())
+                        .to_mm(
+                            ppi=1000,
+                            relative_length=self.bed_dim.bed_height * MILS_IN_MM,
+                        )
+                        .amount
+                    )
                 elif self.position_units == 1:
-                    h = Length(self.text_h.GetValue()).to_cm(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM).amount
+                    h = (
+                        Length(self.text_h.GetValue())
+                        .to_cm(
+                            ppi=1000,
+                            relative_length=self.bed_dim.bed_height * MILS_IN_MM,
+                        )
+                        .amount
+                    )
                 elif self.position_units == 2:
-                    h = Length(self.text_h.GetValue()).to_inch(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM).amount
+                    h = (
+                        Length(self.text_h.GetValue())
+                        .to_inch(
+                            ppi=1000,
+                            relative_length=self.bed_dim.bed_height * MILS_IN_MM,
+                        )
+                        .amount
+                    )
                 elif self.position_units == 3:
-                    h = Length(self.text_h.GetValue()).value(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM)
+                    h = Length(self.text_h.GetValue()).value(
+                        ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
+                    )
                 else:
                     return
         if abs(h) < 1e-8:
@@ -269,16 +320,24 @@ class PositionPanel(wx.Panel):
             self.position_x = x
         except ValueError:
             if self.position_units == 0:
-                x = Length(self.text_x.GetValue()).to_mm(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM)
+                x = Length(self.text_x.GetValue()).to_mm(
+                    ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
+                )
                 self.position_x = x.amount
             elif self.position_units == 1:
-                x = Length(self.text_x.GetValue()).to_cm(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM)
+                x = Length(self.text_x.GetValue()).to_cm(
+                    ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
+                )
                 self.position_x = x.amount
             elif self.position_units == 2:
-                x = Length(self.text_x.GetValue()).to_inch(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM)
+                x = Length(self.text_x.GetValue()).to_inch(
+                    ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
+                )
                 self.position_x = x.amount
             elif self.position_units == 3:
-                x = Length(self.text_x.GetValue()).value(ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM)
+                x = Length(self.text_x.GetValue()).value(
+                    ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
+                )
                 self.position_x = x.amount
             elif self.position_units == 4:
                 ratio_x = float(self.text_x.GetValue()) / 100.0
@@ -305,16 +364,24 @@ class PositionPanel(wx.Panel):
             self.position_y = y
         except ValueError:
             if self.position_units == 0:
-                y = Length(self.text_y.GetValue()).to_mm(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM)
+                y = Length(self.text_y.GetValue()).to_mm(
+                    ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
+                )
                 self.position_y = y.amount
             elif self.position_units == 1:
-                y = Length(self.text_y.GetValue()).to_cm(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM)
+                y = Length(self.text_y.GetValue()).to_cm(
+                    ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
+                )
                 self.position_y = y.amount
             elif self.position_units == 2:
-                y = Length(self.text_y.GetValue()).to_inch(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM)
+                y = Length(self.text_y.GetValue()).to_inch(
+                    ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
+                )
                 self.position_y = y.amount
             elif self.position_units == 3:
-                y = Length(self.text_y.GetValue()).value(ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM)
+                y = Length(self.text_y.GetValue()).value(
+                    ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
+                )
                 self.position_y = y.amount
             elif self.position_units == 4:
                 ratio_y = float(self.text_y.GetValue()) / 100.0

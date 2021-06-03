@@ -235,7 +235,9 @@ class LaserRender:
                 matrix.post_translate(x, y)
                 gc.PushState()
                 if matrix is not None and not matrix.is_identity():
-                    gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+                    gc.ConcatTransform(
+                        wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
+                    )
                 cache = None
                 cache_id = -1
                 try:

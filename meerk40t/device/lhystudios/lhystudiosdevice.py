@@ -419,17 +419,15 @@ def plugin(kernel, lifecycle=None):
             return
 
         @kernel.console_command("lhyemulator", help="activate the lhyemulator.")
-        def lhyemulator(
-            channel, _, **kwargs
-        ):
+        def lhyemulator(channel, _, **kwargs):
             root = kernel.root
             name = root.active
             driver_context = kernel.get_context("lhystudios/driver/%s" % name)
             try:
-                spooler, input_driver, output = root.registered[
-                    "device/%s" % name
-                ]
-                emulator = driver_context.open_as("emulator/lhystudios", "lhyemulator%s" % name)
+                spooler, input_driver, output = root.registered["device/%s" % name]
+                emulator = driver_context.open_as(
+                    "emulator/lhystudios", "lhyemulator%s" % name
+                )
                 channel(_("Lhystudios Emulator attached to %s" % str(driver_context)))
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))
@@ -1576,7 +1574,7 @@ class LhystudiosController:
         :param bytes_to_write: data to write to the queue.
         :return:
         """
-        f = bytes_to_write.find(b'~')
+        f = bytes_to_write.find(b"~")
         if f != -1:
             # ~ was found in bytes. We are in a realtime exception.
             self.realtime = True
@@ -1587,7 +1585,7 @@ class LhystudiosController:
                 self.write(queue_bytes)
 
             # All code after ~ is sent to realtime write.
-            preempt_bytes = bytes_to_write[f + 1:]
+            preempt_bytes = bytes_to_write[f + 1 :]
             if preempt_bytes:
                 self.realtime_write(preempt_bytes)
             return self
@@ -1612,7 +1610,7 @@ class LhystudiosController:
         :param bytes_to_write: data to write to the front of the queue.
         :return:
         """
-        f = bytes_to_write.find(b'~')
+        f = bytes_to_write.find(b"~")
         if f != -1:
             # ~ was found in bytes. We are leaving realtime exception.
             self.realtime = False
@@ -1623,7 +1621,7 @@ class LhystudiosController:
                 self.realtime_write(preempt_bytes)
 
             # All data after ~ is sent back to normal write.
-            queue_bytes = bytes_to_write[f + 1:]
+            queue_bytes = bytes_to_write[f + 1 :]
             if queue_bytes:
                 self.write(queue_bytes)
             return self

@@ -6263,7 +6263,13 @@ class Rect(Shape):
             segments = (
                 Move(None, (x + rx, y)),
                 Line((x + rx, y), (x + width - rx, y)),
-                Arc((x + width - rx, y), (x + width, y + ry), rx=rx, ry=ry, scooped=scooped),
+                Arc(
+                    (x + width - rx, y),
+                    (x + width, y + ry),
+                    rx=rx,
+                    ry=ry,
+                    scooped=scooped,
+                ),
                 Line((x + width, y + ry), (x + width, y + height - ry)),
                 Arc(
                     (x + width, y + height - ry),
@@ -6273,7 +6279,13 @@ class Rect(Shape):
                     scooped=scooped,
                 ),
                 Line((x + width - rx, y + height), (x + rx, y + height)),
-                Arc((x + rx, y + height), (x, y + height - ry), rx=rx, ry=ry, scooped=scooped),
+                Arc(
+                    (x + rx, y + height),
+                    (x, y + height - ry),
+                    rx=rx,
+                    ry=ry,
+                    scooped=scooped,
+                ),
                 Line((x, y + height - ry), (x, y + ry)),
                 Arc((x, y + ry), (x + rx, y), rx=rx, ry=ry, scooped=scooped),
                 Close((x + rx, y), (x + rx, y)),
