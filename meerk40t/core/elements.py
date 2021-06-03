@@ -16,7 +16,6 @@ from ..device.lasercommandconstants import (
 from ..kernel import Modifier
 from ..svgelements import (
     Angle,
-    Arc,
     Circle,
     Close,
     Color,
@@ -3640,6 +3639,12 @@ class Elemental(Modifier):
         def duplicate_operation(node, **kwargs):
             copy_op = LaserOperation(node)
             self.add_op(copy_op)
+            for n in node.children:
+                try:
+                    obj = n.object
+                    copy_op.add(obj, type="opnode")
+                except AttributeError:
+                    pass
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_conditional(
