@@ -112,8 +112,11 @@ class DeviceManager(MWindow):
                 registered = False
             m = self.devices_list.InsertItem(i, str(i))
             if self.context.active == str(m):
-                self.devices_list.SetItemBackgroundColour(m, wx.LIGHT_GREY)
-
+                from .icons import DARKMODE
+                if DARKMODE:
+                    self.devices_list.SetItemBackgroundColour(m, wx.Colour(64, 64, 64))
+                else:
+                    self.devices_list.SetItemBackgroundColour(m, wx.LIGHT_GREY)
             if m != -1:
                 spooler_name = spooler.name if spooler is not None else "None"
                 self.devices_list.SetItem(m, 1, str(spooler_name))
