@@ -13,7 +13,9 @@ from .panes.dragpanel import Drag
 from .panes.jogdistancepanel import JogDistancePanel
 from .panes.movepanel import MovePanel
 from .panes.notespanel import NotePanel
-from .panes.projecttoolbar import ProjectToolBar
+from .panes.toolbarcontrol import ControlToolBar, ControlTools
+from .panes.toolbarpreferences import PreferencesToolBar, PreferencesTools
+from .panes.toolbarproject import ProjectToolBar, ProjectTools
 from .panes.pulsepanel import PulsePanel
 from .panes.spoolerpanel import SpoolerPanel
 from .panes.transformpanel import Transform
@@ -607,20 +609,59 @@ class MeerK40t(MWindow):
             .Top()
             .RightDockable(False)
             .LeftDockable(False)
-            .MinSize(300, 58)
-            .MaxSize(-1, 58)
-            .FloatingSize(640, 58)
+            .MinSize(430, 58)
+            .MaxSize(430, 58)
+            .FloatingSize(430, 58)
             .Layer(1)
             .Caption("Project")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 5
-        pane.control = ProjectToolBar(self, wx.ID_ANY, context=self.context, gui=self)
+        pane.dock_proportion = 7
+        pane.control = ProjectTools(self, wx.ID_ANY, context=self.context, gui=self)
         pane.submenu = "Toolbars"
-
         self.on_pane_add(pane)
         self.context.register("pane/project_toolbar", pane)
+
+        pane = (
+            aui.AuiPaneInfo()
+            .Name("control_toolbar")
+            .Top()
+            .RightDockable(False)
+            .LeftDockable(False)
+            .MinSize(230, 58)
+            .MaxSize(230, 58)
+            .FloatingSize(230, 58)
+            .Layer(1)
+            .Caption("Control")
+            .CaptionVisible(self.context.pane_lock)
+            .Hide()
+        )
+        pane.dock_proportion = 4
+        pane.control = ControlTools(self, wx.ID_ANY, context=self.context, gui=self)
+        pane.submenu = "Toolbars"
+        self.on_pane_add(pane)
+        self.context.register("pane/control_toolbar", pane)
+
+        pane = (
+            aui.AuiPaneInfo()
+            .Name("preferences_toolbar")
+            .Top()
+            .RightDockable(False)
+            .LeftDockable(False)
+            .MinSize(290, 58)
+            .MaxSize(290, 58)
+            .FloatingSize(290, 58)
+            .Layer(1)
+            .Caption("Preferences")
+            .CaptionVisible(self.context.pane_lock)
+            .Hide()
+        )
+        pane.dock_proportion = 5
+        pane.control = PreferencesTools(self, wx.ID_ANY, context=self.context, gui=self)
+        pane.submenu = "Toolbars"
+        self.on_pane_add(pane)
+        self.context.register("pane/preferences_toolbar", pane)
 
         # Define Stop.
         stop = wx.BitmapButton(
@@ -794,6 +835,8 @@ class MeerK40t(MWindow):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
                 pane.CaptionVisible(self.context.pane_lock)
+                if hasattr(pane.window, "lock"):
+                    pane.window.lock()
         self._mgr.Update()
 
     def on_pane_add(self, paneinfo: aui.AuiPaneInfo):

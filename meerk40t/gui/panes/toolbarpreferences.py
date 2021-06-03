@@ -66,7 +66,22 @@ from ..icons import (
 _ = wx.GetTranslation
 
 
-class ProjectToolBar(wx.ToolBar):
+class PreferencesTools(wx.ScrolledWindow):
+    def __init__(self, *args, gui=None, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.ScrolledWindow.__init__(self, *args, **kwds)
+        self.context = context
+        self.gui = gui
+        self.SetScrollRate(10, 10)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        toolbar = PreferencesToolBar(self, wx.ID_ANY, gui=self.gui, context=self.context)
+        sizer.Add(toolbar, 0, 0, 0)
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+        self.Layout()
+
+
+class PreferencesToolBar(wx.ToolBar):
     def __init__(self, *args, context, gui, **kwds):
         # begin wxGlade: wxToolBar.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -75,114 +90,92 @@ class ProjectToolBar(wx.ToolBar):
         self.gui = gui
 
         self.AddTool(
-            ID_OPEN,
-            _("Open"),
-            icons8_opened_folder_50.GetBitmap(),
+            ID_DEVICES,
+            _("Devices"),
+            icons8_manager_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens new project",
-        )
-        self.AddTool(
-            ID_SAVE,
-            _("Save"),
-            icons8_save_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            "Saves a project to disk",
+            "Opens Device Manager",
             "",
         )
-        self.AddSeparator()
-        self.Bind(wx.EVT_TOOL, gui.on_click_open, id=ID_OPEN)
-        self.Bind(wx.EVT_TOOL, gui.on_click_save, id=ID_SAVE)
+        self.Bind(
+            wx.EVT_TOOL,
+            lambda v: self.context("window toggle DeviceManager\n"),
+            id=ID_DEVICES,
+        )
 
         self.AddTool(
-            ID_JOB,
-            _("Execute Job"),
-            icons8_laser_beam_52.GetBitmap(),
+            ID_CONFIGURATION,
+            _("Config"),
+            icons8_computer_support_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Execute the current laser project",
+            "Opens Configuration Window",
             "",
         )
         self.Bind(
             wx.EVT_TOOL,
-            lambda v: self.context("window toggle ExecuteJob 0\n"),
-            id=ID_JOB,
-        )
-        self.AddTool(
-            ID_SIM,
-            _("Simulate"),
-            icons8_laser_beam_hazard2_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            "Simulate the current laser job",
-            "",
-        )
-        self.AddTool(
-            ID_RASTER,
-            _("RasterWizard"),
-            icons8_fantasy_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            "Run RasterWizard ",
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle RasterWizard\n"),
-            id=ID_RASTER,
-        )
-        self.AddSeparator()
-        self.AddTool(
-            ID_NOTES,
-            _("Notes"),
-            icons8_comments_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            "Open Notes Window",
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle Notes\n"),
-            id=ID_NOTES,
-        )
-        self.AddTool(
-            ID_CONSOLE,
-            _("Console"),
-            icons8_console_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            "Open Console Window",
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle Console\n"),
-            id=ID_CONSOLE,
+            lambda v: self.context("window toggle -d Preferences\n"),
+            id=ID_CONFIGURATION,
         )
 
-        def open_simulator(v=None):
-            with wx.BusyInfo(_("Preparing simulation...")):
-                self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-                ),
-
+        self.AddTool(
+            ID_SETTING,
+            _("Settings"),
+            icons8_administrative_tools_50.GetBitmap(),
+            wx.NullBitmap,
+            wx.ITEM_NORMAL,
+            "Opens Settings Window",
+            "",
+        )
         self.Bind(
             wx.EVT_TOOL,
-            open_simulator,
-            id=ID_SIM,
+            lambda v: self.context("window toggle Settings\n"),
+            id=ID_SETTING,
         )
-        self.SetBackgroundColour((200, 225, 250, 255))
 
+        self.AddTool(
+            ID_KEYMAP,
+            _("Keymap"),
+            icons8_keyboard_50.GetBitmap(),
+            wx.NullBitmap,
+            wx.ITEM_NORMAL,
+            "Opens Keymap Window",
+            "",
+        )
+        self.Bind(
+            wx.EVT_TOOL,
+            lambda v: self.context("window toggle Keymap\n"),
+            id=ID_KEYMAP,
+        )
+        self.AddTool(
+            ID_ROTARY,
+            _("Rotary"),
+            icons8_roll_50.GetBitmap(),
+            wx.NullBitmap,
+            wx.ITEM_NORMAL,
+            "Opens Rotary Window",
+            "",
+        )
+        self.Bind(
+            wx.EVT_TOOL,
+            lambda v: self.context("window -p rotary/1 toggle Rotary\n"),
+            id=ID_ROTARY,
+        )
+
+        # self.SetBackgroundColour((200, 225, 250, 255))
         self.__set_properties()
         self.__do_layout()
         # Tool Bar end
 
+    def lock(self):
+        self.Realize()
+        self.Layout()
+
     def __set_properties(self):
         # begin wxGlade: wxToolBar.__set_properties
         self.Realize()
-        self.SetLabel("Project")
+        self.SetLabel("Preferences")
         # end wxGlade
 
     def __do_layout(self):
