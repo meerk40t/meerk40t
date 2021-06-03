@@ -498,9 +498,8 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
             .Float()
-            .MinSize(300, 75)
-            .FloatingSize(300, 75)
-            .MaxSize(200, 100)
+            .MinSize(200, 130)
+            .FloatingSize(200, 130)
             .Hide()
             .Caption("Distances")
             .CaptionVisible(self.context.pane_lock)
