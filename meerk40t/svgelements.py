@@ -6116,8 +6116,11 @@ class Rect(Shape):
         if rx == 0 or ry == 0:
             rx = ry = 0
         else:
-            rx = min(rx, self.width / 2.0)
-            ry = min(ry, self.height / 2.0)
+            try:
+                rx = min(rx, self.width / 2.0)
+                ry = min(ry, self.height / 2.0)
+            except ValueError:
+                pass  # If width is in inches and rx is in units, this is unsolvable without knowing the ppi
         self.rx = rx
         self.ry = ry
 
