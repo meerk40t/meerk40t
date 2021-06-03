@@ -141,6 +141,7 @@ class LhystudiosControllerGui(MWindow):
         self.SetTitle("Lhystudios-Controller")
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
+        self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetFont(
             wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
         )
@@ -176,6 +177,7 @@ class LhystudiosControllerGui(MWindow):
             "-1 match anything. 0+ match exactly that value."
         )
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
+        self.button_controller_control.SetForegroundColour(wx.BLACK)
         self.button_controller_control.SetFont(
             wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
         )
@@ -199,8 +201,8 @@ class LhystudiosControllerGui(MWindow):
         self.text_byte_4.SetMinSize((77, 23))
         self.text_byte_5.SetMinSize((77, 23))
         self.checkbox_show_usb_log.SetValue(1)
-        self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
-        self.button_controller_control.SetBitmap(icons8_play_50.GetBitmap())
+        self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap(use_theme=False))
+        self.button_controller_control.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
         # end wxGlade
 
     def __do_layout(self):
@@ -465,27 +467,27 @@ class LhystudiosControllerGui(MWindow):
             usb_status = self.context.last_signal("pipe;usb_status")
             if usb_status is not None:
                 self.button_device_connect.SetLabel(str(usb_status[0]))
-            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
+            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap(use_theme=False))
             self.button_device_connect.Enable()
         elif state == "STATE_UNINITIALIZED" or state == "STATE_USB_DISCONNECTED":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
-            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
+            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap(use_theme=False))
             self.button_device_connect.Enable()
         elif state == "STATE_USB_SET_DISCONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Disconnecting..."))
-            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
+            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap(use_theme=False))
             self.button_device_connect.Disable()
         elif state == "STATE_USB_CONNECTED" or state == "STATE_CONNECTED":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
-            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
+            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap(use_theme=False))
             self.button_device_connect.Enable()
         elif state == "STATE_CONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connecting..."))
-            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
+            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap(use_theme=False))
             self.button_device_connect.Disable()
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
@@ -534,12 +536,12 @@ class LhystudiosControllerGui(MWindow):
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#009900")
             button.SetLabel(_("Hold Controller"))
-            button.SetBitmap(icons8_play_50.GetBitmap())
+            button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
             button.Enable(True)
         elif state == STATE_BUSY:
             button.SetBackgroundColour("#00dd00")
             button.SetLabel(_("LOCKED"))
-            button.SetBitmap(icons8_play_50.GetBitmap())
+            button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
             button.Enable(False)
         elif state == STATE_WAIT:
 
@@ -549,7 +551,7 @@ class LhystudiosControllerGui(MWindow):
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#dddd00")
             button.SetLabel(_("Force Continue"))
-            button.SetBitmap(icons8_laser_beam_hazard_50.GetBitmap())
+            button.SetBitmap(icons8_laser_beam_hazard_50.GetBitmap(use_theme=False))
             button.Enable(True)
         elif state == STATE_PAUSE:
 
@@ -559,7 +561,7 @@ class LhystudiosControllerGui(MWindow):
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00dd00")
             button.SetLabel(_("Resume Controller"))
-            button.SetBitmap(icons8_play_50.GetBitmap())
+            button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
             button.Enable(True)
         elif state == STATE_ACTIVE:
 
@@ -569,7 +571,7 @@ class LhystudiosControllerGui(MWindow):
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ff00")
             button.SetLabel(_("Pause Controller"))
-            button.SetBitmap(icons8_pause_50.GetBitmap())
+            button.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
             button.Enable(True)
         elif state == STATE_TERMINATE:
 
@@ -579,7 +581,7 @@ class LhystudiosControllerGui(MWindow):
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ffff")
             button.SetLabel(_("Manual Reset"))
-            button.SetBitmap(icons8_emergency_stop_button_50.GetBitmap())
+            button.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(use_theme=False))
             button.Enable(True)
 
     def spin_on_device_index(self, event):  # wxGlade: Preferences.<event_handler>

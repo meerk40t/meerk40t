@@ -38,6 +38,7 @@ class TCPController(MWindow):
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
+        self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetFont(
             wx.Font(
                 12,
@@ -51,7 +52,7 @@ class TCPController(MWindow):
         self.button_device_connect.SetToolTip(
             "Force connection/disconnection from the device."
         )
-        self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
+        self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap(use_theme=False))
         self.text_status.SetToolTip("Connection status")
         self.text_ip_host.SetToolTip("IP/Host if the server computer")
         self.text_port.SetToolTip("Port for tcp connection on the server computer")
@@ -124,12 +125,12 @@ class TCPController(MWindow):
         if state == "uninitialized" or state == "disconnected":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
-            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
+            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap(use_theme=False))
             self.button_device_connect.Enable()
         elif state == "connected":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
-            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
+            self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap(use_theme=False))
             self.button_device_connect.Enable()
 
     def on_tcp_buffer(self, origin, status):
