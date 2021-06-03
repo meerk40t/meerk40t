@@ -3449,6 +3449,7 @@ class Shape(SVGElement, GraphicObject, Transformable):
     """
 
     def __init__(self, *args, **kwargs):
+        self._strict = True
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
         SVGElement.__init__(
@@ -4680,14 +4681,17 @@ class Arc(Curve):
                     )
             elif "rx" in kwargs and "ry" in kwargs:
                 # This formulation will assume p1 and p2 are both axis aligned.
-                rx = kwargs["rx"]
-                ry = kwargs["ry"]
+                # rx = kwargs["rx"]
+                # ry = kwargs["ry"]
                 # We will assume rx == abs(self.start.x - self.end.x)
+                self.sweep = tau / 4.0
                 self.center = Point(self.start.x, self.end.y)
                 cw = bool(Point.orientation(self.start, self.center, self.end) == 1)
+                if "scooped" in kwargs and kwargs["scooped"]:
+                    self.sweep = -self.sweep
+                    cw = not cw
                 if "ccw" in kwargs and kwargs["ccw"] and cw or not cw:
                     self.center = Point(self.end.x, self.start.y)
-                self.sweep = tau / 4.0
 
         if self.center is None:
             raise ValueError("Not enough values to solve for center.")
@@ -6226,6 +6230,7 @@ class Rect(Shape):
         :param transformed: provide the reified version.
         :return: path_d of shape.
         """
+        scooped = False
         x = self.x
         y = self.y
         width = self.width
@@ -6234,6 +6239,15 @@ class Rect(Shape):
             return ()  # a computed value of zero for either dimension disables rendering.
         rx = self.rx
         ry = self.ry
+        if not self._strict:
+            if rx < 0 and ry < 0:
+                scooped = True
+            rx = abs(rx)
+            ry = abs(ry)
+        if rx < 0:
+            rx = 0
+        if ry < 0:
+            ry = 0
         if rx == ry == 0:
             segments = (
                 Move(None, (x, y)),
@@ -6246,18 +6260,19 @@ class Rect(Shape):
             segments = (
                 Move(None, (x + rx, y)),
                 Line((x + rx, y), (x + width - rx, y)),
-                Arc((x + width - rx, y), (x + width, y + ry), rx=rx, ry=ry),
+                Arc((x + width - rx, y), (x + width, y + ry), rx=rx, ry=ry, scooped=scooped),
                 Line((x + width, y + ry), (x + width, y + height - ry)),
                 Arc(
                     (x + width, y + height - ry),
                     (x + width - rx, y + height),
                     rx=rx,
                     ry=ry,
+                    scooped=scooped,
                 ),
                 Line((x + width - rx, y + height), (x + rx, y + height)),
-                Arc((x + rx, y + height), (x, y + height - ry), rx=rx, ry=ry),
+                Arc((x + rx, y + height), (x, y + height - ry), rx=rx, ry=ry, scooped=scooped),
                 Line((x, y + height - ry), (x, y + ry)),
-                Arc((x, y + ry), (x + rx, y), rx=rx, ry=ry),
+                Arc((x, y + ry), (x + rx, y), rx=rx, ry=ry, scooped=scooped),
                 Close((x + rx, y), (x + rx, y)),
             )
         if not transformed or self.transform.is_identity():
