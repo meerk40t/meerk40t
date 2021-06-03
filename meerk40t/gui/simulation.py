@@ -89,7 +89,7 @@ class Simulation(MWindow, Job):
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.button_play = wx.Button(self, wx.ID_ANY, "")
-        self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 100, 1, 1000)
+        self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 100, 1, 2000)
         self.text_playback_speed = wx.TextCtrl(
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
