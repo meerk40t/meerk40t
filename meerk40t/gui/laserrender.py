@@ -172,7 +172,10 @@ class LaserRender:
         if sw is None:
             sw = 1.0
         limit = zoomscale ** 0.5
-        limit /= width_scale
+        try:
+            limit /= width_scale
+        except ZeroDivisionError:
+            pass
         if sw < limit:
             sw = limit
         self.set_pen(gc, element.stroke, width=sw)
