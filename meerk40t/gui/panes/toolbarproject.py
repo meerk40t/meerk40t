@@ -170,10 +170,6 @@ class ProjectToolBar(wx.ToolBar):
         self.__do_layout()
         # Tool Bar end
 
-    def lock(self):
-        self.Realize()
-        self.Layout()
-
     def __set_properties(self):
         # begin wxGlade: wxToolBar.__set_properties
         self.Realize()

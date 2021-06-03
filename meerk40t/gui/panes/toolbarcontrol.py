@@ -31,36 +31,10 @@ ID_ROTARY = wx.NewId()
 ID_RASTER = wx.NewId()
 
 from ..icons import (
-    icon_meerk40t,
-    icons8_administrative_tools_50,
     icons8_camera_50,
-    icons8_comments_50,
-    icons8_computer_support_50,
     icons8_connected_50,
-    icons8_console_50,
-    icons8_direction_20,
-    icons8_emergency_stop_button_50,
-    icons8_fantasy_50,
-    icons8_file_20,
-    icons8_group_objects_20,
-    icons8_home_filled_50,
-    icons8_keyboard_50,
-    icons8_laser_beam_20,
-    icons8_laser_beam_52,
-    icons8_laser_beam_hazard2_50,
-    icons8_lock_50,
-    icons8_manager_50,
     icons8_move_50,
-    icons8_opened_folder_50,
-    icons8_padlock_50,
-    icons8_pause_50,
-    icons8_play_50,
-    icons8_roll_50,
     icons8_route_50,
-    icons8_save_50,
-    icons8_scatter_plot_20,
-    icons8_system_task_20,
-    icons8_vector_20,
 )
 
 _ = wx.GetTranslation
@@ -156,11 +130,6 @@ class ControlToolBar(wx.ToolBar):
         self.__set_properties()
         self.__do_layout()
         # Tool Bar end
-
-    def lock(self):
-        self.Realize()
-        self.Layout()
-        print(self.Size)
 
     def __set_properties(self):
         # begin wxGlade: wxToolBar.__set_properties
