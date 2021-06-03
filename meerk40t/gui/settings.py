@@ -217,7 +217,11 @@ class Settings(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: Settings.__set_properties
         self.SetTitle(_("Settings"))
-        self.radio_units.SetBackgroundColour(wx.Colour(192, 192, 192))
+        # from .icons import DARKMODE
+        # if DARKMODE:
+        #     self.radio_units.SetBackgroundColour(wx.Colour(64, 64, 64))
+        # else:
+        #     self.radio_units.SetBackgroundColour(wx.Colour(192, 192, 192))
         self.radio_units.SetToolTip(_("Set default units for guides"))
         self.radio_units.SetSelection(0)
         self.combo_language.SetToolTip(_("Select the desired language to use."))
