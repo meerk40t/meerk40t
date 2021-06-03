@@ -564,20 +564,21 @@ class MeerK40t(MWindow):
             .CaptionVisible(self.context.pane_lock)
             .TopDockable(False)
         )
+        pane.dock_proportion = 4
         pane.control = self.wxtree
         self.on_pane_add(pane)
         self.context.register("pane/tree", pane)
 
         pane = (
             aui.AuiPaneInfo()
-            .Bottom()
-            .MinSize(-1, -1)
-            .MaxSize(600, 75)
+            .Left()
+            .MinSize(225, 120)
+            .FloatingSize(225, 120)
             .Caption("Position")
             .CaptionVisible(self.context.pane_lock)
             .Name("position")
         )
-        pane.dock_proportion = 4
+        pane.dock_proportion = 2
         pane.control = PositionPanel(self, wx.ID_ANY, context=self.context)
 
         self.on_pane_add(pane)
@@ -760,7 +761,21 @@ class MeerK40t(MWindow):
         self.context.setting(str, "perspective")
         if self.context.perspective is not None:
             self._mgr.LoadPerspective(self.context.perspective)
+        self.on_config_panes()
 
+    def aui_open_pane(self, pane):
+        pane_init = self.context.registered["pane/%s" % pane]
+        self.on_pane_add(pane_init)
+
+    def on_pane_reset(self, event=None):
+        for pane in self._mgr.GetAllPanes():
+            if pane.IsShown():
+                if hasattr(pane.window, "finalize"):
+                    pane.window.finalize()
+        self._mgr.LoadPerspective(self.default_perspective, update=True)
+        self.on_config_panes()
+
+    def on_config_panes(self):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
                 if hasattr(pane.window, "initialize"):
@@ -769,13 +784,6 @@ class MeerK40t(MWindow):
                 if hasattr(pane.window, "noninitialize"):
                     pane.window.noninitialize()
         self.on_pane_unlock(lock=self.context.pane_lock)
-
-    def aui_open_pane(self, pane):
-        pane_init = self.context.registered["pane/%s" % pane]
-        self.on_pane_add(pane_init)
-
-    def on_pane_reset(self, event=None):
-        self._mgr.LoadPerspective(self.default_perspective, update=True)
         wx.CallAfter(self.on_pane_changed, None)
 
     def on_pane_unlock(self, event=None, lock=None):
