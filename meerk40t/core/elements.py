@@ -40,7 +40,6 @@ from ..svgelements import (
     SVGText, SVG_STRUCT_ATTRIB,
 )
 from .cutcode import (
-    ArcCut,
     CubicCut,
     CutCode,
     CutGroup,
@@ -918,7 +917,7 @@ class LaserOperation(Node):
                             path = abs(Path(object_path))
                         else:
                             path = abs(object_path)
-
+                        path.approximate_arcs_with_cubics()
                     settings.line_color = path.stroke
                     for subpath in path.as_subpaths():
                         closed = isinstance(subpath[-1], Close)
@@ -962,9 +961,6 @@ class LaserOperation(Node):
                                         settings=settings,
                                     )
                                 )
-                            elif isinstance(seg, Arc):
-                                arc = ArcCut(seg, settings=settings)
-                                context.append(arc)
                         context = context.parent
             elif self._operation == "Raster":
                 direction = settings.raster_direction
