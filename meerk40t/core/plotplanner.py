@@ -217,14 +217,11 @@ class PlotPlanner:
             for i in range(index, count):
                 nx = cx + (i * dx)
                 ny = cy + (i * dy)
-                print("Single %d %d\n" % (nx, ny))
                 if self.flush:
                     self.single_x = nx
                     self.single_y = ny
-                    print("Single Flushed\n")
                     return
                 yield nx, ny, on
-        print("Single Ended\n")
 
     def apply_ppi(self, plot):
         """
@@ -254,9 +251,7 @@ class PlotPlanner:
                     on = 0
                 if on:
                     self.dot_left = self.settings.dot_length - 1
-            print("PPI %d %d %d\n" % (x, y, on))
             yield x, y, on
-        print("PPI Ended\n")
 
     def shift(self, plot):
         """
@@ -271,9 +266,7 @@ class PlotPlanner:
                     self.shift_pixels <<= 1
                     bx, by = self.shift_buffer.pop()
                     bon = (self.shift_pixels >> 3) & 1
-                    print("Shift Flush2 %d %d %d" % (bx, by, bon))
                     yield bx, by, bon
-                print("Shift SKipped %s" % str(event))
                 yield event
                 continue
 
@@ -294,15 +287,12 @@ class PlotPlanner:
                 # When buffer is full start popping off values.
                 bx, by = self.shift_buffer.pop()
                 bon = (self.shift_pixels >> 3) & 1
-                print("Shift Flushmain %d %d %d" % (bx, by, bon))
                 yield bx, by, bon
         while len(self.shift_buffer) > 0:
             self.shift_pixels <<= 1
             bx, by = self.shift_buffer.pop()
             bon = (self.shift_pixels >> 3) & 1
-            print("Shift Flush %d %d %d\n" % (bx, by, bon))
             yield bx, by, bon
-        print("Shift Ended\n")
 
     def group(self, plot):
         """
@@ -315,7 +305,6 @@ class PlotPlanner:
         :return:
         """
         for event in plot:
-            print("gin %s\n" % str(event))
             if not self.group_enabled:
                 # Flush buffer and continue.
                 if (
@@ -323,24 +312,12 @@ class PlotPlanner:
                     and self.group_y is not None
                     and self.group_on is not None
                 ):
-                    print("out2: %d %d %d\n" % (self.group_x, self.group_y, self.group_on))
                     yield self.group_x + self.group_dx, self.group_y + self.group_dx, self.group_on
                 self.group_dx = 0
                 self.group_dy = 0
-                print("out3: %s\n" % (str(event)))
                 yield event
                 continue
             x, y, on = event
-            try:
-                if abs(x - self.prev_x) != 1:
-                    raise ValueError("Group was not given single-stepped x values.")
-                if abs(y - self.prev_y) != 1:
-                    raise ValueError("Group was not given single-stepped y values.")
-                self.prev_x = x
-                self.prev_y = y
-            except (TypeError, AttributeError):
-                pass
-
             if self.group_x is None:
                 self.group_x = x
             if self.group_y is None:
@@ -361,17 +338,7 @@ class PlotPlanner:
                     self.group_y = y
                     continue
                 # This is non orth-diag point. Must drop a point.
-
-                try:
-                    print("got4: %d %d %d\n" % (
-                    (self.gx - self.group_x), (self.gy - self.group_y), (self.go - self.group_on)))
-                except AttributeError:
-                    pass
-                print("out4: %d %d %d\n" % (self.group_x, self.group_y, self.group_on))
                 yield self.group_x, self.group_y, self.group_on
-                self.gx = self.group_x
-                self.gy = self.group_y
-                self.go = self.group_on
 
             # Set new directions.
             self.group_dx = x - self.group_x
@@ -387,30 +354,13 @@ class PlotPlanner:
 
         self.group_dx = 0
         self.group_dy = 0
-        self.flush = False
         if (
                 self.group_x is not None
                 and self.group_y is not None
                 and self.group_on is not None
         ):
-            try:
-                print(
-                    "got1: %d %d %d" % ((self.gx - self.group_x), (self.gy - self.group_y), (self.go - self.group_on)))
-            except AttributeError:
-                pass
-            print("out1: %d %d %d\n" % (self.group_x, self.group_y, self.group_on))
-
-            gx = self.group_x
-            gy = self.group_y
-            go = self.group_on
-            yield gx, gy, go
-            self.gx = self.group_x
-            self.gy = self.group_y
-            self.go = self.group_on
-        print("Group Ended\n")
+            yield self.group_x, self.group_y, self.group_on
 
     def clear(self):
         self.queue.clear()
         self.flush = True
-        # for i in self.process_plots(None):
-        #     print("FAILED: " +  str(i))

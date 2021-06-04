@@ -713,9 +713,6 @@ class LhystudiosDriver(Driver):
         if self.hold():
             return True
         for x, y, on in self.plot:
-            if x is None and on == 1:
-                print("WTF?")
-            print("Process: %s %s %s" % (str(x), str(y), str(on)))
             sx = self.current_x
             sy = self.current_y
             on = int(on)
