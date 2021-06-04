@@ -36,6 +36,8 @@ of zero will remain zero.
 
 class PlotPlanner:
     def __init__(self, settings):
+        self.flush = False
+
         self.settings = settings
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
 
@@ -70,26 +72,13 @@ class PlotPlanner:
 
         :return:
         """
-        while True:
-            if len(self.queue) == 0:
-                for n in self.process_plots(None):  # flush, and finish.
-                    yield n
-                self.single_x = None
-                self.single_y = None
-                self.group_x = None
-                self.group_y = None
-                yield None, None, PLOT_FINISH
-                return
-
+        while len(self.queue):
             cut = self.queue.pop(0)
-
             cut_set = cut.settings
             cur_set = self.settings
-
             start = cut.start()
             new_start_x = int(start.x)
             new_start_y = int(start.y)
-
             flush = False
             jog = 0
             if self.single_x != new_start_x or self.single_y != new_start_y:
@@ -148,6 +137,14 @@ class PlotPlanner:
             # Current is executed in cut settings.
             for n in self.process_plots(cut.generator()):
                 yield n
+        for n in self.process_plots(None):  # flush, and finish.
+            yield n
+        self.single_x = None
+        self.single_y = None
+        self.group_x = None
+        self.group_y = None
+        self.flush = False
+        yield None, None, PLOT_FINISH
 
     def process_plots(self, plot):
         """
@@ -176,7 +173,6 @@ class PlotPlanner:
         :return:
         """
         if plot is None:
-            yield None
             return
         for event in plot:
             if len(event) == 3:
@@ -219,7 +215,13 @@ class PlotPlanner:
             self.single_x = x
             self.single_y = y
             for i in range(index, count):
-                yield cx + (i * dx), cy + (i * dy), on
+                nx = cx + (i * dx)
+                ny = cy + (i * dy)
+                if self.flush:
+                    self.single_x = nx
+                    self.single_y = ny
+                    return
+                yield nx, ny, on
 
     def apply_ppi(self, plot):
         """
@@ -227,16 +229,10 @@ class PlotPlanner:
 
         Implements PPI power modulation.
 
-        :param plot: generator of single stepped plots
+        :param plot: generator of single stepped plots, with PPI.
         :return:
         """
-        if plot is None:
-            yield None
-            return
         for event in plot:
-            if event is None:
-                yield None
-                continue
             x, y, on = event
             power = self.settings.power
             # TODO: REENABLE WHEN SETTINGS.PPI CAN BE SET.
@@ -265,17 +261,7 @@ class PlotPlanner:
         :return:
         """
         for event in plot:
-            if event is None:
-                # Flush shift buffer, end
-                while len(self.shift_buffer) > 0:
-                    self.shift_pixels <<= 1
-                    bx, by = self.shift_buffer.pop()
-                    bon = (self.shift_pixels >> 3) & 1
-                    yield bx, by, bon
-                yield None
-                return
             if not self.force_shift and not self.settings.shift_enabled:
-                # Flush shift buffer, continue
                 while len(self.shift_buffer) > 0:
                     self.shift_pixels <<= 1
                     bx, by = self.shift_buffer.pop()
@@ -302,6 +288,11 @@ class PlotPlanner:
                 bx, by = self.shift_buffer.pop()
                 bon = (self.shift_pixels >> 3) & 1
                 yield bx, by, bon
+        while len(self.shift_buffer) > 0:
+            self.shift_pixels <<= 1
+            bx, by = self.shift_buffer.pop()
+            bon = (self.shift_pixels >> 3) & 1
+            yield bx, by, bon
 
     def group(self, plot):
         """
@@ -314,17 +305,6 @@ class PlotPlanner:
         :return:
         """
         for event in plot:
-            if event is None:
-                # Flush buffer and exit.
-                if (
-                    self.group_x is not None
-                    and self.group_y is not None
-                    and self.group_on is not None
-                ):
-                    yield self.group_x, self.group_y, self.group_on
-                self.group_dx = 0
-                self.group_dy = 0
-                return
             if not self.group_enabled:
                 # Flush buffer and continue.
                 if (
@@ -332,7 +312,7 @@ class PlotPlanner:
                     and self.group_y is not None
                     and self.group_on is not None
                 ):
-                    yield self.group_x, self.group_y, self.group_on
+                    yield self.group_x + self.group_dx, self.group_y + self.group_dx, self.group_on
                 self.group_dx = 0
                 self.group_dy = 0
                 yield event
@@ -359,6 +339,7 @@ class PlotPlanner:
                     continue
                 # This is non orth-diag point. Must drop a point.
                 yield self.group_x, self.group_y, self.group_on
+
             # Set new directions.
             self.group_dx = x - self.group_x
             self.group_dy = y - self.group_y
@@ -371,7 +352,15 @@ class PlotPlanner:
             self.group_y = y
             self.group_on = on
 
+        self.group_dx = 0
+        self.group_dy = 0
+        if (
+                self.group_x is not None
+                and self.group_y is not None
+                and self.group_on is not None
+        ):
+            yield self.group_x, self.group_y, self.group_on
+
     def clear(self):
         self.queue.clear()
-        for _ in self.gen():
-            continue
+        self.flush = True
