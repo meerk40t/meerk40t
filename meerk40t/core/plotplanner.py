@@ -36,7 +36,7 @@ of zero will remain zero.
 
 class PlotPlanner:
     def __init__(self, settings):
-        self.flush = False
+        self.abort = False
 
         self.settings = settings
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
@@ -137,13 +137,18 @@ class PlotPlanner:
             # Current is executed in cut settings.
             for n in self.process_plots(cut.generator()):
                 yield n
-        for n in self.process_plots(None):  # flush, and finish.
-            yield n
+
+        if not self.abort:
+            # If we were not aborted, flush and finish the last positions.
+            for n in self.process_plots(None):
+                yield n
         self.single_x = None
         self.single_y = None
         self.group_x = None
         self.group_y = None
-        self.flush = False
+        self.group_dx = 0
+        self.group_dy = 0
+        self.abort = False
         yield None, None, PLOT_FINISH
 
     def process_plots(self, plot):
@@ -165,6 +170,8 @@ class PlotPlanner:
         """
         Convert a sequence set of positions into single unit plotted sequences.
 
+        This accepts 3 (X,Y,On) or 2 (X,Y) item events
+
         single_default sets the default for any unmarked processes.
         single_x sets the last known x position this routine has encountered.
         single_y sets the last known y position this routine has encountered.
@@ -173,55 +180,47 @@ class PlotPlanner:
         :return:
         """
         if plot is None:
+            # None calls for a flush routine.
+            yield None, None, self.single_default
             return
         for event in plot:
-            if len(event) == 3:
-                x, y, on = event
-            else:
-                x, y = event
-                on = self.single_default
-
-            index = 1
-            if self.single_x is None:
+            x = event[0]
+            y = event[1]
+            if self.single_x is None or self.single_y is None:
+                # Our single_x or single_y position is not established.
                 self.single_x = x
-                index = 0
-            if self.single_y is None:
                 self.single_y = y
                 index = 0
-            if x > self.single_x:
-                dx = 1
-            elif x < self.single_x:
-                dx = -1
             else:
-                dx = 0
-            if y > self.single_y:
-                dy = 1
-            elif y < self.single_y:
-                dy = -1
-            else:
-                dy = 0
+                index = 1
+            on = event[2] if len(event) >= 3 else self.single_default
+
             total_dx = x - self.single_x
             total_dy = y - self.single_y
             if total_dx == 0 and total_dy == 0:
                 continue
+            dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
+            dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
+
             if total_dy * dx != total_dx * dy:
+                # Check for cross-equality.
                 raise ValueError(
                     "Must be uniformly diagonal or orthogonal: (%d, %d) is not."
                     % (total_dx, total_dy)
                 )
-            count = max(abs(total_dx), abs(total_dy)) + 1
             cx = self.single_x
             cy = self.single_y
-            self.single_x = x
-            self.single_y = y
-            for i in range(index, count):
-                nx = cx + (i * dx)
-                ny = cy + (i * dy)
-                if self.flush:
-                    self.single_x = nx
-                    self.single_y = ny
+            for i in range(index, max(abs(total_dx), abs(total_dy)) + 1):
+                if self.abort:
+                    self.single_x = None
+                    self.single_y = None
                     return
-                yield nx, ny, on
+                self.single_x = cx + (i * dx)
+                self.single_y = cy + (i * dy)
+                yield self.single_x, self.single_y, on
+        if self.abort:
+            self.single_x = None
+            self.single_y = None
 
     def apply_ppi(self, plot):
         """
@@ -232,46 +231,62 @@ class PlotPlanner:
         :param plot: generator of single stepped plots, with PPI.
         :return:
         """
-        for event in plot:
-            x, y, on = event
-            power = self.settings.power
-            # TODO: REENABLE WHEN SETTINGS.PPI CAN BE SET.
-            # if not self.settings.ppi_enabled:
-            #     power = 1000
-            self.ppi_total += power * on
+        px = None
+        py = None
+        for x, y, on in plot:
+            if x is None or y is None:
+                yield x, y, on
+                continue
+            if px is not None and py is not None:
+                assert(abs(px-x) <= 1 or abs(py-y) <= 1)
+            px = x
+            py = y
+            # PPI is always on.
+            self.ppi_total += self.settings.power * on
             if on and self.dot_left > 0:
+                # Process remaining dot_length, must be on or partially on.
                 self.dot_left -= 1
                 on = 1
             else:
+                # No dot length.
                 if self.ppi_total >= 1000.0:
+                    # PPI >= 1000: triggers on.
                     on = 1
                     self.ppi_total -= 1000.0 * self.settings.dot_length
                     self.dot_left = self.settings.dot_length - 1
                 else:
+                    # PPI < 1000: triggers off.
                     on = 0
-                if on:
-                    self.dot_left = self.settings.dot_length - 1
             yield x, y, on
 
     def shift(self, plot):
         """
         Tweaks on-values to simplify them into more coherent subsections.
 
+        This code requires a buffer of 4 path plots.
+
         :param plot: generator of single stepped plots
         :return:
         """
-        for event in plot:
-            if not self.force_shift and not self.settings.shift_enabled:
+        px = None
+        py = None
+        for x, y, on in plot:
+            if (x is None or y is None) or (not self.force_shift and not self.settings.shift_enabled):
+                # If we have an established buffer, flush the buffer.
                 while len(self.shift_buffer) > 0:
                     self.shift_pixels <<= 1
                     bx, by = self.shift_buffer.pop()
                     bon = (self.shift_pixels >> 3) & 1
                     yield bx, by, bon
-                yield event
+                # Yield the current event.
+                yield x, y, on
                 continue
+            if px is not None and py is not None:
+                assert(abs(px-x) <= 1 or abs(py-y) <= 1)
+            px = x
+            py = y
 
-            # Process shift buffer
-            x, y, on = event
+            # Shift() is on.
             self.shift_pixels <<= 1
             if on:
                 self.shift_pixels |= 1
@@ -288,11 +303,10 @@ class PlotPlanner:
                 bx, by = self.shift_buffer.pop()
                 bon = (self.shift_pixels >> 3) & 1
                 yield bx, by, bon
-        while len(self.shift_buffer) > 0:
-            self.shift_pixels <<= 1
-            bx, by = self.shift_buffer.pop()
-            bon = (self.shift_pixels >> 3) & 1
-            yield bx, by, bon
+        # There are no more plots.
+        if self.abort:
+            self.shift_pixels = 0
+            self.shift_buffer.clear()
 
     def group(self, plot):
         """
@@ -304,29 +318,49 @@ class PlotPlanner:
         :param plot: single stepped plots to be grouped into orth/diag sequences.
         :return:
         """
-        for event in plot:
-            if not self.group_enabled:
-                # Flush buffer and continue.
-                if (
-                    self.group_x is not None
-                    and self.group_y is not None
-                    and self.group_on is not None
-                ):
-                    yield self.group_x + self.group_dx, self.group_y + self.group_dx, self.group_on
-                self.group_dx = 0
-                self.group_dy = 0
-                yield event
+        px = None
+        py = None
+        for x, y, on in plot:
+            if x is None or y is None:
+                gx = self.group_x
+                gy = self.group_y
+                go = self.group_on
+                if gx is not None and gy is not None and go is not None:
+                    # If we have an established buffer, flush the buffer.
+                    self.group_x = None
+                    self.group_y = None
+                    self.group_on = None
+                    self.group_dx = 0
+                    self.group_dy = 0
+                    yield gx, gy, go
                 continue
-            x, y, on = event
+            if px is not None and py is not None:
+                assert(abs(px-x) <= 1 or abs(py-y) <= 1)
+            px = x
+            py = y
+
+            gx = self.group_x
+            gy = self.group_y
+            go = self.group_on
+            if not self.group_enabled:
+                if gx is not None and gy is not None and go is not None:
+                    # If we have an established buffer, flush the buffer.
+                    self.group_x = None
+                    self.group_y = None
+                    self.group_on = None
+                    self.group_dx = 0
+                    self.group_dy = 0
+                    yield gx, gy, go
+                # Yield the current event.
+                yield x, y, on
+                continue
+            # Group() is enabled
             if self.group_x is None:
                 self.group_x = x
             if self.group_y is None:
                 self.group_y = y
             if self.group_on is None:
                 self.group_on = on
-            if self.group_dx == 0 and self.group_dy == 0:
-                self.group_dx = x - self.group_x
-                self.group_dy = y - self.group_y
             if self.group_dx != 0 or self.group_dy != 0:
                 if (
                     x == self.group_x + self.group_dx
@@ -336,31 +370,24 @@ class PlotPlanner:
                     # This is an orthogonal/diagonal step along the same path.
                     self.group_x = x
                     self.group_y = y
+                    # Mark the latest position and continue.
                     continue
                 # This is non orth-diag point. Must drop a point.
                 yield self.group_x, self.group_y, self.group_on
-
-            # Set new directions.
+            # If we do not have a defined direction, set our current direction.
             self.group_dx = x - self.group_x
             self.group_dy = y - self.group_y
             if abs(self.group_dx) > 1 or abs(self.group_dy) > 1:
-                # The last step was not valid. Group requires single step values.
+                # The last step was not valid. Group() requires single step values.
                 raise ValueError(
                     "dx(%d) or dy(%d) exceeds 1" % (self.group_dx, self.group_dy)
                 )
+            # Save our buffered position.
             self.group_x = x
             self.group_y = y
             self.group_on = on
-
-        self.group_dx = 0
-        self.group_dy = 0
-        if (
-                self.group_x is not None
-                and self.group_y is not None
-                and self.group_on is not None
-        ):
-            yield self.group_x, self.group_y, self.group_on
+        # There are no more plots.
 
     def clear(self):
         self.queue.clear()
-        self.flush = True
+        self.abort = True

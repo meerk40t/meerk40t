@@ -772,7 +772,7 @@ class LhystudiosDriver(Driver):
                 continue
             else:
                 self.ensure_program_mode()
-            dx = x - sx  # TODO: None, None, 1 ?
+            dx = x - sx
             dy = y - sy
             if self.settings.raster_step != 0:
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
