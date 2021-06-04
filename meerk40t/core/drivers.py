@@ -484,7 +484,7 @@ class Driver:
     def reset(self):
         if self.spooler is not None:
             self.spooler.clear_queue()
-        self.plot = None
+        self.plot_planner.flush = True
         self.plot_planner.clear()
         self.spooled_item = None
         self.temp_holds.clear()
