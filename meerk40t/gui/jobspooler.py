@@ -37,12 +37,12 @@ class JobSpooler(MWindow):
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(index)
-        self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_total_copy = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
+        # self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        # self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        # self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        # self.text_time_total_copy = wx.TextCtrl(
+        #     self, wx.ID_ANY, "", style=wx.TE_READONLY
+        # )
         self.list_job_spool = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
@@ -73,11 +73,11 @@ class JobSpooler(MWindow):
         _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle("Job Spooler")
-        self.combo_device.SetToolTip("Select the device")
-        self.text_time_laser.SetToolTip("Time Estimate: Lasering Time")
-        self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
-        self.text_time_total.SetToolTip("Time Estimate: Total Time")
-        self.text_time_total_copy.SetToolTip("Time Estimate: Total Time")
+        # self.combo_device.SetToolTip("Select the device")
+        # self.text_time_laser.SetToolTip("Time Estimate: Lasering Time")
+        # self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
+        # self.text_time_total.SetToolTip("Time Estimate: Total Time")
+        # self.text_time_total_copy.SetToolTip("Time Estimate: Total Time")
         self.list_job_spool.SetToolTip("List and modify the queued operations")
         self.list_job_spool.AppendColumn("#", format=wx.LIST_FORMAT_LEFT, width=78)
         self.list_job_spool.AppendColumn("Name", format=wx.LIST_FORMAT_LEFT, width=143)
@@ -93,27 +93,27 @@ class JobSpooler(MWindow):
         # begin wxGlade: Spooler.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
         sizer_time = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_total_remaining = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Time Remaining"), wx.VERTICAL
-        )
-        sizer_total_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL
-        )
-        sizer_travel_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL
-        )
-        sizer_laser_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL
-        )
+        # sizer_total_remaining = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, "Time Remaining"), wx.VERTICAL
+        # )
+        # sizer_total_time = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL
+        # )
+        # sizer_travel_time = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL
+        # )
+        # sizer_laser_time = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL
+        # )
         sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
-        sizer_laser_time.Add(self.text_time_laser, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_laser_time, 1, wx.EXPAND, 0)
-        sizer_travel_time.Add(self.text_time_travel, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_travel_time, 1, wx.EXPAND, 0)
-        sizer_total_time.Add(self.text_time_total, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_total_time, 1, wx.EXPAND, 0)
-        sizer_total_remaining.Add(self.text_time_total_copy, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_total_remaining, 1, wx.EXPAND, 0)
+        # sizer_laser_time.Add(self.text_time_laser, 0, wx.EXPAND, 0)
+        # sizer_time.Add(sizer_laser_time, 1, wx.EXPAND, 0)
+        # sizer_travel_time.Add(self.text_time_travel, 0, wx.EXPAND, 0)
+        # sizer_time.Add(sizer_travel_time, 1, wx.EXPAND, 0)
+        # sizer_total_time.Add(self.text_time_total, 0, wx.EXPAND, 0)
+        # sizer_time.Add(sizer_total_time, 1, wx.EXPAND, 0)
+        # sizer_total_remaining.Add(self.text_time_total_copy, 0, wx.EXPAND, 0)
+        # sizer_time.Add(sizer_total_remaining, 1, wx.EXPAND, 0)
         sizer_frame.Add(sizer_time, 0, wx.EXPAND, 0)
         sizer_frame.Add(self.list_job_spool, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_frame)
