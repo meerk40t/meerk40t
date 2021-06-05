@@ -21,11 +21,11 @@ from .panes.movepanel import MovePanel
 from .panes.notespanel import NotePanel
 from .panes.pulsepanel import PulsePanel
 from .panes.spoolerpanel import SpoolerPanel
-from .panes.toolbarcontrol import ControlToolBar, ControlTools
-from .panes.toolbarpreferences import PreferencesToolBar, PreferencesTools
-from .panes.toolbarproject import ProjectToolBar, ProjectTools
+from .panes.toolbarcontrol import  ControlTools
+from .panes.toolbarpreferences import  PreferencesTools
+from .panes.toolbarproject import  ProjectTools
 from .panes.transformpanel import Transform
-from .scene.scene import Scene, ScenePanel
+from .scene.scene import ScenePanel
 from .scene.scenewidgets import (
     ElementsWidget,
     GridWidget,
@@ -110,7 +110,6 @@ from .icons import (
     icons8_opened_folder_50,
     icons8_padlock_50,
     icons8_pause_50,
-    icons8_play_50,
     icons8_roll_50,
     icons8_route_50,
     icons8_save_50,
@@ -190,9 +189,8 @@ def plugin(kernel, lifecycle):
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
 
-    if lifecycle == "register":
+    if lifecycle == "preregister":
         kernel.register("module/wxMeerK40t", wxMeerK40t)
-    if lifecycle == "configure":
         kernel_root = kernel.root
         kernel_root.open("module/wxMeerK40t")
 
