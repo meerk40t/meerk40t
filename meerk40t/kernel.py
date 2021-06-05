@@ -1874,8 +1874,8 @@ class Kernel:
     def command_boot(self) -> None:
         _ = self.translation
 
-        @self.console_option("output", "o", help="Output type to match", type=str)
-        @self.console_option("input", "i", help="Input type to match", type=str)
+        @self.console_option("output", "o", help=_("Output type to match"), type=str)
+        @self.console_option("input", "i", help=_("Input type to match"), type=str)
         @self.console_argument("extended_help", type=str)
         @self.console_command(("help", "?"), hidden=True, help="help <help>")
         def help(channel, _, extended_help, output=None, input=None, **kwargs):
@@ -1923,7 +1923,7 @@ class Kernel:
                             ":\n\t\t%s" % arg_help if arg_help is not None else ""
                         )
                         channel(
-                            "\tArgument: %s '%s'%s" % (arg_type, arg_name, arg_help)
+                            _("\tArgument: %s '%s'%s") % (arg_type, arg_name, arg_help)
                         )
                     for b in func.options:
                         opt_name = b.get("name", "")
@@ -1934,7 +1934,7 @@ class Kernel:
                             ":\n\t\t%s" % opt_help if opt_help is not None else ""
                         )
                         channel(
-                            "\tOption: %s ('--%s', '-%s')%s"
+                            _("\tOption: %s ('--%s', '-%s')%s")
                             % (opt_type, opt_name, opt_short, opt_help)
                         )
                     found = True
@@ -1968,11 +1968,11 @@ class Kernel:
                 else:
                     channel(command_name.split("/")[-1])
 
-        @self.console_command("loop", help="loop <command>")
+        @self.console_command("loop", help=_("loop <command>"))
         def loop(args=tuple(), **kwargs):
             self._tick_command(" ".join(args))
 
-        @self.console_command("end", help="end <commmand>")
+        @self.console_command("end", help=_("end <commmand>"))
         def end(args=tuple(), **kwargs):
             if len(args) == 0:
                 self.commands.clear()
@@ -1981,23 +1981,23 @@ class Kernel:
                 self._untick_command(" ".join(args))
 
         @self.console_option(
-            "off", "o", action="store_true", help="Turn this timer off"
+            "off", "o", action="store_true", help=_("Turn this timer off")
         )
         @self.console_option(
-            "gui", "g", action="store_true", help="Run this timer in the gui-thread"
+            "gui", "g", action="store_true", help=_("Run this timer in the gui-thread")
         )
         @self.console_argument(
-            "times", help="Number of times this timer should execute."
+            "times", help=_("Number of times this timer should execute.")
         )
         @self.console_argument(
             "duration",
             type=float,
-            help="How long in seconds between/before should this be run.",
+            help=_("How long in seconds between/before should this be run."),
         )
         @self.console_command(
             "timer.*",
             regex=True,
-            help="run the command a given number of times with a given duration between.",
+            help=_("run the command a given number of times with a given duration between."),
         )
         def timer(
             command,
@@ -2101,7 +2101,7 @@ class Kernel:
             return
 
         @self.console_option(
-            "path", "p", type=str, default="/", help="Path of variables to set."
+            "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
         @self.console_command("set", help="set [<key> <value>]")
         def set(channel, _, path=None, args=tuple(), **kwargs):
@@ -2143,7 +2143,7 @@ class Kernel:
             return
 
         @self.console_option(
-            "path", "p", type=str, default="/", help="Path of variables to set."
+            "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
         @self.console_command("control", help="control [<executive>]")
         def control(channel, _, path=None, remainder=None, **kwargs):
@@ -2161,9 +2161,9 @@ class Kernel:
                 channel(_("Control '%s' not found.") % control_name)
 
         @self.console_option(
-            "path", "p", type=str, default="/", help="Path of variables to set."
+            "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("module", help="module [(open|close) <module_name>]")
+        @self.console_command("module", help=_("module [(open|close) <module_name>]"))
         def module(channel, _, path=None, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("----------"))
@@ -2206,9 +2206,9 @@ class Kernel:
             return
 
         @self.console_option(
-            "path", "p", type=str, default="/", help="Path of variables to set."
+            "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("modifier", help="modifier [(open|close) <module_name>]")
+        @self.console_command("modifier", help=_("modifier [(open|close) <module_name>]"))
         def modifier(channel, _, path=None, args=tuple(), **kwargs):
             if path is None:
                 path = "/"
@@ -2246,7 +2246,7 @@ class Kernel:
                     else:
                         channel(_("Modifier '%s' not found.") % index)
 
-        @self.console_command("schedule", help="show scheduled events")
+        @self.console_command("schedule", help=_("show scheduled events"))
         def schedule(channel, _, **kwargs):
             channel(_("----------"))
             channel(_("Scheduled Processes:"))
@@ -2266,7 +2266,7 @@ class Kernel:
                 channel(" ".join(parts))
             channel(_("----------"))
 
-        @self.console_command("thread", help="show threads")
+        @self.console_command("thread", help=_("show threads"))
         def thread(channel, _, **kwargs):
             """
             Display the currently registered threads within the Kernel.
@@ -2285,7 +2285,7 @@ class Kernel:
 
         @self.console_command(
             "channel",
-            help="channel (open|close|save|list|print) <channel_name>",
+            help=_("channel (open|close|save|list|print) <channel_name>"),
             output_type="channel",
         )
         def channel(channel, _, remainder=None, **kwargs):
@@ -2303,7 +2303,7 @@ class Kernel:
 
         @self.console_command(
             "list",
-            help="list the channels open in the kernel",
+            help=_("list the channels open in the kernel"),
             input_type="channel",
             output_type="channel",
         )
@@ -2319,10 +2319,10 @@ class Kernel:
                 channel("%s%d: %s" % (is_watched, i + 1, name))
             return "channel", 0
 
-        @self.console_argument("channel_name", help="name of the channel")
+        @self.console_argument("channel_name", help=_("name of the channel"))
         @self.console_command(
             "open",
-            help="watch this channel in the console",
+            help=_("watch this channel in the console"),
             input_type="channel",
             output_type="channel",
         )
@@ -2337,10 +2337,10 @@ class Kernel:
                 channel(_("Watching Channel: %s") % channel_name)
             return "channel", channel_name
 
-        @self.console_argument("channel_name", help="channel name")
+        @self.console_argument("channel_name", help=_("channel name"))
         @self.console_command(
             "close",
-            help="stop watching this channel in the console",
+            help=_("stop watching this channel in the console"),
             input_type="channel",
             output_type="channel",
         )
@@ -2355,10 +2355,10 @@ class Kernel:
                 channel(_("Channel %s is not opened.") % channel_name)
             return "channel", channel_name
 
-        @self.console_argument("channel_name", help="channel name")
+        @self.console_argument("channel_name", help=_("channel name"))
         @self.console_command(
             "print",
-            help="print this channel to the standard out",
+            help=_("print this channel to the standard out"),
             input_type="channel",
             output_type="channel",
         )
@@ -2371,14 +2371,14 @@ class Kernel:
             return "channel", channel_name
 
         @self.console_option(
-            "filename", "f", help="Use this filename rather than default"
+            "filename", "f", help=_("Use this filename rather than default")
         )
         @self.console_argument(
-            "channel_name", help="channel name (you may comma delimit)"
+            "channel_name", help=_("channel name (you may comma delimit)")
         )
         @self.console_command(
             "save",
-            help="save this channel to disk",
+            help=_("save this channel to disk"),
             input_type="channel",
             output_type="channel",
         )
@@ -2414,9 +2414,9 @@ class Kernel:
             "p",
             type=str,
             default="/",
-            help="Path that should be flushed to disk.",
+            help=_("Path that should be flushed to disk."),
         )
-        @self.console_command("flush", help="flush current settings to disk")
+        @self.console_command("flush", help=_("flush current settings to disk"))
         def flush(channel, _, path=None, **kwargs):
             if path is not None:
                 path_context = self.get_context(path)
@@ -2434,13 +2434,13 @@ class Kernel:
                 channel(_("No relevant context found."))
 
         @self.console_command(
-            ("quit", "shutdown"), help="quits meerk40t shutting down all processes"
+            ("quit", "shutdown"), help=_("quits meerk40t shutting down all processes")
         )
         def shutdown(**kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()
 
-        @self.console_command(("ls", "dir"), help="list directory")
+        @self.console_command(("ls", "dir"), help=_("list directory"))
         def ls(channel, **kwargs):
             import os
 
@@ -2448,7 +2448,7 @@ class Kernel:
                 channel(str(f))
 
         @self.console_argument("directory")
-        @self.console_command("cd", help="change directory")
+        @self.console_command("cd", help=_("change directory"))
         def cd(channel, _, directory=None, **kwargs):
             import os
 
@@ -2478,7 +2478,7 @@ class Kernel:
 
         @self.console_argument("filename")
         @self.console_command(
-            "load", help="load file", input_type=None, output_type="file"
+            "load", help=_("loads file from working directory"), input_type=None, output_type="file"
         )
         def load(channel, _, filename=None, **kwargs):
             import os
@@ -2494,7 +2494,7 @@ class Kernel:
             try:
                 root_context.load(new_file)
             except AttributeError:
-                raise SyntaxError("Loading files was not defined")
+                raise SyntaxError(_("Loading files was not defined"))
             channel(_("loading..."))
             return "file", new_file
 

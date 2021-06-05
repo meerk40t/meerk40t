@@ -29,8 +29,8 @@ class ExecuteJob(MWindow):
         # ==========
         self.preview_menu.menu_prehome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
-            "Home",
-            "Automatically add a home command before all jobs",
+            _("Home"),
+            _("Automatically add a home command before all jobs"),
             wx.ITEM_CHECK,
         )
         self.Bind(
@@ -40,8 +40,8 @@ class ExecuteJob(MWindow):
         )
         self.preview_menu.menu_prephysicalhome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
-            "Physical Home",
-            "Automatically add a physical home command before all jobs",
+            _("Physical Home"),
+            _("Automatically add a physical home command before all jobs"),
             wx.ITEM_CHECK,
         )
         self.Bind(
@@ -50,7 +50,7 @@ class ExecuteJob(MWindow):
             id=self.preview_menu.menu_prephysicalhome.GetId(),
         )
 
-        wx_menu.Append(wx.ID_ANY, "Before", wxglade_tmp_menu_sub, "")
+        wx_menu.Append(wx.ID_ANY, _("Before"), wxglade_tmp_menu_sub, "")
         wxglade_tmp_menu_sub = wx.Menu()
 
         # ==========
@@ -58,8 +58,8 @@ class ExecuteJob(MWindow):
         # ==========
         self.preview_menu.menu_autohome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
-            "Home",
-            "Automatically add a home command after all jobs",
+            _("Home"),
+            _("Automatically add a home command after all jobs"),
             wx.ITEM_CHECK,
         )
         self.Bind(
@@ -69,8 +69,8 @@ class ExecuteJob(MWindow):
         )
         self.preview_menu.menu_autophysicalhome = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
-            "Physical Home",
-            "Automatically add a physical home command after all jobs",
+            _("Physical Home"),
+            _("Automatically add a physical home command after all jobs"),
             wx.ITEM_CHECK,
         )
         self.Bind(
@@ -80,8 +80,8 @@ class ExecuteJob(MWindow):
         )
         self.preview_menu.menu_autoorigin = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
-            "Return to Origin",
-            "Automatically return to origin after a job",
+            _("Return to Origin"),
+            _("Automatically return to origin after a job"),
             wx.ITEM_CHECK,
         )
         self.Bind(
@@ -91,8 +91,8 @@ class ExecuteJob(MWindow):
         )
         self.preview_menu.menu_autounlock = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
-            "Unlock",
-            "Automatically unlock the rail after all jobs",
+            _("Unlock"),
+            _("Automatically unlock the rail after all jobs"),
             wx.ITEM_CHECK,
         )
         self.Bind(
@@ -101,7 +101,7 @@ class ExecuteJob(MWindow):
             id=self.preview_menu.menu_autounlock.GetId(),
         )
         self.preview_menu.menu_autobeep = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY, "Beep", "Automatically add a beep after all jobs", wx.ITEM_CHECK
+            wx.ID_ANY, _("Beep"), _("Automatically add a beep after all jobs"), wx.ITEM_CHECK
         )
         self.Bind(
             wx.EVT_MENU,
@@ -110,8 +110,8 @@ class ExecuteJob(MWindow):
         )
         self.preview_menu.menu_autointerrupt = wxglade_tmp_menu_sub.Append(
             wx.ID_ANY,
-            "Interrupt",
-            "Automatically add an interrupt after all jobs",
+            _("Interrupt"),
+            _("Automatically add an interrupt after all jobs"),
             wx.ITEM_CHECK,
         )
         self.Bind(
@@ -120,21 +120,21 @@ class ExecuteJob(MWindow):
             id=self.preview_menu.menu_autointerrupt.GetId(),
         )
 
-        wx_menu.Append(wx.ID_ANY, "After", wxglade_tmp_menu_sub, "")
-        self.preview_menu.Append(wx_menu, "Automatic")
+        wx_menu.Append(wx.ID_ANY, _("After"), wxglade_tmp_menu_sub, "")
+        self.preview_menu.Append(wx_menu, _("Automatic"))
         wx_menu = wx.Menu()
 
         # ==========
         # ADD MENU
         # ==========
         self.preview_menu.menu_jobadd_home = wx_menu.Append(
-            wx.ID_ANY, "Home", "Add a home"
+            wx.ID_ANY, _("Home"), _("Add a home")
         )
         self.Bind(
             wx.EVT_MENU, self.jobadd_home, id=self.preview_menu.menu_jobadd_home.GetId()
         )
         self.preview_menu.menu_jobadd_autophysicalhome = wx_menu.Append(
-            wx.ID_ANY, "Physical Home", "Add a physicalhome"
+            wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")
         )
         self.Bind(
             wx.EVT_MENU,
@@ -142,19 +142,19 @@ class ExecuteJob(MWindow):
             id=self.preview_menu.menu_jobadd_autophysicalhome.GetId(),
         )
         self.preview_menu.menu_jobadd_wait = wx_menu.Append(
-            wx.ID_ANY, "Wait", "Add a wait"
+            wx.ID_ANY, _("Wait"), _("Add a wait")
         )
         self.Bind(
             wx.EVT_MENU, self.jobadd_wait, id=self.preview_menu.menu_jobadd_wait.GetId()
         )
         self.preview_menu.menu_jobadd_beep = wx_menu.Append(
-            wx.ID_ANY, "Beep", "Add a beep"
+            wx.ID_ANY, _("Beep"), _("Add a beep")
         )
         self.Bind(
             wx.EVT_MENU, self.jobadd_beep, id=self.preview_menu.menu_jobadd_beep.GetId()
         )
         self.preview_menu.menu_jobadd_interrupt = wx_menu.Append(
-            wx.ID_ANY, "Interrupt", "Add an interrupt"
+            wx.ID_ANY, _("Interrupt"), _("Add an interrupt")
         )
         self.Bind(
             wx.EVT_MENU,
@@ -162,7 +162,7 @@ class ExecuteJob(MWindow):
             id=self.preview_menu.menu_jobadd_interrupt.GetId(),
         )
 
-        self.preview_menu.Append(wx_menu, "Add")
+        self.preview_menu.Append(wx_menu, _("Add"))
 
         # ==========
         # Tools Menu
@@ -215,19 +215,19 @@ class ExecuteJob(MWindow):
         # self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         # self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.check_rapid_moves_between = wx.CheckBox(
-            self, wx.ID_ANY, "Rapid Moves Between Objects"
+            self, wx.ID_ANY, _("Rapid Moves Between Objects")
         )
         self.check_reduce_travel_time = wx.CheckBox(
-            self, wx.ID_ANY, "Reduce Travel Time"
+            self, wx.ID_ANY, _("Reduce Travel Time")
         )
-        self.check_cut_inner_first = wx.CheckBox(self, wx.ID_ANY, "Cut Inner First")
+        self.check_cut_inner_first = wx.CheckBox(self, wx.ID_ANY, _("Cut Inner First"))
         self.check_reduce_direction_changes = wx.CheckBox(
-            self, wx.ID_ANY, "Reduce Direction Changes"
+            self, wx.ID_ANY, _("Reduce Direction Changes")
         )
         self.check_remove_overlap_cuts = wx.CheckBox(
-            self, wx.ID_ANY, "Remove Overlap Cuts"
+            self, wx.ID_ANY, _("Remove Overlap Cuts")
         )
-        self.button_start = wx.Button(self, wx.ID_ANY, "Start")
+        self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
 
         self.__set_properties()
         self.__do_layout()
@@ -272,12 +272,12 @@ class ExecuteJob(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Execute Job")
+        self.SetTitle(_("Execute Job"))
         self.combo_device.SetToolTip(
-            "Select the device to which to send the current job"
+            _("Select the device to which to send the current job")
         )
-        self.list_operations.SetToolTip("Operations being added to the current job")
-        self.list_command.SetToolTip("Commands being applied to the current job")
+        self.list_operations.SetToolTip(_("Operations being added to the current job"))
+        self.list_command.SetToolTip(_("Commands being applied to the current job"))
         # self.slider_progress.SetToolTip("Preview slider to set progress position")
         # self.text_operation_name.SetToolTip("Current Operation Being Processed")
         # self.gauge_operation.SetToolTip("Gauge of Operation Progress")
@@ -285,19 +285,19 @@ class ExecuteJob(MWindow):
         # self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
         # self.text_time_total.SetToolTip("Time Estimate: Total Time")
         self.check_rapid_moves_between.SetToolTip(
-            "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+            _("Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed")
         )
         self.check_reduce_travel_time.SetToolTip(
-            "Reduce the travel time by optimizing the order of the elements"
+            _("Reduce the travel time by optimizing the order of the elements")
         )
         self.check_cut_inner_first.SetToolTip(
-            "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
+            _("Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts.")
         )
         self.check_reduce_direction_changes.SetToolTip(
-            "Reorder to reduce the number of sharp directional changes"
+            _("Reorder to reduce the number of sharp directional changes")
         )
         self.check_reduce_direction_changes.Hide()
-        self.check_remove_overlap_cuts.SetToolTip("Remove elements of overlapped cuts")
+        self.check_remove_overlap_cuts.SetToolTip(_("Remove elements of overlapped cuts"))
         self.check_remove_overlap_cuts.Hide()
         self.button_start.SetBackgroundColour(wx.Colour(0, 255, 0))
         self.button_start.SetFont(
@@ -319,7 +319,7 @@ class ExecuteJob(MWindow):
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
         sizer_options = wx.BoxSizer(wx.HORIZONTAL)
         sizer_optimizations = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Optimizations"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Optimizations")), wx.VERTICAL
         )
         # sizer_time = wx.BoxSizer(wx.HORIZONTAL)
         # sizer_total_time = wx.StaticBoxSizer(
@@ -664,33 +664,33 @@ class ExecuteJob(MWindow):
         if self.stage == 0:
             self.button_start.SetLabelText(_("Copy"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 255, 102))
-            self.button_start.SetToolTip("Copy Operations from Tree Operations")
+            self.button_start.SetToolTip(_("Copy Operations from Tree Operations"))
         elif self.stage == 1:
             self.button_start.SetLabelText(_("Preprocess Operations"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 255, 255))
             self.button_start.SetToolTip(
-                "Determine what needs to be done validate these operations."
+                _("Determine what needs to be done validate these operations.")
             )
         elif self.stage == 2:
             self.button_start.SetLabelText(_("Validate"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 102, 255))
             self.button_start.SetToolTip(
-                "Run the commands to make these operations valid."
+                _("Run the commands to make these operations valid.")
             )
         elif self.stage == 3:
             self.button_start.SetLabelText(_("Blob"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 102, 255))
-            self.button_start.SetToolTip("Turn this set of operations into Cutcode")
+            self.button_start.SetToolTip(_("Turn this set of operations into Cutcode"))
         elif self.stage == 4:
             self.button_start.SetLabelText(_("Preprocess Optimizations"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 102, 102))
             self.button_start.SetToolTip(
-                "Determine what needs to be done to optimize this cutcode."
+                _("Determine what needs to be done to optimize this cutcode.")
             )
         elif self.stage == 5:
             self.button_start.SetLabelText(_("Optimize"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 255, 102))
-            self.button_start.SetToolTip("Run the commands to optimize this cutcode")
+            self.button_start.SetToolTip(_("Run the commands to optimize this cutcode"))
         elif self.stage == 6:
             self.button_start.SetLabelText(_("Spool"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 255, 255))

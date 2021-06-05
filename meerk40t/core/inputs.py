@@ -71,7 +71,7 @@ class Inputs(Modifier):
         @context.console_option("new", "n", type=str, help="new input type")
         @context.console_command(
             "input",
-            help="input<?> <command>",
+            help=_("input<?> <command>"),
             regex=True,
             input_type=None,
             output_type="input",
@@ -129,7 +129,7 @@ class Inputs(Modifier):
 
         @self.context.console_command(
             "list",
-            help="input<?> list, list current inputs",
+            help=_("input<?> list, list current inputs"),
             input_type="input",
             output_type="input",
         )

@@ -18,11 +18,11 @@ class BufferView(MWindow):
         # Menu Bar
         self.BufferView_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Export EGV", "Export Engrave Data")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Export EGV"), _("Export Engrave Data"))
         self.Bind(wx.EVT_MENU, self.on_menu_export, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Import EGV", "Import Engrave Data")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Import EGV"), _("Import Engrave Data"))
         self.Bind(wx.EVT_MENU, self.on_menu_import, id=item.GetId())
-        self.BufferView_menubar.Append(wxglade_tmp_menu, "File")
+        self.BufferView_menubar.Append(wxglade_tmp_menu, _("File"))
         self.SetMenuBar(self.BufferView_menubar)
         # Menu Bar end
 

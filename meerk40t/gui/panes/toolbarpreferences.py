@@ -72,7 +72,7 @@ class PreferencesToolBar(wx.ToolBar):
             icons8_manager_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens Device Manager",
+            _("Opens Device Manager"),
             "",
         )
         self.Bind(
@@ -87,7 +87,7 @@ class PreferencesToolBar(wx.ToolBar):
             icons8_computer_support_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens Configuration Window",
+            _("Opens Configuration Window"),
             "",
         )
         self.Bind(
@@ -102,7 +102,7 @@ class PreferencesToolBar(wx.ToolBar):
             icons8_administrative_tools_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens Settings Window",
+            _("Opens Settings Window"),
             "",
         )
         self.Bind(
@@ -117,7 +117,7 @@ class PreferencesToolBar(wx.ToolBar):
             icons8_keyboard_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens Keymap Window",
+            _("Opens Keymap Window"),
             "",
         )
         self.Bind(
@@ -131,7 +131,7 @@ class PreferencesToolBar(wx.ToolBar):
             icons8_roll_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens Rotary Window",
+            _("Opens Rotary Window"),
             "",
         )
         self.Bind(
@@ -148,7 +148,7 @@ class PreferencesToolBar(wx.ToolBar):
     def __set_properties(self):
         # begin wxGlade: wxToolBar.__set_properties
         self.Realize()
-        self.SetLabel("Preferences")
+        self.SetLabel(_("Preferences"))
         # end wxGlade
 
     def __do_layout(self):

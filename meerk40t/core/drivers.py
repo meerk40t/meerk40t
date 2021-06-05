@@ -552,7 +552,7 @@ class Drivers(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @context.console_option("new", "n", type=str, help="new driver type")
+        @context.console_option("new", "n", type=str, help=_("new driver type"))
         @self.context.console_command(
             "driver",
             help="driver<?> <command>",

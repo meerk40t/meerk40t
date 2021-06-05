@@ -18,7 +18,7 @@ class Controller(MWindow):
         self.text_controller_message = wx.TextCtrl(
             self,
             wx.ID_ANY,
-            "The output of the selected device is not a controller, or provides no graphical user interface.",
+            _("The output of the selected device is not a controller, or provides no graphical user interface."),
             style=wx.TE_CENTRE | wx.TE_MULTILINE | wx.TE_READONLY,
         )
 
@@ -30,7 +30,7 @@ class Controller(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Controller")
+        self.SetTitle(_("Controller"))
         self.text_controller_message.SetFont(
             wx.Font(
                 14,

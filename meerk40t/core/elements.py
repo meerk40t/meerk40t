@@ -1463,37 +1463,37 @@ class Elemental(Modifier):
         # ==========
         # OPERATION BASE
         # ==========
-        @context.console_command("operations", help="show information about operations")
+        @context.console_command("operations", help=_("show information about operations"))
         def element(**kwargs):
             context(".operation* list\n")
 
         @context.console_command(
-            "operation.*", help="operation: selected operations", output_type="ops"
+            "operation.*", help=_("operation: selected operations"), output_type="ops"
         )
         def operation(**kwargs):
             return "ops", list(self.ops(emphasized=True))
 
         @context.console_command(
-            "operation*", help="operation*: all operations", output_type="ops"
+            "operation*", help=_("operation*: all operations"), output_type="ops"
         )
         def operation(**kwargs):
             return "ops", list(self.ops())
 
         @context.console_command(
-            "operation~", help="operation~: non selected operations.", output_type="ops"
+            "operation~", help=_("operation~: non selected operations."), output_type="ops"
         )
         def operation(**kwargs):
             return "ops", list(self.ops(emphasized=False))
 
         @context.console_command(
-            "operation", help="operation: selected operations.", output_type="ops"
+            "operation", help=_("operation: selected operations."), output_type="ops"
         )
         def operation(**kwargs):
             return "ops", list(self.ops(emphasized=True))
 
         @context.console_command(
             r"operation([0-9]+,?)+",
-            help="operation0,2: operation #0 and #2",
+            help=_("operation0,2: operation #0 and #2"),
             regex=True,
             output_type="ops",
         )
@@ -1516,10 +1516,10 @@ class Elemental(Modifier):
         # OPERATION SUBCOMMANDS
         # ==========
 
-        @context.console_argument("name", help="name to save the operation under")
+        @context.console_argument("name", help=_("name to save the operation under"))
         @context.console_command(
             "save",
-            help="Save current operations to persistent settings",
+            help=_("Save current operations to persistent settings"),
             input_type="ops",
             output_type="ops",
         )
@@ -1531,10 +1531,10 @@ class Elemental(Modifier):
             self.save_persistent_operations(name)
             return "ops", list(self.ops())
 
-        @context.console_argument("name", help="name to save the operation under")
+        @context.console_argument("name", help=_("name to save the operation under"))
         @context.console_command(
             "load",
-            help="Load operations from persistent settings",
+            help=_("Load operations from persistent settings"),
             input_type="ops",
             output_type="ops",
         )
@@ -1548,7 +1548,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "select",
-            help="Set these values as the selection.",
+            help=_("Set these values as the selection."),
             input_type="ops",
             output_type="ops",
         )
@@ -1558,7 +1558,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "select+",
-            help="Add the input to the selection",
+            help=_("Add the input to the selection"),
             input_type="ops",
             output_type="ops",
         )
@@ -1570,7 +1570,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "select-",
-            help="Remove the input data from the selection",
+            help=_("Remove the input data from the selection"),
             input_type="ops",
             output_type="ops",
         )
@@ -1586,7 +1586,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "select^",
-            help="Toggle the input data in the selection",
+            help=_("Toggle the input data in the selection"),
             input_type="ops",
             output_type="ops",
         )
@@ -1602,7 +1602,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "list",
-            help="Show information about the chained data",
+            help=_("Show information about the chained data"),
             input_type="ops",
             output_type="ops",
         )
@@ -1653,7 +1653,7 @@ class Elemental(Modifier):
         @context.console_option("passes", "x", type=int)
         @context.console_command(
             ("cut", "engrave", "raster", "imageop", "dots"),
-            help="<cut/engrave/raster/imageop> - group the elements into this operation",
+            help=_("<cut/engrave/raster/imageop> - group the elements into this operation"),
             input_type=(None, "elements"),
             output_type="ops",
         )
@@ -1707,7 +1707,7 @@ class Elemental(Modifier):
 
         @context.console_argument("step_size", type=int, help="raster step size")
         @context.console_command(
-            "step", help="step <raster-step-size>", input_type=("ops", "elements")
+            "step", help=_("step <raster-step-size>"), input_type=("ops", "elements")
         )
         def step(command, channel, _, step_size=None, args=tuple(), **kwargs):
             if step_size is None:
@@ -1768,7 +1768,7 @@ class Elemental(Modifier):
             return data_type, add_elem
 
         @context.console_command(
-            "delete", help="delete elements", input_type=("elements", "ops")
+            "delete", help=_("delete elements"), input_type=("elements", "ops")
         )
         def e_delete(
             command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
@@ -1786,14 +1786,14 @@ class Elemental(Modifier):
 
         @context.console_command(
             "elements",
-            help="show information about elements",
+            help=_("show information about elements"),
         )
         def element(**kwargs):
             context(".element* list\n")
 
         @context.console_command(
             "element*",
-            help="element*, all elements",
+            help=_("element*, all elements"),
             output_type="elements",
         )
         def element(**kwargs):
@@ -1801,7 +1801,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "element~",
-            help="element~, all non-selected elements",
+            help=_("element~, all non-selected elements"),
             output_type="elements",
         )
         def element(**kwargs):
@@ -1817,7 +1817,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             r"element([0-9]+,?)+",
-            help="element0,3,4,5: chain a list of specific elements",
+            help=_("element0,3,4,5: chain a list of specific elements"),
             regex=True,
             output_type="elements",
         )
@@ -1841,7 +1841,7 @@ class Elemental(Modifier):
         # ==========
         @context.console_command(
             "select",
-            help="Set these values as the selection.",
+            help=_("Set these values as the selection."),
             input_type="elements",
             output_type="elements",
         )
@@ -1851,7 +1851,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "select+",
-            help="Add the input to the selection",
+            help=_("Add the input to the selection"),
             input_type="elements",
             output_type="elements",
         )
@@ -1863,7 +1863,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "select-",
-            help="Remove the input data from the selection",
+            help=_("Remove the input data from the selection"),
             input_type="elements",
             output_type="elements",
         )
@@ -1879,7 +1879,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "select^",
-            help="Toggle the input data in the selection",
+            help=_("Toggle the input data in the selection"),
             input_type="elements",
             output_type="elements",
         )
@@ -1895,7 +1895,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "list",
-            help="Show information about the chained data",
+            help=_("Show information about the chained data"),
             input_type="elements",
             output_type="elements",
         )
@@ -1982,7 +1982,7 @@ class Elemental(Modifier):
                     channel(_("Nothing to align."))
                     return
                 for d in data:
-                    channel("Aligning: %s" % str(d))
+                    channel(_("Aligning: %s") % str(d))
             boundary_points = []
             for d in data:
                 boundary_points.append(d.bounds)
@@ -2176,13 +2176,13 @@ class Elemental(Modifier):
                 self.context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument("c", type=int, help="number of columns")
-        @context.console_argument("r", type=int, help="number of rows")
-        @context.console_argument("x", type=Length, help="x distance")
-        @context.console_argument("y", type=Length, help="y distance")
+        @context.console_argument("c", type=int, help=_("number of columns"))
+        @context.console_argument("r", type=int, help=_("number of rows"))
+        @context.console_argument("x", type=Length, help=_("x distance"))
+        @context.console_argument("y", type=Length, help=_("y distance"))
         @context.console_command(
             "grid",
-            help="grid <columns> <rows> <x_distance> <y_distance>",
+            help=_("grid <columns> <rows> <x_distance> <y_distance>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -2237,7 +2237,7 @@ class Elemental(Modifier):
         @context.console_argument("r_pos", type=Length)
         @context.console_command(
             "circle",
-            help="circle <x> <y> <r> or circle <r>",
+            help=_("circle <x> <y> <r> or circle <r>"),
             input_type=("elements", None),
             output_type="elements",
         )
@@ -2268,7 +2268,7 @@ class Elemental(Modifier):
         @context.console_argument("ry_pos", type=Length)
         @context.console_command(
             "ellipse",
-            help="ellipse <cx> <cy> <rx> <ry>",
+            help=_("ellipse <cx> <cy> <rx> <ry>"),
             input_type=("elements", None),
             output_type="elements",
         )
@@ -2291,20 +2291,20 @@ class Elemental(Modifier):
                 return "elements", data
 
         @context.console_argument(
-            "x_pos", type=Length, help="x position for top left corner of rectangle."
+            "x_pos", type=Length, help=_("x position for top left corner of rectangle.")
         )
         @context.console_argument(
             "y_pos", type=Length, help="y position for top left corner of rectangle."
         )
         @context.console_argument("width", type=Length, help="width of the rectangle.")
         @context.console_argument(
-            "height", type=Length, help="height of the rectangle."
+            "height", type=Length, help=_("height of the rectangle.")
         )
-        @context.console_option("rx", "x", type=Length, help="rounded rx corner value.")
-        @context.console_option("ry", "y", type=Length, help="rounded ry corner value.")
+        @context.console_option("rx", "x", type=Length, help=_("rounded rx corner value."))
+        @context.console_option("ry", "y", type=Length, help=_("rounded ry corner value."))
         @context.console_command(
             "rect",
-            help="adds rectangle to scene",
+            help=_("adds rectangle to scene"),
             input_type=("elements", None),
             output_type="elements",
         )
@@ -2339,13 +2339,13 @@ class Elemental(Modifier):
                 data.append(rect)
                 return "elements", data
 
-        @context.console_argument("x0", type=Length, help="start x position")
-        @context.console_argument("y0", type=Length, help="start y position")
-        @context.console_argument("x1", type=Length, help="end x position")
-        @context.console_argument("y1", type=Length, help="end y position")
+        @context.console_argument("x0", type=Length, help=_("start x position"))
+        @context.console_argument("y0", type=Length, help=_("start y position"))
+        @context.console_argument("x1", type=Length, help=_("end x position"))
+        @context.console_argument("y1", type=Length, help=_("end y position"))
         @context.console_command(
             "line",
-            help="adds line to scene",
+            help=_("adds line to scene"),
             input_type=("elements", None),
             output_type="elements",
         )
@@ -2368,13 +2368,13 @@ class Elemental(Modifier):
                 data.append(simple_line)
                 return "elements", data
 
-        @context.console_argument("x0", type=Length, help="start x position")
-        @context.console_argument("y0", type=Length, help="start y position")
-        @context.console_argument("x1", type=Length, help="end x position")
-        @context.console_argument("y1", type=Length, help="end y position")
+        @context.console_argument("x0", type=Length, help=_("start x position"))
+        @context.console_argument("y0", type=Length, help=_("start y position"))
+        @context.console_argument("x1", type=Length, help=_("end x position"))
+        @context.console_argument("y1", type=Length, help=_("end y position"))
         @context.console_command(
             "line",
-            help="adds line to scene",
+            help=_("adds line to scene"),
             input_type=("elements", None),
             output_type="elements",
         )
@@ -2397,7 +2397,7 @@ class Elemental(Modifier):
                 data.append(line)
                 return "elements", data
 
-        @context.console_argument("text", type=str, help="quoted string of text")
+        @context.console_argument("text", type=str, help=_("quoted string of text"))
         @context.console_command(
             "text",
             help="text <text>",
@@ -2424,7 +2424,7 @@ class Elemental(Modifier):
                 element = Polygon(list(map(float, args)))
             except ValueError:
                 raise SyntaxError(
-                    "Must be a list of spaced delimited floating point numbers values."
+                    _("Must be a list of spaced delimited floating point numbers values.")
                 )
             self.add_element(element)
 
@@ -2438,12 +2438,12 @@ class Elemental(Modifier):
                 element = Polyline(list(map(float, args)))
             except ValueError:
                 raise SyntaxError(
-                    "Must be a list of spaced delimited floating point numbers values."
+                    _("Must be a list of spaced delimited floating point numbers values.")
                 )
             self.add_element(element)
 
         @context.console_command(
-            "path", help="convert any shapes to paths", input_type="elements"
+            "path", help=_("convert any shapes to paths"), input_type="elements"
         )
         def path(data, **kwargs):
             for e in data:
@@ -2455,7 +2455,7 @@ class Elemental(Modifier):
                     pass
 
         @context.console_argument(
-            "stroke_width", type=Length, help="Stroke-width for the given stroke"
+            "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
         )
         @context.console_command(
             "stroke-width",
@@ -2501,7 +2501,7 @@ class Elemental(Modifier):
             return "elements", data
 
         @context.console_argument(
-            "color", type=Color, help="Color to color the given stroke"
+            "color", type=Color, help=_("Color to color the given stroke")
         )
         @context.console_command(
             "stroke",
@@ -2548,7 +2548,7 @@ class Elemental(Modifier):
             return "elements", data
 
         @context.console_argument(
-            "color", type=Color, help="color to color the given fill"
+            "color", type=Color, help=_("color to color the given fill")
         )
         @context.console_command(
             "fill",
@@ -2594,7 +2594,7 @@ class Elemental(Modifier):
         @context.console_argument("y_offset", type=Length, help="y offset")
         @context.console_command(
             "outline",
-            help="outline the current selected elements",
+            help=_("outline the current selected elements"),
             input_type=(
                 None,
                 "elements",
@@ -2656,11 +2656,11 @@ class Elemental(Modifier):
             "a",
             type=bool,
             action="store_true",
-            help="angle_to absolute angle",
+            help=_("angle_to absolute angle"),
         )
         @context.console_command(
             "rotate",
-            help="rotate <angle>",
+            help=_("rotate <angle>"),
             input_type=(
                 None,
                 "elements",
@@ -2739,20 +2739,20 @@ class Elemental(Modifier):
             context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument("scale_x", type=float, help="scale_x value")
-        @context.console_argument("scale_y", type=float, help="scale_y value")
-        @context.console_option("px", "x", type=Length, help="scale x origin point")
-        @context.console_option("py", "y", type=Length, help="scale y origin point")
+        @context.console_argument("scale_x", type=float, help=_("scale_x value"))
+        @context.console_argument("scale_y", type=float, help=_("scale_y value"))
+        @context.console_option("px", "x", type=Length, help=_("scale x origin point"))
+        @context.console_option("py", "y", type=Length, help=_("scale y origin point"))
         @context.console_option(
             "absolute",
             "a",
             type=bool,
             action="store_true",
-            help="scale to absolute size",
+            help=_("scale to absolute size"),
         )
         @context.console_command(
             "scale",
-            help="scale <scale> [<scale-y>]?",
+            help=_("scale <scale> [<scale-y>]?"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -2848,14 +2848,14 @@ class Elemental(Modifier):
             context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument("tx", type=Length, help="translate x value")
+        @context.console_argument("tx", type=Length, help=_("translate x value"))
         @context.console_argument("ty", type=Length, help="translate y value")
         @context.console_option(
             "absolute",
             "a",
             type=bool,
             action="store_true",
-            help="translate to absolute position",
+            help=_("translate to absolute position"),
         )
         @context.console_command(
             "translate",
@@ -2930,16 +2930,16 @@ class Elemental(Modifier):
             return "elements", data
 
         @context.console_argument(
-            "x_pos", type=Length, help="x position for top left corner"
+            "x_pos", type=Length, help=_("x position for top left corner")
         )
         @context.console_argument(
-            "y_pos", type=Length, help="y position for top left corner"
+            "y_pos", type=Length, help=_("y position for top left corner")
         )
-        @context.console_argument("width", type=Length, help="new width of selected")
-        @context.console_argument("height", type=Length, help="new height of selected")
+        @context.console_argument("width", type=Length, help=_("new width of selected"))
+        @context.console_argument("height", type=Length, help=_("new height of selected"))
         @context.console_command(
             "resize",
-            help="resize <x-pos> <y-pos> <width> <height>",
+            help=_("resize <x-pos> <y-pos> <width> <height>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -2986,15 +2986,15 @@ class Elemental(Modifier):
             except (ValueError, ZeroDivisionError, TypeError):
                 raise SyntaxError
 
-        @context.console_argument("sx", type=float, help="scale_x value")
-        @context.console_argument("kx", type=float, help="skew_x value")
-        @context.console_argument("sy", type=float, help="scale_y value")
-        @context.console_argument("ky", type=float, help="skew_y value")
-        @context.console_argument("tx", type=Length, help="translate_x value")
-        @context.console_argument("ty", type=Length, help="translate_y value")
+        @context.console_argument("sx", type=float, help=_("scale_x value"))
+        @context.console_argument("kx", type=float, help=_("skew_x value"))
+        @context.console_argument("sy", type=float, help=_("scale_y value"))
+        @context.console_argument("ky", type=float, help=_("skew_y value"))
+        @context.console_argument("tx", type=Length, help=_("translate_x value"))
+        @context.console_argument("ty", type=Length, help=_("translate_y value"))
         @context.console_command(
             "matrix",
-            help="matrix <sx> <kx> <sy> <ky> <tx> <ty>",
+            help=_("matrix <sx> <kx> <sy> <ky> <tx> <ty>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -3057,7 +3057,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "reset",
-            help="reset affine transformations",
+            help=_("reset affine transformations"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -3083,7 +3083,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "reify",
-            help="reify affine transformations",
+            help=_("reify affine transformations"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -3109,7 +3109,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "classify",
-            help="classify elements into operations",
+            help=_("classify elements into operations"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -3141,7 +3141,7 @@ class Elemental(Modifier):
         # TREE BASE
         # ==========
         @context.console_command(
-            "tree", help="access and alter tree elements", output_type="tree"
+            "tree", help=_("access and alter tree elements"), output_type="tree"
         )
         def tree(
             command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
@@ -3149,7 +3149,7 @@ class Elemental(Modifier):
             return "tree", self._tree
 
         @context.console_command(
-            "list", help="view tree", input_type="tree", output_type="tree"
+            "list", help=_("view tree"), input_type="tree", output_type="tree"
         )
         def tree_list(
             command, channel, _, data=None, data_type=None, args=tuple(), **kwargs
@@ -3165,14 +3165,14 @@ class Elemental(Modifier):
             return "tree", data
 
         @context.console_argument(
-            "path_d", type=str, help="svg path syntax command (quoted)."
+            "path_d", type=str, help=_("svg path syntax command (quoted).")
         )
         @context.console_command("path", help="path <svg path>")
         def path(path_d, **kwargs):
             try:
                 self.add_element(Path(path_d))
             except ValueError:
-                raise SyntaxError("Not a valid path_d string (try quotes)")
+                raise SyntaxError(_("Not a valid path_d string (try quotes)"))
 
         # ==========
         # CLIPBOARD COMMANDS
@@ -3212,11 +3212,11 @@ class Elemental(Modifier):
             self._clipboard[destination] = [copy(e) for e in data]
             return "elements", self._clipboard[destination]
 
-        @context.console_option("dx", "x", help="paste offset x", type=Length)
-        @context.console_option("dy", "y", help="paste offset y", type=Length)
+        @context.console_option("dx", "x", help=_("paste offset x"), type=Length)
+        @context.console_option("dy", "y", help=_("paste offset y"), type=Length)
         @context.console_command(
             "paste",
-            help="clipboard paste",
+            help=_("clipboard paste"),
             input_type="clipboard",
             output_type="elements",
         )
@@ -3250,7 +3250,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "cut",
-            help="clipboard cut",
+            help=_("clipboard cut"),
             input_type="clipboard",
             output_type="elements",
         )
@@ -3262,7 +3262,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "clear",
-            help="clipboard clear",
+            help=_("clipboard clear"),
             input_type="clipboard",
             output_type="elements",
         )
@@ -3274,7 +3274,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "contents",
-            help="clipboard contents",
+            help=_("clipboard contents"),
             input_type="clipboard",
             output_type="elements",
         )
@@ -3284,7 +3284,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "list",
-            help="clipboard list",
+            help=_("clipboard list"),
             input_type="clipboard",
         )
         def clipboard_list(command, channel, _, data=None, args=tuple(), **kwargs):
@@ -3298,7 +3298,7 @@ class Elemental(Modifier):
         @context.console_option(
             "append", "a", type=bool, action="store_true", default=False
         )
-        @context.console_command("note", help="note <note>")
+        @context.console_command("note", help=_("note <note>"))
         def note(command, channel, _, append=False, remainder=None, **kwargs):
             note = remainder
             if note is None:
@@ -3318,7 +3318,7 @@ class Elemental(Modifier):
         # TRACE OPERATIONS
         # ==========
         @context.console_command(
-            "trace_hull", help="trace the convex hull of current elements"
+            "trace_hull", help=_("trace the convex hull of current elements")
         )
         def trace_hull(command, channel, _, args=tuple(), **kwargs):
             active = self.context.active
@@ -3353,7 +3353,7 @@ class Elemental(Modifier):
             spooler.job(trace_hull)
 
         @context.console_command(
-            "trace_quick", help="quick trace the bounding box of current elements"
+            "trace_quick", help=_("quick trace the bounding box of current elements")
         )
         def trace_quick(command, channel, _, args=tuple(), **kwargs):
             active = self.context.active
@@ -3456,7 +3456,7 @@ class Elemental(Modifier):
         @self.tree_operation(
             _("Step {i}"),
             node_type="op",
-            help="Change raster step values of operation",
+            help=_("Change raster step values of operation"),
         )
         def set_step_n(node, i=1, **kwargs):
             settings = node.settings
@@ -3479,7 +3479,7 @@ class Elemental(Modifier):
         @self.tree_operation(
             _("Execute Job"),
             node_type="op",
-            help="Execute Job for the particular element.",
+            help=_("Execute Job for the particular element."),
         )
         def execute_job(node, **kwargs):
             # self.context.open("window/ExecuteJob", self.gui, "0", selected=True)
@@ -3491,7 +3491,7 @@ class Elemental(Modifier):
         @self.tree_operation(
             _("Compile and Simulate"),
             node_type="op",
-            help="Compile Job and run simulation",
+            help=_("Compile Job and run simulation"),
         )
         def compile_and_simulate(node, **kwargs):
             node.emphasized = True
@@ -3572,7 +3572,7 @@ class Elemental(Modifier):
         @self.tree_operation(
             _("Reverse Order"),
             node_type=("op", "group", "branch elems", "file", "branch ops"),
-            help="reverse the items within this subitem",
+            help=_("reverse the items within this subitem"),
         )
         def reverse_layer_order(node, **kwargs):
             node.reverse()
@@ -3590,17 +3590,17 @@ class Elemental(Modifier):
             self.context.signal("rebuild_tree", 0)
 
         materials = [
-            "Wood",
-            "Acrylic",
-            "Foam",
-            "Leather",
-            "Cardboard",
-            "Cork",
-            "Textiles",
-            "Paper",
-            "Save-1",
-            "Save-2",
-            "Save-3",
+            _("Wood"),
+            _("Acrylic"),
+            _("Foam"),
+            _("Leather"),
+            _("Cardboard"),
+            _("Cork"),
+            _("Textiles"),
+            _("Paper"),
+            _("Save-1"),
+            _("Save-2"),
+            _("Save-3"),
         ]
 
         def union_materials_saved():
@@ -3700,7 +3700,7 @@ class Elemental(Modifier):
         @self.tree_operation(
             _("Duplicate Operation"),
             node_type="op",
-            help="duplicate operation element nodes",
+            help=_("duplicate operation element nodes"),
         )
         def duplicate_operation(node, **kwargs):
             copy_op = LaserOperation(node)
@@ -3756,7 +3756,7 @@ class Elemental(Modifier):
         @self.tree_operation(
             _("Make Raster Image"),
             node_type="op",
-            help="Convert a vector element into a raster element.",
+            help=_("Convert a vector element into a raster element."),
         )
         def make_raster_image(node, **kwargs):
             context = self.context
@@ -3873,7 +3873,7 @@ class Elemental(Modifier):
         @self.tree_operation(
             _("Merge Items"),
             node_type="group",
-            help="Merge this node's children into 1 path.",
+            help=_("Merge this node's children into 1 path."),
         )
         def merge_elements(node, **kwargs):
             self.context("element merge\n")
@@ -4534,7 +4534,7 @@ class Elemental(Modifier):
         kernel = self.context._kernel
         filetypes = []
         if all:
-            filetypes.append("All valid types")
+            filetypes.append(_("All valid types"))
             exts = []
             for loader_name in kernel.match("load"):
                 loader = kernel.registered[loader_name]

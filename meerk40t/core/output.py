@@ -16,7 +16,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_argument("port", type=int, help="Port of TCPOutput to change.")
         @kernel.console_command(
             "port",
-            help="change the port of the tcpdevice",
+            help=_("change the port of the tcpdevice"),
             input_type="tcpout",
         )
         def tcpport(channel, _, port, data=None, **kwargs):
@@ -196,7 +196,7 @@ class Outputs(Modifier):
         @context.console_option("new", "n", type=str, help="new output type")
         @context.console_command(
             "output",
-            help="output<?> <command>",
+            help=_("output<?> <command>"),
             regex=True,
             input_type=(None, "input", "driver"),
             output_type="output",
@@ -233,7 +233,7 @@ class Outputs(Modifier):
         @context.console_argument("filename")
         @context.console_command(
             "outfile",
-            help="outfile filename",
+            help=_("outfile filename"),
             input_type=(None, "input", "driver"),
             output_type="output",
         )
@@ -260,17 +260,17 @@ class Outputs(Modifier):
                 output.input = input_driver
             return "output", (output, device_name)
 
-        @context.console_argument("address", type=str, help="tcp address")
-        @context.console_argument("port", type=int, help="tcp/ip port")
+        @context.console_argument("address", type=str, help=_("tcp address"))
+        @context.console_argument("port", type=int, help=_("tcp/ip port"))
         @context.console_command(
             "tcp",
-            help="network <address> <port>",
+            help=_("network <address> <port>"),
             input_type=(None, "input", "driver"),
             output_type="output",
         )
         def outtcp(command, channel, _, data=None, address=None, port=None, **kwargs):
             if port is None:
-                raise SyntaxError("No address/port specified")
+                raise SyntaxError(_("No address/port specified"))
             input_driver = None
             if data is None:
                 if len(command) > 6:
@@ -293,7 +293,7 @@ class Outputs(Modifier):
 
         @self.context.console_command(
             "list",
-            help="output<?> list, list current outputs",
+            help=_("output<?> list, list current outputs"),
             input_type="output",
             output_type="output",
         )
@@ -308,7 +308,7 @@ class Outputs(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_command("type", help="list output types", input_type="output")
+        @context.console_command("type", help=_("list output types"), input_type="output")
         def list_type(channel, _, **kwargs):
             channel(_("----------"))
             channel(_("Output types:"))

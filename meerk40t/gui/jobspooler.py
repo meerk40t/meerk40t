@@ -72,20 +72,20 @@ class JobSpooler(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Job Spooler")
+        self.SetTitle(_("Job Spooler"))
         # self.combo_device.SetToolTip("Select the device")
         # self.text_time_laser.SetToolTip("Time Estimate: Lasering Time")
         # self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
         # self.text_time_total.SetToolTip("Time Estimate: Total Time")
         # self.text_time_total_copy.SetToolTip("Time Estimate: Total Time")
-        self.list_job_spool.SetToolTip("List and modify the queued operations")
-        self.list_job_spool.AppendColumn("#", format=wx.LIST_FORMAT_LEFT, width=78)
-        self.list_job_spool.AppendColumn("Name", format=wx.LIST_FORMAT_LEFT, width=143)
-        self.list_job_spool.AppendColumn("Status", format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_spool.AppendColumn("Type", format=wx.LIST_FORMAT_LEFT, width=53)
-        self.list_job_spool.AppendColumn("Speed", format=wx.LIST_FORMAT_LEFT, width=83)
+        self.list_job_spool.SetToolTip(_("List and modify the queued operations"))
+        self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=78)
+        self.list_job_spool.AppendColumn(_("Name"), format=wx.LIST_FORMAT_LEFT, width=143)
+        self.list_job_spool.AppendColumn(_("Status"), format=wx.LIST_FORMAT_LEFT, width=73)
+        self.list_job_spool.AppendColumn(_("Type"), format=wx.LIST_FORMAT_LEFT, width=53)
+        self.list_job_spool.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=83)
         self.list_job_spool.AppendColumn(
-            "Settings", format=wx.LIST_FORMAT_LEFT, width=223
+            _("Settings"), format=wx.LIST_FORMAT_LEFT, width=223
         )
         # end wxGlade
 

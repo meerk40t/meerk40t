@@ -214,7 +214,7 @@ class CameraInterface(MWindow, Job):
 
         @kernel.console_argument("index", type=int)
         @kernel.console_command(
-            "camwin", help="camwin <index>: Open camera window at index"
+            "camwin", help=_("camwin <index>: Open camera window at index")
         )
         def camera_win(command, channel, _, index=None, args=tuple(), **kwargs):
             if index is None:
@@ -426,7 +426,7 @@ class CamInterfaceWidget(Widget):
 
             menu = wx.Menu()
             sub_menu = wx.Menu()
-            center = menu.Append(wx.ID_ANY, "Aspect", "", wx.ITEM_CHECK)
+            center = menu.Append(wx.ID_ANY, _("Aspect"), "", wx.ITEM_CHECK)
             if self.cam.setting.aspect:
                 center.Check(True)
             self.cam.Bind(wx.EVT_MENU, enable_aspect, center)
@@ -583,7 +583,7 @@ class CameraURI(MWindow):
         self.list_uri = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
-        self.button_add = wx.Button(self, wx.ID_ANY, "Add URI")
+        self.button_add = wx.Button(self, wx.ID_ANY, _("Add URI"))
         self.text_uri = wx.TextCtrl(self, wx.ID_ANY, "")
 
         self.__set_properties()

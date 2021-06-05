@@ -14,7 +14,7 @@ class Preferences(MWindow):
         self.text_controller_message = wx.TextCtrl(
             self,
             wx.ID_ANY,
-            "The  input/driver properties of the selected device provides no graphical user interface.",
+            _("The input/driver properties of the selected device provides no graphical user interface."),
             style=wx.TE_CENTRE | wx.TE_MULTILINE | wx.TE_READONLY,
         )
 
@@ -24,7 +24,7 @@ class Preferences(MWindow):
 
     def __set_properties(self):
         # begin wxGlade: Properties.__set_properties
-        self.SetTitle("Properties")
+        self.SetTitle(_("Properties"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)

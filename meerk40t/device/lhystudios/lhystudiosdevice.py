@@ -44,13 +44,13 @@ def plugin(kernel, lifecycle=None):
             "idonotlovemyhouse",
             type=bool,
             action="store_true",
-            help="override one second laser fire pulse duration",
+            help=_("override one second laser fire pulse duration"),
         )
-        @context.console_argument("time", type=float, help="laser fire pulse duration")
+        @context.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @context.console_command(
             "pulse",
             input_type="lhystudios",
-            help="pulse <time>: Pulse the laser in place.",
+            help=_("pulse <time>: Pulse the laser in place."),
         )
         def pulse(
             command, channel, _, time=None, idonotlovemyhouse=False, data=None, **kwargs
@@ -87,11 +87,11 @@ def plugin(kernel, lifecycle=None):
             "d",
             type=bool,
             action="store_true",
-            help="Change speed by this amount.",
+            help=_("Change speed by this amount."),
         )
-        @context.console_argument("speed", type=str, help="Set the driver speed.")
+        @context.console_argument("speed", type=str, help=_("Set the driver speed."))
         @context.console_command(
-            "speed", input_type="lhystudios", help="Set current speed of driver."
+            "speed", input_type="lhystudios", help=_("Set current speed of driver.")
         )
         def speed(
             command,
@@ -126,9 +126,9 @@ def plugin(kernel, lifecycle=None):
             driver.set_speed(s)
             channel(_("Speed set at: %f mm/s") % driver.speed)
 
-        @context.console_argument("ppi", type=int, help="pulses per inch [0-1000]")
+        @context.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
         @context.console_command(
-            "power", input_type="lhystudios", help="Set Driver Power"
+            "power", input_type="lhystudios", help=_("Set Driver Power")
         )
         def power(command, channel, _, data, ppi=None, args=tuple(), **kwargs):
             spooler, driver, output = data
@@ -140,11 +140,11 @@ def plugin(kernel, lifecycle=None):
                 except ValueError:
                     pass
 
-        @context.console_argument("accel", type=int, help="Acceleration amount [1-4]")
+        @context.console_argument("accel", type=int, help=_("Acceleration amount [1-4]"))
         @context.console_command(
             "acceleration",
             input_type="lhystudios",
-            help="Set Driver Acceleration [1-4]",
+            help=_("Set Driver Acceleration [1-4]"),
         )
         def acceleration(channel, _, data=None, accel=None, **kwargs):
             """
@@ -176,7 +176,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "code_update",
             input_type="lhystudios",
-            help="update movement codes for the drivers",
+            help=_("update movement codes for the drivers"),
         )
         def realtime_pause(data=None, **kwargs):
             spooler, driver, output = data
@@ -185,7 +185,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "status",
             input_type="lhystudios",
-            help="abort waiting process on the controller.",
+            help=_("abort waiting process on the controller."),
         )
         def realtime_pause(channel, _, data=None, **kwargs):
             spooler, driver, output = data
@@ -197,7 +197,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "continue",
             input_type="lhystudios",
-            help="abort waiting process on the controller.",
+            help=_("abort waiting process on the controller."),
         )
         def realtime_pause(data=None, **kwargs):
             spooler, driver, output = data
@@ -206,7 +206,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "pause",
             input_type="lhystudios",
-            help="realtime pause/resume of the machine",
+            help=_("realtime pause/resume of the machine"),
         )
         def realtime_pause(data=None, **kwargs):
             spooler, driver, output = data
@@ -216,23 +216,23 @@ def plugin(kernel, lifecycle=None):
                 driver.pause()
 
         @context.console_command(
-            ("estop", "abort"), input_type="lhystudios", help="Abort Job"
+            ("estop", "abort"), input_type="lhystudios", help=_("Abort Job")
         )
         def pipe_abort(channel, _, data=None, **kwargs):
             spooler, driver, output = data
             driver.reset()
-            channel("Lhystudios Channel Aborted.")
+            channel(_("Lhystudios Channel Aborted."))
 
         @context.console_argument(
-            "rapid_x", type=float, help="limit x speed for rapid."
+            "rapid_x", type=float, help=_("limit x speed for rapid.")
         )
         @context.console_argument(
-            "rapid_y", type=float, help="limit y speed for rapid."
+            "rapid_y", type=float, help=_("limit y speed for rapid.")
         )
         @context.console_command(
             "rapid_override",
             input_type="lhystudios",
-            help="limit speed of typical rapid moves.",
+            help=_("limit speed of typical rapid moves."),
         )
         def rapid_override(channel, _, data=None, rapid_x=None, rapid_y=None, **kwargs):
             spooler, driver, output = data
@@ -254,7 +254,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "egv_import",
             input_type="lhystudios",
-            help="Lhystudios Engrave Buffer Import. egv_import <egv_file>",
+            help=_("Lhystudios Engrave Buffer Import. egv_import <egv_file>"),
         )
         def egv_import(filename, data=None, **kwargs):
             spooler, driver, output = data
@@ -291,7 +291,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "egv_export",
             input_type="lhystudios",
-            help="Lhystudios Engrave Buffer Export. egv_export <egv_file>",
+            help=_("Lhystudios Engrave Buffer Export. egv_export <egv_file>"),
         )
         def egv_export(channel, _, filename, data=None, **kwargs):
             spooler, driver, output = data
@@ -317,7 +317,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "egv",
             input_type="lhystudios",
-            help="Lhystudios Engrave Code Sender. egv <lhymicro-gl>",
+            help=_("Lhystudios Engrave Code Sender. egv <lhymicro-gl>"),
         )
         def egv(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
@@ -327,16 +327,16 @@ def plugin(kernel, lifecycle=None):
                 output.write(bytes(args[0].replace("$", "\n"), "utf8"))
 
         @context.console_command(
-            "start", input_type="lhystudios", help="Start Pipe to Controller"
+            "start", input_type="lhystudios", help=_("Start Pipe to Controller")
         )
         def pipe_start(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
-            channel("Lhystudios Channel Started.")
+            channel(_("Lhystudios Channel Started."))
 
         @context.console_command(
-            "hold", input_type="lhystudios", help="Hold Controller"
+            "hold", input_type="lhystudios", help=_("Hold Controller")
         )
         def pipe_pause(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
@@ -345,42 +345,42 @@ def plugin(kernel, lifecycle=None):
             channel("Lhystudios Channel Paused.")
 
         @context.console_command(
-            "resume", input_type="lhystudios", help="Resume Controller"
+            "resume", input_type="lhystudios", help=_("Resume Controller")
         )
         def pipe_resume(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
-            channel("Lhystudios Channel Resumed.")
+            channel(_("Lhystudios Channel Resumed."))
 
         @context.console_command(
-            "usb_connect", input_type="lhystudios", help="Connects USB"
+            "usb_connect", input_type="lhystudios", help=_("Connects USB")
         )
         def usb_connect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.open()
-            channel("CH341 Opened.")
+            channel(_("CH341 Opened."))
 
         @context.console_command(
-            "usb_disconnect", input_type="lhystudios", help="Disconnects USB"
+            "usb_disconnect", input_type="lhystudios", help=_("Disconnects USB")
         )
         def usb_disconnect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.close()
-            channel("CH341 Closed.")
+            channel(_("CH341 Closed."))
 
         @kernel.console_option(
-            "port", "p", type=int, default=23, help="port to listen on."
+            "port", "p", type=int, default=23, help=_("port to listen on.")
         )
         @kernel.console_option(
             "silent",
             "s",
             type=bool,
             action="store_true",
-            help="do not watch server channels",
+            help=_("do not watch server channels"),
         )
         @kernel.console_option(
-            "watch", "w", type=bool, action="store_true", help="watch send/recv data"
+            "watch", "w", type=bool, action="store_true", help=_("watch send/recv data")
         )
         @kernel.console_option(
             "quit",
@@ -389,7 +389,7 @@ def plugin(kernel, lifecycle=None):
             action="store_true",
             help="shutdown current lhyserver",
         )
-        @kernel.console_command("lhyserver", help="activate the lhyserver.")
+        @kernel.console_command("lhyserver", help=_("activate the lhyserver."))
         def lhyserver(
             channel, _, port=23, silent=False, watch=False, quit=False, **kwargs
         ):
@@ -418,7 +418,7 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Server cannot be attached to any device."))
             return
 
-        @kernel.console_command("lhyemulator", help="activate the lhyemulator.")
+        @kernel.console_command("lhyemulator", help=_("activate the lhyemulator."))
         def lhyemulator(channel, _, **kwargs):
             root = kernel.root
             name = root.active

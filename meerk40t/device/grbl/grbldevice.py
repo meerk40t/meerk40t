@@ -27,29 +27,29 @@ def plugin(kernel, lifecycle=None):
         kernel.register("load/GCodeLoader", GCodeLoader)
 
         @kernel.console_option(
-            "grbl", type=int, help="run grbl-emulator on given port."
+            "grbl", type=int, help=_("run grbl-emulator on given port.")
         )
         @kernel.console_option(
-            "flip_x", "X", type=bool, action="store_true", help="grbl x-flip"
+            "flip_x", "X", type=bool, action="store_true", help=_("grbl x-flip")
         )
         @kernel.console_option(
-            "flip_y", "Y", type=bool, action="store_true", help="grbl y-flip"
+            "flip_y", "Y", type=bool, action="store_true", help=_("grbl y-flip")
         )
         @kernel.console_option(
-            "adjust_x", "x", type=int, help="adjust grbl home_x position"
+            "adjust_x", "x", type=int, help=_("adjust grbl home_x position")
         )
         @kernel.console_option(
-            "adjust_y", "y", type=int, help="adjust grbl home_y position"
+            "adjust_y", "y", type=int, help=_("adjust grbl home_y position")
         )
         @kernel.console_option(
-            "port", "p", type=int, default=23, help="port to listen on."
+            "port", "p", type=int, default=23, help=_("port to listen on.")
         )
         @kernel.console_option(
             "silent",
             "s",
             type=bool,
             action="store_true",
-            help="do not watch server channels",
+            help=_("do not watch server channels"),
         )
         @kernel.console_option(
             "watch", "w", type=bool, action="store_true", help="watch send/recv data"
@@ -61,7 +61,7 @@ def plugin(kernel, lifecycle=None):
             action="store_true",
             help="shutdown current lhyserver",
         )
-        @kernel.console_command("grblserver", help="activate the grblserver.")
+        @kernel.console_command("grblserver", help=_("activate the grblserver."))
         def grblserver(
             command,
             channel,

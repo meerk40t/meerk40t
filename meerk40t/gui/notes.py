@@ -43,7 +43,7 @@ class Notes(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Notes")
+        self.SetTitle(_("Notes"))
         self.check_auto_open_notes.SetToolTip(
             _("Automatically open notes if they exist when file is opened.")
         )

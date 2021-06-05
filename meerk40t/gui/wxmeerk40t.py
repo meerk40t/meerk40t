@@ -445,13 +445,13 @@ class MeerK40t(MWindow):
             .MinSize(174, 230)
             .FloatingSize(174, 230)
             .MaxSize(300, 300)
-            .Caption("Jog")
+            .Caption(_("Jog"))
             .Name("jog")
             .CaptionVisible(self.context.pane_lock)
         )
         pane.dock_proportion = 3
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/jog", pane)
@@ -464,14 +464,14 @@ class MeerK40t(MWindow):
             .MinSize(174, 230)
             .FloatingSize(174, 230)
             .MaxSize(300, 300)
-            .Caption("Drag")
+            .Caption(_("Drag"))
             .Name("drag")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 3
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/drag", pane)
@@ -484,14 +484,14 @@ class MeerK40t(MWindow):
             .MinSize(174, 220)
             .FloatingSize(174, 220)
             .MaxSize(300, 300)
-            .Caption("Transform")
+            .Caption(_("Transform"))
             .Name("transform")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 3
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/transform", pane)
@@ -504,13 +504,13 @@ class MeerK40t(MWindow):
             .MinSize(200, 130)
             .FloatingSize(200, 130)
             .Hide()
-            .Caption("Distances")
+            .Caption(_("Distances"))
             .CaptionVisible(self.context.pane_lock)
             .Name("jogdist")
         )
         pane.dock_proportion = 1
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/jogdist", pane)
@@ -524,13 +524,13 @@ class MeerK40t(MWindow):
             .FloatingSize(150, 75)
             .MaxSize(200, 100)
             .Hide()
-            .Caption("Pulse")
+            .Caption(_("Pulse"))
             .CaptionVisible(self.context.pane_lock)
             .Name("pulse")
         )
         pane.dock_proportion = 1
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/pulse", pane)
@@ -543,13 +543,13 @@ class MeerK40t(MWindow):
             .MinSize(150, 75)
             .FloatingSize(150, 75)
             .MaxSize(200, 100)
-            .Caption("Move")
+            .Caption(_("Move"))
             .CaptionVisible(self.context.pane_lock)
             .Name("move")
         )
         pane.dock_proportion = 1
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/move", pane)
@@ -563,7 +563,7 @@ class MeerK40t(MWindow):
             .LeftDockable()
             .RightDockable()
             .BottomDockable(False)
-            .Caption("Tree")
+            .Caption(_("Tree"))
             .CaptionVisible(self.context.pane_lock)
             .TopDockable(False)
         )
@@ -577,7 +577,7 @@ class MeerK40t(MWindow):
             .Left()
             .MinSize(225, 120)
             .FloatingSize(225, 120)
-            .Caption("Position")
+            .Caption(_("Position"))
             .CaptionVisible(self.context.pane_lock)
             .Name("position")
         )
@@ -595,7 +595,7 @@ class MeerK40t(MWindow):
             .LeftDockable(False)
             .MinSize(300, 120)
             .FloatingSize(640, 120)
-            .Caption("Ribbon")
+            .Caption(_("Ribbon"))
             .CaptionVisible(self.context.pane_lock)
         )
         pane.dock_proportion = 8
@@ -614,13 +614,13 @@ class MeerK40t(MWindow):
             .MaxSize(430, 58)
             .FloatingSize(430, 58)
             .Layer(1)
-            .Caption("Project")
+            .Caption(_("Project"))
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 7
         pane.control = ProjectTools(self, wx.ID_ANY, context=self.context, gui=self)
-        pane.submenu = "Toolbars"
+        pane.submenu = _("Toolbars")
         self.on_pane_add(pane)
         self.context.register("pane/project_toolbar", pane)
 
@@ -634,13 +634,13 @@ class MeerK40t(MWindow):
             .MaxSize(230, 58)
             .FloatingSize(230, 58)
             .Layer(1)
-            .Caption("Control")
+            .Caption(_("Control"))
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 4
         pane.control = ControlTools(self, wx.ID_ANY, context=self.context, gui=self)
-        pane.submenu = "Toolbars"
+        pane.submenu = _("Toolbars")
         self.on_pane_add(pane)
         self.context.register("pane/control_toolbar", pane)
 
@@ -654,13 +654,13 @@ class MeerK40t(MWindow):
             .MaxSize(290, 58)
             .FloatingSize(290, 58)
             .Layer(1)
-            .Caption("Preferences")
+            .Caption(_("Preferences"))
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 5
         pane.control = PreferencesTools(self, wx.ID_ANY, context=self.context, gui=self)
-        pane.submenu = "Toolbars"
+        pane.submenu = _("Toolbars")
         self.on_pane_add(pane)
         self.context.register("pane/preferences_toolbar", pane)
 
@@ -706,7 +706,7 @@ class MeerK40t(MWindow):
         pause.SetSize(pause.GetBestSize())
         pane = (
             aui.AuiPaneInfo()
-            .Caption("Pause")
+            .Caption(_("Pause"))
             .Bottom()
             .Name("pause")
             .CaptionVisible(self.context.pane_lock)
@@ -723,7 +723,7 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
             .Bottom()
-            .Caption("Home")
+            .Caption(_("Home"))
             .Name("home")
             .CaptionVisible(self.context.pane_lock)
         )
@@ -740,7 +740,7 @@ class MeerK40t(MWindow):
             .MinSize(170, 230)
             .FloatingSize(170, 230)
             .MaxSize(300, 300)
-            .Caption("Notes")
+            .Caption(_("Notes"))
             .CaptionVisible(self.context.pane_lock)
             .Name("notes")
             .Hide()
@@ -759,7 +759,7 @@ class MeerK40t(MWindow):
             .Layer(1)
             .MinSize(600, 100)
             .FloatingSize(600, 230)
-            .Caption("Spooler")
+            .Caption(_("Spooler"))
             .Name("spooler")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
@@ -778,7 +778,7 @@ class MeerK40t(MWindow):
             .Layer(2)
             .MinSize(600, 100)
             .FloatingSize(600, 230)
-            .Caption("Console")
+            .Caption(_("Console"))
             .Name("console")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
@@ -797,7 +797,7 @@ class MeerK40t(MWindow):
             .Layer(2)
             .MinSize(600, 100)
             .FloatingSize(600, 230)
-            .Caption("Devices")
+            .Caption(_("Devices"))
             .Name("devices")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
@@ -979,15 +979,15 @@ class MeerK40t(MWindow):
         context.register("control/egv export", self.egv_export)
         context.register("control/egv import", self.egv_import)
 
-        @context.console_command("theme", help="Theming information and assignments")
+        @context.console_command("theme", help=_("Theming information and assignments"))
         def theme(command, channel, _, args=tuple(), **kwargs):
             channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
 
-        @context.console_command("rotaryview", help="Rotary View of Scene")
+        @context.console_command("rotaryview", help=_("Rotary View of Scene"))
         def toggle_rotary_view(*args, **kwargs):
             self.toggle_rotary_view()
 
-        @context.console_command("rotaryscale", help="Rotary Scale selected elements")
+        @context.console_command("rotaryscale", help=_("Rotary Scale selected elements"))
         def apply_rotary_scale(*args, **kwargs):
             self.apply_rotary_scale()
 
@@ -1034,8 +1034,8 @@ class MeerK40t(MWindow):
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
 
-        @context.console_argument("tool", help="tool to use.")
-        @context.console_command("tool", help="sets a particular tool for the scene")
+        @context.console_argument("tool", help=_("tool to use."))
+        @context.console_command("tool", help=_("sets a particular tool for the scene"))
         def tool(command, channel, _, tool=None, **kwargs):
             if tool is None:
                 channel(_("Tools:"))
@@ -1613,11 +1613,11 @@ class MeerK40t(MWindow):
 
     def on_camera_dropdown(self, event):
         menu = wx.Menu()
-        menu.Append(ID_CAMERA1, "Camera %d" % 1)
-        menu.Append(ID_CAMERA2, "Camera %d" % 2)
-        menu.Append(ID_CAMERA3, "Camera %d" % 3)
-        menu.Append(ID_CAMERA4, "Camera %d" % 4)
-        menu.Append(ID_CAMERA5, "Camera %d" % 5)
+        menu.Append(ID_CAMERA1, _("Camera %d") % 1)
+        menu.Append(ID_CAMERA2, _("Camera %d") % 2)
+        menu.Append(ID_CAMERA3, _("Camera %d") % 3)
+        menu.Append(ID_CAMERA4, _("Camera %d") % 4)
+        menu.Append(ID_CAMERA5, _("Camera %d") % 5)
         event.PopupMenu(menu)
 
     def on_camera_click(self, event):
@@ -1839,7 +1839,7 @@ class MeerK40t(MWindow):
 
         if platform == "darwin":
             wt_menu = wx.Menu()
-            self.main_menubar.Append(wt_menu, "Window")
+            self.main_menubar.Append(wt_menu, _("Window"))
 
         # ==========
         # HELP MENU
@@ -2813,7 +2813,7 @@ class MeerK40t(MWindow):
         files = self.context.save_types()
         with wx.FileDialog(
             self,
-            "Save Project",
+            _("Save Project"),
             wildcard=files,
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
         ) as fileDialog:
@@ -4026,10 +4026,10 @@ class wxMeerK40t(wx.App, Module):
             "p",
             type=str,
             default="/",
-            help="Context Path at which to open the window",
+            help=_("Context Path at which to open the window"),
         )
         @kernel.console_command(
-            "window", output_type="window", help="Base window command"
+            "window", output_type="window", help=_("Base window command")
         )
         def window(channel, _, path=None, remainder=None, **kwargs):
             """
@@ -4067,7 +4067,7 @@ class wxMeerK40t(wx.App, Module):
             "list",
             input_type="window",
             output_type="window",
-            help="List available windows.",
+            help=_("List available windows."),
         )
         def window(channel, _, data, **kwargs):
             channel(_("----------"))
@@ -4085,27 +4085,27 @@ class wxMeerK40t(wx.App, Module):
             "d",
             type=bool,
             action="store_true",
-            help="Load Driver Specific Window",
+            help=_("Load Driver Specific Window"),
         )
         @kernel.console_option(
             "output",
             "o",
             type=bool,
             action="store_true",
-            help="Load Output Specific Window",
+            help=_("Load Output Specific Window"),
         )
         @kernel.console_option(
             "input",
             "i",
             type=bool,
             action="store_true",
-            help="Load Source Specific Window",
+            help=_("Load Source Specific Window"),
         )
-        @kernel.console_argument("window", type=str, help="window to be opened")
+        @kernel.console_argument("window", type=str, help=_("window to be opened"))
         @kernel.console_command(
             ("open", "toggle"),
             input_type="window",
-            help="open/toggle the supplied window",
+            help=_("open/toggle the supplied window"),
         )
         def window(
             command,
@@ -4211,7 +4211,7 @@ class wxMeerK40t(wx.App, Module):
                         del kernel.contexts[context]
                 kernel._config.DeleteGroup("window")
 
-        @kernel.console_command("refresh", help="Refresh the main wxMeerK40 window")
+        @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def refresh(command, channel, _, args=tuple(), **kwargs):
             context.signal("refresh_scene")
             context.signal("rebuild_tree")
@@ -4337,12 +4337,10 @@ def send_file_to_developers(filename):
         MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
-            _(
-                "We're sorry, that didn't work. Raise an issue on the github please.\n\n The log file will be in your working directory.\n"
+                _("We're sorry, that didn't work. Raise an issue on the github please.\n\n The log file will be in your working directory.\n")
                 + MEERK40T_ISSUES
                 + "\n\n"
-                + str(http_code)
-            ),
+                + str(http_code),
             _("Thanks"),
             wx.OK,
         )
@@ -4383,14 +4381,14 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    message = """
+    message = _("""
     Good news MeerK40t User! MeerK40t encountered an crash!
 
     You now have the ability to help meerk40t's development by sending us the log.
 
     Send the following data to the MeerK40t team?
     ------
-    """
+    """)
     message += error_log
     answer = wx.MessageBox(
         message, _("Crash Detected! Send Log?"), wx.YES_NO | wx.CANCEL, None

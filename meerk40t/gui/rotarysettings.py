@@ -64,7 +64,7 @@ class RotarySettings(MWindow):
         _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: RotarySettings.__set_properties
-        self.SetTitle("RotarySettings")
+        self.SetTitle(_("RotarySettings"))
         self.checkbox_rotary.SetFont(
             wx.Font(
                 12,

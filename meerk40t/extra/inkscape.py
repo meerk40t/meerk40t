@@ -8,7 +8,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "load",
-            help="load processed file",
+            help=_("load processed file"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -22,7 +22,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "simplify",
-            help="simplify path",
+            help=_("simplify path"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -43,7 +43,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "text2path",
-            help="text to path",
+            help=_("text to path"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -64,10 +64,10 @@ def plugin(kernel, lifecycle):
             channel(c.stdout)
             return "inkscape", (inkscape_path, "temp.svg")
 
-        @kernel.console_option("dpi", "d", type=int, help="dpi to use", default=1000)
-        @kernel.console_option("step", "s", type=int, help="step to use")
+        @kernel.console_option("dpi", "d", type=int, help=_("dpi to use"), default=1000)
+        @kernel.console_option("step", "s", type=int, help=_("step to use"))
         @kernel.console_command(
-            "makepng", help="make png", input_type="inkscape", output_type="inkscape"
+            "makepng", help=_("make png"), input_type="inkscape", output_type="inkscape"
         )
         def png(channel, _, dpi=1000, step=None, data=None, **kwargs):
             if step is not None and step > 0:
@@ -93,7 +93,7 @@ def plugin(kernel, lifecycle):
             return "inkscape", (inkscape_path, "temp.png")
 
         @kernel.console_argument(
-            "filename", type=str, help="filename of svg to be simplified"
+            "filename", type=str, help=_("filename of svg to be simplified")
         )
         @kernel.console_command(
             "input",
@@ -112,7 +112,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "version",
-            help="determine inkscape version",
+            help=_("determine inkscape version"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -127,7 +127,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "locate",
-            help="find inkscape",
+            help=_("Locate the inkscape program on your computer"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -162,7 +162,7 @@ def plugin(kernel, lifecycle):
                     result = _("Success")
                 else:
                     result = _("Fail")
-                channel("Searching: %s -- Result: %s" % (ink, result))
+                channel(_("Searching: %s -- Result: %s") % (ink, result))
             channel(_("----------"))
             if match is None:
                 raise ModuleNotFoundError
@@ -173,7 +173,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "inkscape",
-            help="perform a special inkscape function",
+            help=_("perform a special inkscape function"),
             output_type="inkscape",
         )
         def inkscape(channel, _, **kwargs):

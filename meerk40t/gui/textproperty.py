@@ -115,7 +115,7 @@ class TextProperty(MWindow):
         _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: TextProperty.__set_properties
-        self.SetTitle("Text Properties")
+        self.SetTitle(_("Text Properties"))
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
         self.button_stroke_none.SetToolTip(_('"none" defined value'))
         self.button_stroke_F00.SetBackgroundColour(wx.Colour(255, 0, 0))

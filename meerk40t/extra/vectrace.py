@@ -6,7 +6,7 @@ def plugin(kernel, lifecycle=None):
 
         @kernel.console_command(
             "vectrace",
-            help="return paths around image",
+            help=_("return paths around image"),
             input_type="image",
             output_type="elements",
         )

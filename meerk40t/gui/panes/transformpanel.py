@@ -99,17 +99,17 @@ class Transform(wx.Panel):
         self.button_translate_down.SetToolTip(_("Translate Bottom"))
         self.button_rotate_cw.SetToolTip(_("Rotate Clockwise"))
         self.text_a.SetMinSize((58, 23))
-        self.text_a.SetToolTip("Transform: Scale X")
+        self.text_a.SetToolTip(_("Transform: Scale X"))
         self.text_c.SetMinSize((58, 23))
-        self.text_c.SetToolTip("Transform: Skew Y")
+        self.text_c.SetToolTip(_("Transform: Skew Y"))
         self.text_e.SetMinSize((58, 23))
-        self.text_e.SetToolTip("Transform: Translate X")
+        self.text_e.SetToolTip(_("Transform: Translate X"))
         self.text_b.SetMinSize((58, 23))
-        self.text_b.SetToolTip("Transform: Skew X")
+        self.text_b.SetToolTip(_("Transform: Skew X"))
         self.text_d.SetMinSize((58, 23))
-        self.text_d.SetToolTip("Transform: Scale Y")
+        self.text_d.SetToolTip(_("Transform: Scale Y"))
         self.text_f.SetMinSize((58, 23))
-        self.text_f.SetToolTip("Transform: Translate Y")
+        self.text_f.SetToolTip(_("Transform: Translate Y"))
         # end wxGlade
 
     def __do_layout(self):

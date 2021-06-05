@@ -49,7 +49,7 @@ class DeviceManager(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Device Manager")
+        self.SetTitle(_("Device Manager"))
         self.devices_list.SetFont(
             wx.Font(
                 13,
@@ -60,18 +60,18 @@ class DeviceManager(MWindow):
                 "Segoe UI",
             )
         )
-        self.devices_list.AppendColumn("Index", format=wx.LIST_FORMAT_LEFT, width=56)
-        self.devices_list.AppendColumn("Spooler", format=wx.LIST_FORMAT_LEFT, width=74)
+        self.devices_list.AppendColumn(_("Index"), format=wx.LIST_FORMAT_LEFT, width=56)
+        self.devices_list.AppendColumn(_("Spooler"), format=wx.LIST_FORMAT_LEFT, width=74)
         self.devices_list.AppendColumn(
-            "Driver/Input", format=wx.LIST_FORMAT_LEFT, width=170
+            _("Driver/Input"), format=wx.LIST_FORMAT_LEFT, width=170
         )
-        self.devices_list.AppendColumn("Output", format=wx.LIST_FORMAT_LEFT, width=170)
+        self.devices_list.AppendColumn(_("Output"), format=wx.LIST_FORMAT_LEFT, width=170)
         self.devices_list.AppendColumn(
-            "Registered", format=wx.LIST_FORMAT_LEFT, width=93
+            _("Registered"), format=wx.LIST_FORMAT_LEFT, width=93
         )
-        self.new_device_button.SetToolTip("Add a new device")
+        self.new_device_button.SetToolTip(_("Add a new device"))
         self.new_device_button.SetSize(self.new_device_button.GetBestSize())
-        self.remove_device_button.SetToolTip("Remove selected device")
+        self.remove_device_button.SetToolTip(_("Remove selected device"))
         self.remove_device_button.SetSize(self.remove_device_button.GetBestSize())
         # end wxGlade
 

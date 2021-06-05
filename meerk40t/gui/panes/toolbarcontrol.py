@@ -69,7 +69,7 @@ class ControlToolBar(wx.ToolBar):
             icons8_move_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens new project",
+            _("Opens new project"),
             "",
         )
         self.Bind(
@@ -84,7 +84,7 @@ class ControlToolBar(wx.ToolBar):
                 icons8_camera_50.GetBitmap(),
                 wx.NullBitmap,
                 wx.ITEM_NORMAL,
-                "Opens Camera Window",
+                _("Opens Camera Window"),
                 "",
             )
             self.Bind(wx.EVT_TOOL, gui.on_camera_click, id=ID_CAMERA)
@@ -105,7 +105,7 @@ class ControlToolBar(wx.ToolBar):
             icons8_route_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens Spooler Window",
+            _("Opens Spooler Window"),
             "",
         )
         self.Bind(
@@ -119,7 +119,7 @@ class ControlToolBar(wx.ToolBar):
             icons8_connected_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens Controller Window",
+            _("Opens Controller Window"),
             "",
         )
         self.Bind(
@@ -134,7 +134,7 @@ class ControlToolBar(wx.ToolBar):
     def __set_properties(self):
         # begin wxGlade: wxToolBar.__set_properties
         self.Realize()
-        self.SetLabel("Control")
+        self.SetLabel(_("Control"))
         # end wxGlade
 
     def __do_layout(self):
