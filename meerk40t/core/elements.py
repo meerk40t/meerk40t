@@ -1038,7 +1038,7 @@ class CutNode(Node):
     def __len__(self):
         return 1
 
-    def as_blob(self):
+    def as_blob(self, cut_inner_first=None):
         return self.object
 
 
@@ -1073,6 +1073,40 @@ class CommandOperation(Node):
         yield (self.command,) + self.args
 
 
+class LaserCodeNode(Node):
+    """
+    LaserCode is basic command operations. It contains nothing except a list of commands to be executed.
+
+    Node type "lasercode"
+    """
+
+    def __init__(self, commands, **kwargs):
+        super().__init__(commands, type="lasercode")
+        if 'name' in kwargs:
+            self.name = kwargs['name']
+        else:
+            self.name = "LaserCode"
+        self.commands = commands
+        self.output = True
+        self.operation = "LaserCode"
+
+    def __repr__(self):
+        return "LaserCode('%s', '%s')" % (self.name, str(self.commands))
+
+    def __str__(self):
+        return "LaserCode: %s, %s commands" % (self.name, str(len(self.commands)))
+
+    def __copy__(self):
+        return LaserCodeNode(self.commands, name=self.name)
+
+    def __len__(self):
+        return len(self.commands)
+
+    def generate(self):
+        for cmd in self.commands:
+            yield cmd
+
+
 class RootNode(Node):
     """
     RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
@@ -1092,6 +1126,7 @@ class RootNode(Node):
         self.bootstrap = {
             "op": LaserOperation,
             "cmdop": CommandOperation,
+            "lasercode": LaserCodeNode,
             "elem": ElemNode,
             "opnode": OpNode,
             "cutcode": CutNode,
@@ -3476,12 +3511,35 @@ class Elemental(Modifier):
 
         @self.tree_operation(
             _("Remove: {name}"),
-            node_type=("op", "elem", "cmdop", "file", "group", "opnode"),
+            node_type=("op", "elem", "cmdop", "file", "group", "opnode", "lasercode", "cutcode"),
             help="",
         )
         def remove_type_op(node, **kwargs):
             node.remove_node()
             self.set_emphasis(None)
+
+        @self.tree_operation(
+            _("Convert to Cutcode"),
+            node_type="lasercode",
+            help="",
+        )
+        def lasercode2cut(node, **kwargs):
+            node.replace_node(CutCode.from_lasercode(node.object), type="cutcode")
+
+        @self.tree_operation(
+            _("Convert to Path"),
+            node_type="cutcode",
+            help="",
+        )
+        def cutcode2pathcut(node, **kwargs):
+            cutcode = node.object
+            elements = cutcode.as_elements()
+            n = None
+            for element in elements:
+                n = self.elem_branch.add(element, type="elem")
+            node.remove_node()
+            if n is not None:
+                n.focus()
 
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))

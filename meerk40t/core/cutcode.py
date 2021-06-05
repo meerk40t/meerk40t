@@ -13,7 +13,8 @@ from meerk40t.tools.rasterplotter import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
+from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START, COMMAND_MOVE, COMMAND_HOME, COMMAND_CUT, \
+    lasercode_string, COMMAND_SET_ABSOLUTE, COMMAND_MODE_PROGRAM, COMMAND_MODE_RAPID, COMMAND_SET_INCREMENTAL
 from ..svgelements import Color, Group, Path, Point, Polygon
 from ..tools.pathtools import VectorMontonizer
 
@@ -284,7 +285,8 @@ class CutCode(CutGroup):
             settings = e.settings
             if path is None:
                 path = Path()
-                path.stroke = Color(settings.line_color)
+                c = settings.line_color if settings.line_color is not None else "blue"
+                path.stroke = Color(c)
 
             if len(path) == 0 or last.x != start.x or last.y != start.y:
                 path.move(e.start())
@@ -526,6 +528,56 @@ class CutCode(CutGroup):
             if not outer_path.vm.is_point_inside(p.x, p.y):
                 return False
         return True
+
+    @classmethod
+    def from_lasercode(cls, lasercode):
+        cutcode = cls()
+        x = 0
+        y = 0
+        relative = False
+        settings = LaserSettings()
+        for code in lasercode:
+            if isinstance(code, int):
+                cmd = code
+            elif isinstance(code, (tuple, list)):
+                cmd = code[0]
+            else:
+                continue
+            # print(lasercode_string(cmd))
+            if cmd == COMMAND_PLOT:
+                cutcode.extend(code[1])
+            elif cmd == COMMAND_SET_ABSOLUTE:
+                pass
+            elif cmd == COMMAND_SET_INCREMENTAL:
+                pass
+            elif cmd == COMMAND_MODE_PROGRAM:
+                pass
+            elif cmd == COMMAND_MODE_RAPID:
+                pass
+            elif cmd == COMMAND_MOVE:
+                nx = code[1]
+                ny = code[2]
+                if relative:
+                    nx = x + nx
+                    ny = y + ny
+                cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
+                cutcode.append(cut)
+                x = nx
+                y = ny
+            elif cmd == COMMAND_HOME:
+                x = 0
+                y = 0
+            elif cmd == COMMAND_CUT:
+                nx = code[1]
+                ny = code[2]
+                if relative:
+                    nx = x + nx
+                    ny = y + ny
+                cut = LineCut((x, y), (nx, ny), settings=settings)
+                cutcode.append(cut)
+                x = nx
+                y = ny
+        return cutcode
 
 
 class LineCut(CutObject):
