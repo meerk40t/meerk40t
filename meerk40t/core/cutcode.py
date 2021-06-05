@@ -560,8 +560,6 @@ class CutCode(CutGroup):
                 if relative:
                     nx = x + nx
                     ny = y + ny
-                cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
-                cutcode.append(cut)
                 x = nx
                 y = ny
             elif cmd == COMMAND_HOME:
@@ -573,7 +571,7 @@ class CutCode(CutGroup):
                 if relative:
                     nx = x + nx
                     ny = y + ny
-                cut = LineCut((x, y), (nx, ny), settings=settings)
+                cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
                 cutcode.append(cut)
                 x = nx
                 y = ny
