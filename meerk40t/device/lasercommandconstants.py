@@ -73,3 +73,110 @@ REALTIME_LASER_DISABLE = 1100  # Disables the laser.
 REALTIME_LASER_ENABLE = 1101  # Enables the laser.
 REALTIME_FLOOD_COOLANT = 1210  # Toggle flood coolant
 REALTIME_MIST_COOLANT = 1220  # Toggle mist coolant.
+
+
+def lasercode_string(code):
+    if code == COMMAND_LASER_OFF:
+        return "COMMAND_LASER_OFF"  # Turns laser off
+    if code == COMMAND_LASER_ON:
+        return "COMMAND_LASER_ON"  # Turns laser on
+    if code == COMMAND_LASER_DISABLE:
+        return "COMMAND_LASER_DISABLE"  # Disables the laser
+    if code == COMMAND_LASER_ENABLE:
+        return "COMMAND_LASER_ENABLE"  # Enables the laser
+    if code == COMMAND_MOVE:
+        return "COMMAND_MOVE"  # Performs a line move
+    if code == COMMAND_CUT:
+        return "COMMAND_CUT"  # Performs a line cut.
+    if code == COMMAND_WAIT:
+        return "COMMAND_WAIT"  # Pauses the given time in seconds. (floats accepted).
+    if code == COMMAND_WAIT_FINISH:
+        return "COMMAND_WAIT_FINISH"  # WAIT until the buffer is finished.
+    if code == COMMAND_JOG:
+        return "COMMAND_JOG"  # Jogs the machine in rapid mode.
+    if code == COMMAND_JOG_SWITCH:
+        return "COMMAND_JOG_SWITCH"  # Jogs the machine in rapid mode.
+    if code == COMMAND_JOG_FINISH:
+        return "COMMAND_JOG_FINISH"
+    if code == COMMAND_MODE_RAPID:
+        return "COMMAND_MODE_RAPID"
+    if code == COMMAND_MODE_FINISHED:
+        return "COMMAND_MODE_FINISHED"
+    if code == COMMAND_MODE_PROGRAM:
+        return "COMMAND_MODE_PROGRAM"
+    if code == COMMAND_MODE_RASTER:
+        return "COMMAND_MODE_RASTER"
+    if code == COMMAND_PLOT:
+        return "COMMAND_PLOT"  # Takes a cutobject
+    if code == COMMAND_PLOT_START:
+        return "COMMAND_PLOT_START"  # Starts plotter
+    if code == COMMAND_SET_SPEED:
+        return "COMMAND_SET_SPEED"  # sets the speed for the device
+    if code == COMMAND_SET_POWER:
+        return "COMMAND_SET_POWER"  # sets the power. Out of 1000. Unknown power method.
+    if code == COMMAND_SET_PPI:
+        return "COMMAND_SET_PPI"  # sets the PPI power. Out of 1000.
+    if code == COMMAND_SET_PWM:
+        return "COMMAND_SET_PWM"  # sets the PWM power. Out of 1000.
+    if code == COMMAND_SET_STEP:
+        return "COMMAND_SET_STEP"  # sets the raster step for the device
+    if code == COMMAND_SET_DIRECTION:
+        return "COMMAND_SET_DIRECTION"  # sets the directions for the device.
+    if code == COMMAND_SET_OVERSCAN:
+        return "COMMAND_SET_OVERSCAN"
+    if code == COMMAND_SET_D_RATIO:
+        return "COMMAND_SET_D_RATIO"  # sets the diagonal_ratio for the device
+    if code == COMMAND_SET_ACCELERATION:
+        return "COMMAND_SET_ACCELERATION"  # sets the acceleration for the device 1-4
+    if code == COMMAND_SET_INCREMENTAL:
+        return "COMMAND_SET_INCREMENTAL"  # sets the commands to be relative to current position
+    if code == COMMAND_SET_ABSOLUTE:
+        return "COMMAND_SET_ABSOLUTE"  # sets the commands to be absolute positions.
+    if code == COMMAND_SET_POSITION:
+        return "COMMAND_SET_POSITION"  # Without moving sets the current position to the given coord.
+    if code == COMMAND_HOME:
+        return "COMMAND_HOME"  # Homes the device
+    if code == COMMAND_LOCK:
+        return "COMMAND_LOCK"  # Locks the rail
+    if code == COMMAND_UNLOCK:
+        return "COMMAND_UNLOCK"  # Unlocks the rail.
+    if code == COMMAND_BEEP:
+        return "COMMAND_BEEP"  # Beep.
+    if code == COMMAND_FUNCTION:
+        return "COMMAND_FUNCTION"  # Execute the function given by this command. Blocking.
+    if code == COMMAND_SIGNAL:  # Sends the signal, given: "signal_name:
+        return "COMMAND_SIGNAL"  # Sends the signal, given: "signal_name", operands.
+    if code == REALTIME_RESET:
+        return "REALTIME_RESET"  # Resets the state, purges buffers
+    if code == REALTIME_PAUSE:
+        return "REALTIME_PAUSE"  # Issue a pause command.
+    if code == REALTIME_RESUME:
+        return "REALTIME_RESUME"  # Issue a resume command.
+    if code == REALTIME_STATUS:
+        return "REALTIME_STATUS"  # Issue a status command.
+    if code == REALTIME_SAFETY_DOOR:
+        return "REALTIME_SAFETY_DOOR"  # Issues a forced safety_door state.
+    if code == REALTIME_JOG_CANCEL:
+        return "REALTIME_JOG_CANCEL" # Issues a jog cancel. This should cancel any jogging being processed.
+    if code == REALTIME_SPEED_PERCENT:
+        return "REALTIME_SPEED_PERCENT"  # Set the speed to this percent value of total.
+    if code == REALTIME_RAPID_PERCENT:
+        return "REALTIME_RAPID_PERCENT"  # Sets the rapid speed to this percent value of total.
+    if code == REALTIME_POWER_PERCENT:
+        return "REALTIME_POWER_PERCENT"  # Sets the power to this percent value of total.
+    if code == REALTIME_SPEED:
+        return "REALTIME_SPEED"  # Set the speed to this percent value of total.
+    if code == REALTIME_RAPID:
+        return "REALTIME_RAPID"  # Sets the rapid speed to this percent value of total.
+    if code == REALTIME_POWER:
+        return "REALTIME_POWER"  # Sets the power to this percent value of total.
+    if code == REALTIME_OVERSCAN:
+        return "REALTIME_OVERSCAN"  # Sets the overscan amount to this value.
+    if code == REALTIME_LASER_DISABLE:
+        return "REALTIME_LASER_DISABLE"  # Disables the laser.
+    if code == REALTIME_LASER_ENABLE:
+        return "REALTIME_LASER_ENABLE"  # Enables the laser.
+    if code == REALTIME_FLOOD_COOLANT:
+        return "REALTIME_FLOOD_COOLANT"  # Toggle flood coolant
+    if code == REALTIME_MIST_COOLANT:
+        return "REALTIME_MIST_COOLANT"  # Toggle mist coolant.
