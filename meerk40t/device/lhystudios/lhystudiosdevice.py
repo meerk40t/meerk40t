@@ -975,9 +975,7 @@ class LhystudiosDriver(Driver):
         elif self.state == DRIVER_STATE_PROGRAM:
             mx = 0
             my = 0
-            print("ZINGL OUT!")
             for x, y in ZinglPlotter.plot_line(0, 0, dx, dy):
-                print("ZINGL %s %s" % (x, y))
                 self.goto_octent(x - mx, y - my, cut)
                 mx = x
                 my = y
