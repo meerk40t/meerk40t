@@ -1877,7 +1877,7 @@ class Kernel:
         @self.console_option("output", "o", help=_("Output type to match"), type=str)
         @self.console_option("input", "i", help=_("Input type to match"), type=str)
         @self.console_argument("extended_help", type=str)
-        @self.console_command(("help", "?"), hidden=True, help="help <help>")
+        @self.console_command(("help", "?"), hidden=True, help=_("help <help>"))
         def help(channel, _, extended_help, output=None, input=None, **kwargs):
             """
             'help' will display the list of accepted commands. Help <command> will provided extended help for
@@ -2076,7 +2076,7 @@ class Kernel:
                 channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
             return
 
-        @self.console_command("register", help="register")
+        @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("----------"))
@@ -2093,7 +2093,7 @@ class Kernel:
                     channel("%d: %s type of %s" % (i + 1, name, str(obj)))
                 channel(_("----------"))
 
-        @self.console_command("context", help="context")
+        @self.console_command("context", _("context"))
         def context(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 for context_name in self.contexts:
@@ -2103,7 +2103,7 @@ class Kernel:
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("set", help="set [<key> <value>]")
+        @self.console_command("set", help=_("set [<key> <value>]"))
         def set(channel, _, path=None, args=tuple(), **kwargs):
             relevant_context = None
             if path is not None:
@@ -2145,7 +2145,7 @@ class Kernel:
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("control", help="control [<executive>]")
+        @self.console_command("control", help=_("control [<executive>]"))
         def control(channel, _, path=None, remainder=None, **kwargs):
             if remainder is None:
                 for control_name in self.root.match("[0-9]+/control", suffix=True):

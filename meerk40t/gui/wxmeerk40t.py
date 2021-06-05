@@ -182,7 +182,7 @@ def plugin(kernel, lifecycle):
     if lifecycle == "console":
         GUI_START[0] = False
 
-        @kernel.console_command("gui", help="starts the gui")
+        @kernel.console_command("gui", help=_("starts the gui"))
         def gui_start(**kwargs):
             del kernel.registered["command/None/gui"]
             kernel_root = kernel.root
@@ -4177,12 +4177,12 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
 
-        @kernel.console_argument("window", type=str, help="window to be closed")
+        @kernel.console_argument("window", type=str, help=_("window to be closed"))
         @kernel.console_command(
             "close",
             input_type="window",
             output_type="window",
-            help="close the supplied window",
+            help=_("close the supplied window"),
         )
         def window(channel, _, data, window=None, args=(), **kwargs):
             path = data
@@ -4197,12 +4197,12 @@ class wxMeerK40t(wx.App, Module):
             except IndexError:
                 raise SyntaxError
 
-        @kernel.console_argument("window", type=str, help="window to be reset")
+        @kernel.console_argument("window", type=str, help=_("window to be reset"))
         @kernel.console_command(
             "reset",
             input_type="window",
             output_type="window",
-            help="reset the supplied window, or '*' for all windows",
+            help=_("reset the supplied window, or '*' for all windows"),
         )
         def window(channel, _, data, window=None, **kwargs):
             if kernel._config is not None:

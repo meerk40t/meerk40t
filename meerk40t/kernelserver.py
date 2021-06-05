@@ -23,7 +23,7 @@ def plugin(kernel, lifecycle=None):
             "q",
             type=bool,
             action="store_true",
-            help="shutdown current lhyserver",
+            help=_("shutdown current lhyserver"),
         )
         @kernel.console_command(
             "consoleserver", help=_("starts a console_server on port 23 (telnet)")

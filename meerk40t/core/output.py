@@ -13,7 +13,7 @@ def plugin(kernel, lifecycle=None):
         kernel_root = kernel.root
         kernel_root.activate("modifier/Outputs")
 
-        @kernel.console_argument("port", type=int, help="Port of TCPOutput to change.")
+        @kernel.console_argument("port", type=int, help=_("Port of TCPOutput to change."))
         @kernel.console_command(
             "port",
             help=_("change the port of the tcpdevice"),
@@ -193,7 +193,7 @@ class Outputs(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @context.console_option("new", "n", type=str, help="new output type")
+        @context.console_option("new", "n", type=str, help=_("new output type"))
         @context.console_command(
             "output",
             help=_("output<?> <command>"),

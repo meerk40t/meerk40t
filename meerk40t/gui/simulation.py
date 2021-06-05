@@ -153,7 +153,7 @@ class Simulation(MWindow, Job):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Simulation")
+        self.SetTitle(_("Simulation"))
         self.text_distance_laser.SetToolTip(_("Time Estimate: Lasering Time"))
         self.text_distance_travel.SetToolTip(_("Time Estimate: Traveling Time"))
         self.text_distance_total.SetToolTip(_("Time Estimate: Total Time"))

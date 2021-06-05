@@ -28,7 +28,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_command(
         "image",
-        help="image <operation>*",
+        help=_("image <operation>*"),
         input_type=(None, "image-array", "inkscape"),
         output_type="image",
     )
@@ -89,7 +89,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_command(
         "path",
-        help="return paths around image",
+        help=_("return paths around image"),
         input_type="image",
         output_type="elements",
     )
@@ -110,7 +110,7 @@ def plugin(kernel, lifecycle=None):
         elements.add(paths, type="elem")
         return "elements", paths
 
-    @context.console_argument("script", help="script to apply", type=str)
+    @context.console_argument("script", help=_("script to apply"), type=str)
     @context.console_command(
         "wizard", help=_("apply image wizard"), input_type="image", output_type="elements"
     )
@@ -236,7 +236,7 @@ def plugin(kernel, lifecycle=None):
         default=50.0,
     )
     @context.console_argument(
-        "color", type=Color, help="Color to be removed", default=Color("White")
+        "color", type=Color, help=_("Color to be removed"), default=Color("White")
     )
     @context.console_command(
         "remove",
@@ -331,7 +331,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_argument("right", help="right side of crop", type=Length)
     @context.console_argument("lower", help="lower side of crop", type=Length)
     @context.console_command(
-        "crop", help="Crop image", input_type="image", output_type="image"
+        "crop", help=_("Crop image"), input_type="image", output_type="image"
     )
     def image(
         command, channel, _, data, left, upper, right, lower, args=tuple(), **kwargs
@@ -373,11 +373,11 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_argument(
-        "factor", type=float, help="contrast factor", default=10.0
+        "factor", type=float, help=_("contrast factor"), default=10.0
     )
     @context.console_command(
         "contrast",
-        help="increase image contrast",
+        help=_("increase image contrast"),
         input_type="image",
         output_type="image",
     )
@@ -396,7 +396,7 @@ def plugin(kernel, lifecycle=None):
                 channel(_("image contrast <factor>"))
         return "image", data
 
-    @context.console_argument("factor", type=float, help="contrast factor", default=2.5)
+    @context.console_argument("factor", type=float, help=_("contrast factor"), default=2.5)
     @context.console_command(
         "brightness", help=_("brighten image"), input_type="image", output_type="image"
     )
@@ -416,7 +416,7 @@ def plugin(kernel, lifecycle=None):
                 channel(_("image brightness <factor>"))
         return "image", data
 
-    @context.console_argument("factor", type=float, help="color factor", default=10.0)
+    @context.console_argument("factor", type=float, help=_("color factor"), default=10.0)
     @context.console_command(
         "color", help=_("color enhance"), input_type="image", output_type="image"
     )
@@ -436,7 +436,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_argument(
-        "factor", type=float, help="sharpness factor", default=10.0
+        "factor", type=float, help=_("sharpness factor"), default=10.0
     )
     @context.console_command(
         "sharpness", help=_("shapen image"), input_type="image", output_type="image"
@@ -701,7 +701,7 @@ def plugin(kernel, lifecycle=None):
     )
     @context.console_command(
         "autocontrast",
-        help="autocontrast image",
+        help=_("autocontrast image"),
         input_type="image",
         output_type="image",
     )
@@ -777,7 +777,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_argument(
-        "filename", type=str, help="filename", default="output.png"
+        "filename", type=str, help=_("filename"), default="output.png"
     )
     @context.console_command(
         "save", help=_("save image to disk"), input_type="image", output_type="image"
@@ -797,7 +797,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "flatrotary", help="apply flatrotary bilinear mesh", input_type="image"
+        "flatrotary", help=_("apply flatrotary bilinear mesh"), input_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         """
@@ -830,13 +830,13 @@ def plugin(kernel, lifecycle=None):
                 element.node.altered()
         return "image", data
 
-    @context.console_option("scale", "s", type=int, help="process scaling", default=1)
+    @context.console_option("scale", "s", type=int, help=_("process scaling"), default=1)
     @context.console_argument(
-        "oversample", type=int, help="pixel oversample amount", default=2
+        "oversample", type=int, help=_("pixel oversample amount"), default=2
     )
-    @context.console_argument("sample", type=int, help="pixel sample size", default=10)
+    @context.console_argument("sample", type=int, help=_("pixel sample size"), default=10)
     @context.console_argument(
-        "angle", type=Angle.parse, help="half-tone angle", default=Angle.parse("22")
+        "angle", type=Angle.parse, help=_("half-tone angle"), default=Angle.parse("22")
     )
     @context.console_command(
         "halftone",

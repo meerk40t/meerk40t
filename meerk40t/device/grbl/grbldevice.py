@@ -52,14 +52,14 @@ def plugin(kernel, lifecycle=None):
             help=_("do not watch server channels"),
         )
         @kernel.console_option(
-            "watch", "w", type=bool, action="store_true", help="watch send/recv data"
+            "watch", "w", type=bool, action="store_true", help=_("watch send/recv data")
         )
         @kernel.console_option(
             "quit",
             "q",
             type=bool,
             action="store_true",
-            help="shutdown current lhyserver",
+            help=_("shutdown current grblserver"),
         )
         @kernel.console_command("grblserver", help=_("activate the grblserver."))
         def grblserver(

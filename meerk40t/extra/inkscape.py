@@ -97,7 +97,7 @@ def plugin(kernel, lifecycle):
         )
         @kernel.console_command(
             "input",
-            help="input filename",
+            help=_("input filename"),
             input_type="inkscape",
             output_type="inkscape",
         )

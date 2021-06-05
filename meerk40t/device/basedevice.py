@@ -134,7 +134,7 @@ def plugin(kernel, lifecycle=None):
 
         @kernel.console_command(
             "device",
-            help="device",
+            help=_("device"),
             output_type="device",
         )
         def device(channel, _, remainder=None, **kwargs):
@@ -152,7 +152,7 @@ def plugin(kernel, lifecycle=None):
 
         @kernel.console_command(
             "list",
-            help="list devices",
+            help=_("list devices"),
             input_type="device",
             output_type="device",
         )
@@ -171,7 +171,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_argument("index", type=int, help=_("Index of device deleted"))
         @kernel.console_command(
             "delete",
-            help="delete <index>",
+            help=_("delete <index>"),
             input_type="device",
         )
         def delete(index, **kwargs):

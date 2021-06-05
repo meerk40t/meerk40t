@@ -6,7 +6,7 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         context = kernel.root
 
-        @context.console_command("optimize", help="optimize <type>")
+        @context.console_command("optimize", help=_("optimize <type>"))
         def optimize(command, channel, _, args=tuple(), **kwargs):
             elements = context.elements
             if not elements.has_emphasis():

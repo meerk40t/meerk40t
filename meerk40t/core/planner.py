@@ -189,7 +189,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "list",
-            help="plan<?> list",
+            help=_("plan<?> list"),
             input_type="plan",
             output_type="plan",
         )
@@ -211,7 +211,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "classify",
-            help="plan<?> classify",
+            help=_("plan<?> classify"),
             input_type="plan",
             output_type="plan",
         )
@@ -222,7 +222,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "copy-selected",
-            help="plan<?> copy-selected",
+            help=_("plan<?> copy-selected"),
             input_type="plan",
             output_type="plan",
         )
@@ -247,7 +247,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "copy",
-            help="plan<?> copy",
+            help=_("plan<?> copy"),
             input_type="plan",
             output_type="plan",
         )
@@ -322,7 +322,7 @@ class Planner(Modifier):
         @self.context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @self.context.console_command(
             "append",
-            help="plan<?> append <op>",
+            help=_("plan<?> append <op>"),
             input_type="plan",
             output_type="plan",
         )
@@ -344,7 +344,7 @@ class Planner(Modifier):
         @self.context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @self.context.console_command(
             "prepend",
-            help="plan<?> prepend <op>",
+            help=_("plan<?> prepend <op>"),
             input_type="plan",
             output_type="plan",
         )
@@ -364,7 +364,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "preprocess",
-            help="plan<?> preprocess",
+            help=_("plan<?> preprocess"),
             input_type="plan",
             output_type="plan",
         )

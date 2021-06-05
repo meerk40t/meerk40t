@@ -68,7 +68,7 @@ class Inputs(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @context.console_option("new", "n", type=str, help="new input type")
+        @context.console_option("new", "n", type=str, help=_("new input type"))
         @context.console_command(
             "input",
             help=_("input<?> <command>"),
@@ -144,7 +144,7 @@ class Inputs(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_command("type", help="list input types", input_type="input")
+        @context.console_command("type", help=_("list input types"), input_type="input")
         def list_type(channel, _, **kwargs):
             channel(_("----------"))
             channel(_("Input types:"))

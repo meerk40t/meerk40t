@@ -209,7 +209,7 @@ class Spoolers(Modifier):
 
         @context.console_command(
             "list",
-            help="spool<?> list",
+            help=_("spool<?> list"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -226,7 +226,7 @@ class Spoolers(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_argument("op", type=str, help="unlock, origin, home, etc")
+        @context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @context.console_command(
             "send",
             help=_("send a plan-command to the spooler"),
@@ -326,7 +326,7 @@ class Spoolers(Modifier):
             ("left", "right", "up", "down"),
             input_type=("spooler", None),
             output_type="spooler",
-            help="cmd <amount>",
+            help=_("cmd <amount>"),
         )
         def direction(command, channel, _, data=None, amount=None, **kwargs):
             if data is None:
