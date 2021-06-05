@@ -64,7 +64,12 @@ class PlotPlanner:
         self.force_shift = False
 
     def push(self, plot):
+        self.abort = False
         self.queue.append(plot)
+
+    def clear(self):
+        self.queue.clear()
+        self.abort = True
 
     def gen(self):
         """
@@ -190,9 +195,6 @@ class PlotPlanner:
                 # Our single_x or single_y position is not established.
                 self.single_x = x
                 self.single_y = y
-                index = 0
-            else:
-                index = 1
             on = event[2] if len(event) >= 3 else self.single_default
 
             total_dx = x - self.single_x
@@ -210,7 +212,7 @@ class PlotPlanner:
                 )
             cx = self.single_x
             cy = self.single_y
-            for i in range(index, max(abs(total_dx), abs(total_dy)) + 1):
+            for i in range(1, max(abs(total_dx), abs(total_dy)) + 1):
                 if self.abort:
                     self.single_x = None
                     self.single_y = None
@@ -387,7 +389,3 @@ class PlotPlanner:
             self.group_y = y
             self.group_on = on
         # There are no more plots.
-
-    def clear(self):
-        self.queue.clear()
-        self.abort = True
