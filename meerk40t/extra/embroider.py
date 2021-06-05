@@ -4,6 +4,7 @@ from meerk40t.tools.pathtools import EulerianFill
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
+        _ = kernel.translation
         context = kernel.root
 
         @context.console_option(

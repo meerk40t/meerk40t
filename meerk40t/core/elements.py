@@ -1448,6 +1448,7 @@ class Elemental(Modifier):
 
     def attach(self, *a, **kwargs):
         context = self.context
+        _ = context._kernel.translation
         context.elements = self
         context.classify = self.classify
         context.save = self.save

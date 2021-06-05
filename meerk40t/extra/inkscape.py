@@ -5,6 +5,7 @@ from sys import platform
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
+        _ = kernel.translation
 
         @kernel.console_command(
             "load",

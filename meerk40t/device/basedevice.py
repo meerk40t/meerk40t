@@ -30,6 +30,7 @@ def plugin(kernel, lifecycle=None):
         device_context._devices = index
         kernel.root.setting(str, "active", "0")
     elif lifecycle == "register":
+        _ = kernel.translation
         root = kernel.root
 
         def device():

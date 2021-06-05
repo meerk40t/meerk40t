@@ -7,6 +7,7 @@ from ..kernel import Modifier
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
         kernel.register("modifier/Outputs", Outputs)
         kernel.register("output/file", FileOutput)
         kernel.register("output/tcp", TCPOutput)

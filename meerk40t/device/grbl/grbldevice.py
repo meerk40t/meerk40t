@@ -22,6 +22,7 @@ GRBL device.
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
         kernel.register("driver/grbl", GRBLDriver)
         kernel.register("emulator/grbl", GRBLEmulator)
         kernel.register("load/GCodeLoader", GCodeLoader)

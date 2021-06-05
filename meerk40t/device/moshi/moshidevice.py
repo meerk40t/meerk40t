@@ -327,6 +327,7 @@ swizzle_table = [
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
         kernel.register("driver/moshi", MoshiDriver)
         kernel.register("output/moshi", MoshiController)
         context = kernel.root

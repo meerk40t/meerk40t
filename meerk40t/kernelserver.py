@@ -5,6 +5,7 @@ from .kernel import STATE_TERMINATE, Module
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
         kernel.register("module/TCPServer", TCPServer)
         kernel.register("module/UDPServer", UDPServer)
 

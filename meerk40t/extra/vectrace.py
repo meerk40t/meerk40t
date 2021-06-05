@@ -3,6 +3,7 @@ from meerk40t.svgelements import Path, Polygon
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
 
         @kernel.console_command(
             "vectrace",

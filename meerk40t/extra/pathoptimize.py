@@ -4,6 +4,7 @@ from meerk40t.tools.pathtools import VectorMontonizer
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
+        _ = kernel.translation
         context = kernel.root
 
         @context.console_command("optimize", help=_("optimize <type>"))

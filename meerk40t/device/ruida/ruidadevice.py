@@ -20,6 +20,7 @@ ruida files (*.rd) and turn them likewise into cutcode.
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("emulator/ruida", RuidaEmulator)
 
