@@ -836,7 +836,7 @@ class LhystudiosDriver(Driver):
     def reset(self):
         Driver.reset(self)
         self.context.signal("pipe;buffer", 0)
-        self.data_output(b"~I*\n~")
+        self.data_output(b"~INS1P*\n~")
         self.laser = False
         self.properties = 0
         self.state = DRIVER_STATE_RAPID
