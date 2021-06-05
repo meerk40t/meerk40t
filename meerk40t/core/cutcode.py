@@ -1,30 +1,18 @@
 from abc import ABC
 from copy import copy
 
-from meerk40t.tools.rasterplotter import (
-    BOTTOM,
-    LEFT,
-    RIGHT,
-    TOP,
-    UNIDIRECTIONAL,
-    X_AXIS,
-    Y_AXIS,
-    RasterPlotter,
-)
+from meerk40t.tools.rasterplotter import (BOTTOM, LEFT, RIGHT, TOP,
+                                          UNIDIRECTIONAL, X_AXIS, Y_AXIS,
+                                          RasterPlotter)
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..device.lasercommandconstants import (
-    COMMAND_PLOT,
-    COMMAND_PLOT_START,
-    COMMAND_MOVE,
-    COMMAND_HOME,
-    COMMAND_CUT,
-    lasercode_string,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_MODE_PROGRAM,
-    COMMAND_MODE_RAPID,
-    COMMAND_SET_INCREMENTAL,
-)
+from ..device.lasercommandconstants import (COMMAND_CUT, COMMAND_HOME,
+                                            COMMAND_MODE_PROGRAM,
+                                            COMMAND_MODE_RAPID, COMMAND_MOVE,
+                                            COMMAND_PLOT, COMMAND_PLOT_START,
+                                            COMMAND_SET_ABSOLUTE,
+                                            COMMAND_SET_INCREMENTAL,
+                                            lasercode_string)
 from ..svgelements import Color, Group, Path, Point, Polygon
 from ..tools.pathtools import VectorMontonizer
 

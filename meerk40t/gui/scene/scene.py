@@ -3,12 +3,8 @@ import time
 
 import wx
 
-from meerk40t.gui.laserrender import (
-    DRAW_MODE_ANIMATE,
-    DRAW_MODE_FLIPXY,
-    DRAW_MODE_INVERT,
-    DRAW_MODE_REFRESH,
-)
+from meerk40t.gui.laserrender import (DRAW_MODE_ANIMATE, DRAW_MODE_FLIPXY,
+                                      DRAW_MODE_INVERT, DRAW_MODE_REFRESH)
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox

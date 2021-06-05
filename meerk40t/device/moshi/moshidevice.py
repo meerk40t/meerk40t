@@ -3,32 +3,13 @@ import time
 
 from ...core.drivers import Driver
 from ...core.plotplanner import PlotPlanner
-from ...kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-    Modifier,
-    Module,
-)
-from ..basedevice import (
-    DRIVER_STATE_FINISH,
-    DRIVER_STATE_MODECHANGE,
-    DRIVER_STATE_PROGRAM,
-    DRIVER_STATE_RAPID,
-    DRIVER_STATE_RASTER,
-    PLOT_AXIS,
-    PLOT_DIRECTION,
-    PLOT_FINISH,
-    PLOT_JOG,
-    PLOT_RAPID,
-    PLOT_SETTING,
-)
+from ...kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
+                       STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
+                       STATE_UNKNOWN, STATE_WAIT, Modifier, Module)
+from ..basedevice import (DRIVER_STATE_FINISH, DRIVER_STATE_MODECHANGE,
+                          DRIVER_STATE_PROGRAM, DRIVER_STATE_RAPID,
+                          DRIVER_STATE_RASTER, PLOT_AXIS, PLOT_DIRECTION,
+                          PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING)
 
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING

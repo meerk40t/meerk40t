@@ -2,52 +2,17 @@ import functools
 from copy import copy
 
 from ..device.lasercommandconstants import (
-    COMMAND_BEEP,
-    COMMAND_FUNCTION,
-    COMMAND_HOME,
-    COMMAND_LASER_OFF,
-    COMMAND_LASER_ON,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_WAIT,
-    COMMAND_WAIT_FINISH,
-)
+    COMMAND_BEEP, COMMAND_FUNCTION, COMMAND_HOME, COMMAND_LASER_OFF,
+    COMMAND_LASER_ON, COMMAND_MODE_RAPID, COMMAND_MOVE, COMMAND_SET_ABSOLUTE,
+    COMMAND_WAIT, COMMAND_WAIT_FINISH)
 from ..kernel import Modifier
-from ..svgelements import (
-    SVG_STRUCT_ATTRIB,
-    Angle,
-    Circle,
-    Close,
-    Color,
-    CubicBezier,
-    Ellipse,
-    Group,
-    Length,
-    Line,
-    Matrix,
-    Move,
-    Path,
-    Point,
-    Polygon,
-    Polyline,
-    QuadraticBezier,
-    Rect,
-    Shape,
-    SimpleLine,
-    SVGElement,
-    SVGImage,
-    SVGText,
-)
-from .cutcode import (
-    CubicCut,
-    CutCode,
-    CutGroup,
-    LaserSettings,
-    LineCut,
-    QuadCut,
-    RasterCut,
-)
+from ..svgelements import (SVG_STRUCT_ATTRIB, Angle, Circle, Close, Color,
+                           CubicBezier, Ellipse, Group, Length, Line, Matrix,
+                           Move, Path, Point, Polygon, Polyline,
+                           QuadraticBezier, Rect, Shape, SimpleLine,
+                           SVGElement, SVGImage, SVGText)
+from .cutcode import (CubicCut, CutCode, CutGroup, LaserSettings, LineCut,
+                      QuadCut, RasterCut)
 
 
 def plugin(kernel, lifecycle=None):

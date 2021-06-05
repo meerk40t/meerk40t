@@ -5,12 +5,8 @@ import wx
 from ..core.cutcode import CutCode
 from ..kernel import Job
 from ..svgelements import Matrix
-from .icons import (
-    icons8_laser_beam_hazard2_50,
-    icons8_pause_50,
-    icons8_play_50,
-    icons8_route_50,
-)
+from .icons import (icons8_laser_beam_hazard2_50, icons8_pause_50,
+                    icons8_play_50, icons8_route_50)
 from .laserrender import LaserRender
 from .mwindow import MWindow
 from .scene.scene import ScenePanel, Widget

@@ -3,17 +3,9 @@ from math import ceil
 
 from ..core.cutcode import CutCode
 from ..device.lasercommandconstants import (
-    COMMAND_BEEP,
-    COMMAND_FUNCTION,
-    COMMAND_HOME,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_SET_POSITION,
-    COMMAND_UNLOCK,
-    COMMAND_WAIT,
-    COMMAND_WAIT_FINISH,
-)
+    COMMAND_BEEP, COMMAND_FUNCTION, COMMAND_HOME, COMMAND_MODE_RAPID,
+    COMMAND_MOVE, COMMAND_SET_ABSOLUTE, COMMAND_SET_POSITION, COMMAND_UNLOCK,
+    COMMAND_WAIT, COMMAND_WAIT_FINISH)
 from ..kernel import Modifier
 from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer

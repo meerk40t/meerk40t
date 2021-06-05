@@ -21,20 +21,14 @@ from .panes.movepanel import MovePanel
 from .panes.notespanel import NotePanel
 from .panes.pulsepanel import PulsePanel
 from .panes.spoolerpanel import SpoolerPanel
-from .panes.toolbarcontrol import  ControlTools
-from .panes.toolbarpreferences import  PreferencesTools
-from .panes.toolbarproject import  ProjectTools
+from .panes.toolbarcontrol import ControlTools
+from .panes.toolbarpreferences import PreferencesTools
+from .panes.toolbarproject import ProjectTools
 from .panes.transformpanel import Transform
 from .scene.scene import ScenePanel
-from .scene.scenewidgets import (
-    ElementsWidget,
-    GridWidget,
-    GuideWidget,
-    LaserPathWidget,
-    RectSelectWidget,
-    ReticleWidget,
-    SelectionWidget,
-)
+from .scene.scenewidgets import (ElementsWidget, GridWidget, GuideWidget,
+                                 LaserPathWidget, RectSelectWidget,
+                                 ReticleWidget, SelectionWidget)
 from .scene.toolwidgets import DrawTool, RectTool, ToolContainer
 from .simulation import Simulation
 
@@ -50,35 +44,21 @@ import wx.aui as aui
 import wx.ribbon as RB
 
 from ..core.elements import LaserOperation
-from ..device.lasercommandconstants import (
-    COMMAND_FUNCTION,
-    COMMAND_HOME,
-    COMMAND_JOG,
-    COMMAND_JOG_FINISH,
-    COMMAND_JOG_SWITCH,
-    COMMAND_LASER_OFF,
-    COMMAND_LASER_ON,
-    COMMAND_MODE_PROGRAM,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_SET_DIRECTION,
-    COMMAND_SET_SPEED,
-    COMMAND_WAIT,
-    COMMAND_WAIT_FINISH,
-)
+from ..device.lasercommandconstants import (COMMAND_FUNCTION, COMMAND_HOME,
+                                            COMMAND_JOG, COMMAND_JOG_FINISH,
+                                            COMMAND_JOG_SWITCH,
+                                            COMMAND_LASER_OFF,
+                                            COMMAND_LASER_ON,
+                                            COMMAND_MODE_PROGRAM,
+                                            COMMAND_MODE_RAPID, COMMAND_MOVE,
+                                            COMMAND_SET_ABSOLUTE,
+                                            COMMAND_SET_DIRECTION,
+                                            COMMAND_SET_SPEED, COMMAND_WAIT,
+                                            COMMAND_WAIT_FINISH)
 from ..kernel import STATE_BUSY, ConsoleFunction, Module
 from ..svgelements import (
-    SVG_ATTR_STROKE,
-    Color,
-    Group,
-    Length,
-    Matrix,
-    Path,
-    SVGElement,
-    SVGImage,
-    SVGText,
-)
+    SVG_ATTR_STROKE, Color, Group, Length, Matrix, Path, SVGElement, SVGImage,
+    SVGText)
 from .about import About
 from .bufferview import BufferView
 from .camerainteface import CameraInterface
@@ -87,62 +67,26 @@ from .controller import Controller
 from .devicemanager import DeviceManager
 from .executejob import ExecuteJob
 from .icons import (
-    icon_meerk40t,
-    icons8_administrative_tools_50,
-    icons8_camera_50,
-    icons8_comments_50,
-    icons8_computer_support_50,
-    icons8_connected_50,
-    icons8_console_50,
-    icons8_direction_20,
-    icons8_emergency_stop_button_50,
-    icons8_fantasy_50,
-    icons8_file_20,
-    icons8_group_objects_20,
-    icons8_home_filled_50,
-    icons8_keyboard_50,
-    icons8_laser_beam_20,
-    icons8_laser_beam_52,
-    icons8_laser_beam_hazard2_50,
-    icons8_lock_50,
-    icons8_manager_50,
-    icons8_move_50,
-    icons8_opened_folder_50,
-    icons8_padlock_50,
-    icons8_pause_50,
-    icons8_roll_50,
-    icons8_route_50,
-    icons8_save_50,
-    icons8_scatter_plot_20,
-    icons8_system_task_20,
-    icons8_vector_20,
-)
+    icon_meerk40t, icons8_administrative_tools_50, icons8_camera_50,
+    icons8_comments_50, icons8_computer_support_50, icons8_connected_50,
+    icons8_console_50, icons8_direction_20, icons8_emergency_stop_button_50,
+    icons8_fantasy_50, icons8_file_20, icons8_group_objects_20,
+    icons8_home_filled_50, icons8_keyboard_50, icons8_laser_beam_20,
+    icons8_laser_beam_52, icons8_laser_beam_hazard2_50, icons8_lock_50,
+    icons8_manager_50, icons8_move_50, icons8_opened_folder_50,
+    icons8_padlock_50, icons8_pause_50, icons8_roll_50, icons8_route_50,
+    icons8_save_50, icons8_scatter_plot_20, icons8_system_task_20,
+    icons8_vector_20)
 from .imageproperty import ImageProperty
 from .jobspooler import JobSpooler
 from .keymap import Keymap
 from .laserrender import (
-    DRAW_MODE_ANIMATE,
-    DRAW_MODE_BACKGROUND,
-    DRAW_MODE_CACHE,
-    DRAW_MODE_FILLS,
-    DRAW_MODE_FLIPXY,
-    DRAW_MODE_GRID,
-    DRAW_MODE_GUIDES,
-    DRAW_MODE_ICONS,
-    DRAW_MODE_IMAGE,
-    DRAW_MODE_INVERT,
-    DRAW_MODE_LASERPATH,
-    DRAW_MODE_LINEWIDTH,
-    DRAW_MODE_PATH,
-    DRAW_MODE_REFRESH,
-    DRAW_MODE_RETICLE,
-    DRAW_MODE_SELECTION,
-    DRAW_MODE_STROKES,
-    DRAW_MODE_TEXT,
-    DRAW_MODE_TREE,
-    LaserRender,
-    swizzlecolor,
-)
+    DRAW_MODE_ANIMATE, DRAW_MODE_BACKGROUND, DRAW_MODE_CACHE, DRAW_MODE_FILLS,
+    DRAW_MODE_FLIPXY, DRAW_MODE_GRID, DRAW_MODE_GUIDES, DRAW_MODE_ICONS,
+    DRAW_MODE_IMAGE, DRAW_MODE_INVERT, DRAW_MODE_LASERPATH,
+    DRAW_MODE_LINEWIDTH, DRAW_MODE_PATH, DRAW_MODE_REFRESH, DRAW_MODE_RETICLE,
+    DRAW_MODE_SELECTION, DRAW_MODE_STROKES, DRAW_MODE_TEXT, DRAW_MODE_TREE,
+    LaserRender, swizzlecolor)
 from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
 from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
