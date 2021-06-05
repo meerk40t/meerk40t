@@ -3,10 +3,11 @@ from meerk40t.svgelements import Path, Polygon
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
 
         @kernel.console_command(
             "vectrace",
-            help="return paths around image",
+            help=_("return paths around image"),
             input_type="image",
             output_type="elements",
         )

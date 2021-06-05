@@ -30,6 +30,7 @@ def plugin(kernel, lifecycle=None):
         device_context._devices = index
         kernel.root.setting(str, "active", "0")
     elif lifecycle == "register":
+        _ = kernel.translation
         root = kernel.root
 
         def device():
@@ -41,11 +42,11 @@ def plugin(kernel, lifecycle=None):
         root.device = device
 
         @kernel.console_option(
-            "out", "o", action="store_true", help="match on output rather than driver"
+            "out", "o", action="store_true", help=_("match on output rather than driver")
         )
         @kernel.console_command(
             "dev",
-            help="delegate commands to currently selected device by input/driver",
+            help=_("delegate commands to currently selected device by input/driver"),
             output_type="dev",
             hidden=True,
         )
@@ -86,7 +87,7 @@ def plugin(kernel, lifecycle=None):
                     "device/%s" % root.active
                 ]
             except (KeyError, ValueError, AttributeError):
-                raise CommandMatchRejected("No device selected.")
+                raise CommandMatchRejected(_("No device selected."))
 
             if input_driver is not None:
                 try:
@@ -116,14 +117,14 @@ def plugin(kernel, lifecycle=None):
                             return
                 except AttributeError:
                     pass
-            raise CommandMatchRejected("No matching command.")
+            raise CommandMatchRejected(_("No matching command."))
 
         @kernel.console_argument(
-            "index", type=int, help="Index of device being activated"
+            "index", type=int, help=_("Index of device being activated")
         )
         @kernel.console_command(
             "activate",
-            help="delegate commands to currently selected device",
+            help=_("delegate commands to currently selected device"),
             input_type="device",
             output_type="device",
         )
@@ -134,7 +135,7 @@ def plugin(kernel, lifecycle=None):
 
         @kernel.console_command(
             "device",
-            help="device",
+            help=_("device"),
             output_type="device",
         )
         def device(channel, _, remainder=None, **kwargs):
@@ -152,7 +153,7 @@ def plugin(kernel, lifecycle=None):
 
         @kernel.console_command(
             "list",
-            help="list devices",
+            help=_("list devices"),
             input_type="device",
             output_type="device",
         )
@@ -168,10 +169,10 @@ def plugin(kernel, lifecycle=None):
             channel("----------")
             return "device", data
 
-        @kernel.console_argument("index", type=int, help="Index of device deleted")
+        @kernel.console_argument("index", type=int, help=_("Index of device deleted"))
         @kernel.console_command(
             "delete",
-            help="delete <index>",
+            help=_("delete <index>"),
             input_type="device",
         )
         def delete(index, **kwargs):
@@ -193,4 +194,4 @@ def plugin(kernel, lifecycle=None):
                             pass
                 root.registered["device/%d" % index] = [None, None, None]
             except (KeyError, ValueError):
-                raise SyntaxError("Invalid device-string index.")
+                raise SyntaxError(_("Invalid device-string index."))

@@ -9,9 +9,10 @@ IRC_CLIENT = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
+        _ = kernel.translation
 
-        @kernel.console_argument("page", help="Webhelp page", type=str)
-        @kernel.console_command("webhelp", help="Launch a registered webhelp page")
+        @kernel.console_argument("page", help=_("Webhelp page"), type=str)
+        @kernel.console_command("webhelp", help=_("Launch a registered webhelp page"))
         def webhelp(channel, _, page=None, **kwargs):
             if page is None:
                 channel(_("----------"))

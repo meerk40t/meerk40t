@@ -15,7 +15,7 @@ def plugin(kernel, lifecycle=None):
 
     if lifecycle != "register":
         return
-
+    _ = kernel.translation
     kernel.register("raster_script/Gold", RasterScripts.raster_script_gold())
     kernel.register("raster_script/Stipo", RasterScripts.raster_script_stipo())
     kernel.register("raster_script/Gravy", RasterScripts.raster_script_gravy())
@@ -28,7 +28,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_command(
         "image",
-        help="image <operation>*",
+        help=_("image <operation>*"),
         input_type=(None, "image-array", "inkscape"),
         output_type="image",
     )
@@ -89,7 +89,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_command(
         "path",
-        help="return paths around image",
+        help=_("return paths around image"),
         input_type="image",
         output_type="elements",
     )
@@ -110,9 +110,9 @@ def plugin(kernel, lifecycle=None):
         elements.add(paths, type="elem")
         return "elements", paths
 
-    @context.console_argument("script", help="script to apply", type=str)
+    @context.console_argument("script", help=_("script to apply"), type=str)
     @context.console_command(
-        "wizard", help="apply image wizard", input_type="image", output_type="elements"
+        "wizard", help=_("apply image wizard"), input_type="image", output_type="elements"
     )
     def image(command, channel, _, data, script, args=tuple(), **kwargs):
         if script is None:
@@ -144,7 +144,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "unlock", help="unlock manipulations", input_type="image", output_type="image"
+        "unlock", help=_("unlock manipulations"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         channel(_("Unlocking Elements..."))
@@ -195,7 +195,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "resample", help="Resample image", input_type="image", output_type="image"
+        "resample", help=_("Resample image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         for element in data:
@@ -206,7 +206,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_option("method", "m", type=str, default="Floyd-Steinberg")
     @context.console_command(
-        "dither", help="Dither to 1-bit", input_type="image", output_type="image"
+        "dither", help=_("Dither to 1-bit"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, method="Floyd-Steinberg", **kwargs):
         for element in data:
@@ -232,15 +232,15 @@ def plugin(kernel, lifecycle=None):
         "distance",
         "d",
         type=float,
-        help="Distance from color to be removed.",
+        help=_("Distance from color to be removed."),
         default=50.0,
     )
     @context.console_argument(
-        "color", type=Color, help="Color to be removed", default=Color("White")
+        "color", type=Color, help=_("Color to be removed"), default=Color("White")
     )
     @context.console_command(
         "remove",
-        help="Remove color from image",
+        help=_("Remove color from image"),
         input_type="image",
         output_type="image",
     )
@@ -272,7 +272,7 @@ def plugin(kernel, lifecycle=None):
                 element.node.altered()
         return "image", data
 
-    @context.console_argument("color", type=Color, help="Color to be added")
+    @context.console_argument("color", type=Color, help=_("Color to be added"))
     @context.console_command("add", help="", input_type="image", output_type="image")
     def image(command, channel, _, data, color, args=tuple(), **kwargs):
         if color is None:
@@ -331,7 +331,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_argument("right", help="right side of crop", type=Length)
     @context.console_argument("lower", help="lower side of crop", type=Length)
     @context.console_command(
-        "crop", help="Crop image", input_type="image", output_type="image"
+        "crop", help=_("Crop image"), input_type="image", output_type="image"
     )
     def image(
         command, channel, _, data, left, upper, right, lower, args=tuple(), **kwargs
@@ -373,11 +373,11 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_argument(
-        "factor", type=float, help="contrast factor", default=10.0
+        "factor", type=float, help=_("contrast factor"), default=10.0
     )
     @context.console_command(
         "contrast",
-        help="increase image contrast",
+        help=_("increase image contrast"),
         input_type="image",
         output_type="image",
     )
@@ -396,9 +396,9 @@ def plugin(kernel, lifecycle=None):
                 channel(_("image contrast <factor>"))
         return "image", data
 
-    @context.console_argument("factor", type=float, help="contrast factor", default=2.5)
+    @context.console_argument("factor", type=float, help=_("contrast factor"), default=2.5)
     @context.console_command(
-        "brightness", help="brighten image", input_type="image", output_type="image"
+        "brightness", help=_("brighten image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, factor, args=tuple(), **kwargs):
         from PIL import ImageEnhance
@@ -416,9 +416,9 @@ def plugin(kernel, lifecycle=None):
                 channel(_("image brightness <factor>"))
         return "image", data
 
-    @context.console_argument("factor", type=float, help="color factor", default=10.0)
+    @context.console_argument("factor", type=float, help=_("color factor"), default=10.0)
     @context.console_command(
-        "color", help="color enhance", input_type="image", output_type="image"
+        "color", help=_("color enhance"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, factor, args=tuple(), **kwargs):
         from PIL import ImageEnhance
@@ -436,10 +436,10 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_argument(
-        "factor", type=float, help="sharpness factor", default=10.0
+        "factor", type=float, help=_("sharpness factor"), default=10.0
     )
     @context.console_command(
-        "sharpness", help="shapen image", input_type="image", output_type="image"
+        "sharpness", help=_("shapen image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, factor, args=tuple(), **kwargs):
         from PIL import ImageEnhance
@@ -457,7 +457,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "blur", help="blur image", input_type="image", output_type="image"
+        "blur", help=_("blur image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageFilter
@@ -471,7 +471,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "sharpen", help="sharpen image", input_type="image", output_type="image"
+        "sharpen", help=_("sharpen image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageFilter
@@ -485,7 +485,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "edge_enhance", help="enhance edges", input_type="image", output_type="image"
+        "edge_enhance", help=_("enhance edges"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageFilter
@@ -499,7 +499,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "find_edges", help="find edges", input_type="image", output_type="image"
+        "find_edges", help=_("find edges"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageFilter
@@ -513,7 +513,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "emboss", help="emboss image", input_type="image", output_type="image"
+        "emboss", help=_("emboss image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageFilter
@@ -527,7 +527,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "smooth", help="smooth image", input_type="image", output_type="image"
+        "smooth", help=_("smooth image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageFilter
@@ -541,7 +541,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "contour", help="contour image", input_type="image", output_type="image"
+        "contour", help=_("contour image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageFilter
@@ -555,7 +555,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "detail", help="detail image", input_type="image", output_type="image"
+        "detail", help=_("detail image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageFilter
@@ -569,11 +569,11 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_argument(
-        "colors", type=int, help="colors to quantize into", default=10
+        "colors", type=int, help=_("colors to quantize into"), default=10
     )
     @context.console_command(
         "quantize",
-        help="image quantize <colors>",
+        help=_("image quantize <colors>"),
         input_type="image",
         output_type="image",
     )
@@ -590,7 +590,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_argument(
-        "threshold", type=float, help="threshold for solorize", default=250.0
+        "threshold", type=float, help=_("threshold for solorize"), default=250.0
     )
     @context.console_command(
         "solorize", help="", input_type="image", output_type="image"
@@ -611,7 +611,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "invert", help="invert the image", input_type="image", output_type="image"
+        "invert", help=_("invert the image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageOps
@@ -633,7 +633,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "flip", help="flip image", input_type="image", output_type="image"
+        "flip", help=_("flip image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageOps
@@ -647,7 +647,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "mirror", help="mirror image", input_type="image", output_type="image"
+        "mirror", help=_("mirror image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageOps
@@ -661,7 +661,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "ccw", help="rotate image ccw", input_type="image", output_type="image"
+        "ccw", help=_("rotate image ccw"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import Image
@@ -679,7 +679,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "cw", help="rotate image cw", input_type="image", output_type="image"
+        "cw", help=_("rotate image cw"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import Image
@@ -697,11 +697,11 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_argument(
-        "cutoff", type=float, help="cutoff limit for autocontrast", default=128.0
+        "cutoff", type=float, help=_("cutoff limit for autocontrast"), default=128.0
     )
     @context.console_command(
         "autocontrast",
-        help="autocontrast image",
+        help=_("autocontrast image"),
         input_type="image",
         output_type="image",
     )
@@ -725,11 +725,11 @@ def plugin(kernel, lifecycle=None):
         "method",
         "m",
         type=str,
-        help="Method of grayscale conversion: red, green, blue, alpha",
+        help=_("Method of grayscale conversion: red, green, blue, alpha"),
     )
     @context.console_command(
         ("grayscale", "grayscale"),
-        help="convert image to grayscale",
+        help=_("convert image to grayscale"),
         input_type="image",
         output_type="image",
     )
@@ -763,7 +763,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "equalize", help="equalize image", input_type="image", output_type="image"
+        "equalize", help=_("equalize image"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         from PIL import ImageOps
@@ -777,10 +777,10 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_argument(
-        "filename", type=str, help="filename", default="output.png"
+        "filename", type=str, help=_("filename"), default="output.png"
     )
     @context.console_command(
-        "save", help="save image to disk", input_type="image", output_type="image"
+        "save", help=_("save image to disk"), input_type="image", output_type="image"
     )
     def image(command, channel, _, data, filename, args=tuple(), **kwargs):
         for element in data:
@@ -797,7 +797,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "flatrotary", help="apply flatrotary bilinear mesh", input_type="image"
+        "flatrotary", help=_("apply flatrotary bilinear mesh"), input_type="image"
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         """
@@ -830,17 +830,17 @@ def plugin(kernel, lifecycle=None):
                 element.node.altered()
         return "image", data
 
-    @context.console_option("scale", "s", type=int, help="process scaling", default=1)
+    @context.console_option("scale", "s", type=int, help=_("process scaling"), default=1)
     @context.console_argument(
-        "oversample", type=int, help="pixel oversample amount", default=2
+        "oversample", type=int, help=_("pixel oversample amount"), default=2
     )
-    @context.console_argument("sample", type=int, help="pixel sample size", default=10)
+    @context.console_argument("sample", type=int, help=_("pixel sample size"), default=10)
     @context.console_argument(
-        "angle", type=Angle.parse, help="half-tone angle", default=Angle.parse("22")
+        "angle", type=Angle.parse, help=_("half-tone angle"), default=Angle.parse("22")
     )
     @context.console_command(
         "halftone",
-        help="image halftone <oversample> <sample> <angle>",
+        help=_("halftone the provided image"),
         input_type="image",
         output_type="image",
     )

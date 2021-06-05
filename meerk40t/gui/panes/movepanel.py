@@ -33,16 +33,16 @@ class MovePanel(wx.Panel):
 
     def __set_properties(self):
         # begin wxGlade: MovePanel.__set_properties
-        self.button_navigate_move_to.SetToolTip("Move to the set position")
+        self.button_navigate_move_to.SetToolTip(_("Move to the set position"))
         self.button_navigate_move_to.SetSize(self.button_navigate_move_to.GetBestSize())
-        self.text_position_x.SetToolTip("Set X value for the Move To")
-        self.text_position_y.SetToolTip("Set Y value for the Move To")
+        self.text_position_x.SetToolTip(_("Set X value for the Move To"))
+        self.text_position_y.SetToolTip(_("Set Y value for the Move To"))
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: MovePanel.__do_layout
         sizer_12 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Move To"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Move To")), wx.HORIZONTAL
         )
         sizer_13 = wx.BoxSizer(wx.VERTICAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)

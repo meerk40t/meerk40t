@@ -30,15 +30,9 @@ ID_CONSOLE = wx.NewId()
 ID_ROTARY = wx.NewId()
 ID_RASTER = wx.NewId()
 
-from ..icons import (
-    icons8_comments_50,
-    icons8_console_50,
-    icons8_fantasy_50,
-    icons8_laser_beam_52,
-    icons8_laser_beam_hazard2_50,
-    icons8_opened_folder_50,
-    icons8_save_50,
-)
+from ..icons import (icons8_comments_50, icons8_console_50, icons8_fantasy_50,
+                     icons8_laser_beam_52, icons8_laser_beam_hazard2_50,
+                     icons8_opened_folder_50, icons8_save_50)
 
 _ = wx.GetTranslation
 
@@ -72,7 +66,7 @@ class ProjectToolBar(wx.ToolBar):
             icons8_opened_folder_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Opens new project",
+            _("Opens new project"),
         )
         self.AddTool(
             ID_SAVE,
@@ -80,7 +74,7 @@ class ProjectToolBar(wx.ToolBar):
             icons8_save_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Saves a project to disk",
+            _("Saves a project to disk"),
             "",
         )
         self.AddSeparator()
@@ -93,7 +87,7 @@ class ProjectToolBar(wx.ToolBar):
             icons8_laser_beam_52.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Execute the current laser project",
+            _("Execute the current laser project"),
             "",
         )
         self.Bind(
@@ -107,7 +101,7 @@ class ProjectToolBar(wx.ToolBar):
             icons8_laser_beam_hazard2_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Simulate the current laser job",
+            _("Simulate the current laser job"),
             "",
         )
         self.AddTool(
@@ -116,7 +110,7 @@ class ProjectToolBar(wx.ToolBar):
             icons8_fantasy_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Run RasterWizard ",
+            _("Run RasterWizard "),
             "",
         )
         self.Bind(
@@ -131,7 +125,7 @@ class ProjectToolBar(wx.ToolBar):
             icons8_comments_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Open Notes Window",
+            _("Open Notes Window"),
             "",
         )
         self.Bind(
@@ -145,7 +139,7 @@ class ProjectToolBar(wx.ToolBar):
             icons8_console_50.GetBitmap(),
             wx.NullBitmap,
             wx.ITEM_NORMAL,
-            "Open Console Window",
+            _("Open Console Window"),
             "",
         )
         self.Bind(
@@ -173,7 +167,7 @@ class ProjectToolBar(wx.ToolBar):
     def __set_properties(self):
         # begin wxGlade: wxToolBar.__set_properties
         self.Realize()
-        self.SetLabel("Project")
+        self.SetLabel(_("Project"))
         # end wxGlade
 
     def __do_layout(self):

@@ -13,7 +13,7 @@ class TCPController(MWindow):
         self.spooler, self.input_driver, self.output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
+        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_ip_host = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_port = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -33,7 +33,7 @@ class TCPController(MWindow):
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
-        self.SetTitle("TCP-Controller")
+        self.SetTitle(_("TCP-Controller"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
@@ -50,20 +50,20 @@ class TCPController(MWindow):
             )
         )
         self.button_device_connect.SetToolTip(
-            "Force connection/disconnection from the device."
+            _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
             icons8_disconnected_50.GetBitmap(use_theme=False)
         )
-        self.text_status.SetToolTip("Connection status")
-        self.text_ip_host.SetToolTip("IP/Host if the server computer")
-        self.text_port.SetToolTip("Port for tcp connection on the server computer")
+        self.text_status.SetToolTip(_("Connection status"))
+        self.text_ip_host.SetToolTip(_("IP/Host if the server computer"))
+        self.text_port.SetToolTip(_("Port for tcp connection on the server computer"))
         self.text_buffer_length.SetMinSize((165, 23))
         self.text_buffer_length.SetToolTip(
-            "Current number of bytes in the write buffer."
+            _("Current number of bytes in the write buffer.")
         )
         self.text_buffer_max.SetMinSize((165, 23))
-        self.text_buffer_max.SetToolTip("Current number of bytes in the write buffer.")
+        self.text_buffer_max.SetToolTip(_("Current number of bytes in the write buffer."))
         # end wxGlade
 
     def __do_layout(self):
@@ -73,14 +73,14 @@ class TCPController(MWindow):
         connection_controller = wx.BoxSizer(wx.VERTICAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
         connection_controller.Add(self.button_device_connect, 0, wx.EXPAND, 0)
-        label_7 = wx.StaticText(self, wx.ID_ANY, "Status")
+        label_7 = wx.StaticText(self, wx.ID_ANY, _("Status"))
         sizer_15.Add(label_7, 1, 0, 0)
         sizer_15.Add(self.text_status, 11, 0, 0)
-        label_8 = wx.StaticText(self, wx.ID_ANY, "Address")
+        label_8 = wx.StaticText(self, wx.ID_ANY, _("Address"))
         sizer_15.Add(label_8, 1, 0, 0)
         sizer_15.Add(self.text_ip_host, 11, 0, 0)
         sizer_15.Add((20, 20), 0, 0, 0)
-        label_9 = wx.StaticText(self, wx.ID_ANY, "Port")
+        label_9 = wx.StaticText(self, wx.ID_ANY, _("Port"))
         sizer_15.Add(label_9, 1, 0, 0)
         sizer_15.Add(self.text_port, 11, 0, 0)
         connection_controller.Add(sizer_15, 0, 0, 0)
@@ -89,11 +89,11 @@ class TCPController(MWindow):
         static_line_2.SetMinSize((483, 5))
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
         sizer_1.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
-        label_12 = wx.StaticText(self, wx.ID_ANY, "Buffer Size: ")
+        label_12 = wx.StaticText(self, wx.ID_ANY, _("Buffer Size: "))
         write_buffer.Add(label_12, 0, 0, 0)
         write_buffer.Add(self.text_buffer_length, 10, 0, 0)
         write_buffer.Add((20, 20), 0, 0, 0)
-        label_13 = wx.StaticText(self, wx.ID_ANY, "Max Buffer Size:")
+        label_13 = wx.StaticText(self, wx.ID_ANY, _("Max Buffer Size:"))
         write_buffer.Add(label_13, 0, 0, 0)
         write_buffer.Add(self.text_buffer_max, 10, 0, 0)
         sizer_1.Add(write_buffer, 0, 0, 0)

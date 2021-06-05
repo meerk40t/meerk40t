@@ -20,6 +20,7 @@ ruida files (*.rd) and turn them likewise into cutcode.
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("emulator/ruida", RuidaEmulator)
 
@@ -28,17 +29,17 @@ def plugin(kernel, lifecycle=None):
             "s",
             type=bool,
             action="store_true",
-            help="do not watch server channels",
+            help=_("do not watch server channels"),
         )
         @kernel.console_option(
             "quit",
             "q",
             type=bool,
             action="store_true",
-            help="shutdown current lhyserver",
+            help=_("shutdown current ruidaserver"),
         )
         @kernel.console_command(
-            ("ruidacontrol", "ruidadesign"), help="activate the ruidaserver."
+            ("ruidacontrol", "ruidadesign"), help=_("activate the ruidaserver.")
         )
         def ruidaserver(command, channel, _, silent=False, quit=False, **kwargs):
             """

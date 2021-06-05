@@ -5,12 +5,8 @@ import wx
 from ..core.cutcode import CutCode
 from ..kernel import Job
 from ..svgelements import Matrix
-from .icons import (
-    icons8_laser_beam_hazard2_50,
-    icons8_pause_50,
-    icons8_play_50,
-    icons8_route_50,
-)
+from .icons import (icons8_laser_beam_hazard2_50, icons8_pause_50,
+                    icons8_play_50, icons8_route_50)
 from .laserrender import LaserRender
 from .mwindow import MWindow
 from .scene.scene import ScenePanel, Widget
@@ -153,16 +149,16 @@ class Simulation(MWindow, Job):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Simulation")
-        self.text_distance_laser.SetToolTip("Time Estimate: Lasering Time")
-        self.text_distance_travel.SetToolTip("Time Estimate: Traveling Time")
-        self.text_distance_total.SetToolTip("Time Estimate: Total Time")
-        self.text_time_laser.SetToolTip("Time Estimate: Lasering Time")
-        self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
-        self.text_time_total.SetToolTip("Time Estimate: Total Time")
+        self.SetTitle(_("Simulation"))
+        self.text_distance_laser.SetToolTip(_("Time Estimate: Lasering Time"))
+        self.text_distance_travel.SetToolTip(_("Time Estimate: Traveling Time"))
+        self.text_distance_total.SetToolTip(_("Time Estimate: Total Time"))
+        self.text_time_laser.SetToolTip(_("Time Estimate: Lasering Time"))
+        self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
+        self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.button_play.SetBitmap(icons8_play_50.GetBitmap())
         self.text_playback_speed.SetMinSize((55, 23))
-        self.combo_device.SetToolTip("Select the device")
+        self.combo_device.SetToolTip(_("Select the device"))
         self.button_spool.SetFont(
             wx.Font(
                 18,
@@ -186,23 +182,23 @@ class Simulation(MWindow, Job):
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_time = wx.BoxSizer(wx.HORIZONTAL)
         sizer_total_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Total Time")), wx.VERTICAL
         )
         sizer_travel_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Travel Time")), wx.VERTICAL
         )
         sizer_laser_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Laser Time")), wx.VERTICAL
         )
         sizer_distance = wx.BoxSizer(wx.HORIZONTAL)
         sizer_total_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Total Distance"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Total Distance")), wx.VERTICAL
         )
         sizer_travel_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Travel Distance"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Travel Distance")), wx.VERTICAL
         )
         sizer_laser_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Laser Distance"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Laser Distance")), wx.VERTICAL
         )
         sizer_1.Add(self.view_pane, 3, wx.EXPAND, 0)
         sizer_2.Add(self.slider_progress, 0, wx.EXPAND, 0)
@@ -222,7 +218,7 @@ class Simulation(MWindow, Job):
         sizer_2.Add(sizer_time, 0, wx.EXPAND, 0)
         sizer_3.Add(self.button_play, 0, 0, 0)
         sizer_4.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
-        label_playback_speed = wx.StaticText(self, wx.ID_ANY, "Playback Speed")
+        label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed"))
         sizer_5.Add(label_playback_speed, 2, 0, 0)
         sizer_5.Add(self.text_playback_speed, 1, 0, 0)
         sizer_4.Add(sizer_5, 1, wx.EXPAND, 0)

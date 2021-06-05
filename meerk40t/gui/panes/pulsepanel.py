@@ -33,20 +33,20 @@ class PulsePanel(wx.Panel):
 
     def __set_properties(self):
         # begin wxGlade: PulsePanel.__set_properties
-        self.button_navigate_pulse.SetToolTip("Fire a short laser pulse")
+        self.button_navigate_pulse.SetToolTip(_("Fire a short laser pulse"))
         self.button_navigate_pulse.SetSize(self.button_navigate_pulse.GetBestSize())
         self.spin_pulse_duration.SetMinSize((80, 23))
-        self.spin_pulse_duration.SetToolTip("Set the duration of the laser pulse")
+        self.spin_pulse_duration.SetToolTip(_("Set the duration of the laser pulse"))
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: PulsePanel.__do_layout
         sizer_5 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Short Pulse"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Short Pulse")), wx.HORIZONTAL
         )
         sizer_5.Add(self.button_navigate_pulse, 0, 0, 0)
         sizer_5.Add(self.spin_pulse_duration, 0, 0, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, " ms")
+        label_4 = wx.StaticText(self, wx.ID_ANY, _(" ms"))
         sizer_5.Add(label_4, 0, 0, 0)
         self.SetSizer(sizer_5)
         sizer_5.Fit(self)

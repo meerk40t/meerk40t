@@ -3,32 +3,13 @@ import time
 
 from ...core.drivers import Driver
 from ...core.plotplanner import PlotPlanner
-from ...kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-    Modifier,
-    Module,
-)
-from ..basedevice import (
-    DRIVER_STATE_FINISH,
-    DRIVER_STATE_MODECHANGE,
-    DRIVER_STATE_PROGRAM,
-    DRIVER_STATE_RAPID,
-    DRIVER_STATE_RASTER,
-    PLOT_AXIS,
-    PLOT_DIRECTION,
-    PLOT_FINISH,
-    PLOT_JOG,
-    PLOT_RAPID,
-    PLOT_SETTING,
-)
+from ...kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
+                       STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
+                       STATE_UNKNOWN, STATE_WAIT, Modifier, Module)
+from ..basedevice import (DRIVER_STATE_FINISH, DRIVER_STATE_MODECHANGE,
+                          DRIVER_STATE_PROGRAM, DRIVER_STATE_RAPID,
+                          DRIVER_STATE_RASTER, PLOT_AXIS, PLOT_DIRECTION,
+                          PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING)
 
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING
@@ -327,11 +308,12 @@ swizzle_table = [
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
         kernel.register("driver/moshi", MoshiDriver)
         kernel.register("output/moshi", MoshiController)
         context = kernel.root
 
-        @context.console_command("usb_connect", input_type="moshi", help="Connect USB")
+        @context.console_command("usb_connect", input_type="moshi", help=_("Connect USB"))
         def usb_connect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             try:
@@ -340,7 +322,7 @@ def plugin(kernel, lifecycle=None):
                 channel("Connection Refused.")
 
         @context.console_command(
-            "usb_disconnect", input_type="moshi", help="Disconnect USB"
+            "usb_disconnect", input_type="moshi", help=_("Disconnect USB")
         )
         def usb_disconnect(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
@@ -350,7 +332,7 @@ def plugin(kernel, lifecycle=None):
                 channel("Usb is not connected.")
 
         @context.console_command(
-            "start", input_type="moshi", help="Start Pipe to Controller"
+            "start", input_type="moshi", help=_("Start Pipe to Controller")
         )
         def pipe_start(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
@@ -358,30 +340,30 @@ def plugin(kernel, lifecycle=None):
             output.start()
             channel("Moshi Channel Started.")
 
-        @context.console_command("hold", input_type="moshi", help="Hold Controller")
+        @context.console_command("hold", input_type="moshi", help=_("Hold Controller"))
         def pipe_pause(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_PAUSE)
             output.pause()
-            channel("Moshi Channel Paused.")
+            channel(_("Moshi Channel Paused."))
 
-        @context.console_command("resume", input_type="moshi", help="Resume Controller")
+        @context.console_command("resume", input_type="moshi", help=_("Resume Controller"))
         def pipe_resume(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
-            channel("Moshi Channel Resumed.")
+            channel(_("Moshi Channel Resumed."))
 
-        @context.console_command("abort", input_type="moshi", help="Abort Job")
+        @context.console_command("abort", input_type="moshi", help=_("Abort Job"))
         def pipe_abort(command, channel, _, data=None, args=tuple(), **kwargs):
             spooler, driver, output = data
             output.reset()
-            channel("Moshi Channel Aborted.")
+            channel(_("Moshi Channel Aborted."))
 
         @context.console_command(
             "status",
             input_type="moshi",
-            help="abort waiting process on the controller.",
+            help=_("abort waiting process on the controller."),
         )
         def realtime_status(channel, _, data=None, **kwargs):
             spooler, driver, output = data
@@ -393,7 +375,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "continue",
             input_type="moshi",
-            help="abort waiting process on the controller.",
+            help=_("abort waiting process on the controller."),
         )
         def realtime_pause(data=None, **kwargs):
             spooler, driver, output = data

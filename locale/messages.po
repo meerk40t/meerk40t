@@ -1,2695 +1,6343 @@
 # Translations template for PROJECT.
-# Copyright (C) 2020 ORGANIZATION
+# Copyright (C) 2021 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-08-27 18:28-0700\n"
+"POT-Creation-Date: 2021-06-05 10:20-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.9.1\n"
 
-#: About.py:34
+#: meerk40t/kernel.py:918
 #, python-format
-msgid "About %s v%s"
+msgid "%s: Finalizing Module %s: %s"
 msgstr ""
 
-#: About.py:55 wxMeerK40t.py:363
-msgid "About"
+#: meerk40t/kernel.py:933
+#, python-format
+msgid "%s: Detaching %s: %s"
 msgstr ""
 
-#: Adjustments.py:30 OperationProperty.py:55
-msgid "Group Pulses"
+#: meerk40t/kernel.py:939
+#, python-format
+msgid "Suspended Signal: %s for %s"
 msgstr ""
 
-#: Adjustments.py:75
-msgid "Adjustments"
+#: meerk40t/kernel.py:949
+#, python-format
+msgid "Saving Context State: '%s'"
 msgstr ""
 
-#: Adjustments.py:76
-msgid "Override the Speed setting. Use this instead."
+#: meerk40t/kernel.py:952
+#, python-format
+msgid "Context Shutdown Finished: '%s'"
 msgstr ""
 
-#: Adjustments.py:78
-msgid "Override the Power setting. Use this instead."
+#: meerk40t/kernel.py:955
+msgid "Destroying persistence object"
 msgstr ""
 
-#: Adjustments.py:80
-msgid "Override the Overscan setting. Use this instead."
+#: meerk40t/kernel.py:957
+msgid "Could not destroy persistence object"
 msgstr ""
 
-#: Adjustments.py:82
-msgid "Scale the desired speed settings by this percent."
+#: meerk40t/kernel.py:959
+msgid "Shutting down."
 msgstr ""
 
-#: Adjustments.py:84
-msgid "Scale the Power settings by this Percent. (Crimps to [0,1000])"
+#: meerk40t/kernel.py:968
+#, python-format
+msgid "Thread %s exited safely"
 msgstr ""
 
-#: Adjustments.py:86 OperationProperty.py:235
-msgid "Attempts to adjust the pulse grouping for data efficiency."
+#: meerk40t/kernel.py:973
+#, python-format
+msgid "WARNING: Dead thread %s still registered to %s."
 msgstr ""
 
-#: Adjustments.py:88
-msgid "Move writer position towards top."
+#: meerk40t/kernel.py:978
+#, python-format
+msgid "Finishing Thread %s for %s"
 msgstr ""
 
-#: Adjustments.py:90
-msgid "Move writer position towards left."
+#: meerk40t/kernel.py:981
+#, python-format
+msgid "%s is the current shutdown thread"
 msgstr ""
 
-#: Adjustments.py:91
-msgid "Set writer position as origin (0,0)"
+#: meerk40t/kernel.py:983
+msgid "Asking thread to stop."
 msgstr ""
 
-#: Adjustments.py:94
-msgid "Move writer position towards right."
+#: meerk40t/kernel.py:988
+#, python-format
+msgid "Waiting for thread %s: %s"
 msgstr ""
 
-#: Adjustments.py:96
-msgid "Move writer position towards bottom."
+#: meerk40t/kernel.py:990
+#, python-format
+msgid "Thread %s has finished. %s"
 msgstr ""
 
-#: Adjustments.py:98
-msgid "Flush buffers to empty."
+#: meerk40t/kernel.py:993
+#, python-format
+msgid "Thread %s is daemon. It will die automatically: %s"
 msgstr ""
 
-#: Adjustments.py:99
-msgid "Safely exit current job, purge the spooler."
+#: meerk40t/kernel.py:997
+msgid "No threads required halting."
 msgstr ""
 
-#: Adjustments.py:102
-msgid "Emergency Stop. Kill all buffers stop at this location."
+#: meerk40t/kernel.py:1003
+#, python-format
+msgid "WARNING: Listener '%s' still registered to %s."
 msgstr ""
 
-#: Adjustments.py:103
-msgid "Status Information"
+#: meerk40t/kernel.py:1012
+msgid "Shutdown."
 msgstr ""
 
-#: Adjustments.py:112
-msgid "Power Ratio"
+#: meerk40t/kernel.py:1436
+#, python-format
+msgid "Thread: %s already exists. Waiting..."
 msgstr ""
 
-#: Adjustments.py:113
-msgid "Speed Ratio"
+#: meerk40t/kernel.py:1443
+#, python-format
+msgid "Thread: %s, Initialized"
 msgstr ""
 
-#: Adjustments.py:114
-msgid "Overscan Override"
+#: meerk40t/kernel.py:1447
+#, python-format
+msgid "Thread: %s, Set"
 msgstr ""
 
-#: Adjustments.py:115
-msgid "Power Override"
+#: meerk40t/kernel.py:1449
+#, python-format
+msgid "Thread: %s, Start"
 msgstr ""
 
-#: Adjustments.py:116
-msgid "Speed Override"
+#: meerk40t/kernel.py:1451
+#, python-format
+msgid "Thread: %s, End "
 msgstr ""
 
-#: Alignment.py:21
-msgid "Vertical Alignment Finished"
+#: meerk40t/kernel.py:1453
+#, python-format
+msgid "Thread: %s, Exception-End"
 msgstr ""
 
-#: Alignment.py:24
-msgid "Horizontal Alignment Finished"
+#: meerk40t/kernel.py:1458
+#, python-format
+msgid "Thread: %s, Unset"
 msgstr ""
 
-#: Alignment.py:92
-msgid "Alignment."
+#: meerk40t/kernel.py:1473
+msgid "Unstarted"
 msgstr ""
 
-#: Alignment.py:93
-msgid "Perform vertical near-far alignment test"
+#: meerk40t/kernel.py:1475
+msgid "Abort"
 msgstr ""
 
-#: Alignment.py:96
-msgid "Perform a vertical line alignment test"
+#: meerk40t/kernel.py:1477
+msgid "Finished"
 msgstr ""
 
-#: Alignment.py:99
-msgid "How far down should we move to test?"
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:39
+#: meerk40t/gui/wxmeerk40t.py:651 meerk40t/gui/wxmeerk40t.py:1170
+#: meerk40t/kernel.py:1479
+msgid "Pause"
 msgstr ""
 
-#: Alignment.py:102 Alignment.py:117
-msgid ""
-"Heavily misaligned mirrors will need more power to see the line. Once you"
-" can see the line. Turn this down."
+#: meerk40t/kernel.py:1481
+msgid "Busy"
 msgstr ""
 
-#: Alignment.py:104
-msgid "We are done with vertical alignment."
+#: meerk40t/kernel.py:1483
+msgid "Waiting"
 msgstr ""
 
-#: Alignment.py:105
-msgid "Perform horizontal near-far alignment test"
+#: meerk40t/kernel.py:1485
+msgid "Active"
 msgstr ""
 
-#: Alignment.py:109
-msgid "Perform horizontal line alignment test"
+#: meerk40t/kernel.py:1487
+msgid "Idle"
 msgstr ""
 
-#: Alignment.py:113
-msgid "How far right should we move to test?"
+#: meerk40t/kernel.py:1489
+msgid "Unknown"
 msgstr ""
 
-#: Alignment.py:121
-msgid "Perform 4 corners confirmation test"
+#: meerk40t/kernel.py:1852
+#, python-format
+msgid "Syntax Error (%s): %s"
 msgstr ""
 
-#: Alignment.py:125
-msgid "Perform square confirmation test"
+#: meerk40t/kernel.py:1864
+#, python-format
+msgid "%s is not a registered command in this context: %s"
 msgstr ""
 
-#: Alignment.py:140
-msgid ""
-"You are not centering. The misalignment increases over distance.\n"
-"Get the beam to hit the same point regardless of distance. (Usually not "
-"the center)\n"
-"All beam points should overlap at exactly 1 point, when misalignment is "
-"zero.\n"
-"The overlap point should be nearer to the close point. Aim for that. "
-"Repeat.\n"
+#: meerk40t/kernel.py:1877
+msgid "Output type to match"
 msgstr ""
 
-#: Alignment.py:149
-msgid "Testing width in mm"
+#: meerk40t/kernel.py:1878
+msgid "Input type to match"
 msgstr ""
 
-#: Alignment.py:155 Alignment.py:172
-msgid "Testing power"
+#: meerk40t/kernel.py:1880
+msgid "help <help>"
 msgstr ""
 
-#: Alignment.py:161
-msgid "Get the movement of the beam going right to overlap. "
+#: meerk40t/kernel.py:1926
+#, python-format
+msgid "\tArgument: %s '%s'%s"
 msgstr ""
 
-#: Alignment.py:167
-msgid "Testing height in mm"
+#: meerk40t/kernel.py:1937
+#, python-format
+msgid "\tOption: %s ('--%s', '-%s')%s"
 msgstr ""
 
-#: BufferView.py:45
-msgid "Could not find buffer.\n"
+#: meerk40t/kernel.py:1943
+#, python-format
+msgid "No extended help for: %s"
 msgstr ""
 
-#: BufferView.py:74
-msgid "BufferView"
+#: meerk40t/kernel.py:1959
+msgid "Base"
 msgstr ""
 
-#: BufferView.py:82
-msgid "Buffer"
+#: meerk40t/kernel.py:1960
+#, python-format
+msgid "--- %s Commands ---"
 msgstr ""
 
-#: CH341DriverBase.py:61
-msgid "Uninitialized."
+#: meerk40t/kernel.py:1971
+msgid "loop <command>"
 msgstr ""
 
-#: CH341DriverBase.py:63
-msgid "Attempting connection to USB."
+#: meerk40t/kernel.py:1975
+msgid "end <commmand>"
 msgstr ""
 
-#: CH341DriverBase.py:65
-msgid "Connection to USB failed.\n"
+#: meerk40t/kernel.py:1984
+msgid "Turn this timer off"
 msgstr ""
 
-#: CH341DriverBase.py:67
-msgid "Using LibUSB to connect."
+#: meerk40t/kernel.py:1987
+msgid "Run this timer in the gui-thread"
 msgstr ""
 
-#: CH341DriverBase.py:69
-msgid "Using CH341 Driver to connect."
+#: meerk40t/kernel.py:1990
+msgid "Number of times this timer should execute."
 msgstr ""
 
-#: CH341DriverBase.py:71
-msgid "Using Mock Driver."
+#: meerk40t/kernel.py:1995
+msgid "How long in seconds between/before should this be run."
 msgstr ""
 
-#: CH341DriverBase.py:73
-msgid "Finding devices."
+#: meerk40t/kernel.py:2000
+msgid "run the command a given number of times with a given duration between."
 msgstr ""
 
-#: CH341DriverBase.py:75
-msgid "PyUsb detected no backend LibUSB driver."
+#: meerk40t/core/bindalias.py:39 meerk40t/core/bindalias.py:44
+#: meerk40t/core/bindalias.py:87 meerk40t/core/bindalias.py:92
+#: meerk40t/core/drivers.py:586 meerk40t/core/drivers.py:590
+#: meerk40t/core/drivers.py:593 meerk40t/core/drivers.py:604
+#: meerk40t/core/drivers.py:608 meerk40t/core/drivers.py:611
+#: meerk40t/core/drivers.py:620 meerk40t/core/drivers.py:624
+#: meerk40t/core/elements.py:1576 meerk40t/core/elements.py:1612
+#: meerk40t/core/elements.py:1869 meerk40t/core/elements.py:2439
+#: meerk40t/core/elements.py:2451 meerk40t/core/elements.py:2485
+#: meerk40t/core/elements.py:2497 meerk40t/core/elements.py:2532
+#: meerk40t/core/elements.py:2544 meerk40t/core/elements.py:2649
+#: meerk40t/core/elements.py:2661 meerk40t/core/elements.py:2739
+#: meerk40t/core/elements.py:2756 meerk40t/core/elements.py:2844
+#: meerk40t/core/elements.py:2861 meerk40t/core/elements.py:2982
+#: meerk40t/core/elements.py:2991 meerk40t/core/elements.py:3125
+#: meerk40t/core/elements.py:3130 meerk40t/core/inputs.py:120
+#: meerk40t/core/inputs.py:124 meerk40t/core/inputs.py:126
+#: meerk40t/core/inputs.py:138 meerk40t/core/inputs.py:142
+#: meerk40t/core/inputs.py:144 meerk40t/core/inputs.py:149
+#: meerk40t/core/inputs.py:153 meerk40t/core/output.py:303
+#: meerk40t/core/output.py:307 meerk40t/core/output.py:309
+#: meerk40t/core/output.py:314 meerk40t/core/output.py:318
+#: meerk40t/core/planner.py:167 meerk40t/core/planner.py:171
+#: meerk40t/core/planner.py:178 meerk40t/core/planner.py:190
+#: meerk40t/core/planner.py:194 meerk40t/core/planner.py:201
+#: meerk40t/core/spoolers.py:198 meerk40t/core/spoolers.py:202
+#: meerk40t/core/spoolers.py:206 meerk40t/core/spoolers.py:218
+#: meerk40t/core/spoolers.py:222 meerk40t/core/spoolers.py:226
+#: meerk40t/core/webhelp.py:18 meerk40t/core/webhelp.py:24
+#: meerk40t/device/basedevice.py:144 meerk40t/device/basedevice.py:162
+#: meerk40t/extra/inkscape.py:157 meerk40t/extra/inkscape.py:167
+#: meerk40t/gui/wxmeerk40t.py:3990 meerk40t/gui/wxmeerk40t.py:3998
+#: meerk40t/gui/wxmeerk40t.py:4005 meerk40t/gui/wxmeerk40t.py:4015
+#: meerk40t/image/imagetools.py:49 meerk40t/image/imagetools.py:69
+#: meerk40t/kernel.py:2018 meerk40t/kernel.py:2041 meerk40t/kernel.py:2082
+#: meerk40t/kernel.py:2087 meerk40t/kernel.py:2089 meerk40t/kernel.py:2094
+#: meerk40t/kernel.py:2169 meerk40t/kernel.py:2173 meerk40t/kernel.py:2182
+#: meerk40t/kernel.py:2218 meerk40t/kernel.py:2222 meerk40t/kernel.py:2228
+#: meerk40t/kernel.py:2233 meerk40t/kernel.py:2251 meerk40t/kernel.py:2267
+#: meerk40t/kernel.py:2274 meerk40t/kernel.py:2284 meerk40t/kernel.py:2293
+#: meerk40t/kernel.py:2311
+msgid "----------"
 msgstr ""
 
-#: CH341DriverBase.py:77
+#: meerk40t/kernel.py:2019
+msgid "Timers:"
+msgstr ""
+
+#: meerk40t/kernel.py:2031 meerk40t/kernel.py:2259
+msgid "forever,"
+msgstr ""
+
+#: meerk40t/kernel.py:2033 meerk40t/kernel.py:2261
+#, python-format
+msgid "%d times,"
+msgstr ""
+
+#: meerk40t/kernel.py:2035 meerk40t/kernel.py:2263
+msgid "never"
+msgstr ""
+
+#: meerk40t/kernel.py:2037 meerk40t/kernel.py:2265
+#, python-format
+msgid "each %f seconds"
+msgstr ""
+
+#: meerk40t/kernel.py:2039
+msgid "- gui"
+msgstr ""
+
+#: meerk40t/kernel.py:2050
+msgid "All timers canceled."
+msgstr ""
+
+#: meerk40t/kernel.py:2056
+#, python-format
+msgid "Timer '%s' canceled."
+msgstr ""
+
+#: meerk40t/kernel.py:2058
+#, python-format
+msgid "Timer '%s' does not exist."
+msgstr ""
+
+#: meerk40t/kernel.py:2076
+msgid "Syntax Error: timer<name> <times> <interval> <command>"
+msgstr ""
+
+#: meerk40t/kernel.py:2079
+msgid "register"
+msgstr ""
+
+#: meerk40t/kernel.py:2083
+msgid "Objects Registered:"
+msgstr ""
+
+#: meerk40t/kernel.py:2086
+#, python-format
+msgid "%d: %s type of %s"
+msgstr ""
+
+#: meerk40t/kernel.py:2096
+msgid "context"
+msgstr ""
+
+#: meerk40t/kernel.py:2104 meerk40t/kernel.py:2146 meerk40t/kernel.py:2164
+#: meerk40t/kernel.py:2209
+msgid "Path of variables to set."
+msgstr ""
+
+#: meerk40t/kernel.py:2106
+msgid "set [<key> <value>]"
+msgstr ""
+
+#: meerk40t/kernel.py:2140
+msgid "Attempt failed. Produced a runtime error."
+msgstr ""
+
+#: meerk40t/kernel.py:2142
+msgid "Attempt failed. Produced a value error."
+msgstr ""
+
+#: meerk40t/kernel.py:2148
+msgid "control [<executive>]"
+msgstr ""
+
+#: meerk40t/kernel.py:2159
+#, python-format
+msgid "Executed '%s'"
+msgstr ""
+
+#: meerk40t/kernel.py:2161
+#, python-format
+msgid "Control '%s' not found."
+msgstr ""
+
+#: meerk40t/kernel.py:2166
+msgid "module [(open|close) <module_name>]"
+msgstr ""
+
+#: meerk40t/kernel.py:2170
+msgid "Modules Registered:"
+msgstr ""
+
+#: meerk40t/kernel.py:2178
+#, python-format
+msgid "Loaded Modules in Context %s:"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:3996 meerk40t/gui/wxmeerk40t.py:4004
+#: meerk40t/kernel.py:2181 meerk40t/kernel.py:2227 meerk40t/kernel.py:2232
+#, python-format
+msgid "%d: %s as type of %s"
+msgstr ""
+
+#: meerk40t/kernel.py:2199 meerk40t/kernel.py:2205
+#, python-format
+msgid "Module '%s' not found."
+msgstr ""
+
+#: meerk40t/kernel.py:2211
+msgid "modifier [(open|close) <module_name>]"
+msgstr ""
+
+#: meerk40t/kernel.py:2219
+msgid "Modifiers Registered:"
+msgstr ""
+
+#: meerk40t/kernel.py:2224
+#, python-format
+msgid "Loaded Modifiers in Context %s:"
+msgstr ""
+
+#: meerk40t/kernel.py:2229
+#, python-format
+msgid "Loaded Modifiers in Device %s:"
+msgstr ""
+
+#: meerk40t/kernel.py:2241 meerk40t/kernel.py:2247
+#, python-format
+msgid "Modifier '%s' not found."
+msgstr ""
+
+#: meerk40t/kernel.py:2249
+msgid "show scheduled events"
+msgstr ""
+
+#: meerk40t/kernel.py:2252
+msgid "Scheduled Processes:"
+msgstr ""
+
+#: meerk40t/kernel.py:2269
+msgid "show threads"
+msgstr ""
+
+#: meerk40t/kernel.py:2275
+msgid "Registered Threads:"
+msgstr ""
+
+#: meerk40t/kernel.py:2282
+msgid "is alive."
+msgstr ""
+
+#: meerk40t/kernel.py:2288
+msgid "channel (open|close|save|list|print) <channel_name>"
+msgstr ""
+
+#: meerk40t/kernel.py:2294 meerk40t/kernel.py:2312
+msgid "Channels Active:"
+msgstr ""
+
+#: meerk40t/kernel.py:2306
+msgid "list the channels open in the kernel"
+msgstr ""
+
+#: meerk40t/kernel.py:2322
+msgid "name of the channel"
+msgstr ""
+
+#: meerk40t/kernel.py:2325
+msgid "watch this channel in the console"
+msgstr ""
+
+#: meerk40t/kernel.py:2331 meerk40t/kernel.py:2349 meerk40t/kernel.py:2367
+#: meerk40t/kernel.py:2390
+msgid "channel_name is not specified."
+msgstr ""
+
+#: meerk40t/kernel.py:2334
+msgid "Infinite Loop Error."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:396 meerk40t/kernel.py:2337
+#, python-format
+msgid "Watching Channel: %s"
+msgstr ""
+
+#: meerk40t/kernel.py:2340 meerk40t/kernel.py:2358
+msgid "channel name"
+msgstr ""
+
+#: meerk40t/kernel.py:2343
+msgid "stop watching this channel in the console"
+msgstr ""
+
+#: meerk40t/kernel.py:2353
+#, python-format
+msgid "No Longer Watching Channel: %s"
+msgstr ""
+
+#: meerk40t/kernel.py:2355
+#, python-format
+msgid "Channel %s is not opened."
+msgstr ""
+
+#: meerk40t/kernel.py:2361
+msgid "print this channel to the standard out"
+msgstr ""
+
+#: meerk40t/kernel.py:2369
+#, python-format
+msgid "Printing Channel: %s"
+msgstr ""
+
+#: meerk40t/kernel.py:2374
+msgid "Use this filename rather than default"
+msgstr ""
+
+#: meerk40t/kernel.py:2377
+msgid "channel name (you may comma delimit)"
+msgstr ""
+
+#: meerk40t/kernel.py:2381
+msgid "save this channel to disk"
+msgstr ""
+
+#: meerk40t/kernel.py:2398
+#, python-format
+msgid "Opening file: %s"
+msgstr ""
+
+#: meerk40t/kernel.py:2402
+#, python-format
+msgid "Recording Channel: %s to file %s"
+msgstr ""
+
+#: meerk40t/kernel.py:2417
+msgid "Path that should be flushed to disk."
+msgstr ""
+
+#: meerk40t/kernel.py:2419
+msgid "flush current settings to disk"
+msgstr ""
+
+#: meerk40t/kernel.py:2432
+msgid "Persistent settings force saved."
+msgstr ""
+
+#: meerk40t/kernel.py:2434
+msgid "No relevant context found."
+msgstr ""
+
+#: meerk40t/kernel.py:2437
+msgid "quits meerk40t shutting down all processes"
+msgstr ""
+
+#: meerk40t/kernel.py:2443
+msgid "list directory"
+msgstr ""
+
+#: meerk40t/kernel.py:2451
+msgid "change directory"
+msgstr ""
+
+#: meerk40t/kernel.py:2457
+msgid "Working directory"
+msgstr ""
+
+#: meerk40t/kernel.py:2464
+msgid "Internal Directory"
+msgstr ""
+
+#: meerk40t/kernel.py:2467
+msgid "No internal directory."
+msgstr ""
+
+#: meerk40t/kernel.py:2474
+msgid "No such directory."
+msgstr ""
+
+#: meerk40t/kernel.py:2481
+msgid "loads file from working directory"
+msgstr ""
+
+#: meerk40t/kernel.py:2487
+msgid "No file specified."
+msgstr ""
+
+#: meerk40t/kernel.py:2491
+msgid "No such file."
+msgstr ""
+
+#: meerk40t/kernel.py:2497
+msgid "Loading files was not defined"
+msgstr ""
+
+#: meerk40t/kernel.py:2498
+msgid "loading..."
+msgstr ""
+
+#: meerk40t/device/grbl/grbldevice.py:40
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:358
+#: meerk40t/kernelserver.py:13
+msgid "port to listen on."
+msgstr ""
+
+#: meerk40t/device/grbl/grbldevice.py:47
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:365
+#: meerk40t/device/ruida/ruidadevice.py:32 meerk40t/kernelserver.py:20
+msgid "do not watch server channels"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:375
+#: meerk40t/kernelserver.py:27
+msgid "shutdown current lhyserver"
+msgstr ""
+
+#: meerk40t/kernelserver.py:30
+msgid "starts a console_server on port 23 (telnet)"
+msgstr ""
+
+#: meerk40t/kernelserver.py:42
+#, python-format
+msgid "%s %s Telnet Console.\r\n"
+msgstr ""
+
+#: meerk40t/kernelserver.py:53
+#, python-format
+msgid "%s %s console server on port: %d"
+msgstr ""
+
+#: meerk40t/device/grbl/grbldevice.py:102
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:401
+#: meerk40t/kernelserver.py:63
+#, python-format
+msgid "Server failed on port: %d"
+msgstr ""
+
+#: meerk40t/kernelserver.py:100 meerk40t/kernelserver.py:157
+msgid "Shutting down server."
+msgstr ""
+
+#: meerk40t/kernelserver.py:108
+msgid "No UDP packet can be sent as reply to a host that has never made contact."
+msgstr ""
+
+#: meerk40t/kernelserver.py:115
+#, python-format
+msgid "UDP Socket(%d) Listening."
+msgstr ""
+
+#: meerk40t/kernelserver.py:174
+msgid "Could not start listening."
+msgstr ""
+
+#: meerk40t/kernelserver.py:178
+#, python-format
+msgid "Listening %s on port %d..."
+msgstr ""
+
+#: meerk40t/kernelserver.py:183
+#, python-format
+msgid "Socket Connected: %s"
+msgstr ""
+
+#: meerk40t/kernelserver.py:193
+#, python-format
+msgid "Socket was killed: %s"
+msgstr ""
+
+#: meerk40t/kernelserver.py:198
+msgid "Socket did not exist to accept connection."
+msgstr ""
+
+#: meerk40t/kernelserver.py:230
+#, python-format
+msgid "Connection to %s timed out."
+msgstr ""
+
+#: meerk40t/kernelserver.py:237
+#, python-format
+msgid "Connection to %s was closed."
+msgstr ""
+
+#: meerk40t/core/bindalias.py:30
+msgid "bind <key> <console command>"
+msgstr ""
+
+#: meerk40t/core/bindalias.py:40
+msgid "Binds:"
+msgstr ""
+
+#: meerk40t/core/bindalias.py:43
+#, python-format
+msgid "%d: key %s %s"
+msgstr ""
+
+#: meerk40t/core/bindalias.py:50
+msgid "Set default keymap."
+msgstr ""
+
+#: meerk40t/core/bindalias.py:75
+#, python-format
+msgid "Unbound %s"
+msgstr ""
+
+#: meerk40t/core/bindalias.py:81
+msgid "alias <alias> <console commands[;console command]*>"
+msgstr ""
+
+#: meerk40t/core/bindalias.py:88
+msgid "Aliases:"
+msgstr ""
+
+#: meerk40t/core/bindalias.py:98
+msgid "Set default aliases."
+msgstr ""
+
+#: meerk40t/core/bindalias.py:111
+msgid "This is not an alias."
+msgstr ""
+
+#: meerk40t/core/drivers.py:555
+msgid "new driver type"
+msgstr ""
+
+#: meerk40t/core/drivers.py:558
+msgid "driver<?> <command>"
+msgstr ""
+
+#: meerk40t/core/drivers.py:587 meerk40t/core/drivers.py:605
+msgid "Driver:"
+msgstr ""
+
+#: meerk40t/core/drivers.py:591 meerk40t/core/drivers.py:609
+#, python-format
+msgid "Driver %s:"
+msgstr ""
+
+#: meerk40t/core/drivers.py:598
+msgid "driver<?> list"
+msgstr ""
+
+#: meerk40t/core/drivers.py:616
+msgid "list driver types"
+msgstr ""
+
+#: meerk40t/core/drivers.py:621
+msgid "Drivers permitted:"
+msgstr ""
+
+#: meerk40t/core/drivers.py:628
+msgid "driver<?> reset"
+msgstr ""
+
+#: meerk40t/core/elements.py:1432
+msgid "show information about operations"
+msgstr ""
+
+#: meerk40t/core/elements.py:1437
+msgid "operation: selected operations"
+msgstr ""
+
+#: meerk40t/core/elements.py:1443
+msgid "operation*: all operations"
+msgstr ""
+
+#: meerk40t/core/elements.py:1449
+msgid "operation~: non selected operations."
+msgstr ""
+
+#: meerk40t/core/elements.py:1455
+msgid "operation: selected operations."
+msgstr ""
+
+#: meerk40t/core/elements.py:1462
+msgid "operation0,2: operation #0 and #2"
+msgstr ""
+
+#: meerk40t/core/elements.py:1478 meerk40t/core/elements.py:1802
+#, python-format
+msgid "index %d out of range"
+msgstr ""
+
+#: meerk40t/core/elements.py:1485 meerk40t/core/elements.py:1500
+msgid "name to save the operation under"
+msgstr ""
+
+#: meerk40t/core/elements.py:1488
+msgid "Save current operations to persistent settings"
+msgstr ""
+
+#: meerk40t/core/elements.py:1503
+msgid "Load operations from persistent settings"
+msgstr ""
+
+#: meerk40t/core/elements.py:1517 meerk40t/core/elements.py:1810
+msgid "Set these values as the selection."
+msgstr ""
+
+#: meerk40t/core/elements.py:1527 meerk40t/core/elements.py:1820
+msgid "Add the input to the selection"
+msgstr ""
+
+#: meerk40t/core/elements.py:1539 meerk40t/core/elements.py:1832
+msgid "Remove the input data from the selection"
+msgstr ""
+
+#: meerk40t/core/elements.py:1555 meerk40t/core/elements.py:1848
+msgid "Toggle the input data in the selection"
+msgstr ""
+
+#: meerk40t/core/elements.py:1571 meerk40t/core/elements.py:1864
+msgid "Show information about the chained data"
+msgstr ""
+
+#: meerk40t/core/elements.py:1577
+msgid "Operations:"
+msgstr ""
+
+#: meerk40t/core/elements.py:1622
+msgid "<cut/engrave/raster/imageop> - group the elements into this operation"
+msgstr ""
+
+#: meerk40t/core/elements.py:1674
+msgid "raster step size"
+msgstr ""
+
+#: meerk40t/core/elements.py:1676
+msgid "step <raster-step-size>"
+msgstr ""
+
+#: meerk40t/core/elements.py:1684
+#, python-format
+msgid "Step for %s is currently: %d"
+msgstr ""
+
+#: meerk40t/core/elements.py:1693
+#, python-format
+msgid "Image step for %s is currently: %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:1698
+msgid "No raster operations selected."
+msgstr ""
+
+#: meerk40t/core/elements.py:1722
+msgid "duplicate elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1737
+msgid "delete elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1742
+msgid "deleting."
+msgstr ""
+
+#: meerk40t/core/elements.py:1755
+msgid "show information about elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1762
+msgid "element*, all elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1770
+msgid "element~, all non-selected elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1778
+msgid "element, selected elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1786
+msgid "element0,3,4,5: chain a list of specific elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1870
+msgid "Graphical Elements:"
+msgstr ""
+
+#: meerk40t/core/elements.py:1886
+msgid "merge elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1907
+msgid "break elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1928
+msgid "Alignment position"
+msgstr ""
+
+#: meerk40t/core/elements.py:1931
+msgid "align elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:1948
+msgid "Nothing to align."
+msgstr ""
+
+#: meerk40t/core/elements.py:1951
+#, python-format
+msgid "Aligning: %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:2038
+msgid "Cannot spacial align fewer than 2 elements."
+msgstr ""
+
+#: meerk40t/core/elements.py:2145
+msgid "number of columns"
+msgstr ""
+
+#: meerk40t/core/elements.py:2146
+msgid "number of rows"
+msgstr ""
+
+#: meerk40t/core/elements.py:2147
+msgid "x distance"
+msgstr ""
+
+#: meerk40t/core/elements.py:2148
+msgid "y distance"
+msgstr ""
+
+#: meerk40t/core/elements.py:2151
+msgid "grid <columns> <rows> <x_distance> <y_distance>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2170
+msgid "No item selected."
+msgstr ""
+
+#: meerk40t/core/elements.py:2206
+msgid "circle <x> <y> <r> or circle <r>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2237
+msgid "ellipse <cx> <cy> <rx> <ry>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2260
+msgid "x position for top left corner of rectangle."
+msgstr ""
+
+#: meerk40t/core/elements.py:2263
+msgid "y position for top left corner of rectangle."
+msgstr ""
+
+#: meerk40t/core/elements.py:2265
+msgid "width of the rectangle."
+msgstr ""
+
+#: meerk40t/core/elements.py:2267
+msgid "height of the rectangle."
+msgstr ""
+
+#: meerk40t/core/elements.py:2269
+msgid "rounded rx corner value."
+msgstr ""
+
+#: meerk40t/core/elements.py:2270
+msgid "rounded ry corner value."
+msgstr ""
+
+#: meerk40t/core/elements.py:2273
+msgid "adds rectangle to scene"
+msgstr ""
+
+#: meerk40t/core/elements.py:2308 meerk40t/core/elements.py:2337
+msgid "start x position"
+msgstr ""
+
+#: meerk40t/core/elements.py:2309 meerk40t/core/elements.py:2338
+msgid "start y position"
+msgstr ""
+
+#: meerk40t/core/elements.py:2310 meerk40t/core/elements.py:2339
+msgid "end x position"
+msgstr ""
+
+#: meerk40t/core/elements.py:2311 meerk40t/core/elements.py:2340
+msgid "end y position"
+msgstr ""
+
+#: meerk40t/core/elements.py:2314 meerk40t/core/elements.py:2343
+msgid "adds line to scene"
+msgstr ""
+
+#: meerk40t/core/elements.py:2366
+msgid "quoted string of text"
+msgstr ""
+
+#: meerk40t/core/elements.py:2369
+msgid "text <text>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2375
+msgid "No text specified"
+msgstr ""
+
+#: meerk40t/core/elements.py:2386
+msgid "polygon (float float)*"
+msgstr ""
+
+#: meerk40t/core/elements.py:2393 meerk40t/core/elements.py:2407
+msgid "Must be a list of spaced delimited floating point numbers values."
+msgstr ""
+
+#: meerk40t/core/elements.py:2399
+msgid "polyline (float float)*"
+msgstr ""
+
+#: meerk40t/core/elements.py:2412
+msgid "convert any shapes to paths"
+msgstr ""
+
+#: meerk40t/core/elements.py:2424
+msgid "Stroke-width for the given stroke"
+msgstr ""
+
+#: meerk40t/core/elements.py:2428
+msgid "stroke-width <length>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2440
+msgid "Stroke-Width Values:"
+msgstr ""
+
+#: meerk40t/core/elements.py:2447 meerk40t/core/elements.py:2493
+#, python-format
+msgid "%d: stroke = none - %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:2449 meerk40t/core/elements.py:2495
+#, python-format
+msgid "%d: stroke = %s - %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:2455 meerk40t/core/elements.py:2500
+#: meerk40t/core/elements.py:2666 meerk40t/core/elements.py:2761
+#: meerk40t/core/elements.py:2866 meerk40t/core/elements.py:2996
+#: meerk40t/core/elements.py:3086 meerk40t/core/elements.py:3101
+#: meerk40t/extra/pathoptimize.py:14
+msgid "No selected elements."
+msgstr ""
+
+#: meerk40t/core/elements.py:2470
+msgid "Color to color the given stroke"
+msgstr ""
+
+#: meerk40t/core/elements.py:2474
+msgid "stroke <svg color>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2486
+msgid "Stroke Values:"
+msgstr ""
+
+#: meerk40t/core/elements.py:2517
+msgid "color to color the given fill"
+msgstr ""
+
+#: meerk40t/core/elements.py:2521
+msgid "fill <svg color>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2533
+msgid "Fill Values:"
+msgstr ""
+
+#: meerk40t/core/elements.py:2540
+#, python-format
+msgid "%d: fill = none - %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:2542
+#, python-format
+msgid "%d: fill = %s - %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:2559
+msgid "x offset."
+msgstr ""
+
+#: meerk40t/core/elements.py:2560 meerk40t/core/spoolers.py:417
+msgid "y offset"
+msgstr ""
+
+#: meerk40t/core/elements.py:2563
+msgid "outline the current selected elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:2587
+msgid "Nothing Selected"
+msgstr ""
+
+#: meerk40t/core/elements.py:2617
+msgid "angle to rotate by"
+msgstr ""
+
+#: meerk40t/core/elements.py:2618
+msgid "center x"
+msgstr ""
+
+#: meerk40t/core/elements.py:2619
+msgid "center y"
+msgstr ""
+
+#: meerk40t/core/elements.py:2625
+msgid "angle_to absolute angle"
+msgstr ""
+
+#: meerk40t/core/elements.py:2629
+msgid "rotate <angle>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2650
+msgid "Rotate Values:"
+msgstr ""
+
+#: meerk40t/core/elements.py:2657
+#, python-format
+msgid "%d: rotate(%fturn) - %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:2708 meerk40t/core/elements.py:2955
+msgid "scale_x value"
+msgstr ""
+
+#: meerk40t/core/elements.py:2709 meerk40t/core/elements.py:2957
+msgid "scale_y value"
+msgstr ""
+
+#: meerk40t/core/elements.py:2710
+msgid "scale x origin point"
+msgstr ""
+
+#: meerk40t/core/elements.py:2711
+msgid "scale y origin point"
+msgstr ""
+
+#: meerk40t/core/elements.py:2717
+msgid "scale to absolute size"
+msgstr ""
+
+#: meerk40t/core/elements.py:2721
+msgid "scale <scale> [<scale-y>]?"
+msgstr ""
+
+#: meerk40t/core/elements.py:2740
+msgid "Scale Values:"
+msgstr ""
+
+#: meerk40t/core/elements.py:2779
+msgid "Scaling by Zero Error"
+msgstr ""
+
+#: meerk40t/core/elements.py:2817
+msgid "translate x value"
+msgstr ""
+
+#: meerk40t/core/elements.py:2818
+msgid "translate y value"
+msgstr ""
+
+#: meerk40t/core/elements.py:2824
+msgid "translate to absolute position"
+msgstr ""
+
+#: meerk40t/core/elements.py:2828
+msgid "translate <tx> <ty>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2845
+msgid "Translate Values:"
+msgstr ""
+
+#: meerk40t/core/elements.py:2852
+#, python-format
+msgid "%d: translate(%f, %f) - %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:2899
+msgid "x position for top left corner"
+msgstr ""
+
+#: meerk40t/core/elements.py:2902
+msgid "y position for top left corner"
+msgstr ""
+
+#: meerk40t/core/elements.py:2904
+msgid "new width of selected"
+msgstr ""
+
+#: meerk40t/core/elements.py:2905
+msgid "new height of selected"
+msgstr ""
+
+#: meerk40t/core/elements.py:2908
+msgid "resize <x-pos> <y-pos> <width> <height>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2956
+msgid "skew_x value"
+msgstr ""
+
+#: meerk40t/core/elements.py:2958
+msgid "skew_y value"
+msgstr ""
+
+#: meerk40t/core/elements.py:2959
+msgid "translate_x value"
+msgstr ""
+
+#: meerk40t/core/elements.py:2960
+msgid "translate_y value"
+msgstr ""
+
+#: meerk40t/core/elements.py:2963
+msgid "matrix <sx> <kx> <sy> <ky> <tx> <ty>"
+msgstr ""
+
+#: meerk40t/core/elements.py:2983
+msgid "Matrix Values:"
+msgstr ""
+
+#: meerk40t/core/elements.py:3026
+msgid "reset affine transformations"
+msgstr ""
+
+#: meerk40t/core/elements.py:3043
+#, python-format
+msgid "reset - %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:3052
+msgid "reify affine transformations"
+msgstr ""
+
+#: meerk40t/core/elements.py:3069
+#, python-format
+msgid "reified - %s"
+msgstr ""
+
+#: meerk40t/core/elements.py:3078
+msgid "classify elements into operations"
+msgstr ""
+
+#: meerk40t/core/elements.py:3093
+msgid "declassify selected elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:3110
+msgid "access and alter tree elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:3118
+msgid "view tree"
+msgstr ""
+
+#: meerk40t/core/elements.py:3126
+msgid "Tree:"
+msgstr ""
+
+#: meerk40t/core/elements.py:3134
+msgid "svg path syntax command (quoted)."
+msgstr ""
+
+#: meerk40t/core/elements.py:3136
+msgid "path <svg path>"
+msgstr ""
+
+#: meerk40t/core/elements.py:3141
+msgid "Not a valid path_d string (try quotes)"
+msgstr ""
+
+#: meerk40t/core/elements.py:3149
+msgid "clipboard"
+msgstr ""
+
+#: meerk40t/core/elements.py:3172
+msgid "clipboard copy"
+msgstr ""
+
+#: meerk40t/core/elements.py:3181
+msgid "paste offset x"
+msgstr ""
+
+#: meerk40t/core/elements.py:3182
+msgid "paste offset y"
+msgstr ""
+
+#: meerk40t/core/elements.py:3185
+msgid "clipboard paste"
+msgstr ""
+
+#: meerk40t/core/elements.py:3196
+msgid "Error: Clipboard Empty"
+msgstr ""
+
+#: meerk40t/core/elements.py:3219
+msgid "clipboard cut"
+msgstr ""
+
+#: meerk40t/core/elements.py:3231
+msgid "clipboard clear"
+msgstr ""
+
+#: meerk40t/core/elements.py:3243
+msgid "clipboard contents"
+msgstr ""
+
+#: meerk40t/core/elements.py:3253
+msgid "clipboard list"
+msgstr ""
+
+#: meerk40t/core/elements.py:3267
+msgid "note <note>"
+msgstr ""
+
+#: meerk40t/core/elements.py:3272
+msgid "No Note."
+msgstr ""
+
+#: meerk40t/core/elements.py:3280
+msgid "Note Set."
+msgstr ""
+
+#: meerk40t/core/elements.py:3287
+msgid "trace the convex hull of current elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:3309 meerk40t/core/elements.py:3331
+msgid "No elements bounds to trace."
+msgstr ""
+
+#: meerk40t/core/elements.py:3322
+msgid "quick trace the bounding box of current elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:3351 meerk40t/gui/operationproperty.py:260
+msgid "Operation Properties"
+msgstr ""
+
+#: meerk40t/core/elements.py:3357 meerk40t/gui/pathproperty.py:99
+msgid "Path Properties"
+msgstr ""
+
+#: meerk40t/core/elements.py:3363 meerk40t/gui/textproperty.py:118
+msgid "Text Properties"
+msgstr ""
+
+#: meerk40t/core/elements.py:3369 meerk40t/gui/imageproperty.py:82
+msgid "Image Properties"
+msgstr ""
+
+#: meerk40t/core/elements.py:3374
+msgid "Ungroup Elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:3381
+msgid "Group Elements"
+msgstr ""
+
+#: meerk40t/core/elements.py:3389
+msgid "Enable/Disable Ops"
+msgstr ""
+
+#: meerk40t/core/elements.py:3395 meerk40t/core/elements.py:3400
+#: meerk40t/core/elements.py:3405 meerk40t/core/elements.py:3410
+msgid "Convert Operation"
+msgstr ""
+
+#: meerk40t/core/elements.py:3396
+msgid "Convert Raster"
+msgstr ""
+
+#: meerk40t/core/elements.py:3401
+msgid "Convert Engrave"
+msgstr ""
+
+#: meerk40t/core/elements.py:3406
+msgid "Convert Cut"
+msgstr ""
+
+#: meerk40t/core/elements.py:3411
+msgid "Convert Image"
+msgstr ""
+
+#: meerk40t/core/elements.py:3419 meerk40t/core/elements.py:3859
+#: meerk40t/gui/rasterwizard.py:787
+msgid "Step"
+msgstr ""
+
+#: meerk40t/core/elements.py:3423 meerk40t/core/elements.py:3862
+msgid "Step {i}"
+msgstr ""
+
+#: meerk40t/core/elements.py:3425
+msgid "Change raster step values of operation"
+msgstr ""
+
+#: meerk40t/core/elements.py:3435
+msgid "Set Operation Passes"
+msgstr ""
+
+#: meerk40t/core/elements.py:3438
+msgid "Passes={passvalue}"
+msgstr ""
+
+#: meerk40t/core/elements.py:3446 meerk40t/gui/executejob.py:275
+#: meerk40t/gui/panes/toolbarproject.py:86 meerk40t/gui/wxmeerk40t.py:1069
+#: meerk40t/gui/wxmeerk40t.py:1725
+msgid "Execute Job"
+msgstr ""
+
+#: meerk40t/core/elements.py:3448
+msgid "Execute Job for the particular element."
+msgstr ""
+
+#: meerk40t/core/elements.py:3458
+msgid "Compile and Simulate"
+msgstr ""
+
+#: meerk40t/core/elements.py:3460
+msgid "Compile Job and run simulation"
+msgstr ""
+
+#: meerk40t/core/elements.py:3469 meerk40t/core/elements.py:3473
+#: meerk40t/gui/camerainteface.py:673 meerk40t/gui/jobspooler.py:151
+#: meerk40t/gui/panes/spoolerpanel.py:116
+msgid "Clear All"
+msgstr ""
+
+#: meerk40t/core/elements.py:3479
+msgid "Remove: {name}"
+msgstr ""
+
+#: meerk40t/core/elements.py:3497
+msgid "Convert to Cutcode"
+msgstr ""
+
+#: meerk40t/core/elements.py:3505
+msgid "Convert to Path"
+msgstr ""
+
+#: meerk40t/core/elements.py:3522
+msgid "Remove: {ecount} objects"
+msgstr ""
+
+#: meerk40t/core/elements.py:3527
+msgid "Clone Reference"
+msgstr ""
+
+#: meerk40t/core/elements.py:3529 meerk40t/core/elements.py:3761
+msgid "Make {copies} copies."
+msgstr ""
+
+#: meerk40t/core/elements.py:3539
+msgid "Reverse Order"
+msgstr ""
+
+#: meerk40t/core/elements.py:3541
+msgid "reverse the items within this subitem"
+msgstr ""
+
+#: meerk40t/core/elements.py:3549
+msgid "Refresh Classification"
+msgstr ""
+
+#: meerk40t/core/elements.py:3559
+msgid "Wood"
+msgstr ""
+
+#: meerk40t/core/elements.py:3560
+msgid "Acrylic"
+msgstr ""
+
+#: meerk40t/core/elements.py:3561
+msgid "Foam"
+msgstr ""
+
+#: meerk40t/core/elements.py:3562
+msgid "Leather"
+msgstr ""
+
+#: meerk40t/core/elements.py:3563
+msgid "Cardboard"
+msgstr ""
+
+#: meerk40t/core/elements.py:3564
+msgid "Cork"
+msgstr ""
+
+#: meerk40t/core/elements.py:3565
+msgid "Textiles"
+msgstr ""
+
+#: meerk40t/core/elements.py:3566
+msgid "Paper"
+msgstr ""
+
+#: meerk40t/core/elements.py:3567
+msgid "Save-1"
+msgstr ""
+
+#: meerk40t/core/elements.py:3568
+msgid "Save-2"
+msgstr ""
+
+#: meerk40t/core/elements.py:3569
+msgid "Save-3"
+msgstr ""
+
+#: meerk40t/core/elements.py:3581 meerk40t/core/elements.py:3589
+#: meerk40t/core/elements.py:3594
+msgid "Use"
+msgstr ""
+
+#: meerk40t/core/elements.py:3585
+msgid "Load: {opname}"
+msgstr ""
+
+#: meerk40t/core/elements.py:3590
+msgid "Other/Blue/Red"
+msgstr ""
+
+#: meerk40t/core/elements.py:3595
+msgid "Basic"
+msgstr ""
+
+#: meerk40t/core/elements.py:3599 meerk40t/gui/panes/toolbarproject.py:73
+#: meerk40t/gui/wxmeerk40t.py:1067
+msgid "Save"
+msgstr ""
+
+#: meerk40t/core/elements.py:3601
+msgid "{opname}"
+msgstr ""
+
+#: meerk40t/core/elements.py:3606
+msgid "Add Operation"
+msgstr ""
+
+#: meerk40t/core/elements.py:3610 meerk40t/core/elements.py:3617
+#: meerk40t/core/elements.py:3624 meerk40t/core/elements.py:3631
+#: meerk40t/core/elements.py:3643
+msgid "Special Operations"
+msgstr ""
+
+#: meerk40t/core/elements.py:3611
+msgid "Add Home"
+msgstr ""
+
+#: meerk40t/core/elements.py:3618
+msgid "Add Beep"
+msgstr ""
+
+#: meerk40t/core/elements.py:3625
+msgid "Add Move Origin"
+msgstr ""
+
+#: meerk40t/core/elements.py:3632
+msgid "Add Interrupt"
+msgstr ""
+
+#: meerk40t/core/elements.py:3644
+msgid "Add Shutdown"
+msgstr ""
+
+#: meerk40t/core/elements.py:3656
+msgid "Reclassify Operations"
+msgstr ""
+
+#: meerk40t/core/elements.py:3667
+msgid "Duplicate Operation"
+msgstr ""
+
+#: meerk40t/core/elements.py:3669
+msgid "duplicate operation element nodes"
+msgstr ""
+
+#: meerk40t/core/elements.py:3685 meerk40t/gui/operationproperty.py:96
+#: meerk40t/gui/operationproperty.py:330
+msgid "Passes"
+msgstr ""
+
+#: meerk40t/core/elements.py:3687
+msgid "Add {copies} pass(es)."
+msgstr ""
+
+#: meerk40t/core/elements.py:3708 meerk40t/core/elements.py:3759
+#: meerk40t/gui/camerainteface.py:669
+msgid "Duplicate"
+msgstr ""
+
+#: meerk40t/core/elements.py:3711
+msgid "Duplicate elements {copies} time(s)."
+msgstr ""
+
+#: meerk40t/core/elements.py:3723
+msgid "Make Raster Image"
+msgstr ""
+
+#: meerk40t/core/elements.py:3725
+msgid "Convert a vector element into a raster element."
+msgstr ""
+
+#: meerk40t/core/elements.py:3753
+msgid "Reload {name}"
+msgstr ""
+
+#: meerk40t/core/elements.py:3775
+msgid "Reset User Changes"
+msgstr ""
+
+#: meerk40t/core/elements.py:3784
+msgid "Convert To Path"
+msgstr ""
+
+#: meerk40t/core/elements.py:3791
+msgid "Scale"
+msgstr ""
+
+#: meerk40t/core/elements.py:3795
+msgid "Scale {scale_percent}%"
+msgstr ""
+
+#: meerk40t/core/elements.py:3810
+msgid "Rotate"
+msgstr ""
+
+#: meerk40t/core/elements.py:3815
+msgid "Rotate turn/{i}, {angle}°"
+msgstr ""
+
+#: meerk40t/core/elements.py:3829
+msgid "Reify User Changes"
+msgstr ""
+
+#: meerk40t/core/elements.py:3835
+msgid "Break Subpaths"
+msgstr ""
+
+#: meerk40t/core/elements.py:3840
+msgid "Merge Items"
+msgstr ""
+
+#: meerk40t/core/elements.py:3842
+msgid "Merge this node's children into 1 path."
+msgstr ""
+
+#: meerk40t/core/elements.py:3879
+msgid "Actualize Pixels"
+msgstr ""
+
+#: meerk40t/core/elements.py:3884
+msgid "ZDepth Divide"
+msgstr ""
+
+#: meerk40t/core/elements.py:3887
+msgid "Divide Into {divide} Images"
+msgstr ""
+
+#: meerk40t/core/elements.py:3910 meerk40t/core/elements.py:3916
+#: meerk40t/core/elements.py:3922 meerk40t/core/elements.py:3928
+#: meerk40t/core/elements.py:3934 meerk40t/core/elements.py:3940
+#: meerk40t/core/elements.py:3946 meerk40t/core/elements.py:3952
+#: meerk40t/gui/operationproperty.py:33
+msgid "Image"
+msgstr ""
+
+#: meerk40t/core/elements.py:3911
+msgid "Unlock Manipulations"
+msgstr ""
+
+#: meerk40t/core/elements.py:3917
+msgid "Dither to 1 bit"
+msgstr ""
+
+#: meerk40t/core/elements.py:3923
+msgid "Invert Image"
+msgstr ""
+
+#: meerk40t/core/elements.py:3929
+msgid "Mirror Horizontal"
+msgstr ""
+
+#: meerk40t/core/elements.py:3935
+msgid "Flip Vertical"
+msgstr ""
+
+#: meerk40t/core/elements.py:3941
+msgid "Rotate CW"
+msgstr ""
+
+#: meerk40t/core/elements.py:3947
+msgid "Rotate CCW"
+msgstr ""
+
+#: meerk40t/core/elements.py:3953
+msgid "Save output.png"
+msgstr ""
+
+#: meerk40t/core/elements.py:3958 meerk40t/gui/panes/toolbarproject.py:109
+#: meerk40t/gui/wxmeerk40t.py:1081 meerk40t/gui/wxmeerk40t.py:1731
+msgid "RasterWizard"
+msgstr ""
+
+#: meerk40t/core/elements.py:3962
+msgid "RasterWizard: {script}"
+msgstr ""
+
+#: meerk40t/core/elements.py:3967
+msgid "Apply Raster Script"
+msgstr ""
+
+#: meerk40t/core/elements.py:3971
+msgid "Apply: {script}"
+msgstr ""
+
+#: meerk40t/core/elements.py:3976
+msgid "Convert to SVG"
+msgstr ""
+
+#: meerk40t/core/elements.py:3981
+msgid "Process as Operation"
+msgstr ""
+
+#: meerk40t/core/elements.py:3986
+msgid "Expand All Children"
+msgstr ""
+
+#: meerk40t/core/elements.py:3994
+msgid "Reference"
+msgstr ""
+
+#: meerk40t/core/elements.py:4503
+msgid "All valid types"
+msgstr ""
+
+#: meerk40t/core/inputs.py:71
+msgid "new input type"
+msgstr ""
+
+#: meerk40t/core/inputs.py:74
+msgid "input<?> <command>"
+msgstr ""
+
+#: meerk40t/core/inputs.py:121 meerk40t/core/inputs.py:139
+msgid "Input:"
+msgstr ""
+
+#: meerk40t/core/inputs.py:125 meerk40t/core/inputs.py:143
+#, python-format
+msgid "Input %s: %s"
+msgstr ""
+
+#: meerk40t/core/inputs.py:132
+msgid "input<?> list, list current inputs"
+msgstr ""
+
+#: meerk40t/core/inputs.py:147
+msgid "list input types"
+msgstr ""
+
+#: meerk40t/core/inputs.py:150
+msgid "Input types:"
+msgstr ""
+
+#: meerk40t/core/output.py:17
+msgid "Port of TCPOutput to change."
+msgstr ""
+
+#: meerk40t/core/output.py:20
+msgid "change the port of the tcpdevice"
+msgstr ""
+
+#: meerk40t/core/output.py:27
+#, python-format
+msgid "TCP port changed: %s -> %s"
+msgstr ""
+
+#: meerk40t/core/output.py:197
+msgid "new output type"
+msgstr ""
+
+#: meerk40t/core/output.py:200
+msgid "output<?> <command>"
+msgstr ""
+
+#: meerk40t/core/output.py:237
+msgid "outfile filename"
+msgstr ""
+
+#: meerk40t/core/output.py:264
+msgid "tcp address"
+msgstr ""
+
+#: meerk40t/core/output.py:265
+msgid "tcp/ip port"
+msgstr ""
+
+#: meerk40t/core/output.py:268
+msgid "network <address> <port>"
+msgstr ""
+
+#: meerk40t/core/output.py:274
+msgid "No address/port specified"
+msgstr ""
+
+#: meerk40t/core/output.py:297
+msgid "output<?> list, list current outputs"
+msgstr ""
+
+#: meerk40t/core/output.py:304
+msgid "Output:"
+msgstr ""
+
+#: meerk40t/core/output.py:308
+#, python-format
+msgid "Output %s: %s"
+msgstr ""
+
+#: meerk40t/core/output.py:312
+msgid "list output types"
+msgstr ""
+
+#: meerk40t/core/output.py:315
+msgid "Output types:"
+msgstr ""
+
+#: meerk40t/core/planner.py:99
+msgid "plan command name to alias"
+msgstr ""
+
+#: meerk40t/core/planner.py:103
+msgid "Define a spoolable console command"
+msgstr ""
+
+#: meerk40t/core/planner.py:121
+msgid "You may not overwrite an already used alias."
+msgstr ""
+
+#: meerk40t/core/planner.py:132
+msgid "plan<?> <command>"
+msgstr ""
+
+#: meerk40t/core/planner.py:168 meerk40t/core/planner.py:191
+msgid "Plan:"
+msgstr ""
+
+#: meerk40t/core/planner.py:172 meerk40t/core/planner.py:195
+#, python-format
+msgid "Plan %s:"
+msgstr ""
+
+#: meerk40t/core/planner.py:175 meerk40t/core/planner.py:198
+#, python-format
+msgid "Commands %s:"
+msgstr ""
+
+#: meerk40t/core/planner.py:184
+msgid "plan<?> list"
+msgstr ""
+
+#: meerk40t/core/planner.py:206
+msgid "plan<?> classify"
+msgstr ""
+
+#: meerk40t/core/planner.py:217
+msgid "plan<?> copy-selected"
+msgstr ""
+
+#: meerk40t/core/planner.py:236 meerk40t/core/planner.py:268
+msgid "Copied Operations."
+msgstr ""
+
+#: meerk40t/core/planner.py:242
+msgid "plan<?> copy"
+msgstr ""
+
+#: meerk40t/core/planner.py:272
+msgid "index of location to insert command"
+msgstr ""
+
+#: meerk40t/core/planner.py:274
+msgid "unlock, origin, home, etc."
+msgstr ""
+
+#: meerk40t/core/planner.py:278
+msgid "plan<?> command"
+msgstr ""
+
+#: meerk40t/core/planner.py:294
+msgid "Plan Commands:"
+msgstr ""
+
+#: meerk40t/core/planner.py:307
+msgid "Invalid index for command insert."
+msgstr ""
+
+#: meerk40t/core/planner.py:311 meerk40t/core/planner.py:333
+#: meerk40t/core/planner.py:354 meerk40t/core/spoolers.py:249
+msgid "No plan command found."
+msgstr ""
+
+#: meerk40t/core/planner.py:314 meerk40t/core/planner.py:336
+#: meerk40t/core/spoolers.py:229
+msgid "unlock, origin, home, etc"
+msgstr ""
+
+#: meerk40t/core/planner.py:317
+msgid "plan<?> append <op>"
+msgstr ""
+
+#: meerk40t/core/planner.py:339
+msgid "plan<?> prepend <op>"
+msgstr ""
+
+#: meerk40t/core/planner.py:359
+msgid "plan<?> preprocess"
+msgstr ""
+
+#: meerk40t/core/planner.py:370
+msgid "Physical Home Before: Disabled (Rotary On)"
+msgstr ""
+
+#: meerk40t/core/planner.py:375
+msgid "Home Before: Disabled (Rotary On)"
+msgstr ""
+
+#: meerk40t/core/planner.py:383
+msgid "Home After: Disabled (Rotary On)"
+msgstr ""
+
+#: meerk40t/core/planner.py:388
+msgid "Physical Home After: Disabled (Rotary On)"
+msgstr ""
+
+#: meerk40t/core/planner.py:408
+msgid "plan<?> validate"
+msgstr ""
+
+#: meerk40t/core/planner.py:420
+msgid "plan<?> blob"
+msgstr ""
+
+#: meerk40t/core/planner.py:453
+msgid "plan<?> preopt"
+msgstr ""
+
+#: meerk40t/core/planner.py:472
+msgid "plan<?> optimize"
+msgstr ""
+
+#: meerk40t/core/planner.py:484
+msgid "plan<?> clear"
+msgstr ""
+
+#: meerk40t/core/planner.py:495
+msgid "unlock, origin, home"
+msgstr ""
+
+#: meerk40t/core/planner.py:496
+msgid "columns for the grid"
+msgstr ""
+
+#: meerk40t/core/planner.py:497
+msgid "rows for the grid"
+msgstr ""
+
+#: meerk40t/core/planner.py:499
+msgid "x_distance each column step"
+msgstr ""
+
+#: meerk40t/core/planner.py:502
+msgid "y_distance each row step"
+msgstr ""
+
+#: meerk40t/core/planner.py:506
+msgid "plan<?> step_repeat"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:157
+msgid "Register this device"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:161
+msgid "spool<?> <command>"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:194
+msgid "Spooled Plan."
+msgstr ""
+
+#: meerk40t/core/spoolers.py:199 meerk40t/core/spoolers.py:219
+msgid "Spoolers:"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:203 meerk40t/core/spoolers.py:223
+#, python-format
+msgid "Spooler %s:"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:212
+msgid "spool<?> list"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:232
+msgid "send a plan-command to the spooler"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:254
+msgid "spooler<?> clear"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:299
+msgid "turn laser on in place"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:313
+msgid "turn laser off in place"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:323
+msgid "amount to move in the set direction."
+msgstr ""
+
+#: meerk40t/core/spoolers.py:329
+msgid "cmd <amount>"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:359
+msgid "executes outstanding jog buffer"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:373
+#, python-format
+msgid "Position moved: %d %d"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:377 meerk40t/core/spoolers.py:395
+#: meerk40t/core/spoolers.py:413
+msgid "Busy Error"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:380 meerk40t/core/spoolers.py:398
+msgid "change in x"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:381 meerk40t/core/spoolers.py:399
+msgid "change in y"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:386
+msgid "move <x> <y>: move to position."
+msgstr ""
+
+#: meerk40t/core/spoolers.py:404
+msgid "move_relative <dx> <dy>"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:416
+msgid "x offset"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:422
+msgid "home the laser"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:440
+msgid "unlock the rail"
+msgstr ""
+
+#: meerk40t/core/spoolers.py:453
+msgid "lock the rail"
+msgstr ""
+
+#: meerk40t/core/webhelp.py:14
+msgid "Webhelp page"
+msgstr ""
+
+#: meerk40t/core/webhelp.py:15
+msgid "Launch a registered webhelp page"
+msgstr ""
+
+#: meerk40t/core/webhelp.py:19
+msgid "Webhelp Registered:"
+msgstr ""
+
+#: meerk40t/core/webhelp.py:44
+msgid "Webhelp not found."
+msgstr ""
+
+#: meerk40t/device/basedevice.py:45
+msgid "match on output rather than driver"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:49
+msgid "delegate commands to currently selected device by input/driver"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:64
+#, python-format
+msgid "Device %s, %s, %s"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:90
+msgid "No device selected."
+msgstr ""
+
+#: meerk40t/device/basedevice.py:120
+msgid "No matching command."
+msgstr ""
+
+#: meerk40t/device/basedevice.py:123
+msgid "Index of device being activated"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:127
+msgid "delegate commands to currently selected device"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:138
+msgid "device"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:145 meerk40t/device/basedevice.py:163
+msgid "Devices:"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:156
+msgid "list devices"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:172
+msgid "Index of device deleted"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:175
+msgid "delete <index>"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:197
+msgid "Invalid device-string index."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341.py:127
 msgid "PyUsb is not installed. Skipping."
 msgstr ""
 
-#: CH341DriverBase.py:79
-msgid "K40 device detected:"
+#: meerk40t/device/ch341/ch341.py:133
+msgid "No Windll interfacing. Skipping."
 msgstr ""
 
-#: CH341DriverBase.py:81
+#: meerk40t/device/ch341/ch341.py:164 meerk40t/device/ch341/libusb.py:58
+#, python-format
+msgid "CH341 Chip Version: %d"
+msgstr ""
+
+#: meerk40t/device/ch341/ch341.py:169
+#, python-format
+msgid "Driver Detected: %s"
+msgstr ""
+
+#: meerk40t/device/ch341/ch341.py:171 meerk40t/device/ch341/libusb.py:56
+#: meerk40t/device/ch341/libusb.py:64 meerk40t/device/ch341/mock.py:59
+#: meerk40t/device/ch341/windll.py:55
+msgid "Device Connected.\n"
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:66
+#: meerk40t/device/ch341/libusb.py:30
+msgid "Using LibUSB to connect."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:67
+msgid "Finding devices."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:80
 msgid "Devices Not Found."
 msgstr ""
 
-#: CH341DriverBase.py:83
-msgid "K40 devices were found but they were rejected."
+#: meerk40t/device/ch341/ch341libusbdriver.py:83
+msgid "K40 device detected:"
 msgstr ""
 
-#: CH341DriverBase.py:85
+#: meerk40t/device/ch341/ch341libusbdriver.py:91
+msgid "Your OS does not give you permissions to access USB."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:95
+msgid "K40 devices were found. But something else was connected to them."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:101
+msgid ""
+"K40 devices were found but they were rejected by device criteria in "
+"Controller."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:113
+msgid "Attempting to detach kernel."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:115
+msgid "Kernel detach: Success."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:120
+msgid "Kernel detach: Failed."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:124
+msgid "Kernel detach: Not Implemented."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:130
+msgid "Getting Active Config"
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:133
+msgid "Active Config: Success."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:139
+msgid "Active Config: Failed."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:144
 msgid "Config Set"
 msgstr ""
 
-#: CH341DriverBase.py:87
+#: meerk40t/device/ch341/ch341libusbdriver.py:147
 msgid "Config Set: Success"
 msgstr ""
 
-#: CH341DriverBase.py:89
+#: meerk40t/device/ch341/ch341libusbdriver.py:153
 msgid ""
 "Config Set: Fail\n"
 "(Hint: may recover if you change where the USB is plugged in.)"
 msgstr ""
 
-#: CH341DriverBase.py:91
-msgid "Attempting to detach kernel."
-msgstr ""
-
-#: CH341DriverBase.py:93
-msgid "Kernel detach: Success."
-msgstr ""
-
-#: CH341DriverBase.py:95
-msgid "Kernel detach: Failed."
-msgstr ""
-
-#: CH341DriverBase.py:97
-msgid "Kernel detach: Not Implemented."
-msgstr ""
-
-#: CH341DriverBase.py:99
-msgid "Setting Active Config"
-msgstr ""
-
-#: CH341DriverBase.py:101
-msgid "Active Config: Success."
-msgstr ""
-
-#: CH341DriverBase.py:103
-msgid "Active Config: Failed."
-msgstr ""
-
-#: CH341DriverBase.py:105
+#: meerk40t/device/ch341/ch341libusbdriver.py:162
 msgid "Attempting to claim interface."
 msgstr ""
 
-#: CH341DriverBase.py:107
+#: meerk40t/device/ch341/ch341libusbdriver.py:164
 msgid "Interface claim: Success"
 msgstr ""
 
-#: CH341DriverBase.py:109
+#: meerk40t/device/ch341/ch341libusbdriver.py:169
 msgid "Interface claim: Failed. (Interface is in use.)"
 msgstr ""
 
-#: CH341DriverBase.py:111
-msgid "USB Connected."
-msgstr ""
-
-#: CH341DriverBase.py:113
-msgid "Sending CH341 mode change to EPP1.9."
-msgstr ""
-
-#: CH341DriverBase.py:115
-msgid "CH341 mode change to EPP1.9: Success."
-msgstr ""
-
-#: CH341DriverBase.py:117
-msgid "CH341 mode change to EPP1.9: Fail."
-msgstr ""
-
-#: CH341DriverBase.py:119
-msgid "Device Connected.\n"
-msgstr ""
-
-#: CH341DriverBase.py:121
-msgid "Attempting disconnection from USB."
-msgstr ""
-
-#: CH341DriverBase.py:123
+#: meerk40t/device/ch341/ch341libusbdriver.py:176
 msgid "Attempting kernel attach"
 msgstr ""
 
-#: CH341DriverBase.py:125
+#: meerk40t/device/ch341/ch341libusbdriver.py:178
 msgid "Kernel attach: Success."
 msgstr ""
 
-#: CH341DriverBase.py:127
+#: meerk40t/device/ch341/ch341libusbdriver.py:183
+#: meerk40t/device/ch341/ch341libusbdriver.py:186
 msgid "Kernel attach: Fail."
 msgstr ""
 
-#: CH341DriverBase.py:129
+#: meerk40t/device/ch341/ch341libusbdriver.py:191
 msgid "Attempting to release interface."
 msgstr ""
 
-#: CH341DriverBase.py:131
+#: meerk40t/device/ch341/ch341libusbdriver.py:193
 msgid "Interface released."
 msgstr ""
 
-#: CH341DriverBase.py:133
+#: meerk40t/device/ch341/ch341libusbdriver.py:198
 msgid "Interface did not exist."
 msgstr ""
 
-#: CH341DriverBase.py:135
+#: meerk40t/device/ch341/ch341libusbdriver.py:203
 msgid "Attempting to dispose resources."
 msgstr ""
 
-#: CH341DriverBase.py:137
+#: meerk40t/device/ch341/ch341libusbdriver.py:205
 msgid "Dispose Resources: Success"
 msgstr ""
 
-#: CH341DriverBase.py:139
+#: meerk40t/device/ch341/ch341libusbdriver.py:210
 msgid "Dispose Resources: Fail"
 msgstr ""
 
-#: CH341DriverBase.py:141
+#: meerk40t/device/ch341/ch341libusbdriver.py:215
 msgid "Attempting USB reset."
 msgstr ""
 
-#: CH341DriverBase.py:143
-msgid "USB connection did not exist."
-msgstr ""
-
-#: CH341DriverBase.py:145
+#: meerk40t/device/ch341/ch341libusbdriver.py:217
 msgid "USB connection reset."
 msgstr ""
 
-#: CH341DriverBase.py:147
+#: meerk40t/device/ch341/ch341libusbdriver.py:222
+#: meerk40t/device/ch341/libusb.py:72 meerk40t/device/ch341/mock.py:70
+#: meerk40t/device/ch341/windll.py:66
+msgid "USB connection did not exist."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:233
+#: meerk40t/device/ch341/libusb.py:31 meerk40t/device/ch341/mock.py:41
+#: meerk40t/device/ch341/windll.py:31
+msgid "Attempting connection to USB."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:248
+#: meerk40t/device/ch341/libusb.py:44 meerk40t/device/ch341/mock.py:49
+#: meerk40t/device/ch341/windll.py:44
+msgid "USB Connected."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:252
+msgid "PyUsb detected no backend LibUSB driver."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:255
+#: meerk40t/device/ch341/libusb.py:41 meerk40t/device/ch341/windll.py:39
+msgid "Connection to USB failed.\n"
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:263
+#: meerk40t/device/ch341/libusb.py:70 meerk40t/device/ch341/mock.py:68
+#: meerk40t/device/ch341/windll.py:64
+msgid "Attempting disconnection from USB."
+msgstr ""
+
+#: meerk40t/device/ch341/ch341libusbdriver.py:270
+#: meerk40t/device/ch341/libusb.py:76 meerk40t/device/ch341/mock.py:78
+#: meerk40t/device/ch341/windll.py:72
 msgid "USB Disconnection Successful.\n"
 msgstr ""
 
-#: CH341DriverBase.py:149
-#, python-format
-msgid "CH341 Chip Version: %d"
+#: meerk40t/device/ch341/libusb.py:46 meerk40t/device/ch341/mock.py:50
+#: meerk40t/device/ch341/windll.py:45
+msgid "Sending CH341 mode change to EPP1.9."
 msgstr ""
 
-#: CH341DriverBase.py:151
+#: meerk40t/device/ch341/libusb.py:51 meerk40t/device/ch341/mock.py:53
+#: meerk40t/device/ch341/windll.py:50
+msgid "CH341 mode change to EPP1.9: Success."
+msgstr ""
+
+#: meerk40t/device/ch341/libusb.py:53 meerk40t/device/ch341/mock.py:56
+#: meerk40t/device/ch341/windll.py:53
+msgid "CH341 mode change to EPP1.9: Fail."
+msgstr ""
+
+#: meerk40t/device/ch341/libusb.py:59
 msgid "Driver Detected: LibUsb"
 msgstr ""
 
-#: CH341DriverBase.py:153
-msgid "Driver Detected: CH341"
+#: meerk40t/device/ch341/libusb.py:112 meerk40t/device/ch341/mock.py:168
+#: meerk40t/device/ch341/windll.py:169
+msgid "K40 devices were found but they were rejected due to chip version."
 msgstr ""
 
-#: CH341DriverBase.py:154 Kernel.py:2344
-msgid "Unknown"
+#: meerk40t/device/ch341/libusb.py:123
+msgid "K40 devices were found but they were rejected due to usb bus."
 msgstr ""
 
-#: CameraInteface-New.py:28 CameraInteface.py:25
-msgid "Reset Perspective"
+#: meerk40t/device/ch341/libusb.py:132
+msgid "K40 devices were found but they were rejected due to usb address."
 msgstr ""
 
-#: CameraInteface-New.py:30 CameraInteface.py:27
-msgid "Reset Fisheye"
+#: meerk40t/device/ch341/mock.py:37
+msgid "Using Mock Driver."
 msgstr ""
 
-#: CameraInteface-New.py:34
-msgid "Set URI"
+#: meerk40t/device/ch341/mock.py:40
+msgid "Using Mock Driver to connect."
 msgstr ""
 
-#: CameraInteface-New.py:37
-msgid "Set IP Camera"
+#: meerk40t/device/ch341/windll.py:30
+msgid "Using CH341 Driver to connect."
 msgstr ""
 
-#: CameraInteface-New.py:40 CameraInteface.py:40
-msgid "Set Camera 0"
+#: meerk40t/device/grbl/grbldevice.py:25
+msgid "run grbl-emulator on given port."
 msgstr ""
 
-#: CameraInteface-New.py:43 CameraInteface.py:43
-msgid "Set Camera 1"
+#: meerk40t/device/grbl/grbldevice.py:28
+msgid "grbl x-flip"
 msgstr ""
 
-#: CameraInteface-New.py:46 CameraInteface.py:46
-msgid "Set Camera 2"
+#: meerk40t/device/grbl/grbldevice.py:31
+msgid "grbl y-flip"
 msgstr ""
 
-#: CameraInteface-New.py:49 CameraInteface.py:49
-msgid "Set Camera 3"
+#: meerk40t/device/grbl/grbldevice.py:34
+msgid "adjust grbl home_x position"
 msgstr ""
 
-#: CameraInteface-New.py:52 CameraInteface.py:52
-msgid "Set Camera 4"
+#: meerk40t/device/grbl/grbldevice.py:37
+msgid "adjust grbl home_y position"
 msgstr ""
 
-#: CameraInteface-New.py:56 CameraInteface.py:55 wxMeerK40t.py:205
-#: wxMeerK40t.py:350
-msgid "Camera"
+#: meerk40t/device/grbl/grbldevice.py:50
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:368
+msgid "watch send/recv data"
 msgstr ""
 
-#: CameraInteface-New.py:63 CameraInteface.py:61
+#: meerk40t/device/grbl/grbldevice.py:57
+msgid "shutdown current grblserver"
+msgstr ""
+
+#: meerk40t/device/grbl/grbldevice.py:59
+msgid "activate the grblserver."
+msgstr ""
+
+#: meerk40t/device/grbl/grbldevice.py:87
+msgid "GRBL Mode."
+msgstr ""
+
+#: meerk40t/device/grbl/grbldevice.py:100
+#, python-format
+msgid "TCP Server for GRBL Emulator on port: %d"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:32
+msgid "override one second laser fire pulse duration"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:34
+msgid "laser fire pulse duration"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:38
+msgid "pulse <time>: Pulse the laser in place."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:45
+msgid "Must specify a pulse time in milliseconds."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:50
+#, python-format
+msgid "\"%s\" exceeds 1 second limit to fire a standing laser."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:65
+#, python-format
+msgid "Pulse laser for %f milliseconds"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:67
+msgid "Pulse laser failed: Busy"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:75
+msgid "Change speed by this amount."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:77
+msgid "Set the driver speed."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:79
+msgid "Set current speed of driver."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:93
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:112
+#, python-format
+msgid "Speed set at: %f mm/s"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:103
+msgid "Not a valid speed or percent."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:114
+msgid "pulses per inch [0-1000]"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:116
+msgid "Set Driver Power"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:121
+#, python-format
+msgid "Power set at: %d pulses per inch"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:128
+msgid "Acceleration amount [1-4]"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:132
+msgid "Set Driver Acceleration [1-4]"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:144
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:153
+msgid "Acceleration is set to default."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:146
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:156
+#, python-format
+msgid "Acceleration: %d"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:158
+msgid "Invalid Acceleration [1-4]."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:164
+msgid "update movement codes for the drivers"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:173
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:185
+#: meerk40t/device/moshi/moshidevice.py:366
+#: meerk40t/device/moshi/moshidevice.py:378
+msgid "abort waiting process on the controller."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:180
+#: meerk40t/device/moshi/moshidevice.py:373
+msgid "Could not check status, usb not connected."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:194
+msgid "realtime pause/resume of the machine"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:204
+#: meerk40t/device/moshi/moshidevice.py:357
+msgid "Abort Job"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:209
+msgid "Lhystudios Channel Aborted."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:212
+msgid "limit x speed for rapid."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:215
+msgid "limit y speed for rapid."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:220
+msgid "limit speed of typical rapid moves."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:231
+#, python-format
+msgid "Rapid Limit: %f, %f"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:236
+msgid "Rapid Limit Off"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:242
+msgid "Lhystudios Engrave Buffer Import. egv_import <egv_file>"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:279
+msgid "Lhystudios Engrave Buffer Export. egv_export <egv_file>"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:300
+#, python-format
+msgid "Could not save: %s"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:305
+msgid "Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:315
+#: meerk40t/device/moshi/moshidevice.py:335
+msgid "Start Pipe to Controller"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:321
+msgid "Lhystudios Channel Started."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:324
+#: meerk40t/device/moshi/moshidevice.py:343
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:541
+msgid "Hold Controller"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:333
+#: meerk40t/device/moshi/moshidevice.py:350
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:566
+msgid "Resume Controller"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:339
+msgid "Lhystudios Channel Resumed."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:342
+msgid "Connects USB"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:347
+msgid "CH341 Opened."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:350
+msgid "Disconnects USB"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:355
+msgid "CH341 Closed."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:377
+msgid "activate the lhyserver."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:390
+#, python-format
+msgid "TCP Server for Lhystudios on port: %d"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:398
+#, python-format
+msgid "Attached: %s"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:403
+msgid "Server cannot be attached to any device."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:406
+msgid "activate the lhyemulator."
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:416
+#, python-format
+msgid "Lhystudios Emulator attached to %s"
+msgstr ""
+
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:418
+msgid "Emulator cannot be attached to any device."
+msgstr ""
+
+#: meerk40t/device/moshi/moshidevice.py:316
+msgid "Connect USB"
+msgstr ""
+
+#: meerk40t/device/moshi/moshidevice.py:325
+msgid "Disconnect USB"
+msgstr ""
+
+#: meerk40t/device/moshi/moshidevice.py:348
+msgid "Moshi Channel Paused."
+msgstr ""
+
+#: meerk40t/device/moshi/moshidevice.py:355
+msgid "Moshi Channel Resumed."
+msgstr ""
+
+#: meerk40t/device/moshi/moshidevice.py:361
+msgid "Moshi Channel Aborted."
+msgstr ""
+
+#: meerk40t/device/ruida/ruidadevice.py:39
+msgid "shutdown current ruidaserver"
+msgstr ""
+
+#: meerk40t/device/ruida/ruidadevice.py:42
+msgid "activate the ruidaserver."
+msgstr ""
+
+#: meerk40t/device/ruida/ruidadevice.py:67
+msgid "RuidaServer shutdown."
+msgstr ""
+
+#: meerk40t/device/ruida/ruidadevice.py:69
+#, python-format
+msgid "Ruida Data Server opened on port %d."
+msgstr ""
+
+#: meerk40t/device/ruida/ruidadevice.py:70
+#, python-format
+msgid "Ruida Jog Server opened on port %d."
+msgstr ""
+
+#: meerk40t/device/ruida/ruidadevice.py:92
+msgid "Must run with a correct active device"
+msgstr ""
+
+#: meerk40t/device/ruida/ruidadevice.py:103
+msgid "Server failed."
+msgstr ""
+
+#: meerk40t/extra/embroider.py:11
+msgid "Angle of the fill"
+msgstr ""
+
+#: meerk40t/extra/embroider.py:14
+msgid "Length between rungs"
+msgstr ""
+
+#: meerk40t/extra/embroider.py:16
+msgid "embroider <angle> <distance>"
+msgstr ""
+
+#: meerk40t/extra/embroider.py:22
+msgid "Embroidery Filling"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:12
+msgid "load processed file"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:18
+msgid "Loading..."
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:26
+msgid "simplify path"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:32 meerk40t/extra/inkscape.py:53
+msgid "Making plain_svg with Inkscape."
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:47
+msgid "text to path"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:68
+msgid "dpi to use"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:69
+msgid "step to use"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:71
+msgid "make png"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:77
+msgid "Making PNG with Inkscape."
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:97
+msgid "filename of svg to be simplified"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:101
+msgid "input filename"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:108
+msgid "filename not specified"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:110
+msgid "file is not found."
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:116
+msgid "determine inkscape version"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:123
+msgid "Inkscape not found."
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:131
+msgid "Locate the inkscape program on your computer"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:154
+msgid "Platform inkscape locations unknown."
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:158
+msgid "Finding Inkscape"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:163
+msgid "Success"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:165
+msgid "Fail"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:166
+#, python-format
+msgid "Searching: %s -- Result: %s"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:177
+msgid "perform a special inkscape function"
+msgstr ""
+
+#: meerk40t/extra/pathoptimize.py:10
+msgid "optimize <type>"
+msgstr ""
+
+#: meerk40t/extra/pathoptimize.py:17
+msgid "Optimizations: cut_inner, travel, cut_travel"
+msgstr ""
+
+#: meerk40t/extra/pathoptimize.py:27
+#, python-format
+msgid "Travel Optimizing: %f"
+msgstr ""
+
+#: meerk40t/extra/pathoptimize.py:36
+#, python-format
+msgid "Optimized: %f"
+msgstr ""
+
+#: meerk40t/extra/pathoptimize.py:41
+#, python-format
+msgid "Cut Travel Initial: %f"
+msgstr ""
+
+#: meerk40t/extra/pathoptimize.py:50
+#, python-format
+msgid "Cut Travel Optimized: %f"
+msgstr ""
+
+#: meerk40t/extra/pathoptimize.py:54
+msgid "Optimization not found."
+msgstr ""
+
+#: meerk40t/extra/vectrace.py:10 meerk40t/image/imagetools.py:92
+msgid "return paths around image"
+msgstr ""
+
+#: meerk40t/gui/about.py:22
+#, python-format
+msgid "About %s v%s"
+msgstr ""
+
+#: meerk40t/gui/about.py:30 meerk40t/gui/wxmeerk40t.py:1797
+msgid "About"
+msgstr ""
+
+#: meerk40t/gui/about.py:56
+msgid ""
+"MeerK40t is a free MIT Licensed open source project for lasering on K40 "
+"Devices.\n"
+"\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:57
+msgid ""
+"Participation in the project is highly encouraged. Past participation, "
+"and \n"
+msgstr ""
+
+#: meerk40t/gui/about.py:58
+msgid ""
+"continuing participation is graciously thanked. This program is mostly "
+"the\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:59
+msgid ""
+"brainchild of Tatarize, who sincerely hopes his contributions will be but"
+" \n"
+msgstr ""
+
+#: meerk40t/gui/about.py:60
+msgid "the barest trickle that becomes a raging river."
+msgstr ""
+
+#: meerk40t/gui/about.py:77
+msgid "Thanks go out to.\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:78
+msgid "* Li Huiyu for their controller. \n"
+msgstr ""
+
+#: meerk40t/gui/about.py:79
+msgid "* Scorch for lighting our path.\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:80
+msgid "* Alois Zingl for his wonderful Bresenham plotting algorithms.\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:81
+msgid ""
+"* @joerlane and all the MeerKittens, past and present, great and small.\n"
+"\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:82
+msgid ""
+"* Icon8 for their great icons ( https://icons8.com/ ) used throughout the"
+" project.\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:83
+msgid "* The works of countless developers who made everything possible.\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:84
+msgid "* Regebro for his svg.path module.\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:85
+msgid "* The SVG Working Group.\n"
+msgstr ""
+
+#: meerk40t/gui/about.py:86
+msgid "* Hackers (in the general sense)."
+msgstr ""
+
+#: meerk40t/gui/bufferview.py:21 meerk40t/gui/wxmeerk40t.py:2997
+msgid "Export EGV"
+msgstr ""
+
+#: meerk40t/gui/bufferview.py:21
+msgid "Export Engrave Data"
+msgstr ""
+
+#: meerk40t/gui/bufferview.py:23 meerk40t/gui/wxmeerk40t.py:2980
+msgid "Import EGV"
+msgstr ""
+
+#: meerk40t/gui/bufferview.py:23
+msgid "Import Engrave Data"
+msgstr ""
+
+#: meerk40t/gui/bufferview.py:25 meerk40t/gui/wxmeerk40t.py:1599
+msgid "File"
+msgstr ""
+
+#: meerk40t/gui/bufferview.py:43
+msgid "Could not find buffer.\n"
+msgstr ""
+
+#: meerk40t/gui/bufferview.py:53
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:46
+#: meerk40t/gui/moshi/moshicontrollergui.py:41
+msgid "BufferView"
+msgstr ""
+
+#: meerk40t/gui/bufferview.py:61
+msgid "Buffer"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:46
 msgid "Correct Fisheye"
 msgstr ""
 
-#: CameraInteface-New.py:64 CameraInteface.py:62
+#: meerk40t/gui/camerainteface.py:47
 msgid "Correct Perspective"
 msgstr ""
 
-#: CameraInteface-New.py:162 CameraInteface.py:144
+#: meerk40t/gui/camerainteface.py:72
+msgid "Reset Perspective"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:74
+msgid "Reset Fisheye"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:78
+msgid "Set URI"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:85 meerk40t/gui/camerainteface.py:87
+#: meerk40t/gui/camerainteface.py:89 meerk40t/gui/camerainteface.py:91
+#: meerk40t/gui/camerainteface.py:93
+#, python-format
+msgid "USB %d"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:96 meerk40t/gui/panes/toolbarcontrol.py:79
+#: meerk40t/gui/wxmeerk40t.py:1139 meerk40t/gui/wxmeerk40t.py:1743
+msgid "Camera"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:191
+#, python-format
+msgid "CameraInterface %d"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:192
 msgid "Update Image"
 msgstr ""
 
-#: CameraInteface-New.py:164 CameraInteface.py:146
+#: meerk40t/gui/camerainteface.py:194
 msgid "Export Snapsnot"
 msgstr ""
 
-#: CameraInteface-New.py:166
+#: meerk40t/gui/camerainteface.py:196
 msgid "Reconnect Camera"
 msgstr ""
 
-#: CameraInteface-New.py:168 CameraInteface.py:148
+#: meerk40t/gui/camerainteface.py:198
 msgid "Detect Distortions/Calibration"
 msgstr ""
 
-#: CameraInteface-New.py:333 CameraInteface.py:263
-msgid "Could not import Camera requirements"
+#: meerk40t/gui/camerainteface.py:208
+msgid "camwin <index>: Open camera window at index"
 msgstr ""
 
-#: CameraInteface-New.py:334 CameraInteface.py:264
-msgid "Imports Failed"
-msgstr ""
-
-#: CameraInteface-New.py:355 CameraInteface.py:285
-msgid "Checkerboard 6x9 pattern not found."
-msgstr ""
-
-#: CameraInteface-New.py:356 CameraInteface.py:286
-msgid "Pattern not found."
-msgstr ""
-
-#: CameraInteface-New.py:382 CameraInteface.py:312
-msgid "Ill-conditioned Matrix. Keep trying."
-msgstr ""
-
-#: CameraInteface-New.py:383 CameraInteface.py:313
-msgid "Matrix."
-msgstr ""
-
-#: CameraInteface-New.py:387 CameraInteface.py:317
-#, python-format
-msgid "Success. %d images so far."
-msgstr ""
-
-#: CameraInteface-New.py:388 CameraInteface.py:318
-msgid "Image Captured"
-msgstr ""
-
-#: CameraInteface-New.py:483 CameraInteface.py:352
+#: meerk40t/gui/camerainteface.py:380
 msgid ""
-"If using a precompiled binary, this was requirement was not included.\n"
-"If using pure Python, add it with: pip install opencv-python-headless"
+"Camera backend failure...\n"
+"Cannot attempt camera connection."
 msgstr ""
 
-#: CameraInteface-New.py:485 CameraInteface.py:354
-msgid "Interface Requires OpenCV."
+#: meerk40t/gui/camerainteface.py:385
+msgid "Fetching Frame..."
 msgstr ""
 
-#: CameraInteface-New.py:501 CameraInteface.py:366
-msgid "No Webcam found."
+#: meerk40t/gui/camerainteface.py:420
+msgid "Aspect"
 msgstr ""
 
-#: CameraInteface-New.py:502 CameraInteface.py:367
-msgid "Error"
+#: meerk40t/gui/camerainteface.py:447
+#, python-format
+msgid "Preserve: %s"
 msgstr ""
 
-#: CameraInteface-New.py:514
-msgid "Enter the HTTP or RTSP uri"
+#: meerk40t/gui/camerainteface.py:577
+msgid "Add URI"
 msgstr ""
 
-#: CameraInteface-New.py:516 CameraInteface.py:379
-msgid "Webcam URI Update"
+#: meerk40t/gui/camerainteface.py:599 meerk40t/gui/camerainteface.py:702
+msgid "Camera URI"
 msgstr ""
 
-#: CameraInteface-New.py:1122 JobSpooler.py:99 Keymap.py:90
+#: meerk40t/gui/camerainteface.py:600
+msgid "Displays a list of registered camera URIs"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:601 meerk40t/gui/devicemanager.py:63
+#: meerk40t/gui/panes/devicespanel.py:46
+msgid "Index"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:602
+msgid "URI"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:603
+msgid "Add a new URL"
+msgstr ""
+
+#: meerk40t/gui/camerainteface.py:666 meerk40t/gui/jobspooler.py:148
+#: meerk40t/gui/keymap.py:73 meerk40t/gui/panes/spoolerpanel.py:113
 #, python-format
 msgid "Remove %s"
 msgstr ""
 
-#: CameraInteface-New.py:1124 JobSpooler.py:101 wxMeerK40t.py:2176
-#: wxMeerK40t.py:2179 wxMeerK40t.py:2182 wxMeerK40t.py:2185
-msgid "Clear All"
+#: meerk40t/gui/camerainteface.py:671 meerk40t/gui/camerainteface.py:701
+msgid "Edit"
 msgstr ""
 
-#: CameraInteface.py:31
-msgid "Set IP Camera 1"
+#: meerk40t/gui/console.py:81 meerk40t/gui/panes/toolbarproject.py:138
+#: meerk40t/gui/wxmeerk40t.py:723 meerk40t/gui/wxmeerk40t.py:1095
+#: meerk40t/gui/wxmeerk40t.py:1735
+msgid "Console"
 msgstr ""
 
-#: CameraInteface.py:34
-msgid "Set IP Camera 2"
+#: meerk40t/gui/controller.py:21
+msgid ""
+"The output of the selected device is not a controller, or provides no "
+"graphical user interface."
 msgstr ""
 
-#: CameraInteface.py:37
-msgid "Set IP Camera 3"
-msgstr ""
-
-#: CameraInteface.py:377
-#, python-format
-msgid "Enter the HTTP or RTSP uri for the webcam #%d"
-msgstr ""
-
-#: Controller.py:23
-msgid "Start Controller"
-msgstr ""
-
-#: Controller.py:25
-msgid "Connection"
-msgstr ""
-
-#: Controller.py:30
-msgid "Limit Write Buffer"
-msgstr ""
-
-#: Controller.py:120
-msgid "Kernel Force Event"
-msgstr ""
-
-#: Controller.py:130 wxMeerK40t.py:202 wxMeerK40t.py:353
+#: meerk40t/gui/controller.py:33
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:229
+#: meerk40t/gui/panes/toolbarcontrol.py:114 meerk40t/gui/wxmeerk40t.py:1162
+#: meerk40t/gui/wxmeerk40t.py:1750
 msgid "Controller"
 msgstr ""
 
-#: Controller.py:134
-msgid "Change the currently performed operation."
+#: meerk40t/gui/devicemanager.py:52
+msgid "Device Manager"
 msgstr ""
 
-#: Controller.py:136
-msgid "Displays the controller's current process."
+#: meerk40t/gui/devicemanager.py:64 meerk40t/gui/panes/devicespanel.py:47
+#: meerk40t/gui/panes/toolbarcontrol.py:100 meerk40t/gui/wxmeerk40t.py:704
+#: meerk40t/gui/wxmeerk40t.py:1155 meerk40t/gui/wxmeerk40t.py:1746
+msgid "Spooler"
 msgstr ""
 
-#: Controller.py:140
-msgid "Force connection/disconnection from the device."
+#: meerk40t/gui/devicemanager.py:66 meerk40t/gui/panes/devicespanel.py:49
+msgid "Driver/Input"
 msgstr ""
 
-#: Controller.py:142
-msgid "Connection status"
+#: meerk40t/gui/devicemanager.py:68 meerk40t/gui/devicemanager.py:187
+#: meerk40t/gui/devicemanager.py:208 meerk40t/gui/devicemanager.py:230
+#: meerk40t/gui/panes/devicespanel.py:51 meerk40t/gui/rasterwizard.py:1509
+msgid "Output"
 msgstr ""
 
-#: Controller.py:143
-msgid "Device being used"
+#: meerk40t/gui/devicemanager.py:70 meerk40t/gui/panes/devicespanel.py:53
+msgid "Registered"
 msgstr ""
 
-#: Controller.py:144
-msgid "Connection location"
-msgstr ""
-
-#: Controller.py:146
-msgid ""
-"Limit the write buffer to a certain amount. Permits on-the-fly command "
-"production."
-msgstr ""
-
-#: Controller.py:149
-msgid "Current number of bytes in the write buffer."
-msgstr ""
-
-#: Controller.py:150
-msgid "Current maximum write buffer limit."
-msgstr ""
-
-#: Controller.py:152
-msgid "View a snapshot of the current buffer"
-msgstr ""
-
-#: Controller.py:154
-msgid "Total number of packets sent"
-msgstr ""
-
-#: Controller.py:156
-msgid "Total number of packets rejected"
-msgstr ""
-
-#: Controller.py:157
-msgid "Last packet information sent"
-msgstr ""
-
-#: Controller.py:161
-msgid "The meaning of Byte 1"
-msgstr ""
-
-#: Controller.py:167
-msgid "Pause/Resume the controller"
-msgstr ""
-
-#: Controller.py:170
-msgid "Emergency stop/reset the controller."
-msgstr ""
-
-#: Controller.py:193
-msgid "Process"
-msgstr ""
-
-#: Controller.py:201 JobSpooler.py:73
-msgid "Status"
-msgstr ""
-
-#: Controller.py:205 JobSpooler.py:74
-msgid "Device"
-msgstr ""
-
-#: Controller.py:209 DeviceManager.py:89
-msgid "Location"
-msgstr ""
-
-#: Controller.py:227
-msgid "Packet Count"
-msgstr ""
-
-#: Controller.py:231
-msgid "Rejected Packets"
-msgstr ""
-
-#: Controller.py:235
-msgid "Packet Info"
-msgstr ""
-
-#: Controller.py:240
-msgid "Byte 0"
-msgstr ""
-
-#: Controller.py:244
-msgid "Byte 1"
-msgstr ""
-
-#: Controller.py:249
-msgid "Byte 2"
-msgstr ""
-
-#: Controller.py:253
-msgid "Byte 3"
-msgstr ""
-
-#: Controller.py:257
-msgid "Byte 4"
-msgstr ""
-
-#: Controller.py:261
-msgid "Byte 5"
-msgstr ""
-
-#: Controller.py:322
-msgid "Connect"
-msgstr ""
-
-#: Controller.py:327
-msgid "Disconnecting..."
-msgstr ""
-
-#: Controller.py:332
-msgid "Disconnect"
-msgstr ""
-
-#: Controller.py:337
-msgid "Connecting..."
-msgstr ""
-
-#: Controller.py:349
-msgid "Connection Refused. See USB Log for detailed information."
-msgstr ""
-
-#: Controller.py:350
-msgid "Manual Connection"
-msgstr ""
-
-#: Controller.py:380
-msgid "Hold Controller"
-msgstr ""
-
-#: Controller.py:385
-msgid "LOCKED"
-msgstr ""
-
-#: Controller.py:394
-msgid "Resume Controller"
-msgstr ""
-
-#: Controller.py:403
-msgid "Pause Controller"
-msgstr ""
-
-#: Controller.py:412
-msgid "Manual Reset"
-msgstr ""
-
-#: DeviceManager.py:86
-msgid "Id"
-msgstr ""
-
-#: DeviceManager.py:87
-msgid "Driver"
-msgstr ""
-
-#: DeviceManager.py:88
-msgid "State"
-msgstr ""
-
-#: DeviceManager.py:90
-msgid "Boot"
-msgstr ""
-
-#: DeviceManager.py:91
+#: meerk40t/gui/devicemanager.py:72
 msgid "Add a new device"
 msgstr ""
 
-#: DeviceManager.py:93
+#: meerk40t/gui/devicemanager.py:74
 msgid "Remove selected device"
 msgstr ""
 
-#: DeviceManager.py:95
-msgid "View Device Properties"
+#: meerk40t/gui/devicemanager.py:159
+msgid "What type of driver is being added?"
 msgstr ""
 
-#: DeviceManager.py:97
-msgid "Move device up"
-msgstr ""
-
-#: DeviceManager.py:99
-msgid "Move device down"
-msgstr ""
-
-#: DeviceManager.py:178
-msgid "That device already booted."
-msgstr ""
-
-#: DeviceManager.py:179
-msgid "Cannot Boot Selected Device"
-msgstr ""
-
-#: DeviceManager.py:185
-msgid "What type of device is being added?"
-msgstr ""
-
-#: DeviceManager.py:185
+#: meerk40t/gui/devicemanager.py:159
 msgid "Device Type"
 msgstr ""
 
-#: ImageProperty.py:95
-msgid "Image Properties"
+#: meerk40t/gui/devicemanager.py:172
+msgid "Where does the device output data?"
 msgstr ""
 
-#: ImageProperty.py:97
-msgid "Scan gap / step size image native value."
+#: meerk40t/gui/devicemanager.py:172
+msgid "Output Type"
 msgstr ""
 
-#: ImageProperty.py:99
-msgid "X property of image"
+#: meerk40t/gui/devicemanager.py:186
+msgid "What filename does this device output to?"
 msgstr ""
 
-#: ImageProperty.py:101
-msgid "Y property of image"
+#: meerk40t/gui/devicemanager.py:207
+msgid "What network address does this device output to?"
 msgstr ""
 
-#: ImageProperty.py:103
-msgid "Width property of image"
+#: meerk40t/gui/devicemanager.py:229
+msgid "What network port does this device output to?"
 msgstr ""
 
-#: ImageProperty.py:105
-msgid "Height property of image"
-msgstr ""
-
-#: ImageProperty.py:118
-msgid "DPP"
-msgstr ""
-
-#: ImageProperty.py:119
-msgid "Dots Per Pixel"
-msgstr ""
-
-#: ImageProperty.py:123
-msgid "DPI:"
-msgstr ""
-
-#: ImageProperty.py:124
-msgid "Dots Per Inch"
-msgstr ""
-
-#: ImageProperty.py:128 Navigation.py:328
-msgid "X:"
-msgstr ""
-
-#: ImageProperty.py:132 Navigation.py:332
-msgid "Y:"
-msgstr ""
-
-#: ImageProperty.py:136
-msgid "Width:"
-msgstr ""
-
-#: ImageProperty.py:140
-msgid "Height:"
-msgstr ""
-
-#: JobInfo.py:21 JobInfo.py:273 wxMeerK40t.py:193
-msgid "Start Job"
-msgstr ""
-
-#: JobInfo.py:29
-msgid "Start Spooler"
-msgstr ""
-
-#: JobInfo.py:31
-msgid "Home Before"
-msgstr ""
-
-#: JobInfo.py:33
-msgid "Home After"
-msgstr ""
-
-#: JobInfo.py:36
-msgid "Return to Origin After"
-msgstr ""
-
-#: JobInfo.py:39
-msgid "Beep After"
-msgstr ""
-
-#: JobInfo.py:41
-msgid "Automatic"
-msgstr ""
-
-#: JobInfo.py:44 wxMeerK40t.py:185
+#: meerk40t/gui/executejob.py:32 meerk40t/gui/executejob.py:61
+#: meerk40t/gui/executejob.py:131 meerk40t/gui/wxmeerk40t.py:668
+#: meerk40t/gui/wxmeerk40t.py:1044
 msgid "Home"
 msgstr ""
 
-#: JobInfo.py:46
-msgid "Wait"
+#: meerk40t/gui/executejob.py:33
+msgid "Automatically add a home command before all jobs"
 msgstr ""
 
-#: JobInfo.py:48
+#: meerk40t/gui/executejob.py:43 meerk40t/gui/executejob.py:72
+#: meerk40t/gui/executejob.py:137
+msgid "Physical Home"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:44
+msgid "Automatically add a physical home command before all jobs"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:53
+msgid "Before"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:62
+msgid "Automatically add a home command after all jobs"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:73
+msgid "Automatically add a physical home command after all jobs"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:83
+msgid "Return to Origin"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:84
+msgid "Automatically return to origin after a job"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:94
+msgid "Unlock"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:95
+msgid "Automatically unlock the rail after all jobs"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:104 meerk40t/gui/executejob.py:151
 msgid "Beep"
 msgstr ""
 
-#: JobInfo.py:50 JobInfo.py:101
+#: meerk40t/gui/executejob.py:104
+msgid "Automatically add a beep after all jobs"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:113 meerk40t/gui/executejob.py:157
+#: meerk40t/gui/wxmeerk40t.py:960
 msgid "Interrupt"
 msgstr ""
 
-#: JobInfo.py:52
+#: meerk40t/gui/executejob.py:114
+msgid "Automatically add an interrupt after all jobs"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:123
+msgid "After"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:124
+msgid "Automatic"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:131
+msgid "Add a home"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:137
+msgid "Add a physicalhome"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:145
+msgid "Wait"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:145
+msgid "Add a wait"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:151
+msgid "Add a beep"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:157
+msgid "Add an interrupt"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:165
 msgid "Add"
 msgstr ""
 
-#: JobInfo.py:100
-msgid "Spooling Interrupted. Press OK to Continue."
+#: meerk40t/gui/executejob.py:218
+msgid "Rapid Moves Between Objects"
 msgstr ""
 
-#: JobInfo.py:139
-msgid "Home Before: Disabled (Rotary On)"
+#: meerk40t/gui/executejob.py:221
+msgid "Reduce Travel Time"
 msgstr ""
 
-#: JobInfo.py:153
-msgid "Home After: Disabled (Rotary On)"
+#: meerk40t/gui/executejob.py:223
+msgid "Cut Inner First"
 msgstr ""
 
-#: JobInfo.py:179
-msgid "operation List"
+#: meerk40t/gui/executejob.py:225
+msgid "Reduce Direction Changes"
 msgstr ""
 
-#: JobInfo.py:180
-msgid "Command List"
+#: meerk40t/gui/executejob.py:228
+msgid "Remove Overlap Cuts"
 msgstr ""
 
-#: JobInfo.py:181
-msgid "Start the Job"
+#: meerk40t/gui/executejob.py:230
+msgid "Start"
 msgstr ""
 
-#: JobInfo.py:184
-msgid "View Spooler"
+#: meerk40t/gui/executejob.py:277
+msgid "Select the device to which to send the current job"
 msgstr ""
 
-#: JobInfo.py:191
-msgid "Operations and Commands"
+#: meerk40t/gui/executejob.py:279
+msgid "Operations being added to the current job"
 msgstr ""
 
-#: JobInfo.py:270
-msgid "Execute Commands"
+#: meerk40t/gui/executejob.py:280
+msgid "Commands being applied to the current job"
 msgstr ""
 
-#: JobSpooler.py:70
+#: meerk40t/gui/executejob.py:288
+msgid ""
+"Travel between objects (laser off) at the default/rapid speed rather than"
+" at the current laser-on speed"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:291
+msgid "Reduce the travel time by optimizing the order of the elements"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:294
+msgid ""
+"Ensure that inside burns are done before an outside cut which might "
+"result in the cut piece shifting or dropping out of the material, while "
+"still requiring additonal cuts."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:297
+msgid "Reorder to reduce the number of sharp directional changes"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:300
+msgid "Remove elements of overlapped cuts"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:322
+msgid "Optimizations"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:411
+msgid "How many copies wide?"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:411
+msgid "Enter Columns"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:426
+msgid "How many copies high?"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:426
+msgid "Enter Rows"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:441
+msgid "How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:442
+msgid "Enter X Gap"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:467
+msgid "How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:468
+msgid "Enter Y Gap"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:555
+msgid "Preprocessing..."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:561
+msgid "Determining validity of operations..."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:567
+msgid "Validating operation data..."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:570
+msgid "Compiling cuts..."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:573
+msgid "Determining optimizations to perform..."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:576
+msgid "Performing Optimizations..."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:579
+msgid "Sending data to laser..."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:665
+msgid "Copy"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:667
+msgid "Copy Operations from Tree Operations"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:669
+msgid "Preprocess Operations"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:672
+msgid "Determine what needs to be done validate these operations."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:675
+msgid "Validate"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:678
+msgid "Run the commands to make these operations valid."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:681
+msgid "Blob"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:683
+msgid "Turn this set of operations into Cutcode"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:685
+msgid "Preprocess Optimizations"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:688
+msgid "Determine what needs to be done to optimize this cutcode."
+msgstr ""
+
+#: meerk40t/gui/executejob.py:691
+msgid "Optimize"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:693
+msgid "Run the commands to optimize this cutcode"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:695
+msgid "Spool"
+msgstr ""
+
+#: meerk40t/gui/executejob.py:697
+msgid "Send this data to the spooler"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:84
+msgid "Scan gap / step size image native value."
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:86
+msgid "X property of image"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:88
+msgid "Y property of image"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:90
+msgid "Width property of image"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:92
+msgid "Height property of image"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:105
+msgid "DPP"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:106
+msgid "Dots Per Pixel"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:110
+msgid "DPI:"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:111
+msgid "Dots Per Inch"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:115 meerk40t/gui/navigation.py:514
+msgid "X:"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:119 meerk40t/gui/navigation.py:518
+msgid "Y:"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:123 meerk40t/gui/panes/position.py:94
+msgid "Width:"
+msgstr ""
+
+#: meerk40t/gui/imageproperty.py:127 meerk40t/gui/panes/position.py:91
+msgid "Height:"
+msgstr ""
+
+#: meerk40t/gui/jobspooler.py:75
+msgid "Job Spooler"
+msgstr ""
+
+#: meerk40t/gui/jobspooler.py:81 meerk40t/gui/panes/spoolerpanel.py:67
 msgid "List and modify the queued operations"
 msgstr ""
 
-#: JobSpooler.py:72
+#: meerk40t/gui/jobspooler.py:82 meerk40t/gui/panes/spoolerpanel.py:68
+msgid "#"
+msgstr ""
+
+#: meerk40t/gui/jobspooler.py:83 meerk40t/gui/panes/spoolerpanel.py:69
 msgid "Name"
 msgstr ""
 
-#: JobSpooler.py:75
+#: meerk40t/gui/jobspooler.py:84 meerk40t/gui/panes/spoolerpanel.py:70
+#: meerk40t/gui/tcp/tcpcontroller.py:76
+msgid "Status"
+msgstr ""
+
+#: meerk40t/gui/jobspooler.py:85 meerk40t/gui/panes/spoolerpanel.py:71
 msgid "Type"
 msgstr ""
 
-#: JobSpooler.py:76
+#: meerk40t/gui/jobspooler.py:86 meerk40t/gui/panes/spoolerpanel.py:72
 msgid "Speed"
 msgstr ""
 
-#: JobSpooler.py:77 Settings.py:108 wxMeerK40t.py:345
+#: meerk40t/gui/jobspooler.py:88 meerk40t/gui/panes/spoolerpanel.py:74
+#: meerk40t/gui/panes/toolbarpreferences.py:97 meerk40t/gui/settings.py:218
+#: meerk40t/gui/wxmeerk40t.py:1228 meerk40t/gui/wxmeerk40t.py:1759
 msgid "Settings"
 msgstr ""
 
-#: JobSpooler.py:78
-msgid "Time Estimate"
-msgstr ""
-
-#: JobSpooler.py:136
+#: meerk40t/gui/jobspooler.py:196 meerk40t/gui/panes/spoolerpanel.py:161
 #, python-format
 msgid "%.1fmm/s"
 msgstr ""
 
-#: JobSpooler.py:141
+#: meerk40t/gui/jobspooler.py:201 meerk40t/gui/panes/spoolerpanel.py:166
 #, python-format
 msgid "power=%g"
 msgstr ""
 
-#: JobSpooler.py:145
+#: meerk40t/gui/jobspooler.py:205 meerk40t/gui/panes/spoolerpanel.py:170
 #, python-format
 msgid "step=%d"
 msgstr ""
 
-#: JobSpooler.py:149
+#: meerk40t/gui/jobspooler.py:209 meerk40t/gui/panes/spoolerpanel.py:174
 #, python-format
 msgid "overscan=%d"
 msgstr ""
 
-#: Kernel.py:652
-#, python-format
-msgid "WARNING: Listener '%s' still registered to %s."
-msgstr ""
-
-#: Kernel.py:1816
-#, python-format
-msgid "Suspended Signal: %s for %s"
-msgstr ""
-
-#: Kernel.py:1868
-msgid "Shutting down."
-msgstr ""
-
-#: Kernel.py:1870
-#, python-format
-msgid "Saving Device State: '%s'"
-msgstr ""
-
-#: Kernel.py:1880
-#, python-format
-msgid "Device Shutdown Started: '%s'"
-msgstr ""
-
-#: Kernel.py:1885
-#, python-format
-msgid "Device Shutdown Finished: '%s'"
-msgstr ""
-
-#: Kernel.py:1895
-#, python-format
-msgid "Stopping %s %s: %s"
-msgstr ""
-
-#: Kernel.py:1898
-#, python-format
-msgid "Closing %s %s: %s"
-msgstr ""
-
-#: Kernel.py:1908
-#, python-format
-msgid "Thread %s exited safely %s"
-msgstr ""
-
-#: Kernel.py:1911
-#, python-format
-msgid "WARNING: Dead thread %s still registered to %s."
-msgstr ""
-
-#: Kernel.py:1913
-#, python-format
-msgid "Finishing Thread %s for %s"
-msgstr ""
-
-#: Kernel.py:1915
-#, python-format
-msgid "%s is the current shutdown thread"
-msgstr ""
-
-#: Kernel.py:1919
-msgid "Asking thread to stop."
-msgstr ""
-
-#: Kernel.py:1923
-#, python-format
-msgid "Waiting for thread %s: %s"
-msgstr ""
-
-#: Kernel.py:1925
-#, python-format
-msgid "Thread %s finished. %s"
-msgstr ""
-
-#: Kernel.py:1927
-msgid "No threads required halting."
-msgstr ""
-
-#: Kernel.py:1937
-#, python-format
-msgid "Shutting down %s %s: %s"
-msgstr ""
-
-#: Kernel.py:1949
-#, python-format
-msgid "WARNING: %s %s was not closed."
-msgstr ""
-
-#: Kernel.py:1951
-msgid "Shutdown."
-msgstr ""
-
-#: Kernel.py:1967
-msgid "All Devices are shutdown. Stopping Kernel."
-msgstr ""
-
-#: Kernel.py:2330
-msgid "Unstarted"
-msgstr ""
-
-#: Kernel.py:2332
-msgid "Abort"
-msgstr ""
-
-#: Kernel.py:2334
-msgid "Finished"
-msgstr ""
-
-#: Kernel.py:2336 wxMeerK40t.py:194
-msgid "Pause"
-msgstr ""
-
-#: Kernel.py:2338
-msgid "Busy"
-msgstr ""
-
-#: Kernel.py:2340
-msgid "Active"
-msgstr ""
-
-#: Kernel.py:2342
-msgid "Idle"
-msgstr ""
-
-#: Keymap.py:17
+#: meerk40t/gui/keymap.py:16
 msgid "Add Hotkey"
 msgstr ""
 
-#: Keymap.py:62 wxMeerK40t.py:347
+#: meerk40t/gui/keymap.py:42
 msgid "Keymap Settings"
 msgstr ""
 
-#: Keymap.py:63
+#: meerk40t/gui/keymap.py:43
 msgid "What keys are bound to which actions?"
 msgstr ""
 
-#: Keymap.py:64
+#: meerk40t/gui/keymap.py:44
 msgid "Key"
 msgstr ""
 
-#: Keymap.py:65
+#: meerk40t/gui/keymap.py:46
 msgid "Command"
 msgstr ""
 
-#: Keymap.py:66
+#: meerk40t/gui/keymap.py:48
 msgid "Add a new hotkey"
 msgstr ""
 
-#: Keymap.py:92
+#: meerk40t/gui/keymap.py:76
 msgid "Reset Default"
 msgstr ""
 
-#: Keymap.py:128
+#: meerk40t/gui/keymap.py:114
 msgid "Missing Keystroke"
 msgstr ""
 
-#: Keymap.py:129
+#: meerk40t/gui/keymap.py:115
 msgid "No Keystroke for binding."
 msgstr ""
 
-#: Keymap.py:134
+#: meerk40t/gui/keymap.py:125
 msgid "Missing Command"
 msgstr ""
 
-#: Keymap.py:135
+#: meerk40t/gui/keymap.py:126
 msgid "No Command for binding."
 msgstr ""
 
-#: Navigation.py:140 wxMeerK40t.py:199 wxMeerK40t.py:352
+#: meerk40t/gui/navigation.py:276 meerk40t/gui/panes/toolbarcontrol.py:64
+#: meerk40t/gui/wxmeerk40t.py:1131 meerk40t/gui/wxmeerk40t.py:1739
 msgid "Navigation"
 msgstr ""
 
-#: Navigation.py:142
+#: meerk40t/gui/navigation.py:279 meerk40t/gui/panes/jogdistancepanel.py:42
 msgid "Set Jog Distance in mils (1/1000th of an inch)"
 msgstr ""
 
-#: Navigation.py:144
+#: meerk40t/gui/navigation.py:282 meerk40t/gui/panes/jogdistancepanel.py:45
 msgid "Set Jog Distance in mm"
 msgstr ""
 
-#: Navigation.py:146
+#: meerk40t/gui/navigation.py:284 meerk40t/gui/panes/jogdistancepanel.py:47
 msgid "Set Jog Distance in cm"
 msgstr ""
 
-#: Navigation.py:148
+#: meerk40t/gui/navigation.py:286 meerk40t/gui/panes/jogdistancepanel.py:49
 msgid "Set Jog Distance in inch"
 msgstr ""
 
-#: Navigation.py:149
+#: meerk40t/gui/navigation.py:288 meerk40t/gui/panes/jog.py:90
 msgid "Move laser diagonally in the up and left direction"
 msgstr ""
 
-#: Navigation.py:151
+#: meerk40t/gui/navigation.py:291 meerk40t/gui/panes/jog.py:93
 msgid "Move laser in the up direction"
 msgstr ""
 
-#: Navigation.py:153
+#: meerk40t/gui/navigation.py:294 meerk40t/gui/panes/jog.py:96
 msgid "Move laser diagonally in the up and right direction"
 msgstr ""
 
-#: Navigation.py:155
+#: meerk40t/gui/navigation.py:299 meerk40t/gui/panes/jog.py:101
 msgid "Move laser in the left direction"
 msgstr ""
 
-#: Navigation.py:158
+#: meerk40t/gui/navigation.py:302 meerk40t/gui/panes/jog.py:104
 msgid "Move laser in the right direction"
 msgstr ""
 
-#: Navigation.py:160
+#: meerk40t/gui/navigation.py:305 meerk40t/gui/panes/jog.py:107
 msgid "Move laser diagonally in the down and left direction"
 msgstr ""
 
-#: Navigation.py:162
+#: meerk40t/gui/navigation.py:310 meerk40t/gui/panes/jog.py:112
 msgid "Move laser in the down direction"
 msgstr ""
 
-#: Navigation.py:164
+#: meerk40t/gui/navigation.py:313 meerk40t/gui/panes/jog.py:115
 msgid "Move laser diagonally in the down and right direction"
 msgstr ""
 
-#: Navigation.py:166
+#: meerk40t/gui/navigation.py:318 meerk40t/gui/panes/jog.py:120
 msgid "Unlock the laser rail"
 msgstr ""
 
-#: Navigation.py:168
+#: meerk40t/gui/navigation.py:320 meerk40t/gui/panes/jog.py:122
 msgid "Lock the laser rail"
 msgstr ""
 
-#: Navigation.py:170
+#: meerk40t/gui/navigation.py:323 meerk40t/gui/panes/dragpanel.py:109
 msgid "Align laser with the upper left corner of the selection"
 msgstr ""
 
-#: Navigation.py:173
+#: meerk40t/gui/navigation.py:330 meerk40t/gui/panes/dragpanel.py:116
 msgid "Align laser with the upper right corner of the selection"
 msgstr ""
 
-#: Navigation.py:176
+#: meerk40t/gui/navigation.py:337 meerk40t/gui/panes/dragpanel.py:123
 msgid "Align laser with the center of the selection"
 msgstr ""
 
-#: Navigation.py:179
+#: meerk40t/gui/navigation.py:342 meerk40t/gui/panes/dragpanel.py:128
 msgid "Align laser with the lower left corner of the selection"
 msgstr ""
 
-#: Navigation.py:182
+#: meerk40t/gui/navigation.py:349 meerk40t/gui/panes/dragpanel.py:135
 msgid "Align laser with the lower right corner of the selection"
 msgstr ""
 
-#: Navigation.py:184
+#: meerk40t/gui/navigation.py:355 meerk40t/gui/panes/dragpanel.py:141
 msgid "Align laser with the first position"
 msgstr ""
 
-#: Navigation.py:186
+#: meerk40t/gui/navigation.py:361 meerk40t/gui/panes/dragpanel.py:147
 msgid "Perform a convex hull trace of the selection"
 msgstr ""
 
-#: Navigation.py:188
+#: meerk40t/gui/navigation.py:365 meerk40t/gui/panes/dragpanel.py:151
 msgid "Perform a simple trace of the selection"
 msgstr ""
 
-#: Navigation.py:201
+#: meerk40t/gui/navigation.py:381 meerk40t/gui/panes/transformpanel.py:86
 msgid "Scale Down"
 msgstr ""
 
-#: Navigation.py:202
+#: meerk40t/gui/navigation.py:382 meerk40t/gui/panes/transformpanel.py:87
 msgid "Translate Top"
 msgstr ""
 
-#: Navigation.py:203
+#: meerk40t/gui/navigation.py:383 meerk40t/gui/panes/transformpanel.py:88
 msgid "Scale Up"
 msgstr ""
 
-#: Navigation.py:204
+#: meerk40t/gui/navigation.py:384 meerk40t/gui/panes/transformpanel.py:89
 msgid "Translate Left"
 msgstr ""
 
-#: Navigation.py:205
+#: meerk40t/gui/navigation.py:385 meerk40t/gui/panes/transformpanel.py:90
 msgid "Reset Matrix"
 msgstr ""
 
-#: Navigation.py:206
+#: meerk40t/gui/navigation.py:386 meerk40t/gui/panes/transformpanel.py:91
 msgid "Translate Right"
 msgstr ""
 
-#: Navigation.py:207
+#: meerk40t/gui/navigation.py:387 meerk40t/gui/panes/transformpanel.py:92
 msgid "Rotate Counterclockwise"
 msgstr ""
 
-#: Navigation.py:208
+#: meerk40t/gui/navigation.py:388 meerk40t/gui/panes/transformpanel.py:93
 msgid "Translate Bottom"
 msgstr ""
 
-#: Navigation.py:209
+#: meerk40t/gui/navigation.py:389 meerk40t/gui/panes/transformpanel.py:94
 msgid "Rotate Clockwise"
 msgstr ""
 
-#: Navigation.py:212
+#: meerk40t/gui/navigation.py:392 meerk40t/gui/panes/transformpanel.py:96
 msgid "Transform: Scale X"
 msgstr ""
 
-#: Navigation.py:214
+#: meerk40t/gui/navigation.py:394 meerk40t/gui/panes/transformpanel.py:98
 msgid "Transform: Skew Y"
 msgstr ""
 
-#: Navigation.py:216
+#: meerk40t/gui/navigation.py:396 meerk40t/gui/panes/transformpanel.py:100
 msgid "Transform: Translate X"
 msgstr ""
 
-#: Navigation.py:218
+#: meerk40t/gui/navigation.py:398 meerk40t/gui/panes/transformpanel.py:102
 msgid "Transform: Skew X"
 msgstr ""
 
-#: Navigation.py:220
+#: meerk40t/gui/navigation.py:400 meerk40t/gui/panes/transformpanel.py:104
 msgid "Transform: Scale Y"
 msgstr ""
 
-#: Navigation.py:222
+#: meerk40t/gui/navigation.py:402 meerk40t/gui/panes/transformpanel.py:106
 msgid "Transform: Translate Y"
 msgstr ""
 
-#: Navigation.py:224
+#: meerk40t/gui/navigation.py:404 meerk40t/gui/panes/pulsepanel.py:36
 msgid "Fire a short laser pulse"
 msgstr ""
 
-#: Navigation.py:227
+#: meerk40t/gui/navigation.py:407 meerk40t/gui/panes/pulsepanel.py:39
 msgid "Set the duration of the laser pulse"
 msgstr ""
 
-#: Navigation.py:228
+#: meerk40t/gui/navigation.py:408 meerk40t/gui/panes/movepanel.py:36
 msgid "Move to the set position"
 msgstr ""
 
-#: Navigation.py:230
+#: meerk40t/gui/navigation.py:410 meerk40t/gui/panes/movepanel.py:38
 msgid "Set X value for the Move To"
 msgstr ""
 
-#: Navigation.py:231
+#: meerk40t/gui/navigation.py:411 meerk40t/gui/panes/movepanel.py:39
 msgid "Set Y value for the Move To"
 msgstr ""
 
-#: Navigation.py:238
+#: meerk40t/gui/navigation.py:419 meerk40t/gui/panes/movepanel.py:45
 msgid "Move To"
 msgstr ""
 
-#: Navigation.py:242
+#: meerk40t/gui/navigation.py:425 meerk40t/gui/panes/pulsepanel.py:45
 msgid "Short Pulse"
 msgstr ""
 
-#: Navigation.py:252
+#: meerk40t/gui/navigation.py:437 meerk40t/gui/panes/jogdistancepanel.py:55
 msgid "Jog Distance"
 msgstr ""
 
-#: Navigation.py:258 Settings.py:36
+#: meerk40t/gui/navigation.py:444
 msgid "mils"
 msgstr ""
 
-#: Navigation.py:262
+#: meerk40t/gui/navigation.py:448
 msgid " mm"
 msgstr ""
 
-#: Navigation.py:266 RasterWizard.py:619 Settings.py:36
+#: meerk40t/gui/navigation.py:452 meerk40t/gui/panes/jogdistancepanel.py:58
+#: meerk40t/gui/panes/position.py:31 meerk40t/gui/rasterwizard.py:678
 msgid "cm"
 msgstr ""
 
-#: Navigation.py:270 Settings.py:36
+#: meerk40t/gui/navigation.py:456 meerk40t/gui/panes/position.py:31
 msgid "inch"
 msgstr ""
 
-#: Navigation.py:324
+#: meerk40t/gui/navigation.py:510 meerk40t/gui/panes/pulsepanel.py:49
 msgid " ms"
 msgstr ""
 
-#: Notes.py:17
+#: meerk40t/gui/notes.py:14 meerk40t/gui/panes/notespanel.py:13
 msgid "Automatically Open Notes"
 msgstr ""
 
-#: Notes.py:63
+#: meerk40t/gui/notes.py:46 meerk40t/gui/panes/toolbarproject.py:124
+#: meerk40t/gui/wxmeerk40t.py:685 meerk40t/gui/wxmeerk40t.py:1089
+#: meerk40t/gui/wxmeerk40t.py:1733
+msgid "Notes"
+msgstr ""
+
+#: meerk40t/gui/notes.py:48 meerk40t/gui/panes/notespanel.py:35
 msgid "Automatically open notes if they exist when file is opened."
 msgstr ""
 
-#: OperationProperty.py:27
+#: meerk40t/gui/operationproperty.py:33
 msgid "Engrave"
 msgstr ""
 
-#: OperationProperty.py:27
+#: meerk40t/gui/operationproperty.py:33
 msgid "Cut"
 msgstr ""
 
-#: OperationProperty.py:27 OperationProperty.py:271
+#: meerk40t/gui/operationproperty.py:33 meerk40t/gui/operationproperty.py:347
 msgid "Raster"
 msgstr ""
 
-#: OperationProperty.py:27 wxMeerK40t.py:2340
-msgid "Image"
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:14
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:19
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:24
+#: meerk40t/gui/operationproperty.py:36 meerk40t/gui/rasterwizard.py:514
+#: meerk40t/gui/rasterwizard.py:588 meerk40t/gui/rasterwizard.py:665
+#: meerk40t/gui/rasterwizard.py:926 meerk40t/gui/rasterwizard.py:1008
+#: meerk40t/gui/rasterwizard.py:1166 meerk40t/gui/rasterwizard.py:1320
+#: meerk40t/gui/rasterwizard.py:1481 meerk40t/gui/rasterwizard.py:1542
+#: meerk40t/gui/rasterwizard.py:1561 meerk40t/gui/rasterwizard.py:1588
+msgid "Enable"
 msgstr ""
 
-#: OperationProperty.py:29 RasterWizard.py:1287
-msgid "Output"
-msgstr ""
-
-#: OperationProperty.py:30
+#: meerk40t/gui/operationproperty.py:37
 msgid "Show"
 msgstr ""
 
-#: OperationProperty.py:37
+#: meerk40t/gui/operationproperty.py:47
 msgid "Top To Bottom"
 msgstr ""
 
-#: OperationProperty.py:37
+#: meerk40t/gui/operationproperty.py:48
 msgid "Bottom To Top"
 msgstr ""
 
-#: OperationProperty.py:37
+#: meerk40t/gui/operationproperty.py:49
 msgid "Right To Left"
 msgstr ""
 
-#: OperationProperty.py:38
+#: meerk40t/gui/operationproperty.py:50
 msgid "Left To Right"
 msgstr ""
 
-#: OperationProperty.py:38
+#: meerk40t/gui/operationproperty.py:51
 msgid "Crosshatch"
 msgstr ""
 
-#: OperationProperty.py:39
+#: meerk40t/gui/operationproperty.py:58
 msgid "Directional Raster"
 msgstr ""
 
-#: OperationProperty.py:40
+#: meerk40t/gui/operationproperty.py:59
 msgid "Bidirectional"
 msgstr ""
 
-#: OperationProperty.py:40
+#: meerk40t/gui/operationproperty.py:59
 msgid "Unidirectional"
 msgstr ""
 
-#: OperationProperty.py:47
+#: meerk40t/gui/operationproperty.py:72
 msgid "Advanced"
 msgstr ""
 
-#: OperationProperty.py:49
+#: meerk40t/gui/operationproperty.py:75
 msgid "Custom D-Ratio"
 msgstr ""
 
-#: OperationProperty.py:51
+#: meerk40t/gui/operationproperty.py:79
 msgid "Acceleration"
 msgstr ""
 
-#: OperationProperty.py:53
+#: meerk40t/gui/operationproperty.py:90
 msgid "Dot Length (mils)"
 msgstr ""
 
-#: OperationProperty.py:56 OperationProperty.py:262 wxMeerK40t.py:2237
-msgid "Passes"
+#: meerk40t/gui/operationproperty.py:94
+msgid "Group Pulses"
 msgstr ""
 
-#: OperationProperty.py:208
-msgid "Operation Properties"
-msgstr ""
-
-#: OperationProperty.py:213
+#: meerk40t/gui/operationproperty.py:265
 msgid "Change/View color of this layer"
 msgstr ""
 
-#: OperationProperty.py:214
+#: meerk40t/gui/operationproperty.py:266
 msgid "Default Operation Mode Type"
 msgstr ""
 
-#: OperationProperty.py:216
-msgid "Output This Layer"
+#: meerk40t/gui/operationproperty.py:267
+msgid "Enable output of this layer"
 msgstr ""
 
-#: OperationProperty.py:218
+#: meerk40t/gui/operationproperty.py:269
 msgid "Show This Layer"
 msgstr ""
 
-#: OperationProperty.py:220
+#: meerk40t/gui/operationproperty.py:271
 msgid "Speed at which to perform the action in mm/s."
 msgstr ""
 
-#: OperationProperty.py:221
+#: meerk40t/gui/operationproperty.py:273
 msgid ""
 "1000 always on. 500 it's half power (fire every other step). This is "
 "software PPI control."
 msgstr ""
 
-#: OperationProperty.py:222
+#: meerk40t/gui/operationproperty.py:278
 msgid ""
 "Scan gap / step size, is the distance between scanlines in a raster "
 "engrave. Distance here is in 1/1000th of an inch."
 msgstr ""
 
-#: OperationProperty.py:223
+#: meerk40t/gui/operationproperty.py:282
 msgid "Overscan amount"
 msgstr ""
 
-#: OperationProperty.py:224
+#: meerk40t/gui/operationproperty.py:283
 msgid "Direction to perform a raster"
 msgstr ""
 
-#: OperationProperty.py:226
+#: meerk40t/gui/operationproperty.py:286
 msgid "Rastering on forward and backswing or only forward swing?"
 msgstr ""
 
-#: OperationProperty.py:228
+#: meerk40t/gui/operationproperty.py:289
 msgid "Turn on advanced options?"
 msgstr ""
 
-#: OperationProperty.py:229
+#: meerk40t/gui/operationproperty.py:291
 msgid "Enables the ability to modify the diagonal ratio."
 msgstr ""
 
-#: OperationProperty.py:230
+#: meerk40t/gui/operationproperty.py:294
 msgid ""
 "Diagonal ratio is the ratio of additional time needed to perform a "
 "diagonal step rather than an orthogonal step. (0.261 default)"
 msgstr ""
 
-#: OperationProperty.py:231
+#: meerk40t/gui/operationproperty.py:299
 msgid "Enables the ability to modify the acceleration factor."
 msgstr ""
 
-#: OperationProperty.py:232
+#: meerk40t/gui/operationproperty.py:301
 msgid "Acceleration Factor Override"
 msgstr ""
 
-#: OperationProperty.py:233
+#: meerk40t/gui/operationproperty.py:302
 msgid "Enable Dot Length Feature"
 msgstr ""
 
-#: OperationProperty.py:234
+#: meerk40t/gui/operationproperty.py:304
 msgid "PPI minimum on length for making dash patterns"
 msgstr ""
 
-#: OperationProperty.py:236
+#: meerk40t/gui/operationproperty.py:307
+msgid "Attempts to adjust the pulse grouping for data efficiency."
+msgstr ""
+
+#: meerk40t/gui/operationproperty.py:309
 msgid "Enable Passes"
 msgstr ""
 
-#: OperationProperty.py:237
+#: meerk40t/gui/operationproperty.py:310
 msgid "Run operation how many times?"
 msgstr ""
 
-#: OperationProperty.py:264
+#: meerk40t/gui/operationproperty.py:334
 msgid "PPI Advanced"
 msgstr ""
 
-#: OperationProperty.py:267
+#: meerk40t/gui/operationproperty.py:340
 msgid "Speedcode Advanced"
 msgstr ""
 
-#: OperationProperty.py:272
+#: meerk40t/gui/operationproperty.py:350
 msgid "Start Preference"
 msgstr ""
 
-#: OperationProperty.py:278
+#: meerk40t/gui/operationproperty.py:359
 msgid "Power (ppi)"
 msgstr ""
 
-#: OperationProperty.py:279
+#: meerk40t/gui/operationproperty.py:362
 msgid "Speed (mm/s)"
 msgstr ""
 
-#: OperationProperty.py:280
+#: meerk40t/gui/operationproperty.py:365
 msgid "Layer"
 msgstr ""
 
-#: OperationProperty.py:296
+#: meerk40t/gui/operationproperty.py:382
 msgid "Raster Step (mils)"
 msgstr ""
 
-#: OperationProperty.py:300
+#: meerk40t/gui/operationproperty.py:386
 msgid "Overscan (mils)"
 msgstr ""
 
-#: OperationProperty.py:304
+#: meerk40t/gui/operationproperty.py:390
 msgid "Raster Direction"
 msgstr ""
 
-#: OperationProperty.py:504
+#: meerk40t/gui/operationproperty.py:597
 msgid "Pass Through"
 msgstr ""
 
-#: PathProperty.py:19 PathProperty.py:36
+#: meerk40t/gui/pathproperty.py:19 meerk40t/gui/pathproperty.py:36
 msgid "None"
 msgstr ""
 
-#: PathProperty.py:120
-msgid "Path Properties"
-msgstr ""
-
-#: PathProperty.py:121 PathProperty.py:136 TextProperty.py:132
-#: TextProperty.py:147
+#: meerk40t/gui/pathproperty.py:100 meerk40t/gui/pathproperty.py:115
+#: meerk40t/gui/textproperty.py:120 meerk40t/gui/textproperty.py:135
 msgid "\"none\" defined value"
 msgstr ""
 
-#: PathProperty.py:123 PathProperty.py:138 TextProperty.py:134
-#: TextProperty.py:149
+#: meerk40t/gui/pathproperty.py:102 meerk40t/gui/pathproperty.py:117
+#: meerk40t/gui/textproperty.py:122 meerk40t/gui/textproperty.py:137
 msgid "#FF0000 defined values."
 msgstr ""
 
-#: PathProperty.py:125 PathProperty.py:127 PathProperty.py:140
-#: PathProperty.py:142 TextProperty.py:136 TextProperty.py:138
-#: TextProperty.py:151 TextProperty.py:153
+#: meerk40t/gui/pathproperty.py:104 meerk40t/gui/pathproperty.py:106
+#: meerk40t/gui/pathproperty.py:119 meerk40t/gui/pathproperty.py:121
+#: meerk40t/gui/textproperty.py:124 meerk40t/gui/textproperty.py:126
+#: meerk40t/gui/textproperty.py:139 meerk40t/gui/textproperty.py:141
 msgid "#00FF00 defined values."
 msgstr ""
 
-#: PathProperty.py:129 PathProperty.py:144 TextProperty.py:140
-#: TextProperty.py:155
+#: meerk40t/gui/pathproperty.py:108 meerk40t/gui/pathproperty.py:123
+#: meerk40t/gui/textproperty.py:128 meerk40t/gui/textproperty.py:143
 msgid "#FF00FF defined values."
 msgstr ""
 
-#: PathProperty.py:131 PathProperty.py:146 TextProperty.py:142
-#: TextProperty.py:157
+#: meerk40t/gui/pathproperty.py:110 meerk40t/gui/pathproperty.py:125
+#: meerk40t/gui/textproperty.py:130 meerk40t/gui/textproperty.py:145
 msgid "#00FFFF defined values."
 msgstr ""
 
-#: PathProperty.py:133 PathProperty.py:148 TextProperty.py:144
-#: TextProperty.py:159
+#: meerk40t/gui/pathproperty.py:112 meerk40t/gui/pathproperty.py:127
+#: meerk40t/gui/textproperty.py:132 meerk40t/gui/textproperty.py:147
 msgid "#FFFF00 defined values."
 msgstr ""
 
-#: PathProperty.py:135 PathProperty.py:150 TextProperty.py:146
-#: TextProperty.py:161
+#: meerk40t/gui/pathproperty.py:114 meerk40t/gui/pathproperty.py:129
+#: meerk40t/gui/textproperty.py:134 meerk40t/gui/textproperty.py:149
 msgid "#000000 defined values."
 msgstr ""
 
-#: PathProperty.py:157 TextProperty.py:168
+#: meerk40t/gui/pathproperty.py:137 meerk40t/gui/textproperty.py:157
 msgid "Fill Color"
 msgstr ""
 
-#: PathProperty.py:158 TextProperty.py:169
+#: meerk40t/gui/pathproperty.py:140 meerk40t/gui/textproperty.py:160
 msgid "Stroke Color"
 msgstr ""
 
-#: Preferences.py:25
-msgid "Flip X"
-msgstr ""
-
-#: Preferences.py:26
-msgid "Homes Right"
-msgstr ""
-
-#: Preferences.py:27
-msgid "Flip Y"
-msgstr ""
-
-#: Preferences.py:28
-msgid "Homes Bottom"
-msgstr ""
-
-#: Preferences.py:29
-msgid "Swap X and Y"
-msgstr ""
-
-#: Preferences.py:30
-msgid "Mock USB Connection Mode"
-msgstr ""
-
-#: Preferences.py:37
-msgid "Set Current"
-msgstr ""
-
-#: Preferences.py:40
-msgid "Automatically lock rail"
-msgstr ""
-
-#: Preferences.py:41
-msgid "Home after job complete"
-msgstr ""
-
-#: Preferences.py:42
-msgid "Beep after job complete"
-msgstr ""
-
-#: Preferences.py:154 wxMeerK40t.py:203 wxMeerK40t.py:344
-msgid "Preferences"
-msgstr ""
-
-#: Preferences.py:155
-msgid "Select the board to use. This has affects the speedcodes used."
-msgstr ""
-
-#: Preferences.py:157
-msgid "Swaps the X and Y axis. This happens before the FlipX and FlipY."
-msgstr ""
-
-#: Preferences.py:158
-msgid "Flip the Right and Left commands sent to the controller"
-msgstr ""
-
-#: Preferences.py:159
-msgid "Indicates the device Home is on the right"
-msgstr ""
-
-#: Preferences.py:160
-msgid "Flip the Top and Bottom commands sent to the controller"
-msgstr ""
-
-#: Preferences.py:161
-msgid "Indicates the device Home is on the bottom"
-msgstr ""
-
-#: Preferences.py:163
+#: meerk40t/gui/preferences.py:17
 msgid ""
-"DEBUG. Without a K40 connected continue to process things as if there was"
-" one."
+"The input/driver properties of the selected device provides no graphical "
+"user interface."
 msgstr ""
 
-#: Preferences.py:164 Preferences.py:165 Preferences.py:166
-msgid "-1 match anything. 0-5 match exactly that value."
+#: meerk40t/gui/preferences.py:27
+msgid "Properties"
 msgstr ""
 
-#: Preferences.py:167
-msgid "-1 match anything. 0-255 match exactly that value."
-msgstr ""
-
-#: Preferences.py:169
-msgid "Translate Home X"
-msgstr ""
-
-#: Preferences.py:171
-msgid "Translate Home Y"
-msgstr ""
-
-#: Preferences.py:172
-msgid "Set Home Position based on the current position"
-msgstr ""
-
-#: Preferences.py:174
-msgid "Width of the laser bed."
-msgstr ""
-
-#: Preferences.py:176
-msgid "Height of the laser bed."
-msgstr ""
-
-#: Preferences.py:177
-msgid "Lock rail after operations are finished."
-msgstr ""
-
-#: Preferences.py:179
-msgid "Home the machine after job is finished"
-msgstr ""
-
-#: Preferences.py:180
-msgid "Beep after the job is finished."
-msgstr ""
-
-#: Preferences.py:187
-msgid "General Options"
-msgstr ""
-
-#: Preferences.py:188
-msgid "Bed Dimensions"
-msgstr ""
-
-#: Preferences.py:189
-msgid "Shift Home Position"
-msgstr ""
-
-#: Preferences.py:190
-msgid "USB Settings"
-msgstr ""
-
-#: Preferences.py:195
-msgid "Board Setup"
-msgstr ""
-
-#: Preferences.py:209
-msgid "Device Index:"
-msgstr ""
-
-#: Preferences.py:213
-msgid "Device Address:"
-msgstr ""
-
-#: Preferences.py:217
-msgid "Device Bus:"
-msgstr ""
-
-#: Preferences.py:221
-msgid "Chip Version:"
-msgstr ""
-
-#: Preferences.py:226
-msgid "X"
-msgstr ""
-
-#: Preferences.py:229 Preferences.py:235
-msgid "mil"
-msgstr ""
-
-#: Preferences.py:232
-msgid "Y"
-msgstr ""
-
-#: Preferences.py:240 RasterWizard.py:672
-msgid "Width"
-msgstr ""
-
-#: Preferences.py:243 Preferences.py:249 RasterWizard.py:619
-#: RotarySettings.py:145 RotarySettings.py:149 Settings.py:36
-msgid "mm"
-msgstr ""
-
-#: Preferences.py:246 RasterWizard.py:678
-msgid "Height"
-msgstr ""
-
-#: RasterWizard.py:56 RasterWizard.py:94
+#: meerk40t/gui/rasterwizard.py:54 meerk40t/gui/rasterwizard.py:97
 msgid "name"
 msgstr ""
 
-#: RasterWizard.py:146
+#: meerk40t/gui/rasterwizard.py:144
 msgid "Raster Wizard"
 msgstr ""
 
-#: RasterWizard.py:147
+#: meerk40t/gui/rasterwizard.py:145
 msgid "Processed image preview"
 msgstr ""
 
-#: RasterWizard.py:148
+#: meerk40t/gui/rasterwizard.py:147
 msgid "Image operations applied in order to generate a raster image."
 msgstr ""
 
-#: RasterWizard.py:150
+#: meerk40t/gui/rasterwizard.py:150
 msgid "Process Image and Export"
 msgstr ""
 
-#: RasterWizard.py:295 RasterWizard.py:316
+#: meerk40t/gui/rasterwizard.py:309 meerk40t/gui/rasterwizard.py:326
 msgid "Processing..."
 msgstr ""
 
-#: RasterWizard.py:297
+#: meerk40t/gui/rasterwizard.py:311
 msgid "No image..."
 msgstr ""
 
-#: RasterWizard.py:360
+#: meerk40t/gui/rasterwizard.py:375
 msgid "Raster Script"
 msgstr ""
 
-#: RasterWizard.py:482 RasterWizard.py:540 RasterWizard.py:614
-#: RasterWizard.py:807 RasterWizard.py:882 RasterWizard.py:992
-#: RasterWizard.py:1143 RasterWizard.py:1264 RasterWizard.py:1318
-#: RasterWizard.py:1336 RasterWizard.py:1361
-msgid "Enable"
-msgstr ""
-
-#: RasterWizard.py:500
+#: meerk40t/gui/rasterwizard.py:546
 msgid "Enable Dither"
 msgstr ""
 
-#: RasterWizard.py:502
+#: meerk40t/gui/rasterwizard.py:548
 msgid "Select dither algorithm to use"
 msgstr ""
 
-#: RasterWizard.py:509
+#: meerk40t/gui/rasterwizard.py:555
 msgid "Dither"
 msgstr ""
 
-#: RasterWizard.py:541 RasterWizard.py:808 RasterWizard.py:993
-#: RasterWizard.py:1144 RasterWizard.py:1362
+#: meerk40t/gui/rasterwizard.py:589 meerk40t/gui/rasterwizard.py:927
+#: meerk40t/gui/rasterwizard.py:1167 meerk40t/gui/rasterwizard.py:1321
+#: meerk40t/gui/rasterwizard.py:1589
 msgid "Reset"
 msgstr ""
 
-#: RasterWizard.py:555
+#: meerk40t/gui/rasterwizard.py:603
 msgid "Enable Cropping"
 msgstr ""
 
-#: RasterWizard.py:557
+#: meerk40t/gui/rasterwizard.py:605
 msgid "Reset Cropping"
 msgstr ""
 
-#: RasterWizard.py:558
+#: meerk40t/gui/rasterwizard.py:606
 msgid "Crop field"
 msgstr ""
 
-#: RasterWizard.py:563
+#: meerk40t/gui/rasterwizard.py:612
 msgid "Crop"
 msgstr ""
 
-#: RasterWizard.py:616
+#: meerk40t/gui/rasterwizard.py:670
 msgid "Maintain Aspect Ratio"
 msgstr ""
 
-#: RasterWizard.py:619
+#: meerk40t/gui/rasterwizard.py:678
 msgid "pixels"
 msgstr ""
 
-#: RasterWizard.py:619
+#: meerk40t/gui/rasterwizard.py:678
 msgid "percent"
 msgstr ""
 
-#: RasterWizard.py:619
+#: meerk40t/gui/panes/jogdistancepanel.py:62 meerk40t/gui/rasterwizard.py:678
 msgid "inches"
 msgstr ""
 
-#: RasterWizard.py:650
+#: meerk40t/gui/panes/jogdistancepanel.py:59 meerk40t/gui/panes/position.py:31
+#: meerk40t/gui/rasterwizard.py:678 meerk40t/gui/rotarysettings.py:140
+#: meerk40t/gui/rotarysettings.py:144 meerk40t/gui/settings.py:279
+#: meerk40t/gui/settings.py:285
+msgid "mm"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:747
 msgid "Enable Resampling"
 msgstr ""
 
-#: RasterWizard.py:652
+#: meerk40t/gui/rasterwizard.py:749
 msgid "Image Width"
 msgstr ""
 
-#: RasterWizard.py:653
+#: meerk40t/gui/rasterwizard.py:751
 msgid "Maintain Aspect Ratio for Resample"
 msgstr ""
 
-#: RasterWizard.py:655
+#: meerk40t/gui/rasterwizard.py:754
 msgid "Image Height"
 msgstr ""
 
-#: RasterWizard.py:657
+#: meerk40t/gui/rasterwizard.py:756
 msgid "Image resample step"
 msgstr ""
 
-#: RasterWizard.py:659
+#: meerk40t/gui/rasterwizard.py:758
 msgid "Image resample DPI at given step"
 msgstr ""
 
-#: RasterWizard.py:665
+#: meerk40t/gui/rasterwizard.py:765
 msgid "Resample"
 msgstr ""
 
-#: RasterWizard.py:686 wxMeerK40t.py:2246 wxMeerK40t.py:2307
-msgid "Step"
+#: meerk40t/gui/rasterwizard.py:773 meerk40t/gui/settings.py:276
+msgid "Width"
 msgstr ""
 
-#: RasterWizard.py:691
+#: meerk40t/gui/rasterwizard.py:779 meerk40t/gui/settings.py:282
+msgid "Height"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:792
 msgid "pixels/in"
 msgstr ""
 
-#: RasterWizard.py:826
+#: meerk40t/gui/rasterwizard.py:812
+#, python-format
+msgid "%d x %d pixels"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:947
 msgid "Enable Gamma Shift"
 msgstr ""
 
-#: RasterWizard.py:828
+#: meerk40t/gui/rasterwizard.py:949
 msgid "Reset Gamma Shift"
 msgstr ""
 
-#: RasterWizard.py:829
+#: meerk40t/gui/rasterwizard.py:950
 msgid "Gamma factor slider"
 msgstr ""
 
-#: RasterWizard.py:830
+#: meerk40t/gui/rasterwizard.py:951
 msgid "Amount of gamma factor"
 msgstr ""
 
-#: RasterWizard.py:835
+#: meerk40t/gui/rasterwizard.py:957
 msgid "Gamma"
 msgstr ""
 
-#: RasterWizard.py:836
+#: meerk40t/gui/rasterwizard.py:960
 msgid "Gamma Factor"
 msgstr ""
 
-#: RasterWizard.py:883 wxMeerK40t.py:338
+#: meerk40t/gui/rasterwizard.py:1009 meerk40t/gui/wxmeerk40t.py:1646
 msgid "Invert"
 msgstr ""
 
-#: RasterWizard.py:908
+#: meerk40t/gui/rasterwizard.py:1066
 msgid "Enable Grayscale Convert"
 msgstr ""
 
-#: RasterWizard.py:910
+#: meerk40t/gui/rasterwizard.py:1068
 msgid "Invert Grayscale"
 msgstr ""
 
-#: RasterWizard.py:911
+#: meerk40t/gui/rasterwizard.py:1069
 msgid "Red component amount"
 msgstr ""
 
-#: RasterWizard.py:912
+#: meerk40t/gui/rasterwizard.py:1070
 msgid "Red Factor"
 msgstr ""
 
-#: RasterWizard.py:913
+#: meerk40t/gui/rasterwizard.py:1071
 msgid "Green component control"
 msgstr ""
 
-#: RasterWizard.py:914
+#: meerk40t/gui/rasterwizard.py:1072
 msgid "Green Factor"
 msgstr ""
 
-#: RasterWizard.py:915
+#: meerk40t/gui/rasterwizard.py:1073
 msgid "Blue component control"
 msgstr ""
 
-#: RasterWizard.py:916
+#: meerk40t/gui/rasterwizard.py:1074
 msgid "Blue Factor"
 msgstr ""
 
-#: RasterWizard.py:920
+#: meerk40t/gui/rasterwizard.py:1079
 msgid "Grayscale"
 msgstr ""
 
-#: RasterWizard.py:921
+#: meerk40t/gui/rasterwizard.py:1082
 msgid "Lightness"
 msgstr ""
 
-#: RasterWizard.py:922
+#: meerk40t/gui/rasterwizard.py:1085
 msgid "Blue"
 msgstr ""
 
-#: RasterWizard.py:923
+#: meerk40t/gui/rasterwizard.py:1088
 msgid "Green"
 msgstr ""
 
-#: RasterWizard.py:924
+#: meerk40t/gui/rasterwizard.py:1091
 msgid "Red"
 msgstr ""
 
-#: RasterWizard.py:1013
+#: meerk40t/gui/rasterwizard.py:1187
 msgid "Enable Tone Curve"
 msgstr ""
 
-#: RasterWizard.py:1015
+#: meerk40t/gui/rasterwizard.py:1189
 msgid "Reset Tone Curve"
 msgstr ""
 
-#: RasterWizard.py:1022
+#: meerk40t/gui/rasterwizard.py:1197
 msgid "Tone Curve"
 msgstr ""
 
-#: RasterWizard.py:1169
+#: meerk40t/gui/rasterwizard.py:1372
 msgid "Enable Sharpen"
 msgstr ""
 
-#: RasterWizard.py:1171
+#: meerk40t/gui/rasterwizard.py:1374
 msgid "Sharpen Reset"
 msgstr ""
 
-#: RasterWizard.py:1172
+#: meerk40t/gui/rasterwizard.py:1375
 msgid "Strength of sharpening in percent"
 msgstr ""
 
-#: RasterWizard.py:1173
+#: meerk40t/gui/rasterwizard.py:1376
 msgid "amount of sharpening in %"
 msgstr ""
 
-#: RasterWizard.py:1174
+#: meerk40t/gui/rasterwizard.py:1378
 msgid "Blur radius for the sharpening operation"
 msgstr ""
 
-#: RasterWizard.py:1175
+#: meerk40t/gui/rasterwizard.py:1380
 msgid "Sharpen radius amount"
 msgstr ""
 
-#: RasterWizard.py:1177
+#: meerk40t/gui/rasterwizard.py:1382
 msgid "Threshold controls the minimum brighteness change to be sharpened."
 msgstr ""
 
-#: RasterWizard.py:1178
+#: meerk40t/gui/rasterwizard.py:1384
 msgid "Sharpen Threshold Amount"
 msgstr ""
 
-#: RasterWizard.py:1183
+#: meerk40t/gui/rasterwizard.py:1390
 msgid "Sharpen"
 msgstr ""
 
-#: RasterWizard.py:1184
+#: meerk40t/gui/rasterwizard.py:1393
 msgid "Threshold"
 msgstr ""
 
-#: RasterWizard.py:1185
+#: meerk40t/gui/rasterwizard.py:1396
 msgid "Radius"
 msgstr ""
 
-#: RasterWizard.py:1186
+#: meerk40t/gui/rasterwizard.py:1399
 msgid "Percent"
 msgstr ""
 
-#: RasterWizard.py:1265
+#: meerk40t/gui/rasterwizard.py:1482
 msgid "Replace Image"
 msgstr ""
 
-#: RasterWizard.py:1278
+#: meerk40t/gui/rasterwizard.py:1499
 msgid "Enable Output"
 msgstr ""
 
-#: RasterWizard.py:1280
+#: meerk40t/gui/rasterwizard.py:1501
 msgid "Replace image with this output"
 msgstr ""
 
-#: RasterWizard.py:1330
+#: meerk40t/gui/rasterwizard.py:1554
 msgid "Enable Operation"
 msgstr ""
 
-#: RasterWizard.py:1344
+#: meerk40t/gui/rasterwizard.py:1570
 #, python-format
 msgid "Enable %s"
 msgstr ""
 
-#: RasterWizard.py:1383
+#: meerk40t/gui/rasterwizard.py:1628
 msgid "Enable Contrast"
 msgstr ""
 
-#: RasterWizard.py:1385
+#: meerk40t/gui/rasterwizard.py:1630
 msgid "Reset Contrast"
 msgstr ""
 
-#: RasterWizard.py:1386
+#: meerk40t/gui/rasterwizard.py:1631
 msgid "Contrast amount"
 msgstr ""
 
-#: RasterWizard.py:1387
+#: meerk40t/gui/rasterwizard.py:1633
 msgid "Contrast the lights and darks by how much?"
 msgstr ""
 
-#: RasterWizard.py:1388
+#: meerk40t/gui/rasterwizard.py:1635
 msgid "Brightness amount"
 msgstr ""
 
-#: RasterWizard.py:1389
+#: meerk40t/gui/rasterwizard.py:1637
 msgid "Make the image how much more bright?"
 msgstr ""
 
-#: RasterWizard.py:1394
+#: meerk40t/gui/rasterwizard.py:1644
 msgid "Contrast"
 msgstr ""
 
-#: RasterWizard.py:1395
+#: meerk40t/gui/rasterwizard.py:1647
 msgid "Brightness Amount"
 msgstr ""
 
-#: RasterWizard.py:1397
+#: meerk40t/gui/rasterwizard.py:1650
 msgid "Contrast Amount"
 msgstr ""
 
-#: RotarySettings.py:29 wxMeerK40t.py:209
+#: meerk40t/gui/rasterwizard.py:1763
+msgid "Enable Halftone"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1765
+msgid "Halftone Reset"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1766
+msgid "Use black rather than white dots"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1767
+msgid "Sample size for halftone dots"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1768
+msgid "Halftone dot size"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1769
+msgid "Angle for halftone dots"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1770
+msgid "Halftone dot angle"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1772
+msgid "Oversampling amount for halftone-dots"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1774
+msgid "Halftone dot oversampling amount"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1780
+msgid "Halftone"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1783
+msgid "Oversample"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1786
+msgid "Angle"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1789
+msgid "Sample"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:126
+#: meerk40t/gui/rotarysettings.py:19 meerk40t/gui/wxmeerk40t.py:1242
+#: meerk40t/gui/wxmeerk40t.py:1766
 msgid "Rotary"
 msgstr ""
 
-#: RotarySettings.py:32
+#: meerk40t/gui/rotarysettings.py:22
 msgid "Field Loop"
 msgstr ""
 
-#: RotarySettings.py:34
+#: meerk40t/gui/rotarysettings.py:24
 msgid "Uses Roller"
 msgstr ""
 
-#: RotarySettings.py:99 RotarySettings.py:110
+#: meerk40t/gui/rotarysettings.py:67
+msgid "RotarySettings"
+msgstr ""
+
+#: meerk40t/gui/rotarysettings.py:78 meerk40t/gui/rotarysettings.py:95
 msgid "Use Rotary Settings"
 msgstr ""
 
-#: RotarySettings.py:101 RotarySettings.py:105
+#: meerk40t/gui/rotarysettings.py:80
 msgid "Rotary Scale Factor X"
 msgstr ""
 
-#: RotarySettings.py:112
+#: meerk40t/gui/rotarysettings.py:83
+msgid "Rotary Scale Factor Y"
+msgstr ""
+
+#: meerk40t/gui/rotarysettings.py:97
 msgid "Steps required for a full rotation"
 msgstr ""
 
-#: RotarySettings.py:115
+#: meerk40t/gui/rotarysettings.py:100
 msgid "Circumference of roller"
 msgstr ""
 
-#: RotarySettings.py:119
+#: meerk40t/gui/rotarysettings.py:104
 msgid "Circumference of object in rotary"
 msgstr ""
 
-#: RotarySettings.py:127
+#: meerk40t/gui/rotarysettings.py:113
 msgid "Object Circumference"
 msgstr ""
 
-#: RotarySettings.py:128
+#: meerk40t/gui/rotarysettings.py:116
 msgid "Roller Circumference"
 msgstr ""
 
-#: RotarySettings.py:129
+#: meerk40t/gui/rotarysettings.py:119
 msgid "Rotation Steps"
 msgstr ""
 
-#: RotarySettings.py:130
+#: meerk40t/gui/rotarysettings.py:122
 msgid "Scale X"
 msgstr ""
 
-#: RotarySettings.py:131
+#: meerk40t/gui/rotarysettings.py:125
 msgid "Scale Y"
 msgstr ""
 
-#: RotarySettings.py:140
+#: meerk40t/gui/panes/jogdistancepanel.py:64 meerk40t/gui/rotarysettings.py:135
 msgid "steps"
 msgstr ""
 
-#: Settings.py:27
-msgid "Invert Mouse Wheel Zoom"
-msgstr ""
-
-#: Settings.py:28
-msgid "Print Shutdown"
-msgstr ""
-
-#: Settings.py:29
-msgid "SVG Uniform Save"
-msgstr ""
-
-#: Settings.py:30
-msgid "Image DPI Scaling"
-msgstr ""
-
-#: Settings.py:31
-msgid "Show Negative Guide"
-msgstr ""
-
-#: Settings.py:32
-msgid "Launch Spooler JobStart"
-msgstr ""
-
-#: Settings.py:35
+#: meerk40t/gui/panes/position.py:86 meerk40t/gui/settings.py:26
 msgid "Units"
 msgstr ""
 
-#: Settings.py:110
+#: meerk40t/gui/settings.py:35
+msgid "96 px/in Inkscape"
+msgstr ""
+
+#: meerk40t/gui/settings.py:36
+msgid "72 px/in Illustrator"
+msgstr ""
+
+#: meerk40t/gui/settings.py:37
+msgid "90 px/in Old Inkscape"
+msgstr ""
+
+#: meerk40t/gui/settings.py:38
+msgid "Custom"
+msgstr ""
+
+#: meerk40t/gui/settings.py:46
+msgid "Save Window Positions"
+msgstr ""
+
+#: meerk40t/gui/settings.py:47
+msgid "Open Windows at the same place they were last closed"
+msgstr ""
+
+#: meerk40t/gui/settings.py:52
+msgid "Print Shutdown"
+msgstr ""
+
+#: meerk40t/gui/settings.py:53
+msgid "Print shutdown log when Meerk40t is closed."
+msgstr ""
+
+#: meerk40t/gui/settings.py:58
+msgid "SVG Uniform Save"
+msgstr ""
+
+#: meerk40t/gui/settings.py:59
+msgid "Do not treat overwriting SVG differently if they are MeerK40t files"
+msgstr ""
+
+#: meerk40t/gui/settings.py:66
+msgid "Image DPI Scaling"
+msgstr ""
+
+#: meerk40t/gui/settings.py:67
+msgid ""
+"Set: Use the DPI setting saved in the image to scale the image to the "
+"correct size. Unset: Use the image as if it were 1000 pixels per inch."
+msgstr ""
+
+#: meerk40t/gui/settings.py:74
+msgid "DXF Centering"
+msgstr ""
+
+#: meerk40t/gui/settings.py:75
+msgid "Fit (scale down if necessary) and center a DXF file within the bed"
+msgstr ""
+
+#: meerk40t/gui/settings.py:80
+msgid "Show Negative Guide"
+msgstr ""
+
+#: meerk40t/gui/settings.py:81
+msgid ""
+"Extend the Guide rulers with negative values to assist lining up objects "
+"partially outside the left/top of the bed"
+msgstr ""
+
+#: meerk40t/gui/settings.py:88
+msgid "Launch Spooler JobStart"
+msgstr ""
+
+#: meerk40t/gui/settings.py:89
+msgid "Open the Spooler window automatically when you Execute a Job"
+msgstr ""
+
+#: meerk40t/gui/settings.py:94
+msgid "MouseWheel Pan"
+msgstr ""
+
+#: meerk40t/gui/settings.py:95
+msgid ""
+"Default MouseWheel is Zoom (and horizontal pan with Shift key) - this "
+"changes MouseWheel to pan, and zoom with Ctrl key"
+msgstr ""
+
+#: meerk40t/gui/settings.py:102
+msgid "Invert MouseWheel Pan"
+msgstr ""
+
+#: meerk40t/gui/settings.py:103
+msgid "Reverses the direction of the MouseWheel for horizontal & vertical pan"
+msgstr ""
+
+#: meerk40t/gui/settings.py:110
+msgid "Invert MouseWheel Zoom"
+msgstr ""
+
+#: meerk40t/gui/settings.py:111
+msgid "Reverses the direction of the MouseWheel for zoom"
+msgstr ""
+
+#: meerk40t/gui/settings.py:116
+msgid "Default Operation Empty"
+msgstr ""
+
+#: meerk40t/gui/settings.py:117
+msgid "Sets Operations to Other/Red/Blue if loaded with no operations."
+msgstr ""
+
+#: meerk40t/gui/settings.py:122
+msgid "Reverse SVG Element Load"
+msgstr ""
+
+#: meerk40t/gui/settings.py:123
+msgid ""
+"Inkscape saves SVG files in reverse order, so this loads them into "
+"MeerK40t in the same order as the Inkscape object list"
+msgstr ""
+
+#: meerk40t/gui/settings.py:130
+msgid "Disable ToolTips"
+msgstr ""
+
+#: meerk40t/gui/settings.py:131
+msgid ""
+"If you do not want to see tooltips like this one, check this box.\n"
+"Particularly useful if you have a touch screen.\n"
+"Note: Takes effect when MeerK40t starts"
+msgstr ""
+
+#: meerk40t/gui/settings.py:219
 msgid "Set default units for guides"
 msgstr ""
 
-#: Settings.py:112
+#: meerk40t/gui/settings.py:221
 msgid "Select the desired language to use."
 msgstr ""
 
-#: Settings.py:120
+#: meerk40t/gui/settings.py:223
+msgid "Select the Pixels Per Inch to use when loading an SVG file"
+msgstr ""
+
+#: meerk40t/gui/settings.py:227
+msgid "Custom Pixels Per Inch to use when loading an SVG file"
+msgstr ""
+
+#: meerk40t/gui/settings.py:230
+msgid "Width of the laser bed."
+msgstr ""
+
+#: meerk40t/gui/settings.py:232
+msgid "Height of the laser bed."
+msgstr ""
+
+#: meerk40t/gui/settings.py:234
+msgid ""
+"Scale factor for the X-axis. This defines the ratio of mils to steps. "
+"This is usually at 1:1 steps/mils but due to functional issues it can "
+"deviate and needs to be accounted for"
+msgstr ""
+
+#: meerk40t/gui/settings.py:239
+msgid ""
+"Scale factor for the Y-axis. This defines the ratio of mils to steps. "
+"This is usually at 1:1 steps/mils but due to functional issues it can "
+"deviate and needs to be accounted for"
+msgstr ""
+
+#: meerk40t/gui/settings.py:252
+msgid "Bed Dimensions"
+msgstr ""
+
+#: meerk40t/gui/settings.py:256
+msgid "Y Scale Factor"
+msgstr ""
+
+#: meerk40t/gui/settings.py:259
+msgid "X Scale Factor"
+msgstr ""
+
+#: meerk40t/gui/settings.py:264
+msgid "SVG Pixels Per Inch"
+msgstr ""
+
+#: meerk40t/gui/settings.py:267
 msgid "Language"
 msgstr ""
 
-#: Terminal.py:80 wxMeerK40t.py:208 wxMeerK40t.py:351
-msgid "Terminal"
+#: meerk40t/gui/simulation.py:152
+msgid "Simulation"
 msgstr ""
 
-#: UsbConnect.py:70
+#: meerk40t/gui/simulation.py:153 meerk40t/gui/simulation.py:156
+msgid "Time Estimate: Lasering Time"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:154 meerk40t/gui/simulation.py:157
+msgid "Time Estimate: Traveling Time"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:155 meerk40t/gui/simulation.py:158
+msgid "Time Estimate: Total Time"
+msgstr ""
+
+#: meerk40t/gui/panes/spoolerpanel.py:66 meerk40t/gui/simulation.py:161
+msgid "Select the device"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:185
+msgid "Total Time"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:188
+msgid "Travel Time"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:191
+msgid "Laser Time"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:195
+msgid "Total Distance"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:198
+msgid "Travel Distance"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:201
+msgid "Laser Distance"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:221
+msgid "Playback Speed"
+msgstr ""
+
+#: meerk40t/gui/usbconnect.py:50
 msgid "UsbConnect"
 msgstr ""
 
-#: wxMeerK40t.py:187
-msgid "Main"
+#: meerk40t/gui/wxmeerk40t.py:128
+msgid "starts the gui"
 msgstr ""
 
-#: wxMeerK40t.py:191 wxMeerK40t.py:1329
-msgid "Open"
+#: meerk40t/gui/wxmeerk40t.py:390
+msgid "Jog"
 msgstr ""
 
-#: wxMeerK40t.py:192 wxMeerK40t.py:310
-msgid "Save"
+#: meerk40t/gui/wxmeerk40t.py:396 meerk40t/gui/wxmeerk40t.py:416
+#: meerk40t/gui/wxmeerk40t.py:436 meerk40t/gui/wxmeerk40t.py:455
+#: meerk40t/gui/wxmeerk40t.py:475 meerk40t/gui/wxmeerk40t.py:494
+msgid "Navigate"
 msgstr ""
 
-#: wxMeerK40t.py:196 wxMeerK40t.py:359
-msgid "Windows"
+#: meerk40t/gui/wxmeerk40t.py:409
+msgid "Drag"
 msgstr ""
 
-#: wxMeerK40t.py:200
-msgid "Usb"
+#: meerk40t/gui/wxmeerk40t.py:429
+msgid "Transform"
 msgstr ""
 
-#: wxMeerK40t.py:201
-msgid "Spooler"
+#: meerk40t/gui/wxmeerk40t.py:449
+msgid "Distances"
 msgstr ""
 
-#: wxMeerK40t.py:204
-msgid "Devices"
+#: meerk40t/gui/wxmeerk40t.py:469
+msgid "Pulse"
 msgstr ""
 
-#: wxMeerK40t.py:206
-msgid "Keymap"
+#: meerk40t/gui/wxmeerk40t.py:488
+msgid "Move"
 msgstr ""
 
-#: wxMeerK40t.py:207 wxMeerK40t.py:354
-msgid "Notes"
+#: meerk40t/gui/wxmeerk40t.py:508
+msgid "Tree"
 msgstr ""
 
-#: wxMeerK40t.py:210 wxMeerK40t.py:2348
-msgid "RasterWizard"
-msgstr ""
-
-#: wxMeerK40t.py:244 wxMeerK40t.py:245
+#: meerk40t/gui/wxmeerk40t.py:522
 msgid "Position"
 msgstr ""
 
-#: wxMeerK40t.py:304
-msgid "New"
+#: meerk40t/gui/wxmeerk40t.py:540
+msgid "Ribbon"
 msgstr ""
 
-#: wxMeerK40t.py:305
-msgid "Open Project"
+#: meerk40t/gui/panes/toolbarproject.py:170 meerk40t/gui/wxmeerk40t.py:559
+#: meerk40t/gui/wxmeerk40t.py:1060
+msgid "Project"
 msgstr ""
 
-#: wxMeerK40t.py:307
+#: meerk40t/gui/wxmeerk40t.py:565 meerk40t/gui/wxmeerk40t.py:585
+#: meerk40t/gui/wxmeerk40t.py:605
+msgid "Toolbars"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarcontrol.py:133 meerk40t/gui/wxmeerk40t.py:579
+#: meerk40t/gui/wxmeerk40t.py:1122
+msgid "Control"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:147 meerk40t/gui/wxmeerk40t.py:599
+#: meerk40t/gui/wxmeerk40t.py:1199
+msgid "Preferences"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:619
+msgid "Emergency stop/reset the controller."
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:647
+msgid "Pause/Resume the controller"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:67 meerk40t/gui/wxmeerk40t.py:742
+#: meerk40t/gui/wxmeerk40t.py:1207 meerk40t/gui/wxmeerk40t.py:1753
+msgid "Devices"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:924
+msgid "Theming information and assignments"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:928
+msgid "Rotary View of Scene"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:932
+msgid "Rotary Scale selected elements"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:959
+msgid "Spooling Interrupted. Press OK to Continue."
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:979
+msgid "tool to use."
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:980
+msgid "sets a particular tool for the scene"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:983
+msgid "Tools:"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:987
+msgid "-------"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarproject.py:65 meerk40t/gui/wxmeerk40t.py:1066
+#: meerk40t/gui/wxmeerk40t.py:2324 meerk40t/gui/wxmeerk40t.py:2734
+msgid "Open"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarproject.py:100 meerk40t/gui/wxmeerk40t.py:1077
+#: meerk40t/gui/wxmeerk40t.py:1728
+msgid "Simulate"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarproject.py:152 meerk40t/gui/wxmeerk40t.py:1103
+#: meerk40t/gui/wxmeerk40t.py:1975
+msgid "Preparing simulation..."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:41
+#: meerk40t/gui/moshi/moshicontrollergui.py:32 meerk40t/gui/wxmeerk40t.py:1176
+msgid "Stop"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:82 meerk40t/gui/wxmeerk40t.py:1217
+#: meerk40t/gui/wxmeerk40t.py:1756
+msgid "Config"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:112 meerk40t/gui/wxmeerk40t.py:1236
+#: meerk40t/gui/wxmeerk40t.py:1763
+msgid "Keymap"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1558 meerk40t/gui/wxmeerk40t.py:1559
+#: meerk40t/gui/wxmeerk40t.py:1560 meerk40t/gui/wxmeerk40t.py:1561
+#: meerk40t/gui/wxmeerk40t.py:1562
+#, python-format
+msgid "Camera %d"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1588
+msgid "New\tCtrl-N"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1589
+msgid "Open Project\tCtrl-O"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1591
 msgid "Recent"
 msgstr ""
 
-#: wxMeerK40t.py:308
+#: meerk40t/gui/wxmeerk40t.py:1592
 msgid "Import File"
 msgstr ""
 
-#: wxMeerK40t.py:311
-msgid "Save As"
+#: meerk40t/gui/wxmeerk40t.py:1594
+msgid "Save\tCtrl-S"
 msgstr ""
 
-#: wxMeerK40t.py:314
+#: meerk40t/gui/wxmeerk40t.py:1595
+msgid "Save As\tCtrl-Shift-S"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1598
 msgid "Exit"
 msgstr ""
 
-#: wxMeerK40t.py:315
-msgid "File"
+#: meerk40t/gui/wxmeerk40t.py:1606
+msgid "Zoom Out\tCtrl--"
 msgstr ""
 
-#: wxMeerK40t.py:318
-msgid "Zoom Out"
+#: meerk40t/gui/wxmeerk40t.py:1607
+msgid "Zoom In\tCtrl-+"
 msgstr ""
 
-#: wxMeerK40t.py:319
-msgid "Zoom In"
-msgstr ""
-
-#: wxMeerK40t.py:320
+#: meerk40t/gui/wxmeerk40t.py:1608
 msgid "Zoom To Size"
 msgstr ""
 
-#: wxMeerK40t.py:322
+#: meerk40t/gui/wxmeerk40t.py:1611
 msgid "Hide Grid"
 msgstr ""
 
-#: wxMeerK40t.py:323
+#: meerk40t/gui/wxmeerk40t.py:1613
 msgid "Hide Background"
 msgstr ""
 
-#: wxMeerK40t.py:324
+#: meerk40t/gui/wxmeerk40t.py:1615
 msgid "Hide Guides"
 msgstr ""
 
-#: wxMeerK40t.py:325
+#: meerk40t/gui/wxmeerk40t.py:1616
 msgid "Hide Paths"
 msgstr ""
 
-#: wxMeerK40t.py:326
+#: meerk40t/gui/wxmeerk40t.py:1617
 msgid "Hide Images"
 msgstr ""
 
-#: wxMeerK40t.py:327
+#: meerk40t/gui/wxmeerk40t.py:1618
 msgid "Hide Text"
 msgstr ""
 
-#: wxMeerK40t.py:328
+#: meerk40t/gui/wxmeerk40t.py:1619
 msgid "Hide Fills"
 msgstr ""
 
-#: wxMeerK40t.py:329
+#: meerk40t/gui/wxmeerk40t.py:1621
 msgid "Hide Strokes"
 msgstr ""
 
-#: wxMeerK40t.py:330
+#: meerk40t/gui/wxmeerk40t.py:1624
+msgid "No Stroke-Width Render"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1627
 msgid "Hide Laserpath"
 msgstr ""
 
-#: wxMeerK40t.py:331
+#: meerk40t/gui/wxmeerk40t.py:1630
 msgid "Hide Reticle"
 msgstr ""
 
-#: wxMeerK40t.py:332
+#: meerk40t/gui/wxmeerk40t.py:1633
 msgid "Hide Selection"
 msgstr ""
 
-#: wxMeerK40t.py:333
+#: meerk40t/gui/wxmeerk40t.py:1635
 msgid "Hide Icons"
 msgstr ""
 
-#: wxMeerK40t.py:334
+#: meerk40t/gui/wxmeerk40t.py:1636
 msgid "Hide Tree"
 msgstr ""
 
-#: wxMeerK40t.py:335
+#: meerk40t/gui/wxmeerk40t.py:1638
 msgid "Do Not Cache Image"
 msgstr ""
 
-#: wxMeerK40t.py:336
+#: meerk40t/gui/wxmeerk40t.py:1641
 msgid "Do Not Refresh"
 msgstr ""
 
-#: wxMeerK40t.py:337
+#: meerk40t/gui/wxmeerk40t.py:1644
 msgid "Do Not Animate"
 msgstr ""
 
-#: wxMeerK40t.py:339
+#: meerk40t/gui/wxmeerk40t.py:1647
 msgid "Flip XY"
 msgstr ""
 
-#: wxMeerK40t.py:341
+#: meerk40t/gui/wxmeerk40t.py:1649
 msgid "View"
 msgstr ""
 
-#: wxMeerK40t.py:346
-msgid "Rotary Settings"
+#: meerk40t/gui/wxmeerk40t.py:1709
+msgid "Unlock Panes"
 msgstr ""
 
-#: wxMeerK40t.py:348
-msgid "Device Manager"
+#: meerk40t/gui/wxmeerk40t.py:1714
+msgid "Reset Panes"
 msgstr ""
 
-#: wxMeerK40t.py:349
-msgid "Alignment Ally"
+#: meerk40t/gui/wxmeerk40t.py:1716
+msgid "Panes"
 msgstr ""
 
-#: wxMeerK40t.py:355
+#: meerk40t/gui/wxmeerk40t.py:1768
 msgid "USB"
 msgstr ""
 
-#: wxMeerK40t.py:356
-msgid "Job Spooler"
+#: meerk40t/gui/wxmeerk40t.py:1772
+msgid "Reset Windows"
 msgstr ""
 
-#: wxMeerK40t.py:357 wxMeerK40t.py:2173
-msgid "Execute Job"
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:37
+#: meerk40t/gui/moshi/moshicontrollergui.py:30 meerk40t/gui/wxmeerk40t.py:1775
+msgid "Tools"
 msgstr ""
 
-#: wxMeerK40t.py:362
-msgid "Webpage"
+#: meerk40t/gui/wxmeerk40t.py:1784
+msgid "Window"
 msgstr ""
 
-#: wxMeerK40t.py:364
+#: meerk40t/gui/wxmeerk40t.py:1790 meerk40t/gui/wxmeerk40t.py:1798
 msgid "Help"
 msgstr ""
 
-#: wxMeerK40t.py:540
+#: meerk40t/gui/wxmeerk40t.py:1791
+msgid "Github"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1792
+msgid "Releases"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1793
+msgid "Facebook"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1794
+msgid "Makers Forum"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1795
+msgid "IRC"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:2090
 msgid "Languages"
 msgstr ""
 
-#: wxMeerK40t.py:796
+#: meerk40t/gui/wxmeerk40t.py:2194
+msgid "No active device existed. Add a primary device."
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:2195
+msgid "Active Device"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:2204
 msgid "All attempts to connect to USB have failed."
 msgstr ""
 
-#: wxMeerK40t.py:797
+#: meerk40t/gui/wxmeerk40t.py:2205
 msgid "Usb Connection Problem."
 msgstr ""
 
-#: wxMeerK40t.py:802
+#: meerk40t/gui/wxmeerk40t.py:2212
 #, python-format
 msgid "Usb: %s"
 msgstr ""
 
-#: wxMeerK40t.py:809
+#: meerk40t/gui/wxmeerk40t.py:2220
 #, python-format
 msgid "Controller: %s"
 msgstr ""
 
-#: wxMeerK40t.py:813
+#: meerk40t/gui/wxmeerk40t.py:2226
 #, python-format
 msgid "Spooler: %s"
 msgstr ""
 
-#: wxMeerK40t.py:834
+#: meerk40t/gui/wxmeerk40t.py:2266
 #, python-format
-msgid "%s v%s %s"
+msgid "%s v%s      (%s -> %s -> %s)"
 msgstr ""
 
-#: wxMeerK40t.py:894
+#: meerk40t/gui/wxmeerk40t.py:2276
+#, python-format
+msgid "%s v%s"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:2412
 msgid "Clear Recent"
 msgstr ""
 
-#: wxMeerK40t.py:921
+#: meerk40t/gui/wxmeerk40t.py:2440 meerk40t/gui/wxmeerk40t.py:2989
 msgid "Loading File..."
 msgstr ""
 
-#: wxMeerK40t.py:953
+#: meerk40t/gui/wxmeerk40t.py:2452
+msgid "File is Malformed."
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:2489
 #, python-format
 msgid ""
 "Some files were unrecognized:\n"
 "%s"
 msgstr ""
 
-#: wxMeerK40t.py:954 wxMeerK40t.py:2998
+#: meerk40t/gui/wxmeerk40t.py:2491
 msgid "Error encountered"
 msgstr ""
 
-#: wxMeerK40t.py:1406
+#: meerk40t/gui/wxmeerk40t.py:2758
+msgid "Save Project"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:2829
 msgid "Enter Forced Gear"
 msgstr ""
 
-#: wxMeerK40t.py:1406
+#: meerk40t/gui/wxmeerk40t.py:2829
 msgid "Gear Entry"
 msgstr ""
 
-#: wxMeerK40t.py:1418
+#: meerk40t/gui/wxmeerk40t.py:2841
 msgid "Enter FPS Limit"
 msgstr ""
 
-#: wxMeerK40t.py:1418
+#: meerk40t/gui/wxmeerk40t.py:2841
 msgid "FPS Limit Entry"
 msgstr ""
 
-#: wxMeerK40t.py:1430
+#: meerk40t/gui/wxmeerk40t.py:2855
 msgid ""
 "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
 "translate, etc..."
 msgstr ""
 
-#: wxMeerK40t.py:1432
+#: meerk40t/gui/wxmeerk40t.py:2858
 msgid "Transform Entry"
 msgstr ""
 
-#: wxMeerK40t.py:1447
+#: meerk40t/gui/wxmeerk40t.py:2880
 msgid "The entered command does nothing."
 msgstr ""
 
-#: wxMeerK40t.py:1448
+#: meerk40t/gui/wxmeerk40t.py:2881
 msgid "Non-Useful Matrix."
 msgstr ""
 
-#: wxMeerK40t.py:1500
+#: meerk40t/gui/wxmeerk40t.py:2937
 msgid ""
 "Material must be jigged at 0,0 either home or home offset.\n"
 "How wide is your material (give units: in, mm, cm, px, etc)?"
 msgstr ""
 
-#: wxMeerK40t.py:1502
+#: meerk40t/gui/wxmeerk40t.py:2940
 msgid "Double Side Flip"
 msgstr ""
 
-#: wxMeerK40t.py:1521
+#: meerk40t/gui/wxmeerk40t.py:2963
 msgid "Enter SVG Path Data"
 msgstr ""
 
-#: wxMeerK40t.py:1521
+#: meerk40t/gui/wxmeerk40t.py:2963
 msgid "Path Entry"
 msgstr ""
 
-#: wxMeerK40t.py:1833
-msgid "Operations"
+#: meerk40t/gui/wxmeerk40t.py:3004
+msgid "Saving File..."
 msgstr ""
 
-#: wxMeerK40t.py:1847
-msgid "Elements"
+#: meerk40t/gui/wxmeerk40t.py:3971
+msgid "Context Path at which to open the window"
 msgstr ""
 
-#: wxMeerK40t.py:1851
-msgid "Files"
+#: meerk40t/gui/wxmeerk40t.py:3974
+msgid "Base window command"
 msgstr ""
 
-#: wxMeerK40t.py:2188
+#: meerk40t/gui/wxmeerk40t.py:3991
 #, python-format
-msgid "Remove: %s"
+msgid "Loaded Windows in Context %s:"
 msgstr ""
 
-#: wxMeerK40t.py:2191
+#: meerk40t/gui/wxmeerk40t.py:3999
 #, python-format
-msgid "Remove: %d objects"
+msgid "Loaded Windows in Device %s:"
 msgstr ""
 
-#: wxMeerK40t.py:2196 wxMeerK40t.py:2201 wxMeerK40t.py:2258
+#: meerk40t/gui/wxmeerk40t.py:4012
+msgid "List available windows."
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4016
+msgid "Windows Registered:"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4030
+msgid "Load Driver Specific Window"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4037
+msgid "Load Output Specific Window"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4044
+msgid "Load Source Specific Window"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4046
+msgid "window to be opened"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4050
+msgid "open/toggle the supplied window"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4105 meerk40t/gui/wxmeerk40t.py:4117
+msgid "Window Opened."
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4107 meerk40t/gui/wxmeerk40t.py:4119
+#: meerk40t/gui/wxmeerk40t.py:4138
 #, python-format
-msgid "Make %d copies."
+msgid "No such window as %s"
 msgstr ""
 
-#: wxMeerK40t.py:2197
-msgid "Clone Reference"
+#: meerk40t/gui/wxmeerk40t.py:4114
+msgid "Window Closed."
 msgstr ""
 
-#: wxMeerK40t.py:2202 wxMeerK40t.py:2259
-msgid "Duplicate"
+#: meerk40t/gui/wxmeerk40t.py:4122
+msgid "window to be closed"
 msgstr ""
 
-#: wxMeerK40t.py:2205
-msgid "Reverse Layer Order"
+#: meerk40t/gui/wxmeerk40t.py:4127
+msgid "close the supplied window"
 msgstr ""
 
-#: wxMeerK40t.py:2210
-msgid "Refresh Classification"
+#: meerk40t/gui/wxmeerk40t.py:4136
+msgid "Window closed."
 msgstr ""
 
-#: wxMeerK40t.py:2212
-msgid "Set Other/Blue/Red Classify"
+#: meerk40t/gui/wxmeerk40t.py:4142
+msgid "window to be reset"
 msgstr ""
 
-#: wxMeerK40t.py:2214
-msgid "Set Basic Classification"
+#: meerk40t/gui/wxmeerk40t.py:4147
+msgid "reset the supplied window, or '*' for all windows"
 msgstr ""
 
-#: wxMeerK40t.py:2216
-msgid "Add Operation"
+#: meerk40t/gui/wxmeerk40t.py:4156
+msgid "Refresh the main wxMeerK40 window"
 msgstr ""
 
-#: wxMeerK40t.py:2220
-msgid "Reclassify Operations"
+#: meerk40t/gui/wxmeerk40t.py:4160
+msgid "Refreshed."
 msgstr ""
 
-#: wxMeerK40t.py:2226
+#: meerk40t/gui/wxmeerk40t.py:4272
+msgid ""
+"We got your message. Thank you for helping\n"
+"\n"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4273 meerk40t/gui/wxmeerk40t.py:4286
+msgid "Thanks"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4282
+msgid ""
+"We're sorry, that didn't work. Raise an issue on the github please.\n"
+"\n"
+" The log file will be in your working directory.\n"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4326
+msgid ""
+"\n"
+"    Good news MeerK40t User! MeerK40t encountered an crash!\n"
+"\n"
+"    You now have the ability to help meerk40t's development by sending us"
+" the log.\n"
+"\n"
+"    Send the following data to the MeerK40t team?\n"
+"    ------\n"
+"    "
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:4336
+msgid "Crash Detected! Send Log?"
+msgstr ""
+
+#: meerk40t/gui/file/fileoutput.py:20
+msgid "File Overwrite"
+msgstr ""
+
+#: meerk40t/gui/file/fileoutput.py:20
+msgid "File Append"
+msgstr ""
+
+#: meerk40t/gui/file/fileoutput.py:20
+msgid "File Increment"
+msgstr ""
+
+#: meerk40t/gui/file/fileoutput.py:38
+msgid "FileOutput"
+msgstr ""
+
+#: meerk40t/gui/file/fileoutput.py:42
+msgid "Output filename"
+msgstr ""
+
+#: meerk40t/gui/file/fileoutput.py:54
+msgid "Filename"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:18
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:23
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:28
+msgid "infinity"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:103
+msgid "Acceleration Chart"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:105
+msgid "Enable defined acceleration chart for vectors"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:108
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:111
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:114
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:117
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:123
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:126
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:129
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:132
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:138
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:141
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:144
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:147
 #, python-format
-msgid "Convert %s"
+msgid "Upper limit for accel level %d"
 msgstr ""
 
-#: wxMeerK40t.py:2228
-msgid "Convert Operation"
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:120
+msgid "Enable defined acceleration chart for vertical rasters"
 msgstr ""
 
-#: wxMeerK40t.py:2230
-msgid "Duplicate Operation"
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:135
+msgid "Enable defined acceleration chart for horizontal rasters"
 msgstr ""
 
-#: wxMeerK40t.py:2233
-msgid "Add 1 pass."
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:155
+msgid "Horizontal Raster"
 msgstr ""
 
-#: wxMeerK40t.py:2236
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:162
+msgid "Vertical Raster"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:169
+msgid "Vector"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:179
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:185
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:191
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:197
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:205
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:211
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:217
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:223
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:231
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:237
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:243
+msgid "mm/s"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:31
+#: meerk40t/gui/moshi/moshicontrollergui.py:24
+msgid "Reset USB"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:31
+#: meerk40t/gui/moshi/moshicontrollergui.py:24
+msgid "Reset USB connection"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:34
+#: meerk40t/gui/moshi/moshicontrollergui.py:27
+msgid "Release USB"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:34
+#: meerk40t/gui/moshi/moshicontrollergui.py:27
+msgid "Release USB resources"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:43
+#: meerk40t/gui/moshi/moshicontrollergui.py:38
+msgid "Commands"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:46
+#: meerk40t/gui/moshi/moshicontrollergui.py:41
+msgid "Views the Controller Buffer"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:49
+#: meerk40t/gui/moshi/moshicontrollergui.py:44
+msgid "Views"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:52
+#: meerk40t/gui/moshi/moshicontrollergui.py:47
+#: meerk40t/gui/tcp/tcpcontroller.py:16
+msgid "Connection"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:57
+#: meerk40t/gui/moshi/moshicontrollergui.py:52
+msgid "Mock USB Connection Mode"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:71
+msgid "Start Controller"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:87
+#: meerk40t/gui/moshi/moshicontrollergui.py:73
+msgid "Show USB Log"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:130
+msgid "Lhystudios-Controller"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:138
+#: meerk40t/gui/moshi/moshicontrollergui.py:122
+#: meerk40t/gui/tcp/tcpcontroller.py:53
+msgid "Force connection/disconnection from the device."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:140
+#: meerk40t/gui/moshi/moshicontrollergui.py:124
+#: meerk40t/gui/tcp/tcpcontroller.py:58
+msgid "Connection status"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:142
+#: meerk40t/gui/moshi/moshicontrollergui.py:126
+msgid ""
+"DEBUG. Without a K40 connected continue to process things as if there was"
+" one."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:147
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:153
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:159
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:165
+#: meerk40t/gui/moshi/moshicontrollergui.py:131
+#: meerk40t/gui/moshi/moshicontrollergui.py:137
+#: meerk40t/gui/moshi/moshicontrollergui.py:143
+#: meerk40t/gui/moshi/moshicontrollergui.py:149
+msgid ""
+"Optional: Distinguish between different lasers using the match criteria "
+"below.\n"
+"-1 match anything. 0+ match exactly that value."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:174
+msgid "Change the currently performed operation."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:177
+msgid "Displays the controller's current process."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:180
+msgid "Total number of packets sent"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:182
+msgid "Total number of packets rejected"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:183
+msgid "Last packet information sent"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:187
+#: meerk40t/gui/moshi/moshicontrollergui.py:155
+msgid "The meaning of Byte 1"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:207
+#: meerk40t/gui/moshi/moshicontrollergui.py:169
+msgid "Packet Info"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:210
+#: meerk40t/gui/moshi/moshicontrollergui.py:172
+msgid "Byte Data Status"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:219
+msgid "Last Packet"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:223
+msgid "Rejected Packets"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:226
+msgid "Packet Count"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:232
+#: meerk40t/gui/moshi/moshicontrollergui.py:181
+msgid "USB Settings"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:236
+#: meerk40t/gui/moshi/moshicontrollergui.py:185
+msgid "Chip Version"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:239
+#: meerk40t/gui/moshi/moshicontrollergui.py:188
+msgid "Device Bus:"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:242
+#: meerk40t/gui/moshi/moshicontrollergui.py:191
+msgid "Device Address:"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:245
+#: meerk40t/gui/moshi/moshicontrollergui.py:194
+msgid "Device Index:"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:248
+#: meerk40t/gui/moshi/moshicontrollergui.py:197
+msgid "USB Connection"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:279
+#: meerk40t/gui/moshi/moshicontrollergui.py:218
+msgid "Byte 0"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:283
+#: meerk40t/gui/moshi/moshicontrollergui.py:222
+msgid "Byte 1"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:288
+#: meerk40t/gui/moshi/moshicontrollergui.py:227
+msgid "Byte 2"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:292
+#: meerk40t/gui/moshi/moshicontrollergui.py:231
+msgid "Byte 3"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:296
+#: meerk40t/gui/moshi/moshicontrollergui.py:235
+msgid "Byte 4"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:300
+#: meerk40t/gui/moshi/moshicontrollergui.py:239
+msgid "Byte 5"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:400
+#: meerk40t/gui/moshi/moshicontrollergui.py:323
+msgid "Kernel Force Event"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:469
+#: meerk40t/gui/moshi/moshicontrollergui.py:358
+#: meerk40t/gui/tcp/tcpcontroller.py:129
+msgid "Connect"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:476
+#: meerk40t/gui/moshi/moshicontrollergui.py:365
+msgid "Disconnecting..."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:483
+#: meerk40t/gui/moshi/moshicontrollergui.py:372
+#: meerk40t/gui/tcp/tcpcontroller.py:136
+msgid "Disconnect"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:490
+#: meerk40t/gui/moshi/moshicontrollergui.py:379
+msgid "Connecting..."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:512
+#: meerk40t/gui/moshi/moshicontrollergui.py:401
+msgid "Connection Refused. See USB Log for detailed information."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:513
+#: meerk40t/gui/moshi/moshicontrollergui.py:402
+msgid "Manual Connection"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:546
+msgid "LOCKED"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:556
+msgid "Force Continue"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:576
+msgid "Pause Controller"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:586
+msgid "Manual Reset"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:21
+msgid "Fix rated to actual speed"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:23
+msgid "Flip X"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:24
+#: meerk40t/gui/moshi/moshidrivergui.py:14
+msgid "Home Right"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:25
+msgid "Flip Y"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:26
+#: meerk40t/gui/moshi/moshidrivergui.py:15
+msgid "Home Bottom"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:27
+msgid "Swap X and Y"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:28
+msgid "Strict"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:35
+#: meerk40t/gui/moshi/moshidrivergui.py:22
+msgid "Set Current"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:36
+msgid "Pulse Shifting"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:37
+#: meerk40t/gui/moshi/moshidrivergui.py:23
+msgid "Randomize PPI"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:38
+msgid "Limit Write Buffer"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:43
+msgid "Automatically lock rail"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:97
+msgid "Lhystudios-Prefererences"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:99
+msgid "Select the board to use. This has an effects the speedcodes used."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:103
 #, python-format
-msgid "Add %d passes."
+msgid ""
+"Correct for speed invalidity. Lhystudios speeds are 92% of the correctly "
+"rated speed."
 msgstr ""
 
-#: wxMeerK40t.py:2241 wxMeerK40t.py:2297
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:106
+msgid "Flip the Right and Left commands sent to the controller"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:108
+#: meerk40t/gui/moshi/moshidrivergui.py:45
+msgid "Indicates the device Home is on the right"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:110
+msgid "Flip the Top and Bottom commands sent to the controller"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:113
+#: meerk40t/gui/moshi/moshidrivergui.py:47
+msgid "Indicates the device Home is on the bottom"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:116
+msgid "Swaps the X and Y axis. This happens before the FlipX and FlipY."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:119
+msgid ""
+"Forces the device to enter and exit programmed speed mode from the same "
+"direction.\n"
+"This may prevent devices like the M2-V4 and earlier from having issues. "
+"Not typically needed."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:122
+#: meerk40t/gui/moshi/moshidrivergui.py:50
+msgid "Translate Home X"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:124
+#: meerk40t/gui/moshi/moshidrivergui.py:52
+msgid "Translate Home Y"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:126
+#: meerk40t/gui/moshi/moshidrivergui.py:54
+msgid "Set Home Position based on the current position"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:129
+msgid ""
+"During the pulse planning process allow shifting pulses by one unit to "
+"increase command efficiency\n"
+"This may prevent device stutter and reduce pulse accuracy by one up to "
+"one unit."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:132
+#: meerk40t/gui/moshi/moshidrivergui.py:57
+msgid "Rather than orderly PPI, we perform PPI based on a randomized average"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:136
+msgid ""
+"Limit the write buffer to a certain amount. Permits on-the-fly command "
+"production."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:140
+#: meerk40t/gui/tcp/tcpcontroller.py:63 meerk40t/gui/tcp/tcpcontroller.py:66
+msgid "Current number of bytes in the write buffer."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:142
+msgid "Current maximum write buffer limit."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:143
+msgid "Lock rail after operations are finished."
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:151
+msgid "General Options"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:154
+msgid "Write Buffer"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:157
+#: meerk40t/gui/moshi/moshidrivergui.py:66
+msgid "Pulse Planner"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:160
+#: meerk40t/gui/moshi/moshidrivergui.py:69
+msgid "Shift Home Position"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:165
+#: meerk40t/gui/moshi/moshidrivergui.py:74
+msgid "Configuration"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:171
+msgid "Board Setup"
+msgstr ""
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:191
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:197
+#: meerk40t/gui/moshi/moshidrivergui.py:82
+#: meerk40t/gui/moshi/moshidrivergui.py:88 meerk40t/gui/panes/position.py:31
+msgid "mil"
+msgstr ""
+
+#: meerk40t/gui/moshi/moshicontrollergui.py:32
+msgid "Sends Stop command"
+msgstr ""
+
+#: meerk40t/gui/moshi/moshicontrollergui.py:35
+msgid "Free Motor"
+msgstr ""
+
+#: meerk40t/gui/moshi/moshicontrollergui.py:35
+msgid "Sends Free Motor (Unlock Rail) command"
+msgstr ""
+
+#: meerk40t/gui/moshi/moshicontrollergui.py:111
+msgid "Moshiboard-Controller"
+msgstr ""
+
+#: meerk40t/gui/moshi/moshidrivergui.py:44
+msgid "Moshiboard-Prefererences"
+msgstr ""
+
+#: meerk40t/gui/panes/movepanel.py:78
+msgid "Cannot Move Outside Bed Dimensions"
+msgstr ""
+
+#: meerk40t/gui/panes/movepanel.py:79
+msgid "Error"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarcontrol.py:68
+#: meerk40t/gui/panes/toolbarproject.py:69
+msgid "Opens new project"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarcontrol.py:83
+msgid "Opens Camera Window"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarcontrol.py:104
+msgid "Opens Spooler Window"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarcontrol.py:118
+msgid "Opens Controller Window"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:71
+msgid "Opens Device Manager"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:86
+msgid "Opens Configuration Window"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:101
+msgid "Opens Settings Window"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:116
+msgid "Opens Keymap Window"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarpreferences.py:130
+msgid "Opens Rotary Window"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarproject.py:77
+msgid "Saves a project to disk"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarproject.py:90
+msgid "Execute the current laser project"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarproject.py:104
+msgid "Simulate the current laser job"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarproject.py:113
+msgid "Run RasterWizard "
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarproject.py:128
+msgid "Open Notes Window"
+msgstr ""
+
+#: meerk40t/gui/panes/toolbarproject.py:142
+msgid "Open Console Window"
+msgstr ""
+
+#: meerk40t/gui/tcp/tcpcontroller.py:36
+msgid "TCP-Controller"
+msgstr ""
+
+#: meerk40t/gui/tcp/tcpcontroller.py:59
+msgid "IP/Host if the server computer"
+msgstr ""
+
+#: meerk40t/gui/tcp/tcpcontroller.py:60
+msgid "Port for tcp connection on the server computer"
+msgstr ""
+
+#: meerk40t/gui/tcp/tcpcontroller.py:79
+msgid "Address"
+msgstr ""
+
+#: meerk40t/gui/tcp/tcpcontroller.py:83
+msgid "Port"
+msgstr ""
+
+#: meerk40t/gui/tcp/tcpcontroller.py:92
+msgid "Buffer Size: "
+msgstr ""
+
+#: meerk40t/gui/tcp/tcpcontroller.py:96
+msgid "Max Buffer Size:"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:31
+msgid "image <operation>*"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:50
+msgid "Images:"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:73
+msgid "No selected images."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:113
+msgid "script to apply"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:115
+msgid "apply image wizard"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:121
 #, python-format
-msgid "Step %d"
+msgid "Raster Script: %s"
 msgstr ""
 
-#: wxMeerK40t.py:2248
-msgid "Make Raster Image"
+#: meerk40t/image/imagetools.py:123
+msgid "No Raster Scripts Found."
 msgstr ""
 
-#: wxMeerK40t.py:2253
+#: meerk40t/image/imagetools.py:129
 #, python-format
-msgid "Reload %s"
+msgid "Raster Script %s is not registered."
 msgstr ""
 
-#: wxMeerK40t.py:2263
-msgid "Reset User Changes"
+#: meerk40t/image/imagetools.py:147
+msgid "unlock manipulations"
 msgstr ""
 
-#: wxMeerK40t.py:2268
+#: meerk40t/image/imagetools.py:150
+msgid "Unlocking Elements..."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:157 meerk40t/image/imagetools.py:159
 #, python-format
-msgid "Scale %.0f%%"
+msgid "Element was not locked: %s"
 msgstr ""
 
-#: wxMeerK40t.py:2271
-msgid "Scale"
+#: meerk40t/image/imagetools.py:198
+msgid "Resample image"
 msgstr ""
 
-#: wxMeerK40t.py:2277
+#: meerk40t/image/imagetools.py:209
+msgid "Dither to 1-bit"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:235
+msgid "Distance from color to be removed."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:239
+msgid "Color to be removed"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:243
+msgid "Remove color from image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:249
+msgid "Must specify a color"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:275
+msgid "Color to be added"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:279
+msgid "Must specify a color, to add."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:306
+msgid "Requires 1-bit or grayscale image."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:334
+msgid "Crop image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:376 meerk40t/image/imagetools.py:399
+msgid "contrast factor"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:380
+msgid "increase image contrast"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:394
 #, python-format
-msgid "Rotate turn/%d, %.0f°"
+msgid "Image Contrast Factor: %f"
 msgstr ""
 
-#: wxMeerK40t.py:2284
+#: meerk40t/image/imagetools.py:396
+msgid "image contrast <factor>"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:401
+msgid "brighten image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:414
 #, python-format
-msgid "Rotate turn/%d, -%.0f°"
+msgid "Image Brightness Factor: %f"
 msgstr ""
 
-#: wxMeerK40t.py:2287
-msgid "Rotate"
+#: meerk40t/image/imagetools.py:416
+msgid "image brightness <factor>"
 msgstr ""
 
-#: wxMeerK40t.py:2290
-msgid "Reify User Changes"
+#: meerk40t/image/imagetools.py:419
+msgid "color factor"
 msgstr ""
 
-#: wxMeerK40t.py:2293
-msgid "Break Subpaths"
+#: meerk40t/image/imagetools.py:421
+msgid "color enhance"
 msgstr ""
 
-#: wxMeerK40t.py:2309
-msgid "Actualize Pixels"
-msgstr ""
-
-#: wxMeerK40t.py:2313
+#: meerk40t/image/imagetools.py:433
 #, python-format
-msgid "Divide Into %d Images"
+msgid "Image Color Factor: %f"
 msgstr ""
 
-#: wxMeerK40t.py:2316
-msgid "ZDepth Divide"
+#: meerk40t/image/imagetools.py:435
+msgid "image color <factor>"
 msgstr ""
 
-#: wxMeerK40t.py:2322
-msgid "Unlock Manipulations"
+#: meerk40t/image/imagetools.py:439
+msgid "sharpness factor"
 msgstr ""
 
-#: wxMeerK40t.py:2326
-msgid "Dither to 1 bit"
+#: meerk40t/image/imagetools.py:442
+msgid "shapen image"
 msgstr ""
 
-#: wxMeerK40t.py:2328
-msgid "Invert Image"
-msgstr ""
-
-#: wxMeerK40t.py:2330
-msgid "Mirror Horizontal"
-msgstr ""
-
-#: wxMeerK40t.py:2332
-msgid "Flip Vertical"
-msgstr ""
-
-#: wxMeerK40t.py:2334
-msgid "Rotate CW"
-msgstr ""
-
-#: wxMeerK40t.py:2336
-msgid "Rotate CCW"
-msgstr ""
-
-#: wxMeerK40t.py:2338
-msgid "Save output.png"
-msgstr ""
-
-#: wxMeerK40t.py:2345
+#: meerk40t/image/imagetools.py:454
 #, python-format
-msgid "RasterWizard: %s"
+msgid "Image Sharpness Factor: %f"
 msgstr ""
 
-#: wxMeerK40t.py:2354
+#: meerk40t/image/imagetools.py:456
+msgid "image sharpness <factor>"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:460
+msgid "blur image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:470
+msgid "Image Blurred."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:474
+msgid "sharpen image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:484
+msgid "Image Sharpened."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:488
+msgid "enhance edges"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:498
+msgid "Image Edges Enhanced."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:502
+msgid "find edges"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:512
+msgid "Image Edges Found."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:516
+msgid "emboss image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:526
+msgid "Image Embossed."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:530
+msgid "smooth image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:540
+msgid "Image Smoothed."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:544
+msgid "contour image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:554
+msgid "Image Contoured."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:558
+msgid "detail image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:568
+msgid "Image Detailed."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:572
+msgid "colors to quantize into"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:576
+msgid "image quantize <colors>"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:587
 #, python-format
-msgid "Apply: %s"
+msgid "Image Quantized to %d colors."
 msgstr ""
 
-#: wxMeerK40t.py:2357
-msgid "Apply Raster Script"
+#: meerk40t/image/imagetools.py:593
+msgid "threshold for solorize"
 msgstr ""
 
-#: wxMeerK40t.py:2362
-msgid "Convert to Raster"
-msgstr ""
-
-#: wxMeerK40t.py:2991
+#: meerk40t/image/imagetools.py:608
 #, python-format
-msgid "Saving Log: %s"
+msgid "Image Solarized at %d gray."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:610
+msgid "image solarize <threshold>"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:614
+msgid "invert the image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:630
+msgid "Image Inverted."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:632
+#, python-format
+msgid "Image type cannot be converted. %s"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:636
+msgid "flip image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:646
+msgid "Image Flipped."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:650
+msgid "mirror image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:660
+msgid "Image Mirrored."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:664
+msgid "rotate image ccw"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:678
+msgid "Rotated image counterclockwise."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:682
+msgid "rotate image cw"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:696
+msgid "Rotated image clockwise."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:700
+msgid "cutoff limit for autocontrast"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:704
+msgid "autocontrast image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:719
+msgid "Image Auto-Contrasted."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:721
+msgid "image autocontrast <cutoff-percent>"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:728
+msgid "Method of grayscale conversion: red, green, blue, alpha"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:732
+msgid "convert image to grayscale"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:762
+msgid "Image Grayscale."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:766
+msgid "equalize image"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:776
+msgid "Image Equalized."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:780
+msgid "filename"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:783
+msgid "save image to disk"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:790
+#, python-format
+msgid "Saved: %s"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:792
+msgid "No file given."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:794
+msgid "File could not be written / created."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:796
+msgid "Could not determine expected format."
+msgstr ""
+
+#: meerk40t/image/imagetools.py:800
+msgid "apply flatrotary bilinear mesh"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:833
+msgid "process scaling"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:835
+msgid "pixel oversample amount"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:837
+msgid "pixel sample size"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:839
+msgid "half-tone angle"
+msgstr ""
+
+#: meerk40t/image/imagetools.py:843
+msgid "halftone the provided image"
 msgstr ""
 

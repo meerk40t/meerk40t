@@ -21,12 +21,13 @@ class BindAlias(Modifier):
         self.alias = {}
 
     def attach(self, *a, **kwargs):
+        _ = self.context._kernel.translation
         self.context.keymap = self.keymap
         self.context.alias = self.alias
         self.context.default_keymap = self.default_keymap
         self.context.default_alias = self.default_alias
 
-        @self.context.console_command("bind", help="bind <key> <console command>")
+        @self.context.console_command("bind", help=_("bind <key> <console command>"))
         def bind(command, channel, _, **kwargs):
             """
             Binds a key to a given keyboard keystroke.
@@ -77,7 +78,7 @@ class BindAlias(Modifier):
             return
 
         @self.context.console_command(
-            "alias", help="alias <alias> <console commands[;console command]*>"
+            "alias", help=_("alias <alias> <console commands[;console command]*>")
         )
         def alias(command, channel, _, args=tuple(), **kwargs):
             context = self.context
@@ -107,7 +108,7 @@ class BindAlias(Modifier):
                 for cmd in aliased_command.split(";"):
                     context("%s\n" % cmd)
             else:
-                raise CommandMatchRejected("This is not an alias.")
+                raise CommandMatchRejected(_("This is not an alias."))
 
     def boot(self, *args, **kwargs):
         self.boot_keymap()

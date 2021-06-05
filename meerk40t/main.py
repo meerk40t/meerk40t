@@ -313,6 +313,7 @@ def run():
     kernel_root.device_version = MEERK40T_VERSION
     kernel_root.device_name = "MeerK40t"
 
+    kernel.bootstrap("preregister")
     kernel.bootstrap("register")
     kernel.bootstrap("configure")
     kernel.boot()

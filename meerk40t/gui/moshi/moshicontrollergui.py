@@ -21,35 +21,35 @@ class MoshiControllerGui(MWindow):
         # Menu Bar
         self.MoshiController_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Reset USB", "Reset USB connection")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset USB"), _("Reset USB connection"))
         self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
         item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, "Release USB", "Release USB resources"
+            wx.ID_ANY, _("Release USB"), _("Release USB resources")
         )
         self.Bind(wx.EVT_MENU, self.on_menu_usb_release, id=item.GetId())
-        self.MoshiController_menubar.Append(wxglade_tmp_menu, "Tools")
+        self.MoshiController_menubar.Append(wxglade_tmp_menu, _("Tools"))
         wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Stop", "Sends Stop command")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Stop"), _("Sends Stop command"))
         self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
         item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, "Free Motor", "Sends Free Motor (Unlock Rail) command"
+            wx.ID_ANY, _("Free Motor"), _("Sends Free Motor (Unlock Rail) command")
         )
         self.Bind(wx.EVT_MENU, self.on_menu_freemotor, id=item.GetId())
-        self.MoshiController_menubar.Append(wxglade_tmp_menu, "Commands")
+        self.MoshiController_menubar.Append(wxglade_tmp_menu, _("Commands"))
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, "BufferView", "Views the Controller Buffer"
+            wx.ID_ANY, _("BufferView"), _("Views the Controller Buffer")
         )
         self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
-        self.MoshiController_menubar.Append(wxglade_tmp_menu, "Views")
+        self.MoshiController_menubar.Append(wxglade_tmp_menu, _("Views"))
         self.SetMenuBar(self.MoshiController_menubar)
         # Menu Bar end
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
+        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.text_connection_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.checkbox_mock_usb = wx.CheckBox(
-            self, wx.ID_ANY, "Mock USB Connection Mode"
+            self, wx.ID_ANY, _("Mock USB Connection Mode")
         )
         self.text_device_index = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
@@ -70,7 +70,7 @@ class MoshiControllerGui(MWindow):
         self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.checkbox_show_usb_log = wx.CheckBox(self, wx.ID_ANY, "Show USB Log")
+        self.checkbox_show_usb_log = wx.CheckBox(self, wx.ID_ANY, _("Show USB Log"))
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
@@ -108,7 +108,7 @@ class MoshiControllerGui(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Moshiboard-Controller")
+        self.SetTitle(_("Moshiboard-Controller"))
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
@@ -119,40 +119,40 @@ class MoshiControllerGui(MWindow):
             wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
         )
         self.button_device_connect.SetToolTip(
-            "Force connection/disconnection from the device."
+            _("Force connection/disconnection from the device.")
         )
-        self.text_connection_status.SetToolTip("Connection status")
+        self.text_connection_status.SetToolTip(_("Connection status"))
         self.checkbox_mock_usb.SetToolTip(
-            "DEBUG. Without a K40 connected continue to process things as if there was one."
+            _("DEBUG. Without a K40 connected continue to process things as if there was one.")
         )
         self.text_device_index.SetMinSize((55, 23))
         self.spin_device_index.SetMinSize((40, 23))
         self.spin_device_index.SetToolTip(
-            "Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value."
+            _("Optional: Distinguish between different lasers using the match criteria below.\n"
+            "-1 match anything. 0+ match exactly that value.")
         )
         self.text_device_address.SetMinSize((55, 23))
         self.spin_device_address.SetMinSize((40, 23))
         self.spin_device_address.SetToolTip(
-            "Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value."
+            _("Optional: Distinguish between different lasers using the match criteria below.\n"
+            "-1 match anything. 0+ match exactly that value.")
         )
         self.text_device_bus.SetMinSize((55, 23))
         self.spin_device_bus.SetMinSize((40, 23))
         self.spin_device_bus.SetToolTip(
-            "Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value."
+            _("Optional: Distinguish between different lasers using the match criteria below.\n"
+            "-1 match anything. 0+ match exactly that value.")
         )
         self.text_device_version.SetMinSize((55, 23))
         self.spin_device_version.SetMinSize((40, 23))
         self.spin_device_version.SetToolTip(
-            "Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value."
+            _("Optional: Distinguish between different lasers using the match criteria below.\n"
+            "-1 match anything. 0+ match exactly that value.")
         )
         self.text_byte_0.SetMinSize((77, 23))
         self.text_byte_1.SetMinSize((77, 23))
         self.text_desc.SetMinSize((75, 23))
-        self.text_desc.SetToolTip("The meaning of Byte 1")
+        self.text_desc.SetToolTip(_("The meaning of Byte 1"))
         self.text_byte_2.SetMinSize((77, 23))
         self.text_byte_3.SetMinSize((77, 23))
         self.text_byte_4.SetMinSize((77, 23))
@@ -166,10 +166,10 @@ class MoshiControllerGui(MWindow):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_show_usb_log = wx.BoxSizer(wx.HORIZONTAL)
         packet_count = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Packet Info"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Packet Info")), wx.VERTICAL
         )
         byte_data_status = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Byte Data Status"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Byte Data Status")), wx.HORIZONTAL
         )
         byte5sizer = wx.BoxSizer(wx.VERTICAL)
         byte4sizer = wx.BoxSizer(wx.VERTICAL)
@@ -178,23 +178,23 @@ class MoshiControllerGui(MWindow):
         byte1sizer = wx.BoxSizer(wx.VERTICAL)
         byte0sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_usb_settings = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "USB Settings"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("USB Settings")), wx.VERTICAL
         )
         sizer_23 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_12 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Chip Version"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Chip Version")), wx.HORIZONTAL
         )
         sizer_11 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Device Bus:"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Device Bus:")), wx.HORIZONTAL
         )
         sizer_10 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Device Address:"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Device Address:")), wx.HORIZONTAL
         )
         sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Device Index:"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Device Index:")), wx.HORIZONTAL
         )
         sizer_usb_connect = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "USB Connection"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("USB Connection")), wx.VERTICAL
         )
         sizer_usb_connect.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         sizer_usb_connect.Add(self.text_connection_status, 0, wx.EXPAND, 0)
@@ -215,28 +215,28 @@ class MoshiControllerGui(MWindow):
         sizer_usb_settings.Add(sizer_23, 1, wx.EXPAND, 0)
         sizer_1.Add(sizer_usb_settings, 0, wx.EXPAND, 0)
         byte0sizer.Add(self.text_byte_0, 0, 0, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, "Byte 0")
+        label_1 = wx.StaticText(self, wx.ID_ANY, _("Byte 0"))
         byte0sizer.Add(label_1, 0, 0, 0)
         byte_data_status.Add(byte0sizer, 1, wx.EXPAND, 0)
         byte1sizer.Add(self.text_byte_1, 0, 0, 0)
-        label_2 = wx.StaticText(self, wx.ID_ANY, "Byte 1")
+        label_2 = wx.StaticText(self, wx.ID_ANY, _("Byte 1"))
         byte1sizer.Add(label_2, 0, 0, 0)
         byte1sizer.Add(self.text_desc, 0, 0, 0)
         byte_data_status.Add(byte1sizer, 1, wx.EXPAND, 0)
         byte2sizer.Add(self.text_byte_2, 0, 0, 0)
-        label_3 = wx.StaticText(self, wx.ID_ANY, "Byte 2")
+        label_3 = wx.StaticText(self, wx.ID_ANY, _("Byte 2"))
         byte2sizer.Add(label_3, 0, 0, 0)
         byte_data_status.Add(byte2sizer, 1, wx.EXPAND, 0)
         byte3sizer.Add(self.text_byte_3, 0, 0, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, "Byte 3")
+        label_4 = wx.StaticText(self, wx.ID_ANY, _("Byte 3"))
         byte3sizer.Add(label_4, 0, 0, 0)
         byte_data_status.Add(byte3sizer, 1, wx.EXPAND, 0)
         byte4sizer.Add(self.text_byte_4, 0, 0, 0)
-        label_5 = wx.StaticText(self, wx.ID_ANY, "Byte 4")
+        label_5 = wx.StaticText(self, wx.ID_ANY, _("Byte 4"))
         byte4sizer.Add(label_5, 0, 0, 0)
         byte_data_status.Add(byte4sizer, 1, wx.EXPAND, 0)
         byte5sizer.Add(self.text_byte_5, 0, 0, 0)
-        label_18 = wx.StaticText(self, wx.ID_ANY, "Byte 5")
+        label_18 = wx.StaticText(self, wx.ID_ANY, _("Byte 5"))
         byte5sizer.Add(label_18, 0, 0, 0)
         byte_data_status.Add(byte5sizer, 1, wx.EXPAND, 0)
         packet_count.Add(byte_data_status, 0, wx.EXPAND, 0)

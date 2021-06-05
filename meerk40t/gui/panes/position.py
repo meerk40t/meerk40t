@@ -28,7 +28,7 @@ class PositionPanel(wx.Panel):
         self.combo_box_units = wx.ComboBox(
             self,
             wx.ID_ANY,
-            choices=["mm", "cm", "inch", "mil", "%"],
+            choices=[_("mm"), _("cm"), _("inch"), _("mil"), "%"],
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_box_units.SetSelection(0)
@@ -83,15 +83,15 @@ class PositionPanel(wx.Panel):
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_6 = wx.BoxSizer(wx.VERTICAL)
         sizer_7 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Units"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Units")), wx.HORIZONTAL
         )
         sizer_panel = wx.BoxSizer(wx.VERTICAL)
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_h = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Height:"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Height:")), wx.HORIZONTAL
         )
         sizer_w = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Width:"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Width:")), wx.HORIZONTAL
         )
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_y = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Y:"), wx.HORIZONTAL)

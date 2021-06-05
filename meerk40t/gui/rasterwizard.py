@@ -809,7 +809,7 @@ class ResamplePanel(wx.Panel):
         self.refresh_dims()
         if svg_image is not None:
             self.text_resample_pixels.SetValue(
-                "%d x %d pixels" % (svg_image.image_height, svg_image.image_width)
+                _("%d x %d pixels") % (svg_image.image_height, svg_image.image_width)
             )
 
     def refresh_dims(self):

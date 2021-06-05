@@ -5,28 +5,29 @@ from .kernel import STATE_TERMINATE, Module
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
         kernel.register("module/TCPServer", TCPServer)
         kernel.register("module/UDPServer", UDPServer)
 
         @kernel.console_option(
-            "port", "p", type=int, default=23, help="port to listen on."
+            "port", "p", type=int, default=23, help=_("port to listen on.")
         )
         @kernel.console_option(
             "silent",
             "s",
             type=bool,
             action="store_true",
-            help="do not watch server channels",
+            help=_("do not watch server channels"),
         )
         @kernel.console_option(
             "quit",
             "q",
             type=bool,
             action="store_true",
-            help="shutdown current lhyserver",
+            help=_("shutdown current lhyserver"),
         )
         @kernel.console_command(
-            "consoleserver", help="starts a console_server on port 23 (telnet)"
+            "consoleserver", help=_("starts a console_server on port 23 (telnet)")
         )
         def server_console(
             command, channel, _, port=23, silent=False, quit=False, **kwargs
@@ -38,7 +39,7 @@ def plugin(kernel, lifecycle=None):
                     root.close("console-server")
                     return
                 send = root.channel("console-server/send")
-                send.greet = "%s %s Telnet Console.\r\n" % (
+                send.greet = _("%s %s Telnet Console.\r\n") % (
                     kernel.name,
                     kernel.version,
                 )
@@ -96,7 +97,7 @@ class UDPServer(Module):
         self.context.channel("%s/send" % self.name).unwatch(
             self.send
         )  # We stop watching the send channel
-        self.events_channel("Shutting down server.")
+        self.events_channel(_("Shutting down server."))
         if self.socket is not None:
             self.socket.close()
             self.socket = None
@@ -104,14 +105,14 @@ class UDPServer(Module):
     def send(self, message):
         if self.udp_address is None:
             self.events_channel(
-                "No UDP packet can be sent as reply to a host that has never made contact."
+                _("No UDP packet can be sent as reply to a host that has never made contact.")
             )
             return
         self.socket.sendto(message, self.udp_address)
 
     def run_udp_listener(self):
         try:
-            self.events_channel("UDP Socket(%d) Listening." % self.port)
+            self.events_channel(_("UDP Socket(%d) Listening.") % self.port)
             while True:
                 try:
                     message, address = self.socket.recvfrom(1024)
@@ -153,7 +154,7 @@ class TCPServer(Module):
         self.state = STATE_TERMINATE
 
     def finalize(self, *args, **kwargs):
-        self.events_channel("Shutting down server.")
+        self.events_channel(_("Shutting down server."))
         self.state = STATE_TERMINATE
         if self.socket is not None:
             self.socket.close()
@@ -170,16 +171,16 @@ class TCPServer(Module):
             self.socket.bind(("", self.port))
             self.socket.listen(1)
         except OSError:
-            self.events_channel("Could not start listening.")
+            self.events_channel(_("Could not start listening."))
             return
         handle = 1
         while self.state != STATE_TERMINATE:
-            self.events_channel("Listening %s on port %d..." % (self.name, self.port))
+            self.events_channel(_("Listening %s on port %d...") % (self.name, self.port))
             connection = None
             addr = None
             try:
                 connection, addr = self.socket.accept()
-                self.events_channel("Socket Connected: %s" % str(addr))
+                self.events_channel(_("Socket Connected: %s") % str(addr))
                 self.context.threaded(
                     self.connection_handler(connection, addr),
                     thread_name="handler-%d-%d" % (self.port, handle),
@@ -189,12 +190,12 @@ class TCPServer(Module):
             except socket.timeout:
                 pass
             except OSError:
-                self.events_channel("Socket was killed: %s" % str(addr))
+                self.events_channel(_("Socket was killed: %s") % str(addr))
                 if connection is not None:
                     connection.close()
                 break
             except AttributeError:
-                self.events_channel("Socket did not exist to accept connection.")
+                self.events_channel(_("Socket did not exist to accept connection."))
                 break
         if self.socket is not None:
             self.socket.close()
@@ -226,13 +227,13 @@ class TCPServer(Module):
                         break
                     recv(data_from_socket)
                 except socket.timeout:
-                    self.events_channel("Connection to %s timed out." % str(addr))
+                    self.events_channel(_("Connection to %s timed out.") % str(addr))
                     break
                 except socket.error:
                     if connection is not None:
                         connection.close()
                     break
             self.context.channel(send_channel_name).unwatch(send)
-            self.events_channel("Connection to %s was closed." % str(addr))
+            self.events_channel(_("Connection to %s was closed.") % str(addr))
 
         return handle

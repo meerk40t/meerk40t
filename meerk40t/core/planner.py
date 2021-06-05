@@ -3,17 +3,9 @@ from math import ceil
 
 from ..core.cutcode import CutCode
 from ..device.lasercommandconstants import (
-    COMMAND_BEEP,
-    COMMAND_FUNCTION,
-    COMMAND_HOME,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_SET_POSITION,
-    COMMAND_UNLOCK,
-    COMMAND_WAIT,
-    COMMAND_WAIT_FINISH,
-)
+    COMMAND_BEEP, COMMAND_FUNCTION, COMMAND_HOME, COMMAND_MODE_RAPID,
+    COMMAND_MOVE, COMMAND_SET_ABSOLUTE, COMMAND_SET_POSITION, COMMAND_UNLOCK,
+    COMMAND_WAIT, COMMAND_WAIT_FINISH)
 from ..kernel import Modifier
 from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
@@ -104,11 +96,11 @@ class Planner(Modifier):
         self.context.setting(int, "opt_jog_mode", 0)
 
         @self.context.console_argument(
-            "alias", type=str, help="plan command name to alias"
+            "alias", type=str, help=_("plan command name to alias")
         )
         @self.context.console_command(
             "plan-alias",
-            help="Define a spoolable console command",
+            help=_("Define a spoolable console command"),
             input_type=None,
             output_type=None,
         )
@@ -126,7 +118,7 @@ class Planner(Modifier):
                 raise SyntaxError
             plan_command = "plan/%s" % alias
             if plan_command in self.context.registered:
-                raise SyntaxError("You may not overwrite an already used alias.")
+                raise SyntaxError(_("You may not overwrite an already used alias."))
 
             def user_defined_alias():
                 for s in remainder.split(";"):
@@ -137,7 +129,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "plan",
-            help="plan<?> <command>",
+            help=_("plan<?> <command>"),
             regex=True,
             input_type=(None, "ops"),
             output_type="plan",
@@ -189,7 +181,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "list",
-            help="plan<?> list",
+            help=_("plan<?> list"),
             input_type="plan",
             output_type="plan",
         )
@@ -211,7 +203,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "classify",
-            help="plan<?> classify",
+            help=_("plan<?> classify"),
             input_type="plan",
             output_type="plan",
         )
@@ -222,7 +214,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "copy-selected",
-            help="plan<?> copy-selected",
+            help=_("plan<?> copy-selected"),
             input_type="plan",
             output_type="plan",
         )
@@ -247,7 +239,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "copy",
-            help="plan<?> copy",
+            help=_("plan<?> copy"),
             input_type="plan",
             output_type="plan",
         )
@@ -277,13 +269,13 @@ class Planner(Modifier):
             self.context.signal("plan", self._default_plan, 1)
             return data_type, data
 
-        @self.context.console_option("index", "i", type=int, help="insert index")
+        @self.context.console_option("index", "i", type=int, help=_("index of location to insert command"))
         @self.context.console_option(
-            "op", "o", type=str, help="unlock, origin, home, etc."
+            "op", "o", type=str, help=_("unlock, origin, home, etc.")
         )
         @self.context.console_command(
             "command",
-            help="plan<?> command",
+            help=_("plan<?> command"),
             input_type="plan",
             output_type="plan",
         )
@@ -319,10 +311,10 @@ class Planner(Modifier):
                 channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_argument("op", type=str, help="unlock, origin, home, etc")
+        @self.context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @self.context.console_command(
             "append",
-            help="plan<?> append <op>",
+            help=_("plan<?> append <op>"),
             input_type="plan",
             output_type="plan",
         )
@@ -341,10 +333,10 @@ class Planner(Modifier):
             channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_argument("op", type=str, help="unlock, origin, home, etc")
+        @self.context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @self.context.console_command(
             "prepend",
-            help="plan<?> prepend <op>",
+            help=_("plan<?> prepend <op>"),
             input_type="plan",
             output_type="plan",
         )
@@ -364,7 +356,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "preprocess",
-            help="plan<?> preprocess",
+            help=_("plan<?> preprocess"),
             input_type="plan",
             output_type="plan",
         )
@@ -413,7 +405,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "validate",
-            help="plan<?> validate",
+            help=_("plan<?> validate"),
             input_type="plan",
             output_type="plan",
         )
@@ -425,7 +417,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "blob",
-            help="plan<?> blob",
+            help=_("plan<?> blob"),
             input_type="plan",
             output_type="plan",
         )
@@ -458,7 +450,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "preopt",
-            help="plan<?> preopt",
+            help=_("plan<?> preopt"),
             input_type="plan",
             output_type="plan",
         )
@@ -477,7 +469,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "optimize",
-            help="plan<?> optimize",
+            help=_("plan<?> optimize"),
             input_type="plan",
             output_type="plan",
         )
@@ -489,7 +481,7 @@ class Planner(Modifier):
 
         @self.context.console_command(
             "clear",
-            help="plan<?> clear",
+            help=_("plan<?> clear"),
             input_type="plan",
             output_type="plan",
         )
@@ -500,18 +492,18 @@ class Planner(Modifier):
             self.context.signal("plan", self._default_plan, 0)
             return data_type, data
 
-        @self.context.console_option("op", "o", type=str, help="unlock, origin, home")
-        @self.context.console_argument("cols", type=int, help="columns for the grid")
-        @self.context.console_argument("rows", type=int, help="rows for the grid")
+        @self.context.console_option("op", "o", type=str, help=_("unlock, origin, home"))
+        @self.context.console_argument("cols", type=int, help=_("columns for the grid"))
+        @self.context.console_argument("rows", type=int, help=_("rows for the grid"))
         @self.context.console_argument(
-            "x_distance", type=Length, help="x_distance each column step"
+            "x_distance", type=Length, help=_("x_distance each column step")
         )
         @self.context.console_argument(
-            "y_distance", type=Length, help="y_distance each row step"
+            "y_distance", type=Length, help=_("y_distance each row step")
         )
         @self.context.console_command(
             "step_repeat",
-            help="plan<?> step_repeat",
+            help=_("plan<?> step_repeat"),
             input_type="plan",
             output_type="plan",
         )

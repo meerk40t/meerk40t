@@ -17,7 +17,7 @@ class FileOutput(MWindow):
             self,
             wx.ID_ANY,
             "File",
-            choices=["File Overwrite", "File Append", "File Increment"],
+            choices=[_("File Overwrite"), _("File Append"), _("File Increment")],
             majorDimension=1,
             style=wx.RA_SPECIFY_COLS,
         )
@@ -35,11 +35,11 @@ class FileOutput(MWindow):
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
-        self.SetTitle("FileOutput")
+        self.SetTitle(_("FileOutput"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_file_50.GetBitmap())
         self.SetIcon(_icon)
-        self.text_filename.SetToolTip("Output filename")
+        self.text_filename.SetToolTip(_("Output filename"))
         self.radio_file.SetSelection(0)
         # end wxGlade
         self.radio_file.Enable(False)
@@ -51,7 +51,7 @@ class FileOutput(MWindow):
         connection_controller = wx.BoxSizer(wx.VERTICAL)
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
-        label_8 = wx.StaticText(self, wx.ID_ANY, "Filename")
+        label_8 = wx.StaticText(self, wx.ID_ANY, _("Filename"))
         sizer_15.Add(label_8, 1, 0, 0)
         sizer_15.Add(self.text_filename, 5, 0, 0)
         connection_controller.Add(sizer_15, 0, 0, 0)

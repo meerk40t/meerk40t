@@ -11,16 +11,16 @@ _ = wx.GetTranslation
 class MoshiDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(335, 170, *args, **kwds)
-        self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, "Home Right")
-        self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, "Home Bottom")
+        self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
+        self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
         self.spin_home_x = wx.SpinCtrlDouble(
             self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
         )
         self.spin_home_y = wx.SpinCtrlDouble(
             self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
         )
-        self.button_home_by_current = wx.Button(self, wx.ID_ANY, "Set Current")
-        self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, "Randomize PPI")
+        self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
+        self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, _("Randomize PPI"))
 
         self.__set_properties()
         self.__do_layout()
@@ -41,20 +41,20 @@ class MoshiDriverGui(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle("Moshiboard-Prefererences")
-        self.checkbox_home_right.SetToolTip("Indicates the device Home is on the right")
+        self.SetTitle(_("Moshiboard-Prefererences"))
+        self.checkbox_home_right.SetToolTip(_("Indicates the device Home is on the right"))
         self.checkbox_home_bottom.SetToolTip(
-            "Indicates the device Home is on the bottom"
+            _("Indicates the device Home is on the bottom")
         )
         self.spin_home_x.SetMinSize((80, 23))
-        self.spin_home_x.SetToolTip("Translate Home X")
+        self.spin_home_x.SetToolTip(_("Translate Home X"))
         self.spin_home_y.SetMinSize((80, 23))
-        self.spin_home_y.SetToolTip("Translate Home Y")
+        self.spin_home_y.SetToolTip(_("Translate Home Y"))
         self.button_home_by_current.SetToolTip(
-            "Set Home Position based on the current position"
+            _("Set Home Position based on the current position")
         )
         self.checkbox_random_ppi.SetToolTip(
-            "Rather than orderly PPI, we perform PPI based on a randomized average"
+            _("Rather than orderly PPI, we perform PPI based on a randomized average")
         )
         self.checkbox_random_ppi.Enable(False)
         # end wxGlade
@@ -63,15 +63,15 @@ class MoshiDriverGui(MWindow):
         # begin wxGlade: MoshiDriverGui.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_6 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Pulse Planner"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Pulse Planner")), wx.HORIZONTAL
         )
         sizer_home = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Shift Home Position"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Shift Home Position")), wx.HORIZONTAL
         )
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_config = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Configuration"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Configuration")), wx.HORIZONTAL
         )
         sizer_config.Add(self.checkbox_home_right, 0, 0, 0)
         sizer_config.Add(self.checkbox_home_bottom, 0, 0, 0)
@@ -79,13 +79,13 @@ class MoshiDriverGui(MWindow):
         label_9 = wx.StaticText(self, wx.ID_ANY, "X")
         sizer_4.Add(label_9, 0, 0, 0)
         sizer_4.Add(self.spin_home_x, 0, 0, 0)
-        label_12 = wx.StaticText(self, wx.ID_ANY, "mil")
+        label_12 = wx.StaticText(self, wx.ID_ANY, _("mil"))
         sizer_4.Add(label_12, 0, 0, 0)
         sizer_home.Add(sizer_4, 2, wx.EXPAND, 0)
         label_10 = wx.StaticText(self, wx.ID_ANY, "Y")
         sizer_2.Add(label_10, 0, 0, 0)
         sizer_2.Add(self.spin_home_y, 0, 0, 0)
-        label_11 = wx.StaticText(self, wx.ID_ANY, "mil")
+        label_11 = wx.StaticText(self, wx.ID_ANY, _("mil"))
         sizer_2.Add(label_11, 1, 0, 0)
         sizer_home.Add(sizer_2, 2, wx.EXPAND, 0)
         sizer_home.Add(self.button_home_by_current, 1, 0, 0)

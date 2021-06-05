@@ -552,10 +552,10 @@ class Drivers(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @context.console_option("new", "n", type=str, help="new driver type")
+        @context.console_option("new", "n", type=str, help=_("new driver type"))
         @self.context.console_command(
             "driver",
-            help="driver<?> <command>",
+            help=_("driver<?> <command>"),
             regex=True,
             input_type=(None, "spooler"),
             output_type="driver",
@@ -595,7 +595,7 @@ class Drivers(Modifier):
 
         @self.context.console_command(
             "list",
-            help="driver<?> list",
+            help=_("driver<?> list"),
             input_type="driver",
             output_type="driver",
         )
@@ -613,7 +613,7 @@ class Drivers(Modifier):
 
         @context.console_command(
             "type",
-            help="list driver types",
+            help=_("list driver types"),
             input_type="driver",
         )
         def list_type(channel, _, **kwargs):
@@ -625,7 +625,7 @@ class Drivers(Modifier):
 
         @self.context.console_command(
             "reset",
-            help="driver<?> reset",
+            help=_("driver<?> reset"),
             input_type="driver",
             output_type="driver",
         )

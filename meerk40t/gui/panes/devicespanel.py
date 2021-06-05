@@ -43,14 +43,14 @@ class DevicesPanel(wx.Panel):
                 "Segoe UI",
             )
         )
-        self.devices_list.AppendColumn("Index", format=wx.LIST_FORMAT_LEFT, width=56)
-        self.devices_list.AppendColumn("Spooler", format=wx.LIST_FORMAT_LEFT, width=74)
+        self.devices_list.AppendColumn(_("Index"), format=wx.LIST_FORMAT_LEFT, width=56)
+        self.devices_list.AppendColumn(_("Spooler"), format=wx.LIST_FORMAT_LEFT, width=74)
         self.devices_list.AppendColumn(
-            "Driver/Input", format=wx.LIST_FORMAT_LEFT, width=170
+            _("Driver/Input"), format=wx.LIST_FORMAT_LEFT, width=170
         )
-        self.devices_list.AppendColumn("Output", format=wx.LIST_FORMAT_LEFT, width=170)
+        self.devices_list.AppendColumn(_("Output"), format=wx.LIST_FORMAT_LEFT, width=170)
         self.devices_list.AppendColumn(
-            "Registered", format=wx.LIST_FORMAT_LEFT, width=93
+            _("Registered"), format=wx.LIST_FORMAT_LEFT, width=93
         )
         # end wxGlade
 

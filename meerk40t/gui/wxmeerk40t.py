@@ -21,20 +21,14 @@ from .panes.movepanel import MovePanel
 from .panes.notespanel import NotePanel
 from .panes.pulsepanel import PulsePanel
 from .panes.spoolerpanel import SpoolerPanel
-from .panes.toolbarcontrol import ControlToolBar, ControlTools
-from .panes.toolbarpreferences import PreferencesToolBar, PreferencesTools
-from .panes.toolbarproject import ProjectToolBar, ProjectTools
+from .panes.toolbarcontrol import ControlTools
+from .panes.toolbarpreferences import PreferencesTools
+from .panes.toolbarproject import ProjectTools
 from .panes.transformpanel import Transform
-from .scene.scene import Scene, ScenePanel
-from .scene.scenewidgets import (
-    ElementsWidget,
-    GridWidget,
-    GuideWidget,
-    LaserPathWidget,
-    RectSelectWidget,
-    ReticleWidget,
-    SelectionWidget,
-)
+from .scene.scene import ScenePanel
+from .scene.scenewidgets import (ElementsWidget, GridWidget, GuideWidget,
+                                 LaserPathWidget, RectSelectWidget,
+                                 ReticleWidget, SelectionWidget)
 from .scene.toolwidgets import DrawTool, RectTool, ToolContainer
 from .simulation import Simulation
 
@@ -50,35 +44,21 @@ import wx.aui as aui
 import wx.ribbon as RB
 
 from ..core.elements import LaserOperation
-from ..device.lasercommandconstants import (
-    COMMAND_FUNCTION,
-    COMMAND_HOME,
-    COMMAND_JOG,
-    COMMAND_JOG_FINISH,
-    COMMAND_JOG_SWITCH,
-    COMMAND_LASER_OFF,
-    COMMAND_LASER_ON,
-    COMMAND_MODE_PROGRAM,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_SET_DIRECTION,
-    COMMAND_SET_SPEED,
-    COMMAND_WAIT,
-    COMMAND_WAIT_FINISH,
-)
+from ..device.lasercommandconstants import (COMMAND_FUNCTION, COMMAND_HOME,
+                                            COMMAND_JOG, COMMAND_JOG_FINISH,
+                                            COMMAND_JOG_SWITCH,
+                                            COMMAND_LASER_OFF,
+                                            COMMAND_LASER_ON,
+                                            COMMAND_MODE_PROGRAM,
+                                            COMMAND_MODE_RAPID, COMMAND_MOVE,
+                                            COMMAND_SET_ABSOLUTE,
+                                            COMMAND_SET_DIRECTION,
+                                            COMMAND_SET_SPEED, COMMAND_WAIT,
+                                            COMMAND_WAIT_FINISH)
 from ..kernel import STATE_BUSY, ConsoleFunction, Module
 from ..svgelements import (
-    SVG_ATTR_STROKE,
-    Color,
-    Group,
-    Length,
-    Matrix,
-    Path,
-    SVGElement,
-    SVGImage,
-    SVGText,
-)
+    SVG_ATTR_STROKE, Color, Group, Length, Matrix, Path, SVGElement, SVGImage,
+    SVGText)
 from .about import About
 from .bufferview import BufferView
 from .camerainteface import CameraInterface
@@ -87,63 +67,26 @@ from .controller import Controller
 from .devicemanager import DeviceManager
 from .executejob import ExecuteJob
 from .icons import (
-    icon_meerk40t,
-    icons8_administrative_tools_50,
-    icons8_camera_50,
-    icons8_comments_50,
-    icons8_computer_support_50,
-    icons8_connected_50,
-    icons8_console_50,
-    icons8_direction_20,
-    icons8_emergency_stop_button_50,
-    icons8_fantasy_50,
-    icons8_file_20,
-    icons8_group_objects_20,
-    icons8_home_filled_50,
-    icons8_keyboard_50,
-    icons8_laser_beam_20,
-    icons8_laser_beam_52,
-    icons8_laser_beam_hazard2_50,
-    icons8_lock_50,
-    icons8_manager_50,
-    icons8_move_50,
-    icons8_opened_folder_50,
-    icons8_padlock_50,
-    icons8_pause_50,
-    icons8_play_50,
-    icons8_roll_50,
-    icons8_route_50,
-    icons8_save_50,
-    icons8_scatter_plot_20,
-    icons8_system_task_20,
-    icons8_vector_20,
-)
+    icon_meerk40t, icons8_administrative_tools_50, icons8_camera_50,
+    icons8_comments_50, icons8_computer_support_50, icons8_connected_50,
+    icons8_console_50, icons8_direction_20, icons8_emergency_stop_button_50,
+    icons8_fantasy_50, icons8_file_20, icons8_group_objects_20,
+    icons8_home_filled_50, icons8_keyboard_50, icons8_laser_beam_20,
+    icons8_laser_beam_52, icons8_laser_beam_hazard2_50, icons8_lock_50,
+    icons8_manager_50, icons8_move_50, icons8_opened_folder_50,
+    icons8_padlock_50, icons8_pause_50, icons8_roll_50, icons8_route_50,
+    icons8_save_50, icons8_scatter_plot_20, icons8_system_task_20,
+    icons8_vector_20)
 from .imageproperty import ImageProperty
 from .jobspooler import JobSpooler
 from .keymap import Keymap
 from .laserrender import (
-    DRAW_MODE_ANIMATE,
-    DRAW_MODE_BACKGROUND,
-    DRAW_MODE_CACHE,
-    DRAW_MODE_FILLS,
-    DRAW_MODE_FLIPXY,
-    DRAW_MODE_GRID,
-    DRAW_MODE_GUIDES,
-    DRAW_MODE_ICONS,
-    DRAW_MODE_IMAGE,
-    DRAW_MODE_INVERT,
-    DRAW_MODE_LASERPATH,
-    DRAW_MODE_LINEWIDTH,
-    DRAW_MODE_PATH,
-    DRAW_MODE_REFRESH,
-    DRAW_MODE_RETICLE,
-    DRAW_MODE_SELECTION,
-    DRAW_MODE_STROKES,
-    DRAW_MODE_TEXT,
-    DRAW_MODE_TREE,
-    LaserRender,
-    swizzlecolor,
-)
+    DRAW_MODE_ANIMATE, DRAW_MODE_BACKGROUND, DRAW_MODE_CACHE, DRAW_MODE_FILLS,
+    DRAW_MODE_FLIPXY, DRAW_MODE_GRID, DRAW_MODE_GUIDES, DRAW_MODE_ICONS,
+    DRAW_MODE_IMAGE, DRAW_MODE_INVERT, DRAW_MODE_LASERPATH,
+    DRAW_MODE_LINEWIDTH, DRAW_MODE_PATH, DRAW_MODE_REFRESH, DRAW_MODE_RETICLE,
+    DRAW_MODE_SELECTION, DRAW_MODE_STROKES, DRAW_MODE_TEXT, DRAW_MODE_TREE,
+    LaserRender, swizzlecolor)
 from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
 from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
@@ -182,7 +125,7 @@ def plugin(kernel, lifecycle):
     if lifecycle == "console":
         GUI_START[0] = False
 
-        @kernel.console_command("gui", help="starts the gui")
+        @kernel.console_command("gui", help=_("starts the gui"))
         def gui_start(**kwargs):
             del kernel.registered["command/None/gui"]
             kernel_root = kernel.root
@@ -190,9 +133,8 @@ def plugin(kernel, lifecycle):
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
 
-    if lifecycle == "register":
+    if lifecycle == "preregister":
         kernel.register("module/wxMeerK40t", wxMeerK40t)
-    if lifecycle == "configure":
         kernel_root = kernel.root
         kernel_root.open("module/wxMeerK40t")
 
@@ -445,13 +387,13 @@ class MeerK40t(MWindow):
             .MinSize(174, 230)
             .FloatingSize(174, 230)
             .MaxSize(300, 300)
-            .Caption("Jog")
+            .Caption(_("Jog"))
             .Name("jog")
             .CaptionVisible(self.context.pane_lock)
         )
         pane.dock_proportion = 3
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/jog", pane)
@@ -464,14 +406,14 @@ class MeerK40t(MWindow):
             .MinSize(174, 230)
             .FloatingSize(174, 230)
             .MaxSize(300, 300)
-            .Caption("Drag")
+            .Caption(_("Drag"))
             .Name("drag")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 3
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/drag", pane)
@@ -484,14 +426,14 @@ class MeerK40t(MWindow):
             .MinSize(174, 220)
             .FloatingSize(174, 220)
             .MaxSize(300, 300)
-            .Caption("Transform")
+            .Caption(_("Transform"))
             .Name("transform")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 3
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/transform", pane)
@@ -504,13 +446,13 @@ class MeerK40t(MWindow):
             .MinSize(200, 130)
             .FloatingSize(200, 130)
             .Hide()
-            .Caption("Distances")
+            .Caption(_("Distances"))
             .CaptionVisible(self.context.pane_lock)
             .Name("jogdist")
         )
         pane.dock_proportion = 1
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/jogdist", pane)
@@ -524,13 +466,13 @@ class MeerK40t(MWindow):
             .FloatingSize(150, 75)
             .MaxSize(200, 100)
             .Hide()
-            .Caption("Pulse")
+            .Caption(_("Pulse"))
             .CaptionVisible(self.context.pane_lock)
             .Name("pulse")
         )
         pane.dock_proportion = 1
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/pulse", pane)
@@ -543,13 +485,13 @@ class MeerK40t(MWindow):
             .MinSize(150, 75)
             .FloatingSize(150, 75)
             .MaxSize(200, 100)
-            .Caption("Move")
+            .Caption(_("Move"))
             .CaptionVisible(self.context.pane_lock)
             .Name("move")
         )
         pane.dock_proportion = 1
         pane.control = panel
-        pane.submenu = "Navigate"
+        pane.submenu = _("Navigate")
 
         self.on_pane_add(pane)
         self.context.register("pane/move", pane)
@@ -563,7 +505,7 @@ class MeerK40t(MWindow):
             .LeftDockable()
             .RightDockable()
             .BottomDockable(False)
-            .Caption("Tree")
+            .Caption(_("Tree"))
             .CaptionVisible(self.context.pane_lock)
             .TopDockable(False)
         )
@@ -577,7 +519,7 @@ class MeerK40t(MWindow):
             .Left()
             .MinSize(225, 120)
             .FloatingSize(225, 120)
-            .Caption("Position")
+            .Caption(_("Position"))
             .CaptionVisible(self.context.pane_lock)
             .Name("position")
         )
@@ -595,7 +537,7 @@ class MeerK40t(MWindow):
             .LeftDockable(False)
             .MinSize(300, 120)
             .FloatingSize(640, 120)
-            .Caption("Ribbon")
+            .Caption(_("Ribbon"))
             .CaptionVisible(self.context.pane_lock)
         )
         pane.dock_proportion = 8
@@ -614,13 +556,13 @@ class MeerK40t(MWindow):
             .MaxSize(430, 58)
             .FloatingSize(430, 58)
             .Layer(1)
-            .Caption("Project")
+            .Caption(_("Project"))
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 7
         pane.control = ProjectTools(self, wx.ID_ANY, context=self.context, gui=self)
-        pane.submenu = "Toolbars"
+        pane.submenu = _("Toolbars")
         self.on_pane_add(pane)
         self.context.register("pane/project_toolbar", pane)
 
@@ -634,13 +576,13 @@ class MeerK40t(MWindow):
             .MaxSize(230, 58)
             .FloatingSize(230, 58)
             .Layer(1)
-            .Caption("Control")
+            .Caption(_("Control"))
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 4
         pane.control = ControlTools(self, wx.ID_ANY, context=self.context, gui=self)
-        pane.submenu = "Toolbars"
+        pane.submenu = _("Toolbars")
         self.on_pane_add(pane)
         self.context.register("pane/control_toolbar", pane)
 
@@ -654,13 +596,13 @@ class MeerK40t(MWindow):
             .MaxSize(290, 58)
             .FloatingSize(290, 58)
             .Layer(1)
-            .Caption("Preferences")
+            .Caption(_("Preferences"))
             .CaptionVisible(self.context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 5
         pane.control = PreferencesTools(self, wx.ID_ANY, context=self.context, gui=self)
-        pane.submenu = "Toolbars"
+        pane.submenu = _("Toolbars")
         self.on_pane_add(pane)
         self.context.register("pane/preferences_toolbar", pane)
 
@@ -706,7 +648,7 @@ class MeerK40t(MWindow):
         pause.SetSize(pause.GetBestSize())
         pane = (
             aui.AuiPaneInfo()
-            .Caption("Pause")
+            .Caption(_("Pause"))
             .Bottom()
             .Name("pause")
             .CaptionVisible(self.context.pane_lock)
@@ -723,7 +665,7 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
             .Bottom()
-            .Caption("Home")
+            .Caption(_("Home"))
             .Name("home")
             .CaptionVisible(self.context.pane_lock)
         )
@@ -740,7 +682,7 @@ class MeerK40t(MWindow):
             .MinSize(170, 230)
             .FloatingSize(170, 230)
             .MaxSize(300, 300)
-            .Caption("Notes")
+            .Caption(_("Notes"))
             .CaptionVisible(self.context.pane_lock)
             .Name("notes")
             .Hide()
@@ -759,7 +701,7 @@ class MeerK40t(MWindow):
             .Layer(1)
             .MinSize(600, 100)
             .FloatingSize(600, 230)
-            .Caption("Spooler")
+            .Caption(_("Spooler"))
             .Name("spooler")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
@@ -778,7 +720,7 @@ class MeerK40t(MWindow):
             .Layer(2)
             .MinSize(600, 100)
             .FloatingSize(600, 230)
-            .Caption("Console")
+            .Caption(_("Console"))
             .Name("console")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
@@ -797,7 +739,7 @@ class MeerK40t(MWindow):
             .Layer(2)
             .MinSize(600, 100)
             .FloatingSize(600, 230)
-            .Caption("Devices")
+            .Caption(_("Devices"))
             .Name("devices")
             .CaptionVisible(self.context.pane_lock)
             .Hide()
@@ -979,15 +921,15 @@ class MeerK40t(MWindow):
         context.register("control/egv export", self.egv_export)
         context.register("control/egv import", self.egv_import)
 
-        @context.console_command("theme", help="Theming information and assignments")
+        @context.console_command("theme", help=_("Theming information and assignments"))
         def theme(command, channel, _, args=tuple(), **kwargs):
             channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
 
-        @context.console_command("rotaryview", help="Rotary View of Scene")
+        @context.console_command("rotaryview", help=_("Rotary View of Scene"))
         def toggle_rotary_view(*args, **kwargs):
             self.toggle_rotary_view()
 
-        @context.console_command("rotaryscale", help="Rotary Scale selected elements")
+        @context.console_command("rotaryscale", help=_("Rotary Scale selected elements"))
         def apply_rotary_scale(*args, **kwargs):
             self.apply_rotary_scale()
 
@@ -1034,8 +976,8 @@ class MeerK40t(MWindow):
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
 
-        @context.console_argument("tool", help="tool to use.")
-        @context.console_command("tool", help="sets a particular tool for the scene")
+        @context.console_argument("tool", help=_("tool to use."))
+        @context.console_command("tool", help=_("sets a particular tool for the scene"))
         def tool(command, channel, _, tool=None, **kwargs):
             if tool is None:
                 channel(_("Tools:"))
@@ -1613,11 +1555,11 @@ class MeerK40t(MWindow):
 
     def on_camera_dropdown(self, event):
         menu = wx.Menu()
-        menu.Append(ID_CAMERA1, "Camera %d" % 1)
-        menu.Append(ID_CAMERA2, "Camera %d" % 2)
-        menu.Append(ID_CAMERA3, "Camera %d" % 3)
-        menu.Append(ID_CAMERA4, "Camera %d" % 4)
-        menu.Append(ID_CAMERA5, "Camera %d" % 5)
+        menu.Append(ID_CAMERA1, _("Camera %d") % 1)
+        menu.Append(ID_CAMERA2, _("Camera %d") % 2)
+        menu.Append(ID_CAMERA3, _("Camera %d") % 3)
+        menu.Append(ID_CAMERA4, _("Camera %d") % 4)
+        menu.Append(ID_CAMERA5, _("Camera %d") % 5)
         event.PopupMenu(menu)
 
     def on_camera_click(self, event):
@@ -1839,7 +1781,7 @@ class MeerK40t(MWindow):
 
         if platform == "darwin":
             wt_menu = wx.Menu()
-            self.main_menubar.Append(wt_menu, "Window")
+            self.main_menubar.Append(wt_menu, _("Window"))
 
         # ==========
         # HELP MENU
@@ -2813,7 +2755,7 @@ class MeerK40t(MWindow):
         files = self.context.save_types()
         with wx.FileDialog(
             self,
-            "Save Project",
+            _("Save Project"),
             wildcard=files,
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
         ) as fileDialog:
@@ -4026,10 +3968,10 @@ class wxMeerK40t(wx.App, Module):
             "p",
             type=str,
             default="/",
-            help="Context Path at which to open the window",
+            help=_("Context Path at which to open the window"),
         )
         @kernel.console_command(
-            "window", output_type="window", help="Base window command"
+            "window", output_type="window", help=_("Base window command")
         )
         def window(channel, _, path=None, remainder=None, **kwargs):
             """
@@ -4067,7 +4009,7 @@ class wxMeerK40t(wx.App, Module):
             "list",
             input_type="window",
             output_type="window",
-            help="List available windows.",
+            help=_("List available windows."),
         )
         def window(channel, _, data, **kwargs):
             channel(_("----------"))
@@ -4085,27 +4027,27 @@ class wxMeerK40t(wx.App, Module):
             "d",
             type=bool,
             action="store_true",
-            help="Load Driver Specific Window",
+            help=_("Load Driver Specific Window"),
         )
         @kernel.console_option(
             "output",
             "o",
             type=bool,
             action="store_true",
-            help="Load Output Specific Window",
+            help=_("Load Output Specific Window"),
         )
         @kernel.console_option(
             "input",
             "i",
             type=bool,
             action="store_true",
-            help="Load Source Specific Window",
+            help=_("Load Source Specific Window"),
         )
-        @kernel.console_argument("window", type=str, help="window to be opened")
+        @kernel.console_argument("window", type=str, help=_("window to be opened"))
         @kernel.console_command(
             ("open", "toggle"),
             input_type="window",
-            help="open/toggle the supplied window",
+            help=_("open/toggle the supplied window"),
         )
         def window(
             command,
@@ -4177,12 +4119,12 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
 
-        @kernel.console_argument("window", type=str, help="window to be closed")
+        @kernel.console_argument("window", type=str, help=_("window to be closed"))
         @kernel.console_command(
             "close",
             input_type="window",
             output_type="window",
-            help="close the supplied window",
+            help=_("close the supplied window"),
         )
         def window(channel, _, data, window=None, args=(), **kwargs):
             path = data
@@ -4197,12 +4139,12 @@ class wxMeerK40t(wx.App, Module):
             except IndexError:
                 raise SyntaxError
 
-        @kernel.console_argument("window", type=str, help="window to be reset")
+        @kernel.console_argument("window", type=str, help=_("window to be reset"))
         @kernel.console_command(
             "reset",
             input_type="window",
             output_type="window",
-            help="reset the supplied window, or '*' for all windows",
+            help=_("reset the supplied window, or '*' for all windows"),
         )
         def window(channel, _, data, window=None, **kwargs):
             if kernel._config is not None:
@@ -4211,7 +4153,7 @@ class wxMeerK40t(wx.App, Module):
                         del kernel.contexts[context]
                 kernel._config.DeleteGroup("window")
 
-        @kernel.console_command("refresh", help="Refresh the main wxMeerK40 window")
+        @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def refresh(command, channel, _, args=tuple(), **kwargs):
             context.signal("refresh_scene")
             context.signal("rebuild_tree")
@@ -4337,12 +4279,10 @@ def send_file_to_developers(filename):
         MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
-            _(
-                "We're sorry, that didn't work. Raise an issue on the github please.\n\n The log file will be in your working directory.\n"
+                _("We're sorry, that didn't work. Raise an issue on the github please.\n\n The log file will be in your working directory.\n")
                 + MEERK40T_ISSUES
                 + "\n\n"
-                + str(http_code)
-            ),
+                + str(http_code),
             _("Thanks"),
             wx.OK,
         )
@@ -4383,14 +4323,14 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    message = """
+    message = _("""
     Good news MeerK40t User! MeerK40t encountered an crash!
 
     You now have the ability to help meerk40t's development by sending us the log.
 
     Send the following data to the MeerK40t team?
     ------
-    """
+    """)
     message += error_log
     answer = wx.MessageBox(
         message, _("Crash Detected! Send Log?"), wx.YES_NO | wx.CANCEL, None

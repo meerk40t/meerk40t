@@ -154,11 +154,11 @@ class Spoolers(Modifier):
         _ = kernel.translation
 
         @context.console_option(
-            "register", "r", type=bool, action="store_true", help="Register this device"
+            "register", "r", type=bool, action="store_true", help=_("Register this device")
         )
         @context.console_command(
             "spool",
-            help="spool<?> <command>",
+            help=_("spool<?> <command>"),
             regex=True,
             input_type=(None, "plan", "device"),
             output_type="spooler",
@@ -209,7 +209,7 @@ class Spoolers(Modifier):
 
         @context.console_command(
             "list",
-            help="spool<?> list",
+            help=_("spool<?> list"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -226,10 +226,10 @@ class Spoolers(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_argument("op", type=str, help="unlock, origin, home, etc")
+        @context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @context.console_command(
             "send",
-            help="send a plan-command to the spooler",
+            help=_("send a plan-command to the spooler"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -251,7 +251,7 @@ class Spoolers(Modifier):
 
         @context.console_command(
             "clear",
-            help="spooler<?> clear",
+            help=_("spooler<?> clear"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -296,7 +296,7 @@ class Spoolers(Modifier):
             hidden=True,
             input_type=("spooler", None),
             output_type="spooler",
-            help="turn laser on in place",
+            help=_("turn laser on in place"),
         )
         def plus_laser(data, **kwargs):
             if data is None:
@@ -310,7 +310,7 @@ class Spoolers(Modifier):
             hidden=True,
             input_type=("spooler", None),
             output_type="spooler",
-            help="turn laser off in place",
+            help=_("turn laser off in place"),
         )
         def minus_laser(data, **kwargs):
             if data is None:
@@ -320,13 +320,13 @@ class Spoolers(Modifier):
             return "spooler", data
 
         @context.console_argument(
-            "amount", type=Length, help="amount to move in the set direction."
+            "amount", type=Length, help=_("amount to move in the set direction.")
         )
         @context.console_command(
             ("left", "right", "up", "down"),
             input_type=("spooler", None),
             output_type="spooler",
-            help="cmd <amount>",
+            help=_("cmd <amount>"),
         )
         def direction(command, channel, _, data=None, amount=None, **kwargs):
             if data is None:
@@ -356,7 +356,7 @@ class Spoolers(Modifier):
             hidden=True,
             input_type="spooler",
             output_type="spooler",
-            help="executes outstanding jog buffer",
+            help=_("executes outstanding jog buffer"),
         )
         def jog(command, channel, _, data, **kwargs):
             if data is None:
@@ -377,13 +377,13 @@ class Spoolers(Modifier):
                 channel(_("Busy Error"))
             return "spooler", data
 
-        @context.console_argument("x", type=Length, help="change in x")
-        @context.console_argument("y", type=Length, help="change in y")
+        @context.console_argument("x", type=Length, help=_("change in x"))
+        @context.console_argument("y", type=Length, help=_("change in y"))
         @context.console_command(
             ("move", "move_absolute"),
             input_type=("spooler", None),
             output_type="spooler",
-            help="move <x> <y>: move to position.",
+            help=_("move <x> <y>: move to position."),
         )
         def move(channel, _, x, y, data=None, **kwargs):
             if data is None:
@@ -395,13 +395,13 @@ class Spoolers(Modifier):
                 channel(_("Busy Error"))
             return "spooler", data
 
-        @context.console_argument("dx", type=Length, help="change in x")
-        @context.console_argument("dy", type=Length, help="change in y")
+        @context.console_argument("dx", type=Length, help=_("change in x"))
+        @context.console_argument("dy", type=Length, help=_("change in y"))
         @context.console_command(
             "move_relative",
             input_type=("spooler", None),
             output_type="spooler",
-            help="move_relative <dx> <dy>",
+            help=_("move_relative <dx> <dy>"),
         )
         def move_relative(channel, _, dx, dy, data=None, **kwargs):
             if data is None:
@@ -413,13 +413,13 @@ class Spoolers(Modifier):
                 channel(_("Busy Error"))
             return "spooler", data
 
-        @context.console_argument("x", type=Length, help="x offset")
-        @context.console_argument("y", type=Length, help="y offset")
+        @context.console_argument("x", type=Length, help=_("x offset"))
+        @context.console_argument("y", type=Length, help=_("y offset"))
         @context.console_command(
             "home",
             input_type=("spooler", None),
             output_type="spooler",
-            help="home the laser",
+            help=_("home the laser"),
         )
         def home(x=None, y=None, data=None, **kwargs):
             if data is None:
@@ -437,7 +437,7 @@ class Spoolers(Modifier):
             "unlock",
             input_type=("spooler", None),
             output_type="spooler",
-            help="unlock the rail",
+            help=_("unlock the rail"),
         )
         def unlock(data=None, **kwargs):
             if data is None:
@@ -450,7 +450,7 @@ class Spoolers(Modifier):
             "lock",
             input_type=("spooler", None),
             output_type="spooler",
-            help="lock the rail",
+            help=_("lock the rail"),
         )
         def lock(data, **kwargs):
             if data is None:
