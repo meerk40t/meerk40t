@@ -1712,12 +1712,16 @@ class MeerK40t(MWindow):
 
         self.panes_menu = wx.Menu()
 
-        def open_pane(p):
-            def open(event):
+        def toggle_pane(p):
+            def toggle(event):
+                pane = self._mgr.GetPane(p)
+                if pane.IsShown():
+                    pane.Hide()
+                    self._mgr.Update()
+                    return
                 self.aui_open_pane(p)
-                self._mgr.Update()
 
-            return open
+            return toggle
 
         submenus = {}
         for p in self.context.match("pane/.*"):
@@ -1748,7 +1752,7 @@ class MeerK40t(MWindow):
             menu_item = menu_context.Append(id_new, pane_caption, "", wx.ITEM_CHECK)
             self.Bind(
                 wx.EVT_MENU,
-                open_pane(pane_name),
+                toggle_pane(pane_name),
                 id=id_new,
             )
             pane = self._mgr.GetPane(pane.name)
@@ -4356,7 +4360,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :return:
     """
     error_log = "MeerK40t crash log. Version: %s on %s\n" % (
-        "0.7.0 RC-5",
+        "0.7.0 RC-6",
         sys.platform,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
