@@ -755,9 +755,7 @@ class LhystudiosDriver(Driver):
                 else:  # Moving Top. -y
                     self.set_prop(REQUEST_Y_FORWARD_TOP)
                 continue
-            if on & (
-                PLOT_RAPID | PLOT_JOG
-            ):  # Plot planner requests position change.
+            if on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
                 if (
                     on & PLOT_RAPID
                     or self.state != DRIVER_STATE_PROGRAM
@@ -780,9 +778,7 @@ class LhystudiosDriver(Driver):
                         if self.is_prop(STATE_Y_FORWARD_TOP):
                             if abs(dy) > self.settings.raster_step:
                                 self.ensure_finished_mode()
-                                self.move_relative(
-                                    0, dy + self.settings.raster_step
-                                )
+                                self.move_relative(0, dy + self.settings.raster_step)
                                 self.set_prop(STATE_X_STEPPER_ENABLE)
                                 self.unset_prop(STATE_Y_STEPPER_ENABLE)
                                 self.ensure_program_mode()
@@ -790,9 +786,7 @@ class LhystudiosDriver(Driver):
                         else:
                             if abs(dy) > self.settings.raster_step:
                                 self.ensure_finished_mode()
-                                self.move_relative(
-                                    0, dy - self.settings.raster_step
-                                )
+                                self.move_relative(0, dy - self.settings.raster_step)
                                 self.set_prop(STATE_X_STEPPER_ENABLE)
                                 self.unset_prop(STATE_Y_STEPPER_ENABLE)
                                 self.ensure_program_mode()
@@ -802,9 +796,7 @@ class LhystudiosDriver(Driver):
                         if self.is_prop(STATE_X_FORWARD_LEFT):
                             if abs(dx) > self.settings.raster_step:
                                 self.ensure_finished_mode()
-                                self.move_relative(
-                                    dx + self.settings.raster_step, 0
-                                )
+                                self.move_relative(dx + self.settings.raster_step, 0)
                                 self.set_prop(STATE_Y_STEPPER_ENABLE)
                                 self.unset_prop(STATE_X_STEPPER_ENABLE)
                                 self.ensure_program_mode()
@@ -812,9 +804,7 @@ class LhystudiosDriver(Driver):
                         else:
                             if abs(dx) > self.settings.raster_step:
                                 self.ensure_finished_mode()
-                                self.move_relative(
-                                    dx - self.settings.raster_step, 0
-                                )
+                                self.move_relative(dx - self.settings.raster_step, 0)
                                 self.set_prop(STATE_Y_STEPPER_ENABLE)
                                 self.unset_prop(STATE_X_STEPPER_ENABLE)
                                 self.ensure_program_mode()

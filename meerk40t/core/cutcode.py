@@ -13,8 +13,18 @@ from meerk40t.tools.rasterplotter import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START, COMMAND_MOVE, COMMAND_HOME, COMMAND_CUT, \
-    lasercode_string, COMMAND_SET_ABSOLUTE, COMMAND_MODE_PROGRAM, COMMAND_MODE_RAPID, COMMAND_SET_INCREMENTAL
+from ..device.lasercommandconstants import (
+    COMMAND_PLOT,
+    COMMAND_PLOT_START,
+    COMMAND_MOVE,
+    COMMAND_HOME,
+    COMMAND_CUT,
+    lasercode_string,
+    COMMAND_SET_ABSOLUTE,
+    COMMAND_MODE_PROGRAM,
+    COMMAND_MODE_RAPID,
+    COMMAND_SET_INCREMENTAL,
+)
 from ..svgelements import Color, Group, Path, Point, Polygon
 from ..tools.pathtools import VectorMontonizer
 

@@ -242,7 +242,7 @@ class PlotPlanner:
                 yield x, y, on
                 continue
             if px is not None and py is not None:
-                assert(abs(px-x) <= 1 or abs(py-y) <= 1)
+                assert abs(px - x) <= 1 or abs(py - y) <= 1
             px = x
             py = y
             # PPI is always on.
@@ -275,7 +275,9 @@ class PlotPlanner:
         px = None
         py = None
         for x, y, on in plot:
-            if (x is None or y is None) or (not self.force_shift and not self.settings.shift_enabled):
+            if (x is None or y is None) or (
+                not self.force_shift and not self.settings.shift_enabled
+            ):
                 # If we have an established buffer, flush the buffer.
                 while len(self.shift_buffer) > 0:
                     self.shift_pixels <<= 1
@@ -286,7 +288,7 @@ class PlotPlanner:
                 yield x, y, on
                 continue
             if px is not None and py is not None:
-                assert(abs(px-x) <= 1 or abs(py-y) <= 1)
+                assert abs(px - x) <= 1 or abs(py - y) <= 1
             px = x
             py = y
 
@@ -339,7 +341,7 @@ class PlotPlanner:
                     yield gx, gy, go
                 continue
             if px is not None and py is not None:
-                assert(abs(px-x) <= 1 or abs(py-y) <= 1)
+                assert abs(px - x) <= 1 or abs(py - y) <= 1
             px = x
             py = y
 

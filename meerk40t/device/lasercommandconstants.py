@@ -143,7 +143,9 @@ def lasercode_string(code):
     if code == COMMAND_BEEP:
         return "COMMAND_BEEP"  # Beep.
     if code == COMMAND_FUNCTION:
-        return "COMMAND_FUNCTION"  # Execute the function given by this command. Blocking.
+        return (
+            "COMMAND_FUNCTION"  # Execute the function given by this command. Blocking.
+        )
     if code == COMMAND_SIGNAL:  # Sends the signal, given: "signal_name:
         return "COMMAND_SIGNAL"  # Sends the signal, given: "signal_name", operands.
     if code == REALTIME_RESET:
@@ -157,13 +159,15 @@ def lasercode_string(code):
     if code == REALTIME_SAFETY_DOOR:
         return "REALTIME_SAFETY_DOOR"  # Issues a forced safety_door state.
     if code == REALTIME_JOG_CANCEL:
-        return "REALTIME_JOG_CANCEL" # Issues a jog cancel. This should cancel any jogging being processed.
+        return "REALTIME_JOG_CANCEL"  # Issues a jog cancel. This should cancel any jogging being processed.
     if code == REALTIME_SPEED_PERCENT:
         return "REALTIME_SPEED_PERCENT"  # Set the speed to this percent value of total.
     if code == REALTIME_RAPID_PERCENT:
         return "REALTIME_RAPID_PERCENT"  # Sets the rapid speed to this percent value of total.
     if code == REALTIME_POWER_PERCENT:
-        return "REALTIME_POWER_PERCENT"  # Sets the power to this percent value of total.
+        return (
+            "REALTIME_POWER_PERCENT"  # Sets the power to this percent value of total.
+        )
     if code == REALTIME_SPEED:
         return "REALTIME_SPEED"  # Set the speed to this percent value of total.
     if code == REALTIME_RAPID:

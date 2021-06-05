@@ -1082,8 +1082,8 @@ class LaserCodeNode(Node):
 
     def __init__(self, commands, **kwargs):
         super().__init__(commands, type="lasercode")
-        if 'name' in kwargs:
-            self.name = kwargs['name']
+        if "name" in kwargs:
+            self.name = kwargs["name"]
         else:
             self.name = "LaserCode"
         self.commands = commands
@@ -3511,7 +3511,16 @@ class Elemental(Modifier):
 
         @self.tree_operation(
             _("Remove: {name}"),
-            node_type=("op", "elem", "cmdop", "file", "group", "opnode", "lasercode", "cutcode"),
+            node_type=(
+                "op",
+                "elem",
+                "cmdop",
+                "file",
+                "group",
+                "opnode",
+                "lasercode",
+                "cutcode",
+            ),
             help="",
         )
         def remove_type_op(node, **kwargs):

@@ -254,7 +254,9 @@ class Planner(Modifier):
         def plan(command, channel, _, data_type=None, data=None, **kwargs):
             plan, original, commands, name = data
             operations = elements.get(type="branch ops")
-            for c in operations.flat(types=("op", "cutcode", "cmdop", "lasercode"), depth=1):
+            for c in operations.flat(
+                types=("op", "cutcode", "cmdop", "lasercode"), depth=1
+            ):
                 try:
                     if not c.output:
                         continue

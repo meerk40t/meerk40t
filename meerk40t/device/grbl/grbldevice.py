@@ -243,12 +243,12 @@ def _tokenize_code(code_line):
     pos = code_line.find("(")
     while pos != -1:
         end = code_line.find(")")
-        yield ['comment', code_line[pos + 1: end]]
-        code_line = code_line[:pos] + code_line[end + 1:]
+        yield ["comment", code_line[pos + 1 : end]]
+        code_line = code_line[:pos] + code_line[end + 1 :]
         pos = code_line.find("(")
     pos = code_line.find(";")
     if pos != -1:
-        yield ['comment', code_line[pos + 1:]]
+        yield ["comment", code_line[pos + 1 :]]
         code_line = code_line[:pos]
 
     code = None
@@ -287,6 +287,7 @@ def get_command_code(lines):
         feed_invert = lambda s: s * ((scale / MILS_PER_MM) * 60.0)
         # units to mm, seconds to minutes.
         return feed_convert, feed_invert
+
     feed_convert, feed_invert = g94_feedrate()  # G94 DEFAULT, mm mode
     move_mode = 0
     home = None
