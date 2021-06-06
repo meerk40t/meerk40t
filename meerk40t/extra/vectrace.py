@@ -11,7 +11,7 @@ def plugin(kernel, lifecycle=None):
             input_type="image",
             output_type="elements",
         )
-        def vectrace(command, channel, _, data, args=tuple(), **kwargs):
+        def vectrace(data, **kwargs):
             elements = kernel.root.elements
             path = Path(fill="black", stroke="blue")
             paths = []
@@ -55,9 +55,9 @@ def _trace(pixels, x, y, width, height):
     positions = [x + y * 1j]
     scanpoints = list()
 
-    def px(x, y):
-        if 0 <= x < width and 0 <= y < height:
-            return pixels[x, y]
+    def px(pixel_x, pixel_y):
+        if 0 <= pixel_x < width and 0 <= pixel_y < height:
+            return pixels[pixel_x, pixel_y]
         else:
             return 255
 

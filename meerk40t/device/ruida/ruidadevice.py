@@ -362,10 +362,10 @@ class RuidaEmulator(Module):
         elif array[0] == 0x80:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:
-                desc = "Axis X Move %f" % (value)
+                desc = "Axis X Move %f" % value
                 self.x += value
             elif array[1] == 0x08:
-                desc = "Axis Z Move %f" % (value)
+                desc = "Axis Z Move %f" % value
                 self.z += value
         elif array[0] == 0x88:  # 0b10001000 11 characters.
             self.x = self.abscoord(array[1:6])
@@ -386,17 +386,17 @@ class RuidaEmulator(Module):
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            desc = "Move Horizontal Relative (%f)" % (dx)
+            desc = "Move Horizontal Relative (%f)" % dx
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            desc = "Move Vertical Relative (%f)" % (dy)
+            desc = "Move Vertical Relative (%f)" % dy
         elif array[0] == 0xA0:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:
-                desc = "Axis Y Move %f" % (value)
+                desc = "Axis Y Move %f" % value
             elif array[1] == 0x08:
-                desc = "Axis U Move %f" % (value)
+                desc = "Axis U Move %f" % value
         elif array[0] == 0xA5:
             key = None
             if array[1] == 0x50:
@@ -504,7 +504,7 @@ class RuidaEmulator(Module):
                     settings=self.cutset,
                 )
             )
-            desc = "Cut Horizontal Relative (%f)" % (dx)
+            desc = "Cut Horizontal Relative (%f)" % dx
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
@@ -515,7 +515,7 @@ class RuidaEmulator(Module):
                     settings=self.cutset,
                 )
             )
-            desc = "Cut Vertical Relative (%f)" % (dy)
+            desc = "Cut Vertical Relative (%f)" % dy
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])
             desc = "Imd Power 1 (%f)" % v0
@@ -543,36 +543,36 @@ class RuidaEmulator(Module):
         elif array[0] == 0xC6:
             if array[1] == 0x01:
                 power = self.parse_power(array[2:4])
-                desc = "Power 1 min=%f" % (power)
+                desc = "Power 1 min=%f" % power
                 self.power1_min = power
             elif array[1] == 0x02:
                 power = self.parse_power(array[2:4])
-                desc = "Power 1 max=%f" % (power)
+                desc = "Power 1 max=%f" % power
                 self.power1_max = power
             elif array[1] == 0x05:
                 power = self.parse_power(array[2:4])
-                desc = "Power 3 min=%f" % (power)
+                desc = "Power 3 min=%f" % power
             elif array[1] == 0x06:
                 power = self.parse_power(array[2:4])
-                desc = "Power 3 max=%f" % (power)
+                desc = "Power 3 max=%f" % power
             elif array[1] == 0x07:
                 power = self.parse_power(array[2:4])
-                desc = "Power 4 min=%f" % (power)
+                desc = "Power 4 min=%f" % power
             elif array[1] == 0x08:
                 power = self.parse_power(array[2:4])
-                desc = "Power 4 max=%f" % (power)
+                desc = "Power 4 max=%f" % power
             elif array[1] == 0x10:
                 interval = self.parse_time(array[2:7])
-                desc = "Laser Interval %fms" % (interval)
+                desc = "Laser Interval %fms" % interval
             elif array[1] == 0x11:
                 interval = self.parse_time(array[2:7])
-                desc = "Add Delay %fms" % (interval)
+                desc = "Add Delay %fms" % interval
             elif array[1] == 0x12:
                 interval = self.parse_time(array[2:7])
-                desc = "Laser On Delay %fms" % (interval)
+                desc = "Laser On Delay %fms" % interval
             elif array[1] == 0x13:
                 interval = self.parse_time(array[2:7])
-                desc = "Laser Off Delay %fms" % (interval)
+                desc = "Laser Off Delay %fms" % interval
             elif array[1] == 0x15:
                 interval = self.parse_time(array[2:7])
                 desc = "Laser On2 %fms" % interval
@@ -621,16 +621,16 @@ class RuidaEmulator(Module):
                 desc = "%d, Power 2 Max (%f)" % (part, power)
             elif array[1] == 0x50:
                 power = self.parse_power(array[2:4])
-                desc = "Through Power 1 (%f)" % (power)
+                desc = "Through Power 1 (%f)" % power
             elif array[1] == 0x51:
                 power = self.parse_power(array[2:4])
-                desc = "Through Power 2 (%f)" % (power)
+                desc = "Through Power 2 (%f)" % power
             elif array[1] == 0x55:
                 power = self.parse_power(array[2:4])
-                desc = "Through Power 3 (%f)" % (power)
+                desc = "Through Power 3 (%f)" % power
             elif array[1] == 0x56:
                 power = self.parse_power(array[2:4])
-                desc = "Through Power 4 (%f)" % (power)
+                desc = "Through Power 4 (%f)" % power
             elif array[1] == 0x60:
                 laser = array[2]
                 part = array[3]
@@ -639,12 +639,12 @@ class RuidaEmulator(Module):
         elif array[0] == 0xC9:
             if array[1] == 0x02:
                 speed = self.parse_speed(array[2:7])
-                desc = "Speed Laser 1 %fmm/s" % (speed)
+                desc = "Speed Laser 1 %fmm/s" % speed
                 self.settings.speed = speed
                 self._use_set = None
             elif array[1] == 0x03:
                 speed = self.parse_speed(array[2:7])
-                desc = "Axis Speed %fmm/s" % (speed)
+                desc = "Axis Speed %fmm/s" % speed
             elif array[1] == 0x04:
                 part = array[2]
                 speed = self.parse_speed(array[3:8])
@@ -653,10 +653,10 @@ class RuidaEmulator(Module):
                 desc = "%d, Speed %fmm/s" % (part, speed)
             elif array[1] == 0x05:
                 speed = self.parse_speed(array[2:7]) / 1000.0
-                desc = "Force Eng Speed %fmm/s" % (speed)
+                desc = "Force Eng Speed %fmm/s" % speed
             elif array[1] == 0x06:
                 speed = self.parse_speed(array[2:7]) / 1000.0
-                desc = "Axis Move Speed %fmm/s" % (speed)
+                desc = "Axis Move Speed %fmm/s" % speed
         elif array[0] == 0xCA:
             if array[1] == 0x01:
                 if array[2] == 0x00:
@@ -689,12 +689,12 @@ class RuidaEmulator(Module):
                     desc = "EnLaser2Offset 1"
             elif array[1] == 0x02:
                 part = array[2]
-                desc = "%d, Layer Number" % (part)
+                desc = "%d, Layer Number" % part
             elif array[1] == 0x03:
                 desc = "EnLaserTube Start"
             elif array[1] == 0x04:
                 value = array[2]
-                desc = "X Sign Map %d" % (value)
+                desc = "X Sign Map %d" % value
             elif array[1] == 0x05:
                 c = RuidaEmulator.decodeu35(array[2:7])
                 r = c & 0xFF
@@ -719,7 +719,7 @@ class RuidaEmulator(Module):
                 desc = "EnExIO Start %d" % value
             elif array[1] == 0x22:
                 part = array[2]
-                desc = "%d, Max Layer" % (part)
+                desc = "%d, Max Layer" % part
             elif array[1] == 0x30:
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = "U File ID %d" % filenumber
@@ -984,7 +984,7 @@ class RuidaEmulator(Module):
             elif array[1] == 0x60:
                 # len: 14
                 v = self.decode14(array[2:4])
-                desc = "RD-FUNCTION-UNK1"
+                desc = "RD-FUNCTION-UNK1 %d" % v
         elif array[0] == 0xE5:  # 0xE502
             if array[1] == 0x00:
                 desc = "Document Page Number"
@@ -1027,7 +1027,7 @@ class RuidaEmulator(Module):
                 )
             elif array[1] == 0x05:
                 direction = array[2]
-                desc = "Array Direction (%d)" % (direction)
+                desc = "Array Direction (%d)" % direction
             elif array[1] == 0x06:
                 v1 = self.decodeu35(array[2:7])
                 v2 = self.decodeu35(array[7:12])
@@ -1073,7 +1073,7 @@ class RuidaEmulator(Module):
                 desc = "Array Add (%f,%f)" % (c_x, c_y)
             elif array[1] == 0x24:
                 v1 = array[2]
-                desc = "Array Mirror %d" % (v1)
+                desc = "Array Mirror %d" % v1
             elif array[1] == 0x32:
                 v1 = self.decodeu35(array[2:7])
                 desc = "Unknown Preamble %d" % v1
@@ -1132,7 +1132,7 @@ class RuidaEmulator(Module):
                 desc = "Delete Document %d %d" % (v1, v2)
             elif array[1] == 0x01:
                 filenumber = self.parse_filenumber(array[2:4])
-                desc = "Document Name %d" % (filenumber)
+                desc = "Document Name %d" % filenumber
                 from glob import glob
                 from os.path import join, realpath
 
@@ -1148,12 +1148,12 @@ class RuidaEmulator(Module):
                 desc = "File transfer"
             elif array[1] == 0x03:
                 document = array[2]
-                desc = "Start Select Document %d" % (document)
+                desc = "Start Select Document %d" % document
             elif array[1] == 0x04:
                 desc = "Calculate Document Time"
         elif array[0] == 0xEA:
             index = array[1]
-            desc = "Array Start (%d)" % (index)
+            desc = "Array Start (%d)" % index
         elif array[0] == 0xEB:
             desc = "Array End"
         elif array[0] == 0xF0:
@@ -1161,13 +1161,13 @@ class RuidaEmulator(Module):
         elif array[0] == 0xF1:
             if array[1] == 0x00:
                 index = array[2]
-                desc = "Element Max Index (%d)" % (index)
+                desc = "Element Max Index (%d)" % index
             elif array[1] == 0x01:
                 index = array[2]
-                desc = "Element Name Max Index(%d)" % (index)
+                desc = "Element Name Max Index(%d)" % index
             elif array[1] == 0x02:
                 enable = array[2]
-                desc = "Enable Block Cutting (%d)" % (enable)
+                desc = "Enable Block Cutting (%d)" % enable
             elif array[1] == 0x03:
                 c_x = self.abscoord(array[2:7]) / um_per_mil
                 c_y = self.abscoord(array[7:12]) / um_per_mil
@@ -1180,10 +1180,10 @@ class RuidaEmulator(Module):
         elif array[0] == 0xF2:
             if array[1] == 0x00:
                 index = array[2]
-                desc = "Element Index (%d)" % (index)
+                desc = "Element Index (%d)" % index
             if array[1] == 0x01:
                 index = array[2]
-                desc = "Element Name Index (%d)" % (index)
+                desc = "Element Name Index (%d)" % index
             if array[1] == 0x02:
                 name = bytes(array[2:12])
                 desc = "Element Name (%s)" % (str(name))
@@ -1218,7 +1218,7 @@ class RuidaEmulator(Module):
                 desc = "Element Array Add (%f,%f)" % (c_x, c_y)
             if array[1] == 0x07:
                 index = array[2]
-                desc = "Element Array Mirror (%d)" % (index)
+                desc = "Element Array Mirror (%d)" % index
         else:
             desc = "Unknown Command!"
 

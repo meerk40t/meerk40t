@@ -407,12 +407,12 @@ class LhystudiosControllerGui(MWindow):
         self.on_check_show_usb_log()
 
     def device_execute(self, control_name):
-        def menu_element(event):
+        def menu_element(event=None):
             self.context.execute(control_name)
 
         return menu_element
 
-    def on_controller_menu(self, event):
+    def on_controller_menu(self, event=None):
         gui = self
         menu = wx.Menu()
         path_scale_sub_menu = wx.Menu()
@@ -520,7 +520,7 @@ class LhystudiosControllerGui(MWindow):
             )
             self.button_device_connect.Disable()
 
-    def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
+    def on_button_start_usb(self, event=None):  # wxGlade: Controller.<event_handler>
         state = self.context.last_signal("pipe;state")
         if state is not None and isinstance(state, tuple):
             state = state[0]
@@ -559,7 +559,7 @@ class LhystudiosControllerGui(MWindow):
         self.text_controller_status.SetValue(str(value))
         if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
 
-            def f(event):
+            def f(event=None):
                 self.context("dev start\n")
                 self.context("dev hold\n")
 
@@ -575,7 +575,7 @@ class LhystudiosControllerGui(MWindow):
             button.Enable(False)
         elif state == STATE_WAIT:
 
-            def f(event):
+            def f(event=None):
                 self.context("dev continue\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
@@ -585,7 +585,7 @@ class LhystudiosControllerGui(MWindow):
             button.Enable(True)
         elif state == STATE_PAUSE:
 
-            def f(event):
+            def f(event=None):
                 self.context("dev resume\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
@@ -595,7 +595,7 @@ class LhystudiosControllerGui(MWindow):
             button.Enable(True)
         elif state == STATE_ACTIVE:
 
-            def f(event):
+            def f(event=None):
                 self.context("dev hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
@@ -605,7 +605,7 @@ class LhystudiosControllerGui(MWindow):
             button.Enable(True)
         elif state == STATE_TERMINATE:
 
-            def f(event):
+            def f(event=None):
                 self.context("dev abort\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
@@ -614,23 +614,23 @@ class LhystudiosControllerGui(MWindow):
             button.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(use_theme=False))
             button.Enable(True)
 
-    def spin_on_device_index(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_index(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.usb_index = int(self.spin_device_index.GetValue())
 
-    def spin_on_device_address(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_address(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.usb_address = int(self.spin_device_address.GetValue())
 
-    def spin_on_device_bus(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_bus(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.usb_bus = int(self.spin_device_bus.GetValue())
 
-    def spin_on_device_version(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_version(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.usb_version = int(self.spin_device_version.GetValue())
 
-    def on_check_mock_usb(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_mock_usb(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.mock = self.checkbox_mock_usb.GetValue()
 
     def on_button_start_controller(
-        self, event
+        self, event=None
     ):  # wxGlade: LhystudiosController.<event_handler>
         print("Event handler 'on_button_start_controller' not implemented!")
         event.Skip()
@@ -656,19 +656,19 @@ class LhystudiosControllerGui(MWindow):
         print("Event handler 'on_menu_usb_release' not implemented!")
         event.Skip()
 
-    def on_menu_pause(self, event):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_pause(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
         try:
             self.context("dev pause\n")
         except AttributeError:
             pass
 
-    def on_menu_stop(self, event):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_stop(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
         try:
             self.context("dev estop\n")
         except AttributeError:
             pass
 
     def on_menu_bufferview(
-        self, event
+        self, event=None
     ):  # wxGlade: LhystudiosController.<event_handler>
         self.context("window open BufferView\n")

@@ -80,7 +80,7 @@ class Planner(Modifier):
         _ = self.context._
         elements = context.elements
         rotary_context = self.context.get_context("rotary/1")
-        bed_dim = self.context.root
+        # bed_dim = self.context.root
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)
@@ -111,7 +111,7 @@ class Planner(Modifier):
             input_type=None,
             output_type=None,
         )
-        def plan_alias(command, channel, _, alias=None, remainder=None, **kwargs):
+        def plan_alias(command, channel, _, alias=None, remainder=None, **kwgs):
             """
             Plan alias allows the user to define a spoolable console command.
             eg. plan-alias export egv_export myfile.egv
@@ -141,7 +141,7 @@ class Planner(Modifier):
             input_type=(None, "ops"),
             output_type="plan",
         )
-        def plan(command, channel, _, data=None, remainder=None, **kwargs):
+        def plan_base(command, channel, _, data=None, remainder=None, **kwgs):
             if len(command) > 4:
                 self._default_plan = command[4:]
                 self.context.signal("plan", self._default_plan, None)
@@ -192,7 +192,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+        def plan_list(command, channel, _, data_type=None, data=None, **kwgs):
             plan, original, commands, name = data
             channel(_("----------"))
             channel(_("Plan:"))
@@ -214,7 +214,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+        def plan_classify(command, channel, _, data_type=None, data=None, **kwgs):
             plan, original, commands, name = data
             elements.classify(list(elements.elems(emphasized=True)), plan, plan.append)
             return data_type, data
@@ -225,7 +225,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+        def plan_copy_selected(command, channel, _, data_type=None, data=None, **kwgs):
             plan, original, commands, name = data
             for c in elements.ops(emphasized=True):
                 try:
@@ -250,7 +250,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+        def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             plan, original, commands, name = data
             operations = elements.get(type="branch ops")
             for c in operations.flat(
@@ -288,7 +288,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(
+        def plan_command(
             command,
             channel,
             _,
@@ -296,7 +296,7 @@ class Planner(Modifier):
             op=None,
             index=None,
             data=None,
-            **kwargs
+            **kwgs
         ):
             plan, original, commands, name = data
             if op is None:
@@ -306,12 +306,12 @@ class Planner(Modifier):
                 return
             try:
                 for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
+                    cmd = self.context.registered[command_name]
                     if index is None:
-                        plan.append(plan_command)
+                        plan.append(cmd)
                     else:
                         try:
-                            plan.insert(index, plan_command)
+                            plan.insert(index, cmd)
                         except ValueError:
                             channel(_("Invalid index for command insert."))
                     break
@@ -329,7 +329,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, op=None, data=None, **kwargs):
+        def plan_append(command, channel, _, data_type=None, op=None, data=None, **kwgs):
             plan, original, commands, name = data
             if op is None:
                 raise SyntaxError
@@ -353,7 +353,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, op=None, data=None, **kwargs):
+        def plan_prepend(command, channel, _, data_type=None, op=None, data=None, **kwgs):
             plan, original, commands, name = data
             if op is None:
                 raise SyntaxError
@@ -373,7 +373,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+        def plan_preprocess(command, channel, _, data_type=None, data=None, **kwgs):
             plan, original, commands, name = data
             rotary_context = self.context.get_context("rotary/1")
             if self.context.prephysicalhome:
@@ -422,8 +422,8 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands, name = data
+        def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
+            # plan, original, commands, name = data
             self.execute()
             self.context.signal("plan", self._default_plan, 3)
             return data_type, data
@@ -434,7 +434,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+        def plan_blob(data_type=None, data=None, **kwgs):
             plan, original, commands, name = data
             for i in range(len(plan)):
                 c = plan[i]
@@ -467,8 +467,8 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands, name = data
+        def plan_preopt(data_type=None, data=None, **kwgs):
+            # plan, original, commands, name = data
             if self.context.opt_reduce_travel:
                 self.conditional_jobadd_optimize_travel()
             elif self.context.opt_inner_first:
@@ -486,8 +486,8 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
-            plan, original, commands, name = data
+        def plan_optimize(data_type=None, data=None, **kwgs):
+            # plan, original, commands, name = data
             self.execute()
             self.context.signal("plan", self._default_plan, 6)
             return data_type, data
@@ -498,7 +498,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(command, channel, _, data_type=None, data=None, **kwargs):
+        def plan_clear(data_type=None, data=None, **kwgs):
             plan, original, commands, name = data
             plan.clear()
             commands.clear()
@@ -522,7 +522,7 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan(
+        def plan_step_repeat(
             command,
             channel,
             _,
@@ -532,7 +532,7 @@ class Planner(Modifier):
             y_distance=None,
             data_type=None,
             data=None,
-            **kwargs
+            **kwgs
         ):
             plan, original, commands, name = data
             if y_distance is None:

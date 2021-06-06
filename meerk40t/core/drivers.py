@@ -90,13 +90,13 @@ class Driver:
     def start_driver(self, origin=None, *args):
         if self._thread is None:
 
-            def clear_thread(*args):
+            def clear_thread(*a):
                 self._shutdown = True
 
             self._thread = self.context.threaded(
                 self._driver_threaded,
                 result=clear_thread,
-                thread_name="Driver(%s)" % (self.context.path),
+                thread_name="Driver(%s)" % self.context.path,
             )
             self._thread.stop = clear_thread
 
@@ -559,7 +559,7 @@ class Drivers(Modifier):
             input_type=(None, "spooler"),
             output_type="driver",
         )
-        def driver(command, channel, _, data=None, new=None, remainder=None, **kwargs):
+        def driver_base(command, channel, _, data=None, new=None, remainder=None, **kwgs):
             spooler = None
             if data is None:
                 if len(command) > 6:
@@ -598,15 +598,15 @@ class Drivers(Modifier):
             input_type="driver",
             output_type="driver",
         )
-        def driver_list(command, channel, _, data_type=None, data=None, **kwargs):
-            driver, name = data
+        def driver_list(command, channel, _, data_type=None, data=None, **kwgs):
+            driver_obj, name = data
             channel(_("----------"))
             channel(_("Driver:"))
             for i, drv in enumerate(self.context.root.match("device", suffix=True)):
                 channel("%d: %s" % (i, drv))
             channel(_("----------"))
             channel(_("Driver %s:" % name))
-            channel(str(driver))
+            channel(str(driver_obj))
             channel(_("----------"))
             return data_type, data
 
@@ -615,7 +615,7 @@ class Drivers(Modifier):
             help=_("list driver types"),
             input_type="driver",
         )
-        def list_type(channel, _, **kwargs):
+        def list_type(channel, _, **kwgs):
             channel(_("----------"))
             channel(_("Drivers permitted:"))
             for i, name in enumerate(context.match("driver/", suffix=True)):
@@ -629,6 +629,6 @@ class Drivers(Modifier):
             output_type="driver",
         )
         def driver_reset(data_type=None, data=None, **kwargs):
-            driver, name = data
-            driver.reset()
+            driver_obj, name = data
+            driver_obj.reset()
             return data_type, data

@@ -345,9 +345,9 @@ class Preferences(MWindow):
 #         x = 0
 #         y = 0
 #         if self.context.home_right:
-#             x = int(self.bed_dim.bed_width * 39.3701)
+#             x = int(self.bed_dim.bed_width * MILS_IN_MM)
 #         if self.context.home_bottom:
-#             y = int(self.bed_dim.bed_height * 39.3701)
+#             y = int(self.bed_dim.bed_height * MILS_IN_MM)
 #         return x, y
 #
 #     def on_combobox_boardtype(self, event):  # wxGlade: Preferences.<event_handler>

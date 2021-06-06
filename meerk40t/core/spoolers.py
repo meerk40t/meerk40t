@@ -1,6 +1,7 @@
 from threading import Lock
 
 from meerk40t.svgelements import Length
+from .elements import MILS_IN_MM
 
 from ..device.lasercommandconstants import *
 from ..kernel import Modifier
@@ -168,7 +169,7 @@ class Spoolers(Modifier):
             output_type="spooler",
         )
         def spool(
-            command, channel, _, data=None, register=False, remainder=None, **kwargs
+            command, channel, _, data=None, register=False, remainder=None, **kwgs
         ):
             root = self.context.root
             if len(command) > 5:
@@ -201,12 +202,12 @@ class Spoolers(Modifier):
             if remainder is None:
                 channel(_("----------"))
                 channel(_("Spoolers:"))
-                for i, d_name in enumerate(self.context.match("device", True)):
-                    channel("%d: %s" % (i, d_name))
+                for d, d_name in enumerate(self.context.match("device", True)):
+                    channel("%d: %s" % (d, d_name))
                 channel(_("----------"))
                 channel(_("Spooler %s:" % device_name))
-                for i, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (i, op_name))
+                for s, op_name in enumerate(spooler.queue):
+                    channel("%d: %s" % (s, op_name))
                 channel(_("----------"))
 
             return "spooler", (spooler, device_name)
@@ -217,16 +218,16 @@ class Spoolers(Modifier):
             input_type="spooler",
             output_type="spooler",
         )
-        def spooler_list(command, channel, _, data_type=None, data=None, **kwargs):
+        def spooler_list(command, channel, _, data_type=None, data=None, **kwgs):
             spooler, device_name = data
             channel(_("----------"))
             channel(_("Spoolers:"))
-            for i, d_name in enumerate(self.context.match("device", True)):
-                channel("%d: %s" % (i, d_name))
+            for d, d_name in enumerate(self.context.match("device", True)):
+                channel("%d: %s" % (d, d_name))
             channel(_("----------"))
             channel(_("Spooler %s:" % device_name))
-            for i, op_name in enumerate(spooler.queue):
-                channel("%d: %s" % (i, op_name))
+            for s, op_name in enumerate(spooler.queue):
+                channel("%d: %s" % (s, op_name))
             channel(_("----------"))
             return data_type, data
 
@@ -238,7 +239,7 @@ class Spoolers(Modifier):
             output_type="spooler",
         )
         def spooler_send(
-            command, channel, _, data_type=None, op=None, data=None, **kwargs
+            command, channel, _, data_type=None, op=None, data=None, **kwgs
         ):
             spooler, device_name = data
             if op is None:
@@ -259,17 +260,17 @@ class Spoolers(Modifier):
             input_type="spooler",
             output_type="spooler",
         )
-        def spooler_clear(command, channel, _, data_type=None, data=None, **kwargs):
+        def spooler_clear(command, channel, _, data_type=None, data=None, **kwgs):
             spooler, device_name = data
             spooler.clear_queue()
             return data_type, data
 
         def execute_absolute_position(position_x, position_y):
             x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
+                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
             )
             y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
+                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
             )
 
             def move():
@@ -281,10 +282,10 @@ class Spoolers(Modifier):
 
         def execute_relative_position(position_x, position_y):
             x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
+                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
             )
             y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
+                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
             )
 
             def move():
@@ -302,7 +303,7 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("turn laser on in place"),
         )
-        def plus_laser(data, **kwargs):
+        def plus_laser(data, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
@@ -316,7 +317,7 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("turn laser off in place"),
         )
-        def minus_laser(data, **kwargs):
+        def minus_laser(data, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
@@ -332,14 +333,14 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("cmd <amount>"),
         )
-        def direction(command, channel, _, data=None, amount=None, **kwargs):
+        def direction(command, channel, _, data=None, amount=None, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
             if amount is None:
                 amount = Length("1mm")
-            max_bed_height = bed_dim.bed_height * 39.3701
-            max_bed_width = bed_dim.bed_width * 39.3701
+            max_bed_height = bed_dim.bed_height * MILS_IN_MM
+            max_bed_width = bed_dim.bed_width * MILS_IN_MM
             if not hasattr(spooler, "_dx"):
                 spooler._dx = 0
             if not hasattr(spooler, "_dy"):
@@ -362,7 +363,7 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("executes outstanding jog buffer"),
         )
-        def jog(command, channel, _, data, **kwargs):
+        def jog(command, channel, _, data, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
@@ -389,7 +390,7 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("move <x> <y>: move to position."),
         )
-        def move(channel, _, x, y, data=None, **kwargs):
+        def move(channel, _, x, y, data=None, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
@@ -407,7 +408,7 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("move_relative <dx> <dy>"),
         )
-        def move_relative(channel, _, dx, dy, data=None, **kwargs):
+        def move_relative(channel, _, dx, dy, data=None, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
@@ -425,13 +426,13 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("home the laser"),
         )
-        def home(x=None, y=None, data=None, **kwargs):
+        def home(x=None, y=None, data=None, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
             if x is not None and y is not None:
-                x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701)
-                y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701)
+                x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
+                y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
                 spooler.job(COMMAND_HOME, int(x), int(y))
                 return "spooler", data
             spooler.job(COMMAND_HOME)
@@ -443,7 +444,7 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("unlock the rail"),
         )
-        def unlock(data=None, **kwargs):
+        def unlock(data=None, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
@@ -456,7 +457,7 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("lock the rail"),
         )
-        def lock(data, **kwargs):
+        def lock(data, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data

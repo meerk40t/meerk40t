@@ -133,12 +133,12 @@ class ImageProperty(MWindow):
         self.Centre()
         # end wxGlade
 
-    def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
+    def on_spin_step(self, event=None):  # wxGlade: ElementProperty.<event_handler>
         self.element.values["raster_step"] = self.spin_step_size.GetValue()
         self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
         self.update_step_image()
 
-    def on_combo_dpi(self, event):  # wxGlade: ImageProperty.<event_handler>
+    def on_combo_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
         self.spin_step_size.SetValue(self.combo_dpi.GetSelection() + 1)
         self.element.values["raster_step"] = self.spin_step_size.GetValue()
         self.update_step_image()

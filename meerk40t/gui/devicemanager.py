@@ -151,7 +151,7 @@ class DeviceManager(MWindow):
         self.context("device activate %s\n" % uid)
         self.context("timer 1 0.2 window close DeviceManager\n")
 
-    def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
+    def on_button_new(self, event=None):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         if item == -1:
             return
@@ -256,7 +256,7 @@ class DeviceManager(MWindow):
         self.refresh_device_list()
         self.context.get_context("devices").flush()
 
-    def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
+    def on_button_remove(self, event=None):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         if item == -1:
             return

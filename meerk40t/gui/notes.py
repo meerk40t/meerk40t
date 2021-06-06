@@ -58,10 +58,10 @@ class Notes(MWindow):
         self.Layout()
         # end wxGlade
 
-    def on_check_auto_note_open(self, event):  # wxGlade: Notes.<event_handler>
+    def on_check_auto_note_open(self, event=None):  # wxGlade: Notes.<event_handler>
         self.context.auto_note = self.check_auto_open_notes.GetValue()
 
-    def on_text_notes(self, event):  # wxGlade: Notes.<event_handler>
+    def on_text_notes(self, event=None):  # wxGlade: Notes.<event_handler>
         if len(self.text_notes.GetValue()) == 0:
             self.context.elements.note = None
         else:

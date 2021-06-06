@@ -478,7 +478,6 @@ class GraphWalker:
         index = 0
         ie = len(self.walk)
         while index < ie:
-            segment = None
             try:
                 segment = self.walk[index + 1]
             except IndexError:
@@ -492,7 +491,6 @@ class GraphWalker:
             index += 2
 
     def remove_scaffold_ends_in_range(self, start, end):
-        current = end - start
         new_end = end
         limit = start + 2
         while new_end >= limit:
@@ -512,7 +510,6 @@ class GraphWalker:
                 if new_start == start:
                     break
                 del self.walk[start:new_start]
-                start = new_start
                 break
             new_start += 2
 
@@ -521,7 +518,6 @@ class GraphWalker:
         end = len(self.walk) - 1
         index = end
         while index >= 0:
-            segment = None
             try:
                 segment = self.walk[index - 1]
             except IndexError:
@@ -642,7 +638,6 @@ class GraphWalker:
                         # Only skippable nodes existed before returned to original node, so skip that loop.
                         value += (k - j) * 10
                         j = k
-                        j_node = k_node
                         j_segment = k_segment
                         break
             if j_segment.value == "SCAFFOLD":
@@ -705,7 +700,7 @@ class VectorMontonizer:
             except ZeroDivisionError:
                 m = float("inf")
 
-            b = low.y - (m * low.x)
+            # b = low.y - (m * low.x)
             if self.valid_low_value > high.y:
                 continue  # Cluster before range.
             if self.valid_high_value < low.y:

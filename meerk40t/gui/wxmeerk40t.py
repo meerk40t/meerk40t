@@ -188,8 +188,7 @@ def plugin(kernel, lifecycle):
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
-
-    if lifecycle == "preregister":
+    elif lifecycle == "preregister":
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root = kernel.root
         kernel_root.open("module/wxMeerK40t")
@@ -684,7 +683,7 @@ class MeerK40t(MWindow):
         # Define Pause.
         pause = wx.BitmapButton(self, wx.ID_ANY, icons8_pause_50.GetBitmap())
 
-        def on_pause_button(e=None):
+        def on_pause_button(event=None):
             try:
                 self.context("dev pause\n")
                 # if self.pipe_state != 3:
@@ -896,8 +895,6 @@ class MeerK40t(MWindow):
 
     def __kernel_initialize(self, context):
         context.gui = self
-        context._reticle_x = 0
-        context._reticle_y = 0
         context.setting(int, "draw_mode", 0)
         context.setting(float, "units_convert", MILS_IN_MM)
         context.setting(str, "units_name", "mm")
@@ -978,7 +975,7 @@ class MeerK40t(MWindow):
         context.register("control/egv import", self.egv_import)
 
         @context.console_command("theme", help=_("Theming information and assignments"))
-        def theme(command, channel, _, args=tuple(), **kwargs):
+        def theme(command, channel, _, **kwargs):
             channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
 
         @context.console_command("rotaryview", help=_("Rotary View of Scene"))
@@ -1036,7 +1033,7 @@ class MeerK40t(MWindow):
 
         @context.console_argument("tool", help=_("tool to use."))
         @context.console_command("tool", help=_("sets a particular tool for the scene"))
-        def tool(command, channel, _, tool=None, **kwargs):
+        def tool_base(command, channel, _, tool=None, **kwargs):
             if tool is None:
                 channel(_("Tools:"))
                 channel("none")
@@ -1074,7 +1071,7 @@ class MeerK40t(MWindow):
             self.wxtree,
         )
 
-    def ribbon_bar_toggle(self, event):
+    def ribbon_bar_toggle(self, event=None):
         pane = self._mgr.GetPane("ribbon")
         if pane.name == "ribbon":
             self.ribbonbar_caption_visible = not self.ribbonbar_caption_visible
@@ -1712,14 +1709,14 @@ class MeerK40t(MWindow):
 
         self.panes_menu = wx.Menu()
 
-        def toggle_pane(p):
-            def toggle(event):
-                pane = self._mgr.GetPane(p)
-                if pane.IsShown():
-                    pane.Hide()
+        def toggle_pane(pane_toggle):
+            def toggle(event=None):
+                pane_obj = self._mgr.GetPane(pane_toggle)
+                if pane_obj.IsShown():
+                    pane_obj.Hide()
                     self._mgr.Update()
                     return
-                self.aui_open_pane(p)
+                self.aui_open_pane(pane_toggle)
 
             return toggle
 
@@ -2149,10 +2146,6 @@ class MeerK40t(MWindow):
 
     def on_active_change(self, origin, active):
         self.__set_titlebar()
-        _, driver, _ = self.root_context.device()
-        if driver is not None:
-            self.context._reticle_x = driver.current_x
-            self.context._reticle_y = driver.current_y
 
     def window_close(self):
         context = self.context
@@ -2377,18 +2370,18 @@ class MeerK40t(MWindow):
         Loads an open dialog at given filename to load data.
         """
         files = self.context.load_types()
-        defaultFile = os.path.basename(filename)
-        defaultDir = os.path.dirname(filename)
+        default_file = os.path.basename(filename)
+        default_dir = os.path.dirname(filename)
 
         with wx.FileDialog(
             self,
             _("Open"),
-            defaultDir=defaultDir,
-            defaultFile=defaultFile,
+            defaultDir=default_dir,
+            defaultFile=default_file,
             wildcard=files,
             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
         ) as fileDialog:
-            fileDialog.SetFilename(defaultFile)
+            fileDialog.SetFilename(default_file)
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
             pathname = fileDialog.GetPath()
@@ -2654,141 +2647,141 @@ class MeerK40t(MWindow):
         # self.combo_box_units.SetSelection(self.ribbon_position_units)
         # self.ribbon_position_ignore_update = False
 
-    def on_text_x(self, event):  # wxGlade: MyFrame.<event_handler>
-        if self.ribbon_position_ignore_update:
-            return
-        try:
-            if self.ribbon_position_units != 4:
-                self.ribbon_position_x = float(self.text_x.GetValue())
-        except ValueError:
-            pass
+    # def on_text_x(self, event):  # wxGlade: MyFrame.<event_handler>
+    #     if self.ribbon_position_ignore_update:
+    #         return
+    #     try:
+    #         if self.ribbon_position_units != 4:
+    #             self.ribbon_position_x = float(self.text_x.GetValue())
+    #     except ValueError:
+    #         pass
+    #
+    # def on_text_y(self, event):  # wxGlade: MyFrame.<event_handler>
+    #     if self.ribbon_position_ignore_update:
+    #         return
+    #     try:
+    #         if self.ribbon_position_units != 4:
+    #             self.ribbon_position_y = float(self.text_y.GetValue())
+    #     except ValueError:
+    #         pass
 
-    def on_text_y(self, event):  # wxGlade: MyFrame.<event_handler>
-        if self.ribbon_position_ignore_update:
-            return
-        try:
-            if self.ribbon_position_units != 4:
-                self.ribbon_position_y = float(self.text_y.GetValue())
-        except ValueError:
-            pass
+    # def on_text_w(self, event):  # wxGlade: MyFrame.<event_handler>
+    #     if self.ribbon_position_ignore_update:
+    #         return
+    #     try:
+    #         new = float(self.text_w.GetValue())
+    #         old = self.ribbon_position_w
+    #         if self.ribbon_position_units == 4:
+    #             ratio = new / 100.0
+    #             if self.ribbon_position_aspect_ratio:
+    #                 self.ribbon_position_ignore_update = True
+    #                 self.text_h.SetValue("%.2f" % (ratio * 100))
+    #                 self.ribbon_position_ignore_update = False
+    #         else:
+    #             ratio = new / old
+    #             if self.ribbon_position_aspect_ratio:
+    #                 self.ribbon_position_ignore_update = True
+    #                 self.text_h.SetValue("%.2f" % (self.ribbon_position_h * ratio))
+    #                 self.ribbon_position_ignore_update = False
+    #     except (ValueError, ZeroDivisionError):
+    #         pass
 
-    def on_text_w(self, event):  # wxGlade: MyFrame.<event_handler>
-        if self.ribbon_position_ignore_update:
-            return
-        try:
-            new = float(self.text_w.GetValue())
-            old = self.ribbon_position_w
-            if self.ribbon_position_units == 4:
-                ratio = new / 100.0
-                if self.ribbon_position_aspect_ratio:
-                    self.ribbon_position_ignore_update = True
-                    self.text_h.SetValue("%.2f" % (ratio * 100))
-                    self.ribbon_position_ignore_update = False
-            else:
-                ratio = new / old
-                if self.ribbon_position_aspect_ratio:
-                    self.ribbon_position_ignore_update = True
-                    self.text_h.SetValue("%.2f" % (self.ribbon_position_h * ratio))
-                    self.ribbon_position_ignore_update = False
-        except (ValueError, ZeroDivisionError):
-            pass
+    # def on_button_aspect_ratio(self, event):  # wxGlade: MyFrame.<event_handler>
+    #     if self.ribbon_position_ignore_update:
+    #         return
+    #     if self.ribbon_position_aspect_ratio:
+    #         self.button_aspect_ratio.SetBitmap(icons8_padlock_50.GetBitmap())
+    #     else:
+    #         self.button_aspect_ratio.SetBitmap(icons8_lock_50.GetBitmap())
+    #     self.ribbon_position_aspect_ratio = not self.ribbon_position_aspect_ratio
 
-    def on_button_aspect_ratio(self, event):  # wxGlade: MyFrame.<event_handler>
-        if self.ribbon_position_ignore_update:
-            return
-        if self.ribbon_position_aspect_ratio:
-            self.button_aspect_ratio.SetBitmap(icons8_padlock_50.GetBitmap())
-        else:
-            self.button_aspect_ratio.SetBitmap(icons8_lock_50.GetBitmap())
-        self.ribbon_position_aspect_ratio = not self.ribbon_position_aspect_ratio
+    # def on_text_h(self, event):  # wxGlade: MyFrame.<event_handler>
+    #     if self.ribbon_position_ignore_update:
+    #         return
+    #     try:
+    #         new = float(self.text_h.GetValue())
+    #         old = self.ribbon_position_h
+    #         if self.ribbon_position_units == 4:
+    #             if self.ribbon_position_aspect_ratio:
+    #                 self.ribbon_position_ignore_update = True
+    #                 self.text_w.SetValue("%.2f" % new)
+    #                 self.ribbon_position_ignore_update = False
+    #         else:
+    #             if self.ribbon_position_aspect_ratio:
+    #                 self.ribbon_position_ignore_update = True
+    #                 self.text_w.SetValue(
+    #                     "%.2f" % (self.ribbon_position_w * (new / old))
+    #                 )
+    #                 self.ribbon_position_ignore_update = False
+    #     except (ValueError, ZeroDivisionError):
+    #         pass
+    #
+    # def on_text_dim_enter(self, event):
+    #     if self.ribbon_position_units == 4:
+    #         ratio_w = float(self.text_w.GetValue()) / 100.0
+    #         ratio_h = float(self.text_h.GetValue()) / 100.0
+    #         self.ribbon_position_w *= ratio_w
+    #         self.ribbon_position_h *= ratio_h
+    #     else:
+    #         w = float(self.text_w.GetValue())
+    #         h = float(self.text_h.GetValue())
+    #         self.ribbon_position_w = w
+    #         self.ribbon_position_h = h
+    #     self.context(
+    #         "resize %f%s %f%s %f%s %f%s\n"
+    #         % (
+    #             self.ribbon_position_x,
+    #             self.ribbon_position_name,
+    #             self.ribbon_position_y,
+    #             self.ribbon_position_name,
+    #             self.ribbon_position_w,
+    #             self.ribbon_position_name,
+    #             self.ribbon_position_h,
+    #             self.ribbon_position_name,
+    #         )
+    #     )
+    #     self.update_ribbon_position()
+    #
+    # def on_text_pos_enter(self, event):
+    #     if self.ribbon_position_units == 4:
+    #         ratio_x = float(self.text_x.GetValue()) / 100.0
+    #         ratio_y = float(self.text_y.GetValue()) / 100.0
+    #         self.ribbon_position_x *= ratio_x
+    #         self.ribbon_position_y *= ratio_y
+    #     else:
+    #         x = float(self.text_x.GetValue())
+    #         y = float(self.text_y.GetValue())
+    #         self.ribbon_position_x = x
+    #         self.ribbon_position_y = y
+    #     self.context(
+    #         "resize %f%s %f%s %f%s %f%s\n"
+    #         % (
+    #             self.ribbon_position_x,
+    #             self.ribbon_position_name,
+    #             self.ribbon_position_y,
+    #             self.ribbon_position_name,
+    #             self.ribbon_position_w,
+    #             self.ribbon_position_name,
+    #             self.ribbon_position_h,
+    #             self.ribbon_position_name,
+    #         )
+    #     )
+    #     self.update_ribbon_position()
+    #
+    # def on_combo_box_units(self, event):  # wxGlade: MyFrame.<event_handler>
+    #     if self.ribbon_position_ignore_update:
+    #         return
+    #     self.ribbon_position_units = self.combo_box_units.GetSelection()
+    #     self.update_ribbon_position()
 
-    def on_text_h(self, event):  # wxGlade: MyFrame.<event_handler>
-        if self.ribbon_position_ignore_update:
-            return
-        try:
-            new = float(self.text_h.GetValue())
-            old = self.ribbon_position_h
-            if self.ribbon_position_units == 4:
-                if self.ribbon_position_aspect_ratio:
-                    self.ribbon_position_ignore_update = True
-                    self.text_w.SetValue("%.2f" % (new))
-                    self.ribbon_position_ignore_update = False
-            else:
-                if self.ribbon_position_aspect_ratio:
-                    self.ribbon_position_ignore_update = True
-                    self.text_w.SetValue(
-                        "%.2f" % (self.ribbon_position_w * (new / old))
-                    )
-                    self.ribbon_position_ignore_update = False
-        except (ValueError, ZeroDivisionError):
-            pass
-
-    def on_text_dim_enter(self, event):
-        if self.ribbon_position_units == 4:
-            ratio_w = float(self.text_w.GetValue()) / 100.0
-            ratio_h = float(self.text_h.GetValue()) / 100.0
-            self.ribbon_position_w *= ratio_w
-            self.ribbon_position_h *= ratio_h
-        else:
-            w = float(self.text_w.GetValue())
-            h = float(self.text_h.GetValue())
-            self.ribbon_position_w = w
-            self.ribbon_position_h = h
-        self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
-            % (
-                self.ribbon_position_x,
-                self.ribbon_position_name,
-                self.ribbon_position_y,
-                self.ribbon_position_name,
-                self.ribbon_position_w,
-                self.ribbon_position_name,
-                self.ribbon_position_h,
-                self.ribbon_position_name,
-            )
-        )
-        self.update_ribbon_position()
-
-    def on_text_pos_enter(self, event):
-        if self.ribbon_position_units == 4:
-            ratio_x = float(self.text_x.GetValue()) / 100.0
-            ratio_y = float(self.text_y.GetValue()) / 100.0
-            self.ribbon_position_x *= ratio_x
-            self.ribbon_position_y *= ratio_y
-        else:
-            x = float(self.text_x.GetValue())
-            y = float(self.text_y.GetValue())
-            self.ribbon_position_x = x
-            self.ribbon_position_y = y
-        self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
-            % (
-                self.ribbon_position_x,
-                self.ribbon_position_name,
-                self.ribbon_position_y,
-                self.ribbon_position_name,
-                self.ribbon_position_w,
-                self.ribbon_position_name,
-                self.ribbon_position_h,
-                self.ribbon_position_name,
-            )
-        )
-        self.update_ribbon_position()
-
-    def on_combo_box_units(self, event):  # wxGlade: MyFrame.<event_handler>
-        if self.ribbon_position_ignore_update:
-            return
-        self.ribbon_position_units = self.combo_box_units.GetSelection()
-        self.update_ribbon_position()
-
-    def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         context = self.context
         self.working_file = None
         context.elements.clear_all()
         self.laserpath_widget.clear_laserpath()
         self.request_refresh()
 
-    def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
         files = self.context.load_types()
         with wx.FileDialog(
@@ -2799,10 +2792,10 @@ class MeerK40t(MWindow):
             pathname = fileDialog.GetPath()
             self.load(pathname)
 
-    def on_click_stop(self, event):
+    def on_click_stop(self, event=None):
         self.context("estop\n")
 
-    def on_click_pause(self, event):
+    def on_click_pause(self, event=None):
         self.context("pause\n")
 
     def on_click_save(self, event):
@@ -2812,7 +2805,7 @@ class MeerK40t(MWindow):
             self.save_recent(self.working_file)
             self.context.save(self.working_file)
 
-    def on_click_save_as(self, event):
+    def on_click_save_as(self, event=None):
         files = self.context.save_types()
         with wx.FileDialog(
             self,
@@ -2829,13 +2822,13 @@ class MeerK40t(MWindow):
             self.working_file = pathname
             self.save_recent(self.working_file)
 
-    def on_click_exit(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def on_click_exit(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         try:
             self.Close()
         except RuntimeError:
             pass
 
-    def on_click_zoom_out(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def on_click_zoom_out(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoomout button press
         """
@@ -2845,7 +2838,7 @@ class MeerK40t(MWindow):
         )
         self.request_refresh()
 
-    def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def on_click_zoom_in(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoomin button press
         """
@@ -2855,7 +2848,7 @@ class MeerK40t(MWindow):
         )
         self.request_refresh()
 
-    def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def on_click_zoom_size(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoom size button press.
         """
@@ -2879,7 +2872,7 @@ class MeerK40t(MWindow):
         :return: Toggle function.
         """
 
-        def toggle(event):
+        def toggle(event=None):
             self.context.draw_mode ^= bits
             self.context.signal("draw_mode", self.context.draw_mode)
             self.request_refresh()
@@ -2942,7 +2935,7 @@ class MeerK40t(MWindow):
                     _("Non-Useful Matrix."),
                     wx.OK | wx.ICON_WARNING,
                 )
-                result = dlg.ShowModal()
+                dlg.ShowModal()
                 dlg.Destroy()
             else:
                 for element in root_context.elements.elems():
@@ -3006,9 +2999,8 @@ class MeerK40t(MWindow):
             p = self.context
             root_context = p.root
             bed_dim = root_context
-            context = p
             wmils = bed_dim.bed_width * MILS_IN_MM
-            hmils = bed_dim.bed_height * MILS_IN_MM
+            # hmils = bed_dim.bed_height * MILS_IN_MM
             length = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=wmils)
             mx = Matrix()
             mx.post_scale(-1.0, 1, length / 2.0, 0)
@@ -3034,7 +3026,6 @@ class MeerK40t(MWindow):
         dlg.Destroy()
 
     def egv_import(self):
-        pathname = None
         files = "*.egv"
         with wx.FileDialog(
             self,
@@ -3052,7 +3043,6 @@ class MeerK40t(MWindow):
             return
 
     def egv_export(self):
-        pathname = None
         files = "*.egv"
         with wx.FileDialog(
             self, _("Export EGV"), wildcard=files, style=wx.FD_SAVE
@@ -3708,7 +3698,7 @@ class ShadowTree:
         def menu_functions(f, node):
             func_dict = dict(f.func_dict)
 
-            def specific(event):
+            def specific(event=None):
                 f(node, **func_dict)
 
             return specific
@@ -3935,7 +3925,7 @@ class wxMeerK40t(wx.App, Module):
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
 
-    def on_app_close(self, event):
+    def on_app_close(self, event=None):
         try:
             if self.context is not None:
                 self.context("quit\n")
@@ -4034,7 +4024,7 @@ class wxMeerK40t(wx.App, Module):
         @kernel.console_command(
             "window", output_type="window", help=_("Base window command")
         )
-        def window(channel, _, path=None, remainder=None, **kwargs):
+        def window_base(channel, _, path=None, remainder=None, **kwargs):
             """
             Opens a MeerK40t window or provides information. This command is restricted to use with the wxMeerK40t gui.
             This also allows use of a -p flag that sets the context path for this window to operate at. This should
@@ -4072,7 +4062,7 @@ class wxMeerK40t(wx.App, Module):
             output_type="window",
             help=_("List available windows."),
         )
-        def window(channel, _, data, **kwargs):
+        def window_list(channel, _, data, **kwargs):
             channel(_("----------"))
             channel(_("Windows Registered:"))
             for i, name in enumerate(context.match("window")):
@@ -4110,7 +4100,7 @@ class wxMeerK40t(wx.App, Module):
             input_type="window",
             help=_("open/toggle the supplied window"),
         )
-        def window(
+        def window_open(
             command,
             channel,
             _,
@@ -4187,7 +4177,7 @@ class wxMeerK40t(wx.App, Module):
             output_type="window",
             help=_("close the supplied window"),
         )
-        def window(channel, _, data, window=None, args=(), **kwargs):
+        def window_close(channel, _, data, window=None, args=(), **kwargs):
             path = data
             try:
                 parent = context.gui if hasattr(context, "gui") else None
@@ -4207,7 +4197,7 @@ class wxMeerK40t(wx.App, Module):
             output_type="window",
             help=_("reset the supplied window, or '*' for all windows"),
         )
-        def window(channel, _, data, window=None, **kwargs):
+        def window_reset(channel, _, data, window=None, **kwargs):
             if kernel._config is not None:
                 for context in list(kernel.contexts):
                     if context.startswith("window"):
@@ -4215,7 +4205,7 @@ class wxMeerK40t(wx.App, Module):
                 kernel._config.DeleteGroup("window")
 
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
-        def refresh(command, channel, _, args=tuple(), **kwargs):
+        def scene_refresh(command, channel, _, **kwargs):
             context.signal("refresh_scene")
             context.signal("rebuild_tree")
             channel(_("Refreshed."))

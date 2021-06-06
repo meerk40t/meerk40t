@@ -1,5 +1,8 @@
+from meerk40t.core.elements import MILS_IN_MM
 from meerk40t.svgelements import Angle, Length, Matrix, Path, Polyline, Shape
 from meerk40t.tools.pathtools import EulerianFill
+
+MILS_PER_MM = 39.3701
 
 
 def plugin(kernel, lifecycle):
@@ -15,14 +18,14 @@ def plugin(kernel, lifecycle):
         )
         @context.console_command("embroider", help=_("embroider <angle> <distance>"))
         def embroider(
-            command, channel, _, angle=None, distance=None, args=tuple(), **kwargs
+            command, channel, _, angle=None, distance=None, **kwargs
         ):
             bed_dim = context.root
             elements = context.elements
             channel(_("Embroidery Filling"))
             if distance is not None:
                 distance = distance.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
                 )
             else:
                 distance = 16

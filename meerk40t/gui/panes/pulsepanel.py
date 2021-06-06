@@ -53,9 +53,9 @@ class PulsePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def on_button_navigate_pulse(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_pulse(self, event=None):  # wxGlade: Navigation.<event_handler>
         value = self.spin_pulse_duration.GetValue()
         self.context("pulse %f\n" % value)
 
-    def on_spin_pulse_duration(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_spin_pulse_duration(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context.navigate_pulse = float(self.spin_pulse_duration.GetValue())

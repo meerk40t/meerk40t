@@ -79,7 +79,7 @@ class Keymap(MWindow):
         menu.Destroy()
 
     def on_tree_popup_clear(self, element):
-        def delete(event):
+        def delete(event=None):
             self.context.default_keymap()
             self.list_keymap.DeleteAllItems()
             self.reload_keymap()
@@ -87,7 +87,7 @@ class Keymap(MWindow):
         return delete
 
     def on_tree_popup_delete(self, element):
-        def delete(event):
+        def delete(event=None):
             try:
                 del self.context.keymap[element]
                 self.list_keymap.DeleteAllItems()
@@ -106,7 +106,7 @@ class Keymap(MWindow):
             if m != -1:
                 self.list_keymap.SetItem(m, 1, str(value))
 
-    def on_button_add_hotkey(self, event):  # wxGlade: Keymap.<event_handler>
+    def on_button_add_hotkey(self, event=None):  # wxGlade: Keymap.<event_handler>
         keystroke = self.text_key_name.GetValue()
         if len(keystroke) == 0:
             dlg = wx.MessageDialog(

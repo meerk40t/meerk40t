@@ -84,7 +84,7 @@ def plugin(kernel, lifecycle=None):
             return "dev", (spooler, input_driver, output)
 
         @kernel.console_command(".+", regex=True, hidden=True)
-        def virtual_dev(command, channel, _, remainder=None, **kwargs):
+        def virtual_dev(command, remainder=None, **kwargs):
             try:
                 spooler, input_driver, output = root.registered[
                     "device/%s" % root.active
@@ -131,7 +131,7 @@ def plugin(kernel, lifecycle=None):
             input_type="device",
             output_type="device",
         )
-        def device(channel, _, index, **kwargs):
+        def device(index, **kwargs):
             root.active = str(index)
             root.signal("active", index)
             return "device", (None, str(index))
@@ -160,7 +160,7 @@ def plugin(kernel, lifecycle=None):
             input_type="device",
             output_type="device",
         )
-        def list(channel, _, data, **kwargs):
+        def list_devices(channel, _, data, **kwargs):
             device_context = kernel.get_context("devices")
             channel(_("----------"))
             channel(_("Devices:"))

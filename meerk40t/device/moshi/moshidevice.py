@@ -30,6 +30,8 @@ from ..basedevice import (
     PLOT_SETTING,
 )
 
+MILS_IN_MM = 39.3701
+
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING
 
@@ -345,7 +347,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "usb_disconnect", input_type="moshi", help=_("Disconnect USB")
         )
-        def usb_disconnect(command, channel, _, data=None, args=tuple(), **kwargs):
+        def usb_disconnect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             if output.connection is not None:
                 output.close()
@@ -355,14 +357,14 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "start", input_type="moshi", help=_("Start Pipe to Controller")
         )
-        def pipe_start(command, channel, _, data=None, args=tuple(), **kwargs):
+        def pipe_start(command, channel, _, data=None,  **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel("Moshi Channel Started.")
 
         @context.console_command("hold", input_type="moshi", help=_("Hold Controller"))
-        def pipe_pause(command, channel, _, data=None, args=tuple(), **kwargs):
+        def pipe_pause(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_PAUSE)
             output.pause()
@@ -371,14 +373,14 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "resume", input_type="moshi", help=_("Resume Controller")
         )
-        def pipe_resume(command, channel, _, data=None, args=tuple(), **kwargs):
+        def pipe_resume(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
             channel(_("Moshi Channel Resumed."))
 
         @context.console_command("abort", input_type="moshi", help=_("Abort Job"))
-        def pipe_abort(command, channel, _, data=None, args=tuple(), **kwargs):
+        def pipe_abort(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.reset()
             channel(_("Moshi Channel Aborted."))
@@ -798,9 +800,9 @@ class MoshiDriver(Driver, Modifier):
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if self.context.home_right:
-            x += int(bed_dim.bed_width * 39.3701)
+            x += int(bed_dim.bed_width * MILS_IN_MM)
         if self.context.home_bottom:
-            y += int(bed_dim.bed_height * 39.3701)
+            y += int(bed_dim.bed_height * MILS_IN_MM)
         return x, y
 
     def home(self, *values):
@@ -1016,7 +1018,7 @@ class MoshiController(Module):
         if self._thread is None or not self._thread.is_alive():
             self._thread = self.context.threaded(
                 self._thread_data_send,
-                thread_name="MoshiPipe(%s)" % (self.context.path),
+                thread_name="MoshiPipe(%s)" % self.context.path,
                 result=self.stop,
             )
             self.update_state(STATE_INITIALIZE)

@@ -18,7 +18,7 @@ from .scene.scenewidgets import GridWidget
 
 _ = wx.GetTranslation
 
-MILS_PER_MM = 39.3701
+MILS_IN_MM = 39.3701
 
 
 class Simulation(MWindow, Job):
@@ -246,16 +246,16 @@ class Simulation(MWindow, Job):
         bbox = (
             0,
             0,
-            self.bed_dim.bed_width * MILS_PER_MM,
-            self.bed_dim.bed_height * MILS_PER_MM,
+            self.bed_dim.bed_width * MILS_IN_MM,
+            self.bed_dim.bed_height * MILS_IN_MM,
         )
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
         travel = self.cutcode.length_travel()
         cuts = self.cutcode.length_cut()
-        travel /= MILS_PER_MM
-        cuts /= MILS_PER_MM
+        travel /= MILS_IN_MM
+        cuts /= MILS_IN_MM
         self.text_distance_travel.SetValue("%.2fmm" % travel)
         self.text_distance_laser.SetValue("%.2fmm" % cuts)
         self.text_distance_total.SetValue("%.2fmm" % (travel + cuts))
@@ -331,7 +331,7 @@ class Simulation(MWindow, Job):
         self.context.unschedule(self)
         self.running = False
 
-    def on_button_play(self, event):  # wxGlade: Simulation.<event_handler>
+    def on_button_play(self, event=None):  # wxGlade: Simulation.<event_handler>
         if self.running:
             self._stop()
             return
@@ -349,11 +349,11 @@ class Simulation(MWindow, Job):
             self.context.signal("refresh_scene")
         self.slider_progress.SetValue(self.progress)
 
-    def on_slider_playback(self, event):  # wxGlade: Simulation.<event_handler>
+    def on_slider_playback(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.interval = 0.1 * 100.0 / float(self.slider_playbackspeed.GetValue())
         self.text_playback_speed.SetValue("%d%%" % self.slider_playbackspeed.GetValue())
 
-    def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
+    def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
         self.available_devices = [
             self.context.registered[i] for i in self.context.match("device")
         ]
@@ -367,7 +367,7 @@ class Simulation(MWindow, Job):
             str(i) for i in self.context.match("device", suffix=True)
         ][index]
 
-    def on_button_spool(self, event):  # wxGlade: Simulation.<event_handler>
+    def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
         self.context("window close Simulation\n")
 

@@ -28,11 +28,10 @@ class BindAlias(Modifier):
         self.context.default_alias = self.default_alias
 
         @self.context.console_command("bind", help=_("bind <key> <console command>"))
-        def bind(command, channel, _, **kwargs):
+        def bind(command, channel, _, args=tuple(), **kwgs):
             """
             Binds a key to a given keyboard keystroke.
             """
-            args = kwargs.get("args", tuple())
             context = self.context
             _ = self.context._
             if len(args) == 0:
@@ -80,7 +79,7 @@ class BindAlias(Modifier):
         @self.context.console_command(
             "alias", help=_("alias <alias> <console commands[;console command]*>")
         )
-        def alias(command, channel, _, args=tuple(), **kwargs):
+        def alias(command, channel, _, args=tuple(), **kwgs):
             context = self.context
             _ = self.context._
             if len(args) == 0:
@@ -88,7 +87,7 @@ class BindAlias(Modifier):
                 channel(_("Aliases:"))
                 for i, key in enumerate(context.alias):
                     value = context.alias[key]
-                    channel(("%d: %s %s") % (i, key.ljust(15), value))
+                    channel("%d: %s %s" % (i, key.ljust(15), value))
                 channel(_("----------"))
             else:
                 key = args[0].lower()
@@ -101,7 +100,7 @@ class BindAlias(Modifier):
             return
 
         @self.context.console_command(".*", regex=True, hidden=True)
-        def alias_execute(command, channel, _, args=tuple(), **kwargs):
+        def alias_execute(command, **kwgs):
             context = self.context
             if command in self.alias:
                 aliased_command = self.alias[command]

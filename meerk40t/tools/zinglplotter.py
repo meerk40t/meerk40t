@@ -52,7 +52,7 @@ class ZinglPlotter:
         for i in range(0, arc_required):
             next_t = current_t + slice
 
-            alpha = sin(slice) * (sqrt(4 + 3 * pow(tan((slice) / 2.0), 2)) - 1) / 3.0
+            alpha = sin(slice) * (sqrt(4 + 3 * pow(tan(slice / 2.0), 2)) - 1) / 3.0
 
             cos_start_t = cos(current_t)
             sin_start_t = sin(current_t)

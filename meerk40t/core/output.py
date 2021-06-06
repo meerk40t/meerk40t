@@ -203,7 +203,7 @@ class Outputs(Modifier):
             input_type=(None, "input", "driver"),
             output_type="output",
         )
-        def output(command, channel, _, data=None, new=None, remainder=None, **kwargs):
+        def output_base(command, channel, _, data=None, new=None, remainder=None, **kwgs):
             input_driver = None
             if data is None:
                 if len(command) > 6:
@@ -239,7 +239,7 @@ class Outputs(Modifier):
             input_type=(None, "input", "driver"),
             output_type="output",
         )
-        def outfile(command, channel, _, data=None, filename=None, **kwargs):
+        def output_outfile(command, channel, _, data=None, filename=None, **kwgs):
             if filename is None:
                 raise SyntaxError("No file specified.")
             input_driver = None
@@ -270,7 +270,7 @@ class Outputs(Modifier):
             input_type=(None, "input", "driver"),
             output_type="output",
         )
-        def outtcp(command, channel, _, data=None, address=None, port=None, **kwargs):
+        def output_tcp(command, channel, _, data=None, address=None, port=None, **kwgs):
             if port is None:
                 raise SyntaxError(_("No address/port specified"))
             input_driver = None
@@ -299,7 +299,7 @@ class Outputs(Modifier):
             input_type="output",
             output_type="output",
         )
-        def output(command, channel, _, data_type=None, data=None, **kwargs):
+        def output_list(command, channel, _, data_type=None, data=None, **kwgs):
             output, output_name = data
             channel(_("----------"))
             channel(_("Output:"))
@@ -313,7 +313,7 @@ class Outputs(Modifier):
         @context.console_command(
             "type", help=_("list output types"), input_type="output"
         )
-        def list_type(channel, _, **kwargs):
+        def output_types(channel, _, **kwgs):
             channel(_("----------"))
             channel(_("Output types:"))
             for i, name in enumerate(context.match("output/", suffix=True)):

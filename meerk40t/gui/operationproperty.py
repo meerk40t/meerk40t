@@ -17,15 +17,15 @@ class OperationProperty(MWindow):
         # self.set_alt_size(_advanced_width, 500)
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
-        self.button_add_layer = wx.BitmapButton(
-            self.main_panel, wx.ID_ANY, icons8_plus_50.GetBitmap()
-        )
-        self.listbox_layer = wx.ListBox(
-            self.main_panel, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE
-        )
-        self.button_remove_layer = wx.BitmapButton(
-            self.main_panel, wx.ID_ANY, icons8_delete_50.GetBitmap()
-        )
+        # self.button_add_layer = wx.BitmapButton(
+        #     self.main_panel, wx.ID_ANY, icons8_plus_50.GetBitmap()
+        # )
+        # self.listbox_layer = wx.ListBox(
+        #     self.main_panel, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE
+        # )
+        # self.button_remove_layer = wx.BitmapButton(
+        #     self.main_panel, wx.ID_ANY, icons8_delete_50.GetBitmap()
+        # )
         self.button_layer_color = wx.Button(self.main_panel, wx.ID_ANY, "")
         self.combo_type = wx.ComboBox(
             self.main_panel,
@@ -123,10 +123,10 @@ class OperationProperty(MWindow):
 
     def window_open(self):
         self.set_widgets()
-        self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
-        self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
-        self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_layer_dclick, self.listbox_layer)
-        self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.button_remove_layer)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
+        # self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
+        # self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_layer_dclick, self.listbox_layer)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.button_remove_layer)
         self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
@@ -258,9 +258,9 @@ class OperationProperty(MWindow):
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Operation Properties"))
-        self.button_add_layer.SetSize(self.button_add_layer.GetBestSize())
-        self.listbox_layer.SetMinSize((40, -1))
-        self.button_remove_layer.SetSize(self.button_remove_layer.GetBestSize())
+        # self.button_add_layer.SetSize(self.button_add_layer.GetBestSize())
+        # self.listbox_layer.SetMinSize((40, -1))
+        # self.button_remove_layer.SetSize(self.button_remove_layer.GetBestSize())
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
         self.button_layer_color.SetToolTip(_("Change/View color of this layer"))
         self.combo_type.SetToolTip(_("Default Operation Mode Type"))
@@ -316,9 +316,6 @@ class OperationProperty(MWindow):
         self.slider_right.Enable(False)
         self.slider_left.Enable(False)
         self.slider_bottom.Enable(False)
-        self.button_add_layer.Show(False)
-        self.button_remove_layer.Show(False)
-        self.listbox_layer.Show(False)
         self.checkbox_show.Enable(False)
 
     def __do_layout(self):
@@ -365,9 +362,9 @@ class OperationProperty(MWindow):
             wx.StaticBox(self.main_panel, wx.ID_ANY, _("Layer")), wx.HORIZONTAL
         )
         layers_sizer = wx.BoxSizer(wx.VERTICAL)
-        layers_sizer.Add(self.button_add_layer, 0, 0, 0)
-        layers_sizer.Add(self.listbox_layer, 1, wx.EXPAND, 0)
-        layers_sizer.Add(self.button_remove_layer, 0, 0, 0)
+        # layers_sizer.Add(self.button_add_layer, 0, 0, 0)
+        # layers_sizer.Add(self.listbox_layer, 1, wx.EXPAND, 0)
+        # layers_sizer.Add(self.button_remove_layer, 0, 0, 0)
         sizer_main.Add(layers_sizer, 0, wx.EXPAND, 0)
         layer_sizer.Add(self.button_layer_color, 0, 0, 0)
         layer_sizer.Add(self.combo_type, 1, 0, 0)
@@ -429,13 +426,13 @@ class OperationProperty(MWindow):
         self.Centre()
         # end wxGlade
 
-    def on_display_paint(self, event):
+    def on_display_paint(self, event=None):
         try:
             wx.BufferedPaintDC(self.display_panel, self._Buffer)
         except RuntimeError:
             pass
 
-    def on_display_erase(self, event):
+    def on_display_erase(self, event=None):
         pass
 
     def set_buffer(self):
@@ -517,37 +514,37 @@ class OperationProperty(MWindow):
         self.display_panel.Refresh()
         self.display_panel.Update()
 
-    def on_menu_clear(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.context.elements.clear_operations()
+    # def on_menu_clear(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     self.context.elements.clear_operations()
+    #
+    # def on_menu_default0(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     self.context.elements.load_default()
+    #
+    # def on_menu_default1(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     self.context.elements.load_default2()
 
-    def on_menu_default0(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.context.elements.load_default()
+    # def on_menu_save(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     pass
+    #
+    # def on_menu_load(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     pass
+    #
+    # def on_menu_import(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     pass
 
-    def on_menu_default1(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.context.elements.load_default2()
+    # def on_button_add(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     pass
+    #
+    # def on_list_layer_click(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     pass
+    #
+    # def on_list_layer_dclick(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     pass
+    #
+    # def on_button_remove(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    #     pass
 
-    def on_menu_save(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
-
-    def on_menu_load(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
-
-    def on_menu_import(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
-
-    def on_button_add(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
-
-    def on_list_layer_click(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
-
-    def on_list_layer_dclick(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
-
-    def on_button_remove(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
-
-    def on_button_layer(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_button_layer(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         data = wx.ColourData()
         if self.operation.color is not None and self.operation.color != "none":
             data.SetColour(wx.Colour(swizzlecolor(self.operation.color)))
@@ -600,29 +597,29 @@ class OperationProperty(MWindow):
             self.Layout()
         self.context.signal("element_property_update", self.operation)
 
-    def on_check_output(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.output = bool(self.checkbox_output.GetValue())
         self.context.signal("element_property_update", self.operation)
 
-    def on_check_show(self, event):
+    def on_check_show(self, event=None):
         self.operation.show = bool(self.checkbox_show.GetValue())
         self.context.signal("element_property_update", self.operation)
 
-    def on_text_speed(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.speed = float(self.text_speed.GetValue())
         except ValueError:
             return
         self.context.signal("element_property_update", self.operation)
 
-    def on_text_power(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_power(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.power = float(self.text_power.GetValue())
         except ValueError:
             return
         self.context.signal("element_property_update", self.operation)
 
-    def on_text_raster_step(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_raster_step(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.raster_step = int(self.text_raster_step.GetValue())
         except ValueError:
@@ -632,7 +629,7 @@ class OperationProperty(MWindow):
         self.travel_lines = None
         self.refresh_display()
 
-    def on_text_overscan(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_overscan(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         overscan = self.text_overscan.GetValue()
         if not overscan.endswith("%"):
             try:
@@ -642,34 +639,34 @@ class OperationProperty(MWindow):
         self.operation.settings.overscan = overscan
         self.context.signal("element_property_update", self.operation)
 
-    def on_combo_raster_direction(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_combo_raster_direction(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.operation.settings.raster_direction = (
             self.combo_raster_direction.GetSelection()
         )
         self.context.raster_direction = self.operation.settings.raster_direction
         self.context.signal("element_property_update", self.operation)
 
-    def on_radio_directional(self, event):  # wxGlade: RasterProperty.<event_handler>
+    def on_radio_directional(self, event=None):  # wxGlade: RasterProperty.<event_handler>
         self.operation.settings.raster_swing = (
             self.radio_directional_raster.GetSelection()
         )
         self.context.signal("element_property_update", self.operation)
 
-    def on_slider_top(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_slider_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.settings.raster_preference_top = self.slider_top.GetValue() - 1
         self.context.signal("element_property_update", self.operation)
 
-    def on_slider_left(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_slider_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.settings.raster_preference_left = self.slider_left.GetValue() - 1
         self.context.signal("element_property_update", self.operation)
 
-    def on_slider_right(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_slider_right(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.settings.raster_preference_right = (
             self.slider_right.GetValue() - 1
         )
         self.context.signal("element_property_update", self.operation)
 
-    def on_slider_bottom(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_slider_bottom(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.settings.raster_preference_bottom = (
             self.slider_bottom.GetValue() - 1
         )
@@ -686,13 +683,13 @@ class OperationProperty(MWindow):
         else:
             self.SetSize((_simple_width, 500))
 
-    def on_check_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()
         self.text_dratio.Enable(on)
         self.operation.settings.dratio_custom = bool(on)
         self.context.signal("element_property_update", self.operation)
 
-    def on_text_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.dratio = float(self.text_dratio.GetValue())
         except ValueError:
@@ -700,24 +697,24 @@ class OperationProperty(MWindow):
         self.context.signal("element_property_update", self.operation)
 
     def on_check_acceleration(
-        self, event
+        self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_custom_accel.GetValue()
         self.slider_accel.Enable(on)
         self.operation.settings.acceleration_custom = bool(on)
         self.context.signal("element_property_update", self.operation)
 
-    def on_slider_accel(self, event):
+    def on_slider_accel(self, event=None):
         self.operation.settings.acceleration = self.slider_accel.GetValue()
         self.context.signal("element_property_update", self.operation)
 
-    def on_check_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_dot_length(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dot_length_custom.GetValue()
         self.text_dot_length.Enable(on)
         self.operation.settings.dot_length_custom = bool(on)
         self.context.signal("element_property_update", self.operation)
 
-    def on_text_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dot_length(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.dot_length = int(self.text_dot_length.GetValue())
         except ValueError:
@@ -732,13 +729,13 @@ class OperationProperty(MWindow):
         )
         self.context.signal("element_property_update", self.operation)
 
-    def on_check_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
         self.operation.settings.passes_custom = bool(on)
         self.context.signal("element_property_update", self.operation)
 
-    def on_text_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.passes = int(self.text_passes.GetValue())
         except ValueError:

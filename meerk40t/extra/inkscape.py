@@ -13,7 +13,7 @@ def plugin(kernel, lifecycle):
             input_type="inkscape",
             output_type="inkscape",
         )
-        def load(channel, _, data=None, **kwargs):
+        def inscape_load(channel, _, data=None, **kwargs):
             inkscape_path, filename = data
             channel(_("Loading..."))
             e = kernel.root
@@ -27,7 +27,7 @@ def plugin(kernel, lifecycle):
             input_type="inkscape",
             output_type="inkscape",
         )
-        def simplify(channel, _, data=None, **kwargs):
+        def inkscape_simplify(channel, _, data=None, **kwargs):
             inkscape_path, filename = data
             channel(_("Making plain_svg with Inkscape."))
             c = run(
@@ -48,7 +48,7 @@ def plugin(kernel, lifecycle):
             input_type="inkscape",
             output_type="inkscape",
         )
-        def text2path(channel, _, data=None, **kwargs):
+        def inkscape_text2path(channel, _, data=None, **kwargs):
             inkscape_path, filename = data
             channel(_("Making plain_svg with Inkscape."))
             c = run(
@@ -70,7 +70,7 @@ def plugin(kernel, lifecycle):
         @kernel.console_command(
             "makepng", help=_("make png"), input_type="inkscape", output_type="inkscape"
         )
-        def png(channel, _, dpi=1000, step=None, data=None, **kwargs):
+        def inkscape_png(channel, _, dpi=1000, step=None, data=None, **kwargs):
             if step is not None and step > 0:
                 dpi = 1000 / step
             inkscape_path, filename = data
@@ -102,7 +102,7 @@ def plugin(kernel, lifecycle):
             input_type="inkscape",
             output_type="inkscape",
         )
-        def input(channel, _, filename, data, **kwargs):
+        def inkscape_input_filename(channel, _, filename, data, **kwargs):
             inkscape_path, fn = data
             if filename is None:
                 channel(_("filename not specified"))
@@ -117,7 +117,7 @@ def plugin(kernel, lifecycle):
             input_type="inkscape",
             output_type="inkscape",
         )
-        def version(channel, _, data, **kwargs):
+        def inkscape_version(channel, _, data, **kwargs):
             inkscape_path, filename = data
             if not os.path.exists(inkscape_path):
                 channel(_("Inkscape not found."))
@@ -132,7 +132,7 @@ def plugin(kernel, lifecycle):
             input_type="inkscape",
             output_type="inkscape",
         )
-        def locate(channel, _, data, **kwargs):
+        def inkscape_locate(channel, _, data, **kwargs):
             if "darwin" in platform:
                 inkscape = [
                     "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
@@ -177,7 +177,7 @@ def plugin(kernel, lifecycle):
             help=_("perform a special inkscape function"),
             output_type="inkscape",
         )
-        def inkscape(channel, _, **kwargs):
+        def inkscape_base(**kwargs):
             root_context = kernel.root
             root_context.setting(str, "inkscape_path", "inkscape.exe")
             return "inkscape", (root_context.inkscape_path, None)

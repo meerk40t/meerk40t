@@ -197,7 +197,7 @@ class Context:
         """
         return self._kernel.get_context(path)
 
-    def derivable(self) -> Generator["Context", None, None]:
+    def derivable(self) -> Generator[str, None, None]:
         """
         Generate all sub derived paths.
 
@@ -987,7 +987,7 @@ class Kernel:
             channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
             try:
                 if thread is threading.currentThread():
-                    channel(_("%s is the current shutdown thread") % (thread_name))
+                    channel(_("%s is the current shutdown thread") % thread_name)
                     continue
                 channel(_("Asking thread to stop."))
                 thread.stop()
@@ -1117,7 +1117,7 @@ class Kernel:
 
     def console_command(
         self,
-        path: str = None,
+        path: Union[str, Tuple[str, ...]] = None,
         regex: bool = False,
         hidden: bool = False,
         help: str = None,
@@ -1163,7 +1163,7 @@ class Kernel:
                             if value == pk["name"]:
                                 if pk.get("action") != "store_true":
                                     count = pk.get("nargs", 1)
-                                    for i in range(count):
+                                    for n in range(count):
                                         stack.insert(opt_index, pk)
                                         opt_index += 1
                                 kwargs[value] = True
@@ -1179,8 +1179,8 @@ class Kernel:
                                 break
 
                 # Any unprocessed positional arguments get default values.
-                for i in range(argument_index, len(stack)):
-                    k = stack[i]
+                for a in range(argument_index, len(stack)):
+                    k = stack[a]
                     value = k.get("default")
                     if "type" in k and value is not None:
                         value = k["type"](value)
@@ -1192,8 +1192,8 @@ class Kernel:
                         kwargs[key].append(value)
 
                 # Any singleton list arguments should become their only element.
-                for i in range(len(stack)):
-                    k = stack[i]
+                for a in range(len(stack)):
+                    k = stack[a]
                     key = k["name"]
                     current = kwargs.get(key)
                     if isinstance(current, list):
@@ -1891,7 +1891,7 @@ class Kernel:
         @self.console_option("input", "i", help=_("Input type to match"), type=str)
         @self.console_argument("extended_help", type=str)
         @self.console_command(("help", "?"), hidden=True, help=_("help <help>"))
-        def help(channel, _, extended_help, output=None, input=None, **kwargs):
+        def help_command(channel, _, extended_help, output=None, input=None, **kwargs):
             """
             'help' will display the list of accepted commands. Help <command> will provided extended help for
             that topic. Help can be sub-specified by output or input type.
@@ -1973,11 +1973,11 @@ class Kernel:
                     channel(_("--- %s Commands ---") % command_class)
                     previous_input_type = input_type
 
-                help = func.help
+                help_attribute = func.help
                 if func.hidden:
                     continue
-                if help is not None:
-                    channel("%s %s" % (command_item.ljust(15), help))
+                if help_attribute is not None:
+                    channel("%s %s" % (command_item.ljust(15), help_attribute))
                 else:
                     channel(command_name.split("/")[-1])
 
@@ -2187,9 +2187,9 @@ class Kernel:
                     if len(context.opened) == 0:
                         continue
                     channel(_("Loaded Modules in Context %s:") % str(context.path))
-                    for j, name in enumerate(context.opened):
-                        module = context.opened[name]
-                        channel(_("%d: %s as type of %s") % (j + 1, name, type(module)))
+                    for j, jname in enumerate(context.opened):
+                        module = context.opened[jname]
+                        channel(_("%d: %s as type of %s") % (j + 1, jname, type(module)))
                     channel(_("----------"))
                     return
             if path is None:

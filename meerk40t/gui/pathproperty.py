@@ -164,7 +164,7 @@ class PathProperty(MWindow):
         self.Centre()
         # end wxGlade
 
-    def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
+    def on_text_name_change(self, event=None):  # wxGlade: ElementProperty.<event_handler>
         try:
             self.element.id = self.text_name.GetValue()
             self.element.values[SVG_ATTR_ID] = self.element.id

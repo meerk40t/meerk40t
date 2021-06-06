@@ -23,7 +23,6 @@ from ..device.lasercommandconstants import (
     COMMAND_PLOT_START,
     COMMAND_SET_ABSOLUTE,
     COMMAND_SET_INCREMENTAL,
-    lasercode_string,
 )
 from ..svgelements import Color, Group, Path, Point, Polygon
 from ..tools.pathtools import VectorMontonizer
@@ -40,7 +39,7 @@ properties for that cuts may need or use. Or which may be used by the CutPlanner
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
 
-MILS_PER_MM = 39.3701
+MILS_IN_MM = 39.3701
 
 
 class LaserSettings:
@@ -488,7 +487,7 @@ class CutCode(CutGroup):
         distance = 0
         for i in range(0, len(cutcode)):
             curr = cutcode[i]
-            distance += (curr.length() / MILS_PER_MM) / curr.settings.speed
+            distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
         return distance
 
     def is_inside(self, inner_path, outer_path):

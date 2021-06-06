@@ -110,7 +110,7 @@ class ScenePanel(wx.Panel):
     def signal(self, *args, **kwargs):
         self.scene._signal_widget(self.scene.widget_root, *args, **kwargs)
 
-    def on_size(self, event):
+    def on_size(self, event=None):
         if self.context is None:
             return
         w, h = self.Size
@@ -219,7 +219,7 @@ class ScenePanel(wx.Panel):
                 zoom = 1.0
             self.scene.event(event.GetPosition(), "zoom %f" % zoom)
 
-    def on_paint(self, event):
+    def on_paint(self, event=None):
         try:
             if self._Buffer is None:
                 self.scene.update_buffer_ui_thread()
@@ -1013,15 +1013,16 @@ class SceneSpaceWidget(Widget):
                 - self._placement_event[1]
             )
             p /= 250.0
-            zoom_factor = e ** p
-            zoom_change = zoom_factor / self._previous_zoom
-            self._previous_zoom = zoom_factor
-            self.scene_widget.matrix.post_scale(
-                zoom_change,
-                zoom_change,
-                self._placement_event[0],
-                self._placement_event[1],
-            )
+            if self._previous_zoom is not None:
+                zoom_factor = e ** p
+                zoom_change = zoom_factor / self._previous_zoom
+                self._previous_zoom = zoom_factor
+                self.scene_widget.matrix.post_scale(
+                    zoom_change,
+                    zoom_change,
+                    self._placement_event[0],
+                    self._placement_event[1],
+                )
             self.scene.context.signal("refresh_scene", 0)
         elif self._placement_event_type == "pan":
             pan_factor_x = -(space_pos[0] - self._placement_event[0]) / 10

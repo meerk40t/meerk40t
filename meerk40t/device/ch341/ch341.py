@@ -166,7 +166,7 @@ class CH341(Module, Handler):
         self.context.signal("pipe;chipv", chip_version)
         self.context.signal("pipe;bus", connection.bus)
         self.context.signal("pipe;address", connection.address)
-        self.channel(_("Driver Detected: %s") % (connection.driver_name))
+        self.channel(_("Driver Detected: %s") % connection.driver_name)
         self._state_change("STATE_CONNECTED")
         self.channel(_("Device Connected.\n"))
         return connection

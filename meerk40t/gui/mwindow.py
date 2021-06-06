@@ -51,7 +51,7 @@ class MWindow(wx.Frame, Module):
         self.accelerator_table(self)
 
     def accelerator_table(self, window):
-        def close_window(e=None):
+        def close_window(event=None):
             try:
                 window.Close(False)
             except RuntimeError:

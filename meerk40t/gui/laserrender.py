@@ -311,7 +311,7 @@ class LaserRender:
             gc.StrokePath(node.cache)
         gc.PopState()
 
-    def draw_text_node(self, node, gc, draw_mode, zoomscale=1.0):
+    def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0):
         text = node.object
         try:
             matrix = text.transform

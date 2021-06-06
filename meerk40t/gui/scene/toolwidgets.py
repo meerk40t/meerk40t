@@ -71,9 +71,9 @@ class CircleBrush:
 
     def draw(self, gc: wx.GraphicsContext):
         if self.using:
-            self.drawBrush(gc)
+            self.draw_brush(gc)
 
-    def drawBrush(self, gc: wx.GraphicsContext):
+    def draw_brush(self, gc: wx.GraphicsContext):
         gc.SetBrush(self.brush_fill)
         gc.DrawEllipse(
             self.pos.real - self.tool_size / 2.0,

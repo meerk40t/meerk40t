@@ -1,5 +1,3 @@
-import re
-
 import wx
 
 from ..kernel import Job
@@ -216,7 +214,7 @@ class CameraInterface(MWindow, Job):
         @kernel.console_command(
             "camwin", help=_("camwin <index>: Open camera window at index")
         )
-        def camera_win(command, channel, _, index=None, args=tuple(), **kwargs):
+        def camera_win(index=None, **kwargs):
             if index is None:
                 raise SyntaxError
             context = kernel.root
@@ -290,7 +288,7 @@ class CameraInterface(MWindow, Job):
 
         self.widget_scene.request_refresh()
 
-    def reset_perspective(self, event):
+    def reset_perspective(self, event=None):
         """
         Reset the perspective settings.
 
@@ -299,7 +297,7 @@ class CameraInterface(MWindow, Job):
         """
         self.context("camera%d perspective reset\n" % self.index)
 
-    def reset_fisheye(self, event):
+    def reset_fisheye(self, event=None):
         """
         Reset the fisheye settings.
 
@@ -308,7 +306,7 @@ class CameraInterface(MWindow, Job):
         """
         self.context("camera%d fisheye reset\n" % self.index)
 
-    def on_check_perspective(self, event):
+    def on_check_perspective(self, event=None):
         """
         Perspective checked. Turns on/off
         :param event:
@@ -316,7 +314,7 @@ class CameraInterface(MWindow, Job):
         """
         self.setting.correction_perspective = self.check_perspective.GetValue()
 
-    def on_check_fisheye(self, event):
+    def on_check_fisheye(self, event=None):
         """
         Fisheye checked. Turns on/off.
         :param event:
@@ -324,7 +322,7 @@ class CameraInterface(MWindow, Job):
         """
         self.setting.correction_fisheye = self.check_fisheye.GetValue()
 
-    def on_button_update(self, event):  # wxGlade: CameraInterface.<event_handler>
+    def on_button_update(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
         Button update.
 
@@ -335,7 +333,7 @@ class CameraInterface(MWindow, Job):
         """
         self.context("camera%d background\n" % self.index)
 
-    def on_button_export(self, event):  # wxGlade: CameraInterface.<event_handler>
+    def on_button_export(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
         Button export.
 
@@ -345,7 +343,7 @@ class CameraInterface(MWindow, Job):
         """
         self.context.console("camera%d export\n" % self.index)
 
-    def on_button_reconnect(self, event):  # wxGlade: CameraInterface.<event_handler>
+    def on_button_reconnect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         self.context.console("camera%d stop start\n" % self.index)
 
     def on_slider_fps(self, event=None):  # wxGlade: CameraInterface.<event_handler>
@@ -365,7 +363,7 @@ class CameraInterface(MWindow, Job):
         self.setting.fps = fps
         self.interval = tick
 
-    def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
+    def on_button_detect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
         Attempts to locate 6x9 checkerboard pattern for OpenCV to correct the fisheye pattern.
 
@@ -411,7 +409,7 @@ class CamInterfaceWidget(Widget):
                 )
 
             def set_aspect(aspect):
-                def asp(e):
+                def asp(event=None):
                     self.cam.setting.preserve_aspect = aspect
                     self.scene.widget_root.set_aspect(self.cam.setting.aspect)
                     self.scene.widget_root.set_view(
@@ -597,7 +595,7 @@ class CameraURI(MWindow):
         self.Bind(wx.EVT_TEXT, self.on_text_uri, self.text_uri)
         # end wxGlade
         self.camera_setting = None
-        self.uri_list = dict()
+        self.uri_list = None
         self.changed = False
 
     def __set_properties(self):
@@ -685,7 +683,7 @@ class CameraURI(MWindow):
         menu.Destroy()
 
     def on_tree_popup_delete(self, index):
-        def delete(event):
+        def delete(event=None):
             try:
                 del self.uri_list[index]
             except KeyError:
@@ -696,7 +694,7 @@ class CameraURI(MWindow):
         return delete
 
     def on_tree_popup_duplicate(self, index):
-        def duplicate(event):
+        def duplicate(event=None):
             self.uri_list.insert(index, self.uri_list[index])
             self.changed = True
             self.on_list_refresh()
@@ -704,7 +702,7 @@ class CameraURI(MWindow):
         return duplicate
 
     def on_tree_popup_edit(self, index):
-        def edit(event):
+        def edit(event=None):
             dlg = wx.TextEntryDialog(
                 self,
                 _("Edit"),
@@ -727,7 +725,7 @@ class CameraURI(MWindow):
 
         return delete
 
-    def on_button_add_uri(self, event):  # wxGlade: CameraURI.<event_handler>
+    def on_button_add_uri(self, event=None):  # wxGlade: CameraURI.<event_handler>
         uri = self.text_uri.GetValue()
         if uri is None or uri == "":
             return

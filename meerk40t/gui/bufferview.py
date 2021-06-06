@@ -73,8 +73,8 @@ class BufferView(MWindow):
 
     # end of class BufferView
 
-    def on_menu_export(self, event):  # wxGlade: BufferView.<event_handler>
+    def on_menu_export(self, event=None):  # wxGlade: BufferView.<event_handler>
         self.context.root("dev egv_export\n")
 
-    def on_menu_import(self, event):  # wxGlade: BufferView.<event_handler>
+    def on_menu_import(self, event=None):  # wxGlade: BufferView.<event_handler>
         self.context.root("dev egv_import\n")

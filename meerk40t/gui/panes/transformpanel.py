@@ -186,7 +186,7 @@ class Transform(wx.Panel):
         self.context.signal("refresh_scene")
         self.update_matrix_text()
 
-    def on_scale_down(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_scale_down(self, event=None):  # wxGlade: Navigation.<event_handler>
         scale = 19.0 / 20.0
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
@@ -202,7 +202,7 @@ class Transform(wx.Panel):
         )
         self.matrix_updated()
 
-    def on_scale_up(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_scale_up(self, event=None):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
@@ -218,35 +218,35 @@ class Transform(wx.Panel):
         )
         self.matrix_updated()
 
-    def on_translate_up(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_translate_up(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = -self.context.navigate_jog
         self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
-    def on_translate_left(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_translate_left(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = -self.context.navigate_jog
         dy = 0
         self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
-    def on_translate_right(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_translate_right(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
         dy = 0
         self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
-    def on_translate_down(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_translate_down(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = self.context.navigate_jog
         self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
-    def on_reset(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_reset(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context("reset\n")
         self.matrix_updated()
 
-    def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_rotate_ccw(self, event=None):  # wxGlade: Navigation.<event_handler>
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
@@ -256,7 +256,7 @@ class Transform(wx.Panel):
         )
         self.matrix_updated()
 
-    def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_rotate_cw(self, event=None):  # wxGlade: Navigation.<event_handler>
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
@@ -265,7 +265,7 @@ class Transform(wx.Panel):
         )
         self.matrix_updated()
 
-    def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
         try:
             self.context(
                 "matrix %f %f %f %f %s %s\n"

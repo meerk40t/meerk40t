@@ -191,7 +191,7 @@ class Drag(wx.Panel):
         self.button_align_drag_right.Enable(v)
         self.button_align_drag_left.Enable(v)
 
-    def on_button_align_center(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_center(self, event=None):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
@@ -202,7 +202,7 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (px, py))
         self.drag_ready(True)
 
-    def on_button_align_corner_tl(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_corner_tl(self, event=None):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
@@ -211,7 +211,7 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (bbox[0], bbox[1]))
         self.drag_ready(True)
 
-    def on_button_align_corner_tr(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_corner_tr(self, event=None):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
@@ -220,7 +220,7 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (bbox[2], bbox[1]))
         self.drag_ready(True)
 
-    def on_button_align_corner_bl(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_corner_bl(self, event=None):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
@@ -229,7 +229,7 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (bbox[0], bbox[3]))
         self.drag_ready(True)
 
-    def on_button_align_corner_br(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_corner_br(self, event=None):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
@@ -241,19 +241,19 @@ class Drag(wx.Panel):
     def drag_relative(self, dx, dy):
         self.context("move_relative %d %d\ntranslate %d %d\n" % (dx, dy, dx, dy))
 
-    def on_button_align_drag_down(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_drag_down(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(0, self.context.navigate_jog)
 
-    def on_button_align_drag_right(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_drag_right(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(self.context.navigate_jog, 0)
 
-    def on_button_align_drag_up(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_drag_up(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(0, -self.context.navigate_jog)
 
-    def on_button_align_drag_left(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_drag_left(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(-self.context.navigate_jog, 0)
 
-    def on_button_align_first_position(self, event):
+    def on_button_align_first_position(self, event=None):
         elements = self.context.elements
         e = list(elements.elems(emphasized=True))
         try:
@@ -265,9 +265,9 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (pos[0], pos[1]))
         self.drag_ready(True)
 
-    def on_button_align_trace_hull(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_trace_hull(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context("trace_hull\n")
 
-    def on_button_align_trace_quick(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_trace_quick(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context("trace_quick\n")
         self.drag_ready(True)

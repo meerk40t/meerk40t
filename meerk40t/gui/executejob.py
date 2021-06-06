@@ -7,6 +7,7 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
+MILS_PER_MM = 39.3701
 
 class ExecuteJob(MWindow):
     def __init__(self, *args, **kwds):
@@ -370,49 +371,49 @@ class ExecuteJob(MWindow):
         self.Layout()
         # end wxGlade
 
-    def on_check_home_before(self, event):  # wxGlade: JobInfo.<event_handler>
+    def on_check_home_before(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.prehome = self.preview_menu.menu_prehome.IsChecked()
 
-    def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
+    def on_check_home_after(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.autohome = self.preview_menu.menu_autohome.IsChecked()
 
-    def on_check_physicalhome_before(self, event):  # wxGlade: JobInfo.<event_handler>
+    def on_check_physicalhome_before(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.prephysicalhome = (
             self.preview_menu.menu_prephysicalhome.IsChecked()
         )
 
-    def on_check_physicalhome_after(self, event):  # wxGlade: JobInfo.<event_handler>
+    def on_check_physicalhome_after(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.autophysicalhome = (
             self.preview_menu.menu_autophysicalhome.IsChecked()
         )
 
-    def on_check_origin_after(self, event):  # wxGlade: JobInfo.<event_handler>
+    def on_check_origin_after(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.autoorigin = self.preview_menu.menu_autoorigin.IsChecked()
 
-    def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
+    def on_check_beep_after(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.autobeep = self.preview_menu.menu_autobeep.IsChecked()
 
-    def on_check_interrupt_after(self, event):  # wxGlade: Preview.<event_handler>
+    def on_check_interrupt_after(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.autointerrupt = self.preview_menu.menu_autointerrupt.IsChecked()
 
-    def on_check_unlock_after(self, event):  # wxGlade: Preview.<event_handler>
+    def on_check_unlock_after(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.postunlock = self.preview_menu.menu_autounlock.IsChecked()
 
-    def on_check_reduce_travel(self, event):  # wxGlade: Preview.<event_handler>
+    def on_check_reduce_travel(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_reduce_travel = self.check_reduce_travel_time.IsChecked()
 
-    def on_check_inner_first(self, event):  # wxGlade: Preview.<event_handler>
+    def on_check_inner_first(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_inner_first = self.check_cut_inner_first.IsChecked()
 
-    def on_check_reduce_directions(self, event):  # wxGlade: Preview.<event_handler>
+    def on_check_reduce_directions(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_reduce_directions = (
             self.check_reduce_direction_changes.IsChecked()
         )
 
-    def on_check_remove_overlap(self, event):  # wxGlade: Preview.<event_handler>
+    def on_check_remove_overlap(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_remove_overlap = self.check_remove_overlap_cuts.IsChecked()
 
-    def on_check_rapid_between(self, event):  # wxGlade: Preview.<event_handler>
+    def on_check_rapid_between(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_rapid_between = self.check_rapid_moves_between.IsChecked()
 
     def jobchange_step_repeat(self, event=None):
@@ -458,7 +459,7 @@ class ExecuteJob(MWindow):
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 x_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_PER_MM
                 )
             except ValueError:
                 dlg.Destroy()
@@ -481,7 +482,7 @@ class ExecuteJob(MWindow):
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 y_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * 39.3701
+                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_PER_MM
                 )
             except ValueError:
                 dlg.Destroy()
@@ -526,7 +527,7 @@ class ExecuteJob(MWindow):
         self.context("plan%s command -o console\n" % self.plan_name)
         self.update_gui()
 
-    def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
+    def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
         self.available_devices = [
             self.context.registered[i] for i in self.context.match("device")
         ]
@@ -559,7 +560,7 @@ class ExecuteJob(MWindow):
     def on_listbox_commands_dclick(self, event):  # wxGlade: JobInfo.<event_handler>
         event.Skip()
 
-    def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
+    def on_button_start(self, event=None):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
             with wx.BusyInfo(_("Preprocessing...")):
                 self.context("plan%s copy preprocess\n" % self.plan_name)

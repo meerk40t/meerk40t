@@ -7,6 +7,8 @@ from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 
+MILS_IN_MM = 39.3701
+
 
 class LhystudiosDriverGui(MWindow):
     def __init__(self, *args, **kwds):
@@ -283,45 +285,45 @@ class LhystudiosDriverGui(MWindow):
         x = 0
         y = 0
         if self.context.home_right:
-            x = int(self.bed_dim.bed_width * 39.3701)
+            x = int(self.bed_dim.bed_width * MILS_IN_MM)
         if self.context.home_bottom:
-            y = int(self.bed_dim.bed_height * 39.3701)
+            y = int(self.bed_dim.bed_height * MILS_IN_MM)
         return x, y
 
-    def on_combobox_boardtype(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_combobox_boardtype(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.board = self.combobox_board.GetValue()
 
-    def on_check_swapxy(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_swapxy(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
         self.context("dev code_update\n")
 
-    def on_check_fix_speeds(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_fix_speeds(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.fix_speeds = self.checkbox_fix_speeds.GetValue()
 
-    def on_check_strict(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_strict(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.strict = self.checkbox_strict.GetValue()
 
-    def on_check_flip_x(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_flip_x(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.flip_x = self.checkbox_flip_x.GetValue()
         self.context("dev code_update\n")
 
-    def on_check_home_right(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_home_right(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.home_right = self.checkbox_home_right.GetValue()
 
-    def on_check_flip_y(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_flip_y(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.flip_y = self.checkbox_flip_y.GetValue()
         self.context("dev code_update\n")
 
-    def on_check_home_bottom(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_home_bottom(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
 
-    def spin_on_home_x(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_home_x(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.home_adjust_x = int(self.spin_home_x.GetValue())
 
-    def spin_on_home_y(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_home_y(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.home_adjust_y = int(self.spin_home_y.GetValue())
 
-    def on_button_set_home_current(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_button_set_home_current(self, event=None):  # wxGlade: Preferences.<event_handler>
         x, y = self.calc_home_position()
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
@@ -333,16 +335,16 @@ class LhystudiosDriverGui(MWindow):
         self.spin_home_x.SetValue(self.context.home_adjust_x)
         self.spin_home_y.SetValue(self.context.home_adjust_y)
 
-    def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_autolock(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.autolock = self.checkbox_autolock.GetValue()
 
-    def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
+    def on_check_limit_packet_buffer(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.buffer_limit = self.checkbox_limit_buffer.GetValue()
 
-    def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
+    def on_spin_packet_buffer_max(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.buffer_max = self.spin_packet_buffer_max.GetValue()
 
-    def on_check_pulse_shift(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_check_pulse_shift(self, event=None):  # wxGlade: LhystudiosDriver.<event_handler>
         self.context.plot_shift = self.checkbox_plot_shift.GetValue()
         try:
             _, driver, _ = self.context.root.device()
@@ -350,7 +352,7 @@ class LhystudiosDriverGui(MWindow):
         except (AttributeError, TypeError):
             pass
 
-    def on_check_random_ppi(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_check_random_ppi(self, event=None):  # wxGlade: LhystudiosDriver.<event_handler>
         self.context.random_ppi = self.checkbox_random_ppi.GetValue()
 
     def on_buffer_update(self, origin, value, *args):

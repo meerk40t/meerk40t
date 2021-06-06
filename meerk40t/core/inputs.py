@@ -50,9 +50,9 @@ class Inputs(Modifier):
             try:
                 for pname in self.context.match("input/%s" % input_type):
                     input_class = self.context.registered[pname]
-                    input = input_class(self.context, input_name, **kwargs)
-                    self._inputs[input_name] = input, input_name
-                    return input, input_name
+                    input_obj = input_class(self.context, input_name, **kwargs)
+                    self._inputs[input_name] = input_obj, input_name
+                    return input_obj, input_name
             except (KeyError, IndexError):
                 pass
         return None
@@ -76,7 +76,7 @@ class Inputs(Modifier):
             input_type=None,
             output_type="input",
         )
-        def input(
+        def input_base(
             command,
             channel,
             _,
@@ -84,7 +84,7 @@ class Inputs(Modifier):
             data_type=None,
             new=None,
             remainder=None,
-            **kwargs
+            **kwgs
         ):
             if len(command) > 6:
                 self._default_input = command[6:]
@@ -104,25 +104,25 @@ class Inputs(Modifier):
             if input_data is None:
                 raise SyntaxError("No input")
 
-            input, input_name = input_data
+            input_obj, input_name = input_data
             self.context.signal("input", input_name, 1)
 
             if data is not None:
                 if data_type == "driver":
                     dinter, dname = data
-                    dinter.output = input
-                    input.next = dinter
+                    dinter.output = input_obj
+                    input_obj.next = dinter
                 elif data_type == "input":
                     dinput, dname = data
-                    dinput.output = input
+                    dinput.output = input_obj
             elif remainder is None:
-                input, input_name = input_data
+                input_obj, input_name = input_data
                 channel(_("----------"))
                 channel(_("Input:"))
                 for i, pname in enumerate(self._inputs):
                     channel("%d: %s" % (i, pname))
                 channel(_("----------"))
-                channel(_("Input %s: %s" % (input_name, str(input))))
+                channel(_("Input %s: %s" % (input_name, str(input_obj))))
                 channel(_("----------"))
 
             return "input", input_data
@@ -133,19 +133,19 @@ class Inputs(Modifier):
             input_type="input",
             output_type="input",
         )
-        def input(command, channel, _, data_type=None, data=None, **kwargs):
-            input, input_name = data
+        def input_list(command, channel, _, data_type=None, data=None, **kwgs):
+            input_obj, input_name = data
             channel(_("----------"))
             channel(_("Input:"))
             for i, pname in enumerate(self._inputs):
                 channel("%d: %s" % (i, pname))
             channel(_("----------"))
-            channel(_("Input %s: %s" % (input_name, str(input))))
+            channel(_("Input %s: %s" % (input_name, str(input_obj))))
             channel(_("----------"))
             return data_type, data
 
         @context.console_command("type", help=_("list input types"), input_type="input")
-        def list_type(channel, _, **kwargs):
+        def list_type(channel, _, **kwgs):
             channel(_("----------"))
             channel(_("Input types:"))
             for i, name in enumerate(context.match("input/", suffix=True)):

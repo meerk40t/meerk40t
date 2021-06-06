@@ -32,6 +32,8 @@ from .laserspeed import LaserSpeed
 from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 
 
+MILS_IN_MM = 39.3701
+
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         _ = kernel.translation
@@ -65,7 +67,7 @@ def plugin(kernel, lifecycle=None):
             value = time / 1000.0
             if value > 1.0:
                 channel(
-                    _('"%s" exceeds 1 second limit to fire a standing laser.') % (value)
+                    _('"%s" exceeds 1 second limit to fire a standing laser.') % value
                 )
                 try:
                     if not idonotlovemyhouse:
@@ -133,7 +135,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "power", input_type="lhystudios", help=_("Set Driver Power")
         )
-        def power(command, channel, _, data, ppi=None, args=tuple(), **kwargs):
+        def power(command, channel, _, data, ppi=None, **kwargs):
             spooler, driver, output = data
             if ppi is None:
                 channel(_("Power set at: %d pulses per inch") % driver.power)
@@ -324,12 +326,12 @@ def plugin(kernel, lifecycle=None):
             input_type="lhystudios",
             help=_("Lhystudios Engrave Code Sender. egv <lhymicro-gl>"),
         )
-        def egv(command, channel, _, data=None, args=tuple(), **kwargs):
+        def egv(command, channel, _, data=None, remainder=None, **kwargs):
             spooler, driver, output = data
-            if len(args) == 0:
+            if len(remainder) == 0:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
-                output.write(bytes(args[0].replace("$", "\n"), "utf8"))
+                output.write(bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8"))
 
         @context.console_command(
             "start", input_type="lhystudios", help=_("Start Pipe to Controller")
@@ -429,10 +431,7 @@ def plugin(kernel, lifecycle=None):
             name = root.active
             driver_context = kernel.get_context("lhystudios/driver/%s" % name)
             try:
-                spooler, input_driver, output = root.registered["device/%s" % name]
-                emulator = driver_context.open_as(
-                    "emulator/lhystudios", "lhyemulator%s" % name
-                )
+                driver_context.open_as("emulator/lhystudios", "lhyemulator%s" % name)
                 channel(_("Lhystudios Emulator attached to %s" % str(driver_context)))
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))
@@ -1198,9 +1197,9 @@ class LhystudiosDriver(Driver):
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if self.context.home_right:
-            x = int(bed_dim.bed_width * 39.3701)
+            x = int(bed_dim.bed_width * MILS_IN_MM)
         if self.context.home_bottom:
-            y = int(bed_dim.bed_height * 39.3701)
+            y = int(bed_dim.bed_height * MILS_IN_MM)
         return x, y
 
     def home(self, *values):
@@ -1633,7 +1632,7 @@ class LhystudiosController:
         if self._thread is None or not self._thread.is_alive():
             self._thread = self.context.threaded(
                 self._thread_data_send,
-                thread_name="LhyPipe(%s)" % (self.context._path),
+                thread_name="LhyPipe(%s)" % self.context.path,
                 result=self.stop,
             )
             self._thread.stop = self.stop

@@ -62,7 +62,7 @@ class MovePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def on_button_navigate_move_to(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_move_to(self, event=None):  # wxGlade: Navigation.<event_handler>
         try:
             width = self.bed_dim.bed_width * MILS_IN_MM
             height = self.bed_dim.bed_height * MILS_IN_MM

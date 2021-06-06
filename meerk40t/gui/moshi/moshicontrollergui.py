@@ -315,12 +315,12 @@ class MoshiControllerGui(MWindow):
         self.on_check_show_usb_log()
 
     def device_execute(self, control_name):
-        def menu_element(event):
+        def menu_element(event=None):
             self.context.execute(control_name)
 
         return menu_element
 
-    def on_controller_menu(self, event):
+    def on_controller_menu(self, event=None):
         gui = self
         menu = wx.Menu()
         path_scale_sub_menu = wx.Menu()
@@ -394,7 +394,7 @@ class MoshiControllerGui(MWindow):
             )
             self.button_device_connect.Disable()
 
-    def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
+    def on_button_start_usb(self, event=None):  # wxGlade: Controller.<event_handler>
         state = self.context.last_signal("pipe;state")
         if state is not None and isinstance(state, tuple):
             state = state[0]
@@ -419,23 +419,23 @@ class MoshiControllerGui(MWindow):
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
             self.context("dev usb_disconnect\n")
 
-    def spin_on_device_index(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_index(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.usb_index = int(self.spin_device_index.GetValue())
 
-    def spin_on_device_address(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_address(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.usb_address = int(self.spin_device_address.GetValue())
 
-    def spin_on_device_bus(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_bus(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.usb_bus = int(self.spin_device_bus.GetValue())
 
-    def spin_on_device_version(self, event):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_version(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.usb_version = int(self.spin_device_version.GetValue())
 
-    def on_check_mock_usb(self, event):  # wxGlade: Preferences.<event_handler>
+    def on_check_mock_usb(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.mock = self.checkbox_mock_usb.GetValue()
 
     def on_button_start_controller(
-        self, event
+        self, event=None
     ):  # wxGlade: LhystudiosController.<event_handler>
         print("Event handler 'on_button_start_controller' not implemented!")
         event.Skip()
@@ -451,30 +451,30 @@ class MoshiControllerGui(MWindow):
         else:
             self.SetSize((_simple_width, _default_height))
 
-    def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_usb_reset(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
         print("Event handler 'on_menu_usb_reset' not implemented!")
         event.Skip()
 
     def on_menu_usb_release(
-        self, event
+        self, event=None
     ):  # wxGlade: LhystudiosController.<event_handler>
         print("Event handler 'on_menu_usb_release' not implemented!")
         event.Skip()
 
-    def on_menu_pause(self, event):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_pause(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
         try:
             self.context("dev pause\n")
         except AttributeError:
             pass
 
-    def on_menu_stop(self, event):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_stop(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
         try:
             self.context("dev estop\n")
         except AttributeError:
             pass
 
     def on_menu_bufferview(
-        self, event
+        self, event=None
     ):  # wxGlade: LhystudiosController.<event_handler>
         self.context("window open BufferView\n")
 

@@ -230,7 +230,7 @@ class LaserSpeed:
             # We do not need the diagonal code.
             if raster_step == 0:
                 if suffix_c:
-                    return "CV%s1C" % (encoded_speed)
+                    return "CV%s1C" % encoded_speed
                 else:
                     return "CV%s%1d" % (encoded_speed, acceleration)
         else:

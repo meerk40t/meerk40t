@@ -148,19 +148,19 @@ class RotarySettings(MWindow):
         self.Layout()
         # end wxGlade
 
-    def on_check_rotary(self, event):  # wxGlade: RotarySettings.<event_handler>
+    def on_check_rotary(self, event=None):  # wxGlade: RotarySettings.<event_handler>
         self.context.rotary = self.checkbox_rotary.GetValue()
         self.text_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.text_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
-    def on_text_rotary_scale_y(self, event):  # wxGlade: RotarySettings.<event_handler>
+    def on_text_rotary_scale_y(self, event=None):  # wxGlade: RotarySettings.<event_handler>
         if self.context is not None:
             try:
                 self.context.scale_y = float(self.text_rotary_scaley.GetValue())
             except ValueError:
                 pass
 
-    def on_text_rotary_scale_x(self, event):  # wxGlade: RotarySettings.<event_handler>
+    def on_text_rotary_scale_x(self, event=None):  # wxGlade: RotarySettings.<event_handler>
         if self.context is not None:
             try:
                 self.context.scale_x = float(self.text_rotary_scalex.GetValue())

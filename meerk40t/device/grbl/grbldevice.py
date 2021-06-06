@@ -13,7 +13,7 @@ from ..basedevice import (
 )
 from ..lasercommandconstants import *
 
-MILS_PER_MM = 39.3701
+MILS_IN_MM = 39.3701
 
 """
 GRBL device.
@@ -128,7 +128,7 @@ class GRBLDriver(Driver):
         self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
 
     def g21(self):
-        self.scale = 39.3701  # g21 is mm mode. 39.3701 mils in a mm
+        self.scale = MILS_IN_MM  # g21 is mm mode. 39.3701 mils in a mm
 
     def g93(self):
         # Feed Rate in Minutes / Unit
@@ -274,22 +274,22 @@ def get_command_code(lines):
     home_adjust = None
     flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
     flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
-    scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
+    scale = MILS_IN_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
 
-    def g93_feedrate():
-        # Feed Rate in Minutes / Unit
-        feed_convert = lambda s: (60.0 / s) * scale / MILS_PER_MM
-        feed_invert = lambda s: (60.0 / s) * MILS_PER_MM / scale
-        return feed_convert, feed_invert
+    def g93_feed_convert(s):
+        return (60.0 / s) * scale / MILS_IN_MM
 
-    def g94_feedrate():
-        # Feed Rate in Units / Minute
-        feed_convert = lambda s: s / ((scale / MILS_PER_MM) * 60.0)
-        feed_invert = lambda s: s * ((scale / MILS_PER_MM) * 60.0)
+    def g93_feed_invert(s):
+        return (60.0 / s) * MILS_IN_MM / scale
+
+    def g94_feed_convert(s):
+        return s / ((scale / MILS_IN_MM) * 60.0)
+
+    def g94_feed_invert(s):
         # units to mm, seconds to minutes.
-        return feed_convert, feed_invert
+        return s * ((scale / MILS_IN_MM) * 60.0)
 
-    feed_convert, feed_invert = g94_feedrate()  # G94 DEFAULT, mm mode
+    feed_convert, feed_invert = g94_feed_convert, g94_feed_invert  # G94 DEFAULT, mm mode
     move_mode = 0
     home = None
     home2 = None
@@ -417,7 +417,7 @@ def get_command_code(lines):
                 elif v == 20.0 or v == 70.0:
                     scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
                 elif v == 21.0 or v == 71.0:
-                    scale = 39.3701  # g21 is mm mode. 39.3701 mils in a mm
+                    scale = MILS_IN_MM  # g21 is mm mode. 39.3701 mils in a mm
                 elif v == 28.0:
                     yield COMMAND_MODE_RAPID
                     yield COMMAND_HOME
@@ -539,9 +539,9 @@ def get_command_code(lines):
                     # Clear Coordinate offset set by 92.
                     pass  # Clear Coordinate offset TODO: Implement
                 elif v == 93.0:
-                    feed_convert, feed_invert = g93_feedrate()
+                    feed_convert, feed_invert = g93_feed_convert, g93_feed_invert
                 elif v == 94.0:
-                    feed_convert, feed_invert = g94_feedrate()
+                    feed_convert, feed_invert = g94_feed_convert, g94_feed_invert
                 else:
                     return 20  # Unsupported or invalid g-code command found in block.
             del gc["g"]
@@ -615,7 +615,7 @@ class GRBLEmulator(Module):
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.scale = (
-            MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
+            MILS_IN_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
         )
         self.feed_convert = None
         self.feed_invert = None
@@ -872,7 +872,7 @@ class GRBLEmulator(Module):
                 elif v == 20.0 or v == 70.0:
                     self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
                 elif v == 21.0 or v == 71.0:
-                    self.scale = 39.3701  # g21 is mm mode. 39.3701 mils in a mm
+                    self.scale = MILS_IN_MM  # g21 is mm mode. 39.3701 mils in a mm
                 elif v == 28.0:
                     self.spooler.job(COMMAND_MODE_RAPID)
                     self.spooler.job(COMMAND_HOME)
@@ -1067,13 +1067,13 @@ class GRBLEmulator(Module):
 
     def g93_feedrate(self):
         # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (60.0 / s) * self.scale / MILS_PER_MM
-        self.feed_invert = lambda s: (60.0 / s) * MILS_PER_MM / self.scale
+        self.feed_convert = lambda s: (60.0 / s) * self.scale / MILS_IN_MM
+        self.feed_invert = lambda s: (60.0 / s) * MILS_IN_MM / self.scale
 
     def g94_feedrate(self):
         # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / ((self.scale / MILS_PER_MM) * 60.0)
-        self.feed_invert = lambda s: s * ((self.scale / MILS_PER_MM) * 60.0)
+        self.feed_convert = lambda s: s / ((self.scale / MILS_IN_MM) * 60.0)
+        self.feed_invert = lambda s: s * ((self.scale / MILS_IN_MM) * 60.0)
         # units to mm, seconds to minutes.
 
     @property

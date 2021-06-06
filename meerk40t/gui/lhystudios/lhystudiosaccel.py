@@ -277,7 +277,7 @@ class LhystudiosAccelerationChart(MWindow):
         pass
 
     def on_check_vector_accel_enable(
-        self, event
+        self, event=None
     ):  # wxGlade: LhystudiosDriver.<event_handler>
 
         self.context.vector_accel_table = self.checkbox_vector_accel_enable.GetValue()
@@ -286,7 +286,7 @@ class LhystudiosAccelerationChart(MWindow):
         pass
 
     def on_check_raster_accel_enable(
-        self, event
+        self, event=None
     ):  # wxGlade: LhystudiosDriver.<event_handler>
         self.context.raster_accel_table = self.checkbox_raster_accel_enable.GetValue()
 
@@ -294,7 +294,7 @@ class LhystudiosAccelerationChart(MWindow):
         pass
 
     def on_check_vraster_accel_enable(
-        self, event
+        self, event=None
     ):  # wxGlade: AccelBuild.<event_handler>
         self.context.vraster_accel_table = self.checkbox_vraster_accel_enable.GetValue()
 

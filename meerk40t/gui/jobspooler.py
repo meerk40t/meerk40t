@@ -128,7 +128,7 @@ class JobSpooler(MWindow):
         self.Layout()
         # end wxGlade
 
-    def on_combo_device(self, event):  # wxGlade: Spooler.<event_handler>
+    def on_combo_device(self, event=None):  # wxGlade: Spooler.<event_handler>
         self.available_devices = [
             self.context.registered[i] for i in self.context.match("device")
         ]
@@ -174,11 +174,11 @@ class JobSpooler(MWindow):
         if not self.connected_spooler:
             return
 
-        def name_str(e):
+        def name_str(named_obj):
             try:
-                return e.__name__
+                return named_obj.__name__
             except AttributeError:
-                return str(e)
+                return str(named_obj)
 
         try:
             self.list_job_spool.DeleteAllItems()
@@ -201,26 +201,26 @@ class JobSpooler(MWindow):
                     except AttributeError:
                         pass
                     try:
-                        self.list_job_spool.SetItem(m, 4, _("%.1fmm/s") % (e.speed))
+                        self.list_job_spool.SetItem(m, 4, _("%.1fmm/s") % e.speed)
                     except AttributeError:
                         pass
                     settings = list()
                     try:
-                        settings.append(_("power=%g") % (e.power))
+                        settings.append(_("power=%g") % e.power)
                     except AttributeError:
                         pass
                     try:
-                        settings.append(_("step=%d") % (e.raster_step))
+                        settings.append(_("step=%d") % e.raster_step)
                     except AttributeError:
                         pass
                     try:
-                        settings.append(_("overscan=%d") % (e.overscan))
+                        settings.append(_("overscan=%d") % e.overscan)
                     except AttributeError:
                         pass
                     self.list_job_spool.SetItem(m, 5, " ".join(settings))
 
-    def on_tree_popup_clear(self, element):
-        def delete(event):
+    def on_tree_popup_clear(self, element=None):
+        def delete(event=None):
             spooler = self.connected_spooler
             spooler.clear_queue()
             self.refresh_spooler_list()
@@ -228,7 +228,7 @@ class JobSpooler(MWindow):
         return delete
 
     def on_tree_popup_delete(self, element):
-        def delete(event):
+        def delete(event=None):
             spooler = self.connected_spooler
             spooler.remove(element)
             self.refresh_spooler_list()

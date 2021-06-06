@@ -41,7 +41,7 @@ class Console(MWindow):
         self.command_log = []
         self.command_position = 0
 
-    def on_middle_click(self, event):
+    def on_middle_click(self, event=None):
         self.text_main.SetValue("")
 
     def window_open(self):
@@ -64,11 +64,11 @@ class Console(MWindow):
             pass
 
     def on_text_uri(self, event):
-        mouseEvent = event.GetMouseEvent()
-        if mouseEvent.LeftDClick():
-            urlStart = event.GetURLStart()
-            urlEnd = event.GetURLEnd()
-            url = self.text_main.GetRange(urlStart, urlEnd)
+        mouse_event = event.GetMouseEvent()
+        if mouse_event.LeftDClick():
+            url_start = event.GetURLStart()
+            url_end = event.GetURLEnd()
+            url = self.text_main.GetRange(url_start, url_end)
             import webbrowser
 
             webbrowser.open_new_tab(url)

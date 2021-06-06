@@ -74,8 +74,8 @@ class FileOutput(MWindow):
         # self.Close()
         pass
 
-    def on_text_filename(self, event):  # wxGlade: Controller.<event_handler>
+    def on_text_filename(self, event=None):  # wxGlade: Controller.<event_handler>
         self.output.filename = self.text_filename.GetValue()
 
-    def on_radiobox_file(self, event):  # wxGlade: Controller.<event_handler>
+    def on_radiobox_file(self, event=None):  # wxGlade: Controller.<event_handler>
         pass

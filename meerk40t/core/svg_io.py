@@ -43,7 +43,7 @@ from ..svgelements import (
 )
 from .elements import LaserOperation
 
-MILS_PER_MM = 39.3701
+MILS_IN_MM = 39.3701
 
 
 def plugin(kernel, lifecycle=None):
@@ -73,7 +73,6 @@ class SVGWriter:
             "https://htmlpreview.github.io/?https://github.com/meerk40t/meerk40t/blob/master/svg-namespace.html",
         )
         # Native unit is mils, these must convert to mm and to px
-        mils_per_mm = 39.3701
         # mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
         bed_dim = context.root
@@ -83,8 +82,8 @@ class SVGWriter:
         mm_height = bed_dim.bed_height
         root.set(SVG_ATTR_WIDTH, "%fmm" % mm_width)
         root.set(SVG_ATTR_HEIGHT, "%fmm" % mm_height)
-        px_width = mm_width * mils_per_mm * px_per_mils
-        px_height = mm_height * mils_per_mm * px_per_mils
+        px_width = mm_width * MILS_IN_MM * px_per_mils
+        px_height = mm_height * MILS_IN_MM * px_per_mils
 
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
         scale = "scale(%f)" % px_per_mils
@@ -172,7 +171,7 @@ class SVGWriter:
                 stream = BytesIO()
                 element.image.save(stream, format="PNG")
                 png = b64encode(stream.getvalue()).decode("utf8")
-                subelement.set("xlink:href", "data:image/png;base64,%s" % (png))
+                subelement.set("xlink:href", "data:image/png;base64,%s" % png)
                 subelement.set(SVG_ATTR_X, "0")
                 subelement.set(SVG_ATTR_Y, "0")
                 subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
@@ -274,8 +273,8 @@ class SVGLoader:
         svg = SVG.parse(
             source=pathname,
             reify=True,
-            width="%fmm" % (bed_dim.bed_width),
-            height="%fmm" % (bed_dim.bed_height),
+            width="%fmm" % bed_dim.bed_width,
+            height="%fmm" % bed_dim.bed_height,
             ppi=ppi,
             color="none",
             transform="scale(%f)" % scale_factor,

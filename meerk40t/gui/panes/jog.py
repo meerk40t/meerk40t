@@ -150,51 +150,51 @@ class Jog(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def on_button_navigate_home(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_home(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context("home\n")
 
-    def on_button_navigate_ul(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = -self.context.navigate_jog
         dy = -self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
-    def on_button_navigate_u(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = -self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
-    def on_button_navigate_ur(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
         dy = -self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
-    def on_button_navigate_l(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = -self.context.navigate_jog
         dy = 0
         self.context("move_relative %d %d\n" % (dx, dy))
 
-    def on_button_navigate_r(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_r(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
         dy = 0
         self.context("move_relative %d %d\n" % (dx, dy))
 
-    def on_button_navigate_dl(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = -self.context.navigate_jog
         dy = self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
-    def on_button_navigate_d(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
-    def on_button_navigate_dr(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
         dy = self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
-    def on_button_navigate_unlock(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_unlock(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context("unlock\n")
 
-    def on_button_navigate_lock(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_lock(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context("lock\n")
