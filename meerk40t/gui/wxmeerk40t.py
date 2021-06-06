@@ -393,6 +393,7 @@ class MeerK40t(MWindow):
         self.__set_ribbonbar()
 
         self._mgr = aui.AuiManager()
+        self._mgr.SetFlags(self._mgr.GetFlags() | aui.AUI_MGR_LIVE_RESIZE)
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
         self._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.on_pane_active)
 
