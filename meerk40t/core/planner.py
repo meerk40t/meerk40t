@@ -289,14 +289,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_command(
-            command,
-            channel,
-            _,
-            data_type=None,
-            op=None,
-            index=None,
-            data=None,
-            **kwgs
+            command, channel, _, data_type=None, op=None, index=None, data=None, **kwgs
         ):
             plan, original, commands, name = data
             if op is None:
@@ -329,7 +322,9 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan_append(command, channel, _, data_type=None, op=None, data=None, **kwgs):
+        def plan_append(
+            command, channel, _, data_type=None, op=None, data=None, **kwgs
+        ):
             plan, original, commands, name = data
             if op is None:
                 raise SyntaxError
@@ -353,7 +348,9 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan_prepend(command, channel, _, data_type=None, op=None, data=None, **kwgs):
+        def plan_prepend(
+            command, channel, _, data_type=None, op=None, data=None, **kwgs
+        ):
             plan, original, commands, name = data
             if op is None:
                 raise SyntaxError

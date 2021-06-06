@@ -17,9 +17,7 @@ def plugin(kernel, lifecycle):
             "distance", "d", type=Length, default=16, help=_("Length between rungs")
         )
         @context.console_command("embroider", help=_("embroider <angle> <distance>"))
-        def embroider(
-            command, channel, _, angle=None, distance=None, **kwargs
-        ):
+        def embroider(command, channel, _, angle=None, distance=None, **kwargs):
             bed_dim = context.root
             elements = context.elements
             channel(_("Embroidery Filling"))

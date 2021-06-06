@@ -2189,7 +2189,9 @@ class Kernel:
                     channel(_("Loaded Modules in Context %s:") % str(context.path))
                     for j, jname in enumerate(context.opened):
                         module = context.opened[jname]
-                        channel(_("%d: %s as type of %s") % (j + 1, jname, type(module)))
+                        channel(
+                            _("%d: %s as type of %s") % (j + 1, jname, type(module))
+                        )
                     channel(_("----------"))
                     return
             if path is None:

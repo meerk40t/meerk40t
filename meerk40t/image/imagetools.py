@@ -8,6 +8,7 @@ from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 
 MILS_IN_MM = 39.3701
 
+
 def plugin(kernel, lifecycle=None):
     """
     ImageTools mostly provides the image functionality to the console. It should be loaded in the root context.
@@ -94,7 +95,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="elements",
     )
-    def image(data,  **kwargs):
+    def image(data, **kwargs):
         elements = context.elements
         paths = []
         for element in data:
@@ -171,9 +172,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "threshold", help="", input_type="image", output_type="image"
     )
-    def image(
-        data, threshold_max=None, threshold_min=None, **kwargs
-    ):
+    def image(data, threshold_max=None, threshold_min=None, **kwargs):
         if threshold_min is None:
             raise SyntaxError
         divide = (threshold_max - threshold_min) / 255.0
@@ -251,7 +250,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image( data, color, distance=1, **kwargs):
+    def image(data, color, distance=1, **kwargs):
         if color is None:
             raise SyntaxError(_("Must specify a color"))
         distance_sq = distance * distance
@@ -857,12 +856,7 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def halftone(
-        data,
-        oversample,
-        sample=10,
-        scale=1,
-        angle=Angle.degrees(22),
-        **kwargs
+        data, oversample, sample=10, scale=1, angle=Angle.degrees(22), **kwargs
     ):
         """
         Returns half-tone image for image.

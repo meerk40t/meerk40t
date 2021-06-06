@@ -31,8 +31,8 @@ from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
 from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 
-
 MILS_IN_MM = 39.3701
+
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
@@ -331,7 +331,9 @@ def plugin(kernel, lifecycle=None):
             if len(remainder) == 0:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
-                output.write(bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8"))
+                output.write(
+                    bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
+                )
 
         @context.console_command(
             "start", input_type="lhystudios", help=_("Start Pipe to Controller")

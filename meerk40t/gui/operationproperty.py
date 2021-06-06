@@ -619,7 +619,9 @@ class OperationProperty(MWindow):
             return
         self.context.signal("element_property_update", self.operation)
 
-    def on_text_raster_step(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_raster_step(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.raster_step = int(self.text_raster_step.GetValue())
         except ValueError:
@@ -629,7 +631,9 @@ class OperationProperty(MWindow):
         self.travel_lines = None
         self.refresh_display()
 
-    def on_text_overscan(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_overscan(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         overscan = self.text_overscan.GetValue()
         if not overscan.endswith("%"):
             try:
@@ -639,14 +643,18 @@ class OperationProperty(MWindow):
         self.operation.settings.overscan = overscan
         self.context.signal("element_property_update", self.operation)
 
-    def on_combo_raster_direction(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_combo_raster_direction(
+        self, event=None
+    ):  # wxGlade: Preferences.<event_handler>
         self.operation.settings.raster_direction = (
             self.combo_raster_direction.GetSelection()
         )
         self.context.raster_direction = self.operation.settings.raster_direction
         self.context.signal("element_property_update", self.operation)
 
-    def on_radio_directional(self, event=None):  # wxGlade: RasterProperty.<event_handler>
+    def on_radio_directional(
+        self, event=None
+    ):  # wxGlade: RasterProperty.<event_handler>
         self.operation.settings.raster_swing = (
             self.radio_directional_raster.GetSelection()
         )
@@ -666,7 +674,9 @@ class OperationProperty(MWindow):
         )
         self.context.signal("element_property_update", self.operation)
 
-    def on_slider_bottom(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_slider_bottom(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         self.operation.settings.raster_preference_bottom = (
             self.slider_bottom.GetValue() - 1
         )
@@ -708,13 +718,17 @@ class OperationProperty(MWindow):
         self.operation.settings.acceleration = self.slider_accel.GetValue()
         self.context.signal("element_property_update", self.operation)
 
-    def on_check_dot_length(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_dot_length(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dot_length_custom.GetValue()
         self.text_dot_length.Enable(on)
         self.operation.settings.dot_length_custom = bool(on)
         self.context.signal("element_property_update", self.operation)
 
-    def on_text_dot_length(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dot_length(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.dot_length = int(self.text_dot_length.GetValue())
         except ValueError:

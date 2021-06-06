@@ -9,6 +9,7 @@ _ = wx.GetTranslation
 
 MILS_PER_MM = 39.3701
 
+
 class ExecuteJob(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(496, 573, *args, **kwds)
@@ -377,12 +378,16 @@ class ExecuteJob(MWindow):
     def on_check_home_after(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.autohome = self.preview_menu.menu_autohome.IsChecked()
 
-    def on_check_physicalhome_before(self, event=None):  # wxGlade: JobInfo.<event_handler>
+    def on_check_physicalhome_before(
+        self, event=None
+    ):  # wxGlade: JobInfo.<event_handler>
         self.context.prephysicalhome = (
             self.preview_menu.menu_prephysicalhome.IsChecked()
         )
 
-    def on_check_physicalhome_after(self, event=None):  # wxGlade: JobInfo.<event_handler>
+    def on_check_physicalhome_after(
+        self, event=None
+    ):  # wxGlade: JobInfo.<event_handler>
         self.context.autophysicalhome = (
             self.preview_menu.menu_autophysicalhome.IsChecked()
         )
@@ -405,7 +410,9 @@ class ExecuteJob(MWindow):
     def on_check_inner_first(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_inner_first = self.check_cut_inner_first.IsChecked()
 
-    def on_check_reduce_directions(self, event=None):  # wxGlade: Preview.<event_handler>
+    def on_check_reduce_directions(
+        self, event=None
+    ):  # wxGlade: Preview.<event_handler>
         self.context.opt_reduce_directions = (
             self.check_reduce_direction_changes.IsChecked()
         )

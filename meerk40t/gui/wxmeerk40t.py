@@ -188,6 +188,7 @@ def plugin(kernel, lifecycle):
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
+
     elif lifecycle == "preregister":
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root = kernel.root

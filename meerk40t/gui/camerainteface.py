@@ -343,7 +343,9 @@ class CameraInterface(MWindow, Job):
         """
         self.context.console("camera%d export\n" % self.index)
 
-    def on_button_reconnect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
+    def on_button_reconnect(
+        self, event=None
+    ):  # wxGlade: CameraInterface.<event_handler>
         self.context.console("camera%d stop start\n" % self.index)
 
     def on_slider_fps(self, event=None):  # wxGlade: CameraInterface.<event_handler>

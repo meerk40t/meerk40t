@@ -1761,9 +1761,7 @@ class Elemental(Modifier):
             input_type=("elements", "ops"),
             output_type=("elements", "ops"),
         )
-        def e_copy(
-            data=None, data_type=None, **kwgs
-        ):
+        def e_copy(data=None, data_type=None, **kwgs):
             add_elem = list(map(copy, data))
             if data_type == "ops":
                 self.add_ops(add_elem)
@@ -1774,9 +1772,7 @@ class Elemental(Modifier):
         @context.console_command(
             "delete", help=_("delete elements"), input_type=("elements", "ops")
         )
-        def e_delete(
-            command, channel, _, data=None, data_type=None, **kwgs
-        ):
+        def e_delete(command, channel, _, data=None, data_type=None, **kwgs):
             channel(_("deleting."))
             if data_type == "elements":
                 self.remove_elements(data)
@@ -1925,7 +1921,7 @@ class Elemental(Modifier):
             input_type="elements",
             output_type="elements",
         )
-        def element_merge(data=None,**kwgs):
+        def element_merge(data=None, **kwgs):
             super_element = Path()
             for e in data:
                 if not isinstance(e, Shape):
@@ -2192,15 +2188,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element_grid(
-            command,
-            channel,
-            _,
-            c: int,
-            r: int,
-            x: Length,
-            y: Length,
-            data=None,
-            **kwgs
+            command, channel, _, c: int, r: int, x: Length, y: Length, data=None, **kwgs
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -2276,9 +2264,7 @@ class Elemental(Modifier):
             input_type=("elements", None),
             output_type="elements",
         )
-        def element_ellipse(
-            x_pos, y_pos, rx_pos, ry_pos, data=None, **kwgs
-        ):
+        def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwgs):
             if ry_pos is None:
                 raise SyntaxError
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
@@ -2319,14 +2305,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element_rect(
-            x_pos,
-            y_pos,
-            width,
-            height,
-            rx=None,
-            ry=None,
-            data=None,
-            **kwgs
+            x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwgs
         ):
             """
             Draws an svg rectangle with optional rounded corners.
@@ -2698,11 +2677,15 @@ class Elemental(Modifier):
             rot = angle.as_degrees
 
             if cx is not None:
-                cx = cx.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
+                cx = cx.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
-                cy = cy.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
+                cy = cy.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                )
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
@@ -2857,14 +2840,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element_translate(
-            command,
-            channel,
-            _,
-            tx,
-            ty,
-            absolute=False,
-            data=None,
-            **kwgs
+            command, channel, _, tx, ty, absolute=False, data=None, **kwgs
         ):
             if tx is None:
                 channel(_("----------"))
@@ -2892,11 +2868,15 @@ class Elemental(Modifier):
                 channel(_("No selected elements."))
                 return
             if tx is not None:
-                tx = tx.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
+                tx = tx.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
             else:
                 tx = 0
             if ty is not None:
-                ty = ty.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
+                ty = ty.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                )
             else:
                 ty = 0
             m = Matrix("translate(%f,%f)" % (tx, ty))
@@ -2993,17 +2973,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element_matrix(
-            command,
-            channel,
-            _,
-            sx,
-            kx,
-            sy,
-            ky,
-            tx,
-            ty,
-            data=None,
-            **kwgs
+            command, channel, _, sx, kx, sy, ky, tx, ty, data=None, **kwgs
         ):
             if tx is None:
                 channel(_("----------"))
@@ -3030,8 +3000,12 @@ class Elemental(Modifier):
                     kx,
                     sy,
                     ky,
-                    tx.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM),
-                    ty.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM),
+                    tx.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    ),
+                    ty.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                    ),
                 )
                 for e in data:
                     try:
@@ -3142,9 +3116,7 @@ class Elemental(Modifier):
         @context.console_command(
             "list", help=_("view tree"), input_type="tree", output_type="tree"
         )
-        def tree_list(
-            command, channel, _, data=None, **kwgs
-        ):
+        def tree_list(command, channel, _, data=None, **kwgs):
             if data is None:
                 data = self._tree
             channel(_("----------"))
@@ -3199,9 +3171,7 @@ class Elemental(Modifier):
             input_type="clipboard",
             output_type="elements",
         )
-        def clipboard_paste(
-            command, channel, _, data=None, dx=None, dy=None,**kwgs
-        ):
+        def clipboard_paste(command, channel, _, data=None, dx=None, dy=None, **kwgs):
             destination = self._clipboard_default
             try:
                 pasted = [copy(e) for e in self._clipboard[destination]]

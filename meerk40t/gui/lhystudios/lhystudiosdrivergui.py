@@ -323,7 +323,9 @@ class LhystudiosDriverGui(MWindow):
     def spin_on_home_y(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.home_adjust_y = int(self.spin_home_y.GetValue())
 
-    def on_button_set_home_current(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_button_set_home_current(
+        self, event=None
+    ):  # wxGlade: Preferences.<event_handler>
         x, y = self.calc_home_position()
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
@@ -338,13 +340,17 @@ class LhystudiosDriverGui(MWindow):
     def on_check_autolock(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.autolock = self.checkbox_autolock.GetValue()
 
-    def on_check_limit_packet_buffer(self, event=None):  # wxGlade: JobInfo.<event_handler>
+    def on_check_limit_packet_buffer(
+        self, event=None
+    ):  # wxGlade: JobInfo.<event_handler>
         self.context.buffer_limit = self.checkbox_limit_buffer.GetValue()
 
     def on_spin_packet_buffer_max(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.context.buffer_max = self.spin_packet_buffer_max.GetValue()
 
-    def on_check_pulse_shift(self, event=None):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_check_pulse_shift(
+        self, event=None
+    ):  # wxGlade: LhystudiosDriver.<event_handler>
         self.context.plot_shift = self.checkbox_plot_shift.GetValue()
         try:
             _, driver, _ = self.context.root.device()
@@ -352,7 +358,9 @@ class LhystudiosDriverGui(MWindow):
         except (AttributeError, TypeError):
             pass
 
-    def on_check_random_ppi(self, event=None):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_check_random_ppi(
+        self, event=None
+    ):  # wxGlade: LhystudiosDriver.<event_handler>
         self.context.random_ppi = self.checkbox_random_ppi.GetValue()
 
     def on_buffer_update(self, origin, value, *args):

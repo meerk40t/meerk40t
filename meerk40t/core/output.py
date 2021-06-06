@@ -203,7 +203,9 @@ class Outputs(Modifier):
             input_type=(None, "input", "driver"),
             output_type="output",
         )
-        def output_base(command, channel, _, data=None, new=None, remainder=None, **kwgs):
+        def output_base(
+            command, channel, _, data=None, new=None, remainder=None, **kwgs
+        ):
             input_driver = None
             if data is None:
                 if len(command) > 6:

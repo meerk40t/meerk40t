@@ -559,7 +559,9 @@ class Drivers(Modifier):
             input_type=(None, "spooler"),
             output_type="driver",
         )
-        def driver_base(command, channel, _, data=None, new=None, remainder=None, **kwgs):
+        def driver_base(
+            command, channel, _, data=None, new=None, remainder=None, **kwgs
+        ):
             spooler = None
             if data is None:
                 if len(command) > 6:

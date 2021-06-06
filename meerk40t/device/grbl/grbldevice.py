@@ -289,7 +289,10 @@ def get_command_code(lines):
         # units to mm, seconds to minutes.
         return s * ((scale / MILS_IN_MM) * 60.0)
 
-    feed_convert, feed_invert = g94_feed_convert, g94_feed_invert  # G94 DEFAULT, mm mode
+    feed_convert, feed_invert = (
+        g94_feed_convert,
+        g94_feed_invert,
+    )  # G94 DEFAULT, mm mode
     move_mode = 0
     home = None
     home2 = None

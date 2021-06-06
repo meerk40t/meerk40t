@@ -1,6 +1,5 @@
 import wx
 
-
 from meerk40t.gui.icons import (
     icon_corner1,
     icon_corner2,
@@ -202,7 +201,9 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (px, py))
         self.drag_ready(True)
 
-    def on_button_align_corner_tl(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_corner_tl(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
@@ -211,7 +212,9 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (bbox[0], bbox[1]))
         self.drag_ready(True)
 
-    def on_button_align_corner_tr(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_corner_tr(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
@@ -220,7 +223,9 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (bbox[2], bbox[1]))
         self.drag_ready(True)
 
-    def on_button_align_corner_bl(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_corner_bl(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
@@ -229,7 +234,9 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (bbox[0], bbox[3]))
         self.drag_ready(True)
 
-    def on_button_align_corner_br(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_corner_br(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         elements = self.context.elements
         elements.validate_selected_area()
         bbox = elements.selected_area()
@@ -241,16 +248,24 @@ class Drag(wx.Panel):
     def drag_relative(self, dx, dy):
         self.context("move_relative %d %d\ntranslate %d %d\n" % (dx, dy, dx, dy))
 
-    def on_button_align_drag_down(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_drag_down(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(0, self.context.navigate_jog)
 
-    def on_button_align_drag_right(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_drag_right(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(self.context.navigate_jog, 0)
 
-    def on_button_align_drag_up(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_drag_up(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(0, -self.context.navigate_jog)
 
-    def on_button_align_drag_left(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_drag_left(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(-self.context.navigate_jog, 0)
 
     def on_button_align_first_position(self, event=None):
@@ -265,9 +280,13 @@ class Drag(wx.Panel):
         self.context("move_absolute %f %f\n" % (pos[0], pos[1]))
         self.drag_ready(True)
 
-    def on_button_align_trace_hull(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_trace_hull(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         self.context("trace_hull\n")
 
-    def on_button_align_trace_quick(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_align_trace_quick(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         self.context("trace_quick\n")
         self.drag_ready(True)

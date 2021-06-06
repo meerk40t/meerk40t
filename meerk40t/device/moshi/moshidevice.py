@@ -357,7 +357,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "start", input_type="moshi", help=_("Start Pipe to Controller")
         )
-        def pipe_start(command, channel, _, data=None,  **kwargs):
+        def pipe_start(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()

@@ -1,6 +1,5 @@
 import wx
 
-
 from meerk40t.gui.icons import (
     icons8_down_50,
     icons8_down_left_50,
@@ -150,7 +149,9 @@ class Jog(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def on_button_navigate_home(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_home(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         self.context("home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
@@ -193,8 +194,12 @@ class Jog(wx.Panel):
         dy = self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
-    def on_button_navigate_unlock(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_unlock(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         self.context("unlock\n")
 
-    def on_button_navigate_lock(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_button_navigate_lock(
+        self, event=None
+    ):  # wxGlade: Navigation.<event_handler>
         self.context("lock\n")
