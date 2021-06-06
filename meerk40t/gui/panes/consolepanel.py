@@ -4,10 +4,10 @@ _ = wx.GetTranslation
 
 
 class ConsolePanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.text_main = wx.TextCtrl(
             self,
