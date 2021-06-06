@@ -404,23 +404,25 @@ class SimulationTravelWidget(Widget):
                     s = complex(start[0], start[1])
                     e = complex(end[0], end[1])
                     d = abs(s - e)
-                    if d >= 100:
-                        m = (s + e) / 2.0
-                        ang = math.atan2((s - e).imag, (s - e).real)
-                        q = d / 10.0
-                        m0 = m + complex(
-                            math.cos(ang + math.tau / 10) * q,
-                            math.sin(ang + math.tau / 10) * q,
-                        )
-                        m1 = m + complex(
-                            math.cos(ang - math.tau / 10) * q,
-                            math.sin(ang - math.tau / 10) * q,
-                        )
-                        m = wx.Point2D(m.real, m.imag)
-                        self.starts.append(m)
-                        self.ends.append(wx.Point2D(m0.real, m0.imag))
-                        self.starts.append(m)
-                        self.ends.append(wx.Point2D(m1.real, m1.imag))
+                    if d >= 127:
+                        for p in [0.1, 0.5, 0.9]:
+                            m = p * (e - s) + s
+                            ang = math.atan2((s - e).imag, (s - e).real)
+                            # arrow_size = d / 10.0
+                            arrow_size = 50
+                            m0 = m + complex(
+                                math.cos(ang + math.tau / 10) * arrow_size,
+                                math.sin(ang + math.tau / 10) * arrow_size,
+                            )
+                            m1 = m + complex(
+                                math.cos(ang - math.tau / 10) * arrow_size,
+                                math.sin(ang - math.tau / 10) * arrow_size,
+                            )
+                            m = wx.Point2D(m.real, m.imag)
+                            self.starts.append(m)
+                            self.ends.append(wx.Point2D(m0.real, m0.imag))
+                            self.starts.append(m)
+                            self.ends.append(wx.Point2D(m1.real, m1.imag))
             self.pos.append(len(self.starts))
             prev = curr
 
