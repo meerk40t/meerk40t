@@ -1,4 +1,5 @@
 import wx
+from wx import aui
 
 ID_MAIN_TOOLBAR = wx.NewId()
 ID_ADD_FILE = wx.NewId()
@@ -40,104 +41,84 @@ from ..icons import (
 _ = wx.GetTranslation
 
 
-class ControlTools(wx.Panel):
-    def __init__(self, *args, gui=None, context=None, **kwds):
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-        self.gui = gui
-        # self.SetScrollRate(10, 10)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        toolbar = ControlToolBar(self, wx.ID_ANY, gui=self.gui, context=self.context)
-        sizer.Add(toolbar, 0, 0, 0)
-        self.SetSizer(sizer)
-        sizer.Fit(self)
-        self.Layout()
+def register_control_tools(context, gui):
+    toolbar = aui.AuiToolBar()
 
+    toolbar.AddTool(
+        ID_NAV,
+        _("Navigation"),
+        icons8_move_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Opens new project"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle Navigation\n"),
+        id=ID_NAV,
+    )
+    if context.has_feature("modifier/Camera"):
+        toolbar.AddTool(
+            ID_CAMERA,
+            _("Camera"),
+            icons8_camera_50.GetBitmap(),
+            kind=wx.ITEM_NORMAL,
+            short_help_string=_("Opens Camera Window"),
+        )
+        toolbar.Bind(wx.EVT_TOOL, gui.on_camera_click, id=ID_CAMERA)
+        # self.Bind(
+        #     RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
+        #     self.on_camera_dropdown,
+        #     id=ID_CAMERA,
+        # )
+        # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
+        # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
+        # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
+        # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
+        # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
 
-class ControlToolBar(wx.ToolBar):
-    def __init__(self, *args, context, gui, **kwds):
-        # begin wxGlade: wxToolBar.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.ToolBar.__init__(self, *args, **kwds)
-        self.context = context
-        self.gui = gui
+    toolbar.AddTool(
+        ID_SPOOLER,
+        _("Spooler"),
+        icons8_route_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Opens Spooler Window"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle JobSpooler\n"),
+        id=ID_SPOOLER,
+    )
+    toolbar.AddTool(
+        ID_CONTROLLER,
+        _("Controller"),
+        icons8_connected_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Opens Controller Window"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle -o Controller\n"),
+        id=ID_CONTROLLER,
+    )
 
-        self.AddTool(
-            ID_NAV,
-            _("Navigation"),
-            icons8_move_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Opens new project"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle Navigation\n"),
-            id=ID_NAV,
-        )
-        if self.context.has_feature("modifier/Camera"):
-            self.AddTool(
-                ID_CAMERA,
-                _("Camera"),
-                icons8_camera_50.GetBitmap(),
-                wx.NullBitmap,
-                wx.ITEM_NORMAL,
-                _("Opens Camera Window"),
-                "",
-            )
-            self.Bind(wx.EVT_TOOL, gui.on_camera_click, id=ID_CAMERA)
-            # self.Bind(
-            #     RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-            #     self.on_camera_dropdown,
-            #     id=ID_CAMERA,
-            # )
-            # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
-            # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
-            # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
-            # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
-            # self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
+    toolbar.Create(gui)
 
-        self.AddTool(
-            ID_SPOOLER,
-            _("Spooler"),
-            icons8_route_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Opens Spooler Window"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle JobSpooler\n"),
-            id=ID_SPOOLER,
-        )
-        self.AddTool(
-            ID_CONTROLLER,
-            _("Controller"),
-            icons8_connected_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Opens Controller Window"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle -o Controller\n"),
-            id=ID_CONTROLLER,
-        )
-        self.__set_properties()
-        self.__do_layout()
-        # Tool Bar end
+    pane = (
+        aui.AuiPaneInfo()
+            .Name("control_toolbar")
+            .Top()
+            .ToolbarPane()
+            .FloatingSize(230, 58)
+            .Layer(1)
+            .Caption(_("Control"))
+            .CaptionVisible(not context.pane_lock)
+            .Hide()
+    )
+    pane.dock_proportion = 40
+    pane.control = toolbar
+    pane.submenu = _("Toolbars")
+    gui.on_pane_add(pane)
+    context.register("pane/control_toolbar", pane)
 
-    def __set_properties(self):
-        # begin wxGlade: wxToolBar.__set_properties
-        self.Realize()
-        self.SetLabel(_("Control"))
-        # end wxGlade
+    return toolbar
 
-    def __do_layout(self):
-        # begin wxGlade: wxToolBar.__do_layout
-        pass
-        # end wxGlade

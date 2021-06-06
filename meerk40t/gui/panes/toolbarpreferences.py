@@ -1,4 +1,5 @@
 import wx
+from wx import aui
 
 ID_MAIN_TOOLBAR = wx.NewId()
 ID_ADD_FILE = wx.NewId()
@@ -41,117 +42,91 @@ from ..icons import (
 _ = wx.GetTranslation
 
 
-class PreferencesTools(wx.Panel):
-    def __init__(self, *args, gui=None, context=None, **kwds):
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-        self.gui = gui
-        # self.SetScrollRate(10, 10)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        toolbar = PreferencesToolBar(
-            self, wx.ID_ANY, gui=self.gui, context=self.context
-        )
-        sizer.Add(toolbar, 0, 0, 0)
-        self.SetSizer(sizer)
-        sizer.Fit(self)
-        self.Layout()
+def register_preferences_tools(context, gui):
+    toolbar = aui.AuiToolBar()
 
+    toolbar.AddTool(
+        ID_DEVICES,
+        _("Devices"),
+        icons8_manager_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Opens Device Manager"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle DeviceManager\n"),
+        id=ID_DEVICES,
+    )
 
-class PreferencesToolBar(wx.ToolBar):
-    def __init__(self, *args, context, gui, **kwds):
-        # begin wxGlade: wxToolBar.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.ToolBar.__init__(self, *args, **kwds)
-        self.context = context
-        self.gui = gui
+    toolbar.AddTool(
+        ID_CONFIGURATION,
+        _("Config"),
+        icons8_computer_support_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Opens Configuration Window"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle -d Preferences\n"),
+        id=ID_CONFIGURATION,
+    )
 
-        self.AddTool(
-            ID_DEVICES,
-            _("Devices"),
-            icons8_manager_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Opens Device Manager"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle DeviceManager\n"),
-            id=ID_DEVICES,
-        )
+    toolbar.AddTool(
+        ID_SETTING,
+        _("Settings"),
+        icons8_administrative_tools_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Opens Settings Window"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle Settings\n"),
+        id=ID_SETTING,
+    )
 
-        self.AddTool(
-            ID_CONFIGURATION,
-            _("Config"),
-            icons8_computer_support_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Opens Configuration Window"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle -d Preferences\n"),
-            id=ID_CONFIGURATION,
-        )
+    toolbar.AddTool(
+        ID_KEYMAP,
+        _("Keymap"),
+        icons8_keyboard_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Opens Keymap Window"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle Keymap\n"),
+        id=ID_KEYMAP,
+    )
+    toolbar.AddTool(
+        ID_ROTARY,
+        _("Rotary"),
+        icons8_roll_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Opens Rotary Window"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window -p rotary/1 toggle Rotary\n"),
+        id=ID_ROTARY,
+    )
 
-        self.AddTool(
-            ID_SETTING,
-            _("Settings"),
-            icons8_administrative_tools_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Opens Settings Window"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle Settings\n"),
-            id=ID_SETTING,
-        )
+    toolbar.Create(gui)
 
-        self.AddTool(
-            ID_KEYMAP,
-            _("Keymap"),
-            icons8_keyboard_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Opens Keymap Window"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle Keymap\n"),
-            id=ID_KEYMAP,
-        )
-        self.AddTool(
-            ID_ROTARY,
-            _("Rotary"),
-            icons8_roll_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Opens Rotary Window"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window -p rotary/1 toggle Rotary\n"),
-            id=ID_ROTARY,
-        )
+    pane = (
+        aui.AuiPaneInfo()
+            .Name("preferences_toolbar")
+            .Top()
+            .ToolbarPane()
+            .FloatingSize(290, 58)
+            .Layer(1)
+            .Caption(_("Preferences"))
+            .CaptionVisible(not context.pane_lock)
+            .Hide()
+    )
+    pane.dock_proportion = 50
+    pane.control = toolbar
+    pane.submenu = _("Toolbars")
+    gui.on_pane_add(pane)
+    gui.context.register("pane/preferences_toolbar", pane)
 
-        # self.SetBackgroundColour((200, 225, 250, 255))
-        self.__set_properties()
-        self.__do_layout()
-        # Tool Bar end
+    return toolbar
 
-    def __set_properties(self):
-        # begin wxGlade: wxToolBar.__set_properties
-        self.Realize()
-        self.SetLabel(_("Preferences"))
-        # end wxGlade
-
-    def __do_layout(self):
-        # begin wxGlade: wxToolBar.__do_layout
-        pass
-        # end wxGlade

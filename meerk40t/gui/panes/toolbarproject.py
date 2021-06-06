@@ -1,4 +1,5 @@
 import wx
+from wx import aui
 
 ID_MAIN_TOOLBAR = wx.NewId()
 ID_ADD_FILE = wx.NewId()
@@ -43,140 +44,111 @@ from ..icons import (
 _ = wx.GetTranslation
 
 
-class ProjectTools(wx.Panel):
-    def __init__(self, *args, gui=None, context=None, **kwds):
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-        self.gui = gui
-        # self.SetScrollRate(10, 10)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        toolbar = ProjectToolBar(self, wx.ID_ANY, gui=self.gui, context=self.context)
-        sizer.Add(toolbar, 0, 0, 0)
-        self.SetSizer(sizer)
-        sizer.Fit(self)
-        self.Layout()
+def register_project_tools(context, gui):
+    toolbar = aui.AuiToolBar()
+    toolbar.AddTool(
+        ID_OPEN,
+        _("Open"),
+        icons8_opened_folder_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Opens new project"),
+    )
+    toolbar.AddTool(
+        ID_SAVE,
+        _("Save"),
+        icons8_save_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Saves a project to disk"),
+    )
+    toolbar.AddSeparator()
+    toolbar.Bind(wx.EVT_TOOL, gui.on_click_open, id=ID_OPEN)
+    toolbar.Bind(wx.EVT_TOOL, gui.on_click_save, id=ID_SAVE)
 
+    toolbar.AddTool(
+        ID_JOB,
+        _("Execute Job"),
+        icons8_laser_beam_52.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Execute the current laser project"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle ExecuteJob 0\n"),
+        id=ID_JOB,
+    )
+    toolbar.AddTool(
+        ID_SIM,
+        _("Simulate"),
+        icons8_laser_beam_hazard2_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Simulate the current laser job"),
+    )
+    toolbar.AddTool(
+        ID_RASTER,
+        _("RasterWizard"),
+        icons8_fantasy_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Run RasterWizard "),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle RasterWizard\n"),
+        id=ID_RASTER,
+    )
+    toolbar.AddSeparator()
+    toolbar.AddTool(
+        ID_NOTES,
+        _("Notes"),
+        icons8_comments_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Open Notes Window"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle Notes\n"),
+        id=ID_NOTES,
+    )
+    toolbar.AddTool(
+        ID_CONSOLE,
+        _("Console"),
+        icons8_console_50.GetBitmap(),
+        kind=wx.ITEM_NORMAL,
+        short_help_string=_("Open Console Window"),
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda v: context("window toggle Console\n"),
+        id=ID_CONSOLE,
+    )
 
-class ProjectToolBar(wx.ToolBar):
-    def __init__(self, *args, context, gui, **kwds):
-        # begin wxGlade: wxToolBar.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.ToolBar.__init__(self, *args, **kwds)
-        self.context = context
-        self.gui = gui
+    def open_simulator(v=None):
+        with wx.BusyInfo(_("Preparing simulation...")):
+            context(
+                "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
+            ),
 
-        self.AddTool(
-            ID_OPEN,
-            _("Open"),
-            icons8_opened_folder_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Opens new project"),
-        )
-        self.AddTool(
-            ID_SAVE,
-            _("Save"),
-            icons8_save_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Saves a project to disk"),
-            "",
-        )
-        self.AddSeparator()
-        self.Bind(wx.EVT_TOOL, gui.on_click_open, id=ID_OPEN)
-        self.Bind(wx.EVT_TOOL, gui.on_click_save, id=ID_SAVE)
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        open_simulator,
+        id=ID_SIM,
+    )
+    toolbar.Create(gui)
 
-        self.AddTool(
-            ID_JOB,
-            _("Execute Job"),
-            icons8_laser_beam_52.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Execute the current laser project"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle ExecuteJob 0\n"),
-            id=ID_JOB,
-        )
-        self.AddTool(
-            ID_SIM,
-            _("Simulate"),
-            icons8_laser_beam_hazard2_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Simulate the current laser job"),
-            "",
-        )
-        self.AddTool(
-            ID_RASTER,
-            _("RasterWizard"),
-            icons8_fantasy_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Run RasterWizard "),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle RasterWizard\n"),
-            id=ID_RASTER,
-        )
-        self.AddSeparator()
-        self.AddTool(
-            ID_NOTES,
-            _("Notes"),
-            icons8_comments_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Open Notes Window"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle Notes\n"),
-            id=ID_NOTES,
-        )
-        self.AddTool(
-            ID_CONSOLE,
-            _("Console"),
-            icons8_console_50.GetBitmap(),
-            wx.NullBitmap,
-            wx.ITEM_NORMAL,
-            _("Open Console Window"),
-            "",
-        )
-        self.Bind(
-            wx.EVT_TOOL,
-            lambda v: self.context("window toggle Console\n"),
-            id=ID_CONSOLE,
-        )
+    pane = (
+        aui.AuiPaneInfo()
+            .Name("project_toolbar")
+            .Top()
+            .ToolbarPane()
+            .FloatingSize(430, 58)
+            .Layer(1)
+            .Caption(_("Project"))
+            .CaptionVisible(not context.pane_lock)
+            .Hide()
+    )
+    pane.dock_proportion = 70
+    pane.control = toolbar
+    pane.submenu = _("Toolbars")
+    gui.on_pane_add(pane)
+    context.register("pane/project_toolbar", pane)
 
-        def open_simulator(v=None):
-            with wx.BusyInfo(_("Preparing simulation...")):
-                self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-                ),
-
-        self.Bind(
-            wx.EVT_TOOL,
-            open_simulator,
-            id=ID_SIM,
-        )
-        # self.SetBackgroundColour((200, 225, 250, 255))
-        self.__set_properties()
-        self.__do_layout()
-        # Tool Bar end
-
-    def __set_properties(self):
-        # begin wxGlade: wxToolBar.__set_properties
-        self.Realize()
-        self.SetLabel(_("Project"))
-        # end wxGlade
-
-    def __do_layout(self):
-        # begin wxGlade: wxToolBar.__do_layout
-        pass
-        # end wxGlade
+    return toolbar
