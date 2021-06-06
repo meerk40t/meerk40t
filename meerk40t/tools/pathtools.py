@@ -695,10 +695,10 @@ class VectorMontonizer:
             else:
                 high = p1
                 low = p0
-            try:
-                m = (high.y - low.y) / (high.x - low.x)
-            except ZeroDivisionError:
-                m = float("inf")
+            # try:
+            #     m = (high.y - low.y) / (high.x - low.x)
+            # except ZeroDivisionError:
+            #     m = float("inf")
 
             # b = low.y - (m * low.x)
             if self.valid_low_value > high.y:
