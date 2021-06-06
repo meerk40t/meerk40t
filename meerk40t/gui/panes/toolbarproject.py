@@ -43,13 +43,13 @@ from ..icons import (
 _ = wx.GetTranslation
 
 
-class ProjectTools(wx.ScrolledWindow):
+class ProjectTools(wx.Panel):
     def __init__(self, *args, gui=None, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.ScrolledWindow.__init__(self, *args, **kwds)
+        wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.gui = gui
-        self.SetScrollRate(10, 10)
+        # self.SetScrollRate(10, 10)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         toolbar = ProjectToolBar(self, wx.ID_ANY, gui=self.gui, context=self.context)
         sizer.Add(toolbar, 0, 0, 0)
