@@ -112,14 +112,14 @@ def register_control_tools(context, gui):
 
     pane = (
         aui.AuiPaneInfo()
-            .Name("control_toolbar")
-            .Top()
-            .ToolbarPane()
-            .FloatingSize(230, 58)
-            .Layer(1)
-            .Caption(_("Control"))
-            .CaptionVisible(not context.pane_lock)
-            .Hide()
+        .Name("control_toolbar")
+        .Top()
+        .ToolbarPane()
+        .FloatingSize(230, 58)
+        .Layer(1)
+        .Caption(_("Control"))
+        .CaptionVisible(not context.pane_lock)
+        .Hide()
     )
     pane.dock_proportion = 40
     pane.control = toolbar
@@ -128,4 +128,3 @@ def register_control_tools(context, gui):
     context.register("pane/control_toolbar", pane)
 
     return toolbar
-
