@@ -608,6 +608,14 @@ class MeerK40t(MWindow):
         from .panes.toolbarcontrol import register_control_tools
         register_control_tools(context=self.context, gui=self)
 
+        self.context.setting(bool, 'developer_mode', False)
+        if self.context.developer_mode:
+            from .panes.toolbaralign import register_align_tools
+            register_align_tools(context=self.context, gui=self)
+
+            from .panes.toolbarshapes import register_shapes_tools
+            register_shapes_tools(context=self.context, gui=self)
+
         # Define Stop.
         stop = wx.BitmapButton(
             self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
