@@ -446,9 +446,9 @@ class MeerK40t(MWindow):
             .MaxSize(300, 300)
             .Caption(_("Jog"))
             .Name("jog")
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 3
+        pane.dock_proportion = 30
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -465,10 +465,10 @@ class MeerK40t(MWindow):
             .MaxSize(300, 300)
             .Caption(_("Drag"))
             .Name("drag")
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 3
+        pane.dock_proportion = 30
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -485,10 +485,10 @@ class MeerK40t(MWindow):
             .MaxSize(300, 300)
             .Caption(_("Transform"))
             .Name("transform")
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 3
+        pane.dock_proportion = 30
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -504,10 +504,10 @@ class MeerK40t(MWindow):
             .FloatingSize(190, 110)
             .Hide()
             .Caption(_("Distances"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Name("jogdist")
         )
-        pane.dock_proportion = 1
+        pane.dock_proportion = 10
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -523,10 +523,10 @@ class MeerK40t(MWindow):
             .FloatingSize(150, 75)
             .Hide()
             .Caption(_("Pulse"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Name("pulse")
         )
-        pane.dock_proportion = 1
+        pane.dock_proportion = 10
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -542,10 +542,10 @@ class MeerK40t(MWindow):
             .FloatingSize(150, 75)
             .MaxSize(200, 100)
             .Caption(_("Move"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Name("move")
         )
-        pane.dock_proportion = 1
+        pane.dock_proportion = 10
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -562,10 +562,10 @@ class MeerK40t(MWindow):
             .RightDockable()
             .BottomDockable(False)
             .Caption(_("Tree"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .TopDockable(False)
         )
-        pane.dock_proportion = 4
+        pane.dock_proportion = 40
         pane.control = self.wxtree
         self.on_pane_add(pane)
         self.context.register("pane/tree", pane)
@@ -576,10 +576,10 @@ class MeerK40t(MWindow):
             .MinSize(225, 110)
             .FloatingSize(225, 110)
             .Caption(_("Position"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Name("position")
         )
-        pane.dock_proportion = 2
+        pane.dock_proportion = 20
         pane.control = PositionPanel(self, wx.ID_ANY, context=self.context)
 
         self.on_pane_add(pane)
@@ -594,9 +594,9 @@ class MeerK40t(MWindow):
             .MinSize(300, 120)
             .FloatingSize(640, 120)
             .Caption(_("Ribbon"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 8
+        pane.dock_proportion = 80
         pane.control = self._ribbon
 
         self.on_pane_add(pane)
@@ -613,10 +613,10 @@ class MeerK40t(MWindow):
             .FloatingSize(430, 58)
             .Layer(1)
             .Caption(_("Project"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 7
+        pane.dock_proportion = 70
         pane.control = ProjectTools(self, wx.ID_ANY, context=self.context, gui=self)
         pane.submenu = _("Toolbars")
         self.on_pane_add(pane)
@@ -633,10 +633,10 @@ class MeerK40t(MWindow):
             .FloatingSize(230, 58)
             .Layer(1)
             .Caption(_("Control"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 4
+        pane.dock_proportion = 40
         pane.control = ControlTools(self, wx.ID_ANY, context=self.context, gui=self)
         pane.submenu = _("Toolbars")
         self.on_pane_add(pane)
@@ -653,10 +653,10 @@ class MeerK40t(MWindow):
             .FloatingSize(290, 58)
             .Layer(1)
             .Caption(_("Preferences"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 5
+        pane.dock_proportion = 50
         pane.control = PreferencesTools(self, wx.ID_ANY, context=self.context, gui=self)
         pane.submenu = _("Toolbars")
         self.on_pane_add(pane)
@@ -681,9 +681,9 @@ class MeerK40t(MWindow):
             .MinSize(40, 40)
             .FloatingSize(98, 98)
             .Name("stop")
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 1
+        pane.dock_proportion = 10
         pane.control = stop
 
         self.on_pane_add(pane)
@@ -717,9 +717,9 @@ class MeerK40t(MWindow):
             .MinSize(40, 40)
             .FloatingSize(98, 98)
             .Name("pause")
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 1
+        pane.dock_proportion = 10
         pane.control = pause
 
         self.on_pane_add(pane)
@@ -736,9 +736,9 @@ class MeerK40t(MWindow):
             .MinSize(40, 40)
             .FloatingSize(98, 98)
             .Name("home")
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 1
+        pane.dock_proportion = 10
         pane.control = home
         self.on_pane_add(pane)
         self.context.register("pane/home", pane)
@@ -752,11 +752,11 @@ class MeerK40t(MWindow):
             .FloatingSize(170, 230)
             .MaxSize(300, 300)
             .Caption(_("Notes"))
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Name("notes")
             .Hide()
         )
-        pane.dock_proportion = 3
+        pane.dock_proportion = 30
         pane.control = panel
 
         self.on_pane_add(pane)
@@ -772,10 +772,10 @@ class MeerK40t(MWindow):
             .FloatingSize(600, 230)
             .Caption(_("Spooler"))
             .Name("spooler")
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 5
+        pane.dock_proportion = 50
         pane.control = panel
 
         self.on_pane_add(pane)
@@ -791,10 +791,10 @@ class MeerK40t(MWindow):
             .FloatingSize(600, 230)
             .Caption(_("Console"))
             .Name("console")
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 5
+        pane.dock_proportion = 50
         pane.control = panel
 
         self.on_pane_add(pane)
@@ -810,10 +810,10 @@ class MeerK40t(MWindow):
             .FloatingSize(600, 230)
             .Caption(_("Devices"))
             .Name("devices")
-            .CaptionVisible(self.context.pane_lock)
+            .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 5
+        pane.dock_proportion = 50
         pane.control = panel
 
         self.on_pane_add(pane)
@@ -848,17 +848,17 @@ class MeerK40t(MWindow):
             else:
                 if hasattr(pane.window, "noninitialize"):
                     pane.window.noninitialize()
-        self.on_pane_unlock(lock=self.context.pane_lock)
+        self.on_pane_lock(lock=self.context.pane_lock)
         wx.CallAfter(self.on_pane_changed, None)
 
-    def on_pane_unlock(self, event=None, lock=None):
+    def on_pane_lock(self, event=None, lock=None):
         if lock is None:
             self.context.pane_lock = not self.context.pane_lock
         else:
             self.context.pane_lock = lock
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
-                pane.CaptionVisible(self.context.pane_lock)
+                pane.CaptionVisible(not self.context.pane_lock)
                 if hasattr(pane.window, "lock"):
                     pane.window.lock()
         self._mgr.Update()
@@ -868,7 +868,7 @@ class MeerK40t(MWindow):
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
-                pane.CaptionVisible(self.context.pane_lock)
+                pane.CaptionVisible(not self.context.pane_lock)
                 self.on_pane_reshow(pane)
                 self._mgr.Update()
             return
@@ -1775,7 +1775,7 @@ class MeerK40t(MWindow):
 
         self.panes_menu.AppendSeparator()
         item = self.main_menubar.panereset = self.panes_menu.Append(
-            ID_MENU_PANE_LOCK, _("Unlock Panes"), "", wx.ITEM_CHECK
+            ID_MENU_PANE_LOCK, _("Lock Panes"), "", wx.ITEM_CHECK
         )
         item.Check(self.context.pane_lock)
         self.panes_menu.AppendSeparator()
@@ -2064,7 +2064,7 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            self.on_pane_unlock,
+            self.on_pane_lock,
             id=ID_MENU_PANE_LOCK,
         )
         self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
