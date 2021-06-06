@@ -4498,6 +4498,7 @@ class Elemental(Modifier):
 
     def load_types(self, all=True):
         kernel = self.context._kernel
+        _ = kernel.translation
         filetypes = []
         if all:
             filetypes.append(_("All valid types"))
