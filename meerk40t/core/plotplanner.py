@@ -1,7 +1,13 @@
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..device.basedevice import (PLOT_AXIS, PLOT_DIRECTION, PLOT_FINISH,
-                                 PLOT_JOG, PLOT_RAPID, PLOT_SETTING)
+from ..device.basedevice import (
+    PLOT_AXIS,
+    PLOT_DIRECTION,
+    PLOT_FINISH,
+    PLOT_JOG,
+    PLOT_RAPID,
+    PLOT_SETTING,
+)
 
 """
 

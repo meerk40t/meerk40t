@@ -3,8 +3,14 @@ import re
 
 from ...core.drivers import Driver
 from ...kernel import Module
-from ..basedevice import (PLOT_AXIS, PLOT_DIRECTION, PLOT_FINISH, PLOT_JOG,
-                          PLOT_RAPID, PLOT_SETTING)
+from ..basedevice import (
+    PLOT_AXIS,
+    PLOT_DIRECTION,
+    PLOT_FINISH,
+    PLOT_JOG,
+    PLOT_RAPID,
+    PLOT_SETTING,
+)
 from ..lasercommandconstants import *
 
 MILS_PER_MM = 39.3701

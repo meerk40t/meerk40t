@@ -2,17 +2,52 @@ import functools
 from copy import copy
 
 from ..device.lasercommandconstants import (
-    COMMAND_BEEP, COMMAND_FUNCTION, COMMAND_HOME, COMMAND_LASER_OFF,
-    COMMAND_LASER_ON, COMMAND_MODE_RAPID, COMMAND_MOVE, COMMAND_SET_ABSOLUTE,
-    COMMAND_WAIT, COMMAND_WAIT_FINISH)
+    COMMAND_BEEP,
+    COMMAND_FUNCTION,
+    COMMAND_HOME,
+    COMMAND_LASER_OFF,
+    COMMAND_LASER_ON,
+    COMMAND_MODE_RAPID,
+    COMMAND_MOVE,
+    COMMAND_SET_ABSOLUTE,
+    COMMAND_WAIT,
+    COMMAND_WAIT_FINISH,
+)
 from ..kernel import Modifier
-from ..svgelements import (SVG_STRUCT_ATTRIB, Angle, Circle, Close, Color,
-                           CubicBezier, Ellipse, Group, Length, Line, Matrix,
-                           Move, Path, Point, Polygon, Polyline,
-                           QuadraticBezier, Rect, Shape, SimpleLine,
-                           SVGElement, SVGImage, SVGText)
-from .cutcode import (CubicCut, CutCode, CutGroup, LaserSettings, LineCut,
-                      QuadCut, RasterCut)
+from ..svgelements import (
+    SVG_STRUCT_ATTRIB,
+    Angle,
+    Circle,
+    Close,
+    Color,
+    CubicBezier,
+    Ellipse,
+    Group,
+    Length,
+    Line,
+    Matrix,
+    Move,
+    Path,
+    Point,
+    Polygon,
+    Polyline,
+    QuadraticBezier,
+    Rect,
+    Shape,
+    SimpleLine,
+    SVGElement,
+    SVGImage,
+    SVGText,
+)
+from .cutcode import (
+    CubicCut,
+    CutCode,
+    CutGroup,
+    LaserSettings,
+    LineCut,
+    QuadCut,
+    RasterCut,
+)
 
 
 def plugin(kernel, lifecycle=None):
@@ -1432,7 +1467,9 @@ class Elemental(Modifier):
         # ==========
         # OPERATION BASE
         # ==========
-        @context.console_command("operations", help=_("show information about operations"))
+        @context.console_command(
+            "operations", help=_("show information about operations")
+        )
         def element(**kwargs):
             context(".operation* list\n")
 
@@ -1449,7 +1486,9 @@ class Elemental(Modifier):
             return "ops", list(self.ops())
 
         @context.console_command(
-            "operation~", help=_("operation~: non selected operations."), output_type="ops"
+            "operation~",
+            help=_("operation~: non selected operations."),
+            output_type="ops",
         )
         def operation(**kwargs):
             return "ops", list(self.ops(emphasized=False))
@@ -1622,7 +1661,9 @@ class Elemental(Modifier):
         @context.console_option("passes", "x", type=int)
         @context.console_command(
             ("cut", "engrave", "raster", "imageop", "dots"),
-            help=_("<cut/engrave/raster/imageop> - group the elements into this operation"),
+            help=_(
+                "<cut/engrave/raster/imageop> - group the elements into this operation"
+            ),
             input_type=(None, "elements"),
             output_type="ops",
         )
@@ -2266,12 +2307,18 @@ class Elemental(Modifier):
         @context.console_argument(
             "y_pos", type=Length, help=_("y position for top left corner of rectangle.")
         )
-        @context.console_argument("width", type=Length, help=_("width of the rectangle."))
+        @context.console_argument(
+            "width", type=Length, help=_("width of the rectangle.")
+        )
         @context.console_argument(
             "height", type=Length, help=_("height of the rectangle.")
         )
-        @context.console_option("rx", "x", type=Length, help=_("rounded rx corner value."))
-        @context.console_option("ry", "y", type=Length, help=_("rounded ry corner value."))
+        @context.console_option(
+            "rx", "x", type=Length, help=_("rounded rx corner value.")
+        )
+        @context.console_option(
+            "ry", "y", type=Length, help=_("rounded ry corner value.")
+        )
         @context.console_command(
             "rect",
             help=_("adds rectangle to scene"),
@@ -2394,7 +2441,9 @@ class Elemental(Modifier):
                 element = Polygon(list(map(float, args)))
             except ValueError:
                 raise SyntaxError(
-                    _("Must be a list of spaced delimited floating point numbers values.")
+                    _(
+                        "Must be a list of spaced delimited floating point numbers values."
+                    )
                 )
             self.add_element(element)
 
@@ -2408,7 +2457,9 @@ class Elemental(Modifier):
                 element = Polyline(list(map(float, args)))
             except ValueError:
                 raise SyntaxError(
-                    _("Must be a list of spaced delimited floating point numbers values.")
+                    _(
+                        "Must be a list of spaced delimited floating point numbers values."
+                    )
                 )
             self.add_element(element)
 
@@ -2618,7 +2669,9 @@ class Elemental(Modifier):
                 data.append(element)
                 return "elements", data
 
-        @context.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
+        @context.console_argument(
+            "angle", type=Angle.parse, help=_("angle to rotate by")
+        )
         @context.console_option("cx", "x", type=Length, help=_("center x"))
         @context.console_option("cy", "y", type=Length, help=_("center y"))
         @context.console_option(
@@ -2906,7 +2959,9 @@ class Elemental(Modifier):
             "y_pos", type=Length, help=_("y position for top left corner")
         )
         @context.console_argument("width", type=Length, help=_("new width of selected"))
-        @context.console_argument("height", type=Length, help=_("new height of selected"))
+        @context.console_argument(
+            "height", type=Length, help=_("new height of selected")
+        )
         @context.console_command(
             "resize",
             help=_("resize <x-pos> <y-pos> <width> <height>"),

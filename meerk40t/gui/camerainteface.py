@@ -5,11 +5,20 @@ import wx
 from ..kernel import Job
 from ..svgelements import Color
 from .icons import (
-    icons8_camera_50, icons8_connected_50, icons8_detective_50,
-    icons8_picture_in_picture_alternative_50)
+    icons8_camera_50,
+    icons8_connected_50,
+    icons8_detective_50,
+    icons8_picture_in_picture_alternative_50,
+)
 from .mwindow import MWindow
-from .scene.scene import (HITCHAIN_HIT, RESPONSE_ABORT, RESPONSE_CHAIN,
-                          RESPONSE_CONSUME, ScenePanel, Widget)
+from .scene.scene import (
+    HITCHAIN_HIT,
+    RESPONSE_ABORT,
+    RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+    ScenePanel,
+    Widget,
+)
 
 _ = wx.GetTranslation
 

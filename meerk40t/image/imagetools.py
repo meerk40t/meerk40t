@@ -112,7 +112,10 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_argument("script", help=_("script to apply"), type=str)
     @context.console_command(
-        "wizard", help=_("apply image wizard"), input_type="image", output_type="elements"
+        "wizard",
+        help=_("apply image wizard"),
+        input_type="image",
+        output_type="elements",
     )
     def image(command, channel, _, data, script, args=tuple(), **kwargs):
         if script is None:
@@ -144,7 +147,10 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command(
-        "unlock", help=_("unlock manipulations"), input_type="image", output_type="image"
+        "unlock",
+        help=_("unlock manipulations"),
+        input_type="image",
+        output_type="image",
     )
     def image(command, channel, _, data, args=tuple(), **kwargs):
         channel(_("Unlocking Elements..."))
@@ -396,7 +402,9 @@ def plugin(kernel, lifecycle=None):
                 channel(_("image contrast <factor>"))
         return "image", data
 
-    @context.console_argument("factor", type=float, help=_("contrast factor"), default=2.5)
+    @context.console_argument(
+        "factor", type=float, help=_("contrast factor"), default=2.5
+    )
     @context.console_command(
         "brightness", help=_("brighten image"), input_type="image", output_type="image"
     )
@@ -416,7 +424,9 @@ def plugin(kernel, lifecycle=None):
                 channel(_("image brightness <factor>"))
         return "image", data
 
-    @context.console_argument("factor", type=float, help=_("color factor"), default=10.0)
+    @context.console_argument(
+        "factor", type=float, help=_("color factor"), default=10.0
+    )
     @context.console_command(
         "color", help=_("color enhance"), input_type="image", output_type="image"
     )
@@ -830,11 +840,15 @@ def plugin(kernel, lifecycle=None):
                 element.node.altered()
         return "image", data
 
-    @context.console_option("scale", "s", type=int, help=_("process scaling"), default=1)
+    @context.console_option(
+        "scale", "s", type=int, help=_("process scaling"), default=1
+    )
     @context.console_argument(
         "oversample", type=int, help=_("pixel oversample amount"), default=2
     )
-    @context.console_argument("sample", type=int, help=_("pixel sample size"), default=10)
+    @context.console_argument(
+        "sample", type=int, help=_("pixel sample size"), default=10
+    )
     @context.console_argument(
         "angle", type=Angle.parse, help=_("half-tone angle"), default=Angle.parse("22")
     )

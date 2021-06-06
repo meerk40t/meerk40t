@@ -5,14 +5,25 @@
 
 import wx
 
-from meerk40t.gui.icons import (icons8_connected_50, icons8_disconnected_50,
-                                icons8_emergency_stop_button_50,
-                                icons8_laser_beam_hazard_50, icons8_pause_50,
-                                icons8_play_50)
+from meerk40t.gui.icons import (
+    icons8_connected_50,
+    icons8_disconnected_50,
+    icons8_emergency_stop_button_50,
+    icons8_laser_beam_hazard_50,
+    icons8_pause_50,
+    icons8_play_50,
+)
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
-                             STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
-                             STATE_WAIT)
+from meerk40t.kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_WAIT,
+)
 
 _ = wx.GetTranslation
 
@@ -28,7 +39,9 @@ class LhystudiosControllerGui(MWindow):
         # Menu Bar
         self.LhystudiosController_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset USB"), _("Reset USB connection"))
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Reset USB"), _("Reset USB connection")
+        )
         self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
         item = wxglade_tmp_menu.Append(
             wx.ID_ANY, _("Release USB"), _("Release USB resources")
@@ -68,7 +81,9 @@ class LhystudiosControllerGui(MWindow):
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
-        self.button_controller_control = wx.Button(self, wx.ID_ANY, _("Start Controller"))
+        self.button_controller_control = wx.Button(
+            self, wx.ID_ANY, _("Start Controller")
+        )
         self.text_controller_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
@@ -139,31 +154,41 @@ class LhystudiosControllerGui(MWindow):
         )
         self.text_connection_status.SetToolTip(_("Connection status"))
         self.checkbox_mock_usb.SetToolTip(
-            _("DEBUG. Without a K40 connected continue to process things as if there was one.")
+            _(
+                "DEBUG. Without a K40 connected continue to process things as if there was one."
+            )
         )
         self.text_device_index.SetMinSize((55, 23))
         self.spin_device_index.SetMinSize((40, 23))
         self.spin_device_index.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n"
+                "-1 match anything. 0+ match exactly that value."
+            )
         )
         self.text_device_address.SetMinSize((55, 23))
         self.spin_device_address.SetMinSize((40, 23))
         self.spin_device_address.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n"
+                "-1 match anything. 0+ match exactly that value."
+            )
         )
         self.text_device_bus.SetMinSize((55, 23))
         self.spin_device_bus.SetMinSize((40, 23))
         self.spin_device_bus.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n"
+                "-1 match anything. 0+ match exactly that value."
+            )
         )
         self.text_device_version.SetMinSize((55, 23))
         self.spin_device_version.SetMinSize((40, 23))
         self.spin_device_version.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n"
+                "-1 match anything. 0+ match exactly that value."
+            )
         )
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_controller_control.SetForegroundColour(wx.BLACK)
@@ -179,7 +204,9 @@ class LhystudiosControllerGui(MWindow):
         self.packet_count_text.SetMinSize((77, 23))
         self.packet_count_text.SetToolTip(_("Total number of packets sent"))
         self.rejected_packet_count_text.SetMinSize((77, 23))
-        self.rejected_packet_count_text.SetToolTip(_("Total number of packets rejected"))
+        self.rejected_packet_count_text.SetToolTip(
+            _("Total number of packets rejected")
+        )
         self.packet_text_text.SetToolTip(_("Last packet information sent"))
         self.text_byte_0.SetMinSize((77, 23))
         self.text_byte_1.SetMinSize((77, 23))

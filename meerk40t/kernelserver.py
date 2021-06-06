@@ -107,7 +107,9 @@ class UDPServer(Module):
         _ = self.context._
         if self.udp_address is None:
             self.events_channel(
-                _("No UDP packet can be sent as reply to a host that has never made contact.")
+                _(
+                    "No UDP packet can be sent as reply to a host that has never made contact."
+                )
             )
             return
         self.socket.sendto(message, self.udp_address)
@@ -180,7 +182,9 @@ class TCPServer(Module):
             return
         handle = 1
         while self.state != STATE_TERMINATE:
-            self.events_channel(_("Listening %s on port %d...") % (self.name, self.port))
+            self.events_channel(
+                _("Listening %s on port %d...") % (self.name, self.port)
+            )
             connection = None
             addr = None
             try:

@@ -154,7 +154,11 @@ class Spoolers(Modifier):
         _ = kernel.translation
 
         @context.console_option(
-            "register", "r", type=bool, action="store_true", help=_("Register this device")
+            "register",
+            "r",
+            type=bool,
+            action="store_true",
+            help=_("Register this device"),
         )
         @context.console_command(
             "spool",

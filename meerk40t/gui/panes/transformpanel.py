@@ -3,11 +3,17 @@ import wx
 _ = wx.GetTranslation
 
 
-from meerk40t.gui.icons import (icons8_compress_50, icons8_delete_50,
-                                icons8_down_50, icons8_enlarge_50,
-                                icons8_left_50, icons8_right_50,
-                                icons8_rotate_left_50, icons8_rotate_right_50,
-                                icons8_up_50)
+from meerk40t.gui.icons import (
+    icons8_compress_50,
+    icons8_delete_50,
+    icons8_down_50,
+    icons8_enlarge_50,
+    icons8_left_50,
+    icons8_right_50,
+    icons8_rotate_left_50,
+    icons8_rotate_right_50,
+    icons8_up_50,
+)
 
 
 class Transform(wx.Panel):

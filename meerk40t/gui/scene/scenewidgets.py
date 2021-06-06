@@ -9,10 +9,15 @@ except ImportError:
 
 import wx
 
-from meerk40t.gui.laserrender import (DRAW_MODE_BACKGROUND, DRAW_MODE_GRID,
-                                      DRAW_MODE_GUIDES, DRAW_MODE_LASERPATH,
-                                      DRAW_MODE_RETICLE, DRAW_MODE_SELECTION,
-                                      swizzlecolor)
+from meerk40t.gui.laserrender import (
+    DRAW_MODE_BACKGROUND,
+    DRAW_MODE_GRID,
+    DRAW_MODE_GUIDES,
+    DRAW_MODE_LASERPATH,
+    DRAW_MODE_RETICLE,
+    DRAW_MODE_SELECTION,
+    swizzlecolor,
+)
 from meerk40t.svgelements import Color
 
 MILS_IN_MM = 39.3701
@@ -385,9 +390,7 @@ class SelectionWidget(Widget):
             obj = e.object
             obj.transform.post_translate(dx, dy)
             obj.node.modified()
-        for e in elements.flat(
-            types=("group", "file", "op element"), emphasized=True
-        ):
+        for e in elements.flat(types=("group", "file", "op element"), emphasized=True):
             e._bounds_dirty = True
         self.translate(dx, dy)
         elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])

@@ -35,12 +35,16 @@ class LhystudiosDriverGui(MWindow):
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
         self.checkbox_plot_shift = wx.CheckBox(self, wx.ID_ANY, _("Pulse Shifting"))
         self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, _("Randomize PPI"))
-        self.checkbox_limit_buffer = wx.CheckBox(self, wx.ID_ANY, _("Limit Write Buffer"))
+        self.checkbox_limit_buffer = wx.CheckBox(
+            self, wx.ID_ANY, _("Limit Write Buffer")
+        )
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.spin_packet_buffer_max = wx.SpinCtrl(
             self, wx.ID_ANY, "1500", min=1, max=1000000
         )
-        self.checkbox_autolock = wx.CheckBox(self, wx.ID_ANY, _("Automatically lock rail"))
+        self.checkbox_autolock = wx.CheckBox(
+            self, wx.ID_ANY, _("Automatically lock rail")
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -100,12 +104,16 @@ class LhystudiosDriverGui(MWindow):
         )
         self.combobox_board.SetSelection(0)
         self.checkbox_fix_speeds.SetToolTip(
-            _("Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated speed.")
+            _(
+                "Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated speed."
+            )
         )
         self.checkbox_flip_x.SetToolTip(
             _("Flip the Right and Left commands sent to the controller")
         )
-        self.checkbox_home_right.SetToolTip(_("Indicates the device Home is on the right"))
+        self.checkbox_home_right.SetToolTip(
+            _("Indicates the device Home is on the right")
+        )
         self.checkbox_flip_y.SetToolTip(
             _("Flip the Top and Bottom commands sent to the controller")
         )
@@ -116,7 +124,9 @@ class LhystudiosDriverGui(MWindow):
             _("Swaps the X and Y axis. This happens before the FlipX and FlipY.")
         )
         self.checkbox_strict.SetToolTip(
-            _("Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed.")
+            _(
+                "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
+            )
         )
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip(_("Translate Home X"))
@@ -126,14 +136,18 @@ class LhystudiosDriverGui(MWindow):
             _("Set Home Position based on the current position")
         )
         self.checkbox_plot_shift.SetToolTip(
-            _("During the pulse planning process allow shifting pulses by one unit to increase command efficiency\nThis may prevent device stutter and reduce pulse accuracy by one up to one unit.")
+            _(
+                "During the pulse planning process allow shifting pulses by one unit to increase command efficiency\nThis may prevent device stutter and reduce pulse accuracy by one up to one unit."
+            )
         )
         self.checkbox_random_ppi.SetToolTip(
             _("Rather than orderly PPI, we perform PPI based on a randomized average")
         )
         self.checkbox_random_ppi.Enable(False)
         self.checkbox_limit_buffer.SetToolTip(
-            _("Limit the write buffer to a certain amount. Permits on-the-fly command production.")
+            _(
+                "Limit the write buffer to a certain amount. Permits on-the-fly command production."
+            )
         )
         self.checkbox_limit_buffer.SetValue(1)
         self.text_buffer_length.SetToolTip(

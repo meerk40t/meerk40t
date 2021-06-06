@@ -1,7 +1,11 @@
 import wx
 
-from meerk40t.gui.scene.scene import (HITCHAIN_DELEGATE, HITCHAIN_HIT,
-                                      RESPONSE_ABORT, Widget)
+from meerk40t.gui.scene.scene import (
+    HITCHAIN_DELEGATE,
+    HITCHAIN_HIT,
+    RESPONSE_ABORT,
+    Widget,
+)
 from meerk40t.gui.zmatrix import ZMatrix
 
 

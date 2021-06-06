@@ -3,9 +3,17 @@ from math import ceil
 
 from ..core.cutcode import CutCode
 from ..device.lasercommandconstants import (
-    COMMAND_BEEP, COMMAND_FUNCTION, COMMAND_HOME, COMMAND_MODE_RAPID,
-    COMMAND_MOVE, COMMAND_SET_ABSOLUTE, COMMAND_SET_POSITION, COMMAND_UNLOCK,
-    COMMAND_WAIT, COMMAND_WAIT_FINISH)
+    COMMAND_BEEP,
+    COMMAND_FUNCTION,
+    COMMAND_HOME,
+    COMMAND_MODE_RAPID,
+    COMMAND_MOVE,
+    COMMAND_SET_ABSOLUTE,
+    COMMAND_SET_POSITION,
+    COMMAND_UNLOCK,
+    COMMAND_WAIT,
+    COMMAND_WAIT_FINISH,
+)
 from ..kernel import Modifier
 from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
@@ -268,7 +276,9 @@ class Planner(Modifier):
             self.context.signal("plan", self._default_plan, 1)
             return data_type, data
 
-        @self.context.console_option("index", "i", type=int, help=_("index of location to insert command"))
+        @self.context.console_option(
+            "index", "i", type=int, help=_("index of location to insert command")
+        )
         @self.context.console_option(
             "op", "o", type=str, help=_("unlock, origin, home, etc.")
         )
@@ -310,7 +320,9 @@ class Planner(Modifier):
                 channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
+        @self.context.console_argument(
+            "op", type=str, help=_("unlock, origin, home, etc")
+        )
         @self.context.console_command(
             "append",
             help=_("plan<?> append <op>"),
@@ -332,7 +344,9 @@ class Planner(Modifier):
             channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
+        @self.context.console_argument(
+            "op", type=str, help=_("unlock, origin, home, etc")
+        )
         @self.context.console_command(
             "prepend",
             help=_("plan<?> prepend <op>"),
@@ -491,7 +505,9 @@ class Planner(Modifier):
             self.context.signal("plan", self._default_plan, 0)
             return data_type, data
 
-        @self.context.console_option("op", "o", type=str, help=_("unlock, origin, home"))
+        @self.context.console_option(
+            "op", "o", type=str, help=_("unlock, origin, home")
+        )
         @self.context.console_argument("cols", type=int, help=_("columns for the grid"))
         @self.context.console_argument("rows", type=int, help=_("rows for the grid"))
         @self.context.console_argument(

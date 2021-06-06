@@ -4,13 +4,29 @@ import time
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ...core.drivers import Driver
-from ...kernel import (STATE_ACTIVE, STATE_BUSY, STATE_END, STATE_IDLE,
-                       STATE_INITIALIZE, STATE_PAUSE, STATE_TERMINATE,
-                       STATE_UNKNOWN, STATE_WAIT)
-from ..basedevice import (DRIVER_STATE_FINISH, DRIVER_STATE_MODECHANGE,
-                          DRIVER_STATE_PROGRAM, DRIVER_STATE_RAPID, PLOT_AXIS,
-                          PLOT_DIRECTION, PLOT_FINISH, PLOT_JOG, PLOT_RAPID,
-                          PLOT_SETTING)
+from ...kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+)
+from ..basedevice import (
+    DRIVER_STATE_FINISH,
+    DRIVER_STATE_MODECHANGE,
+    DRIVER_STATE_PROGRAM,
+    DRIVER_STATE_RAPID,
+    PLOT_AXIS,
+    PLOT_DIRECTION,
+    PLOT_FINISH,
+    PLOT_JOG,
+    PLOT_RAPID,
+    PLOT_SETTING,
+)
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
 from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
@@ -31,7 +47,9 @@ def plugin(kernel, lifecycle=None):
             action="store_true",
             help=_("override one second laser fire pulse duration"),
         )
-        @context.console_argument("time", type=float, help=_("laser fire pulse duration"))
+        @context.console_argument(
+            "time", type=float, help=_("laser fire pulse duration")
+        )
         @context.console_command(
             "pulse",
             input_type="lhystudios",
@@ -125,7 +143,9 @@ def plugin(kernel, lifecycle=None):
                 except ValueError:
                     pass
 
-        @context.console_argument("accel", type=int, help=_("Acceleration amount [1-4]"))
+        @context.console_argument(
+            "accel", type=int, help=_("Acceleration amount [1-4]")
+        )
         @context.console_command(
             "acceleration",
             input_type="lhystudios",

@@ -61,11 +61,15 @@ class DeviceManager(MWindow):
             )
         )
         self.devices_list.AppendColumn(_("Index"), format=wx.LIST_FORMAT_LEFT, width=56)
-        self.devices_list.AppendColumn(_("Spooler"), format=wx.LIST_FORMAT_LEFT, width=74)
+        self.devices_list.AppendColumn(
+            _("Spooler"), format=wx.LIST_FORMAT_LEFT, width=74
+        )
         self.devices_list.AppendColumn(
             _("Driver/Input"), format=wx.LIST_FORMAT_LEFT, width=170
         )
-        self.devices_list.AppendColumn(_("Output"), format=wx.LIST_FORMAT_LEFT, width=170)
+        self.devices_list.AppendColumn(
+            _("Output"), format=wx.LIST_FORMAT_LEFT, width=170
+        )
         self.devices_list.AppendColumn(
             _("Registered"), format=wx.LIST_FORMAT_LEFT, width=93
         )

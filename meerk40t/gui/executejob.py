@@ -101,7 +101,10 @@ class ExecuteJob(MWindow):
             id=self.preview_menu.menu_autounlock.GetId(),
         )
         self.preview_menu.menu_autobeep = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY, _("Beep"), _("Automatically add a beep after all jobs"), wx.ITEM_CHECK
+            wx.ID_ANY,
+            _("Beep"),
+            _("Automatically add a beep after all jobs"),
+            wx.ITEM_CHECK,
         )
         self.Bind(
             wx.EVT_MENU,
@@ -285,19 +288,25 @@ class ExecuteJob(MWindow):
         # self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
         # self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.check_rapid_moves_between.SetToolTip(
-            _("Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed")
+            _(
+                "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+            )
         )
         self.check_reduce_travel_time.SetToolTip(
             _("Reduce the travel time by optimizing the order of the elements")
         )
         self.check_cut_inner_first.SetToolTip(
-            _("Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts.")
+            _(
+                "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
+            )
         )
         self.check_reduce_direction_changes.SetToolTip(
             _("Reorder to reduce the number of sharp directional changes")
         )
         self.check_reduce_direction_changes.Hide()
-        self.check_remove_overlap_cuts.SetToolTip(_("Remove elements of overlapped cuts"))
+        self.check_remove_overlap_cuts.SetToolTip(
+            _("Remove elements of overlapped cuts")
+        )
         self.check_remove_overlap_cuts.Hide()
         self.button_start.SetBackgroundColour(wx.Colour(0, 255, 0))
         self.button_start.SetFont(

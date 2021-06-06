@@ -14,7 +14,9 @@ def plugin(kernel, lifecycle=None):
         kernel_root = kernel.root
         kernel_root.activate("modifier/Outputs")
 
-        @kernel.console_argument("port", type=int, help=_("Port of TCPOutput to change."))
+        @kernel.console_argument(
+            "port", type=int, help=_("Port of TCPOutput to change.")
+        )
         @kernel.console_command(
             "port",
             help=_("change the port of the tcpdevice"),
@@ -308,7 +310,9 @@ class Outputs(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_command("type", help=_("list output types"), input_type="output")
+        @context.console_command(
+            "type", help=_("list output types"), input_type="output"
+        )
         def list_type(channel, _, **kwargs):
             channel(_("----------"))
             channel(_("Output types:"))

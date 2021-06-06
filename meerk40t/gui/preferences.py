@@ -14,7 +14,9 @@ class Preferences(MWindow):
         self.text_controller_message = wx.TextCtrl(
             self,
             wx.ID_ANY,
-            _("The input/driver properties of the selected device provides no graphical user interface."),
+            _(
+                "The input/driver properties of the selected device provides no graphical user interface."
+            ),
             style=wx.TE_CENTRE | wx.TE_MULTILINE | wx.TE_READONLY,
         )
 

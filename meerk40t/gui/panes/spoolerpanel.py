@@ -66,10 +66,18 @@ class SpoolerPanel(wx.Panel):
         self.combo_device.SetToolTip(_("Select the device"))
         self.list_job_spool.SetToolTip(_("List and modify the queued operations"))
         self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=78)
-        self.list_job_spool.AppendColumn(_("Name"), format=wx.LIST_FORMAT_LEFT, width=143)
-        self.list_job_spool.AppendColumn(_("Status"), format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_spool.AppendColumn(_("Type"), format=wx.LIST_FORMAT_LEFT, width=53)
-        self.list_job_spool.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=83)
+        self.list_job_spool.AppendColumn(
+            _("Name"), format=wx.LIST_FORMAT_LEFT, width=143
+        )
+        self.list_job_spool.AppendColumn(
+            _("Status"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_spool.AppendColumn(
+            _("Type"), format=wx.LIST_FORMAT_LEFT, width=53
+        )
+        self.list_job_spool.AppendColumn(
+            _("Speed"), format=wx.LIST_FORMAT_LEFT, width=83
+        )
         self.list_job_spool.AppendColumn(
             _("Settings"), format=wx.LIST_FORMAT_LEFT, width=223
         )

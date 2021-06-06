@@ -89,9 +89,7 @@ class RasterWizard(MWindow):
                 return
             self.ops = ops
         else:
-            self.ops = deepcopy(
-                self.context.registered["raster_script/%s" % name]
-            )
+            self.ops = deepcopy(self.context.registered["raster_script/%s" % name])
         self.list_operation.Clear()
         if self.ops is not None:
             list_choices = [_(op["name"]) for op in self.ops]

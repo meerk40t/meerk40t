@@ -18,7 +18,9 @@ class Controller(MWindow):
         self.text_controller_message = wx.TextCtrl(
             self,
             wx.ID_ANY,
-            _("The output of the selected device is not a controller, or provides no graphical user interface."),
+            _(
+                "The output of the selected device is not a controller, or provides no graphical user interface."
+            ),
             style=wx.TE_CENTRE | wx.TE_MULTILINE | wx.TE_READONLY,
         )
 

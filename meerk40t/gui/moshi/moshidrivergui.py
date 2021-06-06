@@ -42,7 +42,9 @@ class MoshiDriverGui(MWindow):
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Prefererences"))
-        self.checkbox_home_right.SetToolTip(_("Indicates the device Home is on the right"))
+        self.checkbox_home_right.SetToolTip(
+            _("Indicates the device Home is on the right")
+        )
         self.checkbox_home_bottom.SetToolTip(
             _("Indicates the device Home is on the bottom")
         )

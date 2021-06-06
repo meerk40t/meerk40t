@@ -21,7 +21,9 @@ class MoshiControllerGui(MWindow):
         # Menu Bar
         self.MoshiController_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset USB"), _("Reset USB connection"))
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Reset USB"), _("Reset USB connection")
+        )
         self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
         item = wxglade_tmp_menu.Append(
             wx.ID_ANY, _("Release USB"), _("Release USB resources")
@@ -123,31 +125,41 @@ class MoshiControllerGui(MWindow):
         )
         self.text_connection_status.SetToolTip(_("Connection status"))
         self.checkbox_mock_usb.SetToolTip(
-            _("DEBUG. Without a K40 connected continue to process things as if there was one.")
+            _(
+                "DEBUG. Without a K40 connected continue to process things as if there was one."
+            )
         )
         self.text_device_index.SetMinSize((55, 23))
         self.spin_device_index.SetMinSize((40, 23))
         self.spin_device_index.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n"
+                "-1 match anything. 0+ match exactly that value."
+            )
         )
         self.text_device_address.SetMinSize((55, 23))
         self.spin_device_address.SetMinSize((40, 23))
         self.spin_device_address.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n"
+                "-1 match anything. 0+ match exactly that value."
+            )
         )
         self.text_device_bus.SetMinSize((55, 23))
         self.spin_device_bus.SetMinSize((40, 23))
         self.spin_device_bus.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n"
+                "-1 match anything. 0+ match exactly that value."
+            )
         )
         self.text_device_version.SetMinSize((55, 23))
         self.spin_device_version.SetMinSize((40, 23))
         self.spin_device_version.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n"
-            "-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n"
+                "-1 match anything. 0+ match exactly that value."
+            )
         )
         self.text_byte_0.SetMinSize((77, 23))
         self.text_byte_1.SetMinSize((77, 23))

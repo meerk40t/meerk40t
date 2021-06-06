@@ -6,8 +6,20 @@ from PIL import Image
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
 from ..core.elements import Node
 from ..svgelements import (
-    Arc, Close, Color, CubicBezier, Group, Line, Matrix, Move, Path,
-    QuadraticBezier, Shape, SVGImage, SVGText)
+    Arc,
+    Close,
+    Color,
+    CubicBezier,
+    Group,
+    Line,
+    Matrix,
+    Move,
+    Path,
+    QuadraticBezier,
+    Shape,
+    SVGImage,
+    SVGText,
+)
 from .zmatrix import ZMatrix
 
 DRAW_MODE_FILLS = 0x000001

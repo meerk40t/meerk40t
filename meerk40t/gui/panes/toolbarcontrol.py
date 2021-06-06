@@ -30,8 +30,12 @@ ID_CONSOLE = wx.NewId()
 ID_ROTARY = wx.NewId()
 ID_RASTER = wx.NewId()
 
-from ..icons import (icons8_camera_50, icons8_connected_50, icons8_move_50,
-                     icons8_route_50)
+from ..icons import (
+    icons8_camera_50,
+    icons8_connected_50,
+    icons8_move_50,
+    icons8_route_50,
+)
 
 _ = wx.GetTranslation
 

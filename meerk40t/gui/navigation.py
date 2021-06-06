@@ -5,18 +5,39 @@
 
 import wx
 
-from .icons import (icon_corner1, icon_corner2, icon_corner3, icon_corner4,
-                    icons8_center_of_gravity_50, icons8_compress_50,
-                    icons8_delete_50, icons8_down, icons8_down_50,
-                    icons8_down_left_50, icons8_down_right_50,
-                    icons8_enlarge_50, icons8_home_filled_50,
-                    icons8_laser_beam_52, icons8_left, icons8_left_50,
-                    icons8_level_1_50, icons8_lock_50, icons8_move_50,
-                    icons8_padlock_50, icons8_pentagon_50,
-                    icons8_pentagon_square_50, icons8_right, icons8_right_50,
-                    icons8_rotate_left_50, icons8_rotate_right_50,
-                    icons8_square_border_50, icons8_up_50, icons8_up_left_50,
-                    icons8_up_right_50, icons8up)
+from .icons import (
+    icon_corner1,
+    icon_corner2,
+    icon_corner3,
+    icon_corner4,
+    icons8_center_of_gravity_50,
+    icons8_compress_50,
+    icons8_delete_50,
+    icons8_down,
+    icons8_down_50,
+    icons8_down_left_50,
+    icons8_down_right_50,
+    icons8_enlarge_50,
+    icons8_home_filled_50,
+    icons8_laser_beam_52,
+    icons8_left,
+    icons8_left_50,
+    icons8_level_1_50,
+    icons8_lock_50,
+    icons8_move_50,
+    icons8_padlock_50,
+    icons8_pentagon_50,
+    icons8_pentagon_square_50,
+    icons8_right,
+    icons8_right_50,
+    icons8_rotate_left_50,
+    icons8_rotate_right_50,
+    icons8_square_border_50,
+    icons8_up_50,
+    icons8_up_left_50,
+    icons8_up_right_50,
+    icons8up,
+)
 from .mwindow import MWindow
 
 _ = wx.GetTranslation

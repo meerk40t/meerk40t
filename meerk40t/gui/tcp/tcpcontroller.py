@@ -63,7 +63,9 @@ class TCPController(MWindow):
             _("Current number of bytes in the write buffer.")
         )
         self.text_buffer_max.SetMinSize((165, 23))
-        self.text_buffer_max.SetToolTip(_("Current number of bytes in the write buffer."))
+        self.text_buffer_max.SetToolTip(
+            _("Current number of bytes in the write buffer.")
+        )
         # end wxGlade
 
     def __do_layout(self):

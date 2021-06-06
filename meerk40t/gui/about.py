@@ -53,11 +53,19 @@ class About(MWindow):
         meerk40t_about_text_header = wx.StaticText(
             self,
             wx.ID_ANY,
-            _("MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\n") +
-            _("Participation in the project is highly encouraged. Past participation, and \n") +
-            _("continuing participation is graciously thanked. This program is mostly the\n") +
-            _("brainchild of Tatarize, who sincerely hopes his contributions will be but \n") +
-            _("the barest trickle that becomes a raging river."),
+            _(
+                "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\n"
+            )
+            + _(
+                "Participation in the project is highly encouraged. Past participation, and \n"
+            )
+            + _(
+                "continuing participation is graciously thanked. This program is mostly the\n"
+            )
+            + _(
+                "brainchild of Tatarize, who sincerely hopes his contributions will be but \n"
+            )
+            + _("the barest trickle that becomes a raging river."),
         )
         meerk40t_about_text_header.SetFont(
             wx.Font(
@@ -74,16 +82,20 @@ class About(MWindow):
         meerk40t_about_text = wx.StaticText(
             self,
             wx.ID_ANY,
-            _("Thanks go out to.\n") +
-            _("* Li Huiyu for their controller. \n") +
-            _("* Scorch for lighting our path.\n") +
-            _("* Alois Zingl for his wonderful Bresenham plotting algorithms.\n") +
-            _("* @joerlane and all the MeerKittens, past and present, great and small.\n\n") +
-            _("* Icon8 for their great icons ( https://icons8.com/ ) used throughout the project.\n") +
-            _("* The works of countless developers who made everything possible.\n") +
-            _("* Regebro for his svg.path module.\n") +
-            _("* The SVG Working Group.\n") +
-            _("* Hackers (in the general sense)."),
+            _("Thanks go out to.\n")
+            + _("* Li Huiyu for their controller. \n")
+            + _("* Scorch for lighting our path.\n")
+            + _("* Alois Zingl for his wonderful Bresenham plotting algorithms.\n")
+            + _(
+                "* @joerlane and all the MeerKittens, past and present, great and small.\n\n"
+            )
+            + _(
+                "* Icon8 for their great icons ( https://icons8.com/ ) used throughout the project.\n"
+            )
+            + _("* The works of countless developers who made everything possible.\n")
+            + _("* Regebro for his svg.path module.\n")
+            + _("* The SVG Working Group.\n")
+            + _("* Hackers (in the general sense)."),
         )
         meerk40t_about_text.SetFont(
             wx.Font(

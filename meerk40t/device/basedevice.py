@@ -42,7 +42,10 @@ def plugin(kernel, lifecycle=None):
         root.device = device
 
         @kernel.console_option(
-            "out", "o", action="store_true", help=_("match on output rather than driver")
+            "out",
+            "o",
+            action="store_true",
+            help=_("match on output rather than driver"),
         )
         @kernel.console_command(
             "dev",

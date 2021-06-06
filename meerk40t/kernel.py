@@ -181,7 +181,7 @@ class Context:
         return self._path
 
     @property
-    def kernel(self) -> 'Kernel':
+    def kernel(self) -> "Kernel":
         return self._kernel
 
     @property
@@ -2010,7 +2010,9 @@ class Kernel:
         @self.console_command(
             "timer.*",
             regex=True,
-            help=_("run the command a given number of times with a given duration between."),
+            help=_(
+                "run the command a given number of times with a given duration between."
+            ),
         )
         def timer(
             command,
@@ -2221,7 +2223,9 @@ class Kernel:
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("modifier", help=_("modifier [(open|close) <module_name>]"))
+        @self.console_command(
+            "modifier", help=_("modifier [(open|close) <module_name>]")
+        )
         def modifier(channel, _, path=None, args=tuple(), **kwargs):
             if path is None:
                 path = "/"
@@ -2491,7 +2495,10 @@ class Kernel:
 
         @self.console_argument("filename")
         @self.console_command(
-            "load", help=_("loads file from working directory"), input_type=None, output_type="file"
+            "load",
+            help=_("loads file from working directory"),
+            input_type=None,
+            output_type="file",
         )
         def load(channel, _, filename=None, **kwargs):
             import os
