@@ -94,7 +94,7 @@ class UDPServer(Module):
         self.context.threaded(self.run_udp_listener, thread_name=name)
 
     def finalize(self, *args, **kwargs):
-        _ = self.context._kernel.translation
+        _ = self.context._
         self.context.channel("%s/send" % self.name).unwatch(
             self.send
         )  # We stop watching the send channel
@@ -104,7 +104,7 @@ class UDPServer(Module):
             self.socket = None
 
     def send(self, message):
-        _ = self.context._kernel.translation
+        _ = self.context._
         if self.udp_address is None:
             self.events_channel(
                 _("No UDP packet can be sent as reply to a host that has never made contact.")
@@ -113,7 +113,7 @@ class UDPServer(Module):
         self.socket.sendto(message, self.udp_address)
 
     def run_udp_listener(self):
-        _ = self.context._kernel.translation
+        _ = self.context._
         try:
             self.events_channel(_("UDP Socket(%d) Listening.") % self.port)
             while True:
@@ -157,7 +157,7 @@ class TCPServer(Module):
         self.state = STATE_TERMINATE
 
     def finalize(self, *args, **kwargs):
-        _ = self.context._kernel.translation
+        _ = self.context._
         self.events_channel(_("Shutting down server."))
         self.state = STATE_TERMINATE
         if self.socket is not None:
@@ -169,7 +169,7 @@ class TCPServer(Module):
         TCP Run is a connection thread delegate. Any connections are given a different threaded
         handle to interact with that connection. This thread here waits for sockets and delegates.
         """
-        _ = self.context._kernel.translation
+        _ = self.context._
         self.socket = socket.socket()
         self.socket.settimeout(5)
         try:
@@ -210,7 +210,8 @@ class TCPServer(Module):
         The TCP Connection Handle, handles all connections delegated by the tcp_run() method.
         The threaded context is entirely local and independent.
         """
-        _ = self.context._kernel.translation
+        _ = self.context._
+
         def handle():
             def send(e):
                 if connection is not None:

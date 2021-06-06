@@ -424,8 +424,8 @@ class MoshiDriver(Driver, Modifier):
     def attach(self, *a, **kwargs):
         context = self.context
         root_context = context.root
-        kernel = context._kernel
-        _ = kernel.translation
+        kernel = context.kernel
+        _ = context._
 
         context.driver = self
 
@@ -993,7 +993,7 @@ class MoshiController(Module):
         if self._thread is None or not self._thread.is_alive():
             self._thread = self.context.threaded(
                 self._thread_data_send,
-                thread_name="MoshiPipe(%s)" % (self.context._path),
+                thread_name="MoshiPipe(%s)" % (self.context.path),
                 result=self.stop,
             )
             self.update_state(STATE_INITIALIZE)

@@ -79,12 +79,12 @@ class Driver:
         self.rapid_override_speed_y = 50.0
         self._thread = None
         self._shutdown = False
-        self.context._kernel.listen("lifecycle;ready", "", self.start_driver)
-        self.context._kernel.listen("lifecycle;shutdown", "", self.shutdown)
+        self.context.kernel.listen("lifecycle;ready", "", self.start_driver)
+        self.context.kernel.listen("lifecycle;shutdown", "", self.shutdown)
 
     def shutdown(self, *args, **kwargs):
-        self.context._kernel.unlisten("lifecycle;ready", "", self.start_driver)
-        self.context._kernel.unlisten("lifecycle;shutdown", "", self.shutdown)
+        self.context.kernel.unlisten("lifecycle;ready", "", self.start_driver)
+        self.context.kernel.unlisten("lifecycle;shutdown", "", self.shutdown)
         self._shutdown = True
 
     def start_driver(self, origin=None, *args):
@@ -96,7 +96,7 @@ class Driver:
             self._thread = self.context.threaded(
                 self._driver_threaded,
                 result=clear_thread,
-                thread_name="Driver(%s)" % (self.context._path),
+                thread_name="Driver(%s)" % (self.context.path),
             )
             self._thread.stop = clear_thread
 
@@ -549,8 +549,7 @@ class Drivers(Modifier):
         context = self.context
         context.drivers = self
 
-        kernel = self.context._kernel
-        _ = kernel.translation
+        _ = self.context._
 
         @context.console_option("new", "n", type=str, help=_("new driver type"))
         @self.context.console_command(

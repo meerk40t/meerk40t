@@ -354,13 +354,12 @@ class Node:
         :param data_object:
         :param type:
         :param name:
-        :param single:
         :param pos:
         :return:
         """
         if isinstance(data_object, Node):
             node = data_object
-            if node._parent != None:
+            if node._parent is not None:
                 raise ValueError("Cannot reparent node on add.")
         else:
             node_class = Node
@@ -1292,6 +1291,10 @@ class Elemental(Modifier):
 
                 yield func
 
+    def flat(self, **kwargs):
+        for e in self._tree.flat(**kwargs):
+            yield e
+
     @staticmethod
     def tree_calc(value_name, calc_func):
         def decor(func):
@@ -1381,7 +1384,7 @@ class Elemental(Modifier):
                 returned = func(node, **ik, **kwargs)
                 return returned
 
-            kernel = self.context._kernel
+            kernel = self.context.kernel
             if isinstance(node_type, tuple):
                 ins = node_type
             else:
@@ -1413,7 +1416,7 @@ class Elemental(Modifier):
 
     def attach(self, *a, **kwargs):
         context = self.context
-        _ = context._kernel.translation
+        _ = context._
         context.elements = self
         context.classify = self.classify
         context.save = self.save
@@ -1934,7 +1937,8 @@ class Elemental(Modifier):
         def align(command, channel, _, data=None, align=None, remainder=None, **kwargs):
             if align is None:
                 channel(
-                    "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n<any valid svg:Preserve Aspect Ratio, eg xminymin>"
+                    "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n"
+                    "<any valid svg:Preserve Aspect Ratio, eg xminymin>"
                 )
                 return
             if data is None:
@@ -3345,7 +3349,7 @@ class Elemental(Modifier):
 
         # --------------------------- TREE OPERATIONS ---------------------------
 
-        _ = self.context._kernel.translation
+        _ = self.context._
 
         @self.tree_separator_after()
         @self.tree_operation(_("Operation Properties"), node_type="op", help="")
@@ -4311,7 +4315,10 @@ class Elemental(Modifier):
     def target_clones(self, node_context, node_exclude, object_search):
         """
         Recursively highlight the children.
-        :param node_context:
+
+        :param node_context: context node to search from
+        :param node_exclude: excluded nodes
+        :param object_search: Specific searched for object.
         :return:
         """
         for child in node_context.children:
@@ -4481,7 +4488,7 @@ class Elemental(Modifier):
                     operations.append(op)
 
     def load(self, pathname, **kwargs):
-        kernel = self.context._kernel
+        kernel = self.context.kernel
         for loader_name in kernel.match("load"):
             loader = kernel.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
@@ -4497,7 +4504,7 @@ class Elemental(Modifier):
                     return True
 
     def load_types(self, all=True):
-        kernel = self.context._kernel
+        kernel = self.context.kernel
         _ = kernel.translation
         filetypes = []
         if all:
@@ -4520,7 +4527,7 @@ class Elemental(Modifier):
         return "|".join(filetypes)
 
     def save(self, pathname):
-        kernel = self.context._kernel
+        kernel = self.context.kernel
         for save_name in kernel.match("save"):
             saver = kernel.registered[save_name]
             for description, extension, mimetype in saver.save_types():
@@ -4530,7 +4537,7 @@ class Elemental(Modifier):
         return False
 
     def save_types(self):
-        kernel = self.context._kernel
+        kernel = self.context.kernel
         filetypes = []
         for save_name in kernel.match("save"):
             saver = kernel.registered[save_name]

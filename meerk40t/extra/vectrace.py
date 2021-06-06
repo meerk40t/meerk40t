@@ -132,6 +132,6 @@ def _vectrace(pixels, width, height):
                     y1 = scanpoints[i + 1][1]
                     if y0 != y1:
                         raise ValueError
-                    for x in range(x0, x1):
-                        pixels[x, y0] = 0 if pixels[x, y0] else 255
+                    for xi in range(x0, x1):
+                        pixels[xi, y0] = 0 if pixels[xi, y0] else 255
                 yield positions

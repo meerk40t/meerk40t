@@ -55,7 +55,7 @@ class Preferences(MWindow):
         self.context.unlisten("active", self.on_active_change)
 
     def on_active_change(self, origin, active):
-        if origin == self.context._path:
+        if origin == self.context.path:
             return
         self.Close()
 

@@ -123,7 +123,7 @@ class LhystudiosAccelerationChart(MWindow):
         self.text_vraster_accel_1.SetToolTip(_("Upper limit for accel level %d") % 1)
         self.text_vraster_accel_1.Enable(False)
         self.text_vraster_accel_2.SetMinSize((55, 23))
-        self.text_vraster_accel_2.SetToolTip(_("Upper limit for accel level %d") % 2 )
+        self.text_vraster_accel_2.SetToolTip(_("Upper limit for accel level %d") % 2)
         self.text_vraster_accel_2.Enable(False)
         self.text_vraster_accel_3.SetMinSize((55, 23))
         self.text_vraster_accel_3.SetToolTip(_("Upper limit for accel level %d") % 3)

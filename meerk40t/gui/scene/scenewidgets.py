@@ -381,11 +381,11 @@ class SelectionWidget(Widget):
     def tool_translate(self, position, dx, dy):
         elements = self.scene.context.elements
         b = elements.selected_area()
-        for e in elements._tree.flat(types=("elem",), emphasized=True):
+        for e in elements.flat(types=("elem",), emphasized=True):
             obj = e.object
             obj.transform.post_translate(dx, dy)
             obj.node.modified()
-        for e in elements._tree.flat(
+        for e in elements.flat(
             types=("group", "file", "op element"), emphasized=True
         ):
             e._bounds_dirty = True

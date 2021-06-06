@@ -289,7 +289,7 @@ def plugin(kernel, lifecycle=None):
                     f.write("Copyright: Unknown\n")
                     f.write(
                         "Creator-Software: %s v%s\n"
-                        % (output.context._kernel.name, output.context._kernel.version)
+                        % (output.context.kernel.name, output.context.kernel.version)
                     )
                     f.write("\n")
                     f.write("%0%0%0%0%\n")

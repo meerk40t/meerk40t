@@ -118,6 +118,7 @@ class RuidaEmulator(Module):
         self.output = None
         self.elements = None
         self.control = False
+        self.color = None
 
         self.x = 0.0
         self.y = 0.0

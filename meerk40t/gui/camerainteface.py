@@ -617,8 +617,8 @@ class CameraURI(MWindow):
 
     def window_open(self):
         self.camera_setting = self.context.get_context("camera")
-        keylist = self.camera_setting._kernel.load_persistent_string_dict(
-            self.camera_setting._path, suffix=True
+        keylist = self.camera_setting.kernel.load_persistent_string_dict(
+            self.camera_setting.path, suffix=True
         )
         if keylist is not None:
             keys = [q for q in keylist]
@@ -636,8 +636,8 @@ class CameraURI(MWindow):
             if not c.startswith("uri"):
                 continue
             setattr(self.camera_setting, c, None)
-        for c in list(self.camera_setting._kernel.keylist(self.camera_setting._path)):
-            self.camera_setting._kernel.delete_persistent(c)
+        for c in list(self.camera_setting.kernel.keylist(self.camera_setting.path)):
+            self.camera_setting.kernel.delete_persistent(c)
 
         for i, uri in enumerate(self.uri_list):
             key = "uri%d" % i

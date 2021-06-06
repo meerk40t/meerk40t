@@ -57,8 +57,10 @@ class LaserRender:
         """
         Render scene information.
 
-        :param gc:
-        :param draw_mode:
+        :param nodes: Node types to render.
+        :param gc: graphics context
+        :param draw_mode: draw_mode set
+        :param zoomscale: set zoomscale at which this is drawn at
         :return:
         """
         if draw_mode is None:

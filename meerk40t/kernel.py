@@ -67,10 +67,6 @@ class Modifier:
 
         Devices are not expected to undo all changes they made. This would typically only happen on the closing of a
         particular context.
-
-        :param device:
-        :param channel:
-        :return:
         """
         pass
 
@@ -179,6 +175,18 @@ class Context:
     @property
     def root(self) -> "Context":
         return self.get_context("/")
+
+    @property
+    def path(self) -> str:
+        return self._path
+
+    @property
+    def kernel(self) -> 'Kernel':
+        return self._kernel
+
+    @property
+    def _(self):
+        return self._kernel.translation
 
     def get_context(self, path) -> "Context":
         """
@@ -393,6 +401,7 @@ class Context:
         Delegate of Kernel match.
 
         :param matchtext:  regex matchtext to locate.
+        :param suffix: provide the suffix of the match only.
         :yield: matched entries.
         """
         for m in self._kernel.match(matchtext, suffix):
@@ -1021,6 +1030,7 @@ class Kernel:
         Lists all registered paths that regex match the given matchtext
 
         :param matchtext: match text to match.
+        :param suffix: provide the suffix of the match only.
         :return:
         """
         match = re.compile(matchtext)
@@ -1567,9 +1577,12 @@ class Kernel:
         Adds a job to the scheduler.
 
         :param run: function to run
+        :param name: Specific job name to add
         :param args: arguments to give to that function.
         :param interval: in seconds, how often should the job be run.
         :param times: limit on number of executions.
+        :param run_main: Should this run in the main thread (as registered by kernel.run_later)
+        :param conditional: Should execute only if the given additional conditional is true. (checked outside run_main)
         :return: Reference to the job added.
         """
         job = Job(
@@ -2175,10 +2188,10 @@ class Kernel:
                     context = self.contexts[name]
                     if len(context.opened) == 0:
                         continue
-                    channel(_("Loaded Modules in Context %s:") % str(context._path))
-                    for i, name in enumerate(context.opened):
+                    channel(_("Loaded Modules in Context %s:") % str(context.path))
+                    for j, name in enumerate(context.opened):
                         module = context.opened[name]
-                        channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
+                        channel(_("%d: %s as type of %s") % (j + 1, name, type(module)))
                     channel(_("----------"))
                     return
             if path is None:
@@ -2221,12 +2234,12 @@ class Kernel:
                     channel("%d: %s" % (i + 1, name))
                 channel(_("----------"))
 
-                channel(_("Loaded Modifiers in Context %s:") % str(path_context._path))
+                channel(_("Loaded Modifiers in Context %s:") % str(path_context.path))
                 for i, name in enumerate(path_context.attached):
                     modifier = path_context.attached[name]
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
                 channel(_("----------"))
-                channel(_("Loaded Modifiers in Device %s:") % str(path_context._path))
+                channel(_("Loaded Modifiers in Device %s:") % str(path_context.path))
                 for i, name in enumerate(path_context.attached):
                     modifier = path_context.attached[name]
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))

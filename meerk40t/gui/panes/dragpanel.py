@@ -1,13 +1,13 @@
 import wx
 
-_ = wx.GetTranslation
-
 
 from meerk40t.gui.icons import (icon_corner1, icon_corner2, icon_corner3,
                                 icon_corner4, icons8_down, icons8_left,
                                 icons8_level_1_50, icons8_pentagon_50,
                                 icons8_pentagon_square_50, icons8_right,
                                 icons8_square_border_50, icons8up)
+
+_ = wx.GetTranslation
 
 
 class Drag(wx.Panel):

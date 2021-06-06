@@ -69,8 +69,7 @@ class Planner(Modifier):
         context.planner = self
         context.default_plan = self.default_plan
 
-        kernel = self.context._kernel
-        _ = kernel.translation
+        _ = self.context._
         elements = context.elements
         rotary_context = self.context.get_context("rotary/1")
         bed_dim = self.context.root

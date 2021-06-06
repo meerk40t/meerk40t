@@ -2135,6 +2135,7 @@ class MeerK40t(MWindow):
         """
         Called by 'element_property_update' when the properties of an element are changed.
 
+        :param origin: the path of the originating signal
         :param args:
         :return:
         """
@@ -2158,6 +2159,7 @@ class MeerK40t(MWindow):
         """
         Called by 'rebuild_tree' signal. To refresh tree directly
 
+        :param origin: the path of the originating signal
         :param args:
         :return:
         """
@@ -2173,6 +2175,7 @@ class MeerK40t(MWindow):
         """
         Called by 'refresh_scene' change. To refresh tree.
 
+        :param origin: the path of the originating signal
         :param args:
         :return:
         """
@@ -2217,7 +2220,7 @@ class MeerK40t(MWindow):
         self.pipe_state = state
 
         self.main_statusbar.SetStatusText(
-            _("Controller: %s") % self.context._kernel.get_text_thread_state(state), 1
+            _("Controller: %s") % self.context.kernel.get_text_thread_state(state), 1
         )
         self.toolbar_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
 
@@ -3988,7 +3991,7 @@ class wxMeerK40t(wx.App, Module):
 
             if remainder is None:
                 channel(_("----------"))
-                channel(_("Loaded Windows in Context %s:") % str(context._path))
+                channel(_("Loaded Windows in Context %s:") % str(context.path))
                 for i, name in enumerate(context.opened):
                     if not name.startswith("window"):
                         continue
@@ -3996,7 +3999,7 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
 
                 channel(_("----------"))
-                channel(_("Loaded Windows in Device %s:") % str(path._path))
+                channel(_("Loaded Windows in Device %s:") % str(path.path))
                 for i, name in enumerate(path.opened):
                     if not name.startswith("window"):
                         continue
@@ -4085,7 +4088,7 @@ class wxMeerK40t(wx.App, Module):
                     obj = q
                     try:
                         t = obj.type
-                        m = obj.context._path
+                        m = obj.context.path
                     except AttributeError:
                         pass
                 path = context.get_context(m)
@@ -4161,7 +4164,7 @@ class wxMeerK40t(wx.App, Module):
 
     def initialize(self, *args, **kwargs):
         context = self.context
-        kernel = context._kernel
+        kernel = context.kernel
 
         try:  # pyinstaller internal location
             _resource_path = os.path.join(sys._MEIPASS, "locale")
@@ -4190,7 +4193,7 @@ class wxMeerK40t(wx.App, Module):
             self.update_language(language)
 
     def clear_control(self):
-        kernel = self.context._kernel
+        kernel = self.context.kernel
         if kernel._config is not None:
             kernel._config.DeleteAll()
             kernel._config = None

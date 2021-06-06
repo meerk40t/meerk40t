@@ -27,7 +27,7 @@ MEERK40T_VERSION = "0.7.0 RC-6"
 def pair(value):
     rv = value.split("=")
     if len(rv) != 2:
-        raise argparse.ArgumentParser()
+        raise argparse.ArgumentError
     return rv
 
 

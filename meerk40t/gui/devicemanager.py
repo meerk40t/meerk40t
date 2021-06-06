@@ -154,7 +154,7 @@ class DeviceManager(MWindow):
         spooler_input = self.devices_list.GetItem(item).Text
         # END SPOOLER
 
-        names = [name for name in self.context._kernel.match("driver", suffix=True)]
+        names = [name for name in self.context.match("driver", suffix=True)]
         dlg = wx.SingleChoiceDialog(
             None, _("What type of driver is being added?"), _("Device Type"), names
         )
@@ -167,7 +167,7 @@ class DeviceManager(MWindow):
         dlg.Destroy()
         # END Driver
 
-        names = [name for name in self.context._kernel.match("output", suffix=True)]
+        names = [name for name in self.context.match("output", suffix=True)]
         dlg = wx.SingleChoiceDialog(
             None, _("Where does the device output data?"), _("Output Type"), names
         )

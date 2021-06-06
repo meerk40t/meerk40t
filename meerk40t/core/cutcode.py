@@ -179,7 +179,7 @@ class CutObject:
     def generator(self):
         raise NotImplementedError
 
-    def _contains_uncut_objects(self):
+    def contains_uncut_objects(self):
         if self.contains is None:
             return False
         for c in self.contains:
@@ -248,7 +248,7 @@ class CutGroup(list, CutObject, ABC):
         inner-most non-containing cutcode are the only candidates for cutting.
         """
         for c in self:
-            if c._contains_uncut_objects():
+            if c.contains_uncut_objects():
                 continue
             for s in c.flat():
                 if s is None:
@@ -258,6 +258,7 @@ class CutGroup(list, CutObject, ABC):
 
 
 class CutCode(CutGroup):
+
     def __init__(self, seq=()):
         CutGroup.__init__(self, None, seq)
         self.output = True

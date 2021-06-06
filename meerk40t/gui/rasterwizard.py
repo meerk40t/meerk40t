@@ -90,7 +90,7 @@ class RasterWizard(MWindow):
             self.ops = ops
         else:
             self.ops = deepcopy(
-                self.context._kernel.registered["raster_script/%s" % name]
+                self.context.registered["raster_script/%s" % name]
             )
         self.list_operation.Clear()
         if self.ops is not None:
@@ -470,7 +470,7 @@ class RasterWizard(MWindow):
         with self.thread_update_lock:
             self.needs_update = True
             if self.wizard_thread is None:
-                self.wizard_thread = self.context._kernel.threaded(self.wiz_img)
+                self.wizard_thread = self.context.threaded(self.wiz_img)
                 self.context.signal("RasterWizard-Refresh")
 
     def on_raster_wizard_refresh_signal(self, origin, *args):

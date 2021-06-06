@@ -140,7 +140,7 @@ class JobSpooler(MWindow):
         index = event.Index
         spooler = self.connected_spooler
         try:
-            element = spooler._queue[index]
+            element = spooler.queue[index]
         except IndexError:
             return
         menu = wx.Menu()
@@ -178,9 +178,9 @@ class JobSpooler(MWindow):
             return
 
         spooler = self.connected_spooler
-        if len(spooler._queue) > 0:
+        if len(spooler.queue) > 0:
             # This should actually process and update the queue items.
-            for i, e in enumerate(spooler._queue):
+            for i, e in enumerate(spooler.queue):
                 m = self.list_job_spool.InsertItem(i, "#%d" % i)
                 if m != -1:
                     self.list_job_spool.SetItem(m, 1, name_str(e))

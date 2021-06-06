@@ -403,27 +403,27 @@ class LhystudiosControllerGui(MWindow):
             menu.Destroy()
 
     def on_update_pipe_index(self, origin, value):
-        if origin != self.context._path:
+        if origin != self.context.path:
             return
         self.text_device_index.SetValue(str(value))
 
     def on_update_pipe_chipv(self, origin, value):
-        if origin != self.context._path:
+        if origin != self.context.path:
             return
         self.text_device_version.SetValue(str(value))
 
     def on_update_pipe_bus(self, origin, value):
-        if origin != self.context._path:
+        if origin != self.context.path:
             return
         self.text_device_bus.SetValue(str(value))
 
     def on_update_pipe_address(self, origin, value):
-        if origin != self.context._path:
+        if origin != self.context.path:
             return
         self.text_device_address.SetValue(str(value))
 
     def update_status(self, origin, status_data, code_string):
-        if origin != self.context._path:
+        if origin != self.context.path:
             return
         if status_data is not None:
             if isinstance(status_data, int):
@@ -528,7 +528,7 @@ class LhystudiosControllerGui(MWindow):
         button = self.button_controller_control
         if self.text_controller_status is None:
             return
-        value = self.context._kernel.get_text_thread_state(state)
+        value = self.context.kernel.get_text_thread_state(state)
         self.text_controller_status.SetValue(str(value))
         if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
 

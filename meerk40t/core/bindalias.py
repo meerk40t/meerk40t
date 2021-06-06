@@ -21,7 +21,7 @@ class BindAlias(Modifier):
         self.alias = {}
 
     def attach(self, *a, **kwargs):
-        _ = self.context._kernel.translation
+        _ = self.context._
         self.context.keymap = self.keymap
         self.context.alias = self.alias
         self.context.default_keymap = self.default_keymap
@@ -34,7 +34,7 @@ class BindAlias(Modifier):
             """
             args = kwargs.get("args", tuple())
             context = self.context
-            _ = self.context._kernel.translation
+            _ = self.context._
             if len(args) == 0:
                 channel(_("----------"))
                 channel(_("Binds:"))
@@ -82,7 +82,7 @@ class BindAlias(Modifier):
         )
         def alias(command, channel, _, args=tuple(), **kwargs):
             context = self.context
-            _ = self.context._kernel.translation
+            _ = self.context._
             if len(args) == 0:
                 channel(_("----------"))
                 channel(_("Aliases:"))
@@ -137,14 +137,14 @@ class BindAlias(Modifier):
     def boot_keymap(self):
         self.keymap.clear()
         prefs = self.context.derive("keymap")
-        prefs._kernel.load_persistent_string_dict(prefs._path, self.keymap, suffix=True)
+        prefs.kernel.load_persistent_string_dict(prefs.path, self.keymap, suffix=True)
         if not len(self.keymap):
             self.default_keymap()
 
     def boot_alias(self):
         self.alias.clear()
         prefs = self.context.derive("alias")
-        prefs._kernel.load_persistent_string_dict(prefs._path, self.alias, suffix=True)
+        prefs.kernel.load_persistent_string_dict(prefs.path, self.alias, suffix=True)
         if not len(self.alias):
             self.default_alias()
 

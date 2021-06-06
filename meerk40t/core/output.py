@@ -191,8 +191,7 @@ class Outputs(Modifier):
         context = self.context
         context.outputs = self
 
-        kernel = self.context._kernel
-        _ = kernel.translation
+        _ = self.context._
 
         @context.console_option("new", "n", type=str, help=_("new output type"))
         @context.console_command(

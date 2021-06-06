@@ -287,7 +287,7 @@ class Simulation(MWindow, Job):
     def on_refresh_scene(self, origin, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
-
+        :param origin: the path of the originating signal
         :param args:
         :return:
         """

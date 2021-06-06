@@ -18,7 +18,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "boot":
         device_context = kernel.get_context("devices")
         index = 0
-        for d in device_context._kernel.keylist(device_context._path):
+        for d in device_context.kernel.keylist(device_context.path):
             suffix = d.split("/")[-1]
             if not suffix.startswith("device_"):
                 continue

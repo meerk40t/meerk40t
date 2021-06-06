@@ -1,7 +1,5 @@
 import wx
 
-_ = wx.GetTranslation
-
 
 from meerk40t.gui.icons import (icons8_down_50, icons8_down_left_50,
                                 icons8_down_right_50, icons8_home_filled_50,
@@ -9,6 +7,8 @@ from meerk40t.gui.icons import (icons8_down_50, icons8_down_left_50,
                                 icons8_padlock_50, icons8_right_50,
                                 icons8_up_50, icons8_up_left_50,
                                 icons8_up_right_50)
+
+_ = wx.GetTranslation
 
 MILS_IN_MM = 39.3701
 
