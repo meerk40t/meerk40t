@@ -996,12 +996,12 @@ class Length(object):
             if s.units == "":
                 s = s.amount
             else:
-                a = "%.12f" % (s.amount)
+                a = "%.12f" % s.amount
                 if "." in a:
                     a = a.rstrip("0").rstrip(".")
                 return "'%s%s'" % (a, s.units)
         try:
-            s = "%.12f" % (s)
+            s = "%.12f" % s
         except TypeError:
             return str(s)
         if "." in s:
@@ -1093,8 +1093,8 @@ class Color(object):
 
     def __repr__(self):
         if self.value is None:
-            return "Color('%s')" % (self.value)
-        return "Color('%s')" % (self.hex)
+            return "Color('%s')" % self.value
+        return "Color('%s')" % self.hex
 
     def __eq__(self, other):
         if self is other:
@@ -2036,12 +2036,12 @@ class Point:
 
     def __str__(self):
         try:
-            x_str = "%.12G" % (self.x)
+            x_str = "%.12G" % self.x
         except TypeError:
             return self.__repr__()
         if "." in x_str:
             x_str = x_str.rstrip("0").rstrip(".")
-        y_str = "%.12G" % (self.y)
+        y_str = "%.12G" % self.y
         if "." in y_str:
             y_str = y_str.rstrip("0").rstrip(".")
         return "%s,%s" % (x_str, y_str)
@@ -3011,9 +3011,9 @@ class Matrix:
         [b d f]   %  [b d f] = [c d 0]
         [0 0 1]      [0 0 1]   [e f 1]
 
-        :param m0: matrix operand
-        :param m1: matrix operand
-        :return: muliplied matrix.
+        :param m: matrix operand
+        :param s: matrix operand
+        :return: multiplied matrix.
         """
         r0 = (
             s.a * m.a + s.c * m.b + s.e * 0,
@@ -3105,18 +3105,25 @@ class Viewbox:
 
         It creates transform commands equal to that viewport expected.
 
-        :param svg_node: dict containing the relevant svg entries.
+        Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+        Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute
+        respectively.
+
+        Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
+        Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
+        or if meetOrSlice is missing from this value.
+
+        :param e_x: element_x value
+        :param e_y: element_y value
+        :param e_width: element_width value
+        :param e_height: element_height value
+        :param vb_x: viewbox_x value
+        :param vb_y: viewbox_y value
+        :param vb_width: viewbox_width value
+        :param vb_height: viewbox_height value
+        :param aspect: preserve aspect ratio value
         :return: string of the SVG transform commands to account for the viewbox.
         """
-
-        # Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
-
-        # Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y,
-        # width and height values of the viewBox attribute respectively.
-
-        # Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
-        # Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
-        # or if meetOrSlice is missing from this value.
         if (
             e_x is None
             or e_y is None
@@ -4046,15 +4053,15 @@ class Linear(PathSegment):
         """ Gives the point on the line closest to the given point. """
         a = self.start
         b = self.end
-        vAPx = p[0] - a.x
-        vAPy = p[1] - a.y
-        vABx = b.x - a.x
-        vABy = b.y - a.y
-        sqDistanceAB = vABx * vABx + vABy * vABy
-        ABAPproduct = vABx * vAPx + vABy * vAPy
-        if sqDistanceAB == 0:
+        v_ap_x = p[0] - a.x
+        v_ap_y = p[1] - a.y
+        v_ab_x = b.x - a.x
+        v_ab_y = b.y - a.y
+        sq_distance_ab = v_ab_x * v_ab_x + v_ab_y * v_ab_y
+        ab_ap_product = v_ab_x * v_ap_x + v_ab_y * v_ap_y
+        if sq_distance_ab == 0:
             return 0  # Line is point.
-        amount = ABAPproduct / float(sqDistanceAB)
+        amount = ab_ap_product / float(sq_distance_ab)
         if respect_bounds:
             if amount > 1:
                 amount = 1
@@ -5011,10 +5018,10 @@ class Arc(Curve):
         vy = (-y1prim - cyprim) / ry
         n = sqrt(ux * ux + uy * uy)
         p = ux
-        theta = degrees(acos(p / n))
-        if uy < 0:
-            theta = -theta
-        theta = theta % 360
+        # theta = degrees(acos(p / n))
+        # if uy < 0:
+        #     theta = -theta
+        # theta = theta % 360
 
         n = sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))
         p = ux * vx + uy * vy
@@ -5102,9 +5109,7 @@ class Arc(Curve):
         for i in range(0, arc_required):
             next_t = current_t + t_slice
 
-            alpha = (
-                sin(t_slice) * (sqrt(4 + 3 * pow(tan((t_slice) / 2.0), 2)) - 1) / 3.0
-            )
+            alpha = sin(t_slice) * (sqrt(4 + 3 * pow(tan(t_slice / 2.0), 2)) - 1) / 3.0
 
             cos_start_t = cos(current_t)
             sin_start_t = sin(current_t)
@@ -6596,6 +6601,7 @@ class _RoundShape(Shape):
 
         :param a0: start angle
         :param a1: end angle
+        :param ccw: optional flag to force clockwise or counter-clockwise arc-angles, default is smaller angle
         :return: arc
         """
         if ccw is None:
@@ -6677,12 +6683,12 @@ class _RoundShape(Shape):
         center = self.implicit_center
         cx = center.x
         cy = center.y
-        cosTheta = cos(rotation)
-        sinTheta = sin(rotation)
-        cosT = cos(t)
-        sinT = sin(t)
-        px = cx + a * cosT * cosTheta - b * sinT * sinTheta
-        py = cy + a * cosT * sinTheta + b * sinT * cosTheta
+        cos_theta = cos(rotation)
+        sin_theta = sin(rotation)
+        cos_t = cos(t)
+        sin_t = sin(t)
+        px = cx + a * cos_t * cos_theta - b * sin_t * sin_theta
+        py = cy + a * cos_t * sin_theta + b * sin_t * cos_theta
         return Point(px, py)
 
     def point(self, position, error=ERROR):
@@ -6690,7 +6696,8 @@ class _RoundShape(Shape):
         find the point that corresponds to given value [0,1].
         Where t=0 is the first point and t=1 is the final point.
 
-        :param position:
+        :param position: position value between 0,1 where value equals the amount through the shape
+        :param error: error permitted in determining point value (unused for this shape)
         :return: point at t
         """
         return self.point_at_t(tau * position)
@@ -6839,7 +6846,7 @@ class SimpleLine(Shape):
         if transformed:
             start *= self.transform
             end *= self.transform
-        return (Move(None, start), Line(start, end))
+        return Move(None, start), Line(start, end)
 
     def reify(self):
         """
@@ -8016,7 +8023,7 @@ class SVG(Group):
                 if tag.startswith("{http://www.w3.org/2000/svg"):
                     tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
             except AttributeError:
-                yield (None, event, elem)
+                yield None, event, elem
                 continue
 
             if event == "start":
@@ -8062,7 +8069,7 @@ class SVG(Group):
                                     x,
                                     y,
                                 )
-                        yield (tag, event, elem)
+                        yield tag, event, elem
                         try:
                             shadow_node = defs[url[1:]]
                             children.append(
@@ -8073,11 +8080,11 @@ class SVG(Group):
                         except KeyError:
                             pass  # Failed to find link.
                 else:
-                    yield (tag, event, elem)
+                    yield tag, event, elem
                 if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
                     defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
             elif event == "end":
-                yield (tag, event, elem)
+                yield tag, event, elem
                 # event is 'end', pop values.
                 parent, children = parent  # Parent is now node.
 
