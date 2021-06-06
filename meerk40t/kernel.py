@@ -2119,12 +2119,8 @@ class Kernel:
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
         @self.console_command("set", help=_("set [<key> <value>]"))
-        def set(channel, _, path=None, args=tuple(), **kwargs):
-            relevant_context = None
-            if path is not None:
-                relevant_context = self.get_context(path)
-            if relevant_context is None:
-                return None
+        def set_command(channel, _, path=None, args=tuple(), **kwargs):
+            relevant_context = self.get_context(path) if path is not None else self.root
             if len(args) == 0:
                 for attr in dir(relevant_context):
                     v = getattr(relevant_context, attr)
