@@ -673,7 +673,15 @@ class MeerK40t(MWindow):
         stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         stop.SetToolTip(_("Emergency stop/reset the controller."))
         stop.SetSize(stop.GetBestSize())
-        pane = aui.AuiPaneInfo().Bottom().Caption("Stop").Name("stop")
+        pane = (
+            aui.AuiPaneInfo()
+            .Bottom()
+            .Caption(_("Stop"))
+            .MinSize(40, 40)
+            .FloatingSize(98, 98)
+            .Name("stop")
+            .CaptionVisible(self.context.pane_lock)
+        )
         pane.dock_proportion = 1
         pane.control = stop
 
@@ -705,6 +713,8 @@ class MeerK40t(MWindow):
             aui.AuiPaneInfo()
             .Caption(_("Pause"))
             .Bottom()
+            .MinSize(40, 40)
+            .FloatingSize(98, 98)
             .Name("pause")
             .CaptionVisible(self.context.pane_lock)
         )
@@ -715,17 +725,20 @@ class MeerK40t(MWindow):
         self.context.register("pane/pause", pane)
 
         # Define Home.
-        panel = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), panel)
+        home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+        home.SetBackgroundColour((200, 225, 250))
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), home)
         pane = (
             aui.AuiPaneInfo()
             .Bottom()
             .Caption(_("Home"))
+            .MinSize(40, 40)
+            .FloatingSize(98, 98)
             .Name("home")
             .CaptionVisible(self.context.pane_lock)
         )
         pane.dock_proportion = 1
-        pane.control = panel
+        pane.control = home
         self.on_pane_add(pane)
         self.context.register("pane/home", pane)
 
