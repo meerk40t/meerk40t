@@ -499,8 +499,8 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
             .Float()
-            .MinSize(200, 130)
-            .FloatingSize(200, 130)
+            .MinSize(190, 110)
+            .FloatingSize(190, 110)
             .Hide()
             .Caption(_("Distances"))
             .CaptionVisible(self.context.pane_lock)
@@ -518,9 +518,8 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
             .Right()
-            .MinSize(150, 75)
+            .MinSize(75, 50)
             .FloatingSize(150, 75)
-            .MaxSize(200, 100)
             .Hide()
             .Caption(_("Pulse"))
             .CaptionVisible(self.context.pane_lock)
@@ -573,8 +572,8 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
             .Left()
-            .MinSize(225, 120)
-            .FloatingSize(225, 120)
+            .MinSize(225, 110)
+            .FloatingSize(225, 110)
             .Caption(_("Position"))
             .CaptionVisible(self.context.pane_lock)
             .Name("position")
