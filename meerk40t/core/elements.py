@@ -1950,6 +1950,8 @@ class Elemental(Modifier):
             for e in data:
                 node = e.node
                 group_node = node.replace_node(type="group", name=node.name)
+                if isinstance(e, Shape) and not isinstance(e, Path):
+                    e = Path(e)
                 p = abs(e)
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
