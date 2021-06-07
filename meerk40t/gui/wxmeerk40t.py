@@ -3367,9 +3367,9 @@ class ShadowTree:
             if node.highlighted:
                 tree.SetItemBackgroundColour(node_item, wx.LIGHT_GREY)
             elif node.emphasized:
-                tree.SetItemBackgroundColour(node_item, wx.CYAN)
+                tree.SetItemBackgroundColour(node_item, wx.Colour(0x80A0A0))
             elif node.targeted:
-                tree.SetItemBackgroundColour(node_item, wx.Colour(0xFF00FF))
+                tree.SetItemBackgroundColour(node_item, wx.Colour(0xA080A0))
         except AttributeError:
             pass
 
