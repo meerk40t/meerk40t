@@ -4697,7 +4697,7 @@ class Arc(Curve):
                 if "scooped" in kwargs and kwargs["scooped"]:
                     self.sweep = -self.sweep
                     cw = not cw
-                if "ccw" in kwargs and kwargs["ccw"] and cw or not cw:
+                if ("ccw" in kwargs and kwargs["ccw"] and cw) or not cw:
                     self.center = Point(self.end.x, self.start.y)
 
         if self.center is None:
@@ -6248,13 +6248,12 @@ class Rect(Shape):
         rx = self.rx
         ry = self.ry
         if not self._strict:
-            if rx < 0 and ry < 0:
+            if rx < 0 < width and ry < 0 < height:
                 scooped = True
-            rx = abs(rx)
-            ry = abs(ry)
-        if rx < 0:
+                rx = abs(rx)
+                ry = abs(ry)
+        if rx < 0 < width or ry < 0 < height:
             rx = 0
-        if ry < 0:
             ry = 0
         if rx == ry == 0:
             segments = (
