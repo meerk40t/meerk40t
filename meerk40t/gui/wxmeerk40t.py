@@ -445,7 +445,7 @@ class MeerK40t(MWindow):
             .Name("jog")
             .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 30
+        pane.dock_proportion = 230
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -465,7 +465,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 30
+        pane.dock_proportion = 230
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -485,7 +485,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 30
+        pane.dock_proportion = 220
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -504,7 +504,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .Name("jogdist")
         )
-        pane.dock_proportion = 10
+        pane.dock_proportion = 110
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -523,7 +523,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .Name("pulse")
         )
-        pane.dock_proportion = 10
+        pane.dock_proportion = 150
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -542,7 +542,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .Name("move")
         )
-        pane.dock_proportion = 10
+        pane.dock_proportion = 150
         pane.control = panel
         pane.submenu = _("Navigate")
 
@@ -562,7 +562,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .TopDockable(False)
         )
-        pane.dock_proportion = 40
+        pane.dock_proportion = 275
         pane.control = self.wxtree
         self.on_pane_add(pane)
         self.context.register("pane/tree", pane)
@@ -576,7 +576,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .Name("position")
         )
-        pane.dock_proportion = 20
+        pane.dock_proportion = 225
         pane.control = PositionPanel(self, wx.ID_ANY, context=self.context)
 
         self.on_pane_add(pane)
@@ -593,7 +593,7 @@ class MeerK40t(MWindow):
             .Caption(_("Ribbon"))
             .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 80
+        pane.dock_proportion = 640
         pane.control = self._ribbon
 
         self.on_pane_add(pane)
@@ -637,7 +637,7 @@ class MeerK40t(MWindow):
             .Name("stop")
             .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 10
+        pane.dock_proportion = 98
         pane.control = stop
 
         self.on_pane_add(pane)
@@ -673,7 +673,7 @@ class MeerK40t(MWindow):
             .Name("pause")
             .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 10
+        pane.dock_proportion = 98
         pane.control = pause
 
         self.on_pane_add(pane)
@@ -692,7 +692,7 @@ class MeerK40t(MWindow):
             .Name("home")
             .CaptionVisible(not self.context.pane_lock)
         )
-        pane.dock_proportion = 10
+        pane.dock_proportion = 98
         pane.control = home
         self.on_pane_add(pane)
         self.context.register("pane/home", pane)
@@ -702,15 +702,15 @@ class MeerK40t(MWindow):
         pane = (
             aui.AuiPaneInfo()
             .Float()
-            .MinSize(170, 230)
+            .MinSize(100, 100)
             .FloatingSize(170, 230)
-            .MaxSize(300, 300)
+            .MaxSize(500, 500)
             .Caption(_("Notes"))
             .CaptionVisible(not self.context.pane_lock)
             .Name("notes")
             .Hide()
         )
-        pane.dock_proportion = 30
+        pane.dock_proportion = 100
         pane.control = panel
 
         self.on_pane_add(pane)
@@ -729,7 +729,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 50
+        pane.dock_proportion = 600
         pane.control = panel
 
         self.on_pane_add(pane)
@@ -748,7 +748,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 50
+        pane.dock_proportion = 600
         pane.control = panel
 
         self.on_pane_add(pane)
@@ -767,7 +767,7 @@ class MeerK40t(MWindow):
             .CaptionVisible(not self.context.pane_lock)
             .Hide()
         )
-        pane.dock_proportion = 50
+        pane.dock_proportion = 600
         pane.control = panel
 
         self.on_pane_add(pane)

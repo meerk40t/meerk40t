@@ -97,7 +97,7 @@ def register_preferences_tools(context, gui):
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 50
+    pane.dock_proportion = 290
     pane.control = toolbar
     pane.submenu = _("Toolbars")
     gui.on_pane_add(pane)

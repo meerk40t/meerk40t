@@ -124,7 +124,7 @@ def register_project_tools(context, gui):
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 70
+    pane.dock_proportion = 430
     pane.control = toolbar
     pane.submenu = _("Toolbars")
     gui.on_pane_add(pane)
