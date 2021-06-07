@@ -405,7 +405,7 @@ class SimulationTravelWidget(Widget):
                     e = complex(end[0], end[1])
                     d = abs(s - e)
                     if d >= 127:
-                        for p in [0.1, 0.5, 0.9]:
+                        for p in [0.75]:
                             m = p * (e - s) + s
                             ang = math.atan2((s - e).imag, (s - e).real)
                             # arrow_size = d / 10.0
