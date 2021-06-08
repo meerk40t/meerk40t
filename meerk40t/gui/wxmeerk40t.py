@@ -9,6 +9,7 @@ import traceback
 
 from meerk40t.gui.panes.jog import Jog
 from meerk40t.gui.panes.position import PositionPanel
+from .panes.camerapanel import CameraPanel
 
 from ..core.cutcode import CutCode
 from .file.fileoutput import FileOutput
@@ -772,6 +773,27 @@ class MeerK40t(MWindow):
 
         self.on_pane_add(pane)
         self.context.register("pane/devices", pane)
+
+        # Define Camera
+        if self.context.developer_mode:
+            for index in range(5):
+                panel = CameraPanel(self, wx.ID_ANY, context=self.context, gui=self, index=index)
+                pane = (
+                    aui.AuiPaneInfo()
+                    .Right()
+                    .Layer(2)
+                    .MinSize(640, 480)
+                    .FloatingSize(640, 480)
+                    .Caption(_("Camera %d" % index))
+                    .Name("camera%d" % index)
+                    .CaptionVisible(not self.context.pane_lock)
+                    .Hide()
+                )
+                pane.dock_proportion = 640
+                pane.control = panel
+                pane.submenu = _("Camera")
+                self.on_pane_add(pane)
+                self.context.register("pane/camera%d" % index, pane)
 
         # AUI Manager Update.
         self._mgr.Update()
