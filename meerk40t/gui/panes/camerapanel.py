@@ -42,28 +42,6 @@ class CameraPanel(wx.Panel, Job):
 
         self.root_context = self.context.root
 
-        self.button_update = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_camera_50.GetBitmap()
-        )
-        self.button_export = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap()
-        )
-        self.button_reconnect = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_connected_50.GetBitmap()
-        )
-        self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
-        self.check_perspective = wx.CheckBox(self, wx.ID_ANY, _("Correct Perspective"))
-        self.slider_fps = wx.Slider(
-            self,
-            wx.ID_ANY,
-            24,
-            0,
-            60,
-            style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS,
-        )
-        self.button_detect = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_detective_50.GetBitmap()
-        )
         self.display_camera = ScenePanel(
             self.context,
             self,
@@ -79,13 +57,6 @@ class CameraPanel(wx.Panel, Job):
         self.image_height = -1
         self.frame_bitmap = None
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
-        self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
-        self.Bind(wx.EVT_BUTTON, self.on_button_reconnect, self.button_reconnect)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_fisheye, self.check_fisheye)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_perspective, self.check_perspective)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_fps, self.slider_fps)
-        self.Bind(wx.EVT_BUTTON, self.on_button_detect, self.button_detect)
         self.SetDoubleBuffered(True)
         # end wxGlade
 
@@ -111,8 +82,6 @@ class CameraPanel(wx.Panel, Job):
 
             return
 
-        self.check_fisheye.SetValue(self.setting.correction_fisheye)
-        self.check_perspective.SetValue(self.setting.correction_perspective)
         if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.setting.fisheye)
         else:
@@ -124,8 +93,6 @@ class CameraPanel(wx.Panel, Job):
         else:
             self.camera.perspective = None
         self.widget_scene.widget_root.set_aspect(self.setting.aspect)
-        self.slider_fps.SetValue(self.setting.fps)
-        self.on_slider_fps()
 
         self.widget_scene.background_brush = wx.WHITE_BRUSH
         self.widget_scene.add_scenewidget(CamSceneWidget(self.widget_scene, self))
@@ -136,31 +103,13 @@ class CameraPanel(wx.Panel, Job):
 
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_3 = wx.BoxSizer(wx.VERTICAL)
-        sizer_2.Add(self.button_update, 0, 0, 0)
-        sizer_2.Add(self.button_export, 0, 0, 0)
-        sizer_2.Add(self.button_reconnect, 0, 0, 0)
-        sizer_3.Add(self.check_fisheye, 0, 0, 0)
-        sizer_3.Add(self.check_perspective, 0, 0, 0)
-        sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
-        sizer_2.Add(self.slider_fps, 1, wx.EXPAND, 0)
-        sizer_2.Add(self.button_detect, 0, 0, 0)
-        sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
         sizer_1.Add(self.display_camera, 10, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()
 
     def __set_properties(self):
         # begin wxGlade: CameraInterface.__set_properties
-        self.button_update.SetToolTip(_("Update Image"))
-        self.button_update.SetSize(self.button_update.GetBestSize())
-        self.button_export.SetToolTip(_("Export Snapsnot"))
-        self.button_export.SetSize(self.button_export.GetBestSize())
-        self.button_reconnect.SetToolTip(_("Reconnect Camera"))
-        self.button_reconnect.SetSize(self.button_reconnect.GetBestSize())
-        self.button_detect.SetToolTip(_("Detect Distortions/Calibration"))
-        self.button_detect.SetSize(self.button_detect.GetBestSize())
+        pass
         # end wxGlade
 
     def initialize(self, *args):
@@ -229,92 +178,6 @@ class CameraPanel(wx.Panel, Job):
             self.frame_bitmap = None
 
         return swap
-
-    def reset_perspective(self, event=None):
-        """
-        Reset the perspective settings.
-
-        :param event:
-        :return:
-        """
-        self.context("camera%d perspective reset\n" % self.index)
-
-    def reset_fisheye(self, event=None):
-        """
-        Reset the fisheye settings.
-
-        :param event:
-        :return:
-        """
-        self.context("camera%d fisheye reset\n" % self.index)
-
-    def on_check_perspective(self, event=None):
-        """
-        Perspective checked. Turns on/off
-        :param event:
-        :return:
-        """
-        self.setting.correction_perspective = self.check_perspective.GetValue()
-
-    def on_check_fisheye(self, event=None):
-        """
-        Fisheye checked. Turns on/off.
-        :param event:
-        :return:
-        """
-        self.setting.correction_fisheye = self.check_fisheye.GetValue()
-
-    def on_button_update(self, event=None):  # wxGlade: CameraInterface.<event_handler>
-        """
-        Button update.
-
-        Sets image background to main scene.
-
-        :param event:
-        :return:
-        """
-        self.context("camera%d background\n" % self.index)
-
-    def on_button_export(self, event=None):  # wxGlade: CameraInterface.<event_handler>
-        """
-        Button export.
-
-        Sends an image to the scene as an exported object.
-        :param event:
-        :return:
-        """
-        self.context.console("camera%d export\n" % self.index)
-
-    def on_button_reconnect(
-        self, event=None
-    ):  # wxGlade: CameraInterface.<event_handler>
-        self.context.console("camera%d stop start\n" % self.index)
-
-    def on_slider_fps(self, event=None):  # wxGlade: CameraInterface.<event_handler>
-        """
-        Adjusts the camera FPS.
-
-        If set to 0, this will be a frame each 5 seconds.
-
-        :param event:
-        :return:
-        """
-        fps = self.slider_fps.GetValue()
-        if fps == 0:
-            tick = 5
-        else:
-            tick = 1.0 / fps
-        self.setting.fps = fps
-        self.interval = tick
-
-    def on_button_detect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
-        """
-        Attempts to locate 6x9 checkerboard pattern for OpenCV to correct the fisheye pattern.
-
-        :param event:
-        :return:
-        """
-        self.context.console("camera%d fisheye capture\n" % self.index)
 
 
 class CamInterfaceWidget(Widget):
@@ -399,18 +262,42 @@ class CamInterfaceWidget(Widget):
                 sub_menu,
             )
             menu.AppendSeparator()
-            item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
-            self.cam.Bind(wx.EVT_MENU, self.cam.reset_perspective, id=item.GetId())
-            item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
-            self.cam.Bind(wx.EVT_MENU, self.cam.reset_fisheye, id=item.GetId())
+
+            item = menu.Append(wx.ID_ANY, _("Reconnect Camera"), "")
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d stop start\n" % self.cam.index), id=item.GetId())
+
+            item = menu.Append(wx.ID_ANY, _("Export Snapshot"), "")
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d export\n" % self.cam.index), id=item.GetId())
+
+            item = menu.Append(wx.ID_ANY, _("Update Background"), "")
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d background\n" % self.cam.index), id=item.GetId())
+
             menu.AppendSeparator()
 
-            # item = menu.Append(wx.ID_ANY, _("Set URI"), "")
-            # self.cam.Bind(
-            #     wx.EVT_MENU,
-            #     lambda e: self.cam.context.open("window/CameraURI", self, index=self.cam.index),
-            #     id=item.GetId(),
-            # )
+            fisheye = menu.Append(wx.ID_ANY, _("Correct Fisheye"), "", wx.ITEM_CHECK)
+            fisheye.Check(self.cam.setting.correction_fisheye)
+            self.cam.setting.correction_fisheye = fisheye.IsChecked()
+
+            def check_fisheye(event=None):
+                self.cam.setting.correction_fisheye = fisheye.IsChecked()
+            self.cam.Bind(wx.EVT_MENU, check_fisheye, fisheye)
+
+            perspect = menu.Append(wx.ID_ANY, _("Correct Perspective"), "", wx.ITEM_CHECK)
+            perspect.Check(self.cam.setting.correction_perspective)
+            self.cam.setting.correction_perspective = perspect.IsChecked()
+
+            def check_perspect(event=None):
+                self.cam.setting.correction_perspective = perspect.IsChecked()
+
+            self.cam.Bind(wx.EVT_MENU, check_perspect, perspect)
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.context("camera%d perspective reset\n" % self.index), id=item.GetId())
+            item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.context("camera%d fisheye reset\n" % self.index), id=item.GetId())
+            menu.AppendSeparator()
+
+            sub_menu = wx.Menu()
             camera_setting = self.cam.context.get_context("camera")
             keylist = camera_setting.kernel.load_persistent_string_dict(
                 camera_setting.path, suffix=True
@@ -420,24 +307,31 @@ class CamInterfaceWidget(Widget):
                 keys.sort()
                 uri_list = [keylist[k] for k in keys]
                 for uri in uri_list:
-                    item = menu.Append(wx.ID_ANY, _("URI: %s") % uri, "")
+                    item = sub_menu.Append(wx.ID_ANY, _("URI: %s") % uri, "")
                     self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId())
 
-            item = menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(0), id=item.GetId())
-            item = menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(1), id=item.GetId())
-            item = menu.Append(wx.ID_ANY, _("USB %d") % 2, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 2, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(2), id=item.GetId())
-            item = menu.Append(wx.ID_ANY, _("USB %d") % 3, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 3, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(3), id=item.GetId())
-            item = menu.Append(wx.ID_ANY, _("USB %d") % 4, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 4, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(4), id=item.GetId())
 
+            menu.Append(
+                wx.ID_ANY,
+                _("Set URI"),
+                sub_menu,
+            )
             if menu.MenuItemCount != 0:
                 self.cam.PopupMenu(menu)
                 menu.Destroy()
             return RESPONSE_ABORT
+        if event_type == "doubleclick":
+            self.cam.context("camera%d background\n" % self.cam.index)
         return RESPONSE_CHAIN
 
 

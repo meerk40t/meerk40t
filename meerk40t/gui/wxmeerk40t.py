@@ -782,7 +782,7 @@ class MeerK40t(MWindow):
                     aui.AuiPaneInfo()
                     .Right()
                     .Layer(2)
-                    .MinSize(640, 480)
+                    .MinSize(320, 240)
                     .FloatingSize(640, 480)
                     .Caption(_("Camera %d" % index))
                     .Name("camera%d" % index)
