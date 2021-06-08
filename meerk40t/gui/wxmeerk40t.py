@@ -644,7 +644,7 @@ class MeerK40t(MWindow):
         self.context.register("pane/stop", pane)
 
         # Define Pause.
-        pause = wx.BitmapButton(self, wx.ID_ANY, icons8_pause_50.GetBitmap())
+        pause = wx.BitmapButton(self, wx.ID_ANY, icons8_pause_50.GetBitmap(use_theme=False))
 
         def on_pause_button(event=None):
             try:
