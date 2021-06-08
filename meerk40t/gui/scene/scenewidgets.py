@@ -615,9 +615,21 @@ class GridWidget(Widget):
         self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
         self.grid_line_pen.SetWidth(1)
 
+    def hit(self):
+        return HITCHAIN_HIT
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "hover":
             return RESPONSE_CHAIN
+        elif event_type == "doubleclick":
+            menu = wx.Menu()
+            _ = self.scene.context._
+            if self.background is not None:
+                item = menu.Append(wx.ID_ANY, _("Remove Background"), "")
+                self.scene.gui.Bind(wx.EVT_MENU, lambda e: self.scene.gui.signal("background", None), id=item.GetId())
+                if menu.MenuItemCount != 0:
+                    self.scene.gui.PopupMenu(menu)
+                    menu.Destroy()
         self.grid = None
         return RESPONSE_CHAIN
 
