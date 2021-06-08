@@ -681,7 +681,7 @@ class MeerK40t(MWindow):
 
         # Define Home.
         home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        home.SetBackgroundColour((200, 225, 250))
+        # home.SetBackgroundColour((200, 225, 250))
         self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), home)
         pane = (
             aui.AuiPaneInfo()
