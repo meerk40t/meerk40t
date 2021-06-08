@@ -406,13 +406,13 @@ class CamInterfaceWidget(Widget):
             self.cam.Bind(wx.EVT_MENU, self.cam.reset_fisheye, id=item.GetId())
             menu.AppendSeparator()
 
-            item = menu.Append(wx.ID_ANY, _("Set URI"), "")
-            self.cam.Bind(
-                wx.EVT_MENU,
-                lambda e: self.cam.context.open("window/CameraURI", self, index=self.cam.index),
-                id=item.GetId(),
-            )
-
+            # item = menu.Append(wx.ID_ANY, _("Set URI"), "")
+            # self.cam.Bind(
+            #     wx.EVT_MENU,
+            #     lambda e: self.cam.context.open("window/CameraURI", self, index=self.cam.index),
+            #     id=item.GetId(),
+            # )
+            # TODO: replace with list of cam_uris already setup.
             item = menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(0), id=item.GetId())
             item = menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
