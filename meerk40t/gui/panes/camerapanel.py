@@ -409,7 +409,7 @@ class CamInterfaceWidget(Widget):
             item = menu.Append(wx.ID_ANY, _("Set URI"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.context.open("window/CameraURI", self, index=self.cam.gui.index),
+                lambda e: self.cam.context.open("window/CameraURI", self, index=self.cam.index),
                 id=item.GetId(),
             )
 
