@@ -780,16 +780,15 @@ class MeerK40t(MWindow):
                 panel = CameraPanel(self, wx.ID_ANY, context=self.context, gui=self, index=index)
                 pane = (
                     aui.AuiPaneInfo()
-                    .Right()
-                    .Layer(2)
-                    .MinSize(320, 240)
+                    .Left()
+                    .MinSize(200, 150)
                     .FloatingSize(640, 480)
                     .Caption(_("Camera %d" % index))
                     .Name("camera%d" % index)
                     .CaptionVisible(not self.context.pane_lock)
                     .Hide()
                 )
-                pane.dock_proportion = 320
+                pane.dock_proportion = 200
                 pane.control = panel
                 pane.submenu = _("Camera")
                 self.on_pane_add(pane)
