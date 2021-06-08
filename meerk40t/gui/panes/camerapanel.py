@@ -412,7 +412,18 @@ class CamInterfaceWidget(Widget):
             #     lambda e: self.cam.context.open("window/CameraURI", self, index=self.cam.index),
             #     id=item.GetId(),
             # )
-            # TODO: replace with list of cam_uris already setup.
+            camera_setting = self.cam.context.get_context("camera")
+            keylist = camera_setting.kernel.load_persistent_string_dict(
+                camera_setting.path, suffix=True
+            )
+            if keylist is not None:
+                keys = [q for q in keylist]
+                keys.sort()
+                uri_list = [keylist[k] for k in keys]
+                for uri in uri_list:
+                    item = menu.Append(wx.ID_ANY, _("URI: %s") % uri, "")
+                    self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId())
+
             item = menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(0), id=item.GetId())
             item = menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
