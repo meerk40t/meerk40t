@@ -652,7 +652,7 @@ class MeerK40t(MWindow):
                 # if self.pipe_state != 3:
                 #     pause.SetBitmap(icons8_play_50.GetBitmap())
                 # else:
-                pause.SetBitmap(icons8_pause_50.GetBitmap())
+                # pause.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
             except AttributeError:
                 pass
 
