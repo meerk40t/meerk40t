@@ -30,7 +30,7 @@ class CameraPanel(wx.Panel, Job):
         self.gui = gui
         self.context = context
         self.index = index
-        Job.__init__(self, job_name="Camera%d" % self.index)
+        Job.__init__(self, job_name="CamPane%d" % self.index)
         self.process = self.update_camera_frame
         self.run_main = True
 
@@ -67,7 +67,7 @@ class CameraPanel(wx.Panel, Job):
         self.display_camera = ScenePanel(
             self.context,
             self,
-            scene_name="Camera%s" % str(self.index),
+            scene_name="CamPaneScene%s" % str(self.index),
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.widget_scene = self.display_camera.scene
@@ -179,7 +179,6 @@ class CameraPanel(wx.Panel, Job):
         self.context("camera%d stop\n" % self.index)
         self.context.unschedule(self)
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
-        self.context.close("Camera%s" % str(self.index))
         self.context.kernel.unlisten("lifecycle;shutdown", "", self.finalize)
 
     def on_refresh_scene(self, origin, *args):
