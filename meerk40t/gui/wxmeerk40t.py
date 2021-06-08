@@ -789,7 +789,7 @@ class MeerK40t(MWindow):
                     .CaptionVisible(not self.context.pane_lock)
                     .Hide()
                 )
-                pane.dock_proportion = 640
+                pane.dock_proportion = 320
                 pane.control = panel
                 pane.submenu = _("Camera")
                 self.on_pane_add(pane)
