@@ -224,6 +224,13 @@ class CameraPanel(wx.Panel, Job):
 
         self.widget_scene.request_refresh()
 
+    def swap_camera(self, uri):
+        def swap(event=None):
+            self.context("camera%d --uri %s stop start\n" % (self.index, str(uri)))
+            self.frame_bitmap = None
+
+        return swap
+
     def reset_perspective(self, event=None):
         """
         Reset the perspective settings.
@@ -392,34 +399,30 @@ class CamInterfaceWidget(Widget):
                 _("Preserve: %s") % self.cam.setting.preserve_aspect,
                 sub_menu,
             )
-
-            camera_interface_menubar = wx.MenuBar()
-            wxglade_tmp_menu = wx.Menu()
-            item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
             self.cam.Bind(wx.EVT_MENU, self.cam.reset_perspective, id=item.GetId())
-            item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
+            item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
             self.cam.Bind(wx.EVT_MENU, self.cam.reset_fisheye, id=item.GetId())
-            wxglade_tmp_menu.AppendSeparator()
+            menu.AppendSeparator()
 
-            item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
+            item = menu.Append(wx.ID_ANY, _("Set URI"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
                 lambda e: self.cam.context.open("window/CameraURI", self, index=self.cam.gui.index),
                 id=item.GetId(),
             )
 
-            item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
+            item = menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(0), id=item.GetId())
-            item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
+            item = menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(1), id=item.GetId())
-            item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 2, "")
+            item = menu.Append(wx.ID_ANY, _("USB %d") % 2, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(2), id=item.GetId())
-            item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 3, "")
+            item = menu.Append(wx.ID_ANY, _("USB %d") % 3, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(3), id=item.GetId())
-            item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 4, "")
+            item = menu.Append(wx.ID_ANY, _("USB %d") % 4, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(4), id=item.GetId())
-
-            camera_interface_menubar.Append(wxglade_tmp_menu, _("Camera"))
 
             if menu.MenuItemCount != 0:
                 self.cam.PopupMenu(menu)
