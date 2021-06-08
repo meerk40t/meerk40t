@@ -230,6 +230,18 @@ class CamInterfaceWidget(Widget):
                 return asp
 
             menu = wx.Menu()
+
+            item = menu.Append(wx.ID_ANY, _("Update Background"), "")
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d background\n" % self.cam.index), id=item.GetId())
+
+            item = menu.Append(wx.ID_ANY, _("Export Snapshot"), "")
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d export\n" % self.cam.index), id=item.GetId())
+
+            item = menu.Append(wx.ID_ANY, _("Reconnect Camera"), "")
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d stop start\n" % self.cam.index), id=item.GetId())
+
+            menu.AppendSeparator()
+
             sub_menu = wx.Menu()
             center = menu.Append(wx.ID_ANY, _("Aspect"), "", wx.ITEM_CHECK)
             if self.cam.setting.aspect:
@@ -263,16 +275,6 @@ class CamInterfaceWidget(Widget):
             )
             menu.AppendSeparator()
 
-            item = menu.Append(wx.ID_ANY, _("Reconnect Camera"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d stop start\n" % self.cam.index), id=item.GetId())
-
-            item = menu.Append(wx.ID_ANY, _("Export Snapshot"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d export\n" % self.cam.index), id=item.GetId())
-
-            item = menu.Append(wx.ID_ANY, _("Update Background"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d background\n" % self.cam.index), id=item.GetId())
-
-            menu.AppendSeparator()
 
             fisheye = menu.Append(wx.ID_ANY, _("Correct Fisheye"), "", wx.ITEM_CHECK)
             fisheye.Check(self.cam.setting.correction_fisheye)
