@@ -775,7 +775,7 @@ class MeerK40t(MWindow):
         self.context.register("pane/devices", pane)
 
         # Define Camera
-        if self.context.developer_mode:
+        if self.context.has_feature("modifier/Camera"):
             for index in range(5):
                 panel = CameraPanel(self, wx.ID_ANY, context=self.context, gui=self, index=index)
                 pane = (
