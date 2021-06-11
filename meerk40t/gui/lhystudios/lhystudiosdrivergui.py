@@ -13,6 +13,10 @@ MILS_IN_MM = 39.3701
 class LhystudiosDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(337, 317, *args, **kwds)
+
+        self.bed_dim = self.context.root
+        self.bed_dim.setting(int, "bed_width", 310)
+        self.bed_dim.setting(int, "bed_height", 210)
         self.combobox_board = wx.ComboBox(
             self,
             wx.ID_ANY,
