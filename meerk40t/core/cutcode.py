@@ -209,9 +209,8 @@ class CutObject:
 
 class CutGroup(list, CutObject, ABC):
     """
-    Cut groups are effectively constraints. They may contain CutObjects or other
-    CutGroups. However, the CutObjects must be cut *after* the groups within the
-    CutGroup is cut.
+    CutGroups are group container CutObject. They are used to group objects together such as
+    to maintain the relationship between within a closed path object.
     """
 
     def __init__(

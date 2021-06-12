@@ -976,7 +976,7 @@ class Planner(Modifier):
         Test that path1 is inside path2.
         :param inner_path: inner path
         :param outer_path: outer path
-        :return: whether path1 is wholely inside path2.
+        :return: whether path1 is wholly inside path2.
         """
         if not hasattr(inner_path, "bounding_box"):
             inner_path.bounding_box = Group.union_bbox([inner_path])
