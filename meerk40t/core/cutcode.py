@@ -151,7 +151,7 @@ class CutObject:
         self.contains = None
         self.path = None
         self.original_op = None
-        self.pass_index = 0
+        self.pass_index = -1
 
     def reversible(self):
         return True

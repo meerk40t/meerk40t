@@ -468,6 +468,7 @@ class Planner(Modifier):
                     if isinstance(c, CutObject) and not isinstance(c, CutCode):
                         cc = CutCode([c])
                         cc.original_op = c.original_op
+                        cc.pass_index = c.pass_index
                         plan.append(cc)
                     else:
                         plan.append(c)
