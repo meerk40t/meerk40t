@@ -144,9 +144,14 @@ class CutObject:
         self._end = end
         self.normal = True  # Normal or Reversed.
         self.parent = parent
+        self.permitted = True
+
+        self.mode = None
         self.inside = None
         self.contains = None
-        self.permitted = True
+        self.path = None
+        self.original_op = None
+        self.pass_index = 0
 
     def reversible(self):
         return True

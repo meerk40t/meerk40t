@@ -1,7 +1,7 @@
 from copy import copy
 from math import ceil
 
-from ..core.cutcode import CutCode
+from ..core.cutcode import CutCode, CutObject
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
@@ -92,6 +92,9 @@ class Planner(Modifier):
         self.context.setting(bool, "autoorigin", False)
         self.context.setting(bool, "autobeep", True)
         self.context.setting(bool, "autointerrupt", False)
+        self.context.setting(int, "opt_closed_distance", 15)
+        self.context.setting(bool, "opt_serial_passes", False)
+        self.context.setting(bool, "opt_serial_ops", False)
         self.context.setting(bool, "opt_reduce_travel", True)
         self.context.setting(bool, "opt_inner_first", True)
         self.context.setting(bool, "opt_reduce_directions", False)
@@ -433,28 +436,41 @@ class Planner(Modifier):
         )
         def plan_blob(data_type=None, data=None, **kwgs):
             plan, original, commands, name = data
+            blob_plan = list()
             for i in range(len(plan)):
                 c = plan[i]
                 try:
                     if c.operation == "Dots":
+                        blob_plan.append(c)
                         continue
-                    plan[i] = c.as_blob(cut_inner_first=self.context.opt_inner_first)
-                    if plan[i] is None:
-                        continue
-                    if i != 0 and isinstance(plan[i - 1], CutCode):
-                        plan[i - 1].extend(plan[i])
-                        if plan[i].mode == "constrained":
-                            plan[i - 1].mode = "constrained"
-                        plan[i] = plan[i - 1]
-                        plan[i - 1] = None
+                    blob_plan.extend(c.as_blob())
+                except AttributeError:
+                    blob_plan.append(c)
+            plan.clear()
+
+            for i in range(len(blob_plan)):
+                c = blob_plan[i]
+                try:
                     c.settings.jog_distance = self.context.opt_jog_minimum
                     c.settings.jog_enable = self.context.opt_rapid_between
                 except AttributeError:
                     pass
-            for i in range(len(plan) - 1, -1, -1):
-                c = plan[i]
-                if c is None:
-                    del plan[i]
+                merge = len(plan) and isinstance(plan[-1], CutCode) and isinstance(blob_plan[i], CutObject)
+                if merge and self.context.opt_serial_passes and plan[-1].pass_index != c.pass_index:
+                    merge = False
+                if merge and self.context.opt_serial_ops and plan[-1].original_op != c.original_op:
+                    merge = False
+                if merge:
+                    if blob_plan[i].mode == "constrained":
+                        plan[-1].mode = "constrained"
+                    plan[-1].extend(blob_plan[i])
+                else:
+                    if isinstance(c, CutObject) and not isinstance(c, CutCode):
+                        cc = CutCode([c])
+                        cc.original_op = c.original_op
+                        plan.append(cc)
+                    else:
+                        plan.append(c)
             self.context.signal("plan", self._default_plan, 4)
             return data_type, data
 
