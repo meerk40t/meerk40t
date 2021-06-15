@@ -93,8 +93,8 @@ class Planner(Modifier):
         self.context.setting(bool, "autobeep", True)
         self.context.setting(bool, "autointerrupt", False)
         self.context.setting(int, "opt_closed_distance", 15)
-        self.context.setting(bool, "opt_serial_passes", False)
-        self.context.setting(bool, "opt_serial_ops", False)
+        self.context.setting(bool, "opt_merge_passes", False)
+        self.context.setting(bool, "opt_merge_ops", False)
         self.context.setting(bool, "opt_reduce_travel", True)
         self.context.setting(bool, "opt_inner_first", True)
         self.context.setting(bool, "opt_reduce_directions", False)
@@ -456,9 +456,9 @@ class Planner(Modifier):
                 except AttributeError:
                     pass
                 merge = len(plan) and isinstance(plan[-1], CutCode) and isinstance(blob_plan[i], CutObject)
-                if merge and self.context.opt_serial_passes and plan[-1].pass_index != c.pass_index:
+                if merge and not self.context.opt_merge_passes and plan[-1].pass_index != c.pass_index:
                     merge = False
-                if merge and self.context.opt_serial_ops and plan[-1].original_op != c.original_op:
+                if merge and not self.context.opt_merge_ops and plan[-1].original_op != c.original_op:
                     merge = False
                 if merge:
                     if blob_plan[i].mode == "constrained":
