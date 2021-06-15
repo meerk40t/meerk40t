@@ -219,6 +219,12 @@ class ExecuteJob(MWindow):
         # self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         # self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         # self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.check_serial_passes = wx.CheckBox(
+            self, wx.ID_ANY, _("Do not combine passes")
+        )
+        self.check_serial_ops = wx.CheckBox(
+            self, wx.ID_ANY, _("Do not combine operations")
+        )
         self.check_rapid_moves_between = wx.CheckBox(
             self, wx.ID_ANY, _("Rapid Moves Between Objects")
         )
@@ -247,6 +253,12 @@ class ExecuteJob(MWindow):
         self.Bind(wx.EVT_LISTBOX, self.on_listbox_commands_click, self.list_command)
         self.Bind(
             wx.EVT_LISTBOX_DCLICK, self.on_listbox_commands_dclick, self.list_command
+        )
+        self.Bind(
+            wx.EVT_CHECKBOX, self.on_check_serial_passes, self.check_serial_passes
+        )
+        self.Bind(
+            wx.EVT_CHECKBOX, self.on_check_serial_ops, self.check_serial_ops
         )
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_rapid_between, self.check_rapid_moves_between
@@ -289,6 +301,16 @@ class ExecuteJob(MWindow):
         # self.text_time_laser.SetToolTip(_("Time Estimate: Lasering Time"))
         # self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
         # self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
+        self.check_serial_passes.SetToolTip(
+            _(
+                "Do not combine passes into the same optimization"
+            )
+        )
+        self.check_serial_ops.SetToolTip(
+            _(
+                "Do not combine operations into the same optimization"
+            )
+        )
         self.check_rapid_moves_between.SetToolTip(
             _(
                 "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
@@ -360,6 +382,8 @@ class ExecuteJob(MWindow):
         # sizer_total_time.Add(self.text_time_total, 0, wx.EXPAND, 0)
         # sizer_time.Add(sizer_total_time, 1, wx.EXPAND, 0)
         # sizer_frame.Add(sizer_time, 0, wx.EXPAND, 0)
+        sizer_optimizations.Add(self.check_serial_ops, 0, 0, 0)
+        sizer_optimizations.Add(self.check_serial_passes, 0, 0, 0)
         sizer_optimizations.Add(self.check_rapid_moves_between, 0, 0, 0)
         sizer_optimizations.Add(self.check_reduce_travel_time, 0, 0, 0)
         sizer_optimizations.Add(self.check_cut_inner_first, 0, 0, 0)
@@ -419,6 +443,12 @@ class ExecuteJob(MWindow):
 
     def on_check_remove_overlap(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_remove_overlap = self.check_remove_overlap_cuts.IsChecked()
+
+    def on_check_serial_ops(self, event=None):
+        self.context.opt_serial_ops = self.check_serial_ops.IsChecked()
+
+    def on_check_serial_passes(self, event=None):
+        self.context.opt_serial_passes = self.check_serial_passes.IsChecked()
 
     def on_check_rapid_between(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_rapid_between = self.check_rapid_moves_between.IsChecked()
@@ -637,6 +667,8 @@ class ExecuteJob(MWindow):
         self.preview_menu.menu_autointerrupt.Check(bool(self.context.autointerrupt))
         self.preview_menu.menu_autounlock.Check(bool(self.context.postunlock))
 
+        self.check_serial_passes.SetValue(self.context.opt_serial_passes)
+        self.check_serial_ops.SetValue(self.context.opt_serial_ops)
         self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
         self.check_cut_inner_first.SetValue(self.context.opt_inner_first)
         self.check_reduce_direction_changes.SetValue(self.context.opt_reduce_directions)
