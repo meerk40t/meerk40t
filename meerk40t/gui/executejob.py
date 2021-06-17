@@ -649,7 +649,7 @@ class ExecuteJob(MWindow):
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_remove_overlap", False)
         self.context.setting(bool, "opt_rapid_between", True)
-        self.context.setting(int, "opt_jog_minimum", 127)
+        self.context.setting(int, "opt_jog_minimum", 256)
         self.context.setting(int, "opt_jog_mode", 0)
 
         self.context.listen("element_property_update", self.on_element_property_update)

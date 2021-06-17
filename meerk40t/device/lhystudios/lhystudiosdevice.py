@@ -636,7 +636,7 @@ class LhystudiosDriver(Driver):
         root_context = context.root
         root_context.setting(bool, "opt_rapid_between", True)
         root_context.setting(int, "opt_jog_mode", 0)
-        root_context.setting(int, "opt_jog_minimum", 127)
+        root_context.setting(int, "opt_jog_minimum", 256)
 
         context.driver = self
 
