@@ -210,34 +210,29 @@ class ExecuteJob(MWindow):
         self.combo_device.SetSelection(index)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
-        # self.slider_progress = wx.Slider(self, wx.ID_ANY, 10000, 0, 10000)
+
         self.panel_operation = wx.Panel(self, wx.ID_ANY)
-        # self.text_operation_name = wx.TextCtrl(
-        #     self.panel_operation, wx.ID_ANY, "", style=wx.TE_READONLY
-        # )
-        # self.gauge_operation = wx.Gauge(self.panel_operation, wx.ID_ANY, 10)
-        # self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        # self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        # self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.check_merge_passes = wx.CheckBox(
-            self, wx.ID_ANY, _("Merge Passes")
-        )
-        self.check_merge_ops = wx.CheckBox(
-            self, wx.ID_ANY, _("Merge Operations")
-        )
+
         self.check_rapid_moves_between = wx.CheckBox(
             self, wx.ID_ANY, _("Rapid Moves Between Objects")
         )
         self.check_reduce_travel_time = wx.CheckBox(
             self, wx.ID_ANY, _("Reduce Travel Time")
         )
+
+        self.check_merge_passes = wx.CheckBox(
+            self, wx.ID_ANY, _("Merge Passes")
+        )
+        self.check_merge_ops = wx.CheckBox(
+            self, wx.ID_ANY, _("Merge Operations")
+        )
         self.check_cut_inner_first = wx.CheckBox(self, wx.ID_ANY, _("Cut Inner First"))
-        self.check_reduce_direction_changes = wx.CheckBox(
-            self, wx.ID_ANY, _("Reduce Direction Changes")
-        )
-        self.check_remove_overlap_cuts = wx.CheckBox(
-            self, wx.ID_ANY, _("Remove Overlap Cuts")
-        )
+        # self.check_reduce_direction_changes = wx.CheckBox(
+        #     self, wx.ID_ANY, _("Reduce Direction Changes")
+        # )
+        # self.check_remove_overlap_cuts = wx.CheckBox(
+        #     self, wx.ID_ANY, _("Remove Overlap Cuts")
+        # )
         self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
 
         self.__set_properties()
@@ -269,16 +264,16 @@ class ExecuteJob(MWindow):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_inner_first, self.check_cut_inner_first
         )
-        self.Bind(
-            wx.EVT_CHECKBOX,
-            self.on_check_reduce_directions,
-            self.check_reduce_direction_changes,
-        )
-        self.Bind(
-            wx.EVT_CHECKBOX,
-            self.on_check_remove_overlap,
-            self.check_remove_overlap_cuts,
-        )
+        # self.Bind(
+        #     wx.EVT_CHECKBOX,
+        #     self.on_check_reduce_directions,
+        #     self.check_reduce_direction_changes,
+        # )
+        # self.Bind(
+        #     wx.EVT_CHECKBOX,
+        #     self.on_check_remove_overlap,
+        #     self.check_remove_overlap_cuts,
+        # )
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         # end wxGlade
@@ -324,14 +319,14 @@ class ExecuteJob(MWindow):
                 "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
             )
         )
-        self.check_reduce_direction_changes.SetToolTip(
-            _("Reorder to reduce the number of sharp directional changes")
-        )
-        self.check_reduce_direction_changes.Hide()
-        self.check_remove_overlap_cuts.SetToolTip(
-            _("Remove elements of overlapped cuts")
-        )
-        self.check_remove_overlap_cuts.Hide()
+        # self.check_reduce_direction_changes.SetToolTip(
+        #     _("Reorder to reduce the number of sharp directional changes")
+        # )
+        # self.check_reduce_direction_changes.Hide()
+        # self.check_remove_overlap_cuts.SetToolTip(
+        #     _("Remove elements of overlapped cuts")
+        # )
+        # self.check_remove_overlap_cuts.Hide()
         self.button_start.SetBackgroundColour(wx.Colour(0, 255, 0))
         self.button_start.SetFont(
             wx.Font(
@@ -382,13 +377,13 @@ class ExecuteJob(MWindow):
         # sizer_total_time.Add(self.text_time_total, 0, wx.EXPAND, 0)
         # sizer_time.Add(sizer_total_time, 1, wx.EXPAND, 0)
         # sizer_frame.Add(sizer_time, 0, wx.EXPAND, 0)
-        sizer_optimizations.Add(self.check_merge_ops, 0, 0, 0)
-        sizer_optimizations.Add(self.check_merge_passes, 0, 0, 0)
         sizer_optimizations.Add(self.check_rapid_moves_between, 0, 0, 0)
         sizer_optimizations.Add(self.check_reduce_travel_time, 0, 0, 0)
+        sizer_optimizations.Add(self.check_merge_ops, 0, 0, 0)
+        sizer_optimizations.Add(self.check_merge_passes, 0, 0, 0)
         sizer_optimizations.Add(self.check_cut_inner_first, 0, 0, 0)
-        sizer_optimizations.Add(self.check_reduce_direction_changes, 0, 0, 0)
-        sizer_optimizations.Add(self.check_remove_overlap_cuts, 0, 0, 0)
+        # sizer_optimizations.Add(self.check_reduce_direction_changes, 0, 0, 0)
+        # sizer_optimizations.Add(self.check_remove_overlap_cuts, 0, 0, 0)
         sizer_options.Add(sizer_optimizations, 2, wx.EXPAND, 0)
         sizer_options.Add(self.button_start, 3, wx.EXPAND, 0)
         sizer_frame.Add(sizer_options, 0, wx.EXPAND, 0)
@@ -430,19 +425,21 @@ class ExecuteJob(MWindow):
 
     def on_check_reduce_travel(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_reduce_travel = self.check_reduce_travel_time.IsChecked()
+        self.check_merge_ops.Enable(self.context.opt_reduce_travel)
+        self.check_merge_passes.Enable(self.context.opt_reduce_travel)
 
     def on_check_inner_first(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_inner_first = self.check_cut_inner_first.IsChecked()
 
-    def on_check_reduce_directions(
-        self, event=None
-    ):  # wxGlade: Preview.<event_handler>
-        self.context.opt_reduce_directions = (
-            self.check_reduce_direction_changes.IsChecked()
-        )
-
-    def on_check_remove_overlap(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context.opt_remove_overlap = self.check_remove_overlap_cuts.IsChecked()
+    # def on_check_reduce_directions(
+    #     self, event=None
+    # ):  # wxGlade: Preview.<event_handler>
+    #     self.context.opt_reduce_directions = (
+    #         self.check_reduce_direction_changes.IsChecked()
+    #     )
+    #
+    # def on_check_remove_overlap(self, event=None):  # wxGlade: Preview.<event_handler>
+    #     self.context.opt_remove_overlap = self.check_remove_overlap_cuts.IsChecked()
 
     def on_check_merge_ops(self, event=None):
         self.context.opt_merge_ops = self.check_merge_ops.IsChecked()
@@ -667,13 +664,15 @@ class ExecuteJob(MWindow):
         self.preview_menu.menu_autointerrupt.Check(bool(self.context.autointerrupt))
         self.preview_menu.menu_autounlock.Check(bool(self.context.postunlock))
 
+        self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
+        self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
         self.check_merge_passes.SetValue(self.context.opt_merge_passes)
         self.check_merge_ops.SetValue(self.context.opt_merge_ops)
-        self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
+        self.check_merge_ops.Enable(self.context.opt_reduce_travel)
+        self.check_merge_passes.Enable(self.context.opt_reduce_travel)
         self.check_cut_inner_first.SetValue(self.context.opt_inner_first)
-        self.check_reduce_direction_changes.SetValue(self.context.opt_reduce_directions)
-        self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
-        self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
+        # self.check_reduce_direction_changes.SetValue(self.context.opt_reduce_directions)
+        # self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
 
         operations, original, commands, plan_name = self.context.default_plan()
         if len(operations) == 0 and len(commands) == 0:
