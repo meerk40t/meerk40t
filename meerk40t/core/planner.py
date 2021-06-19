@@ -443,7 +443,7 @@ class Planner(Modifier):
                     if c.operation == "Dots":
                         blob_plan.append(c)
                         continue
-                    blob_plan.extend(c.as_blob())
+                    blob_plan.extend(c.as_blob(self.context.opt_closed_distance))
                 except AttributeError:
                     blob_plan.append(c)
             plan.clear()
