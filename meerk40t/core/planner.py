@@ -115,11 +115,15 @@ class CutPlan:
                 self.plan[i] = inner_selection_cutcode(c)
 
     def optimize_travel(self):
+        last = None
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.mode == "constrained":
                     self.plan[i] = inner_first_cutcode(c)
+                if last is not None:
+                    c.start = last
                 self.plan[i] = short_travel_cutcode(c)
+                last = self.plan[i].end()
 
     def strip_text(self):
         for k in range(len(self.plan) - 1, -1, -1):
@@ -297,8 +301,8 @@ class CutPlan:
             except AttributeError:
                 pass
 
-    def conditional_jobadd_scale_rotary(self, context):
-        rotary_context = context.get_context("rotary/1")
+    def conditional_jobadd_scale_rotary(self):
+        rotary_context = self.context.get_context("rotary/1")
         if rotary_context.scale_x != 1.0 or rotary_context.scale_y != 1.0:
             self.commands.append(self.scale_for_rotary)
 
