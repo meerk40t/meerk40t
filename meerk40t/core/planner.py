@@ -50,7 +50,7 @@ def plugin(kernel, lifecycle=None):
 
 class CutPlan:
     """
-    Cut Plan is a centralized class to modify plans in specific methods.
+    Cut Plan is a centralized class to modify plans with specific methods.
     """
     def __init__(self, name, context):
         self.name = name
@@ -59,7 +59,15 @@ class CutPlan:
         self.original = list()
         self.commands = list()
 
+    def execute(self):
+        # Using copy of commands, so commands can add ops.
+        cmds = self.commands[:]
+        self.commands.clear()
+        for cmd in cmds:
+            cmd()
+
     def blob(self):
+        context = self.context
         blob_plan = list()
         for i in range(len(self.plan)):
             c = self.plan[i]
@@ -67,7 +75,7 @@ class CutPlan:
                 if c.operation == "Dots":
                     blob_plan.append(c)
                     continue
-                blob_plan.extend(c.as_blob(self.context.opt_closed_distance))
+                blob_plan.extend(c.as_blob(context.opt_closed_distance))
             except AttributeError:
                 blob_plan.append(c)
         self.plan.clear()
@@ -75,16 +83,16 @@ class CutPlan:
         for i in range(len(blob_plan)):
             c = blob_plan[i]
             try:
-                c.settings.jog_distance = self.context.opt_jog_minimum
-                c.settings.jog_enable = self.context.opt_rapid_between
+                c.settings.jog_distance = context.opt_jog_minimum
+                c.settings.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
             merge = len(self.plan) and isinstance(self.plan[-1], CutCode) and isinstance(blob_plan[i], CutObject)
-            if merge and not self.context.opt_merge_passes and self.plan[-1].pass_index != c.pass_index:
+            if merge and not context.opt_merge_passes and self.plan[-1].pass_index != c.pass_index:
                 merge = False
-            if merge and not self.context.opt_merge_ops and self.plan[-1].original_op != c.original_op:
+            if merge and not context.opt_merge_ops and self.plan[-1].original_op != c.original_op:
                 merge = False
-            if merge and not self.context.opt_inner_first and self.plan[-1].original_op == 'Cut':
+            if merge and not context.opt_inner_first and self.plan[-1].original_op == 'Cut':
                 merge = False
             if merge:
                 if blob_plan[i].mode == "constrained":
@@ -98,29 +106,6 @@ class CutPlan:
                     self.plan.append(cc)
                 else:
                     self.plan.append(c)
-
-    def execute(self):
-        # Using copy of commands, so commands can add ops.
-        cmds = self.commands[:]
-        self.commands.clear()
-        for cmd in cmds:
-            cmd()
-
-    def actualize(self):
-        for op in self.plan:
-            try:
-                if op.operation == "Raster":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, op.settings.raster_step):
-                            make_actual(elem, op.settings.raster_step)
-                if op.operation == "Image":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, None):
-                            make_actual(elem, None)
-            except AttributeError:
-                pass
 
     def optimize_cuts(self):
         for i, c in enumerate(self.plan):
@@ -203,6 +188,22 @@ class CutPlan:
                     op.add(image_element, type="opnode")
             except AttributeError:
                 continue
+
+    def actualize(self):
+        for op in self.plan:
+            try:
+                if op.operation == "Raster":
+                    for elem in op.children:
+                        elem = elem.object
+                        if needs_actualization(elem, op.settings.raster_step):
+                            make_actual(elem, op.settings.raster_step)
+                if op.operation == "Image":
+                    for elem in op.children:
+                        elem = elem.object
+                        if needs_actualization(elem, None):
+                            make_actual(elem, None)
+            except AttributeError:
+                pass
 
     def scale_for_rotary(self):
         r = self.context.get_context("rotary/1")
