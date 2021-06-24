@@ -916,7 +916,6 @@ class LaserOperation(Node):
                     closed = isinstance(subpath[-1], Close) or abs(Path(subpath).first_point - Path(subpath).current_point) < closed_distance
                     group = CutGroup(None, closed=closed)
                     group.path = Path(subpath)
-                    group.pass_index = p
                     group.original_op = self._operation
                     for seg in subpath:
                         if isinstance(seg, Move):
@@ -968,12 +967,10 @@ class LaserOperation(Node):
                     )
                     cut = RasterCut(object_image, settings)
                     cut.path = path
-                    cut.pass_index = p
                     cut.original_op = self._operation
                     yield cut
                     cut = RasterCut(object_image, cross_settings)
                     cut.path = path
-                    cut.pass_index = p
                     cut.original_op = self._operation
                     yield cut
             else:
@@ -990,7 +987,6 @@ class LaserOperation(Node):
                     )
                     cut = RasterCut(object_image, settings)
                     cut.path = path
-                    cut.pass_index = p
                     cut.original_op = self._operation
                     yield cut
         elif self._operation == "Image":
@@ -1013,7 +1009,6 @@ class LaserOperation(Node):
 
                 cut = RasterCut(object_image, settings)
                 cut.path = path
-                cut.pass_index = p
                 cut.original_op = self._operation
                 yield cut
 
@@ -1023,7 +1018,6 @@ class LaserOperation(Node):
 
                     cut = RasterCut(object_image, cross_settings)
                     cut.path = path
-                    cut.pass_index = p
                     cut.original_op = self._operation
                     yield cut
 

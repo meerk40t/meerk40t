@@ -116,6 +116,7 @@ class CutPlan:
                 and self.plan[-1].original_op == "Cut"
             ):
                 merge = False
+
             if merge:
                 if blob_plan[i].mode == "constrained":
                     self.plan[-1].mode = "constrained"
