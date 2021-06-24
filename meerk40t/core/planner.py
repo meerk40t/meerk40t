@@ -25,13 +25,13 @@ def plugin(kernel, lifecycle=None):
         kernel_root = kernel.root
         kernel.register("modifier/Planner", Planner)
 
-        kernel.register("plan/physicalhome", Planner.physicalhome)
-        kernel.register("plan/home", Planner.home)
-        kernel.register("plan/origin", Planner.origin)
-        kernel.register("plan/unlock", Planner.unlock)
-        kernel.register("plan/wait", Planner.wait)
-        kernel.register("plan/beep", Planner.beep)
-        kernel.register("plan/interrupt", Planner.interrupt)
+        kernel.register("plan/physicalhome", physicalhome)
+        kernel.register("plan/home", home)
+        kernel.register("plan/origin", origin)
+        kernel.register("plan/unlock", unlock)
+        kernel.register("plan/wait", wait)
+        kernel.register("plan/beep", beep)
+        kernel.register("plan/interrupt", interrupt)
 
         def shutdown():
             yield COMMAND_WAIT_FINISH
@@ -46,6 +46,231 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "boot":
         kernel_root = kernel.root
         kernel_root.activate("modifier/Planner")
+
+
+class CutPlan:
+    """
+    Cut Plan is a centralized class to modify plans in specific methods.
+    """
+    def __init__(self, name):
+        self.name = name
+        self.plan = list()
+        self.original = list()
+        self.commands = list()
+
+    def execute(self):
+        # Using copy of commands, so commands can add ops.
+        cmds = self.commands[:]
+        self.commands.clear()
+        for cmd in cmds:
+            cmd()
+
+    def conditional_jobadd_strip_text(self):
+        for op in self.plan:
+            try:
+                if op.operation in ("Cut", "Engrave"):
+                    for e in op.children:
+                        if not isinstance(e.object, SVGText):
+                            continue  # make raster not needed since its a single real raster.
+                        self.jobadd_strip_text()
+                        return True
+            except AttributeError:
+                pass
+        return False
+
+    def jobadd_strip_text(self):
+
+        def strip_text():
+            for k in range(len(self.plan) - 1, -1, -1):
+                op = self.plan[k]
+                try:
+                    if op.operation in ("Cut", "Engrave"):
+                        for i, e in enumerate(list(op.children)):
+                            if isinstance(e.object, SVGText):
+                                e.remove_node()
+                        if len(op.children) == 0:
+                            del self.plan[k]
+                except AttributeError:
+                    pass
+
+        self.commands.append(strip_text)
+
+    def conditional_jobadd_make_raster(self):
+        plan, original, commands, name = self
+        for op in plan:
+            try:
+                if op.operation == "Raster":
+                    if len(op.children) == 0:
+                        continue
+                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
+                        continue  # make raster not needed since its a single real raster.
+                    self.jobadd_make_raster()
+                    return True
+            except AttributeError:
+                pass
+        return False
+
+    def jobadd_make_raster(self, context):
+        """
+        TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
+            time around because the renderer is what sets the size of the text. If the size hasn't
+            already been set, the initial bounds are wrong.
+        """
+        make_raster = context.registered.get("render-op/make_raster")
+
+        def strip_rasters():
+            stripped = False
+            for k, op in enumerate(self.plan):
+                try:
+                    if op.operation == "Raster":
+                        if len(op.children) == 1 and isinstance(op[0], SVGImage):
+                            continue
+                        self.plan[k] = None
+                        stripped = True
+                except AttributeError:
+                    pass
+            if stripped:
+                p = [q for q in self.plan if q is not None]
+                self.plan.clear()
+                self.plan.extend(p)
+
+        def make_image_for_op(op):
+            subitems = list(op.flat(types=("elem", "opnode")))
+            make_raster = context.registered.get("render-op/make_raster")
+            objs = [s.object for s in subitems]
+            bounds = Group.union_bbox(objs)
+            if bounds is None:
+                return None
+            xmin, ymin, xmax, ymax = bounds
+            image = make_raster(subitems, bounds, step=op.settings.raster_step)
+            image_element = SVGImage(image=image)
+            image_element.transform.post_translate(xmin, ymin)
+            return image_element
+
+        def make_image():
+            for op in self.plan:
+                try:
+                    if op.operation == "Raster":
+                        if len(op.children) == 1 and isinstance(
+                            op.children[0], SVGImage
+                        ):
+                            continue
+                        image_element = make_image_for_op(op)
+                        if image_element is None:
+                            continue
+                        if (
+                            image_element.image_width == 1
+                            and image_element.image_height == 1
+                        ):
+                            image_element = make_image_for_op(op)
+                        op.children.clear()
+                        op.add(image_element, type="opnode")
+                except AttributeError:
+                    continue
+
+        if make_raster is None:
+            self.commands.append(strip_rasters)
+        else:
+            self.commands.append(make_image)
+
+    def conditional_jobadd_optimize_travel(self):
+        self.jobadd_optimize_travel()
+
+    def jobadd_optimize_travel(self):
+        def optimize_travel():
+            for i, c in enumerate(self.plan):
+                if isinstance(c, CutCode):
+                    if c.mode == "constrained":
+                        self.plan[i] = c.inner_first_cutcode()
+                    self.plan[i] = c.short_travel_cutcode(self.plan[i])
+
+        self.commands.append(optimize_travel)
+
+    def conditional_jobadd_optimize_cuts(self):
+        for op in self.plan:
+            try:
+                if op.operation == "CutCode":
+                    self.jobadd_optimize_cuts()
+                    return
+            except AttributeError:
+                pass
+
+    def jobadd_optimize_cuts(self):
+        def optimize_cuts():
+            for i, c in enumerate(self.plan):
+                if isinstance(c, CutCode):
+                    if c.mode == "constrained":
+                        self.plan[i] = c.inner_first_cutcode()
+                    self.plan[i] = c.inner_selection_cutcode(self.plan[i])
+
+        self.commands.append(optimize_cuts)
+
+    def conditional_jobadd_actualize_image(self):
+        for op in self.plan:
+            try:
+                if op.operation == "Raster":
+                    for elem in op.children:
+                        elem = elem.object
+                        if self.needs_actualization(elem, op.settings.raster_step):
+                            self.jobadd_actualize_image()
+                            return
+                if op.operation == "Image":
+                    for elem in op.children:
+                        elem = elem.object
+                        if self.needs_actualization(elem, None):
+                            self.jobadd_actualize_image()
+                            return
+            except AttributeError:
+                pass
+
+    def jobadd_actualize_image(self):
+        def actualize():
+            for op in self.plan:
+                try:
+                    if op.operation == "Raster":
+                        for elem in op.children:
+                            elem = elem.object
+                            if self.needs_actualization(elem, op.settings.raster_step):
+                                self.make_actual(elem, op.settings.raster_step)
+                    if op.operation == "Image":
+                        for elem in op.children:
+                            elem = elem.object
+                            if self.needs_actualization(elem, None):
+                                self.make_actual(elem, None)
+                except AttributeError:
+                    pass
+
+        self.commands.append(actualize)
+
+    def conditional_jobadd_scale_rotary(self, context):
+        rotary_context = context.get_context("rotary/1")
+        if rotary_context.scale_x != 1.0 or rotary_context.scale_y != 1.0:
+            self.jobadd_scale_rotary(context)
+
+    def jobadd_scale_rotary(self, context):
+        def scale_for_rotary():
+            r = self.context.get_context("rotary/1")
+            spooler, input_driver, output = self.context.registered[
+                "device/%s" % self.context.root.active
+            ]
+            scale_str = "scale(%f,%f,%f,%f)" % (
+                r.scale_x,
+                r.scale_y,
+                input_driver.current_x,
+                input_driver.current_y,
+            )
+            for o in self.plan:
+                if isinstance(o, LaserOperation):
+                    for node in o.children:
+                        e = node.object
+                        try:
+                            ne = e * scale_str
+                            node.replace_object(ne)
+                        except AttributeError:
+                            pass
+            self.conditional_jobadd_actualize_image()
+
+        self.commands.append(scale_for_rotary)
 
 
 class Planner(Modifier):
@@ -460,6 +685,8 @@ class Planner(Modifier):
                     merge = False
                 if merge and not self.context.opt_merge_ops and plan[-1].original_op != c.original_op:
                     merge = False
+                if merge and not self.context.opt_inner_first and plan[-1].original_op == 'Cut':
+                    merge = False
                 if merge:
                     if blob_plan[i].mode == "constrained":
                         plan[-1].mode = "constrained"
@@ -586,443 +813,219 @@ class Planner(Modifier):
         for item in self._plan:
             yield item
 
-    def execute(self):
-        # Using copy of commands, so commands can add ops.
-        plan, original, commands, name = self.default_plan()
-        cmds = commands[:]
-        commands.clear()
-        for cmd in cmds:
-            cmd()
 
-    def conditional_jobadd_strip_text(self):
-        plan, original, commands, name = self.default_plan()
-        for op in plan:
-            try:
-                if op.operation in ("Cut", "Engrave"):
-                    for e in op.children:
-                        if not isinstance(e.object, SVGText):
-                            continue  # make raster not needed since its a single real raster.
-                        self.jobadd_strip_text()
-                        return True
-            except AttributeError:
-                pass
+def needs_actualization(image_element, step_level=None):
+    if not isinstance(image_element, SVGImage):
         return False
-
-    def jobadd_strip_text(self):
-        plan, original, commands, name = self.default_plan()
-
-        def strip_text():
-            for k in range(len(plan) - 1, -1, -1):
-                op = plan[k]
-                try:
-                    if op.operation in ("Cut", "Engrave"):
-                        for i, e in enumerate(list(op.children)):
-                            if isinstance(e.object, SVGText):
-                                e.remove_node()
-                        if len(op.children) == 0:
-                            del plan[k]
-                except AttributeError:
-                    pass
-
-        commands.append(strip_text)
-
-    def conditional_jobadd_make_raster(self):
-        plan, original, commands, name = self.default_plan()
-        for op in plan:
-            try:
-                if op.operation == "Raster":
-                    if len(op.children) == 0:
-                        continue
-                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                        continue  # make raster not needed since its a single real raster.
-                    self.jobadd_make_raster()
-                    return True
-            except AttributeError:
-                pass
-        return False
-
-    def jobadd_make_raster(self):
-        make_raster = self.context.registered.get("render-op/make_raster")
-        plan, original, commands, name = self.default_plan()
-
-        def strip_rasters():
-            stripped = False
-            for k, op in enumerate(plan):
-                try:
-                    if op.operation == "Raster":
-                        if len(op.children) == 1 and isinstance(op[0], SVGImage):
-                            continue
-                        plan[k] = None
-                        stripped = True
-                except AttributeError:
-                    pass
-            if stripped:
-                p = [q for q in plan if q is not None]
-                plan.clear()
-                plan.extend(p)
-
-        def make_image_for_op(op):
-            subitems = list(op.flat(types=("elem", "opnode")))
-            make_raster = self.context.registered.get("render-op/make_raster")
-            objs = [s.object for s in subitems]
-            bounds = Group.union_bbox(objs)
-            if bounds is None:
-                return None
-            xmin, ymin, xmax, ymax = bounds
-            image = make_raster(subitems, bounds, step=op.settings.raster_step)
-            image_element = SVGImage(image=image)
-            image_element.transform.post_translate(xmin, ymin)
-            return image_element
-
-        def make_image():
-            for op in plan:
-                try:
-                    if op.operation == "Raster":
-                        if len(op.children) == 1 and isinstance(
-                            op.children[0], SVGImage
-                        ):
-                            continue
-                        image_element = make_image_for_op(op)
-                        if image_element is None:
-                            continue
-                        if (
-                            image_element.image_width == 1
-                            and image_element.image_height == 1
-                        ):
-                            # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
-                            #  time around because the renderer is what sets the size of the text. If the size hasn't
-                            #  already been set, the initial bounds are wrong.
-                            image_element = make_image_for_op(op)
-                        op.children.clear()
-                        op.add(image_element, type="opnode")
-                except AttributeError:
-                    continue
-
-        if make_raster is None:
-            commands.append(strip_rasters)
+    if step_level is None:
+        if "raster_step" in image_element.values:
+            step_level = float(image_element.values["raster_step"])
         else:
-            commands.append(make_image)
+            step_level = 1.0
+    m = image_element.transform
+    # Transformation must be uniform to permit native rastering.
+    return m.a != step_level or m.b != 0.0 or m.c != 0.0 or m.d != step_level
 
-    def conditional_jobadd_optimize_travel(self):
-        self.jobadd_optimize_travel()
 
-    def jobadd_optimize_travel(self):
-        def optimize_travel():
-            for i, c in enumerate(plan):
-                if isinstance(c, CutCode):
-                    if c.mode == "constrained":
-                        plan[i] = c.inner_first_cutcode()
-                    plan[i] = c.short_travel_cutcode(plan[i])
+def make_actual(image_element, step_level=None):
+    """
+    Makes PIL image actual in that it manipulates the pixels to actually exist
+    rather than simply apply the transform on the image to give the resulting image.
+    Since our goal is to raster the images real pixels this is required.
 
-        plan, original, commands, name = self.default_plan()
-        commands.append(optimize_travel)
+    SVG matrices are defined as follows.
+    [a c e]
+    [b d f]
 
-    def conditional_jobadd_optimize_cuts(self):
-        plan, original, commands, name = self.default_plan()
-        for op in plan:
-            try:
-                if op.operation == "CutCode":
-                    self.jobadd_optimize_cuts()
-                    return
-            except AttributeError:
-                pass
+    Pil requires a, c, e, b, d, f accordingly.
+    """
+    if not isinstance(image_element, SVGImage):
+        return
+    from PIL import Image
 
-    def jobadd_optimize_cuts(self):
-        def optimize_cuts():
-            for i, c in enumerate(plan):
-                if isinstance(c, CutCode):
-                    if c.mode == "constrained":
-                        plan[i] = c.inner_first_cutcode()
-                    plan[i] = c.inner_selection_cutcode(plan[i])
-
-        plan, original, commands, name = self.default_plan()
-        commands.append(optimize_cuts)
-
-    def conditional_jobadd_actualize_image(self):
-        plan, original, commands, name = self.default_plan()
-        for op in plan:
-            try:
-                if op.operation == "Raster":
-                    for elem in op.children:
-                        elem = elem.object
-                        if self.needs_actualization(elem, op.settings.raster_step):
-                            self.jobadd_actualize_image()
-                            return
-                if op.operation == "Image":
-                    for elem in op.children:
-                        elem = elem.object
-                        if self.needs_actualization(elem, None):
-                            self.jobadd_actualize_image()
-                            return
-            except AttributeError:
-                pass
-
-    def jobadd_actualize_image(self):
-        def actualize():
-            plan, original, commands, name = self.default_plan()
-            for op in plan:
-                try:
-                    if op.operation == "Raster":
-                        for elem in op.children:
-                            elem = elem.object
-                            if self.needs_actualization(elem, op.settings.raster_step):
-                                self.make_actual(elem, op.settings.raster_step)
-                    if op.operation == "Image":
-                        for elem in op.children:
-                            elem = elem.object
-                            if self.needs_actualization(elem, None):
-                                self.make_actual(elem, None)
-                except AttributeError:
-                    pass
-
-        plan, original, commands, name = self.default_plan()
-        commands.append(actualize)
-
-    def conditional_jobadd_scale_rotary(self):
-        rotary_context = self.context.get_context("rotary/1")
-        if rotary_context.scale_x != 1.0 or rotary_context.scale_y != 1.0:
-            self.jobadd_scale_rotary()
-
-    def jobadd_scale_rotary(self):
-        def scale_for_rotary():
-            r = self.context.get_context("rotary/1")
-            spooler, input_driver, output = self.context.registered[
-                "device/%s" % self.context.root.active
-            ]
-            scale_str = "scale(%f,%f,%f,%f)" % (
-                r.scale_x,
-                r.scale_y,
-                input_driver.current_x,
-                input_driver.current_y,
-            )
-            plan, original, commands, name = self.default_plan()
-            for o in plan:
-                if isinstance(o, LaserOperation):
-                    for node in o.children:
-                        e = node.object
-                        try:
-                            ne = e * scale_str
-                            node.replace_object(ne)
-                        except AttributeError:
-                            pass
-            self.conditional_jobadd_actualize_image()
-
-        plan, original, commands, name = self.default_plan()
-        commands.append(scale_for_rotary)
-
-    @staticmethod
-    def needs_actualization(image_element, step_level=None):
-        if not isinstance(image_element, SVGImage):
-            return False
-        if step_level is None:
-            if "raster_step" in image_element.values:
-                step_level = float(image_element.values["raster_step"])
-            else:
-                step_level = 1.0
-        m = image_element.transform
-        # Transformation must be uniform to permit native rastering.
-        return m.a != step_level or m.b != 0.0 or m.c != 0.0 or m.d != step_level
-
-    @staticmethod
-    def make_actual(image_element, step_level=None):
-        """
-        Makes PIL image actual in that it manipulates the pixels to actually exist
-        rather than simply apply the transform on the image to give the resulting image.
-        Since our goal is to raster the images real pixels this is required.
-
-        SVG matrices are defined as follows.
-        [a c e]
-        [b d f]
-
-        Pil requires a, c, e, b, d, f accordingly.
-        """
-        if not isinstance(image_element, SVGImage):
-            return
-        from PIL import Image
-
-        pil_image = image_element.image
-        image_element.cache = None
-        matrix = image_element.transform
-        bbox = Group.union_bbox([image_element])
-        element_width = int(ceil(bbox[2] - bbox[0]))
-        element_height = int(ceil(bbox[3] - bbox[1]))
-        if step_level is None:
-            # If we are not told the step amount either draw it from the object or set it to default.
-            if "raster_step" in image_element.values:
-                step_level = float(image_element.values["raster_step"])
-            else:
-                step_level = 1.0
-        step_scale = 1 / float(step_level)
-        tx = bbox[0]
-        ty = bbox[1]
-        matrix.post_translate(-tx, -ty)
-        matrix.post_scale(
-            step_scale, step_scale
-        )  # step level requires the actual image be scaled down.
-        try:
-            matrix.inverse()
-        except ZeroDivisionError:
-            # Rare crash if matrix is malformed and cannot invert.
-            matrix.reset()
-            matrix.post_translate(-tx, -ty)
-            matrix.post_scale(step_scale, step_scale)
-        if (
-            matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0
-        ) and pil_image.mode != "RGBA":
-            # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-            pil_image = pil_image.convert("RGBA")
-
-        pil_image = pil_image.transform(
-            (element_width, element_height),
-            Image.AFFINE,
-            (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-            resample=Image.BICUBIC,
-        )
-        image_element.image_width, image_element.image_height = (
-            element_width,
-            element_height,
-        )
+    pil_image = image_element.image
+    image_element.cache = None
+    matrix = image_element.transform
+    bbox = Group.union_bbox([image_element])
+    element_width = int(ceil(bbox[2] - bbox[0]))
+    element_height = int(ceil(bbox[3] - bbox[1]))
+    if step_level is None:
+        # If we are not told the step amount either draw it from the object or set it to default.
+        if "raster_step" in image_element.values:
+            step_level = float(image_element.values["raster_step"])
+        else:
+            step_level = 1.0
+    step_scale = 1 / float(step_level)
+    tx = bbox[0]
+    ty = bbox[1]
+    matrix.post_translate(-tx, -ty)
+    matrix.post_scale(
+        step_scale, step_scale
+    )  # step level requires the actual image be scaled down.
+    try:
+        matrix.inverse()
+    except ZeroDivisionError:
+        # Rare crash if matrix is malformed and cannot invert.
         matrix.reset()
+        matrix.post_translate(-tx, -ty)
+        matrix.post_scale(step_scale, step_scale)
+    if (
+        matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0
+    ) and pil_image.mode != "RGBA":
+        # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
+        pil_image = pil_image.convert("RGBA")
 
-        box = pil_image.getbbox()
-        if box is None:
-            matrix.post_scale(step_level, step_level)
-            matrix.post_translate(tx, ty)
-            image_element.image = pil_image
-            return
-        width = box[2] - box[0]
-        height = box[3] - box[1]
-        if width != element_width and height != element_height:
-            image_element.image_width, image_element.image_height = (width, height)
-            pil_image = pil_image.crop(box)
-            matrix.post_translate(box[0], box[1])
-        # step level requires the new actualized matrix be scaled up.
+    pil_image = pil_image.transform(
+        (element_width, element_height),
+        Image.AFFINE,
+        (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+        resample=Image.BICUBIC,
+    )
+    image_element.image_width, image_element.image_height = (
+        element_width,
+        element_height,
+    )
+    matrix.reset()
+
+    box = pil_image.getbbox()
+    if box is None:
         matrix.post_scale(step_level, step_level)
         matrix.post_translate(tx, ty)
         image_element.image = pil_image
+        return
+    width = box[2] - box[0]
+    height = box[3] - box[1]
+    if width != element_width and height != element_height:
+        image_element.image_width, image_element.image_height = (width, height)
+        pil_image = pil_image.crop(box)
+        matrix.post_translate(box[0], box[1])
+    # step level requires the new actualized matrix be scaled up.
+    matrix.post_scale(step_level, step_level)
+    matrix.post_translate(tx, ty)
+    image_element.image = pil_image
 
-    @staticmethod
-    def origin():
-        yield COMMAND_MODE_RAPID
-        yield COMMAND_SET_ABSOLUTE
-        yield COMMAND_MOVE, 0, 0
 
-    @staticmethod
-    def unlock():
-        yield COMMAND_MODE_RAPID
-        yield COMMAND_UNLOCK
+def origin():
+    yield COMMAND_MODE_RAPID
+    yield COMMAND_SET_ABSOLUTE
+    yield COMMAND_MOVE, 0, 0
 
-    @staticmethod
-    def home():
-        yield COMMAND_HOME
 
-    @staticmethod
-    def physicalhome():
+def unlock():
+    yield COMMAND_MODE_RAPID
+    yield COMMAND_UNLOCK
+
+
+def home():
+    yield COMMAND_HOME
+
+
+def physicalhome():
+    yield COMMAND_WAIT_FINISH
+    yield COMMAND_HOME, 0, 0
+
+
+def offset(x, y):
+    def offset_value():
         yield COMMAND_WAIT_FINISH
-        yield COMMAND_HOME, 0, 0
+        yield COMMAND_SET_POSITION, -int(x), -int(y)
 
-    @staticmethod
-    def offset(x, y):
-        def offset_value():
-            yield COMMAND_WAIT_FINISH
-            yield COMMAND_SET_POSITION, -int(x), -int(y)
+    return offset_value
 
-        return offset_value
 
-    @staticmethod
-    def wait():
-        wait_amount = 5.0
-        yield COMMAND_WAIT_FINISH
-        yield COMMAND_WAIT, wait_amount
+def wait():
+    wait_amount = 5.0
+    yield COMMAND_WAIT_FINISH
+    yield COMMAND_WAIT, wait_amount
 
-    @staticmethod
-    def beep():
-        yield COMMAND_WAIT_FINISH
-        yield COMMAND_BEEP
 
-    @staticmethod
-    def interrupt():
-        yield COMMAND_WAIT_FINISH
+def beep():
+    yield COMMAND_WAIT_FINISH
+    yield COMMAND_BEEP
 
-        def intr():
-            input("waiting for user...")
 
-        yield COMMAND_FUNCTION, intr
+def interrupt():
+    yield COMMAND_WAIT_FINISH
 
-    @staticmethod
-    def reify_matrix(self):
-        """Apply the matrix to the path and reset matrix."""
-        self.element = abs(self.element)
-        self.scene_bounds = None
+    def intr():
+        input("waiting for user...")
 
-    @staticmethod
-    def bounding_box(elements):
-        if isinstance(elements, SVGElement):
-            elements = [elements]
-        elif isinstance(elements, list):
-            try:
-                elements = [
-                    e.object for e in elements if isinstance(e.object, SVGElement)
-                ]
-            except AttributeError:
-                pass
-        boundary_points = []
-        for e in elements:
-            box = e.bbox(False)
-            if box is None:
-                continue
-            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
-            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
-            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
-            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
-            return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
+    yield COMMAND_FUNCTION, intr
 
-    @staticmethod
-    def is_inside(inner_path, outer_path):
-        """
-        Test that path1 is inside path2.
-        :param inner_path: inner path
-        :param outer_path: outer path
-        :return: whether path1 is wholly inside path2.
-        """
-        if not hasattr(inner_path, "bounding_box"):
-            inner_path.bounding_box = Group.union_bbox([inner_path])
-        if not hasattr(outer_path, "bounding_box"):
-            outer_path.bounding_box = Group.union_bbox([outer_path])
-        if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
-            # outer minx > inner minx (is not contained)
+
+def reify_matrix(self):
+    """Apply the matrix to the path and reset matrix."""
+    self.element = abs(self.element)
+    self.scene_bounds = None
+
+
+def bounding_box(elements):
+    if isinstance(elements, SVGElement):
+        elements = [elements]
+    elif isinstance(elements, list):
+        try:
+            elements = [
+                e.object for e in elements if isinstance(e.object, SVGElement)
+            ]
+        except AttributeError:
+            pass
+    boundary_points = []
+    for e in elements:
+        box = e.bbox(False)
+        if box is None:
+            continue
+        top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+        top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+        bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+        bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+        boundary_points.append(top_left)
+        boundary_points.append(top_right)
+        boundary_points.append(bottom_left)
+        boundary_points.append(bottom_right)
+    if len(boundary_points) == 0:
+        return None
+    xmin = min([e[0] for e in boundary_points])
+    ymin = min([e[1] for e in boundary_points])
+    xmax = max([e[0] for e in boundary_points])
+    ymax = max([e[1] for e in boundary_points])
+    return xmin, ymin, xmax, ymax
+
+
+def is_inside(inner_path, outer_path):
+    """
+    Test that path1 is inside path2.
+    :param inner_path: inner path
+    :param outer_path: outer path
+    :return: whether path1 is wholly inside path2.
+    """
+    if not hasattr(inner_path, "bounding_box"):
+        inner_path.bounding_box = Group.union_bbox([inner_path])
+    if not hasattr(outer_path, "bounding_box"):
+        outer_path.bounding_box = Group.union_bbox([outer_path])
+    if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
+        # outer minx > inner minx (is not contained)
+        return False
+    if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
+        # outer miny > inner miny (is not contained)
+        return False
+    if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
+        # outer maxx < inner maxx (is not contained)
+        return False
+    if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
+        # outer maxy < inner maxy (is not contained)
+        return False
+    if outer_path.bounding_box == inner_path.bounding_box:
+        if outer_path == inner_path:  # This is the same object.
             return False
-        if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
-            # outer miny > inner miny (is not contained)
+    if not hasattr(outer_path, "vm"):
+        outer_path = Polygon(
+            [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
+        )
+        vm = VectorMontonizer()
+        vm.add_cluster(outer_path)
+        outer_path.vm = vm
+    for i in range(101):
+        p = inner_path.point(i / 100.0, error=1e4)
+        if not outer_path.vm.is_point_inside(p.x, p.y):
             return False
-        if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
-            # outer maxx < inner maxx (is not contained)
-            return False
-        if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
-            # outer maxy < inner maxy (is not contained)
-            return False
-        if outer_path.bounding_box == inner_path.bounding_box:
-            if outer_path == inner_path:  # This is the same object.
-                return False
-        if not hasattr(outer_path, "vm"):
-            outer_path = Polygon(
-                [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
-            )
-            vm = VectorMontonizer()
-            vm.add_cluster(outer_path)
-            outer_path.vm = vm
-        for i in range(101):
-            p = inner_path.point(i / 100.0, error=1e4)
-            if not outer_path.vm.is_point_inside(p.x, p.y):
-                return False
-        return True
+    return True

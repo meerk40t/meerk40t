@@ -889,6 +889,9 @@ class LaserOperation(Node):
                 yield COMMAND_LASER_OFF
 
     def as_blob(self, closed_distance=15):
+        return CutCode(self.as_cutobjects(closed_distance=closed_distance))
+
+    def as_cutobjects(self, closed_distance=15):
         settings = self.settings
         for p in range(settings.implicit_passes):
             if self._operation in ("Cut", "Engrave"):
@@ -913,7 +916,7 @@ class LaserOperation(Node):
                         path.approximate_arcs_with_cubics()
                     settings.line_color = path.stroke
                     for subpath in path.as_subpaths():
-                        closed = isinstance(subpath[-1], Close) or abs(subpath.first_point - subpath.last_point) < closed_distance
+                        closed = isinstance(subpath[-1], Close) or abs(Path(subpath).first_point - Path(subpath).current_point) < closed_distance
                         group = CutGroup(None, closed=closed)
                         group.path = Path(subpath)
                         group.pass_index = p
