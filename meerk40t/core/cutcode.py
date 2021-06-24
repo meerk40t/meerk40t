@@ -1,5 +1,4 @@
 from abc import ABC
-from copy import copy
 
 from meerk40t.tools.rasterplotter import (
     BOTTOM,
@@ -24,8 +23,7 @@ from ..device.lasercommandconstants import (
     COMMAND_SET_ABSOLUTE,
     COMMAND_SET_INCREMENTAL,
 )
-from ..svgelements import Color, Group, Path, Point, Polygon
-from ..tools.pathtools import VectorMontonizer
+from ..svgelements import Color, Path, Point
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be

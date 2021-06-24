@@ -52,6 +52,7 @@ class CutPlan:
     """
     Cut Plan is a centralized class to modify plans with specific methods.
     """
+
     def __init__(self, name, context):
         self.name = name
         self.context = context
@@ -75,7 +76,12 @@ class CutPlan:
                 if c.operation == "Dots":
                     blob_plan.append(c)
                     continue
-                blob_plan.extend(c.as_blob(context.opt_closed_distance))
+                for p in range(c.settings.implicit_passes):
+                    cutcode = CutCode(
+                        c.as_cutobjects(closed_distance=context.opt_closed_distance)
+                    )
+                    cutcode.pass_index = p
+                    blob_plan.extend(cutcode)
             except AttributeError:
                 blob_plan.append(c)
         self.plan.clear()
@@ -87,12 +93,28 @@ class CutPlan:
                 c.settings.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
-            merge = len(self.plan) and isinstance(self.plan[-1], CutCode) and isinstance(blob_plan[i], CutObject)
-            if merge and not context.opt_merge_passes and self.plan[-1].pass_index != c.pass_index:
+            merge = (
+                len(self.plan)
+                and isinstance(self.plan[-1], CutCode)
+                and isinstance(blob_plan[i], CutObject)
+            )
+            if (
+                merge
+                and not context.opt_merge_passes
+                and self.plan[-1].pass_index != c.pass_index
+            ):
                 merge = False
-            if merge and not context.opt_merge_ops and self.plan[-1].original_op != c.original_op:
+            if (
+                merge
+                and not context.opt_merge_ops
+                and self.plan[-1].original_op != c.original_op
+            ):
                 merge = False
-            if merge and not context.opt_inner_first and self.plan[-1].original_op == 'Cut':
+            if (
+                merge
+                and not context.opt_inner_first
+                and self.plan[-1].original_op == "Cut"
+            ):
                 merge = False
             if merge:
                 if blob_plan[i].mode == "constrained":
@@ -171,9 +193,7 @@ class CutPlan:
         for op in self.plan:
             try:
                 if op.operation == "Raster":
-                    if len(op.children) == 1 and isinstance(
-                        op.children[0], SVGImage
-                    ):
+                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
                         continue
                     image_element = self.make_image_for_op(op)
                     if image_element is None:
@@ -474,7 +494,9 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_classify(command, channel, _, data_type=None, data=None, **kwgs):
-            elements.classify(list(elements.elems(emphasized=True)), data.plan, data.plan.append)
+            elements.classify(
+                list(elements.elems(emphasized=True)), data.plan, data.plan.append
+            )
             return data_type, data
 
         @self.context.console_command(
@@ -943,9 +965,7 @@ def bounding_box(elements):
         elements = [elements]
     elif isinstance(elements, list):
         try:
-            elements = [
-                e.object for e in elements if isinstance(e.object, SVGElement)
-            ]
+            elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
         except AttributeError:
             pass
     boundary_points = []

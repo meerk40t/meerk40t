@@ -888,115 +888,73 @@ class LaserOperation(Node):
                 yield COMMAND_WAIT, (self.settings.speed / 1000.0)
                 yield COMMAND_LASER_OFF
 
-    def as_blob(self, closed_distance=15):
-        return CutCode(self.as_cutobjects(closed_distance=closed_distance))
-
     def as_cutobjects(self, closed_distance=15):
         settings = self.settings
-        for p in range(settings.implicit_passes):
-            if self._operation in ("Cut", "Engrave"):
-                for object_path in self.children:
-                    object_path = object_path.object
-                    if isinstance(object_path, SVGImage):
-                        box = object_path.bbox()
-                        path = Path(
-                            Polygon(
-                                (box[0], box[1]),
-                                (box[0], box[3]),
-                                (box[2], box[3]),
-                                (box[2], box[1]),
-                            )
+
+        if self._operation in ("Cut", "Engrave"):
+            for object_path in self.children:
+                object_path = object_path.object
+                if isinstance(object_path, SVGImage):
+                    box = object_path.bbox()
+                    path = Path(
+                        Polygon(
+                            (box[0], box[1]),
+                            (box[0], box[3]),
+                            (box[2], box[3]),
+                            (box[2], box[1]),
                         )
-                    else:
-                        # Is a shape or path.
-                        if not isinstance(object_path, Path):
-                            path = abs(Path(object_path))
-                        else:
-                            path = abs(object_path)
-                        path.approximate_arcs_with_cubics()
-                    settings.line_color = path.stroke
-                    for subpath in path.as_subpaths():
-                        closed = isinstance(subpath[-1], Close) or abs(Path(subpath).first_point - Path(subpath).current_point) < closed_distance
-                        group = CutGroup(None, closed=closed)
-                        group.path = Path(subpath)
-                        group.pass_index = p
-                        group.original_op = self._operation
-                        for seg in subpath:
-                            if isinstance(seg, Move):
-                                pass  # Move operations are ignored.
-                            elif isinstance(seg, Close):
-                                group.append(
-                                    LineCut(seg.start, seg.end, settings=settings)
-                                )
-                            elif isinstance(seg, Line):
-                                group.append(
-                                    LineCut(seg.start, seg.end, settings=settings)
-                                )
-                            elif isinstance(seg, QuadraticBezier):
-                                group.append(
-                                    QuadCut(
-                                        seg.start,
-                                        seg.control,
-                                        seg.end,
-                                        settings=settings,
-                                    )
-                                )
-                            elif isinstance(seg, CubicBezier):
-                                group.append(
-                                    CubicCut(
-                                        seg.start,
-                                        seg.control1,
-                                        seg.control2,
-                                        seg.end,
-                                        settings=settings,
-                                    )
-                                )
-                        yield group
-            elif self._operation == "Raster":
-                direction = settings.raster_direction
-                settings.crosshatch = False
-                if direction == 4:
-                    cross_settings = LaserSettings(settings)
-                    cross_settings.crosshatch = True
-                    for object_image in self.children:
-                        object_image = object_image.object
-                        box = object_image.bbox()
-                        path = Path(
-                            Polygon(
-                                (box[0], box[1]),
-                                (box[0], box[3]),
-                                (box[2], box[3]),
-                                (box[2], box[1]),
-                            )
-                        )
-                        cut = RasterCut(object_image, settings)
-                        cut.path = path
-                        cut.pass_index = p
-                        cut.original_op = self._operation
-                        yield cut
-                        cut = RasterCut(object_image, cross_settings)
-                        cut.path = path
-                        cut.pass_index = p
-                        cut.original_op = self._operation
-                        yield cut
+                    )
                 else:
-                    for object_image in self.children:
-                        object_image = object_image.object
-                        box = object_image.bbox()
-                        path = Path(
-                            Polygon(
-                                (box[0], box[1]),
-                                (box[0], box[3]),
-                                (box[2], box[3]),
-                                (box[2], box[1]),
+                    # Is a shape or path.
+                    if not isinstance(object_path, Path):
+                        path = abs(Path(object_path))
+                    else:
+                        path = abs(object_path)
+                    path.approximate_arcs_with_cubics()
+                settings.line_color = path.stroke
+                for subpath in path.as_subpaths():
+                    closed = isinstance(subpath[-1], Close) or abs(Path(subpath).first_point - Path(subpath).current_point) < closed_distance
+                    group = CutGroup(None, closed=closed)
+                    group.path = Path(subpath)
+                    group.pass_index = p
+                    group.original_op = self._operation
+                    for seg in subpath:
+                        if isinstance(seg, Move):
+                            pass  # Move operations are ignored.
+                        elif isinstance(seg, Close):
+                            group.append(
+                                LineCut(seg.start, seg.end, settings=settings)
                             )
-                        )
-                        cut = RasterCut(object_image, settings)
-                        cut.path = path
-                        cut.pass_index = p
-                        cut.original_op = self._operation
-                        yield cut
-            elif self._operation == "Image":
+                        elif isinstance(seg, Line):
+                            group.append(
+                                LineCut(seg.start, seg.end, settings=settings)
+                            )
+                        elif isinstance(seg, QuadraticBezier):
+                            group.append(
+                                QuadCut(
+                                    seg.start,
+                                    seg.control,
+                                    seg.end,
+                                    settings=settings,
+                                )
+                            )
+                        elif isinstance(seg, CubicBezier):
+                            group.append(
+                                CubicCut(
+                                    seg.start,
+                                    seg.control1,
+                                    seg.control2,
+                                    seg.end,
+                                    settings=settings,
+                                )
+                            )
+                    yield group
+        elif self._operation == "Raster":
+            direction = settings.raster_direction
+            settings.crosshatch = False
+            if direction == 4:
+                cross_settings = LaserSettings(settings)
+                cross_settings.crosshatch = True
                 for object_image in self.children:
                     object_image = object_image.object
                     box = object_image.bbox()
@@ -1008,27 +966,66 @@ class LaserOperation(Node):
                             (box[2], box[1]),
                         )
                     )
-                    settings = LaserSettings(self.settings)
-                    try:
-                        settings.raster_step = int(object_image.values["raster_step"])
-                    except KeyError:
-                        settings.raster_step = 1
-
                     cut = RasterCut(object_image, settings)
                     cut.path = path
                     cut.pass_index = p
                     cut.original_op = self._operation
                     yield cut
+                    cut = RasterCut(object_image, cross_settings)
+                    cut.path = path
+                    cut.pass_index = p
+                    cut.original_op = self._operation
+                    yield cut
+            else:
+                for object_image in self.children:
+                    object_image = object_image.object
+                    box = object_image.bbox()
+                    path = Path(
+                        Polygon(
+                            (box[0], box[1]),
+                            (box[0], box[3]),
+                            (box[2], box[3]),
+                            (box[2], box[1]),
+                        )
+                    )
+                    cut = RasterCut(object_image, settings)
+                    cut.path = path
+                    cut.pass_index = p
+                    cut.original_op = self._operation
+                    yield cut
+        elif self._operation == "Image":
+            for object_image in self.children:
+                object_image = object_image.object
+                box = object_image.bbox()
+                path = Path(
+                    Polygon(
+                        (box[0], box[1]),
+                        (box[0], box[3]),
+                        (box[2], box[3]),
+                        (box[2], box[1]),
+                    )
+                )
+                settings = LaserSettings(self.settings)
+                try:
+                    settings.raster_step = int(object_image.values["raster_step"])
+                except KeyError:
+                    settings.raster_step = 1
 
-                    if settings.raster_direction == 4:
-                        cross_settings = LaserSettings(settings)
-                        cross_settings.crosshatch = True
+                cut = RasterCut(object_image, settings)
+                cut.path = path
+                cut.pass_index = p
+                cut.original_op = self._operation
+                yield cut
 
-                        cut = RasterCut(object_image, cross_settings)
-                        cut.path = path
-                        cut.pass_index = p
-                        cut.original_op = self._operation
-                        yield cut
+                if settings.raster_direction == 4:
+                    cross_settings = LaserSettings(settings)
+                    cross_settings.crosshatch = True
+
+                    cut = RasterCut(object_image, cross_settings)
+                    cut.path = path
+                    cut.pass_index = p
+                    cut.original_op = self._operation
+                    yield cut
 
 
 class CutNode(Node):
@@ -1054,8 +1051,8 @@ class CutNode(Node):
     def __len__(self):
         return 1
 
-    def as_blob(self, closed_distance=15):
-        yield self.object
+    def as_cutobjects(self, closed_distance=15):
+        yield from self.object
 
 
 class CommandOperation(Node):
