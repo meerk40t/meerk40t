@@ -3513,7 +3513,7 @@ class Elemental(Modifier):
         )
         def cutcode2pathcut(node, **kwgs):
             cutcode = node.object
-            elements = cutcode.as_elements()
+            elements = list(cutcode.as_elements())
             n = None
             for element in elements:
                 n = self.elem_branch.add(element, type="elem")
@@ -3980,7 +3980,7 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: hasattr(node.object, "as_elements"))
         @self.tree_operation(_("Convert to SVG"), node_type="elem", help="")
         def cutcode_convert_svg(node, **kwgs):
-            self.context.elements.add_elems(node.object.as_elements())
+            self.context.elements.add_elems(list(node.object.as_elements()))
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "generate"))
         @self.tree_operation(_("Process as Operation"), node_type="elem", help="")

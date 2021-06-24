@@ -288,7 +288,6 @@ class CutCode(CutGroup):
         return "CutCode(%s)" % " ".join(parts)
 
     def as_elements(self):
-        elements = list()
         last = None
         path = None
         previous_settings = None
@@ -311,13 +310,12 @@ class CutCode(CutGroup):
                 path.quad(e.c1(), e.c2(), end)
             if previous_settings is not settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
-                    elements.append(path)
+                    yield path
                     path = None
             previous_settings = settings
             last = end
         if path is not None and len(path) != 0:
-            elements.append(path)
-        return elements
+            yield path
 
     def cross(self, j, k):
         """
