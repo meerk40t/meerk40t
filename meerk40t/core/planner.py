@@ -756,8 +756,6 @@ class Planner(Modifier):
         ):
             if y_distance is None:
                 raise SyntaxError
-            # TODO: IMPLEMENT!
-            # TODO: Implement the 0.6.19 switch changes.
             data.plan.clear()
             data.commands.clear()
             x_distance = int(x_distance)
@@ -773,9 +771,7 @@ class Planner(Modifier):
                     y_offset = y_pos - y_last
                     data.plan.append(origin)
                     if x_offset != 0 or y_offset != 0:
-                        data.plan.append(
-                            offset(x_offset, y_offset)
-                        )
+                        data.plan.append(offset(x_offset, y_offset))
 
                     data.plan.extend(list(data.original))
                     x_last = x_pos
