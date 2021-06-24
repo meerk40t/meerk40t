@@ -79,7 +79,7 @@ class CutPlan:
                 pass
         return False
 
-    def command_strip_text(self):
+    def strip_text(self):
         for k in range(len(self.plan) - 1, -1, -1):
             op = self.plan[k]
             try:
@@ -92,7 +92,7 @@ class CutPlan:
             except AttributeError:
                 pass
 
-    def command_strip_rasters(self):
+    def strip_rasters(self):
         stripped = False
         for k, op in enumerate(self.plan):
             try:
@@ -121,7 +121,7 @@ class CutPlan:
         image_element.transform.post_translate(xmin, ymin)
         return image_element
 
-    def command_make_image(self):
+    def make_image(self):
         for op in self.plan:
             try:
                 if op.operation == "Raster":
@@ -129,20 +129,20 @@ class CutPlan:
                         op.children[0], SVGImage
                     ):
                         continue
-                    image_element = self.make_image_for_op(self.context, op)
+                    image_element = self.make_image_for_op(op)
                     if image_element is None:
                         continue
                     if (
                         image_element.image_width == 1
                         and image_element.image_height == 1
                     ):
-                        image_element = self.make_image_for_op(self.context, op)
+                        image_element = self.make_image_for_op(op)
                     op.children.clear()
                     op.add(image_element, type="opnode")
             except AttributeError:
                 continue
 
-    def command_scale_for_rotary(self):
+    def scale_for_rotary(self):
         r = self.context.get_context("rotary/1")
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
@@ -165,7 +165,7 @@ class CutPlan:
         self.conditional_jobadd_actualize_image()
 
     def jobadd_strip_text(self):
-        self.commands.append(self.command_strip_text)
+        self.commands.append(self.strip_text)
 
     def conditional_jobadd_make_raster(self):
         for op in self.plan:
@@ -190,9 +190,9 @@ class CutPlan:
         make_raster = self.context.registered.get("render-op/make_raster")
 
         if make_raster is None:
-            self.commands.append(self.command_strip_rasters)
+            self.commands.append(self.strip_rasters)
         else:
-            self.commands.append(self.command_make_image)
+            self.commands.append(self.make_image)
 
     def conditional_jobadd_optimize_travel(self):
         self.jobadd_optimize_travel()
@@ -269,7 +269,7 @@ class CutPlan:
             self.jobadd_scale_rotary(context)
 
     def jobadd_scale_rotary(self):
-        self.commands.append(self.command_scale_for_rotary)
+        self.commands.append(self.scale_for_rotary)
 
 
 class Planner(Modifier):
