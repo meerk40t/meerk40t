@@ -249,6 +249,9 @@ class CutGroup(list, CutObject, ABC):
         return self[-1].end() if self.normal else self[0].start()
 
     def flat(self):
+        """
+        Flat list of cut objects with a depth first search.
+        """
         for c in self:
             if not isinstance(c, CutGroup):
                 yield c
@@ -336,136 +339,6 @@ class CutCode(CutGroup):
             yield COMMAND_PLOT, cutobject
         yield COMMAND_PLOT_START
 
-    def correct_empty(self, context=None):
-        """
-        Iterates through backwards deleting any entries that empty.
-        """
-        if context is None:
-            context = self
-        for index in range(len(context) - 1, -1, -1):
-            c = context[index]
-            if not isinstance(c, CutGroup):
-                continue
-            self.correct_empty(c)
-            if len(c) == 0:
-                del context[index]
-
-    def extract_closed_groups(self, context=None):
-        """
-        yields all closed groups within the current cutcode.
-        Removing those groups from this cutcode.
-        """
-        if context is None:
-            context = self
-        index = len(context) - 1
-        while index != -1:
-            c = context[index]
-            if isinstance(c, CutGroup):
-                if c.closed:
-                    del context[index]
-                    yield c
-                index -= 1
-                continue
-            for s in self.extract_closed_groups(c):
-                yield s
-            index -= 1
-
-    def permit(self, permit, _list=None):
-        if _list is None:
-            _list = self.flat()
-        for c in _list:
-            c.permitted = permit
-
-    def inner_first_cutcode(self):
-        ordered = CutCode()
-        closed_groups = list(self.extract_closed_groups())
-        if len(closed_groups):
-            ordered.contains = closed_groups
-            ordered.extend(closed_groups)
-        ordered.extend(self.flat())
-        self.clear()
-        for oj in ordered:
-            for ok in ordered:
-                if oj is ok:
-                    continue
-                if self.is_inside(ok, oj):
-                    if ok.inside is None:
-                        ok.inside = list()
-                    if oj.contains is None:
-                        oj.contains = list()
-                    ok.inside.append(oj)
-                    oj.contains.append(ok)
-        # for j, c in enumerate(ordered):
-        #     if c.contains is not None:
-        #         for k, q in enumerate(c.contains):
-        #             assert q in ordered
-        #             assert q is not c
-        #     if c.inside is not None:
-        #         for m, q in enumerate(c.inside):
-        #             assert q in ordered
-        #             assert q is not c
-
-        ordered.mode = "constrained"
-        return ordered
-
-    def short_travel_cutcode(self, cc):
-        """
-        Selects cutcode from candidate cutcode permitted, optimizing with greedy/brute for
-        shortest distances optimizations.
-        """
-        curr = cc.start
-        if curr is None:
-            curr = 0
-        else:
-            curr = complex(curr[0], curr[1])
-        self.permit(True, cc.flat())
-        ordered = CutCode()
-        while True:
-            closest = None
-            backwards = False
-            distance = float("inf")
-            for cut in cc.candidate():
-                s = cut.start()
-                s = complex(s[0], s[1])
-                d = abs(s - curr)
-                if d < distance:
-                    distance = d
-                    backwards = False
-                    closest = cut
-                if cut.reversible():
-                    e = cut.end()
-                    e = complex(e[0], e[1])
-                    d = abs(e - curr)
-                    if d < distance:
-                        distance = d
-                        backwards = True
-                        closest = cut
-            if closest is None:
-                break
-            closest.permitted = False
-            c = copy(closest)
-            if backwards:
-                c.reverse()
-            end = c.end()
-            curr = complex(end[0], end[1])
-            ordered.append(c)
-        return ordered
-
-    def inner_selection_cutcode(self, cc):
-        """
-        Selects cutcode from candidate cutcode permitted but does nothing to optimize byond
-        finding a valid solution.
-        """
-        self.permit(True, cc.flat())
-        ordered = CutCode()
-        while True:
-            c = list(cc.candidate())
-            if len(c) == 0:
-                break
-            ordered.extend(c)
-            self.permit(False, ordered.flat())
-        return ordered
-
     def length_travel(self):
         cutcode = list(self.flat())
         distance = 0
@@ -491,54 +364,6 @@ class CutCode(CutGroup):
             curr = cutcode[i]
             distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
         return distance
-
-    def is_inside(self, inner_path, outer_path):
-        """
-        Test that path1 is inside path2.
-        :param inner_path: inner path
-        :param outer_path: outer path
-        :return: whether path1 is wholly inside path2.
-        """
-        if hasattr(inner_path, "path"):
-            inner_path = inner_path.path
-        if hasattr(outer_path, "path"):
-            outer_path = outer_path.path
-        if not hasattr(inner_path, "bounding_box"):
-            inner_path.bounding_box = Group.union_bbox([inner_path])
-        if not hasattr(outer_path, "bounding_box"):
-            outer_path.bounding_box = Group.union_bbox([outer_path])
-
-        if outer_path.bounding_box is None:
-            return False
-        if inner_path.bounding_box is None:
-            return False
-        if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
-            # outer minx > inner minx (is not contained)
-            return False
-        if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
-            # outer miny > inner miny (is not contained)
-            return False
-        if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
-            # outer maxx < inner maxx (is not contained)
-            return False
-        if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
-            # outer maxy < inner maxy (is not contained)
-            return False
-        if outer_path.bounding_box == inner_path.bounding_box:
-            if outer_path == inner_path:  # This is the same object.
-                return False
-        if not hasattr(outer_path, "vm"):
-            outer_path = Polygon(
-                [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
-            )
-            vm = VectorMontonizer()
-            vm.add_cluster(outer_path)
-            outer_path.vm = vm
-        for i in range(101):
-            p = inner_path.point(i / 100.0, error=1e4)
-            if not outer_path.vm.is_point_inside(p.x, p.y):
-                return False
-        return True
 
     @classmethod
     def from_lasercode(cls, lasercode):
