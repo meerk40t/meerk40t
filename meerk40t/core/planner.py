@@ -52,8 +52,9 @@ class CutPlan:
     """
     Cut Plan is a centralized class to modify plans in specific methods.
     """
-    def __init__(self, name):
+    def __init__(self, name, context):
         self.name = name
+        self.context = context
         self.plan = list()
         self.original = list()
         self.commands = list()
@@ -78,26 +79,96 @@ class CutPlan:
                 pass
         return False
 
+    def command_strip_text(self):
+        for k in range(len(self.plan) - 1, -1, -1):
+            op = self.plan[k]
+            try:
+                if op.operation in ("Cut", "Engrave"):
+                    for i, e in enumerate(list(op.children)):
+                        if isinstance(e.object, SVGText):
+                            e.remove_node()
+                    if len(op.children) == 0:
+                        del self.plan[k]
+            except AttributeError:
+                pass
+
+    def command_strip_rasters(self):
+        stripped = False
+        for k, op in enumerate(self.plan):
+            try:
+                if op.operation == "Raster":
+                    if len(op.children) == 1 and isinstance(op[0], SVGImage):
+                        continue
+                    self.plan[k] = None
+                    stripped = True
+            except AttributeError:
+                pass
+        if stripped:
+            p = [q for q in self.plan if q is not None]
+            self.plan.clear()
+            self.plan.extend(p)
+
+    def make_image_for_op(self, op):
+        subitems = list(op.flat(types=("elem", "opnode")))
+        make_raster = self.context.registered.get("render-op/make_raster")
+        objs = [s.object for s in subitems]
+        bounds = Group.union_bbox(objs)
+        if bounds is None:
+            return None
+        xmin, ymin, xmax, ymax = bounds
+        image = make_raster(subitems, bounds, step=op.settings.raster_step)
+        image_element = SVGImage(image=image)
+        image_element.transform.post_translate(xmin, ymin)
+        return image_element
+
+    def command_make_image(self):
+        for op in self.plan:
+            try:
+                if op.operation == "Raster":
+                    if len(op.children) == 1 and isinstance(
+                        op.children[0], SVGImage
+                    ):
+                        continue
+                    image_element = self.make_image_for_op(self.context, op)
+                    if image_element is None:
+                        continue
+                    if (
+                        image_element.image_width == 1
+                        and image_element.image_height == 1
+                    ):
+                        image_element = self.make_image_for_op(self.context, op)
+                    op.children.clear()
+                    op.add(image_element, type="opnode")
+            except AttributeError:
+                continue
+
+    def command_scale_for_rotary(self):
+        r = self.context.get_context("rotary/1")
+        spooler, input_driver, output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
+        scale_str = "scale(%f,%f,%f,%f)" % (
+            r.scale_x,
+            r.scale_y,
+            input_driver.current_x,
+            input_driver.current_y,
+        )
+        for o in self.plan:
+            if isinstance(o, LaserOperation):
+                for node in o.children:
+                    e = node.object
+                    try:
+                        ne = e * scale_str
+                        node.replace_object(ne)
+                    except AttributeError:
+                        pass
+        self.conditional_jobadd_actualize_image()
+
     def jobadd_strip_text(self):
-
-        def strip_text():
-            for k in range(len(self.plan) - 1, -1, -1):
-                op = self.plan[k]
-                try:
-                    if op.operation in ("Cut", "Engrave"):
-                        for i, e in enumerate(list(op.children)):
-                            if isinstance(e.object, SVGText):
-                                e.remove_node()
-                        if len(op.children) == 0:
-                            del self.plan[k]
-                except AttributeError:
-                    pass
-
-        self.commands.append(strip_text)
+        self.commands.append(self.command_strip_text)
 
     def conditional_jobadd_make_raster(self):
-        plan, original, commands, name = self
-        for op in plan:
+        for op in self.plan:
             try:
                 if op.operation == "Raster":
                     if len(op.children) == 0:
@@ -110,68 +181,18 @@ class CutPlan:
                 pass
         return False
 
-    def jobadd_make_raster(self, context):
+    def jobadd_make_raster(self):
         """
         TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
             time around because the renderer is what sets the size of the text. If the size hasn't
             already been set, the initial bounds are wrong.
         """
-        make_raster = context.registered.get("render-op/make_raster")
-
-        def strip_rasters():
-            stripped = False
-            for k, op in enumerate(self.plan):
-                try:
-                    if op.operation == "Raster":
-                        if len(op.children) == 1 and isinstance(op[0], SVGImage):
-                            continue
-                        self.plan[k] = None
-                        stripped = True
-                except AttributeError:
-                    pass
-            if stripped:
-                p = [q for q in self.plan if q is not None]
-                self.plan.clear()
-                self.plan.extend(p)
-
-        def make_image_for_op(op):
-            subitems = list(op.flat(types=("elem", "opnode")))
-            make_raster = context.registered.get("render-op/make_raster")
-            objs = [s.object for s in subitems]
-            bounds = Group.union_bbox(objs)
-            if bounds is None:
-                return None
-            xmin, ymin, xmax, ymax = bounds
-            image = make_raster(subitems, bounds, step=op.settings.raster_step)
-            image_element = SVGImage(image=image)
-            image_element.transform.post_translate(xmin, ymin)
-            return image_element
-
-        def make_image():
-            for op in self.plan:
-                try:
-                    if op.operation == "Raster":
-                        if len(op.children) == 1 and isinstance(
-                            op.children[0], SVGImage
-                        ):
-                            continue
-                        image_element = make_image_for_op(op)
-                        if image_element is None:
-                            continue
-                        if (
-                            image_element.image_width == 1
-                            and image_element.image_height == 1
-                        ):
-                            image_element = make_image_for_op(op)
-                        op.children.clear()
-                        op.add(image_element, type="opnode")
-                except AttributeError:
-                    continue
+        make_raster = self.context.registered.get("render-op/make_raster")
 
         if make_raster is None:
-            self.commands.append(strip_rasters)
+            self.commands.append(self.command_strip_rasters)
         else:
-            self.commands.append(make_image)
+            self.commands.append(self.command_make_image)
 
     def conditional_jobadd_optimize_travel(self):
         self.jobadd_optimize_travel()
@@ -211,13 +232,13 @@ class CutPlan:
                 if op.operation == "Raster":
                     for elem in op.children:
                         elem = elem.object
-                        if self.needs_actualization(elem, op.settings.raster_step):
+                        if needs_actualization(elem, op.settings.raster_step):
                             self.jobadd_actualize_image()
                             return
                 if op.operation == "Image":
                     for elem in op.children:
                         elem = elem.object
-                        if self.needs_actualization(elem, None):
+                        if needs_actualization(elem, None):
                             self.jobadd_actualize_image()
                             return
             except AttributeError:
@@ -230,13 +251,13 @@ class CutPlan:
                     if op.operation == "Raster":
                         for elem in op.children:
                             elem = elem.object
-                            if self.needs_actualization(elem, op.settings.raster_step):
-                                self.make_actual(elem, op.settings.raster_step)
+                            if needs_actualization(elem, op.settings.raster_step):
+                                make_actual(elem, op.settings.raster_step)
                     if op.operation == "Image":
                         for elem in op.children:
                             elem = elem.object
-                            if self.needs_actualization(elem, None):
-                                self.make_actual(elem, None)
+                            if needs_actualization(elem, None):
+                                make_actual(elem, None)
                 except AttributeError:
                     pass
 
@@ -247,30 +268,8 @@ class CutPlan:
         if rotary_context.scale_x != 1.0 or rotary_context.scale_y != 1.0:
             self.jobadd_scale_rotary(context)
 
-    def jobadd_scale_rotary(self, context):
-        def scale_for_rotary():
-            r = self.context.get_context("rotary/1")
-            spooler, input_driver, output = self.context.registered[
-                "device/%s" % self.context.root.active
-            ]
-            scale_str = "scale(%f,%f,%f,%f)" % (
-                r.scale_x,
-                r.scale_y,
-                input_driver.current_x,
-                input_driver.current_y,
-            )
-            for o in self.plan:
-                if isinstance(o, LaserOperation):
-                    for node in o.children:
-                        e = node.object
-                        try:
-                            ne = e * scale_str
-                            node.replace_object(ne)
-                        except AttributeError:
-                            pass
-            self.conditional_jobadd_actualize_image()
-
-        self.commands.append(scale_for_rotary)
+    def jobadd_scale_rotary(self):
+        self.commands.append(self.command_scale_for_rotary)
 
 
 class Planner(Modifier):
@@ -291,7 +290,7 @@ class Planner(Modifier):
         try:
             return self._plan[plan_name]
         except KeyError:
-            self._plan[plan_name] = list(), list(), list(), plan_name
+            self._plan[plan_name] = CutPlan(plan_name, self.context)
             return self._plan[plan_name]
 
     def default_plan(self):
@@ -376,9 +375,7 @@ class Planner(Modifier):
 
             if data is not None:
                 # If ops data is in data, then we copy that and move on to next step.
-                plan, original, commands, name = self.get_or_make_plan(
-                    self._default_plan
-                )
+                cutplan = self.get_or_make_plan(self._default_plan)
                 for c in data:
                     if not c.output:
                         continue
@@ -392,9 +389,9 @@ class Planner(Modifier):
                         copy_c.deep_copy_children(c)
                     except AttributeError:
                         pass
-                    plan.append(copy_c)
+                    cutplan.plan.append(copy_c)
                 self.context.signal("plan", self._default_plan, 1)
-                return "plan", (plan, original, commands, self._default_plan)
+                return "plan", cutplan
 
             data = self.get_or_make_plan(self._default_plan)
             if remainder is None:
@@ -421,17 +418,16 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_list(command, channel, _, data_type=None, data=None, **kwgs):
-            plan, original, commands, name = data
             channel(_("----------"))
             channel(_("Plan:"))
             for i, plan_name in enumerate(self._plan):
                 channel("%d: %s" % (i, plan_name))
             channel(_("----------"))
             channel(_("Plan %s:" % self._default_plan))
-            for i, op_name in enumerate(plan):
+            for i, op_name in enumerate(data.plan):
                 channel("%d: %s" % (i, op_name))
             channel(_("Commands %s:" % self._default_plan))
-            for i, cmd_name in enumerate(commands):
+            for i, cmd_name in enumerate(data.commands):
                 channel("%d: %s" % (i, cmd_name))
             channel(_("----------"))
             return data_type, data
@@ -443,8 +439,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_classify(command, channel, _, data_type=None, data=None, **kwgs):
-            plan, original, commands, name = data
-            elements.classify(list(elements.elems(emphasized=True)), plan, plan.append)
+            elements.classify(list(elements.elems(emphasized=True)), data.plan, data.plan.append)
             return data_type, data
 
         @self.context.console_command(
@@ -454,7 +449,6 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_copy_selected(command, channel, _, data_type=None, data=None, **kwgs):
-            plan, original, commands, name = data
             for c in elements.ops(emphasized=True):
                 try:
                     if not c.output:
@@ -466,7 +460,7 @@ class Planner(Modifier):
                     copy_c.deep_copy_children(c)
                 except AttributeError:
                     pass
-                plan.append(copy_c)
+                data.plan.append(copy_c)
 
             channel(_("Copied Operations."))
             self.context.signal("plan", self._default_plan, 1)
@@ -479,7 +473,6 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
-            plan, original, commands, name = data
             operations = elements.get(type="branch ops")
             for c in operations.flat(
                 types=("op", "cutcode", "cmdop", "lasercode"), depth=1
@@ -499,7 +492,7 @@ class Planner(Modifier):
                     copy_c.deep_copy_children(c)
                 except AttributeError:
                     pass
-                plan.append(copy_c)
+                data.plan.append(copy_c)
             channel(_("Copied Operations."))
             self.context.signal("plan", self._default_plan, 1)
             return data_type, data
@@ -519,7 +512,6 @@ class Planner(Modifier):
         def plan_command(
             command, channel, _, data_type=None, op=None, index=None, data=None, **kwgs
         ):
-            plan, original, commands, name = data
             if op is None:
                 channel(_("Plan Commands:"))
                 for command_name in self.context.match("plan/.*", suffix=True):
@@ -529,10 +521,10 @@ class Planner(Modifier):
                 for command_name in self.context.match("plan/%s" % op):
                     cmd = self.context.registered[command_name]
                     if index is None:
-                        plan.append(cmd)
+                        data.plan.append(cmd)
                     else:
                         try:
-                            plan.insert(index, cmd)
+                            data.plan.insert(index, cmd)
                         except ValueError:
                             channel(_("Invalid index for command insert."))
                     break
@@ -553,13 +545,12 @@ class Planner(Modifier):
         def plan_append(
             command, channel, _, data_type=None, op=None, data=None, **kwgs
         ):
-            plan, original, commands, name = data
             if op is None:
                 raise SyntaxError
             try:
                 for command_name in self.context.match("plan/%s" % op):
                     plan_command = self.context.registered[command_name]
-                    plan.append(plan_command)
+                    data.plan.append(plan_command)
                     self.context.signal("plan", self._default_plan, None)
                     return data_type, data
             except (KeyError, IndexError):
@@ -579,13 +570,12 @@ class Planner(Modifier):
         def plan_prepend(
             command, channel, _, data_type=None, op=None, data=None, **kwgs
         ):
-            plan, original, commands, name = data
             if op is None:
                 raise SyntaxError
             try:
                 for command_name in self.context.match("plan/%s" % op):
                     plan_command = self.context.registered[command_name]
-                    plan.insert(0, plan_command)
+                    data.plan.insert(0, plan_command)
                     break
                 self.context.signal("plan", self._default_plan, None)
             except (KeyError, IndexError):
@@ -599,45 +589,44 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_preprocess(command, channel, _, data_type=None, data=None, **kwgs):
-            plan, original, commands, name = data
             rotary_context = self.context.get_context("rotary/1")
             if self.context.prephysicalhome:
                 if not rotary_context.rotary:
-                    plan.insert(0, self.context.registered["plan/physicalhome"])
+                    data.plan.insert(0, self.context.registered["plan/physicalhome"])
                 else:
-                    plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
+                    data.plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
             if self.context.prehome:
                 if not rotary_context.rotary:
-                    plan.insert(0, self.context.registered["plan/home"])
+                    data.plan.insert(0, self.context.registered["plan/home"])
                 else:
-                    plan.insert(0, _("Home Before: Disabled (Rotary On)"))
+                    data.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
             # ==========
             # BEFORE/AFTER
             # ==========
             if self.context.autohome:
                 if not rotary_context.rotary:
-                    plan.append(self.context.registered["plan/home"])
+                    data.plan.append(self.context.registered["plan/home"])
                 else:
-                    plan.append(_("Home After: Disabled (Rotary On)"))
+                    data.plan.append(_("Home After: Disabled (Rotary On)"))
             if self.context.autophysicalhome:
                 if not rotary_context.rotary:
-                    plan.append(self.context.registered["plan/physicalhome"])
+                    data.plan.append(self.context.registered["plan/physicalhome"])
                 else:
-                    plan.append(_("Physical Home After: Disabled (Rotary On)"))
+                    data.plan.append(_("Physical Home After: Disabled (Rotary On)"))
             if self.context.autoorigin:
-                plan.append(self.context.registered["plan/origin"])
+                data.plan.append(self.context.registered["plan/origin"])
             if self.context.postunlock:
-                plan.append(self.context.registered["plan/unlock"])
+                data.plan.append(self.context.registered["plan/unlock"])
             if self.context.autobeep:
-                plan.append(self.context.registered["plan/beep"])
+                data.plan.append(self.context.registered["plan/beep"])
             if self.context.autointerrupt:
-                plan.append(self.context.registered["plan/interrupt"])
+                data.plan.append(self.context.registered["plan/interrupt"])
             # divide
-            self.conditional_jobadd_strip_text()
+            data.conditional_jobadd_strip_text()
             if rotary_context.rotary:
-                self.conditional_jobadd_scale_rotary()
-            self.conditional_jobadd_actualize_image()
-            self.conditional_jobadd_make_raster()
+                data.conditional_jobadd_scale_rotary()
+            data.conditional_jobadd_actualize_image()
+            data.conditional_jobadd_make_raster()
             self.context.signal("plan", self._default_plan, 2)
             return data_type, data
 
@@ -649,7 +638,7 @@ class Planner(Modifier):
         )
         def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
             # plan, original, commands, name = data
-            self.execute()
+            data.execute()
             self.context.signal("plan", self._default_plan, 3)
             return data_type, data
 
@@ -660,10 +649,9 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_blob(data_type=None, data=None, **kwgs):
-            plan, original, commands, name = data
             blob_plan = list()
-            for i in range(len(plan)):
-                c = plan[i]
+            for i in range(len(data.plan)):
+                c = data.plan[i]
                 try:
                     if c.operation == "Dots":
                         blob_plan.append(c)
@@ -671,7 +659,7 @@ class Planner(Modifier):
                     blob_plan.extend(c.as_blob(self.context.opt_closed_distance))
                 except AttributeError:
                     blob_plan.append(c)
-            plan.clear()
+            data.plan.clear()
 
             for i in range(len(blob_plan)):
                 c = blob_plan[i]
@@ -680,25 +668,25 @@ class Planner(Modifier):
                     c.settings.jog_enable = self.context.opt_rapid_between
                 except AttributeError:
                     pass
-                merge = len(plan) and isinstance(plan[-1], CutCode) and isinstance(blob_plan[i], CutObject)
-                if merge and not self.context.opt_merge_passes and plan[-1].pass_index != c.pass_index:
+                merge = len(data.plan) and isinstance(data.plan[-1], CutCode) and isinstance(blob_plan[i], CutObject)
+                if merge and not self.context.opt_merge_passes and data.plan[-1].pass_index != c.pass_index:
                     merge = False
-                if merge and not self.context.opt_merge_ops and plan[-1].original_op != c.original_op:
+                if merge and not self.context.opt_merge_ops and data.plan[-1].original_op != c.original_op:
                     merge = False
-                if merge and not self.context.opt_inner_first and plan[-1].original_op == 'Cut':
+                if merge and not self.context.opt_inner_first and data.plan[-1].original_op == 'Cut':
                     merge = False
                 if merge:
                     if blob_plan[i].mode == "constrained":
-                        plan[-1].mode = "constrained"
-                    plan[-1].extend(blob_plan[i])
+                        data.plan[-1].mode = "constrained"
+                    data.plan[-1].extend(blob_plan[i])
                 else:
                     if isinstance(c, CutObject) and not isinstance(c, CutCode):
                         cc = CutCode([c])
                         cc.original_op = c.original_op
                         cc.pass_index = c.pass_index
-                        plan.append(cc)
+                        data.plan.append(cc)
                     else:
-                        plan.append(c)
+                        data.plan.append(c)
             self.context.signal("plan", self._default_plan, 4)
             return data_type, data
 
@@ -709,11 +697,10 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
-            # plan, original, commands, name = data
             if self.context.opt_reduce_travel:
-                self.conditional_jobadd_optimize_travel()
+                data.conditional_jobadd_optimize_travel()
             elif self.context.opt_inner_first:
-                self.conditional_jobadd_optimize_cuts()
+                data.conditional_jobadd_optimize_cuts()
             if self.context.opt_reduce_directions:
                 pass
             if self.context.opt_remove_overlap:
@@ -728,8 +715,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_optimize(data_type=None, data=None, **kwgs):
-            # plan, original, commands, name = data
-            self.execute()
+            data.execute()
             self.context.signal("plan", self._default_plan, 6)
             return data_type, data
 
@@ -740,9 +726,8 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_clear(data_type=None, data=None, **kwgs):
-            plan, original, commands, name = data
-            plan.clear()
-            commands.clear()
+            data.plan.clear()
+            data.commands.clear()
             self.context.signal("plan", self._default_plan, 0)
             return data_type, data
 
@@ -775,13 +760,12 @@ class Planner(Modifier):
             data=None,
             **kwgs
         ):
-            plan, original, commands, name = data
             if y_distance is None:
                 raise SyntaxError
             # TODO: IMPLEMENT!
             # TODO: Implement the 0.6.19 switch changes.
-            self.operations.clear()
-            self.preprocessor.commands = list()
+            data.operations.clear()
+            data.preprocessor.commands = list()
             x_distance = int(x_distance)
             y_distance = int(y_distance)
             x_last = 0
@@ -793,20 +777,20 @@ class Planner(Modifier):
                 for k in range(cols):
                     x_offset = x_pos - x_last
                     y_offset = y_pos - y_last
-                    self.operations.append(OperationPreprocessor.origin)
+                    data.operations.append(origin)
                     if x_offset != 0 or y_offset != 0:
-                        self.operations.append(
-                            OperationPreprocessor.offset(x_offset, y_offset)
+                        data.operations.append(
+                            offset(x_offset, y_offset)
                         )
-                    self.operations.extend(list(self._original_ops))
+                    data.operations.extend(list(self._original_ops))
                     x_last = x_pos
                     y_last = y_pos
                     x_pos += x_distance
                 y_pos += y_distance
             if x_pos != 0 or y_pos != 0:
-                self.operations.append(OperationPreprocessor.offset(-x_pos, -y_pos))
-            self.refresh_lists()
-            self.update_gui()
+                data.operations.append(offset(-x_pos, -y_pos))
+            # self.refresh_lists()
+            # self.update_gui()
             return data_type, data
 
     def plan(self, **kwargs):

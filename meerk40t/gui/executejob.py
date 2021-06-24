@@ -674,8 +674,8 @@ class ExecuteJob(MWindow):
         # self.check_reduce_direction_changes.SetValue(self.context.opt_reduce_directions)
         # self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
 
-        operations, original, commands, plan_name = self.context.default_plan()
-        if len(operations) == 0 and len(commands) == 0:
+        cutplan = self.context.default_plan()
+        if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
             self.context("plan%s copy preprocess\n" % self.plan_name)
 
         self.update_gui()
@@ -707,11 +707,11 @@ class ExecuteJob(MWindow):
 
         self.list_operations.Clear()
         self.list_command.Clear()
-        operations, original, commands, plan_name = self.context.default_plan()
-        if operations is not None and len(operations) != 0:
-            self.list_operations.InsertItems([name_str(e) for e in operations], 0)
-        if commands is not None and len(commands) != 0:
-            self.list_command.InsertItems([name_str(e) for e in commands], 0)
+        cutplan = self.context.default_plan()
+        if cutplan.plan is not None and len(cutplan.plan) != 0:
+            self.list_operations.InsertItems([name_str(e) for e in cutplan.plan], 0)
+        if cutplan.commands is not None and len(cutplan.commands) != 0:
+            self.list_command.InsertItems([name_str(e) for e in cutplan.commands], 0)
         if self.stage == 0:
             self.button_start.SetLabelText(_("Copy"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 255, 102))
