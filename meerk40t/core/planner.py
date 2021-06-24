@@ -59,6 +59,46 @@ class CutPlan:
         self.original = list()
         self.commands = list()
 
+    def blob(self):
+        blob_plan = list()
+        for i in range(len(self.plan)):
+            c = self.plan[i]
+            try:
+                if c.operation == "Dots":
+                    blob_plan.append(c)
+                    continue
+                blob_plan.extend(c.as_blob(self.context.opt_closed_distance))
+            except AttributeError:
+                blob_plan.append(c)
+        self.plan.clear()
+
+        for i in range(len(blob_plan)):
+            c = blob_plan[i]
+            try:
+                c.settings.jog_distance = self.context.opt_jog_minimum
+                c.settings.jog_enable = self.context.opt_rapid_between
+            except AttributeError:
+                pass
+            merge = len(self.plan) and isinstance(self.plan[-1], CutCode) and isinstance(blob_plan[i], CutObject)
+            if merge and not self.context.opt_merge_passes and self.plan[-1].pass_index != c.pass_index:
+                merge = False
+            if merge and not self.context.opt_merge_ops and self.plan[-1].original_op != c.original_op:
+                merge = False
+            if merge and not self.context.opt_inner_first and self.plan[-1].original_op == 'Cut':
+                merge = False
+            if merge:
+                if blob_plan[i].mode == "constrained":
+                    self.plan[-1].mode = "constrained"
+                self.plan[-1].extend(blob_plan[i])
+            else:
+                if isinstance(c, CutObject) and not isinstance(c, CutCode):
+                    cc = CutCode([c])
+                    cc.original_op = c.original_op
+                    cc.pass_index = c.pass_index
+                    self.plan.append(cc)
+                else:
+                    self.plan.append(c)
+
     def execute(self):
         # Using copy of commands, so commands can add ops.
         cmds = self.commands[:]
@@ -185,6 +225,10 @@ class CutPlan:
                     except AttributeError:
                         pass
         self.conditional_jobadd_actualize_image()
+
+    def clear(self):
+        self.plan.clear()
+        self.commands.clear()
 
     # ==========
     # CONDITIONAL JOB ADDS
@@ -607,7 +651,10 @@ class Planner(Modifier):
                 data.plan.append(self.context.registered["plan/beep"])
             if self.context.autointerrupt:
                 data.plan.append(self.context.registered["plan/interrupt"])
-            # divide
+
+            # ==========
+            # Conditional Ops
+            # ==========
             data.conditional_jobadd_strip_text()
             if rotary_context.rotary:
                 data.conditional_jobadd_scale_rotary()
@@ -634,44 +681,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_blob(data_type=None, data=None, **kwgs):
-            blob_plan = list()
-            for i in range(len(data.plan)):
-                c = data.plan[i]
-                try:
-                    if c.operation == "Dots":
-                        blob_plan.append(c)
-                        continue
-                    blob_plan.extend(c.as_blob(self.context.opt_closed_distance))
-                except AttributeError:
-                    blob_plan.append(c)
-            data.plan.clear()
-
-            for i in range(len(blob_plan)):
-                c = blob_plan[i]
-                try:
-                    c.settings.jog_distance = self.context.opt_jog_minimum
-                    c.settings.jog_enable = self.context.opt_rapid_between
-                except AttributeError:
-                    pass
-                merge = len(data.plan) and isinstance(data.plan[-1], CutCode) and isinstance(blob_plan[i], CutObject)
-                if merge and not self.context.opt_merge_passes and data.plan[-1].pass_index != c.pass_index:
-                    merge = False
-                if merge and not self.context.opt_merge_ops and data.plan[-1].original_op != c.original_op:
-                    merge = False
-                if merge and not self.context.opt_inner_first and data.plan[-1].original_op == 'Cut':
-                    merge = False
-                if merge:
-                    if blob_plan[i].mode == "constrained":
-                        data.plan[-1].mode = "constrained"
-                    data.plan[-1].extend(blob_plan[i])
-                else:
-                    if isinstance(c, CutObject) and not isinstance(c, CutCode):
-                        cc = CutCode([c])
-                        cc.original_op = c.original_op
-                        cc.pass_index = c.pass_index
-                        data.plan.append(cc)
-                    else:
-                        data.plan.append(c)
+            data.blob()
             self.context.signal("plan", self._default_plan, 4)
             return data_type, data
 
@@ -711,8 +721,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_clear(data_type=None, data=None, **kwgs):
-            data.plan.clear()
-            data.commands.clear()
+            data.clear()
             self.context.signal("plan", self._default_plan, 0)
             return data_type, data
 
@@ -749,8 +758,8 @@ class Planner(Modifier):
                 raise SyntaxError
             # TODO: IMPLEMENT!
             # TODO: Implement the 0.6.19 switch changes.
-            data.operations.clear()
-            data.preprocessor.commands = list()
+            data.plan.clear()
+            data.commands.clear()
             x_distance = int(x_distance)
             y_distance = int(y_distance)
             x_last = 0
@@ -762,21 +771,20 @@ class Planner(Modifier):
                 for k in range(cols):
                     x_offset = x_pos - x_last
                     y_offset = y_pos - y_last
-                    data.operations.append(origin)
+                    data.plan.append(origin)
                     if x_offset != 0 or y_offset != 0:
-                        data.operations.append(
+                        data.plan.append(
                             offset(x_offset, y_offset)
                         )
 
-                    data.operations.extend(list(data.original))
+                    data.plan.extend(list(data.original))
                     x_last = x_pos
                     y_last = y_pos
                     x_pos += x_distance
                 y_pos += y_distance
             if x_pos != 0 or y_pos != 0:
-                data.operations.append(offset(-x_pos, -y_pos))
-            # self.refresh_lists()
-            # self.update_gui()
+                data.plan.append(offset(-x_pos, -y_pos))
+            self.context.signal("plan", self._default_plan, None)
             return data_type, data
 
     def plan(self, **kwargs):
