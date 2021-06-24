@@ -582,8 +582,8 @@ class ExecuteJob(MWindow):
         node_index = self.list_operations.GetSelection()
         if node_index == -1:
             return
-        operations, original, commands, name = self.context.default_plan()
-        obj = operations[node_index]
+        cutplan = self.context.default_plan()
+        obj = cutplan.plan[node_index]
         if isinstance(obj, LaserOperation):
             self.context.open("window/OperationProperty", self, node=obj)
         event.Skip()
@@ -598,14 +598,14 @@ class ExecuteJob(MWindow):
         if self.stage == 0:
             with wx.BusyInfo(_("Preprocessing...")):
                 self.context("plan%s copy preprocess\n" % self.plan_name)
-                operations, original, commands, name = self.context.default_plan()
-                if len(commands) == 0:
+                cutplan = self.context.default_plan()
+                if len(cutplan.commands) == 0:
                     self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 1:
             with wx.BusyInfo(_("Determining validity of operations...")):
                 self.context("plan%s preprocess\n" % self.plan_name)
-                operations, original, commands, name = self.context.default_plan()
-                if len(commands) == 0:
+                cutplan = self.context.default_plan()
+                if len(cutplan.commands) == 0:
                     self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 2:
             with wx.BusyInfo(_("Validating operation data...")):
