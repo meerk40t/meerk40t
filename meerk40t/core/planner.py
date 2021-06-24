@@ -66,18 +66,35 @@ class CutPlan:
         for cmd in cmds:
             cmd()
 
-    def conditional_jobadd_strip_text(self):
+    def actualize(self):
         for op in self.plan:
             try:
-                if op.operation in ("Cut", "Engrave"):
-                    for e in op.children:
-                        if not isinstance(e.object, SVGText):
-                            continue  # make raster not needed since its a single real raster.
-                        self.jobadd_strip_text()
-                        return True
+                if op.operation == "Raster":
+                    for elem in op.children:
+                        elem = elem.object
+                        if needs_actualization(elem, op.settings.raster_step):
+                            make_actual(elem, op.settings.raster_step)
+                if op.operation == "Image":
+                    for elem in op.children:
+                        elem = elem.object
+                        if needs_actualization(elem, None):
+                            make_actual(elem, None)
             except AttributeError:
                 pass
-        return False
+
+    def optimize_cuts(self):
+        for i, c in enumerate(self.plan):
+            if isinstance(c, CutCode):
+                if c.mode == "constrained":
+                    self.plan[i] = c.inner_first_cutcode()
+                self.plan[i] = c.inner_selection_cutcode(self.plan[i])
+
+    def optimize_travel(self):
+        for i, c in enumerate(self.plan):
+            if isinstance(c, CutCode):
+                if c.mode == "constrained":
+                    self.plan[i] = c.inner_first_cutcode()
+                self.plan[i] = c.short_travel_cutcode(self.plan[i])
 
     def strip_text(self):
         for k in range(len(self.plan) - 1, -1, -1):
@@ -136,6 +153,11 @@ class CutPlan:
                         image_element.image_width == 1
                         and image_element.image_height == 1
                     ):
+                        """
+                        TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
+                            time around because the renderer is what sets the size of the text. If the size hasn't
+                            already been set, the initial bounds are wrong.
+                        """
                         image_element = self.make_image_for_op(op)
                     op.children.clear()
                     op.add(image_element, type="opnode")
@@ -164,8 +186,22 @@ class CutPlan:
                         pass
         self.conditional_jobadd_actualize_image()
 
-    def jobadd_strip_text(self):
-        self.commands.append(self.strip_text)
+    # ==========
+    # CONDITIONAL JOB ADDS
+    # ==========
+
+    def conditional_jobadd_strip_text(self):
+        for op in self.plan:
+            try:
+                if op.operation in ("Cut", "Engrave"):
+                    for e in op.children:
+                        if not isinstance(e.object, SVGText):
+                            continue  # make raster not needed since its a single real raster.
+                        self.commands.append(self.strip_text)
+                        return True
+            except AttributeError:
+                pass
+        return False
 
     def conditional_jobadd_make_raster(self):
         for op in self.plan:
@@ -175,56 +211,28 @@ class CutPlan:
                         continue
                     if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
                         continue  # make raster not needed since its a single real raster.
-                    self.jobadd_make_raster()
+                    make_raster = self.context.registered.get("render-op/make_raster")
+
+                    if make_raster is None:
+                        self.commands.append(self.strip_rasters)
+                    else:
+                        self.commands.append(self.make_image)
                     return True
             except AttributeError:
                 pass
         return False
 
-    def jobadd_make_raster(self):
-        """
-        TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
-            time around because the renderer is what sets the size of the text. If the size hasn't
-            already been set, the initial bounds are wrong.
-        """
-        make_raster = self.context.registered.get("render-op/make_raster")
-
-        if make_raster is None:
-            self.commands.append(self.strip_rasters)
-        else:
-            self.commands.append(self.make_image)
-
     def conditional_jobadd_optimize_travel(self):
-        self.jobadd_optimize_travel()
-
-    def jobadd_optimize_travel(self):
-        def optimize_travel():
-            for i, c in enumerate(self.plan):
-                if isinstance(c, CutCode):
-                    if c.mode == "constrained":
-                        self.plan[i] = c.inner_first_cutcode()
-                    self.plan[i] = c.short_travel_cutcode(self.plan[i])
-
-        self.commands.append(optimize_travel)
+        self.commands.append(self.optimize_travel)
 
     def conditional_jobadd_optimize_cuts(self):
         for op in self.plan:
             try:
                 if op.operation == "CutCode":
-                    self.jobadd_optimize_cuts()
+                    self.commands.append(self.optimize_cuts)
                     return
             except AttributeError:
                 pass
-
-    def jobadd_optimize_cuts(self):
-        def optimize_cuts():
-            for i, c in enumerate(self.plan):
-                if isinstance(c, CutCode):
-                    if c.mode == "constrained":
-                        self.plan[i] = c.inner_first_cutcode()
-                    self.plan[i] = c.inner_selection_cutcode(self.plan[i])
-
-        self.commands.append(optimize_cuts)
 
     def conditional_jobadd_actualize_image(self):
         for op in self.plan:
@@ -233,43 +241,21 @@ class CutPlan:
                     for elem in op.children:
                         elem = elem.object
                         if needs_actualization(elem, op.settings.raster_step):
-                            self.jobadd_actualize_image()
+                            self.commands.append(self.actualize)
                             return
                 if op.operation == "Image":
                     for elem in op.children:
                         elem = elem.object
                         if needs_actualization(elem, None):
-                            self.jobadd_actualize_image()
+                            self.commands.append(self.actualize)
                             return
             except AttributeError:
                 pass
 
-    def jobadd_actualize_image(self):
-        def actualize():
-            for op in self.plan:
-                try:
-                    if op.operation == "Raster":
-                        for elem in op.children:
-                            elem = elem.object
-                            if needs_actualization(elem, op.settings.raster_step):
-                                make_actual(elem, op.settings.raster_step)
-                    if op.operation == "Image":
-                        for elem in op.children:
-                            elem = elem.object
-                            if needs_actualization(elem, None):
-                                make_actual(elem, None)
-                except AttributeError:
-                    pass
-
-        self.commands.append(actualize)
-
     def conditional_jobadd_scale_rotary(self, context):
         rotary_context = context.get_context("rotary/1")
         if rotary_context.scale_x != 1.0 or rotary_context.scale_y != 1.0:
-            self.jobadd_scale_rotary(context)
-
-    def jobadd_scale_rotary(self):
-        self.commands.append(self.scale_for_rotary)
+            self.commands.append(self.scale_for_rotary)
 
 
 class Planner(Modifier):
@@ -637,7 +623,6 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
-            # plan, original, commands, name = data
             data.execute()
             self.context.signal("plan", self._default_plan, 3)
             return data_type, data
@@ -782,7 +767,8 @@ class Planner(Modifier):
                         data.operations.append(
                             offset(x_offset, y_offset)
                         )
-                    data.operations.extend(list(self._original_ops))
+
+                    data.operations.extend(list(data.original))
                     x_last = x_pos
                     y_last = y_pos
                     x_pos += x_distance
