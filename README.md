@@ -40,11 +40,11 @@ https://github.com/meerk40t/meerk40t/issues
 
 If you need additional support, please research/ask on:
 
-* [Facebook](https://www.facebook.com/groups/716000085655097/)
-* [Maker Forums](https://forum.makerforums.info/t/about-the-meerk40t-category/79660)
+* [Facebook - K40 MeerK40t group](https://www.facebook.com/groups/716000085655097/)
+* [Maker Forums - MeerK40t category](https://forum.makerforums.info/t/about-the-meerk40t-category/79660)
 * [Youtube - David Olsen's channel](https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ)
 * [Youtube - Milan Karakas' channel](https://www.youtube.com/channel/UCXhlGsmGJZ3m5GgTE8xuc_Q)
-* [IRC - channel #MeerK40t on irc.freenode.net](irc://irc.freenode.net:6666)
+* [IRC - channel #MeerK40t on irc.libera.chat](<irc://irc.libera.chat:6666>)
 
 # Assisting the Project
 
