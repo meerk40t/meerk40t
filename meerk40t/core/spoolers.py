@@ -194,10 +194,9 @@ class Spoolers(Modifier):
             spooler = self.get_or_make_spooler(device_name)
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
-                plan, original, commands, plan_name = data
-                spooler.jobs(plan)
+                spooler.jobs(data.plan)
                 channel(_("Spooled Plan."))
-                self.context.signal("plan", plan_name, 6)
+                self.context.signal("plan", data.name, 6)
 
             if remainder is None:
                 channel(_("----------"))

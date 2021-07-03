@@ -3,7 +3,7 @@ from copy import copy
 from math import ceil
 from os import path as ospath
 
-from ..core.planner import Planner
+from ..core.planner import needs_actualization, make_actual
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 
 MILS_IN_MM = 39.3701
@@ -179,8 +179,8 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             image_element = copy(element)
             image_element.image = image_element.image.copy()
-            if Planner.needs_actualization(image_element):
-                Planner.make_actual(image_element)
+            if needs_actualization(image_element):
+                make_actual(image_element)
             img = image_element.image
             img = img.convert("L")
 
@@ -205,7 +205,7 @@ def plugin(kernel, lifecycle=None):
     )
     def image(data, **kwargs):
         for element in data:
-            Planner.make_actual(element)
+            make_actual(element)
             if hasattr(element, "node"):
                 element.node.altered()
         return "image", data

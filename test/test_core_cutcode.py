@@ -21,7 +21,7 @@ class TestCutcode(unittest.TestCase):
         cutcode.append(
             QuadCut(Point(0, 0), Point(100, 100), Point(200, 0), settings=settings)
         )
-        path = Path(*cutcode.as_elements())
+        path = Path(*list(cutcode.as_elements()))
         self.assertEqual(
             path, "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
         )
@@ -37,8 +37,8 @@ class TestCutcode(unittest.TestCase):
         laserop = LaserOperation()
         laserop.operation = "Cut"
         laserop.add(path, type="opnode")
-        cutcode = laserop.as_blob()
-        path = Path(*cutcode.as_elements())
+        cutcode = list(laserop.as_blob())[0]
+        path = Path(*list(cutcode.as_elements()))
         self.assertEqual(path, initial)
 
     def test_cutcode_engrave(self):
@@ -52,8 +52,8 @@ class TestCutcode(unittest.TestCase):
         laserop = LaserOperation()
         laserop.operation = "Engrave"
         laserop.add(path, type="opnode")
-        cutcode = laserop.as_blob()
-        path = Path(*cutcode.as_elements())
+        cutcode = list(laserop.as_blob())[0]
+        path = Path(*list(cutcode.as_elements()))
         self.assertEqual(path, initial)
 
     def test_cutcode_no_type(self):
@@ -67,7 +67,7 @@ class TestCutcode(unittest.TestCase):
         laserop = LaserOperation()
         # Operation type is unset.
         laserop.add(path, type="opnode")
-        cutcode = laserop.as_blob()
+        cutcode = list(laserop.as_blob())[0]
         self.assertEqual(cutcode, None)
 
     def test_cutcode_raster(self):

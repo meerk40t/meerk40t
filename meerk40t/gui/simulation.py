@@ -35,12 +35,8 @@ class Simulation(MWindow, Job):
         self.interval = 0.1
 
         self.plan_name = plan_name
-        (
-            self.operations,
-            original,
-            commands,
-            plan_name,
-        ) = self.context.root.default_plan()
+        cutplan = self.context.root.default_plan()
+        self.operations = cutplan.plan
         self.cutcode = CutCode()
 
         for c in self.operations:

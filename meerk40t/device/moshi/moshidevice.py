@@ -460,7 +460,7 @@ class MoshiDriver(Driver, Modifier):
         context.setting(bool, "home_bottom", False)
         root_context.setting(bool, "opt_rapid_between", True)
         root_context.setting(int, "opt_jog_mode", 0)
-        root_context.setting(int, "opt_jog_minimum", 127)
+        root_context.setting(int, "opt_jog_minimum", 256)
 
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
