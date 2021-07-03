@@ -272,8 +272,6 @@ class PlotPlanner:
         :param plot: generator of single stepped plots
         :return:
         """
-        px = None
-        py = None
         for x, y, on in plot:
             if (x is None or y is None) or (
                 not self.force_shift and not self.settings.shift_enabled
@@ -287,10 +285,6 @@ class PlotPlanner:
                 # Yield the current event.
                 yield x, y, on
                 continue
-            if px is not None and py is not None:
-                assert abs(px - x) <= 1 or abs(py - y) <= 1
-            px = x
-            py = y
 
             # Shift() is on.
             self.shift_pixels <<= 1
