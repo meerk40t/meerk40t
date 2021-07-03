@@ -80,8 +80,10 @@ class CutPlan:
                     cutcode = CutCode(
                         c.as_cutobjects(closed_distance=context.opt_closed_distance)
                     )
+                    cutcode.constrained = c.operation == "Cut" and context.opt_inner_first
                     cutcode.pass_index = p
-                    blob_plan.extend(cutcode)
+                    if len(cutcode):
+                        blob_plan.append(cutcode)
             except AttributeError:
                 blob_plan.append(c)
         self.plan.clear()
@@ -118,8 +120,8 @@ class CutPlan:
                 merge = False
 
             if merge:
-                if blob_plan[i].mode == "constrained":
-                    self.plan[-1].mode = "constrained"
+                if blob_plan[i].constrained:
+                    self.plan[-1].constrained = True
                 self.plan[-1].extend(blob_plan[i])
             else:
                 if isinstance(c, CutObject) and not isinstance(c, CutCode):
@@ -133,7 +135,7 @@ class CutPlan:
     def optimize_cuts(self):
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
-                if c.mode == "constrained":
+                if c.constrained:
                     self.plan[i] = inner_first_cutcode(c)
                 self.plan[i] = inner_selection_cutcode(c)
 
@@ -141,10 +143,11 @@ class CutPlan:
         last = None
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
-                if c.mode == "constrained":
+                if c.constrained:
                     self.plan[i] = inner_first_cutcode(c)
+                    c = self.plan[i]
                 if last is not None:
-                    c.start = last
+                    self.plan[i].start = last
                 self.plan[i] = short_travel_cutcode(c)
                 last = self.plan[i].end()
 
@@ -1108,7 +1111,7 @@ def inner_first_cutcode(context: CutGroup):
     #             assert q in ordered
     #             assert q is not c
 
-    ordered.mode = "constrained"
+    ordered.constrained = True
     return ordered
 
 

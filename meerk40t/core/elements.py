@@ -889,6 +889,9 @@ class LaserOperation(Node):
                 yield COMMAND_LASER_OFF
 
     def as_cutobjects(self, closed_distance=15):
+        """
+        Generator of cutobjects for a particular operation.
+        """
         settings = self.settings
 
         if self._operation in ("Cut", "Engrave"):
