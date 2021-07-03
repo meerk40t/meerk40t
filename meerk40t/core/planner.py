@@ -19,6 +19,8 @@ from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .elements import LaserOperation
 
+MILS_IN_MM = 39.3701
+
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
@@ -364,7 +366,10 @@ class Planner(Modifier):
         _ = self.context._
         elements = context.elements
         rotary_context = self.context.get_context("rotary/1")
-        # bed_dim = self.context.root
+        bed_dim = context.root
+        bed_dim.setting(int, "bed_width", 310)
+        bed_dim.setting(int, "bed_height", 210)
+
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)
@@ -790,8 +795,8 @@ class Planner(Modifier):
                 raise SyntaxError
             data.plan.clear()
             data.commands.clear()
-            x_distance = int(x_distance)
-            y_distance = int(y_distance)
+            x_distance = x_distance.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
+            y_distance = x_distance.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
             x_last = 0
             y_last = 0
             y_pos = 0
@@ -812,6 +817,27 @@ class Planner(Modifier):
                 y_pos += y_distance
             if x_pos != 0 or y_pos != 0:
                 data.plan.append(offset(-x_pos, -y_pos))
+            self.context.signal("plan", self._default_plan, None)
+            return data_type, data
+
+        @self.context.console_command(
+            "return",
+            help=_("plan<?> return"),
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan_return(command, channel, _, data_type=None, data=None, **kwgs):
+            operations = elements.get(type="branch ops")
+            operations.remove_all_children()
+
+            for c in data.plan:
+                copy_c = copy(c)
+                try:
+                    copy_c.deep_copy_children(c)
+                except AttributeError:
+                    pass
+                operations.add(copy_c)
+            channel(_("Returned Operations."))
             self.context.signal("plan", self._default_plan, None)
             return data_type, data
 

@@ -172,8 +172,28 @@ class ExecuteJob(MWindow):
         # ==========
         # Tools Menu
         # ==========
-        # wx_menu = wx.Menu()
-        # self.preview_menu.Append(wx_menu, _("Tools"))
+        self.context.setting(bool, 'developer_mode', False)
+        if self.context.developer_mode:
+            wx_menu = wx.Menu()
+            self.preview_menu.Append(wx_menu, _("Tools"))
+
+            self.preview_menu.menu_send_back = wx_menu.Append(
+                wx.ID_ANY, _("Return to Operations"), _("Return the current Plan to Operations")
+            )
+            self.Bind(
+                wx.EVT_MENU,
+                self.jobchange_return_to_operations,
+                id=self.preview_menu.menu_send_back.GetId(),
+            )
+
+            self.preview_menu.menu_step_repeat = wx_menu.Append(
+                wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
+            )
+            self.Bind(
+                wx.EVT_MENU,
+                self.jobchange_step_repeat,
+                id=self.preview_menu.menu_step_repeat.GetId(),
+            )
 
         self.SetMenuBar(self.preview_menu)
         # ==========
@@ -450,6 +470,9 @@ class ExecuteJob(MWindow):
     def on_check_rapid_between(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_rapid_between = self.check_rapid_moves_between.IsChecked()
 
+    def jobchange_return_to_operations(self, event=None):
+        self.context("plan%s return clear\n" % (self.plan_name))
+
     def jobchange_step_repeat(self, event=None):
         dlg = wx.TextEntryDialog(
             self, _("How many copies wide?"), _("Enter Columns"), ""
@@ -529,7 +552,7 @@ class ExecuteJob(MWindow):
             return
         dlg.Destroy()
         self.context(
-            "plan%s step_repeat %s %s %s %s"
+            "plan%s step_repeat %s %s %s %s\n"
             % (self.plan_name, cols, rows, x_distance, y_distance)
         )
 
