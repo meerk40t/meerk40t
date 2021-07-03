@@ -82,6 +82,7 @@ class CutPlan:
                     )
                     cutcode.constrained = c.operation == "Cut" and context.opt_inner_first
                     cutcode.pass_index = p
+                    cutcode.original_op = c.operation
                     if len(cutcode):
                         blob_plan.append(cutcode)
             except AttributeError:
