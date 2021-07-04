@@ -645,6 +645,8 @@ class ExecuteJob(MWindow):
         elif self.stage == 6:
             with wx.BusyInfo(_("Sending data to laser...")):
                 self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
+                if self.context.auto_spooler:
+                    self.context("window open JobSpooler\n")
                 self.Close()
         self.update_gui()
 
@@ -653,6 +655,7 @@ class ExecuteJob(MWindow):
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)
+        self.context.setting(bool, "auto_spooler", True)
         self.context.setting(bool, "prehome", False)
         self.context.setting(bool, "autohome", False)
         self.context.setting(bool, "prephysicalhome", False)

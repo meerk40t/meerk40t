@@ -85,7 +85,7 @@ class Settings(MWindow):
                 True,
             ),
             (
-                _("Launch Spooler JobStart"),
+                _("Launch Spooler on Job Start"),
                 _("Open the Spooler window automatically when you Execute a Job"),
                 "auto_spooler",
                 True,
