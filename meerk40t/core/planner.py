@@ -831,12 +831,9 @@ class Planner(Modifier):
             operations.remove_all_children()
 
             for c in data.plan:
-                copy_c = copy(c)
-                try:
-                    copy_c.deep_copy_children(c)
-                except AttributeError:
-                    pass
-                operations.add(copy_c)
+                if isinstance(c, CutCode):
+                    copy_c = copy(c)
+                    operations.add(copy_c, type="cutcode")
             channel(_("Returned Operations."))
             self.context.signal("plan", self._default_plan, None)
             return data_type, data
