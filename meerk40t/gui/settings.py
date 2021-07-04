@@ -131,7 +131,7 @@ class Settings(MWindow):
                 _(
                     "If you do not want to see tooltips like this one, check this box.\n"
                     "Particularly useful if you have a touch screen.\n"
-                    "Note: Takes effect when MeerK40t starts"
+                    "Note: You will need to restart MeerK40t for any change to take effect.\n"
                 ),
                 "disable_tool_tips",
                 False,
