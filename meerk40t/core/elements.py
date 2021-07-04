@@ -1474,6 +1474,7 @@ class Elemental(Modifier):
         bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
+        context.root.setting(bool, "classify_reverse", False)
 
         # ==========
         # OPERATION BASE
@@ -4423,11 +4424,13 @@ class Elemental(Modifier):
         :param add_op_function: function to add a new operation, because of a lack of classification options.
         :return:
         """
-
+        reverse = self.context.classify_reverse
         if elements is None:
             return
         if operations is None:
             operations = list(self.ops())
+        if reverse:
+            elements = reversed(elements)
         if add_op_function is None:
             add_op_function = self.add_op
         for element in elements:

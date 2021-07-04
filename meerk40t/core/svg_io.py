@@ -258,8 +258,8 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
-        context.root.setting(bool, "svg_reverse", False)
-        reverse = context.root.svg_reverse
+        # context.root.setting(bool, "classify_reverse", False)
+        reverse = False
         bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)

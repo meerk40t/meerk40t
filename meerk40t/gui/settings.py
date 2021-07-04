@@ -119,11 +119,11 @@ class Settings(MWindow):
                 True,
             ),
             (
-                _("Reverse SVG Element Load"),
+                _("Classify Reversed"),
                 _(
-                    "Inkscape saves SVG files in reverse order, so this loads them into MeerK40t in the same order as the Inkscape object list"
+                    "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
-                "svg_reverse",
+                "classify_reverse",
                 False,
             ),
             (
