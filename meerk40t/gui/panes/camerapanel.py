@@ -240,6 +240,9 @@ class CamInterfaceWidget(Widget):
             item = menu.Append(wx.ID_ANY, _("Reconnect Camera"), "")
             self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d stop start\n" % self.cam.index), id=item.GetId())
 
+            item = menu.Append(wx.ID_ANY, _("Stop Camera"), "")
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d stop\n" % self.cam.index), id=item.GetId())
+
             menu.AppendSeparator()
 
             sub_menu = wx.Menu()
