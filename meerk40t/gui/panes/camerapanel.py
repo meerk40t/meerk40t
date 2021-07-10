@@ -294,9 +294,9 @@ class CamInterfaceWidget(Widget):
             self.cam.Bind(wx.EVT_MENU, check_perspect, perspect)
             menu.AppendSeparator()
             item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.context("camera%d perspective reset\n" % self.index), id=item.GetId())
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.setting("camera%d perspective reset\n" % self.index), id=item.GetId())
             item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.context("camera%d fisheye reset\n" % self.index), id=item.GetId())
+            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.setting("camera%d fisheye reset\n" % self.index), id=item.GetId())
             menu.AppendSeparator()
 
             sub_menu = wx.Menu()
