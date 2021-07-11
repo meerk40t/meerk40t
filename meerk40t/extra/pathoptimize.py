@@ -124,6 +124,8 @@ def optimize_cut_inside(paths):
 def length_travel(paths):
     distance = 0.0
     for p in paths:
+        if not isinstance(p, Path):
+            continue
         for s in p:
             if isinstance(s, Move):
                 if s.start is not None:
@@ -137,6 +139,8 @@ def optimize_travel(paths):
         paths = [paths]
     subpaths = []
     for path in paths:
+        if not isinstance(path, Path):
+            continue
         subpaths.extend([abs(Path(s)) for s in path.as_subpaths()])
     improved = True
     while improved:
