@@ -907,14 +907,21 @@ class Kernel:
         :param channel:
         :return:
         """
+        self.state = STATE_END  # Terminates the Scheduler.
+
         self.bootstrap("shutdown")
         _ = self.translation
         if channel is None:
             channel = self.root.channel("shutdown")
 
-        self.state = STATE_END  # Terminates the Scheduler.
-
         self.process_queue()  # Notify listeners of state.
+        # Suspend Signals
+
+        def signal(code, path, *message):
+            channel(_("Suspended Signal: %s for %s" % (code, message)))
+
+        self.signal = signal  # redefine signal function.
+        self.process_queue()  # Process last events.
 
         # Close Modules
         for context_name in list(self.contexts):
@@ -942,13 +949,6 @@ class Kernel:
                     _("%s: Detaching %s: %s") % (str(context), attached_name, str(obj))
                 )
                 context.deactivate(attached_name, channel=channel)
-
-        # Suspend Signals
-        def signal(code, path, *message):
-            channel(_("Suspended Signal: %s for %s" % (code, message)))
-
-        self.signal = signal  # redefine signal function.
-        self.process_queue()  # Process last events.
 
         # Context Flush and Shutdown
         for context_name in list(self.contexts):
