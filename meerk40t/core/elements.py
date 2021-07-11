@@ -2957,6 +2957,11 @@ class Elemental(Modifier):
                 w, h = x1 - x, y1 - y
                 sx = width / w
                 sy = height / h
+                if abs(sx - 1.0) < 1e-1:
+                    sx = 1.0
+                if abs(sy - 1.0) < 1e-1:
+                    sy = 1.0
+
                 m = Matrix(
                     "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
                     % (x_pos, y_pos, sx, sy, -x, -y)
@@ -2965,7 +2970,7 @@ class Elemental(Modifier):
                     data = list(self.elems(emphasized=True))
                 for e in data:
                     try:
-                        if e.lock:
+                        if e.lock and (not sx == 1.0 or not sy == 1.0):
                             continue
                     except AttributeError:
                         pass
