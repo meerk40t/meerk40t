@@ -121,9 +121,12 @@ class Spooler:
         self.queue_lock.release()
         self.context.signal("spooler;queue", len(self._queue))
 
-    def remove(self, element):
+    def remove(self, element, index=None):
         self.queue_lock.acquire(True)
-        self._queue.remove(element)
+        if index is None:
+            self._queue.remove(element)
+        else:
+            del self._queue[index]
         self.queue_lock.release()
         self.context.signal("spooler;queue", len(self._queue))
 

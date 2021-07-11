@@ -155,7 +155,7 @@ class JobSpooler(MWindow):
         convert = menu.Append(
             wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
         )
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element, index), convert)
         convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
         self.PopupMenu(menu)
@@ -227,10 +227,10 @@ class JobSpooler(MWindow):
 
         return delete
 
-    def on_tree_popup_delete(self, element):
+    def on_tree_popup_delete(self, element, index=None):
         def delete(event=None):
             spooler = self.connected_spooler
-            spooler.remove(element)
+            spooler.remove(element, index)
             self.refresh_spooler_list()
 
         return delete
