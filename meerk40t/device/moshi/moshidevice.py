@@ -794,6 +794,8 @@ class MoshiDriver(Driver, Modifier):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def calc_home_position(self):
+        self.context.setting(int, "home_adjust_x", 0)
+        self.context.setting(int, "home_adjust_y", 0)
         x = self.context.home_adjust_x
         y = self.context.home_adjust_y
         bed_dim = self.context.root
