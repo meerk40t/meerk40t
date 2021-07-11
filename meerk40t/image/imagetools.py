@@ -1676,7 +1676,7 @@ class ImageLoader:
             context.setting(bool, "image_dpi", True)
             if context.image_dpi:
                 dpi = image.image.info["dpi"]
-                if isinstance(dpi, tuple):
+                if isinstance(dpi, tuple) and len(dpi) >= 2 and dpi[0] != 0 and dpi[1] != 0:
                     image *= "scale(%f,%f)" % (1000.0 / dpi[0], 1000.0 / dpi[1])
         except (KeyError, IndexError):
             pass
