@@ -153,6 +153,7 @@ class Spoolers(Modifier):
         context = self.context
         context.spoolers = self
         bed_dim = context.root
+        self.context.root.setting(str, "active", "0")
 
         kernel = self.context._kernel
         _ = kernel.translation
