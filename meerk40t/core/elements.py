@@ -109,7 +109,7 @@ class Node:
 
         self._bounds = None
         self._bounds_dirty = True
-        self.name = None
+        self.label = None
 
         self.icon = None
         self.cache = None
@@ -377,18 +377,18 @@ class Node:
 
     def add_all(self, objects, type=None, name=None, pos=None):
         for obj in objects:
-            self.add(obj, type=type, name=name, pos=pos)
+            self.add(obj, type=type, label=name, pos=pos)
             if pos is not None:
                 pos += 1
 
-    def add(self, data_object=None, type=None, name=None, pos=None):
+    def add(self, data_object=None, type=None, label=None, pos=None):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
         :param data_object:
         :param type:
-        :param name:
+        :param label: display name for this node
         :param pos:
         :return:
         """
@@ -403,7 +403,7 @@ class Node:
             except Exception:
                 pass
             node = node_class(data_object)
-            node.set_name(name)
+            node.set_label(label)
             if self.root is not None:
                 self.root.notify_created(node)
         node.type = type
@@ -417,44 +417,44 @@ class Node:
         node.notify_attached(node, pos=pos)
         return node
 
-    def _get_node_name(self, node) -> str:
+    def name_from_source_cascade(self) -> str:
         """
         Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
         node str. If something else provides a superior name it should be added in here.
         """
         try:
-            attribs = node.object.values[SVG_STRUCT_ATTRIB]
+            attribs = self.object.values[SVG_STRUCT_ATTRIB]
             return attribs["label"]
         except (AttributeError, KeyError):
             pass
 
         try:
-            attribs = node.object.values[SVG_STRUCT_ATTRIB]
+            attribs = self.object.values[SVG_STRUCT_ATTRIB]
             return attribs["{http://www.inkscape.org/namespaces/inkscape}label"]
         except (AttributeError, KeyError):
             pass
 
         try:
-            return node.object.id
+            return self.object.id
         except AttributeError:
             pass
 
-        if node.object is not None:
-            return str(node.object)
-        return str(node)
+        if self.object is not None:
+            return str(self.object)
+        return str(self)
 
-    def set_name(self, name):
+    def set_label(self, name):
         """
         Set the name of this node to the name given.
         :param name: Name to be set for this node.
         :return:
         """
-        self.name = name
+        self.label = name
         if name is None:
-            if self.name is None:
-                self.name = self._get_node_name(self)
+            if self.label is None:
+                self.label = self.name_from_source_cascade()
         else:
-            self.name = name
+            self.label = name
 
     def _flatten(self, node):
         """
@@ -1154,7 +1154,7 @@ class RootNode(Node):
     def __init__(self, context):
         super().__init__(None)
         self._root = self
-        self.set_name("Project")
+        self.set_label("Project")
         self.type = "root"
         self.context = context
         self.listeners = []
@@ -1169,8 +1169,8 @@ class RootNode(Node):
             "opnode": OpNode,
             "cutcode": CutNode,
         }
-        self.add(type="branch ops", name="Operations")
-        self.add(type="branch elems", name="Elements")
+        self.add(type="branch ops", label="Operations")
+        self.add(type="branch elems", label="Elements")
 
     def __repr__(self):
         return "RootNode(%s)" % (str(self.context))
@@ -1329,7 +1329,7 @@ class Elemental(Modifier):
             if reject:
                 continue
             func_dict = {
-                "name": str(node.name)[:15],
+                "name": str(node.label)[:15],
             }
 
             iterator = func.values
@@ -1992,7 +1992,7 @@ class Elemental(Modifier):
             elements = []
             for e in data:
                 node = e.node
-                group_node = node.replace_node(type="group", name=node.name)
+                group_node = node.replace_node(type="group", label=node.label)
                 if isinstance(e, Shape) and not isinstance(e, Path):
                     e = Path(e)
                 p = abs(e)
@@ -3173,7 +3173,7 @@ class Elemental(Modifier):
             channel(_("Tree:"))
             path = ""
             for i, node in enumerate(data.children):
-                channel("%s:%d %s" % (path, i, str(node.name)))
+                channel("%s:%d %s" % (path, i, str(node.label)))
             channel(_("----------"))
             return "tree", data
 
@@ -3420,7 +3420,7 @@ class Elemental(Modifier):
         @self.tree_operation(_("Group Elements"), node_type="elem", help="")
         def group_elements(node, **kwgs):
             # group_node = node.parent.add_sibling(node, type="group", name="Group")
-            group_node = node.parent.add(type="group", name="Group")
+            group_node = node.parent.add(type="group", label="Group")
             for e in list(self.elems(emphasized=True)):
                 node = e.node
                 group_node.append_child(node)
@@ -4219,14 +4219,14 @@ class Elemental(Modifier):
 
     def add_op(self, op):
         operation_branch = self._tree.get(type="branch ops")
-        op.set_name(str(op))
+        op.set_label(str(op))
         operation_branch.add(op, type="op")
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get(type="branch ops")
         items = []
         for op in adding_ops:
-            op.set_name(str(op))
+            op.set_label(str(op))
             operation_branch.add(op, type="op")
             items.append(op)
         return items

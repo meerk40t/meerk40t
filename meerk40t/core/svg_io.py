@@ -281,7 +281,7 @@ class SVGLoader:
         )
         context_node = elements_modifier.get(type="branch elems")
         basename = os.path.basename(pathname)
-        file_node = context_node.add(type="file", name=basename)
+        file_node = context_node.add(type="file", label=basename)
         file_node.filepath = pathname
         file_node.focus()
         return SVGLoader.parse(

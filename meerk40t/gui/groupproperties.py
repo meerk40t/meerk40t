@@ -27,8 +27,8 @@ class GroupProperty(MWindow):
             pass
 
         try:
-            if node.object.label is not None:
-                self.text_label.SetValue(str(node.object.label))
+            if node.object.id is not None:
+                self.text_label.SetValue(str(node.label))
         except AttributeError:
             pass
 
