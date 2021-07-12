@@ -9,6 +9,7 @@ import traceback
 
 from meerk40t.gui.panes.jog import Jog
 from meerk40t.gui.panes.position import PositionPanel
+from .groupproperties import GroupProperty
 from .panes.camerapanel import CameraPanel
 
 from ..core.cutcode import CutCode
@@ -3623,10 +3624,13 @@ class ShadowTree:
             self.context.open("window/TextProperty", self.gui, node=node)
         elif isinstance(obj, SVGImage):
             self.context.open("window/ImageProperty", self.gui, node=node)
+        elif isinstance(obj, Group):
+            self.context.open("window/GroupProperty", self.gui, node=node)
         elif isinstance(obj, SVGElement):
             self.context.open("window/PathProperty", self.gui, node=node)
         elif isinstance(obj, CutCode):
             self.context.open("window/Simulation", self.gui, node=node)
+
 
     def on_item_selection_changed(self, event):
         """
@@ -3972,6 +3976,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/TextProperty", TextProperty)
         kernel.register("window/ImageProperty", ImageProperty)
         kernel.register("window/OperationProperty", OperationProperty)
+        kernel.register("window/GroupProperty", GroupProperty)
         kernel.register("window/CameraInterface", CameraInterface)
         kernel.register("window/Terminal", Console)
         kernel.register("window/Console", Console)

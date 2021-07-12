@@ -690,6 +690,33 @@ class ElemNode(Node):
         return False
 
 
+class GroupNode(Node):
+    """
+    GroupNode is the bootstrapped node type for the group type.
+    All group types are bootstrapped into this node object.
+    """
+
+    def __init__(self, data_object):
+        super(GroupNode, self).__init__(data_object)
+        self.last_transform = None
+        data_object.node = self
+
+    def __repr__(self):
+        return "ElemNode('%s', %s, %s)" % (
+            self.type,
+            str(self.object),
+            str(self._parent),
+        )
+
+    def drop(self, drag_node):
+        drop_node = self
+        # Dragging element into element.
+        if drag_node.type == "elem":
+            drop_node.insert_sibling(drag_node)
+            return True
+        return False
+
+
 class LaserOperation(Node):
     """
     Default object defining any operation done on the laser.
@@ -1137,6 +1164,7 @@ class RootNode(Node):
             "op": LaserOperation,
             "cmdop": CommandOperation,
             "lasercode": LaserCodeNode,
+            "group": GroupNode,
             "elem": ElemNode,
             "opnode": OpNode,
             "cutcode": CutNode,
@@ -3362,6 +3390,12 @@ class Elemental(Modifier):
         @self.tree_operation(_("Path Properties"), node_type="elem", help="")
         def path_property(node, **kwgs):
             self.context.open("window/PathProperty", self.context.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: isinstance(node.object, Group))
+        @self.tree_operation(_("Group Properties"), node_type="group", help="")
+        def group_property(node, **kwgs):
+            self.context.open("window/GroupProperty", self.context.gui, node=node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, SVGText))
