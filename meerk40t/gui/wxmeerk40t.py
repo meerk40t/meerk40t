@@ -3206,13 +3206,13 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_name(node)
+        self.update_label(node)
 
     def emphasized(self, node):
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_name(node)
+        self.update_label(node)
         self.set_enhancements(node)
         self.context.signal("emphasized", node)
 
@@ -3220,7 +3220,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_name(node)
+        self.update_label(node)
         self.set_enhancements(node)
         self.context.signal("targeted", node)
 
@@ -3228,7 +3228,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_name(node)
+        self.update_label(node)
         self.set_enhancements(node)
         self.context.signal("highlighted", node)
 
@@ -3236,7 +3236,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_name(node)
+        self.update_label(node)
         try:
             c = node.color
             self.set_color(node, c)
@@ -3248,7 +3248,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_name(node)
+        self.update_label(node)
         try:
             c = node.color
             self.set_color(node, c)
@@ -3291,9 +3291,9 @@ class ShadowTree:
     def on_element_update(self, *args):
         element = args[0]
         if hasattr(element, "node"):
-            self.update_name(element.node, True)
+            self.update_label(element.node)
         else:
-            self.update_name(element, True)
+            self.update_label(element)
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -3367,7 +3367,7 @@ class ShadowTree:
         else:
             node.item = tree.InsertItem(parent_item, pos, self.name)
         tree.SetItemData(node.item, node)
-        self.update_name(node)
+        self.update_label(node)
         try:
             stroke = node.object.values[SVG_ATTR_STROKE]
             color = wx.Colour(swizzlecolor(Color(stroke).argb))
@@ -3452,9 +3452,9 @@ class ShadowTree:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
 
-    def update_name(self, node, force=False):
+    def update_label(self, node, force=False):
         if node.label is None or force:
-            node.label = node.name_from_source_cascade()
+            node.label = node.label_from_source_cascade()
         if not hasattr(node, "item"):
             # Unregistered node updating name.
             self.rebuild_tree()

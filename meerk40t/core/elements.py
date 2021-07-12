@@ -417,7 +417,7 @@ class Node:
         node.notify_attached(node, pos=pos)
         return node
 
-    def name_from_source_cascade(self) -> str:
+    def label_from_source_cascade(self) -> str:
         """
         Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
         node str. If something else provides a superior name it should be added in here.
@@ -452,7 +452,7 @@ class Node:
         self.label = name
         if name is None:
             if self.label is None:
-                self.label = self.name_from_source_cascade()
+                self.label = self.label_from_source_cascade()
         else:
             self.label = name
 

@@ -27,7 +27,7 @@ class GroupProperty(MWindow):
             pass
 
         try:
-            if node.object.id is not None:
+            if node.label is not None:
                 self.text_label.SetValue(str(node.label))
         except AttributeError:
             pass
@@ -67,28 +67,22 @@ class GroupProperty(MWindow):
         try:
             self.element.id = self.text_id.GetValue()
             self.element.values[SVG_ATTR_ID] = self.element.id
-            self.context.signal("element_property_update", self.element)
+            # self.context.signal("element_property_update", self.element)
         except AttributeError:
             pass
 
     def on_text_label_change(
             self, event=None
     ):  # wxGlade: ElementProperty.<event_handler>
-        try:
-            if len(self.text_label.GetValue()):
-                self.element.label = self.text_label.GetValue()
-                self.element.values["label"] = self.element.label
-            else:
-                try:
-                    del self.element.label
-                except AttributeError:
-                    pass
-                try:
-                    del self.element.values["label"]
-                except KeyError:
-                    pass
-            self.context.signal("element_property_update", self.element)
-        except AttributeError:
-            pass
+        if len(self.text_label.GetValue()):
+            self.element_node.label = self.text_label.GetValue()
+            self.element.values["label"] = self.element_node.label
+        else:
+            self.element_node.label = None
+            try:
+                del self.element.values["label"]
+            except KeyError:
+                pass
+        self.context.signal("element_property_update", self.element)
 
 # end of class GroupProperty
