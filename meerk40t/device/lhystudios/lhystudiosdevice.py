@@ -1716,7 +1716,8 @@ class LhystudiosController:
     def update_packet(self, packet):
         self.context.signal("pipe;packet", convert_to_list_bytes(packet))
         self.context.signal("pipe;packet_text", packet)
-        self.usb_send_channel(packet)
+        if self.usb_send_channel:
+            self.usb_send_channel(packet)
 
     def _thread_data_send(self):
         """
@@ -1967,7 +1968,8 @@ class LhystudiosController:
             self.context.signal(
                 "pipe;status", self._status, get_code_string_from_code(self._status[1])
             )
-            self.recv_channel(str(self._status))
+            if self.recv_channel:
+                self.recv_channel(str(self._status))
 
     def wait_until_accepting_packets(self):
         i = 0

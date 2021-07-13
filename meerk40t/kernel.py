@@ -2577,7 +2577,13 @@ class Channel:
         self.unwatch(monitor_function=other)
 
     def __bool__(self):
-        return bool(self.watchers)
+        """
+        In the case that a channel requires preprocessing or object creation, the truthy value
+        of the channel reflects whether that data will be actually sent anywhere before trying to
+        send the data. With this you can have channels that do no work unless something in the kernel
+        is listening for that data, or the data is being buffered.
+        """
+        return bool(self.watchers) or self.buffer_size != 0
 
     def watch(self, monitor_function: Callable):
         for q in self.watchers:
