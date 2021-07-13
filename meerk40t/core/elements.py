@@ -435,7 +435,8 @@ class Node:
             pass
 
         try:
-            return self.object.id
+            if self.object.id is not None:
+                return str(self.object.id)
         except AttributeError:
             pass
 
