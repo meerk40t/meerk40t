@@ -313,7 +313,6 @@ class SVGLoader:
                 context_node.add(element, type="elem")
                 elements_modifier.classify([element])
             elif isinstance(element, Shape):
-                element._strict = False
                 if not element.transform.is_identity():
                     # Shape Reification failed.
                     element = Path(element)
