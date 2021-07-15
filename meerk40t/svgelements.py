@@ -5812,6 +5812,10 @@ class Path(Shape, MutableSequence):
         start_pos = self.current_point
         rx = arc_args[0]
         ry = arc_args[1]
+        if rx < 0:
+            rx = abs(rx)
+        if ry < 0:
+            ry = abs(ry)
         rotation = arc_args[2]
         arc = arc_args[3]
         sweep = arc_args[4]
