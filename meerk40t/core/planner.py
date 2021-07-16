@@ -1084,7 +1084,10 @@ def extract_closed_groups(context: CutGroup):
     yields all closed groups within the current cutcode.
     Removing those groups from this cutcode.
     """
-    index = len(context) - 1
+    try:
+        index = len(context) - 1
+    except TypeError:
+        index = -1
     while index != -1:
         c = context[index]
         if isinstance(c, CutGroup):
