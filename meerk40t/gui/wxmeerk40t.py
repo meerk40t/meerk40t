@@ -3288,7 +3288,7 @@ class ShadowTree:
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.set_icon(node)
-        self.on_element_update(node)
+        self.on_force_element_update(node)
 
     def focus(self, node):
         item = node.item
