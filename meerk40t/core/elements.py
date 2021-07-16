@@ -3488,9 +3488,8 @@ class Elemental(Modifier):
             help=_("Execute Job for the particular element."),
         )
         def execute_job(node, **kwgs):
-            # self.context.open("window/ExecuteJob", self.gui, "0", selected=True)
             node.emphasized = True
-            self.context("plan0 copy-selected\n")
+            self.context("plan0 clear copy-selected\n")
             self.context("window open ExecuteJob 0\n")
 
         @self.tree_separator_after()

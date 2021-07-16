@@ -517,14 +517,14 @@ class Planner(Modifier):
         )
         def plan_copy_selected(command, channel, _, data_type=None, data=None, **kwgs):
             for c in elements.ops(emphasized=True):
-                try:
-                    if not c.output:
-                        continue
-                except AttributeError:
-                    pass
                 copy_c = copy(c)
                 try:
                     copy_c.deep_copy_children(c)
+                except AttributeError:
+                    pass
+                try:
+                    if not copy_c.output:
+                        copy_c.output = True
                 except AttributeError:
                     pass
                 data.plan.append(copy_c)
