@@ -274,8 +274,8 @@ class OperationPreprocessor:
         image_element.cache = None
         matrix = image_element.transform
         bbox = OperationPreprocessor.bounding_box([image_element])
-        element_width = int(ceil(bbox[2] - bbox[0]))
-        element_height = int(ceil(bbox[3] - bbox[1]))
+        element_width = int(ceil(bbox[2] - bbox[0])) + 1
+        element_height = int(ceil(bbox[3] - bbox[1])) + 1
         if step_level is None:
             # If we are not told the step amount either draw it from the object or set it to default.
             if 'raster_step' in image_element.values:
