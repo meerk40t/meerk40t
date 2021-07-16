@@ -2,7 +2,7 @@ import math
 
 import wx
 
-from ..core.cutcode import CutCode
+from ..core.cutcode import CutCode, LineCut
 from ..kernel import Job
 from ..svgelements import Matrix
 from .icons import (
@@ -43,8 +43,8 @@ class Simulation(MWindow, Job):
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
-        self.max = max(len(self.cutcode), 1)
-        self.progress = self.max
+        self.max = max(len(self.cutcode), 0) + 1
+        self.progress = self.max - 1
 
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
@@ -296,23 +296,6 @@ class Simulation(MWindow, Job):
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)
 
-    #
-    # def on_view_travel(self, event):  # wxGlade: Simulation.<event_handler>
-    #     print("Event handler 'on_view_travel' not implemented!")
-    #     event.Skip()
-    #
-    # def on_view_background(self, event):  # wxGlade: Simulation.<event_handler>
-    #     print("Event handler 'on_view_background' not implemented!")
-    #     event.Skip()
-    #
-    # def on_optimize_travel_greedy(self, event):  # wxGlade: Simulation.<event_handler>
-    #     print("Event handler 'on_optimize_travel_greedy' not implemented!")
-    #     event.Skip()
-    #
-    # def on_optimize_travel_twoop(self, event):  # wxGlade: Simulation.<event_handler>
-    #     print("Event handler 'on_optimize_travel_twoop' not implemented!")
-    #     event.Skip()
-
     def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.progress = min(self.slider_progress.GetValue(), self.max)
         self.context.signal("refresh_scene")
@@ -389,6 +372,8 @@ class SimulationTravelWidget(Widget):
         self.starts = list()
         self.ends = list()
         self.pos = list()
+        self.starts.append(wx.Point2D(0,0))
+        self.ends.append(wx.Point2D(0,0))
         prev = None
         for i, curr in enumerate(list(self.sim.cutcode)):
             if prev is not None:
@@ -427,7 +412,7 @@ class SimulationTravelWidget(Widget):
             if self.sim.progress == self.sim.max:
                 pos = self.pos[-1]
             else:
-                pos = self.pos[self.sim.progress]
+                pos = self.pos[self.sim.progress - 1]
             if pos > 1:
                 starts = self.starts[:pos]
                 ends = self.ends[:pos]
@@ -441,51 +426,23 @@ class SimReticleWidget(Widget):
         self.sim = sim
 
     def process_draw(self, gc):
-        if self.sim.cutcode:
-            if self.sim.max == 0:
-                x = 0
-                y = 0
+        x = 0
+        y = 0
+        if self.sim.progress > 0 and self.sim.cutcode is not None and len(self.sim.cutcode):
+            if self.sim.progress == self.sim.max:
+                pos = self.sim.cutcode[self.sim.progress - 2].end()
             else:
-                if self.sim.progress == self.sim.max:
-                    pos = self.sim.cutcode[self.sim.progress - 1].end()
-                else:
-                    pos = self.sim.cutcode[self.sim.progress].start()
-                x = pos[0]
-                y = pos[1]
-            try:
-                # Draw Reticle
-                gc.SetPen(wx.Pen(wx.Colour(0, 255, 0, alpha=127)))
-                gc.SetBrush(wx.TRANSPARENT_BRUSH)
-                x, y = self.scene.convert_scene_to_window([x, y])
-                gc.DrawEllipse(x - 5, y - 5, 10, 10)
-                gc.DrawEllipse(x - 10, y - 10, 20, 20)
-                gc.DrawEllipse(x - 20, y - 20, 40, 40)
-            except AttributeError:
-                pass
+                pos = self.sim.cutcode[self.sim.progress - 1].start()
+            x = pos[0]
+            y = pos[1]
 
-
-# class SimulationInterfaceWidget(Widget):
-#     def __init__(self, scene):
-#         Widget.__init__(self, scene, 40, 40, 200, 70)
-#         self.selected = False
-#
-#     def process_draw(self, gc):
-#         font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
-#         gc.SetBrush(wx.TRANSPARENT_BRUSH)
-#         gc.SetFont(font, wx.BLACK)
-#         gc.DrawText(_("Simulating Burn..."), self.left, self.top)
-#         gc.SetPen(wx.BLACK_PEN)
-#         gc.DrawRectangle(self.left, self.top, self.width, self.height)
-#
-#     def hit(self):
-#         return HITCHAIN_HIT
-#
-#     def event(self, window_pos=None, space_pos=None, event_type=None):
-#         if event_type == "leftdown":
-#             self.selected = True
-#         if event_type == "move":
-#             self.translate_self(window_pos[4], window_pos[5])
-#             self.scene.context.signal("refresh_scene")
-#         if event_type == "leftup":
-#             self.selected = False
-#         return RESPONSE_CONSUME
+        try:
+            # Draw Reticle
+            gc.SetPen(wx.Pen(wx.Colour(0, 255, 0, alpha=127)))
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            x, y = self.scene.convert_scene_to_window([x, y])
+            gc.DrawEllipse(x - 5, y - 5, 10, 10)
+            gc.DrawEllipse(x - 10, y - 10, 20, 20)
+            gc.DrawEllipse(x - 20, y - 20, 40, 40)
+        except AttributeError:
+            pass
