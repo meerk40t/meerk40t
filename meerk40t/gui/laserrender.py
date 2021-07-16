@@ -145,11 +145,13 @@ class LaserRender:
                     )
         return p
 
-    def set_pen(self, gc, stroke, width=1.0):
+    def set_pen(self, gc, stroke, width=1.0, alpha=None):
         c = stroke
         if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
-            self.color.SetRGBA(swizzle_color | c.alpha << 24)  # wx has BBGGRR
+            if alpha is None:
+                alpha = c.alpha
+            self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
             try:
                 self.pen.SetWidth(width)
@@ -159,11 +161,13 @@ class LaserRender:
         else:
             gc.SetPen(wx.TRANSPARENT_PEN)
 
-    def set_brush(self, gc, fill):
+    def set_brush(self, gc, fill, alpha=None):
         c = fill
         if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
-            self.color.SetRGBA(swizzle_color | c.alpha << 24)  # wx has BBGGRR
+            if alpha is None:
+                alpha = c.alpha
+            self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
             self.brush.SetColour(self.color)
             gc.SetBrush(self.brush)
         else:
@@ -209,7 +213,7 @@ class LaserRender:
                     gc.StrokePath(p)
                     del p
                 p = gc.CreatePath()
-                self.set_pen(gc, c, width=7.0)
+                self.set_pen(gc, c, width=7.0, alpha=127)
             start = cut.start()
             end = cut.end()
             if p is None:
