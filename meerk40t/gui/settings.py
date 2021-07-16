@@ -113,7 +113,7 @@ class Settings(MWindow):
                 False,
             ),
             (
-                _("Default Operation Empty"),
+                _("Default Operation Other/Red/Blue"),
                 _("Sets Operations to Other/Red/Blue if loaded with no operations."),
                 "operation_default_empty",
                 True,
