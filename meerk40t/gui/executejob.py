@@ -675,7 +675,7 @@ class ExecuteJob(MWindow):
         self.context.setting(int, "opt_jog_minimum", 256)
         self.context.setting(int, "opt_jog_mode", 0)
 
-        self.context.listen("element_property_update", self.on_element_property_update)
+        self.context.listen("element_property_reload", self.on_element_property_update)
         self.context.listen("plan", self.plan_update)
 
         self.preview_menu.menu_prehome.Check(bool(self.context.prehome))
@@ -710,7 +710,7 @@ class ExecuteJob(MWindow):
         self.context("plan%s clear\n" % self.plan_name)
 
         self.context.unlisten(
-            "element_property_update", self.on_element_property_update
+            "element_property_reload", self.on_element_property_update
         )
         self.context.unlisten("plan", self.plan_update)
 

@@ -153,7 +153,7 @@ class ImageProperty(MWindow):
         element.transform.post_translate(tx, ty)
         element.node.modified()
         if self.context is not None:
-            self.context.signal("element_property_update", element)
+            self.context.signal("element_property_reload", element)
             self.context.signal("refresh_scene")
 
     def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>

@@ -199,7 +199,7 @@ class TextProperty(MWindow):
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(element.fill)))
 
     def refresh(self):
-        self.context.signal("element_property_update", self.element)
+        self.context.signal("element_property_reload", self.element)
         self.context.signal("refresh_scene", 0)
 
     def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>

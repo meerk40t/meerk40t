@@ -1782,7 +1782,7 @@ class Elemental(Modifier):
             for op in self.ops(emphasized=True):
                 if op.operation in ("Raster", "Image"):
                     op.settings.raster_step = step_size
-                    self.context.signal("element_property_update", op)
+                    self.context.signal("element_property_reload", op)
             for element in self.elems(emphasized=True):
                 element.values["raster_step"] = str(step_size)
                 m = element.transform
@@ -1792,7 +1792,7 @@ class Elemental(Modifier):
                 element.transform.post_translate(tx, ty)
                 if hasattr(element, "node"):
                     element.node.modified()
-                self.context.signal("element_property_update", element)
+                self.context.signal("element_property_reload", element)
                 self.context.signal("refresh_scene")
             return
 
@@ -3467,7 +3467,7 @@ class Elemental(Modifier):
         def set_step_n(node, i=1, **kwgs):
             settings = node.settings
             settings.raster_step = i
-            self.context.signal("element_property_update", node)
+            self.context.signal("element_property_reload", node)
 
         def radio_match(node, passvalue=1, **kwgs):
             return node.settings.passes == passvalue and node.settings.passes_custom
@@ -3479,7 +3479,7 @@ class Elemental(Modifier):
         def set_n_passes(node, passvalue=1, **kwgs):
             node.settings.passes = passvalue
             node.settings.passes_custom = passvalue != 1
-            self.context.signal("element_property_update", node)
+            self.context.signal("element_property_reload", node)
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -3911,7 +3911,7 @@ class Elemental(Modifier):
             element.transform.post_translate(tx, ty)
             if hasattr(element, "node"):
                 element.node.modified()
-            self.context.signal("element_property_update", node.object)
+            self.context.signal("element_property_reload", node.object)
             self.context.signal("refresh_scene")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))

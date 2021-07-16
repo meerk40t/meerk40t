@@ -103,11 +103,9 @@ from .icons import (
     icons8_laser_beam_20,
     icons8_laser_beam_52,
     icons8_laser_beam_hazard2_50,
-    icons8_lock_50,
     icons8_manager_50,
     icons8_move_50,
     icons8_opened_folder_50,
-    icons8_padlock_50,
     icons8_pause_50,
     icons8_roll_50,
     icons8_route_50,
@@ -903,6 +901,7 @@ class MeerK40t(MWindow):
         context.listen("refresh_tree", self.request_refresh)
         context.listen("refresh_scene", self.on_refresh_scene)
         context.listen("element_property_update", self.on_element_update)
+        context.listen("element_property_reload", self.on_force_element_update)
 
         context.listen("device;noactive", self.on_device_noactive)
         context.listen("pipe;error", self.on_usb_error)
@@ -2158,6 +2157,7 @@ class MeerK40t(MWindow):
         context.unlisten("refresh_scene", self.on_refresh_scene)
         context.unlisten("refresh_tree", self.request_refresh)
         context.unlisten("element_property_update", self.on_element_update)
+        context.unlisten("element_property_reload", self.on_force_element_update)
 
         context.unlisten("device;noactive", self.on_device_noactive)
         context.unlisten("pipe;error", self.on_usb_error)
@@ -2182,6 +2182,18 @@ class MeerK40t(MWindow):
         """
         if self.shadow_tree is not None:
             self.shadow_tree.on_element_update(*args)
+
+
+    def on_force_element_update(self, origin, *args):
+        """
+        Called by 'element_property_reload' when the properties of an element are changed.
+
+        :param origin: the path of the originating signal
+        :param args:
+        :return:
+        """
+        if self.shadow_tree is not None:
+            self.shadow_tree.on_force_element_update(*args)
 
     def on_rebuild_tree_request(self, *args):
         """
@@ -3287,6 +3299,13 @@ class ShadowTree:
             self.wxtree.SelectItem(s, False)
         self.wxtree.SelectItem(item)
         self.wxtree.ScrollTo(item)
+
+    def on_force_element_update(self, *args):
+        element = args[0]
+        if hasattr(element, "node"):
+            self.update_label(element.node, force=True)
+        else:
+            self.update_label(element, force=True)
 
     def on_element_update(self, *args):
         element = args[0]

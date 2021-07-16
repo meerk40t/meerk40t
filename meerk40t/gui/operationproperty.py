@@ -558,7 +558,7 @@ class OperationProperty(MWindow):
             self.button_layer_color.SetBackgroundColour(
                 wx.Colour(swizzlecolor(self.operation.color))
             )
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_combo_operation(
         self, event=None
@@ -595,29 +595,29 @@ class OperationProperty(MWindow):
             self.check_dratio_custom.Enable(False)
             self.text_dratio.Enable(False)
             self.Layout()
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.output = bool(self.checkbox_output.GetValue())
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_check_show(self, event=None):
         self.operation.show = bool(self.checkbox_show.GetValue())
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.speed = float(self.text_speed.GetValue())
         except ValueError:
             return
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_text_power(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.power = float(self.text_power.GetValue())
         except ValueError:
             return
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_text_raster_step(
         self, event=None
@@ -626,7 +626,7 @@ class OperationProperty(MWindow):
             self.operation.settings.raster_step = int(self.text_raster_step.GetValue())
         except ValueError:
             return
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
         self.raster_lines = None
         self.travel_lines = None
         self.refresh_display()
@@ -641,7 +641,7 @@ class OperationProperty(MWindow):
             except ValueError:
                 return
         self.operation.settings.overscan = overscan
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_combo_raster_direction(
         self, event=None
@@ -650,7 +650,7 @@ class OperationProperty(MWindow):
             self.combo_raster_direction.GetSelection()
         )
         self.context.raster_direction = self.operation.settings.raster_direction
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_radio_directional(
         self, event=None
@@ -658,21 +658,21 @@ class OperationProperty(MWindow):
         self.operation.settings.raster_swing = (
             self.radio_directional_raster.GetSelection()
         )
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_slider_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.settings.raster_preference_top = self.slider_top.GetValue() - 1
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_slider_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.settings.raster_preference_left = self.slider_left.GetValue() - 1
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_slider_right(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.settings.raster_preference_right = (
             self.slider_right.GetValue() - 1
         )
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_slider_bottom(
         self, event=None
@@ -680,7 +680,7 @@ class OperationProperty(MWindow):
         self.operation.settings.raster_preference_bottom = (
             self.slider_bottom.GetValue() - 1
         )
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_check_advanced(
         self, event=None
@@ -697,14 +697,14 @@ class OperationProperty(MWindow):
         on = self.check_dratio_custom.GetValue()
         self.text_dratio.Enable(on)
         self.operation.settings.dratio_custom = bool(on)
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_text_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.dratio = float(self.text_dratio.GetValue())
         except ValueError:
             return
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_check_acceleration(
         self, event=None
@@ -712,11 +712,11 @@ class OperationProperty(MWindow):
         on = self.checkbox_custom_accel.GetValue()
         self.slider_accel.Enable(on)
         self.operation.settings.acceleration_custom = bool(on)
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_slider_accel(self, event=None):
         self.operation.settings.acceleration = self.slider_accel.GetValue()
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_check_dot_length(
         self, event=None
@@ -724,7 +724,7 @@ class OperationProperty(MWindow):
         on = self.check_dot_length_custom.GetValue()
         self.text_dot_length.Enable(on)
         self.operation.settings.dot_length_custom = bool(on)
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_text_dot_length(
         self, event=None
@@ -733,7 +733,7 @@ class OperationProperty(MWindow):
             self.operation.settings.dot_length = int(self.text_dot_length.GetValue())
         except ValueError:
             return
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_check_group_pulses(
         self, event
@@ -741,20 +741,20 @@ class OperationProperty(MWindow):
         self.operation.settings.shift_enabled = bool(
             self.check_shift_enabled.GetValue()
         )
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_check_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
         self.operation.settings.passes_custom = bool(on)
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_text_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.passes = int(self.text_passes.GetValue())
         except ValueError:
             return
-        self.context.signal("element_property_update", self.operation)
+        self.context.signal("element_property_reload", self.operation)
 
     def on_key_press(self, event):
         keycode = event.GetKeyCode()
