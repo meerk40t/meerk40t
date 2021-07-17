@@ -1356,11 +1356,13 @@ class LhystudioController(Module, Pipe):
                 self.refuse_counts += 1
                 self.pre_ok = False
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
-                if self.refuse_counts >= self.max_attempts:
+                if self.refuse_counts == self.max_attempts:
                     # We were refused too many times, kill the thread.
-                    self.update_state(STATE_TERMINATE)
-                    self.device.signal('pipe;error', self.refuse_counts)
-                    break
+                    # self.update_state(STATE_TERMINATE)
+                    self.device.signal('pipe;failing', self.refuse_counts)
+                    # break
+                if self.refuse_counts > self.max_attempts:
+                    time.sleep(3)
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.

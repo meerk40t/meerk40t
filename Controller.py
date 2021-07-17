@@ -62,6 +62,8 @@ class Controller(wx.Frame, Module):
         self.last_control_state = None
         self.gui_update = True
 
+        self.retries = None
+
         # OSX Window close
         if parent is not None:
             parent.accelerator_table(self)
@@ -86,6 +88,7 @@ class Controller(wx.Frame, Module):
         self.device.listen('pipe;buffer', self.on_buffer_update)
         self.device.listen('pipe;usb_state', self.on_connection_state_change)
         self.device.listen('pipe;thread', self.on_control_state)
+        self.device.listen('pipe;failing', self.on_usb_error)
         self.checkbox_limit_buffer.SetValue(self.device.buffer_limit)
         self.spin_packet_buffer_max.SetValue(self.device.buffer_max)
         self.text_device.SetValue(self.device.device_name)
@@ -97,6 +100,7 @@ class Controller(wx.Frame, Module):
         self.device.unlisten('pipe;buffer', self.on_buffer_update)
         self.device.unlisten('pipe;usb_state', self.on_connection_state_change)
         self.device.unlisten('pipe;thread', self.on_control_state)
+        self.device.unlisten('pipe;failing', self.on_usb_error)
         try:
             self.Close()
         except RuntimeError:
@@ -317,10 +321,22 @@ class Controller(wx.Frame, Module):
         if string_data is not None and len(string_data) != 0:
             self.packet_text_text.SetValue(str(string_data))
 
+    def on_usb_error(self, value):
+        self.retries = value
+
+        if value == 5:
+            pass
+        print(value)
+
     def on_connection_state_change(self, state):
         status = get_name_for_status(state, translation=_)
         self.text_connection_status.SetValue(status)
-        if state == STATE_CONNECTION_FAILED or state == STATE_DRIVER_NO_BACKEND:
+        if state == STATE_DRIVER_NO_BACKEND:
+            self.button_device_connect.SetBackgroundColour("#dfdf00")
+            self.button_device_connect.SetLabel(status)
+            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
+            self.button_device_connect.Enable()
+        elif state == STATE_CONNECTION_FAILED:
             self.button_device_connect.SetBackgroundColour("#dfdf00")
             self.button_device_connect.SetLabel(status)
             self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
