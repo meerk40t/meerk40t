@@ -1085,6 +1085,7 @@ class LhystudioController(Module, Pipe):
         self.refuse_counts = 0
         self.connection_errors = 0
         self.count = 0
+        self.aborted_retries = False
         self.pre_ok = False
 
         self.abort_waiting = False
@@ -1099,6 +1100,7 @@ class LhystudioController(Module, Pipe):
         self.device.control_instance_add("Connect_USB", self.open)
         self.device.control_instance_add("Disconnect_USB", self.close)
         self.device.control_instance_add("Status Update", self.update_status)
+        self.device.control_instance_add("Abort_USB", self.abort_retry)
         self.usb_log = self.device.channel_open("usb", buffer=20)
         self.send_channel = self.device.channel_open('send')
         self.recv_channel = self.device.channel_open('recv')
@@ -1257,6 +1259,9 @@ class LhystudioController(Module, Pipe):
         if self._thread is not None and self._thread.is_alive():
             self.write(b'\x18\n')
 
+    def abort_retry(self):
+        self.aborted_retries = True
+
     def update_usb_state(self, code):
         """
         Process updated values for the usb status. Sending it to the usb channel and sending update signals.
@@ -1348,6 +1353,8 @@ class LhystudioController(Module, Pipe):
             try:
                 # We try to process the queue.
                 queue_processed = self.process_queue()
+                if self.refuse_counts:
+                    self.device.signal('pipe;failing', 0)
                 self.refuse_counts = 0
                 if self.is_shutdown:
                     break  # Sometimes it could reset this and escape.
@@ -1355,14 +1362,14 @@ class LhystudioController(Module, Pipe):
                 # The attempt refused the connection.
                 self.refuse_counts += 1
                 self.pre_ok = False
+                if self.aborted_retries:
+                    self.refuse_counts = 0
+                    self.aborted_retries = False
+                    self.update_state(STATE_TERMINATE)
+                    self.device.signal('pipe;failing', 0)
+                    break
+                self.device.signal('pipe;failing', self.refuse_counts)
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
-                if self.refuse_counts == self.max_attempts:
-                    # We were refused too many times, kill the thread.
-                    # self.update_state(STATE_TERMINATE)
-                    self.device.signal('pipe;failing', self.refuse_counts)
-                    # break
-                if self.refuse_counts > self.max_attempts:
-                    time.sleep(3)
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.

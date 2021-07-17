@@ -62,7 +62,7 @@ class Controller(wx.Frame, Module):
         self.last_control_state = None
         self.gui_update = True
 
-        self.retries = None
+        self.retries = 0
 
         # OSX Window close
         if parent is not None:
@@ -324,10 +324,6 @@ class Controller(wx.Frame, Module):
     def on_usb_error(self, value):
         self.retries = value
 
-        if value == 5:
-            pass
-        print(value)
-
     def on_connection_state_change(self, state):
         status = get_name_for_status(state, translation=_)
         self.text_connection_status.SetValue(status)
@@ -337,10 +333,16 @@ class Controller(wx.Frame, Module):
             self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
             self.button_device_connect.Enable()
         elif state == STATE_CONNECTION_FAILED:
-            self.button_device_connect.SetBackgroundColour("#dfdf00")
-            self.button_device_connect.SetLabel(status)
-            self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
-            self.button_device_connect.Enable()
+            if self.retries >= 5:
+                self.button_device_connect.SetBackgroundColour("#df0000")
+                self.button_device_connect.SetLabel(_("Retrying..."))
+                self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
+                self.button_device_connect.Enable()
+            else:
+                self.button_device_connect.SetBackgroundColour("#dfdf00")
+                self.button_device_connect.SetLabel(status)
+                self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
+                self.button_device_connect.Enable()
         elif state == STATE_UNINITIALIZED or state == STATE_USB_DISCONNECTED:
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
@@ -366,7 +368,13 @@ class Controller(wx.Frame, Module):
         state = self.device.last_signal('pipe;usb_state')
         if state is not None and isinstance(state, tuple):
             state = state[0]
-        if state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK, None):
+        if state == STATE_CONNECTION_FAILED and self.retries >= 5:
+            self.retries = 0
+            try:
+                self.device.execute("Abort_USB")
+            except ConnectionRefusedError:
+                pass
+        elif state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK, None):
             try:
                 self.device.execute("Connect_USB")
             except ConnectionRefusedError:
@@ -375,6 +383,7 @@ class Controller(wx.Frame, Module):
                 result = dlg.ShowModal()
                 dlg.Destroy()
         elif state in (STATE_CONNECTED, STATE_USB_CONNECTED):
+            self.retries = 0
             self.device.execute("Disconnect_USB")
 
     def on_buffer_update(self, value, *args):
