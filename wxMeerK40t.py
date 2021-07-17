@@ -36,7 +36,6 @@ from Settings import Settings
 from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
-from UsbRetry import UsbRetry
 from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
     LaserPathWidget, RectSelectWidget
 from icons import *
@@ -630,7 +629,7 @@ class MeerK40t(wx.Frame, Module):
         device.listen('rebuild_tree', self.on_rebuild_tree_signal)
         device.listen('refresh_scene', self.on_refresh_scene)
         device.listen('element_property_update', self.on_element_update)
-        device.listen('pipe;error', self.on_usb_error)
+        device.listen('pipe;failing', self.on_usb_error)
         device.listen('pipe;usb_state_text', self.on_usb_state_text)
         device.listen('pipe;thread', self.on_pipe_state)
         device.listen('spooler;thread', self.on_spooler_state)
@@ -780,7 +779,7 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
         device.unlisten('refresh_scene', self.on_refresh_scene)
         device.unlisten('element_property_update', self.on_element_update)
-        device.unlisten('pipe;error', self.on_usb_error)
+        device.unlisten('pipe;failing', self.on_usb_error)
         device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
         device.unlisten('pipe;thread', self.on_pipe_state)
         device.unlisten('spooler;thread', self.on_spooler_state)
@@ -856,10 +855,12 @@ class MeerK40t(wx.Frame, Module):
         dlg.Destroy()
 
     def on_usb_error(self, value):
-        dlg = wx.MessageDialog(None, _("All attempts to connect to USB have failed."),
-                               _("Usb Connection Problem."), wx.OK | wx.ICON_WARNING)
-        dlg.ShowModal()
-        dlg.Destroy()
+        if value == 5:
+            self.device.open('window', "Controller", self)
+            dlg = wx.MessageDialog(None, _("All attempts to connect to USB have failed."),
+                                   _("Usb Connection Problem."), wx.OK | wx.ICON_WARNING)
+            dlg.ShowModal()
+            dlg.Destroy()
 
     def on_usb_state_text(self, value):
         self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
@@ -3272,7 +3273,6 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', "BufferView", BufferView)
         device.register('window', "Adjustments", Adjustments)
         device.register('window', "RasterWizard", RasterWizard)
-        device.register('window', 'UsbRetry', UsbRetry)
 
     def run_later(self, command, *args):
         if wx.IsMainThread():
