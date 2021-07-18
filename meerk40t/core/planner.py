@@ -1025,9 +1025,9 @@ def is_inside(inner_path, outer_path):
     :param outer_path: outer path
     :return: whether path1 is wholly inside path2.
     """
-    if hasattr(inner_path, "path"):
+    if hasattr(inner_path, "path") and inner_path.path is not None:
         inner_path = inner_path.path
-    if hasattr(outer_path, "path"):
+    if hasattr(outer_path, "path") and outer_path.path is not None:
         outer_path = outer_path.path
     if not hasattr(inner_path, "bounding_box"):
         inner_path.bounding_box = Group.union_bbox([inner_path])
