@@ -2115,6 +2115,13 @@ class Kernel:
                     channel(context_name)
             return
 
+        @self.console_command("plugin", _("list loaded plugins in kernel"))
+        def context(channel, _, args=tuple(), **kwargs):
+            if len(args) == 0:
+                for name in self._plugins:
+                    channel(name.__module__)
+            return
+
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
