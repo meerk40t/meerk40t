@@ -2548,9 +2548,9 @@ class Channel:
             self.buffer = list()
 
     def __repr__(self):
-        return "Channel(%s, buffer_size=%d, line_end=%s)" % (
+        return "Channel(%s, buffer_size=%s, line_end=%s)" % (
             repr(self.name),
-            self.buffer_size,
+            str(self.buffer_size),
             repr(self.line_end),
         )
 
