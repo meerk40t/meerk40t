@@ -149,7 +149,7 @@ class Handler(CH341Handler):
         CH341Handler.__init__(self, channel=channel, status=status)
         try:
             self.driver = windll.LoadLibrary("CH341DLL.dll")
-        except (NameError, OSError) as e:
+        except (NameError, OSError, FileNotFoundError) as e:
             self.channel(str(e))
             raise ConnectionRefusedError
 
