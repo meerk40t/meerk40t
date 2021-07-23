@@ -1,4 +1,5 @@
 from ctypes import c_byte, windll
+from math import e
 
 from .ch341 import Connection as CH341Connection
 from .ch341 import Handler as CH341Handler
@@ -151,7 +152,7 @@ class Handler(CH341Handler):
             self.driver = windll.LoadLibrary("CH341DLL.dll")
         except (NameError, OSError, FileNotFoundError) as e:
             self.channel(str(e))
-            raise ConnectionRefusedError
+            raise ImportError
 
     def connect(self, driver_index=0, chipv=-1, bus=-1, address=-1):
         """Tries to open device at index, with given criteria"""
