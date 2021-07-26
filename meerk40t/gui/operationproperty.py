@@ -37,6 +37,7 @@ class OperationProperty(MWindow):
         self.checkbox_show = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Show"))
         self.text_speed = wx.TextCtrl(self.main_panel, wx.ID_ANY, "20.0")
         self.text_power = wx.TextCtrl(self.main_panel, wx.ID_ANY, "1000.0")
+        self.power_label = wx.StaticBox(self.main_panel, wx.ID_ANY, _("Power (ppi)" + ("⚠️" if node.settings.power <= 100 else "")))
         self.raster_panel = wx.Panel(self.main_panel, wx.ID_ANY)
         self.text_raster_step = wx.TextCtrl(self.raster_panel, wx.ID_ANY, "1")
         self.text_overscan = wx.TextCtrl(self.raster_panel, wx.ID_ANY, "20")
@@ -271,7 +272,7 @@ class OperationProperty(MWindow):
         self.text_speed.SetToolTip(_("Speed at which to perform the action in mm/s."))
         self.text_power.SetToolTip(
             _(
-                "1000 always on. 500 it's half power (fire every other step). This is software PPI control."
+                "1000 always on. 500 it's half power (fire every other step). This is software PPI control. Values of 100 or less are generally used only for dotted lines."
             )
         )
         self.text_raster_step.SetToolTip(
@@ -352,9 +353,7 @@ class OperationProperty(MWindow):
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         speed_power_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        power_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self.main_panel, wx.ID_ANY, _("Power (ppi)")), wx.HORIZONTAL
-        )
+        power_sizer = wx.StaticBoxSizer(self.power_label, wx.HORIZONTAL)
         speed_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self.main_panel, wx.ID_ANY, _("Speed (mm/s)")), wx.HORIZONTAL
         )
@@ -617,6 +616,10 @@ class OperationProperty(MWindow):
             self.operation.settings.power = float(self.text_power.GetValue())
         except ValueError:
             return
+        if self.operation.settings.power <= 100:
+            self.power_label.LabelText = "Power (ppi) ⚠️"
+        else:
+            self.power_label.LabelText = "Power (ppi)"
         self.context.signal("element_property_reload", self.operation)
 
     def on_text_raster_step(
