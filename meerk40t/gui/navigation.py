@@ -562,13 +562,16 @@ class Navigation(MWindow):
 
         context_root.listen("emphasized", self.on_emphasized_elements_changed)
         context.listen("driver;position", self.on_position_update)
+
         self.update_matrix_text()
         self.SetFocus()
 
     def window_close(self):
+        context = self.context
         context_root = self.context.root
+
         context_root.unlisten("emphasized", self.on_emphasized_elements_changed)
-        self.context.unlisten("driver;position", self.on_position_update)
+        context.unlisten("driver;position", self.on_position_update)
 
     def on_emphasized_elements_changed(self, origin, elements):
         self.select_ready(self.context.elements.has_emphasis())
