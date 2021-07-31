@@ -504,11 +504,14 @@ class LaserRender:
         else:
             pil_data = pil_data.copy()
         if dewhite:
-            img = pil_data.convert("L")
-            black = Image.new("L", img.size, color="black")
-            img = img.point(lambda e: 255 - e)
-            black.putalpha(img)
-            pil_data = black
+            try:
+                img = pil_data.convert("L")
+                black = Image.new("L", img.size, color="black")
+                img = img.point(lambda e: 255 - e)
+                black.putalpha(img)
+                pil_data = black
+            except MemoryError:
+                pass  # Not enough memory to do this.
 
         if pil_data.mode != "RGBA":
             pil_data = pil_data.convert("RGBA")
