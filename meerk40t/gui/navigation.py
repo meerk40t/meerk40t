@@ -612,28 +612,31 @@ class Navigation(MWindow):
         :param v: whether selection is currently drag ready.
         :return:
         """
-        if not v:
-            self.button_align_drag_down.Enable(False)
-            self.button_align_drag_up.Enable(False)
-            self.button_align_drag_left.Enable(False)
-            self.button_align_drag_right.Enable(False)
-        self.button_align_center.Enable(v)
-        self.button_align_corner_top_left.Enable(v)
-        self.button_align_corner_top_right.Enable(v)
-        self.button_align_corner_bottom_left.Enable(v)
-        self.button_align_corner_bottom_right.Enable(v)
-        self.button_align_first_position.Enable(v)
-        self.button_align_trace_hull.Enable(v)
-        self.button_align_trace_quick.Enable(v)
-        self.button_scale_down.Enable(v)
-        self.button_scale_up.Enable(v)
-        self.button_rotate_ccw.Enable(v)
-        self.button_rotate_cw.Enable(v)
-        self.button_translate_down.Enable(v)
-        self.button_translate_up.Enable(v)
-        self.button_translate_left.Enable(v)
-        self.button_translate_right.Enable(v)
-        self.button_reset.Enable(v)
+        try:
+            if not v:
+                self.button_align_drag_down.Enable(False)
+                self.button_align_drag_up.Enable(False)
+                self.button_align_drag_left.Enable(False)
+                self.button_align_drag_right.Enable(False)
+            self.button_align_center.Enable(v)
+            self.button_align_corner_top_left.Enable(v)
+            self.button_align_corner_top_right.Enable(v)
+            self.button_align_corner_bottom_left.Enable(v)
+            self.button_align_corner_bottom_right.Enable(v)
+            self.button_align_first_position.Enable(v)
+            self.button_align_trace_hull.Enable(v)
+            self.button_align_trace_quick.Enable(v)
+            self.button_scale_down.Enable(v)
+            self.button_scale_up.Enable(v)
+            self.button_rotate_ccw.Enable(v)
+            self.button_rotate_cw.Enable(v)
+            self.button_translate_down.Enable(v)
+            self.button_translate_up.Enable(v)
+            self.button_translate_left.Enable(v)
+            self.button_translate_right.Enable(v)
+            self.button_reset.Enable(v)
+        except RuntimeError:
+            pass
 
     def set_jog_distances(self, jog_mils):
         self.spin_jog_mils.SetValue(jog_mils)
