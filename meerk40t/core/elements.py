@@ -697,7 +697,9 @@ class GroupNode(Node):
     All group types are bootstrapped into this node object.
     """
 
-    def __init__(self, data_object):
+    def __init__(self, data_object=None):
+        if data_object is None:
+            data_object = Group()
         super(GroupNode, self).__init__(data_object)
         self.last_transform = None
         data_object.node = self
