@@ -157,12 +157,13 @@ class LaserRender:
         try:
             matrix = element.transform
         except AttributeError:
-            matrix = Matrix()
+            matrix = None
         if not hasattr(element, 'cache') or element.cache is None:
             cache = self.make_path(gc, element)
             element.cache = cache
         gc.PushState()
-        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, element,  zoomscale=zoomscale)
         self.set_element_brush(gc, element)
         if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:

@@ -1356,6 +1356,7 @@ class LhystudioController(Module, Pipe):
                 if self.refuse_counts:
                     self.device.signal('pipe;failing', 0)
                 self.refuse_counts = 0
+                self.device.signal('pipe;running', True)
                 if self.is_shutdown:
                     break  # Sometimes it could reset this and escape.
             except ConnectionRefusedError:
@@ -1368,6 +1369,7 @@ class LhystudioController(Module, Pipe):
                     self.update_state(STATE_TERMINATE)
                     self.device.signal('pipe;failing', 0)
                     break
+                self.device.signal('pipe;running', False)
                 self.device.signal('pipe;failing', self.refuse_counts)
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
                 continue
@@ -1377,6 +1379,7 @@ class LhystudioController(Module, Pipe):
                 self.pre_ok = False
                 time.sleep(0.5)
                 self.close()
+                self.device.signal('pipe;running', False)
                 continue
             if queue_processed:
                 # Packet was sent.
@@ -1393,11 +1396,13 @@ class LhystudioController(Module, Pipe):
                 time.sleep(0.02 * self.count)
                 # will tick up to 1 second waits if there's never a queue.
                 self.count += 1
+                self.device.signal('pipe;running', False)
         self._main_lock.release()
         self._thread = None
         self.update_state(STATE_END)
         self.is_shutdown = False
         self.pre_ok = False
+        self.device.signal('pipe;running', False)
 
     def process_queue(self):
         """
