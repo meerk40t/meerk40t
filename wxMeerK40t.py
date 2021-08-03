@@ -158,6 +158,7 @@ class MeerK40t(wx.Frame, Module):
         # begin wxGlade: MeerK40t.__init__
         wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
         Module.__init__(self)
+        self.usb_running = False
         self.DragAcceptFiles(True)
 
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
@@ -577,6 +578,14 @@ class MeerK40t(wx.Frame, Module):
         if self.state == 5:
             event.Veto()
         else:
+            if self.usb_running:
+                message = _("The device is actively sending data. Really quit?")
+                answer = wx.MessageBox(
+                    message, _("Currently Sending Data..."), wx.YES_NO | wx.CANCEL, None
+                )
+                if answer != wx.YES:
+                    event.Veto()
+                    return
             self.state = 5
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
@@ -630,6 +639,7 @@ class MeerK40t(wx.Frame, Module):
         device.listen('refresh_scene', self.on_refresh_scene)
         device.listen('element_property_update', self.on_element_update)
         device.listen('pipe;failing', self.on_usb_error)
+        device.listen('pipe;running', self.on_usb_running)
         device.listen('pipe;usb_state_text', self.on_usb_state_text)
         device.listen('pipe;thread', self.on_pipe_state)
         device.listen('spooler;thread', self.on_spooler_state)
@@ -780,6 +790,7 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten('refresh_scene', self.on_refresh_scene)
         device.unlisten('element_property_update', self.on_element_update)
         device.unlisten('pipe;failing', self.on_usb_error)
+        device.unlisten('pipe;running', self.on_usb_running)
         device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
         device.unlisten('pipe;thread', self.on_pipe_state)
         device.unlisten('spooler;thread', self.on_spooler_state)
@@ -861,6 +872,9 @@ class MeerK40t(wx.Frame, Module):
                                    _("Usb Connection Problem."), wx.OK | wx.ICON_WARNING)
             dlg.ShowModal()
             dlg.Destroy()
+
+    def on_usb_running(self, value):
+        self.usb_running = value
 
     def on_usb_state_text(self, value):
         self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
