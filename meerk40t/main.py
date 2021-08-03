@@ -11,7 +11,6 @@ except ImportError:
 
     tau = pi * 2
 
-
 """
 Laser software for the Stock-LIHUIYU laserboard.
 
@@ -100,6 +99,15 @@ def run():
 
     if args.version:
         print("MeerK40t %s" % MEERK40T_VERSION)
+        return
+    python_version_required = (3, 5)
+    if sys.version_info < python_version_required:
+        print("MeerK40t %s requires Python %d.%d or greater." %
+              (
+                    MEERK40T_VERSION,
+                    python_version_required[0],
+                    python_version_required[1])
+              )
         return
 
     if args.profile is not None:
