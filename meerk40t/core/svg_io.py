@@ -1,4 +1,5 @@
 import os
+import gzip
 from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
@@ -254,7 +255,7 @@ class SVGWriter:
 class SVGLoader:
     @staticmethod
     def load_types():
-        yield "Scalable Vector Graphics", ("svg",), "image/svg+xml"
+        yield "Scalable Vector Graphics", ("svg","svgz"), "image/svg+xml"
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
@@ -270,8 +271,11 @@ class SVGLoader:
         if ppi == 0:
             ppi = 96.0
         scale_factor = 1000.0 / ppi
+        source = pathname
+        if pathname.lower().endswith("svgz"):
+            source = gzip.open(pathname, "rb")
         svg = SVG.parse(
-            source=pathname,
+            source=source,
             reify=True,
             width="%fmm" % bed_dim.bed_width,
             height="%fmm" % bed_dim.bed_height,
