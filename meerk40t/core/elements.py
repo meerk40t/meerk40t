@@ -1091,20 +1091,20 @@ class CommandOperation(Node):
 
     def __init__(self, name, command, *args, **kwargs):
         super().__init__(command, type="cmdop")
-        self.name = name
+        self.label = name
         self.command = command
         self.args = args
         self.output = True
         self.operation = "Command"
 
     def __repr__(self):
-        return "CommandOperation('%s', '%s')" % (self.name, str(self.command))
+        return "CommandOperation('%s', '%s')" % (self.label, str(self.command))
 
     def __str__(self):
-        return "%s: %s" % (self.name, str(self.args))
+        return "%s: %s" % (self.label, str(self.args))
 
     def __copy__(self):
-        return CommandOperation(self.name, self.command, *self.args)
+        return CommandOperation(self.label, self.command, *self.args)
 
     def __len__(self):
         return 1
