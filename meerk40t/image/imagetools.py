@@ -1656,6 +1656,7 @@ class ImageLoader:
         yield "Portable Network Graphics", ("png",), "image/png"
         yield "Bitmap Graphics", ("bmp",), "image/bmp"
         yield "EPS Format", ("eps",), "image/eps"
+        yield "TIFF Format", ("tiff",), "image/tiff"
         yield "GIF Format", ("gif",), "image/gif"
         yield "Icon Format", ("ico",), "image/ico"
         yield "JPEG Format", ("jpg", "jpeg", "jpe"), "image/jpeg"
