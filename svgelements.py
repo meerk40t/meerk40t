@@ -43,7 +43,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.5.3"
+SVGELEMENTS_VERSION = "1.5.5"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -996,12 +996,12 @@ class Length(object):
             if s.units == "":
                 s = s.amount
             else:
-                a = "%.12f" % (s.amount)
+                a = "%.12f" % s.amount
                 if "." in a:
                     a = a.rstrip("0").rstrip(".")
                 return "'%s%s'" % (a, s.units)
         try:
-            s = "%.12f" % (s)
+            s = "%.12f" % s
         except TypeError:
             return str(s)
         if "." in s:
@@ -1093,8 +1093,8 @@ class Color(object):
 
     def __repr__(self):
         if self.value is None:
-            return "Color('%s')" % (self.value)
-        return "Color('%s')" % (self.hex)
+            return "Color('%s')" % self.value
+        return "Color('%s')" % self.hex
 
     def __eq__(self, other):
         if self is other:
@@ -2036,12 +2036,12 @@ class Point:
 
     def __str__(self):
         try:
-            x_str = "%.12G" % (self.x)
+            x_str = "%.12G" % self.x
         except TypeError:
             return self.__repr__()
         if "." in x_str:
             x_str = x_str.rstrip("0").rstrip(".")
-        y_str = "%.12G" % (self.y)
+        y_str = "%.12G" % self.y
         if "." in y_str:
             y_str = y_str.rstrip("0").rstrip(".")
         return "%s,%s" % (x_str, y_str)
@@ -3011,9 +3011,9 @@ class Matrix:
         [b d f]   %  [b d f] = [c d 0]
         [0 0 1]      [0 0 1]   [e f 1]
 
-        :param m0: matrix operand
-        :param m1: matrix operand
-        :return: muliplied matrix.
+        :param m: matrix operand
+        :param s: matrix operand
+        :return: multiplied matrix.
         """
         r0 = (
             s.a * m.a + s.c * m.b + s.e * 0,
@@ -3105,18 +3105,25 @@ class Viewbox:
 
         It creates transform commands equal to that viewport expected.
 
-        :param svg_node: dict containing the relevant svg entries.
+        Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+        Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute
+        respectively.
+
+        Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
+        Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
+        or if meetOrSlice is missing from this value.
+
+        :param e_x: element_x value
+        :param e_y: element_y value
+        :param e_width: element_width value
+        :param e_height: element_height value
+        :param vb_x: viewbox_x value
+        :param vb_y: viewbox_y value
+        :param vb_width: viewbox_width value
+        :param vb_height: viewbox_height value
+        :param aspect: preserve aspect ratio value
         :return: string of the SVG transform commands to account for the viewbox.
         """
-
-        # Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
-
-        # Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y,
-        # width and height values of the viewBox attribute respectively.
-
-        # Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
-        # Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
-        # or if meetOrSlice is missing from this value.
         if (
             e_x is None
             or e_y is None
@@ -3449,6 +3456,7 @@ class Shape(SVGElement, GraphicObject, Transformable):
     """
 
     def __init__(self, *args, **kwargs):
+        self._strict = True
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
         SVGElement.__init__(
@@ -4045,15 +4053,15 @@ class Linear(PathSegment):
         """ Gives the point on the line closest to the given point. """
         a = self.start
         b = self.end
-        vAPx = p[0] - a.x
-        vAPy = p[1] - a.y
-        vABx = b.x - a.x
-        vABy = b.y - a.y
-        sqDistanceAB = vABx * vABx + vABy * vABy
-        ABAPproduct = vABx * vAPx + vABy * vAPy
-        if sqDistanceAB == 0:
+        v_ap_x = p[0] - a.x
+        v_ap_y = p[1] - a.y
+        v_ab_x = b.x - a.x
+        v_ab_y = b.y - a.y
+        sq_distance_ab = v_ab_x * v_ab_x + v_ab_y * v_ab_y
+        ab_ap_product = v_ab_x * v_ap_x + v_ab_y * v_ap_y
+        if sq_distance_ab == 0:
             return 0  # Line is point.
-        amount = ABAPproduct / float(sqDistanceAB)
+        amount = ab_ap_product / float(sq_distance_ab)
         if respect_bounds:
             if amount > 1:
                 amount = 1
@@ -4456,7 +4464,7 @@ class CubicBezier(Curve):
         """Calculate the length of the path up to a certain position"""
         try:
             return self._length_scipy(error)
-        except:  # The code works but fall back for *any* reason
+        except:  # Fallback on any failure
             return self._length_default(error, min_depth)
 
     def is_smooth_from(self, previous):
@@ -4680,14 +4688,17 @@ class Arc(Curve):
                     )
             elif "rx" in kwargs and "ry" in kwargs:
                 # This formulation will assume p1 and p2 are both axis aligned.
-                rx = kwargs["rx"]
-                ry = kwargs["ry"]
+                # rx = kwargs["rx"]
+                # ry = kwargs["ry"]
                 # We will assume rx == abs(self.start.x - self.end.x)
+                self.sweep = tau / 4.0
                 self.center = Point(self.start.x, self.end.y)
                 cw = bool(Point.orientation(self.start, self.center, self.end) == 1)
-                if "ccw" in kwargs and kwargs["ccw"] and cw or not cw:
+                if "scooped" in kwargs and kwargs["scooped"]:
+                    self.sweep = -self.sweep
+                    cw = not cw
+                if ("ccw" in kwargs and kwargs["ccw"] and cw) or not cw:
                     self.center = Point(self.end.x, self.start.y)
-                self.sweep = tau / 4.0
 
         if self.center is None:
             raise ValueError("Not enough values to solve for center.")
@@ -4930,7 +4941,7 @@ class Arc(Curve):
             return abs(self.rx * self.sweep)
         try:
             return self._exact_length()
-        except:  # Fallback code for *any* reason
+        except:  # Fallback on any failure
             return self._line_length(error=error, min_depth=min_depth)
 
     def _svg_complex_parameterize(
@@ -5007,10 +5018,10 @@ class Arc(Curve):
         vy = (-y1prim - cyprim) / ry
         n = sqrt(ux * ux + uy * uy)
         p = ux
-        theta = degrees(acos(p / n))
-        if uy < 0:
-            theta = -theta
-        theta = theta % 360
+        # theta = degrees(acos(p / n))
+        # if uy < 0:
+        #     theta = -theta
+        # theta = theta % 360
 
         n = sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))
         p = ux * vx + uy * vy
@@ -5046,8 +5057,8 @@ class Arc(Curve):
         if arc_required is None:
             sweep_limit = tau / 12.0
             arc_required = int(ceil(abs(self.sweep) / sweep_limit))
-            if arc_required == 0:
-                return
+        if arc_required == 0:
+            return
         t_slice = self.sweep / float(arc_required)
 
         current_t = self.get_start_t()
@@ -5081,8 +5092,8 @@ class Arc(Curve):
         if arc_required is None:
             sweep_limit = tau / 12.0
             arc_required = int(ceil(abs(self.sweep) / sweep_limit))
-            if arc_required == 0:
-                return
+        if arc_required == 0:
+            return
         t_slice = self.sweep / float(arc_required)
 
         theta = self.get_rotation()
@@ -5098,9 +5109,7 @@ class Arc(Curve):
         for i in range(0, arc_required):
             next_t = current_t + t_slice
 
-            alpha = (
-                sin(t_slice) * (sqrt(4 + 3 * pow(tan((t_slice) / 2.0), 2)) - 1) / 3.0
-            )
+            alpha = sin(t_slice) * (sqrt(4 + 3 * pow(tan(t_slice / 2.0), 2)) - 1) / 3.0
 
             cos_start_t = cos(current_t)
             sin_start_t = sin(current_t)
@@ -5803,6 +5812,10 @@ class Path(Shape, MutableSequence):
         start_pos = self.current_point
         rx = arc_args[0]
         ry = arc_args[1]
+        if rx < 0:
+            rx = abs(rx)
+        if ry < 0:
+            ry = abs(ry)
         rotation = arc_args[2]
         arc = arc_args[3]
         sweep = arc_args[4]
@@ -6112,8 +6125,11 @@ class Rect(Shape):
         if rx == 0 or ry == 0:
             rx = ry = 0
         else:
-            rx = min(rx, self.width / 2.0)
-            ry = min(ry, self.height / 2.0)
+            try:
+                rx = min(rx, self.width / 2.0)
+                ry = min(ry, self.height / 2.0)
+            except ValueError:
+                pass  # If width is in inches and rx is in units, this is unsolvable without knowing the ppi
         self.rx = rx
         self.ry = ry
 
@@ -6226,6 +6242,7 @@ class Rect(Shape):
         :param transformed: provide the reified version.
         :return: path_d of shape.
         """
+        scooped = False
         x = self.x
         y = self.y
         width = self.width
@@ -6234,6 +6251,14 @@ class Rect(Shape):
             return ()  # a computed value of zero for either dimension disables rendering.
         rx = self.rx
         ry = self.ry
+        if not self._strict:
+            if rx < 0 < width and ry < 0 < height:
+                scooped = True
+                rx = abs(rx)
+                ry = abs(ry)
+        if rx < 0 < width or ry < 0 < height:
+            rx = 0
+            ry = 0
         if rx == ry == 0:
             segments = (
                 Move(None, (x, y)),
@@ -6246,18 +6271,31 @@ class Rect(Shape):
             segments = (
                 Move(None, (x + rx, y)),
                 Line((x + rx, y), (x + width - rx, y)),
-                Arc((x + width - rx, y), (x + width, y + ry), rx=rx, ry=ry),
+                Arc(
+                    (x + width - rx, y),
+                    (x + width, y + ry),
+                    rx=rx,
+                    ry=ry,
+                    scooped=scooped,
+                ),
                 Line((x + width, y + ry), (x + width, y + height - ry)),
                 Arc(
                     (x + width, y + height - ry),
                     (x + width - rx, y + height),
                     rx=rx,
                     ry=ry,
+                    scooped=scooped,
                 ),
                 Line((x + width - rx, y + height), (x + rx, y + height)),
-                Arc((x + rx, y + height), (x, y + height - ry), rx=rx, ry=ry),
+                Arc(
+                    (x + rx, y + height),
+                    (x, y + height - ry),
+                    rx=rx,
+                    ry=ry,
+                    scooped=scooped,
+                ),
                 Line((x, y + height - ry), (x, y + ry)),
-                Arc((x, y + ry), (x + rx, y), rx=rx, ry=ry),
+                Arc((x, y + ry), (x + rx, y), rx=rx, ry=ry, scooped=scooped),
                 Close((x + rx, y), (x + rx, y)),
             )
         if not transformed or self.transform.is_identity():
@@ -6566,6 +6604,7 @@ class _RoundShape(Shape):
 
         :param a0: start angle
         :param a1: end angle
+        :param ccw: optional flag to force clockwise or counter-clockwise arc-angles, default is smaller angle
         :return: arc
         """
         if ccw is None:
@@ -6647,12 +6686,12 @@ class _RoundShape(Shape):
         center = self.implicit_center
         cx = center.x
         cy = center.y
-        cosTheta = cos(rotation)
-        sinTheta = sin(rotation)
-        cosT = cos(t)
-        sinT = sin(t)
-        px = cx + a * cosT * cosTheta - b * sinT * sinTheta
-        py = cy + a * cosT * sinTheta + b * sinT * cosTheta
+        cos_theta = cos(rotation)
+        sin_theta = sin(rotation)
+        cos_t = cos(t)
+        sin_t = sin(t)
+        px = cx + a * cos_t * cos_theta - b * sin_t * sin_theta
+        py = cy + a * cos_t * sin_theta + b * sin_t * cos_theta
         return Point(px, py)
 
     def point(self, position, error=ERROR):
@@ -6660,7 +6699,8 @@ class _RoundShape(Shape):
         find the point that corresponds to given value [0,1].
         Where t=0 is the first point and t=1 is the final point.
 
-        :param position:
+        :param position: position value between 0,1 where value equals the amount through the shape
+        :param error: error permitted in determining point value (unused for this shape)
         :return: point at t
         """
         return self.point_at_t(tau * position)
@@ -6809,7 +6849,7 @@ class SimpleLine(Shape):
         if transformed:
             start *= self.transform
             end *= self.transform
-        return (Move(None, start), Line(start, end))
+        return Move(None, start), Line(start, end)
 
     def reify(self):
         """
@@ -7944,7 +7984,8 @@ class SVG(Group):
         self.y = Length(self.y).value(relative_length=height, **kwargs)
 
     def elements(self, conditional=None):
-        yield self
+        if conditional is None or conditional(self):
+            yield self
         for q in self.select(conditional):
             yield q
 
@@ -7986,7 +8027,7 @@ class SVG(Group):
                 if tag.startswith("{http://www.w3.org/2000/svg"):
                     tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
             except AttributeError:
-                yield (None, event, elem)
+                yield None, event, elem
                 continue
 
             if event == "start":
@@ -8032,7 +8073,7 @@ class SVG(Group):
                                     x,
                                     y,
                                 )
-                        yield (tag, event, elem)
+                        yield tag, event, elem
                         try:
                             shadow_node = defs[url[1:]]
                             children.append(
@@ -8043,11 +8084,11 @@ class SVG(Group):
                         except KeyError:
                             pass  # Failed to find link.
                 else:
-                    yield (tag, event, elem)
+                    yield tag, event, elem
                 if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
                     defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
             elif event == "end":
-                yield (tag, event, elem)
+                yield tag, event, elem
                 # event is 'end', pop values.
                 parent, children = parent  # Parent is now node.
 
