@@ -1349,14 +1349,15 @@ class LhystudioController(Module, Pipe):
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
                     time.sleep(0.25)
+                    self.device.signal('pipe;running', False)
                     continue
+
             try:
                 # We try to process the queue.
                 queue_processed = self.process_queue()
                 if self.refuse_counts:
                     self.device.signal('pipe;failing', 0)
                 self.refuse_counts = 0
-                self.device.signal('pipe;running', True)
                 if self.is_shutdown:
                     break  # Sometimes it could reset this and escape.
             except ConnectionRefusedError:
@@ -1369,6 +1370,7 @@ class LhystudioController(Module, Pipe):
                     self.update_state(STATE_TERMINATE)
                     self.device.signal('pipe;failing', 0)
                     break
+
                 self.device.signal('pipe;running', False)
                 self.device.signal('pipe;failing', self.refuse_counts)
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
@@ -1377,16 +1379,17 @@ class LhystudioController(Module, Pipe):
                 # There was an error with the connection, close it and try again.
                 self.connection_errors += 1
                 self.pre_ok = False
+
+                self.device.signal('pipe;running', False)
                 time.sleep(0.5)
                 self.close()
-                self.device.signal('pipe;running', False)
                 continue
+
             if queue_processed:
                 # Packet was sent.
                 if self.state not in (STATE_PAUSE, STATE_BUSY, STATE_ACTIVE, STATE_TERMINATE):
                     self.update_state(STATE_ACTIVE)
                 self.count = 0
-                continue
             else:
                 # No packet could be sent.
                 if self.state not in (STATE_PAUSE, STATE_BUSY, STATE_BUSY, STATE_TERMINATE):
@@ -1396,7 +1399,7 @@ class LhystudioController(Module, Pipe):
                 time.sleep(0.02 * self.count)
                 # will tick up to 1 second waits if there's never a queue.
                 self.count += 1
-                self.device.signal('pipe;running', False)
+            self.device.signal('pipe;running', queue_processed)
         self._main_lock.release()
         self._thread = None
         self.update_state(STATE_END)
