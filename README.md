@@ -1,37 +1,24 @@
 # MeerK40t
-Laser software for the Stock-LIHUIYU laserboard. This is the stock board for most K40 Laser Cutters, M2 Nano, et al.
-
 MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-source laser cutting software. It's a replacement for LaserDrw, Corel Laser, and K40 Whisperer. 
 
-With the dual driver support it can run aside any of these programs, without breaking anything. It's written in python and has precompiled versions for Windows, Mac OSX, and Raspberry Pi. Available: https://github.com/meerk40t/meerk40t/releases
+MeerK40t is designed specifically for stock K40 lasers with Lhymicro laser controllers like the M2-Nano, and will not work with other controller boards.
 
+It supports two sets of drivers which come with the software supplied with the K40 and which are used by Whisperer and the default USB drivers,
+and so MeerK40t can usually run alongside these other pieces of software but without requiring them as a pre-requisite.
 
-# Installing
+MeerK40t is written in Python and precompiled versions are [available for download](https://github.com/meerk40t/meerk40t/releases) for Windows, Mac OSX, Linux and Raspberry Pi. 
 
-Windows, OSX, Raspberry Pi, and Linux (sometimes) Versions.
-Everything is prebundled. You can just run the file.
-https://github.com/meerk40t/meerk40t/releases
+Alternatively you can run MeerK40t directly from Python.
 
-Download the version you need and run it
-
----
-
-If you need/want something more complex or need to run from Python directly: https://github.com/meerk40t/meerk40t/wiki/Alternative-Installs
+The primary source for help and documentation is the [MeerK40t Wiki - please click here](https://github.com/meerk40t/meerk40t/wiki). 
+Please help us make this a comprehensive source of information.
 
 # GUI
-
 ![meerk40t69](https://user-images.githubusercontent.com/3302478/97104931-babe8e80-1674-11eb-841b-5c8f4674a629.png)
 
 The wxMeerK40t is the GUI and is written in wxPython.
 
-# CLI
-
-MeerK40t has a highly robust command line interface. It should be able to execute many projects without needing or having a gui
-
-https://github.com/meerk40t/meerk40t/wiki/Command-Line-Interface
-
 # Features
-
 * Built in Raster Preprocessing, RasterWizard.
 * Dual drivers, use either the Whisperer method or LaserDrw method. 
 * Grid/Guides, Zoom and Pan scene Navigation (use middle mouse button, mouse wheel).
@@ -45,40 +32,31 @@ https://github.com/meerk40t/meerk40t/wiki/Command-Line-Interface
 * Pixel perfect curve cutting.
 * Command Line Interface
 
-
 # Support
+The primary source for help and documentation is the [MeerK40t Wiki - please click here](https://github.com/meerk40t/meerk40t/wiki).
 
 If you have a bug, feature request, or other issue raise it here. These are likely to be resolved. Squeaky wheels get the grease.
 https://github.com/meerk40t/meerk40t/issues
 
-## Wiki
-See/edit the Wiki here.
-https://github.com/meerk40t/meerk40t/wiki
+If you need additional support, please research/ask on:
 
-## Facebook
-Most Official MeerK40t facebook group: https://www.facebook.com/groups/716000085655097/
-
-## Maker Forum
-Maker Forum MeerK40t category: https://forum.makerforums.info/t/about-the-meerk40t-category/79660
-
-## Youtube
-* David Olsen's channel: https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ
-* Milan Karakas' channel https://www.youtube.com/channel/UCXhlGsmGJZ3m5GgTE8xuc_Q
-
-## IRC
-* There is an IRC channel #MeerK40t on irc.freenode.net irc://irc.freenode.net:6666
-
+* [Facebook - K40 MeerK40t group](https://www.facebook.com/groups/716000085655097/)
+* [Maker Forums - MeerK40t category](https://forum.makerforums.info/t/about-the-meerk40t-category/79660)
+* [Youtube - David Olsen's channel](https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ)
+* [Youtube - Milan Karakas' channel](https://www.youtube.com/channel/UCXhlGsmGJZ3m5GgTE8xuc_Q)
+* [IRC - channel #MeerK40t on irc.libera.chat](<irc://irc.libera.chat:6666>)
 
 # Assisting the Project
 
 Open source projects live and die with their support. There are a lots of ways to help the project.
+* Documentation - edit the Wiki
+* Provide Translations in other languages.
 * Code
 * Research ( https://github.com/meerk40t/meerk40t/wiki/Needed-Research )
 * Design ( Good design instincts, smooth out the rough edges)
 * Compile/Testers
+* Beta testers
 * Provide feedback, criticism is preferable to praise but both are welcome.
-* Edit the Wiki
 * Make helpful support content
 * Make guides ("How to setup cameras?", etc)
-* Provide Translations in other languages.
 * Bounce ideas around
