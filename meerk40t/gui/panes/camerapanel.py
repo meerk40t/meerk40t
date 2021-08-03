@@ -2,12 +2,6 @@ import wx
 
 from ...kernel import Job
 from ...svgelements import Color
-from ..icons import (
-    icons8_camera_50,
-    icons8_connected_50,
-    icons8_detective_50,
-    icons8_picture_in_picture_alternative_50,
-)
 from ..scene.scene import (
     HITCHAIN_HIT,
     RESPONSE_ABORT,
@@ -280,7 +274,6 @@ class CamInterfaceWidget(Widget):
                 sub_menu,
             )
             menu.AppendSeparator()
-
 
             fisheye = menu.Append(wx.ID_ANY, _("Correct Fisheye"), "", wx.ITEM_CHECK)
             fisheye.Check(self.cam.setting.correction_fisheye)

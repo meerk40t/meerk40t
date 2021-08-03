@@ -630,7 +630,7 @@ class CameraURI(MWindow):
             self.camera_setting.path, suffix=True
         )
         if keylist is not None:
-            keys = [q for q in keylist]
+            keys = [q for q in keylist if isinstance(q, str) and q.startswith("uri")]
             keys.sort()
             self.uri_list = [keylist[k] for k in keys]
             self.on_list_refresh()
