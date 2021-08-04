@@ -447,7 +447,7 @@ class MeerK40t(MWindow):
         )
         pane.dock_proportion = 230
         pane.control = panel
-        pane.submenu = _("Navigate")
+        pane.submenu = _("Navigation")
 
         self.on_pane_add(pane)
         self.context.register("pane/jog", pane)
