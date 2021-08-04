@@ -2183,7 +2183,6 @@ class MeerK40t(MWindow):
         if self.shadow_tree is not None:
             self.shadow_tree.on_element_update(*args)
 
-
     def on_force_element_update(self, origin, *args):
         """
         Called by 'element_property_reload' when the properties of an element are changed.
