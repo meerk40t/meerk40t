@@ -256,6 +256,8 @@ class Simulation(MWindow, Job):
         self.text_distance_laser.SetValue("%.2fmm" % cuts)
         self.text_distance_total.SetValue("%.2fmm" % (travel + cuts))
 
+        extra = self.cutcode.extra_time()
+
         try:
             time_travel = travel / self.cutcode.travel_speed
             t_hours = time_travel // 3600
@@ -269,7 +271,7 @@ class Simulation(MWindow, Job):
             t_mins = (time_cuts % 3600) // 60
             t_seconds = time_cuts % 60
             self.text_time_laser.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
-            time_total = time_travel + time_cuts
+            time_total = time_travel + time_cuts + extra
             t_hours = time_total // 3600
             t_mins = (time_total % 3600) // 60
             t_seconds = time_total % 60

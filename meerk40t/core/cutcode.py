@@ -163,6 +163,9 @@ class CutObject:
     def length(self):
         return Point.distance(self.start(), self.end())
 
+    def extra(self):
+        return 0
+
     def major_axis(self):
         start = self.start()
         end = self.end()
@@ -354,6 +357,14 @@ class CutCode(CutGroup):
             curr = cutcode[i]
             distance += curr.length()
         return distance
+
+    def extra_time(self):
+        cutcode = list(self.flat())
+        extra = 0
+        for i in range(0, len(cutcode)):
+            curr = cutcode[i]
+            extra += curr.extra()
+        return extra
 
     def duration_cut(self):
         cutcode = list(self.flat())
@@ -593,6 +604,9 @@ class RasterCut(CutObject):
             + (self.overscan * self.height)
             + (self.height * self.step)
         )
+
+    def extra(self):
+        return self.width * 0.105  # 105ms for the turnaround.
 
     def major_axis(self):
         return 0 if self.plot.horizontal else 1
