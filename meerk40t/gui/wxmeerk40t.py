@@ -467,7 +467,7 @@ class MeerK40t(MWindow):
         )
         pane.dock_proportion = 230
         pane.control = panel
-        pane.submenu = _("Navigate")
+        pane.submenu = _("Navigation")
 
         self.on_pane_add(pane)
         self.context.register("pane/drag", pane)
@@ -487,7 +487,7 @@ class MeerK40t(MWindow):
         )
         pane.dock_proportion = 220
         pane.control = panel
-        pane.submenu = _("Navigate")
+        pane.submenu = _("Navigation")
 
         self.on_pane_add(pane)
         self.context.register("pane/transform", pane)
@@ -506,7 +506,7 @@ class MeerK40t(MWindow):
         )
         pane.dock_proportion = 110
         pane.control = panel
-        pane.submenu = _("Navigate")
+        pane.submenu = _("Navigation")
 
         self.on_pane_add(pane)
         self.context.register("pane/jogdist", pane)
@@ -525,7 +525,7 @@ class MeerK40t(MWindow):
         )
         pane.dock_proportion = 150
         pane.control = panel
-        pane.submenu = _("Navigate")
+        pane.submenu = _("Navigation")
 
         self.on_pane_add(pane)
         self.context.register("pane/pulse", pane)
@@ -544,7 +544,7 @@ class MeerK40t(MWindow):
         )
         pane.dock_proportion = 150
         pane.control = panel
-        pane.submenu = _("Navigate")
+        pane.submenu = _("Navigation")
 
         self.on_pane_add(pane)
         self.context.register("pane/move", pane)
