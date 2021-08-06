@@ -6361,7 +6361,7 @@ class Rect(Shape):
         return self
 
     def is_degenerate(self):
-        return self.width == 0 or self.height == 0
+        return self.width == 0 or self.height == 0 or self.width is None or self.height is None
 
 
 class _RoundShape(Shape):
