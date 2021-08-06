@@ -153,7 +153,8 @@ class JobSpooler(MWindow):
             return
         menu = wx.Menu()
         convert = menu.Append(
-            wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
+
+            wx.ID_ANY, _("Remove %s") % JobSpooler._name_str(element)[:16], "", wx.ITEM_NORMAL
         )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element, index), convert)
         convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
@@ -168,17 +169,18 @@ class JobSpooler(MWindow):
     def window_close(self):
         self.context.unlisten("spooler;queue", self.on_spooler_update)
 
+    @staticmethod
+    def _name_str(named_obj):
+        try:
+            return named_obj.__name__
+        except AttributeError:
+            return str(named_obj)
+
     def refresh_spooler_list(self):
         if not self.update_spooler:
             return
         if not self.connected_spooler:
             return
-
-        def name_str(named_obj):
-            try:
-                return named_obj.__name__
-            except AttributeError:
-                return str(named_obj)
 
         try:
             self.list_job_spool.DeleteAllItems()
@@ -191,7 +193,7 @@ class JobSpooler(MWindow):
             for i, e in enumerate(spooler.queue):
                 m = self.list_job_spool.InsertItem(i, "#%d" % i)
                 if m != -1:
-                    self.list_job_spool.SetItem(m, 1, name_str(e))
+                    self.list_job_spool.SetItem(m, 1, JobSpooler._name_str(e))
                     try:
                         self.list_job_spool.SetItem(m, 2, e._status_value)
                     except AttributeError:
