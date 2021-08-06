@@ -354,28 +354,37 @@ class Simulation(MWindow, Job):
 
 
 class SimulationWidget(Widget):
+    """
+    The simulation widget is responsible for rendering the cutcode to the scene. This should be
+    done such that both progress of 0 and 1 render nothing and items begin to draw at 2.
+    """
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
         self.renderer = LaserRender(self.scene.context)
         self.sim = sim
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if self.sim.progress == self.sim.max:
-            sim_cut = self.sim.cutcode
-        else:
-            sim_cut = self.sim.cutcode[: self.sim.progress]
-        self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
+        if self.sim.progress > 1:
+            if self.sim.progress < self.sim.max:
+                sim_cut = self.sim.cutcode[: self.sim.progress - 1]
+            else:
+                sim_cut = self.sim.cutcode
+            self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
 
 
 class SimulationTravelWidget(Widget):
+    """
+    The simulation Travel Widget is responsible for the background of dotted lines and arrows
+    within the simulation scene.
+    """
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
         self.sim = sim
         self.starts = list()
         self.ends = list()
         self.pos = list()
-        self.starts.append(wx.Point2D(0,0))
-        self.ends.append(wx.Point2D(0,0))
+        self.starts.append(wx.Point2D(0, 0))
+        self.ends.append(wx.Point2D(0, 0))
         prev = None
         for i, curr in enumerate(list(self.sim.cutcode)):
             if prev is not None:
@@ -411,10 +420,10 @@ class SimulationTravelWidget(Widget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if len(self.pos):
-            if self.sim.progress == self.sim.max:
-                pos = self.pos[-1]
-            else:
+            if self.sim.progress < self.sim.max:
                 pos = self.pos[self.sim.progress - 1]
+            else:
+                pos = self.pos[-1]
             if pos > 1:
                 starts = self.starts[:pos]
                 ends = self.ends[:pos]
@@ -423,6 +432,11 @@ class SimulationTravelWidget(Widget):
 
 
 class SimReticleWidget(Widget):
+    """
+    The simulation Reticle widget is responsible for rendering the three green circles.
+    The position at 0 should be 0,0. At 1 the start position. And at all other positions
+    the end of the current cut object.
+    """
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
         self.sim = sim
@@ -431,10 +445,10 @@ class SimReticleWidget(Widget):
         x = 0
         y = 0
         if self.sim.progress > 0 and self.sim.cutcode is not None and len(self.sim.cutcode):
-            if self.sim.progress == self.sim.max:
-                pos = self.sim.cutcode[self.sim.progress - 2].end()
-            else:
+            if self.sim.progress != self.sim.max:
                 pos = self.sim.cutcode[self.sim.progress - 1].start()
+            else:
+                pos = self.sim.cutcode[self.sim.progress - 2].end()
             x = pos[0]
             y = pos[1]
 
