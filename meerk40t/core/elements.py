@@ -4492,7 +4492,7 @@ class Elemental(Modifier):
                     elif isinstance(element, SVGText):
                         op.add(element)
                         was_classified = True
-                    elif element.fill is not None and element.fill.argb is not None:
+                    elif element.fill is not None and op.color == abs(element.fill):
                         op.add(element, type="opnode")
                         was_classified = True
                 elif (
@@ -4518,12 +4518,18 @@ class Elemental(Modifier):
                     break  # May only classify in Dots.
             if not was_classified:
                 if element.stroke is not None and element.stroke.value is not None:
-                    if Color.distance("red", element.stroke) < 90: # if element.stroke == Color("red"):
+                    if Color.distance_sq("red", element.stroke) <= 18825: # if element.stroke == Color("red"):
                         op = LaserOperation(operation="Cut", color=element.stroke)
+                    elif Color.distance_sq("black", element.stroke) <= 2304: # if element.stroke == Color("black"):
+                        op = LaserOperation(operation="Raster", color=element.stroke)
                     else:
                         op = LaserOperation(operation="Engrave", color=element.stroke)
                     add_op_function(op)
                     op.add(element, type="opnode")
+                    operations.append(op)
+                elif element.stroke is None and element.fill is not None and element.fill.value is not None: # add operation for fill-only elements if not existing
+                    op = LaserOperation(operation="Raster", color=element.fill)
+                    op.add(element, type"opnode")
                     operations.append(op)
 
     def load(self, pathname, **kwargs):
