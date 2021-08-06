@@ -4518,7 +4518,7 @@ class Elemental(Modifier):
                     break  # May only classify in Dots.
             if not was_classified:
                 if element.stroke is not None and element.stroke.value is not None:
-                    if element.stroke == Color("red"):
+                    if Color.distance("red", element.stroke) < 90: # if element.stroke == Color("red"):
                         op = LaserOperation(operation="Cut", color=element.stroke)
                     else:
                         op = LaserOperation(operation="Engrave", color=element.stroke)
