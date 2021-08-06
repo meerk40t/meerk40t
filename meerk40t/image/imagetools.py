@@ -1453,7 +1453,7 @@ class RasterScripts:
             elif name == "auto_contrast":
                 try:
                     if op["enable"]:
-                        if image.mode != "P":
+                        if image.mode == "P":
                             image = image.convert("L")
                         image = ImageOps.autocontrast(image, cutoff=op["cutoff"])
                 except KeyError:
