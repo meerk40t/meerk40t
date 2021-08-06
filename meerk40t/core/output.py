@@ -129,7 +129,7 @@ class TCPOutput:
                 else:
                     tries += 1
                     time.sleep(0.1)
-            except ConnectionError:
+            except (ConnectionError, OSError):
                 tries += 1
                 self.disconnect()
                 time.sleep(0.05)
