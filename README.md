@@ -1,3 +1,6 @@
+# Legacy
+This branch of MeerK40t focuses on stability and consistency of the 0.6.x codebase. No new features or behavior changes will be added to this branch. Bugs will be fixed. 
+
 # MeerK40t
 MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-source laser cutting software. It's a replacement for LaserDrw, Corel Laser, and K40 Whisperer. 
 
@@ -14,7 +17,7 @@ The primary source for help and documentation is the [MeerK40t Wiki - please cli
 Please help us make this a comprehensive source of information.
 
 # GUI
-![meerk40t69](https://user-images.githubusercontent.com/3302478/97104931-babe8e80-1674-11eb-841b-5c8f4674a629.png)
+![0 6 23](https://user-images.githubusercontent.com/3302478/128551910-fb49126f-e6fa-4cbd-9870-6c8e75a72702.png)
 
 The wxMeerK40t is the GUI and is written in wxPython.
 
@@ -35,7 +38,7 @@ The wxMeerK40t is the GUI and is written in wxPython.
 # Support
 The primary source for help and documentation is the [MeerK40t Wiki - please click here](https://github.com/meerk40t/meerk40t/wiki).
 
-If you have a bug, feature request, or other issue raise it here. These are likely to be resolved. Squeaky wheels get the grease.
+If you have a bug report or other issue raise it here. These are likely to be resolved. Squeaky wheels get the grease. Features should be suggested only for the main branch.
 https://github.com/meerk40t/meerk40t/issues
 
 If you need additional support, please research/ask on:
