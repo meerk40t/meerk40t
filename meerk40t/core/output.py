@@ -86,7 +86,7 @@ class TCPOutput:
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._stream.connect((self.address, self.port))
             self.context.signal("tcp;status", "connected")
-        except ConnectionError:
+        except (ConnectionError, TimeoutError):
             self.disconnect()
 
     def disconnect(self):
