@@ -4529,7 +4529,7 @@ class Elemental(Modifier):
                     operations.append(op)
                 elif element.stroke is None and element.fill is not None and element.fill.value is not None: # add operation for fill-only elements if not existing
                     op = LaserOperation(operation="Raster", color=element.fill)
-                    op.add(element, type"opnode")
+                    op.add(element, type="opnode")
                     operations.append(op)
 
     def load(self, pathname, **kwargs):
