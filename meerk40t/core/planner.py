@@ -1165,7 +1165,7 @@ def short_travel_cutcode(context: CutCode):
             s = cut.start()
             s = complex(s[0], s[1])
             d = abs(s - curr)
-            if d < distance:
+            if d <= distance:
                 distance = d
                 backwards = False
                 closest = cut
