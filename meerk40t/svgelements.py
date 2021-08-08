@@ -2023,8 +2023,8 @@ class Point:
             raise IndexError
 
     def __repr__(self):
-        x_str = Length.str(round(self.x,4))
-        y_str = Length.str(round(self.y,4))
+        x_str = Length.str(round(self.x,2))
+        y_str = Length.str(round(self.y,2))
         return "Point(%s,%s)" % (x_str, y_str)
 
     def __copy__(self):
@@ -2032,12 +2032,12 @@ class Point:
 
     def __str__(self):
         try:
-            x_str = "%.4G" % self.x
+            x_str = "%.2G" % self.x
         except TypeError:
             return self.__repr__()
         if "." in x_str:
             x_str = x_str.rstrip("0").rstrip(".")
-        y_str = "%.4G" % self.y
+        y_str = "%.2G" % self.y
         if "." in y_str:
             y_str = y_str.rstrip("0").rstrip(".")
         return "%s,%s" % (x_str, y_str)
