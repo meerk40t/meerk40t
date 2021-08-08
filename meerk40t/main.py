@@ -22,6 +22,9 @@ for full details.
 
 MEERK40T_VERSION = "0.7.0 RC-8"
 
+if not getattr(sys, "frozen", False):
+    MEERK40T_VERSION += "s"
+
 
 def pair(value):
     rv = value.split("=")
