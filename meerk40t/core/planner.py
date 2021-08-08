@@ -33,6 +33,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("plan/unlock", unlock)
         kernel.register("plan/wait", wait)
         kernel.register("plan/beep", beep)
+        kernel.register("function/interrupt", interrupt_text)
         kernel.register("plan/interrupt", interrupt)
 
         def shutdown():
@@ -973,13 +974,13 @@ def beep():
     yield COMMAND_BEEP
 
 
+def interrupt_text():
+    input("waiting for user...")
+
+
 def interrupt():
     yield COMMAND_WAIT_FINISH
-
-    def intr():
-        input("waiting for user...")
-
-    yield COMMAND_FUNCTION, intr
+    yield COMMAND_FUNCTION, interrupt_text
 
 
 def reify_matrix(self):

@@ -1005,10 +1005,12 @@ class MeerK40t(MWindow):
             )
             dlg.ShowModal()
             dlg.Destroy()
+        context.register("function/interrupt", interrupt_popup)
 
         def interrupt():
             yield COMMAND_WAIT_FINISH
-            yield COMMAND_FUNCTION, interrupt_popup
+            yield COMMAND_FUNCTION, context.registered["function/interrupt"]
+
 
         context.register("plan/interrupt", interrupt)
 
