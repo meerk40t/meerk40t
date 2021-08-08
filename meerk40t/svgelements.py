@@ -2032,12 +2032,12 @@ class Point:
 
     def __str__(self):
         try:
-            x_str = "%.4G" % self.x
+            x_str = "%.12G" % self.x
         except TypeError:
             return self.__repr__()
         if "." in x_str:
             x_str = x_str.rstrip("0").rstrip(".")
-        y_str = "%.4G" % self.y
+        y_str = "%.12G" % self.y
         if "." in y_str:
             y_str = y_str.rstrip("0").rstrip(".")
         return "%s,%s" % (x_str, y_str)
