@@ -6408,7 +6408,7 @@ class _RoundShape(Shape):
         if self.cy is not None:
             values.append("cy=%s" % Length.str(self.cy))
         if self.rx == self.ry or self.ry is None or self.rx is None:
-            values.append("r=%s" % Length.str(self.rx))
+            values.append("r=%s" % Length.str(self.rx if self.rx else self.ry))
         else:
             values.append("rx=%s" % Length.str(self.rx))
             values.append("ry=%s" % Length.str(self.ry))
