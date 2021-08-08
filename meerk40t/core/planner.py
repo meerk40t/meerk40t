@@ -1169,13 +1169,12 @@ def short_travel_cutcode(context: CutCode):
             s = complex(s[0], s[1])
             d = abs(s - curr)
             l = cut.length()
-            if (
-                d < distance or
-                (
-                    d == distance and
-                    (
-                        backwards or
-                        l < closest_length
+            if (d < distance
+                or (
+                    d == distance
+                    and (
+                        backwards
+                        or l < closest_length
                     )
                 )
             ):
@@ -1187,12 +1186,11 @@ def short_travel_cutcode(context: CutCode):
                 e = cut.end()
                 e = complex(e[0], e[1])
                 d = abs(e - curr)
-                if (
-                    d < distance or
-                    (
-                        d == distance and
-                        backwards and
-                        l < closest_length
+                if (d < distance
+                    or (
+                        d == distance
+                        and backwards
+                        and l < closest_length
                     )
                 ):
                     distance = d
