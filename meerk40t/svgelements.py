@@ -7690,6 +7690,12 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
             values.append("image_width=%s" % Length.str(self.image_width))
         if self.image_height != 0:
             values.append("image_height=%s" % Length.str(self.image_height))
+        if self.preserve_aspect_ratio is not None:
+            values.append("%s=%s" % (SVG_ATTR_PRESERVEASPECTRATIO, self.preserve_aspect_ratio))
+        if self.viewbox is not None:
+            values.append("%s=%s" % (SVG_ATTR_VIEWBOX, repr(self.viewbox)))
+        if self.url is not None:
+            values.append("%s=%s" % (SVG_HREF, self.url))
         params = ", ".join(values)
         return "SVGImage(%s)" % params
 
