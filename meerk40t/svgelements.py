@@ -2023,8 +2023,8 @@ class Point:
             raise IndexError
 
     def __repr__(self):
-        x_str = Length.str(self.x)
-        y_str = Length.str(self.y)
+        x_str = Length.str(round(self.x,4))
+        y_str = Length.str(round(self.y,4))
         return "Point(%s,%s)" % (x_str, y_str)
 
     def __copy__(self):
