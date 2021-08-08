@@ -4507,7 +4507,7 @@ class Elemental(Modifier):
                     and op.color == element_color
                     and (isinstance(element, Shape) or isinstance(element, SVGText))
                 ):
-                    op.add(element)
+                    op.add(element, type="opnode")
                     was_classified = True
                 elif (
                     op.operation in ("Engrave", "Cut")
