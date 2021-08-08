@@ -554,7 +554,6 @@ class MeerK40t(MWindow):
             .Name("tree")
             .Left()
             .MinSize(200, -1)
-            .MaxSize(275, -1)
             .LeftDockable()
             .RightDockable()
             .BottomDockable(False)
@@ -2341,7 +2340,6 @@ class MeerK40t(MWindow):
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
-        self.wxtree.SetMaxSize((275, -1))
 
     def __do_layout(self):
         # main_sizer = wx.BoxSizer(wx.VERTICAL)
