@@ -3739,10 +3739,10 @@ class PathSegment:
         values = []
         s = self.start
         if s is not None:
-            values.append("from=%s" % repr(s))
+            values.append("start=%s" % repr(s))
         e = self.end
         if e is not None:
-            values.append("to=%s" % repr(e))
+            values.append("end=%s" % repr(e))
         return "%s(%s)" % (self.__class__.__name__, ", ".join(values))
 
     def __mul__(self, other):
