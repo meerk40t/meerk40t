@@ -4486,7 +4486,7 @@ class Elemental(Modifier):
             element_color = element.stroke
             if element_color is None or str(element_color) == 'None':
                 element_color = element.fill
-            if isinstance(element, Shape) and (element_color is None or element_color == 'None'):
+            if isinstance(element, Shape) and (element_color is None or str(element_color) == 'None'):
                 continue
             is_dot = (isinstance(element, Path) and len(element) == 2 and isinstance(element[0], Move)
                 and (isinstance(element[1], Close) or (isinstance(element[1], Line) and element[1].length() == 0)))
