@@ -7687,11 +7687,11 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
         if self.height != 0:
             values.append("height=%s" % Length.str(self.height))
         if self.image_width != 0:
-            values.append("image width=%s" % Length.str(self.image_width))
+            values.append("image_width=%s" % Length.str(self.image_width))
         if self.image_height != 0:
-            values.append("image height=%s" % Length.str(self.image_height))
+            values.append("image_height=%s" % Length.str(self.image_height))
         params = ", ".join(values)
-        return "Image(%s)" % params
+        return "SVGImage(%s)" % params
 
     def property_by_object(self, s):
         SVGElement.property_by_object(self, s)
