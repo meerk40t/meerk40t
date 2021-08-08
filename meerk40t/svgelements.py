@@ -1092,9 +1092,7 @@ class Color(object):
         return self.hex
 
     def __repr__(self):
-        if self.value is None:
-            return "Color('%s')" % self.value
-        return "Color('%s')" % self.hex
+        return "Color('%s')" % str(self)
 
     def __eq__(self, other):
         if self is other:
@@ -1904,9 +1902,7 @@ class Color(object):
         r = c1.red - c2.red
         g = c1.green - c2.green
         b = c1.blue - c2.blue
-        return (((512 + red_mean) * r * r) >> 8) + 4 * g * g + (
-            (767 - red_mean) * b * b
-        ) >> 8
+        return (((512 + red_mean) * r * r) >> 8) + 4 * g * g + (((767 - red_mean) * b * b) >> 8)
 
     @staticmethod
     def crimp(v):
@@ -2036,12 +2032,12 @@ class Point:
 
     def __str__(self):
         try:
-            x_str = "%.12G" % self.x
+            x_str = "%.4G" % self.x
         except TypeError:
             return self.__repr__()
         if "." in x_str:
             x_str = x_str.rstrip("0").rstrip(".")
-        y_str = "%.12G" % self.y
+        y_str = "%.4G" % self.y
         if "." in y_str:
             y_str = y_str.rstrip("0").rstrip(".")
         return "%s,%s" % (x_str, y_str)
@@ -3739,6 +3735,16 @@ class PathSegment:
         self.start = None
         self.end = None
 
+    def __repr__(self):
+        values = []
+        s = self.start
+        if s is not None:
+            values.append("from=%s" % repr(s))
+        e = self.end
+        if e is not None:
+            values.append("to=%s" % repr(e))
+        return "%s(%s)" % (self.__class__.__name__, ", ".join(values))
+
     def __mul__(self, other):
         if isinstance(other, (Matrix, str)):
             n = copy(self)
@@ -3941,12 +3947,6 @@ class Move(PathSegment):
                 self.end *= other
         return self
 
-    def __repr__(self):
-        if self.start is None:
-            return "Move(end=%s)" % repr(self.end)
-        else:
-            return "Move(start=%s, end=%s)" % (repr(self.start), repr(self.end))
-
     def __copy__(self):
         return Move(self.start, self.end, relative=self.relative)
 
@@ -4079,17 +4079,6 @@ class Close(Linear):
     which can close or not close several times.
     """
 
-    def __repr__(self):
-        if self.start is None and self.end is None:
-            return "Close()"
-        s = self.start
-        if s is not None:
-            s = repr(s)
-        e = self.end
-        if e is not None:
-            e = repr(e)
-        return "Close(start=%s, end=%s)" % (s, e)
-
     def d(self, current_point=None, relative=None, smooth=None):
         if (
             current_point is None
@@ -4103,11 +4092,6 @@ class Close(Linear):
 
 class Line(Linear):
     """Represents line commands."""
-
-    def __repr__(self):
-        if self.start is None:
-            return "Line(end=%s)" % (repr(self.end))
-        return "Line(start=%s, end=%s)" % (repr(self.start), repr(self.end))
 
     def d(self, current_point=None, relative=None, smooth=None):
         if (
@@ -4753,7 +4737,7 @@ class Arc(Curve):
             self.end = self.point_at_t(start_t)
 
     def __repr__(self):
-        return "Arc(%s, %s, %s, %s, %s, %s)" % (
+        return "Arc(start=%s, end=%s, center=%s, prx=%s, pry=%s, sweep=%s)" % (
             repr(self.start),
             repr(self.end),
             repr(self.center),
@@ -5520,8 +5504,7 @@ class Path(Shape, MutableSequence):
             values.append(", ".join(repr(x) for x in self._segments))
         self._repr_shape(values)
         params = ", ".join(values)
-        name = self._name()
-        return "%s(%s)" % (name, params)
+        return "%s(%s)" % (self.__class__.__name__, params)
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -6424,15 +6407,14 @@ class _RoundShape(Shape):
             values.append("cx=%s" % Length.str(self.cx))
         if self.cy is not None:
             values.append("cy=%s" % Length.str(self.cy))
-        if self.rx == self.ry or self.ry is None:
+        if self.rx == self.ry or self.ry is None or self.rx is None:
             values.append("r=%s" % Length.str(self.rx))
         else:
             values.append("rx=%s" % Length.str(self.rx))
             values.append("ry=%s" % Length.str(self.ry))
         self._repr_shape(values)
         params = ", ".join(values)
-        name = self._name()
-        return "%s(%s)" % (name, params)
+        return "%s(%s)" % (self.__class__.__name__, params)
 
     @property
     def implicit_rx(self):
@@ -6949,8 +6931,7 @@ class _Polyshape(Shape):
             values.append("points=(%s)" % repr(s))
         self._repr_shape(values)
         params = ", ".join(values)
-        name = self._name()
-        return "%s(%s)" % (name, params)
+        return "%s(%s)" % (self.__class__.__name__, params)
 
     def __len__(self):
         return len(self.points)
@@ -7694,6 +7675,23 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
                     self.data = b64decode(self.url[23:])
                 elif self.url.startswith("data:image/svg+xml;base64,"):
                     self.data = b64decode(self.url[26:])
+
+    def __repr__(self):
+        values = []
+        if self.x != 0:
+            values.append("x=%s" % Length.str(self.x))
+        if self.y != 0:
+            values.append("y=%s" % Length.str(self.y))
+        if self.width != 0:
+            values.append("width=%s" % Length.str(self.width))
+        if self.height != 0:
+            values.append("height=%s" % Length.str(self.height))
+        if self.image_width != 0:
+            values.append("image width=%s" % Length.str(self.image_width))
+        if self.image_height != 0:
+            values.append("image height=%s" % Length.str(self.image_height))
+        params = ", ".join(values)
+        return "Image(%s)" % params
 
     def property_by_object(self, s):
         SVGElement.property_by_object(self, s)
