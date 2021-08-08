@@ -1147,6 +1147,9 @@ def short_travel_cutcode(context: CutCode):
     Selects cutcode from candidate cutcode permitted, optimizing with greedy/brute for
     shortest distances optimizations.
 
+    For paths starting at exactly the same point forward paths are prefered over reverse paths
+    and within this shorter paths are prefered over longer ones.
+
     We start at either 0,0 or the value given in cc.start
     """
     curr = context.start
@@ -1160,23 +1163,42 @@ def short_travel_cutcode(context: CutCode):
     while True:
         closest = None
         backwards = False
-        distance = float("inf")
+        closest_length = distance = float("inf")
         for cut in context.candidate():
             s = cut.start()
             s = complex(s[0], s[1])
             d = abs(s - curr)
-            if d <= distance:
+            l = cut.length()
+            if (
+                d < distance or
+                (
+                    d == distance and
+                    (
+                        backwards or
+                        l < closest_length
+                    )
+                )
+            ):
                 distance = d
                 backwards = False
                 closest = cut
+                closest_length = l
             if cut.reversible():
                 e = cut.end()
                 e = complex(e[0], e[1])
                 d = abs(e - curr)
-                if d < distance:
+                if (
+                    d < distance or
+                    (
+                        d == distance and
+                        backwards and
+                        l < closest_length
+                    )
+                ):
                     distance = d
                     backwards = True
                     closest = cut
+                    closest_length = l
         if closest is None:
             break
         closest.permitted = False
