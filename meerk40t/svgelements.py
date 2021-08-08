@@ -3739,6 +3739,15 @@ class PathSegment:
         self.start = None
         self.end = None
 
+    def __repr__(self):
+        s = self.start
+        if s is not None:
+            s = repr(s)
+        e = self.end
+        if e is not None:
+            e = repr(e)
+        return "%s(start=%s, end=%s)" % (self.__class__.__name__, s, e)
+
     def __mul__(self, other):
         if isinstance(other, (Matrix, str)):
             n = copy(self)
@@ -3941,12 +3950,6 @@ class Move(PathSegment):
                 self.end *= other
         return self
 
-    def __repr__(self):
-        if self.start is None:
-            return "Move(end=%s)" % repr(self.end)
-        else:
-            return "Move(start=%s, end=%s)" % (repr(self.start), repr(self.end))
-
     def __copy__(self):
         return Move(self.start, self.end, relative=self.relative)
 
@@ -4079,17 +4082,6 @@ class Close(Linear):
     which can close or not close several times.
     """
 
-    def __repr__(self):
-        if self.start is None and self.end is None:
-            return "Close()"
-        s = self.start
-        if s is not None:
-            s = repr(s)
-        e = self.end
-        if e is not None:
-            e = repr(e)
-        return "Close(start=%s, end=%s)" % (s, e)
-
     def d(self, current_point=None, relative=None, smooth=None):
         if (
             current_point is None
@@ -4103,11 +4095,6 @@ class Close(Linear):
 
 class Line(Linear):
     """Represents line commands."""
-
-    def __repr__(self):
-        if self.start is None:
-            return "Line(end=%s)" % (repr(self.end))
-        return "Line(start=%s, end=%s)" % (repr(self.start), repr(self.end))
 
     def d(self, current_point=None, relative=None, smooth=None):
         if (
@@ -4753,7 +4740,7 @@ class Arc(Curve):
             self.end = self.point_at_t(start_t)
 
     def __repr__(self):
-        return "Arc(%s, %s, %s, %s, %s, %s)" % (
+        return "Arc(start=%s, end=%s, center=%s, prx=%s, pry=%s, sweep=%s)" % (
             repr(self.start),
             repr(self.end),
             repr(self.center),
@@ -5520,8 +5507,7 @@ class Path(Shape, MutableSequence):
             values.append(", ".join(repr(x) for x in self._segments))
         self._repr_shape(values)
         params = ", ".join(values)
-        name = self._name()
-        return "%s(%s)" % (name, params)
+        return "%s(%s)" % (self.__class__.__name__, params)
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -6424,15 +6410,14 @@ class _RoundShape(Shape):
             values.append("cx=%s" % Length.str(self.cx))
         if self.cy is not None:
             values.append("cy=%s" % Length.str(self.cy))
-        if self.rx == self.ry or self.ry is None:
+        if self.rx == self.ry or self.ry is None or self.rx is None:
             values.append("r=%s" % Length.str(self.rx))
         else:
             values.append("rx=%s" % Length.str(self.rx))
             values.append("ry=%s" % Length.str(self.ry))
         self._repr_shape(values)
         params = ", ".join(values)
-        name = self._name()
-        return "%s(%s)" % (name, params)
+        return "%s(%s)" % (self.__class__.__name__, params)
 
     @property
     def implicit_rx(self):
@@ -6949,8 +6934,7 @@ class _Polyshape(Shape):
             values.append("points=(%s)" % repr(s))
         self._repr_shape(values)
         params = ", ".join(values)
-        name = self._name()
-        return "%s(%s)" % (name, params)
+        return "%s(%s)" % (self.__class__.__name__, params)
 
     def __len__(self):
         return len(self.points)
