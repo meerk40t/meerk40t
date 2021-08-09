@@ -2032,12 +2032,12 @@ class Point:
 
     def __str__(self):
         try:
-            x_str = "%.12G" % self.x
+            x_str = "%.2G" % self.x
         except TypeError:
             return self.__repr__()
         if "." in x_str:
             x_str = x_str.rstrip("0").rstrip(".")
-        y_str = "%.12G" % self.y
+        y_str = "%.2G" % self.y
         if "." in y_str:
             y_str = y_str.rstrip("0").rstrip(".")
         return "%s,%s" % (x_str, y_str)
@@ -3739,10 +3739,10 @@ class PathSegment:
         values = []
         s = self.start
         if s is not None:
-            values.append("from=%s" % repr(s))
+            values.append("start=%s" % repr(s))
         e = self.end
         if e is not None:
-            values.append("to=%s" % repr(e))
+            values.append("end=%s" % repr(e))
         return "%s(%s)" % (self.__class__.__name__, ", ".join(values))
 
     def __mul__(self, other):
@@ -6408,7 +6408,7 @@ class _RoundShape(Shape):
         if self.cy is not None:
             values.append("cy=%s" % Length.str(self.cy))
         if self.rx == self.ry or self.ry is None or self.rx is None:
-            values.append("r=%s" % Length.str(self.rx))
+            values.append("r=%s" % Length.str(self.rx if self.rx else self.ry))
         else:
             values.append("rx=%s" % Length.str(self.rx))
             values.append("ry=%s" % Length.str(self.ry))
@@ -7687,11 +7687,17 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
         if self.height != 0:
             values.append("height=%s" % Length.str(self.height))
         if self.image_width != 0:
-            values.append("image width=%s" % Length.str(self.image_width))
+            values.append("image_width=%s" % Length.str(self.image_width))
         if self.image_height != 0:
-            values.append("image height=%s" % Length.str(self.image_height))
+            values.append("image_height=%s" % Length.str(self.image_height))
+        if self.preserve_aspect_ratio is not None:
+            values.append("%s=%s" % (SVG_ATTR_PRESERVEASPECTRATIO, self.preserve_aspect_ratio))
+        if self.viewbox is not None:
+            values.append("%s=%s" % (SVG_ATTR_VIEWBOX, repr(self.viewbox)))
+        if self.url is not None:
+            values.append("%s=%s" % (SVG_HREF, self.url))
         params = ", ".join(values)
-        return "Image(%s)" % params
+        return "SVGImage(%s)" % params
 
     def property_by_object(self, s):
         SVGElement.property_by_object(self, s)
