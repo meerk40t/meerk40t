@@ -43,6 +43,9 @@ class Spooler:
         self._queue = None
         self.next = None
 
+    def __len__(self):
+        return len(self._queue)
+
     def as_device(self):
         links = []
         obj = self
@@ -65,6 +68,7 @@ class Spooler:
 
     def pop(self):
         if len(self._queue) == 0:
+            self.context.signal("spooler;queue", len(self._queue), self.name)
             return None
         self.queue_lock.acquire(True)
         queue_head = self._queue[0]

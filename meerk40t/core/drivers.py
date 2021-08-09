@@ -138,6 +138,7 @@ class Driver:
         # We have a spooled item to process.
         if self.command(self.spooled_item):
             self.spooled_item = None
+            self.spooler.pop()
             return
 
         # We are dealing with an iterator/generator
@@ -148,6 +149,7 @@ class Driver:
         except StopIteration:
             # The spooled item is finished.
             self.spooled_item = None
+            self.spooler.pop()
 
     def plotplanner_process(self):
         """
@@ -170,7 +172,7 @@ class Driver:
         if element is None:
             return  # Spooler is empty.
 
-        self.spooler.pop()
+        # self.spooler.pop()
         if isinstance(element, int):
             self.spooled_item = (element,)
         elif isinstance(element, tuple):
