@@ -349,6 +349,7 @@ class MeerK40t(MWindow):
         except AttributeError:
             # Not WX 4.1
             pass
+        self.usb_running = False
         context = self.context
         self.context.setting(bool, "disable_tool_tips", False)
         if self.context.disable_tool_tips:
@@ -904,7 +905,7 @@ class MeerK40t(MWindow):
         context.listen("element_property_reload", self.on_force_element_update)
 
         context.listen("device;noactive", self.on_device_noactive)
-        context.listen("pipe;error", self.on_usb_error)
+        context.listen("pipe;failing", self.on_usb_error)
         context.listen("pipe;usb_status", self.on_usb_state_text)
         context.listen("pipe;thread", self.on_pipe_state)
         context.listen("spooler;thread", self.on_spooler_state)
@@ -2162,7 +2163,7 @@ class MeerK40t(MWindow):
         context.unlisten("element_property_reload", self.on_force_element_update)
 
         context.unlisten("device;noactive", self.on_device_noactive)
-        context.unlisten("pipe;error", self.on_usb_error)
+        context.unlisten("pipe;failing", self.on_usb_error)
         context.unlisten("pipe;usb_status", self.on_usb_state_text)
         context.unlisten("pipe;thread", self.on_pipe_state)
         context.unlisten("spooler;thread", self.on_spooler_state)
@@ -2256,14 +2257,19 @@ class MeerK40t(MWindow):
         dlg.Destroy()
 
     def on_usb_error(self, origin, value):
-        dlg = wx.MessageDialog(
-            None,
-            _("All attempts to connect to USB have failed."),
-            _("Usb Connection Problem."),
-            wx.OK | wx.ICON_WARNING,
-        )
-        dlg.ShowModal()
-        dlg.Destroy()
+        if value == 5:
+            self.context("window open -o Controller\n")
+            dlg = wx.MessageDialog(
+                None,
+                _("All attempts to connect to USB have failed."),
+                _("Usb Connection Problem."),
+                wx.OK | wx.ICON_WARNING,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+
+    def on_usb_running(self, value):
+        self.usb_running = value
 
     def on_usb_state_text(self, origin, value):
         self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)

@@ -1486,6 +1486,7 @@ class LhystudiosController:
         self.refuse_counts = 0
         self.connection_errors = 0
         self.count = 0
+        self.aborted_retries = False
         self.pre_ok = False
         self.realtime = False
 
@@ -1699,6 +1700,9 @@ class LhystudiosController:
         except RuntimeError:
             pass  # Stop called by current thread.
 
+    def abort_retry(self):
+        self.aborted_retries = True
+
     def update_state(self, state):
         if state == self.state:
             return
@@ -1737,10 +1741,13 @@ class LhystudiosController:
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
                     time.sleep(0.25)
+                    self.context.signal("pipe;running", False)
                     continue
             try:
                 # We try to process the queue.
                 queue_processed = self.process_queue()
+                if self.refuse_counts:
+                    self.context.signal('pipe;failing', 0)
                 self.refuse_counts = 0
                 if self.is_shutdown:
                     break  # Sometimes it could reset this and escape.
@@ -1748,17 +1755,22 @@ class LhystudiosController:
                 # The attempt refused the connection.
                 self.refuse_counts += 1
                 self.pre_ok = False
-                time.sleep(3)  # 3 second sleep on failed connection attempt.
-                if self.refuse_counts >= self.max_attempts:
-                    # We were refused too many times, kill the thread.
+                if self.aborted_retries:
+                    self.refuse_counts = 0
+                    self.aborted_retries = False
+                    self.context.signal('pipe;failing', 0)
                     self.update_state(STATE_TERMINATE)
-                    self.context.signal("pipe;error", self.refuse_counts)
                     break
+                self.context.signal('pipe;failing', self.refuse_counts)
+                self.context.signal("pipe;running", False)
+                time.sleep(3)  # 3 second sleep on failed connection attempt.
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.
                 self.connection_errors += 1
                 self.pre_ok = False
+
+                self.context.signal("pipe;running", False)
                 time.sleep(0.5)
                 self.close()
                 continue
@@ -1787,6 +1799,7 @@ class LhystudiosController:
                 time.sleep(0.02 * self.count)
                 # will tick up to 1 second waits if there's never a queue.
                 self.count += 1
+            self.context.signal("pipe;running", queue_processed)
         self._thread = None
         self.is_shutdown = False
         self.update_state(STATE_END)
