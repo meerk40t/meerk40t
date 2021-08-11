@@ -31,7 +31,7 @@ def plugin(kernel, lifecycle=None):
 
 class Driver:
     """
-    An Driver takes spoolable commands and turns those commands into states and code in a language
+    A driver takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
 
     These drive hardware specific backend information from the reusable spoolers and server objects that may also be
@@ -81,6 +81,8 @@ class Driver:
         self._shutdown = False
         self.context.kernel.listen("lifecycle;ready", "", self.start_driver)
         self.context.kernel.listen("lifecycle;shutdown", "", self.shutdown)
+
+        self.last_fetch = None
 
     def shutdown(self, *args, **kwargs):
         self.context.kernel.unlisten("lifecycle;ready", "", self.start_driver)
@@ -138,6 +140,7 @@ class Driver:
         # We have a spooled item to process.
         if self.command(self.spooled_item):
             self.spooled_item = None
+            self.spooler.pop()
             return
 
         # We are dealing with an iterator/generator
@@ -148,6 +151,7 @@ class Driver:
         except StopIteration:
             # The spooled item is finished.
             self.spooled_item = None
+            self.spooler.pop()
 
     def plotplanner_process(self):
         """
@@ -167,10 +171,17 @@ class Driver:
         if self.spooler is None:
             return  # Spooler does not exist.
         element = self.spooler.peek()
+
+        if self.last_fetch is not None:
+            self.context.channel("spooler")("Time between fetches: %f" % (time.time() - self.last_fetch))
+            self.last_fetch = None
+
         if element is None:
             return  # Spooler is empty.
 
-        self.spooler.pop()
+        self.last_fetch = time.time()
+
+        # self.spooler.pop()
         if isinstance(element, int):
             self.spooled_item = (element,)
         elif isinstance(element, tuple):

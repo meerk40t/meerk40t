@@ -13,7 +13,7 @@ from ...kernel import (
     STATE_PAUSE,
     STATE_TERMINATE,
     STATE_UNKNOWN,
-    STATE_WAIT,
+    STATE_WAIT, STATE_SUSPEND,
 )
 from ..basedevice import (
     DRIVER_STATE_FINISH,
@@ -377,6 +377,13 @@ def plugin(kernel, lifecycle=None):
             spooler, driver, output = data
             output.close()
             channel(_("CH341 Closed."))
+
+        @context.console_command(
+            "usb_abort", input_type="lhystudios", help=_("Stops USB retries")
+        )
+        def usb_disconnect(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.abort_retry()
 
         @kernel.console_option(
             "port", "p", type=int, default=23, help=_("port to listen on.")
@@ -1486,6 +1493,7 @@ class LhystudiosController:
         self.refuse_counts = 0
         self.connection_errors = 0
         self.count = 0
+        self.aborted_retries = False
         self.pre_ok = False
         self.realtime = False
 
@@ -1699,6 +1707,9 @@ class LhystudiosController:
         except RuntimeError:
             pass  # Stop called by current thread.
 
+    def abort_retry(self):
+        self.aborted_retries = True
+
     def update_state(self, state):
         if state == self.state:
             return
@@ -1732,15 +1743,18 @@ class LhystudiosController:
             if self.state == STATE_INITIALIZE:
                 # If we are initialized. Change that to active since we're running.
                 self.update_state(STATE_ACTIVE)
-            if self.state == STATE_PAUSE or self.state == STATE_BUSY:
+            if self.state in (STATE_PAUSE, STATE_BUSY, STATE_SUSPEND):
                 # If we are paused just keep sleeping until the state changes.
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
                     time.sleep(0.25)
+                    self.context.signal("pipe;running", False)
                     continue
             try:
                 # We try to process the queue.
                 queue_processed = self.process_queue()
+                if self.refuse_counts:
+                    self.context.signal('pipe;failing', 0)
                 self.refuse_counts = 0
                 if self.is_shutdown:
                     break  # Sometimes it could reset this and escape.
@@ -1748,17 +1762,24 @@ class LhystudiosController:
                 # The attempt refused the connection.
                 self.refuse_counts += 1
                 self.pre_ok = False
+                if self.aborted_retries:
+                    self.refuse_counts = 0
+                    self.aborted_retries = False
+                    self.context.signal('pipe;failing', 0)
+                    self.update_state(STATE_PAUSE)
+                    self.context.signal("pipe;state", "STATE_FAILED_SUSPENDED")
+                elif self.refuse_counts >= 5:
+                    self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
+                self.context.signal('pipe;failing', self.refuse_counts)
+                self.context.signal("pipe;running", False)
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
-                if self.refuse_counts >= self.max_attempts:
-                    # We were refused too many times, kill the thread.
-                    self.update_state(STATE_TERMINATE)
-                    self.context.signal("pipe;error", self.refuse_counts)
-                    break
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.
                 self.connection_errors += 1
                 self.pre_ok = False
+
+                self.context.signal("pipe;running", False)
                 time.sleep(0.5)
                 self.close()
                 continue
@@ -1787,10 +1808,12 @@ class LhystudiosController:
                 time.sleep(0.02 * self.count)
                 # will tick up to 1 second waits if there's never a queue.
                 self.count += 1
+            self.context.signal("pipe;running", queue_processed)
         self._thread = None
         self.is_shutdown = False
         self.update_state(STATE_END)
         self.pre_ok = False
+        self.context.signal('pipe;running', False)
         self._main_lock.release()
 
     def process_queue(self):

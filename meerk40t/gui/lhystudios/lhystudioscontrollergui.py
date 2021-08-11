@@ -136,6 +136,7 @@ class LhystudiosControllerGui(MWindow):
         # end wxGlade
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
         self.last_control_state = None
+        self.retries = 0
         self.set_widgets()
 
     def __set_properties(self):
@@ -352,6 +353,7 @@ class LhystudiosControllerGui(MWindow):
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
         self.context.listen("pipe;state", self.on_connection_state_change)
         self.context.listen("pipe;thread", self.on_control_state)
+        self.context.listen("pipe;failing", self.on_usb_failing)
         self.context.listen("active", self.on_active_change)
 
     def window_close(self):
@@ -367,6 +369,7 @@ class LhystudiosControllerGui(MWindow):
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)
         self.context.unlisten("pipe;thread", self.on_control_state)
+        self.context.unlisten("pipe;failing", self.on_usb_failing)
         self.context.unlisten("active", self.on_active_change)
 
     def on_active_change(self, origin, active):
@@ -482,11 +485,34 @@ class LhystudiosControllerGui(MWindow):
     def on_connection_state_change(self, origin, state):
         if origin != self.context._path:
             return
-        if state == "STATE_CONNECTION_FAILED" or state == "STATE_DRIVER_NO_BACKEND":
+        if state == "STATE_CONNECTION_FAILED":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
             usb_status = self.context.last_signal("pipe;usb_status")
-            if usb_status is not None:
-                self.button_device_connect.SetLabel(str(usb_status[0]))
+            self.button_device_connect.SetLabel(_("Connect Failed"))
+            self.button_device_connect.SetBitmap(
+                icons8_disconnected_50.GetBitmap(use_theme=False)
+            )
+            self.button_device_connect.Enable()
+        elif state == "STATE_FAILED_RETRYING":
+            self.button_device_connect.SetBackgroundColour("#df0000")
+            usb_status = self.context.last_signal("pipe;usb_status")
+            self.button_device_connect.SetLabel(_("Retrying..."))
+            self.button_device_connect.SetBitmap(
+                icons8_disconnected_50.GetBitmap(use_theme=False)
+            )
+            self.button_device_connect.Enable()
+        elif state == "STATE_FAILED_SUSPENDED":
+            self.button_device_connect.SetBackgroundColour("#0000df")
+            usb_status = self.context.last_signal("pipe;usb_status")
+            self.button_device_connect.SetLabel(_("Suspended Retrying"))
+            self.button_device_connect.SetBitmap(
+                icons8_disconnected_50.GetBitmap(use_theme=False)
+            )
+            self.button_device_connect.Enable()
+        elif state == "STATE_DRIVER_NO_BACKEND":
+            self.button_device_connect.SetBackgroundColour("#dfdf00")
+            usb_status = self.context.last_signal("pipe;usb_status")
+            self.button_device_connect.SetLabel(_("No Backend"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected_50.GetBitmap(use_theme=False)
             )
@@ -524,7 +550,13 @@ class LhystudiosControllerGui(MWindow):
         state = self.context.last_signal("pipe;state")
         if state is not None and isinstance(state, tuple):
             state = state[0]
-        if state in (
+
+        if state == "STATE_FAILED_RETRYING":
+            self.retries = 0
+            self.context("dev usb_abort\n")
+        elif state == "STATE_FAILED_SUSPENDED":
+            self.context("dev hold\ndev start\n")
+        elif state in (
             "STATE_USB_DISCONNECTED",
             "STATE_UNINITIALIZED",
             "STATE_CONNECTION_FAILED",
@@ -613,6 +645,9 @@ class LhystudiosControllerGui(MWindow):
             button.SetLabel(_("Manual Reset"))
             button.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(use_theme=False))
             button.Enable(True)
+
+    def on_usb_failing(self, origin, count):
+        self.retries = count
 
     def spin_on_device_index(self, event=None):  # wxGlade: Preferences.<event_handler>
         self.context.usb_index = int(self.spin_device_index.GetValue())

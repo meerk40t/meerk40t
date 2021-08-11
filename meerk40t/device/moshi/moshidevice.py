@@ -462,6 +462,11 @@ class MoshiDriver(Driver, Modifier):
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 256)
 
+        context.setting(int, "usb_index", -1)
+        context.setting(int, "usb_bus", -1)
+        context.setting(int, "usb_address", -1)
+        context.setting(int, "usb_version", -1)
+
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
 
@@ -1157,7 +1162,7 @@ class MoshiController(Module):
                     if self.refuse_counts >= self.max_attempts:
                         # We were refused too many times, kill the thread.
                         self.update_state(STATE_TERMINATE)
-                        self.context.signal("pipe;error", self.refuse_counts)
+                        self.context.signal("pipe;failing", self.refuse_counts)
                         break
                     continue
                 except ConnectionError:
