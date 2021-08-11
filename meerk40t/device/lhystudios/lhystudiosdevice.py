@@ -13,7 +13,7 @@ from ...kernel import (
     STATE_PAUSE,
     STATE_TERMINATE,
     STATE_UNKNOWN,
-    STATE_WAIT,
+    STATE_WAIT, STATE_SUSPEND,
 )
 from ..basedevice import (
     DRIVER_STATE_FINISH,
@@ -377,6 +377,13 @@ def plugin(kernel, lifecycle=None):
             spooler, driver, output = data
             output.close()
             channel(_("CH341 Closed."))
+
+        @context.console_command(
+            "usb_abort", input_type="lhystudios", help=_("Stops USB retries")
+        )
+        def usb_disconnect(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.abort_retry()
 
         @kernel.console_option(
             "port", "p", type=int, default=23, help=_("port to listen on.")
@@ -1736,7 +1743,7 @@ class LhystudiosController:
             if self.state == STATE_INITIALIZE:
                 # If we are initialized. Change that to active since we're running.
                 self.update_state(STATE_ACTIVE)
-            if self.state == STATE_PAUSE or self.state == STATE_BUSY:
+            if self.state in (STATE_PAUSE, STATE_BUSY, STATE_SUSPEND):
                 # If we are paused just keep sleeping until the state changes.
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
@@ -1759,8 +1766,10 @@ class LhystudiosController:
                     self.refuse_counts = 0
                     self.aborted_retries = False
                     self.context.signal('pipe;failing', 0)
-                    self.update_state(STATE_TERMINATE)
-                    break
+                    self.update_state(STATE_PAUSE)
+                    self.context.signal("pipe;state", "STATE_FAILED_SUSPENDED")
+                elif self.refuse_counts >= 5:
+                    self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal('pipe;failing', self.refuse_counts)
                 self.context.signal("pipe;running", False)
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
@@ -1804,6 +1813,7 @@ class LhystudiosController:
         self.is_shutdown = False
         self.update_state(STATE_END)
         self.pre_ok = False
+        self.context.signal('pipe;running', False)
         self._main_lock.release()
 
     def process_queue(self):
