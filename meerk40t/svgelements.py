@@ -1169,7 +1169,7 @@ class Color(object):
     @staticmethod
     def parse(color_string):
         """Parse SVG color, will return a set value."""
-        if color_string is None or color_string == SVG_VALUE_NONE:
+        if color_string is None or color_string.lower() == SVG_VALUE_NONE.lower():
             return None
         match = REGEX_COLOR_HEX.match(color_string)
         if match:
@@ -3688,9 +3688,9 @@ class Shape(SVGElement, GraphicObject, Transformable):
         if not self.transform.is_identity():
             values.append("transform=%s" % repr(self.transform))
         if self.stroke is not None:
-            values.append("stroke='%s'" % self.stroke)
+            values.append("stroke=%s" % repr(self.stroke))
         if self.fill is not None:
-            values.append("fill='%s'" % self.fill)
+            values.append("fill=%s" % repr(self.fill))
         if self.stroke_width is not None and self.stroke_width != 1.0:
             values.append("stroke_width='%s'" % str(self.stroke_width))
         if self.apply is not None and not self.apply:
@@ -8143,7 +8143,7 @@ class SVG(Group):
                 stack.append((context, values))
                 if (
                     SVG_ATTR_DISPLAY in values
-                    and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE
+                    and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE.lower()
                 ):
                     continue  # Values has a display=none. Do not render anything. No Shadow Dom.
                 current_values = values
@@ -8204,7 +8204,7 @@ class SVG(Group):
                         attributes[key] = value
                 if (
                     SVG_ATTR_FILL in attributes
-                    and attributes[SVG_ATTR_FILL] == SVG_VALUE_CURRENT_COLOR
+                    and attributes[SVG_ATTR_FILL].lower() == SVG_VALUE_CURRENT_COLOR.lower()
                 ):
                     if SVG_ATTR_COLOR in attributes:
                         attributes[SVG_ATTR_FILL] = attributes[SVG_ATTR_COLOR]
@@ -8213,7 +8213,7 @@ class SVG(Group):
 
                 if (
                     SVG_ATTR_STROKE in attributes
-                    and attributes[SVG_ATTR_STROKE] == SVG_VALUE_CURRENT_COLOR
+                    and attributes[SVG_ATTR_STROKE].lower() == SVG_VALUE_CURRENT_COLOR.lower()
                 ):
                     if SVG_ATTR_COLOR in attributes:
                         attributes[SVG_ATTR_STROKE] = attributes[SVG_ATTR_COLOR]
@@ -8237,7 +8237,7 @@ class SVG(Group):
                 values[SVG_STRUCT_ATTRIB] = attributes
                 if (
                     SVG_ATTR_DISPLAY in values
-                    and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE
+                    and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE.lower()
                 ):
                     continue  # If the attributes flags our values to display=none, stop rendering.
                 if SVG_NAME_TAG == tag:
