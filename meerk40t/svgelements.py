@@ -3708,9 +3708,9 @@ class Shape(SVGElement, GraphicObject, Transformable):
         if not self.transform.is_identity():
             values.append("transform=%s" % repr(self.transform))
         if self.stroke is not None:
-            values.append("stroke='%s'" % self.stroke)
+            values.append("stroke=%s" % repr(self.stroke))
         if self.fill is not None:
-            values.append("fill='%s'" % self.fill)
+            values.append("fill=%s" % repr(self.fill))
         if self.stroke_width is not None and self.stroke_width != 1.0:
             values.append("stroke_width='%s'" % str(self.stroke_width))
         if self.apply is not None and not self.apply:
