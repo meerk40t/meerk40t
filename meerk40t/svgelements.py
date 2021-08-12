@@ -43,7 +43,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.5.4"
+SVGELEMENTS_VERSION = "1.5.5"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -1902,7 +1902,11 @@ class Color(object):
         r = c1.red - c2.red
         g = c1.green - c2.green
         b = c1.blue - c2.blue
-        return (((512 + red_mean) * r * r) >> 8) + 4 * g * g + (((767 - red_mean) * b * b) >> 8)
+        return (
+            (((512 + red_mean) * r * r) >> 8)
+            + (4 * g * g)
+            + (((767 - red_mean) * b * b) >> 8)
+        )
 
     @staticmethod
     def crimp(v):
@@ -2032,12 +2036,12 @@ class Point:
 
     def __str__(self):
         try:
-            x_str = "%.2G" % self.x
+            x_str = "%.12G" % self.x
         except TypeError:
             return self.__repr__()
         if "." in x_str:
             x_str = x_str.rstrip("0").rstrip(".")
-        y_str = "%.2G" % self.y
+        y_str = "%.12G" % self.y
         if "." in y_str:
             y_str = y_str.rstrip("0").rstrip(".")
         return "%s,%s" % (x_str, y_str)
@@ -3045,6 +3049,19 @@ class Viewbox:
         else:
             self.set_viewbox(viewbox)
 
+    def __eq__(self, other):
+        if not isinstance(other, Viewbox):
+            return False
+        if self.x != other.x:
+            return False
+        if self.y != other.y:
+            return False
+        if self.width != other.width:
+            return False
+        if self.height != other.height:
+            return False
+        return self.preserve_aspect_ratio == other.preserve_aspect_ratio
+
     def __str__(self):
         return "%s %s %s %s" % (
             Length.str(self.x),
@@ -3052,6 +3069,9 @@ class Viewbox:
             Length.str(self.width),
             Length.str(self.height),
         )
+
+    def __repr__(self):
+        return "%s('%s')" % (self.__class__.__name__, str(self))
 
     def property_by_object(self, obj):
         self.x = obj.x
@@ -6344,7 +6364,12 @@ class Rect(Shape):
         return self
 
     def is_degenerate(self):
-        return self.width == 0 or self.height == 0 or self.width is None or self.height is None
+        return (
+            self.width == 0
+            or self.height == 0
+            or self.width is None
+            or self.height is None
+        )
 
 
 class _RoundShape(Shape):
@@ -6407,8 +6432,8 @@ class _RoundShape(Shape):
             values.append("cx=%s" % Length.str(self.cx))
         if self.cy is not None:
             values.append("cy=%s" % Length.str(self.cy))
-        if self.rx == self.ry or self.ry is None or self.rx is None:
-            values.append("r=%s" % Length.str(self.rx if self.rx else self.ry))
+        if self.rx == self.ry or self.ry is None:
+            values.append("r=%s" % Length.str(self.rx))
         else:
             values.append("rx=%s" % Length.str(self.rx))
             values.append("ry=%s" % Length.str(self.ry))
@@ -7516,16 +7541,16 @@ class SVGText(SVGElement, GraphicObject, Transformable):
     def parse_font(self, font):
         """
         CSS Fonts 3 has a shorthand font property which serves to provide a single location to define:
-        ‘font-style’, ‘font-variant’, ‘font-weight’, ‘font-stretch’, ‘font-size’, ‘line-height’, and ‘font-family’
+        `font-style`, `font-variant`, `font-weight`, `font-stretch`, `font-size`, `line-height`, and `font-family`
 
         font-style: normal | italic | oblique
         font-variant: normal | small-caps
         font-weight: normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
         font-stretch: normal | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded
         font-size: <absolute-size> | <relative-size> | <length-percentage>
-        line-height: '/' <‘line-height’>
+        line-height: '/' <`line-height`>
         font-family: [ <family-name> | <generic-family> ] #
-        generic-family:  ‘serif’, ‘sans-serif’, ‘cursive’, ‘fantasy’, and ‘monospace’
+        generic-family:  `serif`, `sans-serif`, `cursive`, `fantasy`, and `monospace`
         """
         # https://www.w3.org/TR/css-fonts-3/#font-prop
         font_elements = list(*re.findall(REGEX_CSS_FONT, font))
@@ -7678,24 +7703,22 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
 
     def __repr__(self):
         values = []
-        if self.x != 0:
-            values.append("x=%s" % Length.str(self.x))
-        if self.y != 0:
-            values.append("y=%s" % Length.str(self.y))
-        if self.width != 0:
-            values.append("width=%s" % Length.str(self.width))
-        if self.height != 0:
-            values.append("height=%s" % Length.str(self.height))
-        if self.image_width != 0:
-            values.append("image_width=%s" % Length.str(self.image_width))
-        if self.image_height != 0:
-            values.append("image_height=%s" % Length.str(self.image_height))
-        if self.preserve_aspect_ratio is not None:
-            values.append("%s=%s" % (SVG_ATTR_PRESERVEASPECTRATIO, self.preserve_aspect_ratio))
-        if self.viewbox is not None:
-            values.append("%s=%s" % (SVG_ATTR_VIEWBOX, repr(self.viewbox)))
         if self.url is not None:
             values.append("%s=%s" % (SVG_HREF, self.url))
+        if self.x != 0:
+            values.append("%s=%s" % (SVG_ATTR_X, Length.str(self.x)))
+        if self.y != 0:
+            values.append("%s=%s" % (SVG_ATTR_Y, Length.str(self.y)))
+        if self.width != "100%":
+            values.append("%s=%s" % (SVG_ATTR_WIDTH, Length.str(self.width)))
+        if self.height != "100%":
+            values.append("%s=%s" % (SVG_ATTR_HEIGHT, Length.str(self.height)))
+        if self.preserve_aspect_ratio is not None:
+            values.append(
+                "%s=%s" % (SVG_ATTR_PRESERVEASPECTRATIO, self.preserve_aspect_ratio)
+            )
+        if self.viewbox is not None:
+            values.append("%s=%s" % (SVG_ATTR_VIEWBOX, repr(self.viewbox)))
         params = ", ".join(values)
         return "SVGImage(%s)" % params
 
@@ -7860,9 +7883,23 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
 
 
 class Desc(SVGElement):
-    def __init__(self, values, desc=None):
-        self.desc = desc
-        SVGElement.__init__(self, **values)
+    def __init__(self, *args, **values):
+        self.desc = None
+        if values is None:
+            values = dict()
+        SVGElement.__init__(self, *args, **values)
+
+    def __eq__(self, other):
+        if not isinstance(other, Desc):
+            return False
+        return self.desc == other.desc
+
+    def __repr__(self):
+        return "%s('%s')" % (self.__class__.__name__, self.desc)
+
+    def property_by_args(self, *args):
+        if len(args) == 1:
+            self.desc = args[0]
 
     def property_by_object(self, obj):
         SVGElement.property_by_object(self, obj)
@@ -7878,9 +7915,23 @@ SVGDesc = Desc
 
 
 class Title(SVGElement):
-    def __init__(self, values, title=None):
-        self.title = title
-        SVGElement.__init__(self, **values)
+    def __init__(self, *args, **values):
+        self.title = None
+        if values is None:
+            values = dict()
+        SVGElement.__init__(self, *args, **values)
+
+    def __eq__(self, other):
+        if not isinstance(other, Title):
+            return False
+        return self.title == other.title
+
+    def __repr__(self):
+        return "%s('%s')" % (self.__class__.__name__, self.title)
+
+    def property_by_args(self, *args):
+        if len(args) == 1:
+            self.title = args[0]
 
     def property_by_object(self, obj):
         SVGElement.property_by_object(self, obj)
@@ -7988,7 +8039,8 @@ class SVG(Group):
         self.y = Length(self.y).value(relative_length=height, **kwargs)
 
     def elements(self, conditional=None):
-        yield self
+        if conditional is None or conditional(self):
+            yield self
         for q in self.select(conditional):
             yield q
 

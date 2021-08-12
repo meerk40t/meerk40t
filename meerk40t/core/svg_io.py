@@ -98,7 +98,7 @@ class SVGWriter:
                 if c is not None:
                     if isinstance(c, int):
                         c = Color(c)
-                subelement.set("color", str(c))
+                subelement.set("color", str(c).lower())
             for key in dir(operation):
                 if key.startswith("_") or key.startswith("implicit"):
                     continue
