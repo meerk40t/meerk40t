@@ -1998,6 +1998,8 @@ class Elemental(Modifier):
                 group_node = node.replace_node(type="group", label=node.label)
                 if isinstance(e, Shape) and not isinstance(e, Path):
                     e = Path(e)
+                elif isinstance(e, SVGText):
+                    continue
                 p = abs(e)
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
