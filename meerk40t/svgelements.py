@@ -3071,7 +3071,19 @@ class Viewbox:
         )
 
     def __repr__(self):
-        return "%s('%s')" % (self.__class__.__name__, str(self))
+        values = []
+        if self.x != 0:
+            values.append("x=%s" % Length.str(self.x))
+        if self.y != 0:
+            values.append("y=%s" % Length.str(self.y))
+        if self.width != 0:
+            values.append("width=%s" % Length.str(self.width))
+        if self.height != 0:
+            values.append("height=%s" % Length.str(self.height))
+        if self.preserve_aspect_ratio is not None:
+            values.append("%s=%s" % (SVG_ATTR_PRESERVEASPECTRATIO, self.preserve_aspect_ratio))
+        params = ", ".join(values)
+        return "Viewbox(%s)" % params
 
     def property_by_object(self, obj):
         self.x = obj.x
@@ -7703,8 +7715,6 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
 
     def __repr__(self):
         values = []
-        if self.url is not None:
-            values.append("%s=%s" % (SVG_HREF, self.url))
         if self.x != 0:
             values.append("%s=%s" % (SVG_ATTR_X, Length.str(self.x)))
         if self.y != 0:
@@ -7713,12 +7723,18 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
             values.append("%s=%s" % (SVG_ATTR_WIDTH, Length.str(self.width)))
         if self.height != "100%":
             values.append("%s=%s" % (SVG_ATTR_HEIGHT, Length.str(self.height)))
+        if self.image_width != 0:
+            values.append("image_width=%s" % Length.str(self.image_width))
+        if self.image_height != 0:
+            values.append("image_height=%s" % Length.str(self.image_height))
         if self.preserve_aspect_ratio is not None:
             values.append(
                 "%s=%s" % (SVG_ATTR_PRESERVEASPECTRATIO, self.preserve_aspect_ratio)
             )
         if self.viewbox is not None:
             values.append("%s=%s" % (SVG_ATTR_VIEWBOX, repr(self.viewbox)))
+        if self.url is not None:
+            values.append("%s='%s'" % (SVG_HREF, self.url))
         params = ", ".join(values)
         return "SVGImage(%s)" % params
 
