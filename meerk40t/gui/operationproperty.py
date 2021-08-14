@@ -361,7 +361,7 @@ class OperationProperty(MWindow):
             _("Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."),
             _("This setting is an operation-by-operation equivalent to the Pulse Grouping option in Device Config."),
             _("It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."),
-            _("As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because these bits are 1/1000\" in width, the difference should not be visible even under magnification."),
+            _("As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000\", the difference should not be visible even under magnification."),
         )))
         self.check_passes.SetToolTip("\n".join((
             _("Enable Operation Passes"),
