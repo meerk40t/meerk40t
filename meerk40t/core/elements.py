@@ -2607,7 +2607,7 @@ class Elemental(Modifier):
                         channel(_("%d: fill = %s - %s") % (i, e.fill.hex, name))
                     i += 1
                 channel(_("----------"))
-                return
+                return "elements", data
             if color == "none":
                 for e in data:
                     e.fill = None
@@ -2619,7 +2619,7 @@ class Elemental(Modifier):
                     if hasattr(e, "node"):
                         e.node.altered()
             context.signal("refresh_scene")
-            return
+            return "elements", data
 
         @context.console_argument("x_offset", type=Length, help=_("x offset."))
         @context.console_argument("y_offset", type=Length, help=_("y offset"))
