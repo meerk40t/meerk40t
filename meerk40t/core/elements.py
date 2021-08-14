@@ -1,4 +1,5 @@
 import functools
+import re
 from copy import copy
 
 from ..device.lasercommandconstants import (
@@ -38,6 +39,7 @@ from ..svgelements import (
     SVGElement,
     SVGImage,
     SVGText,
+    Viewbox,
 )
 from .cutcode import (
     CubicCut,
@@ -63,6 +65,10 @@ def plugin(kernel, lifecycle=None):
 
 
 MILS_IN_MM = 39.3701
+
+group_simplify_re = re.compile("(\([^()]+?\))|(SVG(?=Image|Text))", re.IGNORECASE)
+element_simplify_re = re.compile("(?<=\.\d{2})(\d+)", re.IGNORECASE)
+image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href='data:.*?'(,\s?|\s|(?=\))))", re.IGNORECASE)
 
 """
 The elements modifier stores all the element types in a bootstrapped tree. Specific node types added to the tree become
@@ -90,6 +96,7 @@ class Node:
     """
     Nodes are elements within the tree which stores most of the objects in Elements.
     """
+
 
     def __init__(self, data_object=None, type=None, *args, **kwargs):
         super().__init__()
@@ -422,26 +429,59 @@ class Node:
         Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
         node str. If something else provides a superior name it should be added in here.
         """
+        element = self.object
+        element_type = element.__class__.__name__
+        if element_type == "SVGImage":
+            element_type = "Image"
+        elif element_type == "SVGText":
+            element_type = "Text"
+        elif (
+            element_type == "Path"
+            and len(element) == 2
+            and isinstance(element[0], Move)
+            and (
+                isinstance(element[1], Close)
+                or (
+                    isinstance(element[1], Line)
+                    and element[1].length() == 0
+                    )
+                )
+            ):
+            element_type = "Dot"
+
         try:
             attribs = self.object.values[SVG_STRUCT_ATTRIB]
-            return attribs["label"]
+            return element_type + ": " + attribs["label"]
         except (AttributeError, KeyError):
             pass
 
         try:
             attribs = self.object.values[SVG_STRUCT_ATTRIB]
-            return attribs["{http://www.inkscape.org/namespaces/inkscape}label"]
+            return element_type + ": " + attribs["{http://www.inkscape.org/namespaces/inkscape}label"]
         except (AttributeError, KeyError):
             pass
 
         try:
             if self.object.id is not None:
-                return str(self.object.id)
+                return element_type + ": id=" + str(self.object.id)
         except AttributeError:
             pass
 
         if self.object is not None:
-            return str(self.object)
+            desc = str(self.object)
+            if element_type in ["Dot", "Path"]:
+                desc = element_type + "(" + element_simplify_re.sub("", desc) + ")"
+            elif element_type == "Group": # Group
+                n = 1
+                while n:
+                    desc, n = group_simplify_re.subn("", desc)
+                desc = element_type + ": " + desc
+            elif element_type == "Image": # Image
+                desc = image_simplify_re.sub("", desc)
+            else:
+                desc = element_simplify_re.sub("", desc)
+            return desc
+
         return str(self)
 
     def set_label(self, name):
@@ -734,11 +774,12 @@ class LaserOperation(Node):
             self._operation = kwargs["operation"]
         except KeyError:
             self._operation = "Unknown"
+        self.color = Color("black")
         self.output = True
         self.show = True
+        self.default = False
 
         self._status_value = "Queued"
-        self.color = Color("black")
         self.settings = LaserSettings(*args, **kwargs)
 
         try:
@@ -751,6 +792,10 @@ class LaserOperation(Node):
             pass
         try:
             self.show = bool(kwargs["show"])
+        except (ValueError, TypeError, KeyError):
+            pass
+        try:
+            self.default = bool(kwargs["default"])
         except (ValueError, TypeError, KeyError):
             pass
         if len(args) == 1:
@@ -791,6 +836,8 @@ class LaserOperation(Node):
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
+        if self.default:
+            parts.append("✓")
         if self.settings.passes_custom and self.settings.passes != 1:
             parts.append("%dX" % self.settings.passes)
         if op is None:
@@ -1696,11 +1743,12 @@ class Elemental(Modifier):
                         channel(name)
             channel(_("----------"))
 
+        @context.console_option("color", "c", type=Color)
+        @context.console_option("default", "d", type=bool)
         @context.console_option("speed", "s", type=float)
         @context.console_option("power", "p", type=float)
         @context.console_option("step", "S", type=int)
         @context.console_option("overscan", "o", type=Length)
-        @context.console_option("color", "c", type=Color)
         @context.console_option("passes", "x", type=int)
         @context.console_command(
             ("cut", "engrave", "raster", "imageop", "dots"),
@@ -1724,6 +1772,8 @@ class Elemental(Modifier):
             op = LaserOperation()
             if color is not None:
                 op.color = color
+            if default is not None:
+                op.default = default
             if speed is not None:
                 op.settings.speed = speed
             if power is not None:
@@ -2204,7 +2254,6 @@ class Elemental(Modifier):
                 for e in data:
                     bw = bed_dim.bed_width
                     bh = bed_dim.bed_height
-                    from ..svgelements import Viewbox
 
                     matrix = Viewbox.viewbox_transform(
                         0,
@@ -3676,7 +3725,7 @@ class Elemental(Modifier):
                 CommandOperation(
                     "Interrupt",
                     COMMAND_FUNCTION,
-                    self.context.registered["function/interrupt"],
+                    self.context.console_function("interrupt\n"),
                 ),
                 type="cmdop",
             )
@@ -4453,14 +4502,26 @@ class Elemental(Modifier):
         """
         Classify does the placement of elements within operations.
 
-        "Image" is classified as Image.
+        SVGImage is classified as Image.
         Dots are a special type of Path
         Text is classified as Raster
+        All other SVGElement types are Shapes
 
-        All other SVGElement types are Paths and:
-        If element stroke / fill is red-ish they get classed as Cut operations
-        If element stroke / fill is black-ish they get classed as Raster operations
-        Otherwise they get classed as engrave.
+        1. Classify first attempts to match Shapes to all EXISTING Operations of the same absolute color. Color match is on RGB only, not transparency.
+
+        2. If not, then we classify as follows:
+            * Paths consisting of a move followed by a single stright line segment are never Raster (since no width) - testing for more complex stright line elements is
+            * Stroke/Fill of same colour is a Raster
+            * Stroke/Fill of different colors are both Cut/Engrave and Raster
+            * No Stroke/Fill is a Raster
+            * Reddish Stroke is a Cut.
+            * Black Stroke is a Raster.
+            * All other stroke colors are Engrave
+            * Cut/Engraves/Raster elements are attenpted to match to an existing  to a matching Operation of same absolute color, creating it if necessary.
+            * Cut/Engraves/Raster elements are classified to a matching Operation of same absolute color, creating it if necessary.
+            *
+            * Cut/Engraves elements are classified to a matching Operation of same absolute color, creating it if necessary.
+            * White Engrave operations created by classify will be created disabled.
 
         :param elements: list of elements to classify.
         :param operations: operations list to classify into.
@@ -4476,79 +4537,151 @@ class Elemental(Modifier):
             elements = reversed(elements)
         if add_op_function is None:
             add_op_function = self.add_op
+
+        default_cut_ops = []
+        default_engrave_ops = []
+        default_raster_ops = []
+        for op in operations:
+            if op.default:
+                if op.operation == "Cut":
+                    default_cut_ops.append(op)
+                if op.operation == "Engrave":
+                    default_engrave_ops.append(op)
+                if op.operation == "Raster":
+                    default_raster_ops.append(op)
+
+        new_ops = []
+
         for element in elements:
-            was_classified = False
             if hasattr(element, "operation"):
                 add_op_function(element)
                 continue
             if element is None:
                 continue
             element_color = element.stroke
-            if element_color is None or str(element_color) == 'None':
+            if element_color is None or element_color.rgb is None:
                 element_color = element.fill
-            if isinstance(element, Shape) and (element_color is None or str(element_color) == 'None'):
+            if isinstance(element, Shape) and (element_color is None or element_color.rgb is None):
                 continue
             is_dot = (isinstance(element, Path) and len(element) == 2 and isinstance(element[0], Move)
                 and (isinstance(element[1], Close) or (isinstance(element[1], Line) and element[1].length() == 0)))
+            is_simple_line = (isinstance(element, Path) and len(element) == 2 and isinstance(element[0], Move)
+                and (isinstance(element[1], Line) and element[1].length() != 0))
 
-            # First try to classify in an existing operation
-            for op in operations:
-                # Since dots are special case of path, need to classify this before any other paths.
-                #if (
-                #    op.operation == "Dots"
-                #    and is_dot
-                #):
-                #    op.add(element, type="opnode")
-                #    was_classified = True
-                #    break  # May only classify in one Dots operation.
-                #elif (
-                if (
-                    op.operation == "Raster"
-                    and op.color == element_color
-                    and (isinstance(element, Shape) or isinstance(element, SVGText))
-                ):
-                    op.add(element, type="opnode")
-                    was_classified = True
-                elif (
-                    op.operation in ("Engrave", "Cut")
-                    and isinstance(element, Shape)
-                    and op.color == element_color
-                ):
-                    op.add(element, type="opnode")
-                    was_classified = True
-                elif (
-                    op.operation == "Image"
-                    and isinstance(element, SVGImage)
-                ):
-                    op.add(element, type="opnode")
-                    was_classified = True
-                    break  # May only classify in one Image operation.
-            if was_classified: continue
 
-            # Not classified into an existing operation, so we need to create an operation for it
-            #if is_dot:
-            #    op = LaserOperation(operation="Dot", color=element_color)
-            #elif isinstance(element, SVGImage):
-            if isinstance(element, SVGImage):
-                op = LaserOperation(operation="Image")
-            elif isinstance(element, Shape) or isinstance(element, SVGText):
-                if Color.distance_sq("black", element_color) <= 2304 or isinstance(element, SVGText): # if element_colour == Color("black"):
-                    op = LaserOperation(operation="Raster", color=element_color)
-                elif Color.distance_sq("red", element_color) <= 18825: # if element_color == Color("red"):
-                    op = LaserOperation(operation="Cut", color=element_color)
+            add_vector = False    # For everything except shapes
+            add_non_vector = True # Text - Dots and Images will also abuse this
+            if isinstance(element,Shape) and not is_dot:
+                if element_color.rgb == Color("black").rgb: # Treated as a raster for user convenience
+                    add_vector = False
+                    add_non_vector = True
                 else:
-                    op = LaserOperation(operation="Engrave", color=element_color)
-            add_op_function(op)
-            op.add(element, type="opnode")
-            operations.append(op)
+                    add_vector = element.stroke is not None and element.stroke.rgb is not None
+                    add_non_vector = element.fill is not None and element.fill.rgb is not None
+                    if is_simple_line or element.fill.alpha == 0:
+                        add_non_vector = False
+                    elif add_vector and add_non_vector and element.stroke == element.fill:
+                        add_vector = False
+            if not (add_vector or add_non_vector): # No stroke, fill alpha = 0
+                continue
 
-            # ToDo:
-            # Operations are always appended and so appear in sequence that elements are loaded - but perhaps instead
-            # operations should be grouped if possible i.e. new operation inserted after the last operation of the same type if one exists
-            # but if a new type of operation, then cut operations should be last and if the last existing operation is a cut, then the new operation should be inserted
-            # immediately before the first cut operation of the last group of cut operations.
-            # Or perhaps for a new type of operation the above algorithm should be extended to do Image / Raster first then Engrave then Cut.
-            # Sequence of existing operations should probably not be changed in case user has manually sequenced them for a reason - above algorithm respects this.
+            # First classify to operations of exact color
+            for op in operations:
+                op_operation = op.operation
+
+                # Since dots are special case of path, need to classify this before any other paths.
+                if is_dot:
+                    if op_operation == "Dots":
+                        op.add(element, type="opnode")
+                        add_non_vector = False
+                        break # May only classify in one Dots operation
+                elif (
+                    isinstance(element, Shape)
+                    and op_operation in ["Cut", "Engrave", "Raster"]
+                    and op.color.rgb == element_color.rgb
+                    and op not in default_cut_ops
+                    and op not in default_engrave_ops
+                    and op not in default_raster_ops
+                ):
+                    if op.operation == "Raster":
+                        # Only do raster add to existing raster ops because new reaster ops is default / a different color
+                        if op not in new_ops: # if an existing Operation, then we will not add opposite type later.
+                            op.add(element, type="opnode")
+                            add_vector = add_non_vector = False
+                    else:
+                        # Always do vector add because newly created vector ops match colour
+                        op.add(element, type="opnode")
+                        add_vector = False
+                        if op not in new_ops: # if an existing Operation, then we will not add opposite type later.
+                            add_non_vector = False
+                elif (
+                    isinstance(element, SVGText)
+                    and op_operation == "Raster"
+                    and op.color.rgb == element_color.rgb
+                    and op not in default_raster_ops
+                ):
+                    op.add(element, type="opnode")
+                    add_non_vector = False
+                elif (
+                    isinstance(element, SVGImage)
+                    and op_operation == "Image"
+                ):
+                    op.add(element, type="opnode")
+                    add_non_vector = False
+                    break  # May only classify in one Image operation.
+
+            # Check for default operations
+            if (isinstance(element,Shape) or isinstance(element,SVGText)) and not is_dot:
+                is_cut = Color.distance_sq("red", element_color) <= 18825
+                if add_vector and is_cut and default_cut_ops:
+                    for op in default_vector_ops:
+                        op.add(element, type="opnode")
+                    add_vector = False
+                elif add_vector and not is_cut and default_engrave_ops:
+                    for op in default_vector_ops:
+                        op.add(element, type="opnode")
+                    add_vector = False
+                if add_non_vector and default_raster_ops:
+                    for op in default_raster_ops:
+                        op.add(element, type="opnode")
+                    add_non_vector = False
+
+            # If we have matched element to an original operation or matched to all relavent new operations, we can move to the next element
+            if not (add_vector or add_non_vector):
+                continue
+
+            # Need to add an operation to classify into
+            ops = []
+            if is_dot:
+                ops.append(LaserOperation(operation="Dots", color="White", default=True))
+            elif isinstance(element, SVGImage):
+                ops.append(LaserOperation(operation="Image", color="Transparent", default=True))
+            elif isinstance(element, Shape) or isinstance(element, SVGText):
+                if add_vector:
+                    if is_cut: # This will be initialised because criteria are same as above
+                        ops.append(LaserOperation(operation="Cut", color=abs(element_color)))
+                    else:
+                        op = LaserOperation(operation="Engrave", color=abs(element_color))
+                        if element_color == Color("white"):
+                            op.settings.laser_enabled = False
+                        ops.append(op)
+                if add_non_vector:
+                    op = LaserOperation(operation="Raster", color="Black", default=True)
+                    default_raster_ops.append(op)
+                    ops.append(op)
+            for op in ops:
+                new_ops.append(op)
+                op.add(element, type="opnode")
+                add_op_function(op)
+                operations.append(op)
+
+        # ToDo:
+          # Operations are always appended and so appear in sequence that elements are loaded - but perhaps instead
+          # Operations should be grouped if possible i.e. new operation inserted after the last operation of the same type if one exists
+          # but if a new type of operation, then cut operations should be last and if the last existing operation is a cut, then the new operation should be inserted
+          # immediately before the first cut operation of the last group of cut operations.
+          # Or perhaps for a new type of operation the above algorithm should be extended to do Image / Raster first then Engrave then Cut.
+          # Sequence of existing operations should probably not be changed in case user has manually sequenced them for a reason - above algorithm respects this.
 
 
     def load(self, pathname, **kwargs):
