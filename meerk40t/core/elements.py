@@ -2487,7 +2487,6 @@ class Elemental(Modifier):
                 data.append(path)
                 return "elements", data
 
-
         @context.console_argument(
             "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
         )
@@ -2534,6 +2533,7 @@ class Elemental(Modifier):
             context.signal("refresh_scene")
             return "elements", data
 
+        @context.console_option("filter", "f", type=str, help="Filter indexes")
         @context.console_argument(
             "color", type=Color, help=_("Color to color the given stroke")
         )
@@ -2546,9 +2546,21 @@ class Elemental(Modifier):
             ),
             output_type="elements",
         )
-        def element_stroke(command, channel, _, color, data=None, **kwargs):
+        def element_stroke(command, channel, _, color, data=None, filter=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
             if color is None:
                 channel(_("----------"))
                 channel(_("Stroke Values:"))
@@ -2564,23 +2576,20 @@ class Elemental(Modifier):
                     i += 1
                 channel(_("----------"))
                 return
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-
-            if color == "none":
-                for e in data:
+            elif color == "none":
+                for e in apply:
                     e.stroke = None
                     if hasattr(e, "node"):
                         e.node.altered()
             else:
-                for e in data:
+                for e in apply:
                     e.stroke = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
             context.signal("refresh_scene")
             return "elements", data
 
+        @context.console_option("filter", "f", type=str, help="Filter indexes")
         @context.console_argument(
             "color", type=Color, help=_("color to color the given fill")
         )
@@ -2593,9 +2602,21 @@ class Elemental(Modifier):
             ),
             output_type="elements",
         )
-        def element_fill(command, channel, _, color, data=None, **kwgs):
+        def element_fill(command, channel, _, color, data=None, filter=None, **kwgs):
             if data is None:
                 data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
             if color is None:
                 channel(_("----------"))
                 channel(_("Fill Values:"))
@@ -2611,13 +2632,13 @@ class Elemental(Modifier):
                     i += 1
                 channel(_("----------"))
                 return "elements", data
-            if color == "none":
-                for e in data:
+            elif color == "none":
+                for e in apply:
                     e.fill = None
                     if hasattr(e, "node"):
                         e.node.altered()
             else:
-                for e in data:
+                for e in apply:
                     e.fill = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
