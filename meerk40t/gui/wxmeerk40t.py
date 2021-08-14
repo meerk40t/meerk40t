@@ -932,6 +932,39 @@ class MeerK40t(MWindow):
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
+        @context.console_command("dialog_transform", hidden=True)
+        def transform(**kwargs):
+            self.open_transform_dialog()
+
+        @context.console_command("dialog_flip", hidden=True)
+        def flip(**kwargs):
+            self.open_flip_dialog()
+
+        @context.console_command("dialog_path", hidden=True)
+        def path(**kwargs):
+            self.open_path_dialog()
+
+        @context.console_command("dialog_fill", hidden=True)
+        def fill(**kwargs):
+            self.open_fill_dialog()
+
+        @context.console_command("dialog_stroke", hidden=True)
+        def stroke(**kwargs):
+            self.open_stroke_dialog()
+
+        @context.console_command("dialog_fps", hidden=True)
+        def fps(**kwargs):
+            self.open_fps_dialog()
+
+        @context.console_command("dialog_gear", hidden=True)
+        def gear(**kwargs):
+            self.open_speedcode_gear_dialog()
+
+        @context.console_command("laserpath_clear", hidden=True)
+        def gear(**kwargs):
+            self.laserpath_widget.clear_laserpath()
+
+
         context.register("control/Transform", self.open_transform_dialog)
         context.register("control/Flip", self.open_flip_dialog)
         context.register("control/Path", self.open_path_dialog)
