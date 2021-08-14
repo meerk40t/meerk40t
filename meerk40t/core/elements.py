@@ -2469,12 +2469,21 @@ class Elemental(Modifier):
         @context.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
         )
-        @context.console_command("path", help=_("path <svg path>"))
-        def element_path(path_d, **kwgs):
+        @context.console_command("path", help=_("path <svg path>"), input_type="elements", output_type="elements")
+        def element_path(path_d, data, **kwgs):
+
             try:
-                self.add_element(Path(path_d))
+                path = Path(path_d)
             except ValueError:
                 raise SyntaxError(_("Not a valid path_d string (try quotes)"))
+
+            self.add_element(path)
+            if data is None:
+                return "elements", [path]
+            else:
+                data.append(path)
+                return "elements", data
+
 
         @context.console_argument(
             "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
