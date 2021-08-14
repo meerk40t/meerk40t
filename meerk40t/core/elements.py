@@ -2260,6 +2260,7 @@ class Elemental(Modifier):
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError
             y_pos = 0
+            data_out = list(data)
             for j in range(r):
                 x_pos = 0
                 for k in range(c):
@@ -2268,8 +2269,10 @@ class Elemental(Modifier):
                         for e in add_elem:
                             e *= "translate(%f, %f)" % (x_pos, y_pos)
                         self.add_elems(add_elem)
+                        data_out.extend(add_elem)
                     x_pos += x
                 y_pos += y
+            return "elements", data_out
 
         # ==========
         # ELEMENT/SHAPE COMMANDS
