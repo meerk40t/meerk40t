@@ -2242,7 +2242,7 @@ class Elemental(Modifier):
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
-            if len(data) == 0 or self._emphasized_bounds is None:
+            if len(data) == 0 and self._emphasized_bounds is None:
                 channel(_("No item selected."))
                 return
             if r is None:
