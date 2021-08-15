@@ -262,13 +262,15 @@ class Context:
         """
         from .svgelements import Color
 
+        props = [k for k, v in vars(self.__class__).items() if isinstance(v, property)]
         for attr in dir(self):
             if attr.startswith("_"):
+                continue
+            if attr in props:
                 continue
             value = getattr(self, attr)
             if value is None:
                 continue
-
             if isinstance(value, (int, bool, str, float, Color)):
                 self._kernel.write_persistent(self.abs_path(attr), value)
 

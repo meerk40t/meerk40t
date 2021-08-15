@@ -1998,6 +1998,8 @@ class Elemental(Modifier):
                 group_node = node.replace_node(type="group", label=node.label)
                 if isinstance(e, Shape) and not isinstance(e, Path):
                     e = Path(e)
+                elif isinstance(e, SVGText):
+                    continue
                 p = abs(e)
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
@@ -2240,7 +2242,7 @@ class Elemental(Modifier):
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
-            if len(data) == 0 or self._emphasized_bounds is None:
+            if len(data) == 0 and self._emphasized_bounds is None:
                 channel(_("No item selected."))
                 return
             if r is None:
@@ -2258,6 +2260,7 @@ class Elemental(Modifier):
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError
             y_pos = 0
+            data_out = list(data)
             for j in range(r):
                 x_pos = 0
                 for k in range(c):
@@ -2266,8 +2269,10 @@ class Elemental(Modifier):
                         for e in add_elem:
                             e *= "translate(%f, %f)" % (x_pos, y_pos)
                         self.add_elems(add_elem)
+                        data_out.extend(add_elem)
                     x_pos += x
                 y_pos += y
+            return "elements", data_out
 
         # ==========
         # ELEMENT/SHAPE COMMANDS
@@ -2467,12 +2472,20 @@ class Elemental(Modifier):
         @context.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
         )
-        @context.console_command("path", help=_("path <svg path>"))
-        def element_path(path_d, **kwgs):
+        @context.console_command("path", help=_("path <svg path>"), input_type="elements", output_type="elements")
+        def element_path(path_d, data, **kwgs):
+
             try:
-                self.add_element(Path(path_d))
+                path = Path(path_d)
             except ValueError:
                 raise SyntaxError(_("Not a valid path_d string (try quotes)"))
+
+            self.add_element(path)
+            if data is None:
+                return "elements", [path]
+            else:
+                data.append(path)
+                return "elements", data
 
         @context.console_argument(
             "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
@@ -2520,6 +2533,7 @@ class Elemental(Modifier):
             context.signal("refresh_scene")
             return "elements", data
 
+        @context.console_option("filter", "f", type=str, help="Filter indexes")
         @context.console_argument(
             "color", type=Color, help=_("Color to color the given stroke")
         )
@@ -2532,9 +2546,21 @@ class Elemental(Modifier):
             ),
             output_type="elements",
         )
-        def element_stroke(command, channel, _, color, data=None, **kwargs):
+        def element_stroke(command, channel, _, color, data=None, filter=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
             if color is None:
                 channel(_("----------"))
                 channel(_("Stroke Values:"))
@@ -2550,23 +2576,20 @@ class Elemental(Modifier):
                     i += 1
                 channel(_("----------"))
                 return
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-
-            if color == "none":
-                for e in data:
+            elif color == "none":
+                for e in apply:
                     e.stroke = None
                     if hasattr(e, "node"):
                         e.node.altered()
             else:
-                for e in data:
+                for e in apply:
                     e.stroke = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
             context.signal("refresh_scene")
             return "elements", data
 
+        @context.console_option("filter", "f", type=str, help="Filter indexes")
         @context.console_argument(
             "color", type=Color, help=_("color to color the given fill")
         )
@@ -2579,9 +2602,21 @@ class Elemental(Modifier):
             ),
             output_type="elements",
         )
-        def element_fill(command, channel, _, color, data=None, **kwgs):
+        def element_fill(command, channel, _, color, data=None, filter=None, **kwgs):
             if data is None:
                 data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
             if color is None:
                 channel(_("----------"))
                 channel(_("Fill Values:"))
@@ -2596,19 +2631,19 @@ class Elemental(Modifier):
                         channel(_("%d: fill = %s - %s") % (i, e.fill.hex, name))
                     i += 1
                 channel(_("----------"))
-                return
-            if color == "none":
-                for e in data:
+                return "elements", data
+            elif color == "none":
+                for e in apply:
                     e.fill = None
                     if hasattr(e, "node"):
                         e.node.altered()
             else:
-                for e in data:
+                for e in apply:
                     e.fill = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
             context.signal("refresh_scene")
-            return
+            return "elements", data
 
         @context.console_argument("x_offset", type=Length, help=_("x offset."))
         @context.console_argument("y_offset", type=Length, help=_("y offset"))
