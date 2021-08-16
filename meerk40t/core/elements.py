@@ -3753,7 +3753,7 @@ class Elemental(Modifier):
                 CommandOperation(
                     "Interrupt",
                     COMMAND_FUNCTION,
-                    self.context.console_function("interrupt\n"),
+                    self.context.registered["function/interrupt"],
                 ),
                 type="cmdop",
             )
