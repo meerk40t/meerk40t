@@ -77,6 +77,36 @@ def reversed_enumerate(collection: list):
         yield i, collection[i]
 
 
+def isDot(element):
+    if not isinstance(element, Shape):
+        return False
+    if isinstance(element, Path):
+        path = element
+    else:
+        path = element.segments()
+
+    if len(path) == 2 and isinstance(path[0], Move):
+        if isinstance(path[1], Close):
+            return True
+        if isinstance(path[1], Line) and path[1].length() == 0:
+            return True
+    return False
+
+
+def isStraightLine(element):
+    if not isinstance(element, Shape):
+        return False
+    if isinstance(element, Path):
+        path = element
+    else:
+        path = element.segments()
+
+    if len(path) == 2 and isinstance(path[0], Move):
+        if isinstance(path[1], Line) and path[1].length() > 0:
+            return True
+    return False
+
+
 """
 The elements modifier stores all the element types in a bootstrapped tree. Specific node types added to the tree become
 particular class types and the interactions between these types and functions applied are registered in the kernel.
@@ -436,7 +466,7 @@ class Node:
         Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
         node str. If something else provides a superior name it should be added in here.
         """
-        element = self.object
+        element = abs(self.object)
         element_type = element.__class__.__name__
         if element_type == "SVGImage":
             element_type = "Image"
@@ -444,18 +474,7 @@ class Node:
             element_type = "Text"
         elif element_type == "SimpleLine":
             element_type = "Line"
-        elif (
-            element_type == "Path"
-            and len(element) == 2
-            and isinstance(element[0], Move)
-            and (
-                isinstance(element[1], Close)
-                or (
-                    isinstance(element[1], Line)
-                    and element[1].length() == 0
-                    )
-                )
-            ):
+        elif isDot(element):
             element_type = "Dot"
 
         try:
@@ -478,7 +497,7 @@ class Node:
 
         if element is not None:
             desc = str(element)
-            if element_type in ["Dot", "Path"]:
+            if isinstance(element,Path):
                 desc = element_type + "(" + element_simplify_re.sub("", desc) + ")"
             elif element_type == "Group": # Group
                 n = 1
@@ -4610,10 +4629,8 @@ class Elemental(Modifier):
                 element_color = element.fill
             if isinstance(element, Shape) and (element_color is None or element_color.rgb is None):
                 continue
-            is_dot = (isinstance(element, Path) and len(element) == 2 and isinstance(element[0], Move)
-                and (isinstance(element[1], Close) or (isinstance(element[1], Line) and element[1].length() == 0)))
-            is_simple_line = (isinstance(element, Path) and len(element) == 2 and isinstance(element[0], Move)
-                and (isinstance(element[1], Line) and element[1].length() != 0))
+            is_dot = isDot(element)
+            is_straight_line = isStraightLine(element)
 
 
             add_vector = False    # For everything except shapes
@@ -4625,11 +4642,11 @@ class Elemental(Modifier):
                 else:
                     add_vector = element.stroke is not None and element.stroke.rgb is not None
                     add_non_vector = element.fill is not None and element.fill.rgb is not None
-                    if is_simple_line or element.fill.alpha == 0:
+                    if is_straight_line or element.fill.alpha == 0: # Straight lines and transparent fill cannot be rastered
                         add_non_vector = False
                     elif add_vector and add_non_vector and element.stroke == element.fill:
                         add_vector = False
-            if not (add_vector or add_non_vector): # No stroke, fill alpha = 0
+            if not (add_vector or add_non_vector): # No stroke and (straight line or transparent fill)
                 continue
 
             # First classify to operations of exact color
