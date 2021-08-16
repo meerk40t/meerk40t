@@ -66,9 +66,16 @@ def plugin(kernel, lifecycle=None):
 
 MILS_IN_MM = 39.3701
 
-group_simplify_re = re.compile("(\([^()]+?\))|(SVG(?=Image|Text))", re.IGNORECASE)
-element_simplify_re = re.compile("(?<=\.\d{2})(\d+)", re.IGNORECASE)
+group_simplify_re = re.compile("(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE)
+element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
 image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href='data:.*?'(,\s?|\s|(?=\))))", re.IGNORECASE)
+
+OP_PRIORITIES = ["Dots","Image","Raster","Engrave","Cut"]
+
+def reversed_enumerate(collection: list):
+    for i in range(len(collection)-1, -1, -1):
+        yield i, collection[i]
+
 
 """
 The elements modifier stores all the element types in a bootstrapped tree. Specific node types added to the tree become
@@ -435,6 +442,8 @@ class Node:
             element_type = "Image"
         elif element_type == "SVGText":
             element_type = "Text"
+        elif element_type == "SimpleLine":
+            element_type = "Line"
         elif (
             element_type == "Path"
             and len(element) == 2
@@ -450,25 +459,25 @@ class Node:
             element_type = "Dot"
 
         try:
-            attribs = self.object.values[SVG_STRUCT_ATTRIB]
+            attribs = element.values[SVG_STRUCT_ATTRIB]
             return element_type + ": " + attribs["label"]
         except (AttributeError, KeyError):
             pass
 
         try:
-            attribs = self.object.values[SVG_STRUCT_ATTRIB]
+            attribs = element.values[SVG_STRUCT_ATTRIB]
             return element_type + ": " + attribs["{http://www.inkscape.org/namespaces/inkscape}label"]
         except (AttributeError, KeyError):
             pass
 
         try:
-            if self.object.id is not None:
-                return element_type + ": id=" + str(self.object.id)
+            if element.id is not None:
+                return element_type + ": id=" + str(element.id)
         except AttributeError:
             pass
 
-        if self.object is not None:
-            desc = str(self.object)
+        if element is not None:
+            desc = str(element)
             if element_type in ["Dot", "Path"]:
                 desc = element_type + "(" + element_simplify_re.sub("", desc) + ")"
             elif element_type == "Group": # Group
@@ -4268,10 +4277,17 @@ class Elemental(Modifier):
                 return elem
         raise IndexError
 
-    def add_op(self, op):
+    def add_op(self, op, pos=None):
+        """
+        Add an operation. Wraps it within a node, and appends it to the tree.
+
+        :param element:
+        :param classify: Should this element be automatically classified.
+        :return:
+        """
         operation_branch = self._tree.get(type="branch ops")
         op.set_label(str(op))
-        operation_branch.add(op, type="op")
+        operation_branch.add(op, type="op", pos=pos)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get(type="branch ops")
@@ -4498,6 +4514,33 @@ class Elemental(Modifier):
         self._emphasized_bounds = None
         self.set_emphasis(None)
 
+    def add_classify_op(self, op):
+        """
+        Ops are added as part of classify as elements are iterated that need a new op.
+        Rather than add them at the end, creating a random sequence of Engrave and Cut operations
+        perhaps with an Image or Raster or Dots operation in there as well, instead  we need to try
+        to group operations together, adding the new operation:
+        1. After the last operation of the same type if one exists; or if not
+        2. After the last operation of the highest priority existing operation (where Dots is the lowest priority and Cut is the highest.
+        """
+        operation_branch = self._tree.get(type="branch ops")
+        operations = operation_branch.children
+        for pos, old_op in reversed_enumerate(operations):
+            if op.operation == old_op.operation:
+                return self.add_op(op, pos=pos + 1)
+
+        # No operation of same type found. So we will look for last operation of a lower priority and add after it.
+        try:
+            priority = OP_PRIORITIES.index(op.operation)
+        except ValueError:
+            return self.add_op(op)
+
+        for pos, old_op in reversed_enumerate(operations):
+            if OP_PRIORITIES.index(old_op.operation) < priority:
+                   return self.add_op(op, pos=pos + 1)
+        return self.add_op(op, pos=0)
+
+
     def classify(self, elements, operations=None, add_op_function=None):
         """
         Classify does the placement of elements within operations.
@@ -4536,7 +4579,7 @@ class Elemental(Modifier):
         if reverse:
             elements = reversed(elements)
         if add_op_function is None:
-            add_op_function = self.add_op
+            add_op_function = self.add_classify_op
 
         default_cut_ops = []
         default_engrave_ops = []
