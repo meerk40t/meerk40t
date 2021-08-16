@@ -1790,6 +1790,7 @@ class Elemental(Modifier):
             command,
             data=None,
             color=None,
+            default=None,
             speed=None,
             power=None,
             step=None,
@@ -4698,11 +4699,11 @@ class Elemental(Modifier):
             if (isinstance(element,Shape) or isinstance(element,SVGText)) and not is_dot:
                 is_cut = Color.distance_sq("red", element_color) <= 18825
                 if add_vector and is_cut and default_cut_ops:
-                    for op in default_vector_ops:
+                    for op in default_cut_ops:
                         op.add(element, type="opnode")
                     add_vector = False
                 elif add_vector and not is_cut and default_engrave_ops:
-                    for op in default_vector_ops:
+                    for op in default_engrave_ops:
                         op.add(element, type="opnode")
                     add_vector = False
                 if add_non_vector and default_raster_ops:
