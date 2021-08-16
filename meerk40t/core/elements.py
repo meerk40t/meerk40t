@@ -3768,8 +3768,13 @@ class Elemental(Modifier):
             help=_("duplicate operation element nodes"),
         )
         def duplicate_operation(node, **kwgs):
+            operations = self._tree.get(type="branch ops").children
+            try:
+                pos = operations.index(node) + 1
+            except ValueError:
+                pos = None
             copy_op = LaserOperation(node)
-            self.add_op(copy_op)
+            self.add_op(copy_op, pos=pos)
             for n in node.children:
                 try:
                     obj = n.object
@@ -4523,8 +4528,7 @@ class Elemental(Modifier):
         1. After the last operation of the same type if one exists; or if not
         2. After the last operation of the highest priority existing operation (where Dots is the lowest priority and Cut is the highest.
         """
-        operation_branch = self._tree.get(type="branch ops")
-        operations = operation_branch.children
+        operations = self._tree.get(type="branch ops").children
         for pos, old_op in reversed_enumerate(operations):
             if op.operation == old_op.operation:
                 return self.add_op(op, pos=pos + 1)
