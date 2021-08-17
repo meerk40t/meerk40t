@@ -39,7 +39,7 @@ class LhystudiosDriverGui(MWindow):
             self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
         )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
-        self.checkbox_plot_shift = wx.CheckBox(self, wx.ID_ANY, _("Pulse Shifting"))
+        self.checkbox_plot_shift = wx.CheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
         self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, _("Randomize PPI"))
         self.checkbox_limit_buffer = wx.CheckBox(
             self, wx.ID_ANY, _("Limit Write Buffer")
@@ -141,11 +141,16 @@ class LhystudiosDriverGui(MWindow):
         self.button_home_by_current.SetToolTip(
             _("Set Home Position based on the current position")
         )
-        self.checkbox_plot_shift.SetToolTip(
-            _(
-                "During the pulse planning process allow shifting pulses by one unit to increase command efficiency\nThis may prevent device stutter and reduce pulse accuracy by one up to one unit."
-            )
-        )
+        self.checkbox_plot_shift.SetToolTip("\n".join((
+            _("Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."),
+            _("This setting is a global equivalent to the Pulse Grouping option in Operation Properties."),
+            _("It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."),
+            _("As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000\", the difference should not be visible even under magnification."),
+            _("Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly,") +
+            " " +
+            _("this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process."),
+            _("Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked.")
+        )))
         self.checkbox_random_ppi.SetToolTip(
             _("Rather than orderly PPI, we perform PPI based on a randomized average")
         )
