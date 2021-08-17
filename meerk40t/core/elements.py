@@ -1651,6 +1651,27 @@ class Elemental(Modifier):
             self.set_emphasis(ops)
             return "ops", ops
 
+        @context.console_argument("start", type=int, help=_("operation start"))
+        @context.console_argument("end", type=int, help=_("operation end"))
+        @context.console_argument("step", type=int, help=_("operation step"))
+        @context.console_command(
+            "range",
+            help=_("Toggle selection by begin, end and step"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_select_range(data=None, start=None, end=None, step=1, **kwgs):
+            subops = list()
+            for e in range(start, end, step):
+                try:
+                    subops.append(data[e])
+                except IndexError:
+                    pass
+            self.set_emphasis(subops)
+            return "ops", subops
+
+
+
         @context.console_command(
             "list",
             help=_("Show information about the chained data"),
