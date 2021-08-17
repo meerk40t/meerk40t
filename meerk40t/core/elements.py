@@ -466,6 +466,8 @@ class Node:
         Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
         node str. If something else provides a superior name it should be added in here.
         """
+        if self.object is None:
+            return self.label
         element = abs(self.object)
         element_type = element.__class__.__name__
         if element_type == "SVGImage":
@@ -826,33 +828,43 @@ class LaserOperation(Node):
             self.default = bool(kwargs["default"])
         except (ValueError, TypeError, KeyError):
             pass
+
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
                 self.add(obj, type="opnode")
             elif isinstance(obj, LaserOperation):
                 self._operation = obj.operation
-
                 self.color = Color(obj.color)
                 self.output = obj.output
                 self.show = obj.show
-
                 self.settings = LaserSettings(obj.settings)
+
         if self.operation == "Cut":
             if self.settings.speed is None:
                 self.settings.speed = 10.0
             if self.settings.power is None:
                 self.settings.power = 1000.0
-        if self.operation == "Engrave":
+        elif self.operation == "Engrave":
             if self.settings.speed is None:
                 self.settings.speed = 35.0
             if self.settings.power is None:
                 self.settings.power = 1000.0
-        if self.operation == "Raster":
+        elif self.operation == "Raster":
             if self.settings.raster_step == 0:
-                self.settings.raster_step = 1
+                self.settings.raster_step = 2
             if self.settings.speed is None:
                 self.settings.speed = 150.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+        elif self.operation == "Image":
+            if self.settings.speed is None:
+                self.settings.speed = 150.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+        else:
+            if self.settings.speed is None:
+                self.settings.speed = 10.0
             if self.settings.power is None:
                 self.settings.power = 1000.0
 
@@ -4739,14 +4751,6 @@ class Elemental(Modifier):
                 op.add(element, type="opnode")
                 add_op_function(op)
                 operations.append(op)
-
-        # ToDo:
-          # Operations are always appended and so appear in sequence that elements are loaded - but perhaps instead
-          # Operations should be grouped if possible i.e. new operation inserted after the last operation of the same type if one exists
-          # but if a new type of operation, then cut operations should be last and if the last existing operation is a cut, then the new operation should be inserted
-          # immediately before the first cut operation of the last group of cut operations.
-          # Or perhaps for a new type of operation the above algorithm should be extended to do Image / Raster first then Engrave then Cut.
-          # Sequence of existing operations should probably not be changed in case user has manually sequenced them for a reason - above algorithm respects this.
 
 
     def load(self, pathname, **kwargs):
