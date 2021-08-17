@@ -1671,7 +1671,6 @@ class Elemental(Modifier):
             return "ops", subops
 
 
-
         @context.console_command(
             "list",
             help=_("Show information about the chained data"),
@@ -2067,6 +2066,26 @@ class Elemental(Modifier):
                     channel("%d: %s" % (i, name))
             channel("----------")
             return "elements", data
+
+
+        @context.console_argument("start", type=int, help=_("elements start"))
+        @context.console_argument("end", type=int, help=_("elements end"))
+        @context.console_argument("step", type=int, help=_("elements step"))
+        @context.console_command(
+            "range",
+            help=_("Toggle selection by begin, end and step"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_select_range(data=None, start=None, end=None, step=1, **kwgs):
+            subelem = list()
+            for e in range(start, end, step):
+                try:
+                    subelem.append(data[e])
+                except IndexError:
+                    pass
+            self.set_emphasis(subelem)
+            return "elements", subelem
 
         @context.console_command(
             "merge",
