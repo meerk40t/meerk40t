@@ -1798,6 +1798,42 @@ class Elemental(Modifier):
                 self.context.signal("refresh_scene")
             return
 
+        @context.console_argument("speed", type=float, help=_("operation speed in mm/s"))
+        @context.console_command(
+            "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
+        )
+        def op_speed(command, channel, _, speed=None, data=None, **kwrgs):
+            if speed is None:
+                for op in data:
+                    old_speed = op.settings.speed
+                    channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
+                return
+            for op in data:
+                old_speed = op.settings.speed
+                op.settings.speed = speed
+                channel(_("Speed for '%s' updated %f -> %f") % (str(op), old_speed, speed))
+                op.modified()
+                self.context.signal("element_property_reload", op)
+            return "ops", data
+
+        @context.console_argument("ppi", type=float, help=_("ppi in pulses per inch mm/s"))
+        @context.console_command(
+            "ppi", help=_("ppi <ppi>"), input_type="ops", output_type="ops"
+        )
+        def op_ppi(command, channel, _, ppi=None, data=None, **kwrgs):
+            if ppi is None:
+                for op in data:
+                    old_ppi = op.settings.ppi
+                    channel(_("PPI for '%s' is currently: %d") % (str(op), old_ppi))
+                return
+            for op in data:
+                old_ppi = op.settings.ppi
+                op.settings.ppi = ppi
+                channel(_("PPI for '%s' updated %s -> %s") % (str(op), old_ppi, ppi))
+                op.modified()
+                self.context.signal("element_property_reload", op)
+            return "ops", data
+
         # ==========
         # ELEMENT/OPERATION SUBCOMMANDS
         # ==========
