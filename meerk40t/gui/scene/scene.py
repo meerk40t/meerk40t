@@ -344,7 +344,7 @@ class Scene(Module, Job):
         Called by in the UI thread.
         """
         if self.screen_refresh_is_requested:
-            if self.screen_refresh_lock.acquire(timeout=0.2):
+            if self.screen_refresh_lock.acquire():
                 self.update_buffer_ui_thread()
                 self.gui.Refresh()
                 self.gui.Update()
