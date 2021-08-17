@@ -45,8 +45,8 @@ class LaserSettings:
         self.line_color = None
 
         self.laser_enabled = True
-        self.speed = 20.0
-        self.power = 1000.0
+        self.speed = None
+        self.power = None
         self.dratio_custom = False
         self.dratio = 0.261
         self.acceleration_custom = False
