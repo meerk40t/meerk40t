@@ -1844,6 +1844,45 @@ class Elemental(Modifier):
                 op.notify_update()
             return "ops", data
 
+        @context.console_argument("passes", type=int, help=_("Set operation passes"))
+        @context.console_command(
+            "passes", help=_("passes <passes>"), input_type="ops", output_type="ops"
+        )
+        def op_ppi(command, channel, _, passes=None, data=None, **kwrgs):
+            if passes is None:
+                for op in data:
+                    old_passes = op.settings.passes
+                    channel(_("Passes for '%s' is currently: %d") % (str(op), old_passes))
+                return
+            for op in data:
+                old_passes = op.settings.passes
+                op.settings.passes = passes
+                if passes >= 1:
+                    op.settings.passes_custom = True
+                channel(_("Passes for '%s' updated %d -> %d") % (str(op), old_passes, passes))
+                op.notify_update()
+            return "ops", data
+
+        @context.console_command(
+            "disable", help=_("disable the given operations"), input_type="ops", output_type="ops"
+        )
+        def op_disable(command, channel, _, data=None, **kwrgs):
+            for op in data:
+                op.settings.output = False
+                channel(_("Operation '%s' disabled.") % str(op))
+                op.notify_update()
+            return "ops", data
+
+        @context.console_command(
+            "enable", help=_("enable the given operations"), input_type="ops", output_type="ops"
+        )
+        def op_enable(command, channel, _, data=None, **kwrgs):
+            for op in data:
+                op.settings.output = True
+                channel(_("Operation '%s' enabled.") % str(op))
+                op.notify_update()
+            return "ops", data
+
         # ==========
         # ELEMENT/OPERATION SUBCOMMANDS
         # ==========
