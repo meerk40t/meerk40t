@@ -1738,6 +1738,26 @@ class Elemental(Modifier):
             self.set_emphasis(ops)
             return "ops", ops
 
+        @context.console_argument("start", type=int, help=_("operation start"))
+        @context.console_argument("end", type=int, help=_("operation end"))
+        @context.console_argument("step", type=int, help=_("operation step"))
+        @context.console_command(
+            "range",
+            help=_("Toggle selection by begin, end and step"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_select_range(data=None, start=None, end=None, step=1, **kwgs):
+            subops = list()
+            for e in range(start, end, step):
+                try:
+                    subops.append(data[e])
+                except IndexError:
+                    pass
+            self.set_emphasis(subops)
+            return "ops", subops
+
+
         @context.console_command(
             "list",
             help=_("Show information about the chained data"),
@@ -1848,46 +1868,97 @@ class Elemental(Modifier):
 
         @context.console_argument("step_size", type=int, help=_("raster step size"))
         @context.console_command(
-            "step", help=_("step <raster-step-size>"), input_type=("ops", "elements")
+            "step", help=_("step <raster-step-size>"), input_type="ops"
         )
-        def step_command(command, channel, _, step_size=None, **kwrgs):
+        def op_step(command, channel, _, data, step_size=None, **kwrgs):
             if step_size is None:
                 found = False
-                for op in self.ops(emphasized=True):
+                for op in data:
                     if op.operation in ("Raster", "Image"):
                         step = op.settings.raster_step
                         channel(_("Step for %s is currently: %d") % (str(op), step))
                         found = True
-                for element in self.elems(emphasized=True):
-                    if isinstance(element, SVGImage):
-                        try:
-                            step = element.values["raster_step"]
-                        except KeyError:
-                            step = 1
-                        channel(
-                            _("Image step for %s is currently: %s")
-                            % (str(element), step)
-                        )
-                        found = True
                 if not found:
                     channel(_("No raster operations selected."))
                 return
-            for op in self.ops(emphasized=True):
+            for op in data:
                 if op.operation in ("Raster", "Image"):
                     op.settings.raster_step = step_size
-                    self.context.signal("element_property_reload", op)
-            for element in self.elems(emphasized=True):
-                element.values["raster_step"] = str(step_size)
-                m = element.transform
-                tx = m.e
-                ty = m.f
-                element.transform = Matrix.scale(float(step_size), float(step_size))
-                element.transform.post_translate(tx, ty)
-                if hasattr(element, "node"):
-                    element.node.modified()
-                self.context.signal("element_property_reload", element)
-                self.context.signal("refresh_scene")
-            return
+                    op.notify_update()
+            return "ops", data
+
+        @context.console_argument("speed", type=float, help=_("operation speed in mm/s"))
+        @context.console_command(
+            "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
+        )
+        def op_speed(command, channel, _, speed=None, data=None, **kwrgs):
+            if speed is None:
+                for op in data:
+                    old_speed = op.settings.speed
+                    channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
+                return
+            for op in data:
+                old_speed = op.settings.speed
+                op.settings.speed = speed
+                channel(_("Speed for '%s' updated %f -> %f") % (str(op), old_speed, speed))
+                op.notify_update()
+            return "ops", data
+
+        @context.console_argument("power", type=int, help=_("power in pulses per inch (ppi, 1000=max)"))
+        @context.console_command(
+            "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
+        )
+        def op_power(command, channel, _, power=None, data=None, **kwrgs):
+            if power is None:
+                for op in data:
+                    old_ppi = op.settings.power
+                    channel(_("Power for '%s' is currently: %d") % (str(op), old_ppi))
+                return
+            for op in data:
+                old_ppi = op.settings.power
+                op.settings.power = power
+                channel(_("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power))
+                op.notify_update()
+            return "ops", data
+
+        @context.console_argument("passes", type=int, help=_("Set operation passes"))
+        @context.console_command(
+            "passes", help=_("passes <passes>"), input_type="ops", output_type="ops"
+        )
+        def op_passes(command, channel, _, passes=None, data=None, **kwrgs):
+            if passes is None:
+                for op in data:
+                    old_passes = op.settings.passes
+                    channel(_("Passes for '%s' is currently: %d") % (str(op), old_passes))
+                return
+            for op in data:
+                old_passes = op.settings.passes
+                op.settings.passes = passes
+                if passes >= 1:
+                    op.settings.passes_custom = True
+                channel(_("Passes for '%s' updated %d -> %d") % (str(op), old_passes, passes))
+                op.notify_update()
+            return "ops", data
+
+        @context.console_command(
+            "disable", help=_("disable the given operations"), input_type="ops", output_type="ops"
+        )
+        def op_disable(command, channel, _, data=None, **kwrgs):
+            for op in data:
+                op.settings.output = False
+                channel(_("Operation '%s' disabled.") % str(op))
+                op.notify_update()
+            return "ops", data
+
+        @context.console_command(
+            "enable", help=_("enable the given operations"), input_type="ops", output_type="ops"
+        )
+        def op_enable(command, channel, _, data=None, **kwrgs):
+            for op in data:
+                op.settings.output = True
+                channel(_("Operation '%s' enabled.") % str(op))
+                op.notify_update()
+            return "ops", data
 
         # ==========
         # ELEMENT/OPERATION SUBCOMMANDS
@@ -1976,6 +2047,41 @@ class Elemental(Modifier):
         # ==========
         # ELEMENT SUBCOMMANDS
         # ==========
+
+        @context.console_argument("step_size", type=int, help=_("element step size"))
+        @context.console_command(
+            "step", help=_("step <element step-size>"), input_type="elements", output_type="elements"
+        )
+        def step_command(command, channel, _, data, step_size=None, **kwrgs):
+            if step_size is None:
+                found = False
+                for element in data:
+                    if isinstance(element, SVGImage):
+                        try:
+                            step = element.values["raster_step"]
+                        except KeyError:
+                            step = 1
+                        channel(
+                            _("Image step for %s is currently: %s")
+                            % (str(element), step)
+                        )
+                        found = True
+                if not found:
+                    channel(_("No image element selected."))
+                return
+            for element in data:
+                element.values["raster_step"] = str(step_size)
+                m = element.transform
+                tx = m.e
+                ty = m.f
+                element.transform = Matrix.scale(float(step_size), float(step_size))
+                element.transform.post_translate(tx, ty)
+                if hasattr(element, "node"):
+                    element.node.modified()
+                self.context.signal("element_property_reload", element)
+                self.context.signal("refresh_scene")
+            return "elements",
+
         @context.console_command(
             "select",
             help=_("Set these values as the selection."),
@@ -2051,6 +2157,26 @@ class Elemental(Modifier):
                     channel("%d: %s" % (i, name))
             channel("----------")
             return "elements", data
+
+
+        @context.console_argument("start", type=int, help=_("elements start"))
+        @context.console_argument("end", type=int, help=_("elements end"))
+        @context.console_argument("step", type=int, help=_("elements step"))
+        @context.console_command(
+            "range",
+            help=_("Toggle selection by begin, end and step"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_select_range(data=None, start=None, end=None, step=1, **kwgs):
+            subelem = list()
+            for e in range(start, end, step):
+                try:
+                    subelem.append(data[e])
+                except IndexError:
+                    pass
+            self.set_emphasis(subelem)
+            return "elements", subelem
 
         @context.console_command(
             "merge",
