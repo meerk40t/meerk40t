@@ -1818,16 +1818,16 @@ class Elemental(Modifier):
         @context.console_command(
             "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
         )
-        def op_power(command, channel, _, ppi=None, data=None, **kwrgs):
-            if ppi is None:
+        def op_power(command, channel, _, power=None, data=None, **kwrgs):
+            if power is None:
                 for op in data:
                     old_ppi = op.settings.power
                     channel(_("Power for '%s' is currently: %d") % (str(op), old_ppi))
                 return
             for op in data:
                 old_ppi = op.settings.power
-                op.settings.power = ppi
-                channel(_("Power for '%s' updated %d -> %d") % (str(op), old_ppi, ppi))
+                op.settings.power = power
+                channel(_("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power))
                 op.notify_update()
             return "ops", data
 
