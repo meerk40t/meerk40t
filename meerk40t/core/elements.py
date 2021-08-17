@@ -1757,16 +1757,32 @@ class Elemental(Modifier):
 
         @context.console_argument("step_size", type=int, help=_("raster step size"))
         @context.console_command(
-            "step", help=_("step <raster-step-size>"), input_type=("ops", "elements")
+            "step", help=_("step <raster-step-size>"), input_type="ops"
         )
-        def step_command(command, channel, _, step_size=None, **kwrgs):
+        def step_command(command, channel, _, data, step_size=None, **kwrgs):
             if step_size is None:
                 found = False
-                for op in self.ops(emphasized=True):
+                for op in data:
                     if op.operation in ("Raster", "Image"):
                         step = op.settings.raster_step
                         channel(_("Step for %s is currently: %d") % (str(op), step))
                         found = True
+                if not found:
+                    channel(_("No raster operations selected."))
+                return
+            for op in data:
+                if op.operation in ("Raster", "Image"):
+                    op.settings.raster_step = step_size
+                    op.notify_update()
+            return "ops", data
+
+        @context.console_argument("step_size", type=int, help=_("raster step size"))
+        @context.console_command(
+            "step", help=_("step <raster-step-size>"), input_type="elements"
+        )
+        def step_command(command, channel, _, data, step_size=None, **kwrgs):
+            if step_size is None:
+                found = False
                 for element in self.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         try:
@@ -1779,13 +1795,9 @@ class Elemental(Modifier):
                         )
                         found = True
                 if not found:
-                    channel(_("No raster operations selected."))
+                    channel(_("No image element selected."))
                 return
-            for op in self.ops(emphasized=True):
-                if op.operation in ("Raster", "Image"):
-                    op.settings.raster_step = step_size
-                    self.context.signal("element_property_reload", op)
-            for element in self.elems(emphasized=True):
+            for element in data:
                 element.values["raster_step"] = str(step_size)
                 m = element.transform
                 tx = m.e
@@ -1796,7 +1808,7 @@ class Elemental(Modifier):
                     element.node.modified()
                 self.context.signal("element_property_reload", element)
                 self.context.signal("refresh_scene")
-            return
+            return "elements",
 
         @context.console_argument("speed", type=float, help=_("operation speed in mm/s"))
         @context.console_command(
@@ -1812,11 +1824,10 @@ class Elemental(Modifier):
                 old_speed = op.settings.speed
                 op.settings.speed = speed
                 channel(_("Speed for '%s' updated %f -> %f") % (str(op), old_speed, speed))
-                op.modified()
-                self.context.signal("element_property_reload", op)
+                op.notify_update()
             return "ops", data
 
-        @context.console_argument("ppi", type=float, help=_("ppi in pulses per inch mm/s"))
+        @context.console_argument("ppi", type=int, help=_("ppi in pulses per inch mm/s"))
         @context.console_command(
             "ppi", help=_("ppi <ppi>"), input_type="ops", output_type="ops"
         )
@@ -1829,9 +1840,8 @@ class Elemental(Modifier):
             for op in data:
                 old_ppi = op.settings.ppi
                 op.settings.ppi = ppi
-                channel(_("PPI for '%s' updated %s -> %s") % (str(op), old_ppi, ppi))
-                op.modified()
-                self.context.signal("element_property_reload", op)
+                channel(_("PPI for '%s' updated %d -> %d") % (str(op), old_ppi, ppi))
+                op.notify_update()
             return "ops", data
 
         # ==========
