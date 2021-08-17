@@ -1759,7 +1759,7 @@ class Elemental(Modifier):
         @context.console_command(
             "step", help=_("step <raster-step-size>"), input_type="ops"
         )
-        def step_command(command, channel, _, data, step_size=None, **kwrgs):
+        def op_step(command, channel, _, data, step_size=None, **kwrgs):
             if step_size is None:
                 found = False
                 for op in data:
@@ -1775,40 +1775,6 @@ class Elemental(Modifier):
                     op.settings.raster_step = step_size
                     op.notify_update()
             return "ops", data
-
-        @context.console_argument("step_size", type=int, help=_("raster step size"))
-        @context.console_command(
-            "step", help=_("step <raster-step-size>"), input_type="elements"
-        )
-        def step_command(command, channel, _, data, step_size=None, **kwrgs):
-            if step_size is None:
-                found = False
-                for element in self.elems(emphasized=True):
-                    if isinstance(element, SVGImage):
-                        try:
-                            step = element.values["raster_step"]
-                        except KeyError:
-                            step = 1
-                        channel(
-                            _("Image step for %s is currently: %s")
-                            % (str(element), step)
-                        )
-                        found = True
-                if not found:
-                    channel(_("No image element selected."))
-                return
-            for element in data:
-                element.values["raster_step"] = str(step_size)
-                m = element.transform
-                tx = m.e
-                ty = m.f
-                element.transform = Matrix.scale(float(step_size), float(step_size))
-                element.transform.post_translate(tx, ty)
-                if hasattr(element, "node"):
-                    element.node.modified()
-                self.context.signal("element_property_reload", element)
-                self.context.signal("refresh_scene")
-            return "elements",
 
         @context.console_argument("speed", type=float, help=_("operation speed in mm/s"))
         @context.console_command(
@@ -1848,7 +1814,7 @@ class Elemental(Modifier):
         @context.console_command(
             "passes", help=_("passes <passes>"), input_type="ops", output_type="ops"
         )
-        def op_ppi(command, channel, _, passes=None, data=None, **kwrgs):
+        def op_passes(command, channel, _, passes=None, data=None, **kwrgs):
             if passes is None:
                 for op in data:
                     old_passes = op.settings.passes
@@ -1970,6 +1936,41 @@ class Elemental(Modifier):
         # ==========
         # ELEMENT SUBCOMMANDS
         # ==========
+
+        @context.console_argument("step_size", type=int, help=_("element step size"))
+        @context.console_command(
+            "step", help=_("step <element step-size>"), input_type="elements", output_type="elements"
+        )
+        def step_command(command, channel, _, data, step_size=None, **kwrgs):
+            if step_size is None:
+                found = False
+                for element in data:
+                    if isinstance(element, SVGImage):
+                        try:
+                            step = element.values["raster_step"]
+                        except KeyError:
+                            step = 1
+                        channel(
+                            _("Image step for %s is currently: %s")
+                            % (str(element), step)
+                        )
+                        found = True
+                if not found:
+                    channel(_("No image element selected."))
+                return
+            for element in data:
+                element.values["raster_step"] = str(step_size)
+                m = element.transform
+                tx = m.e
+                ty = m.f
+                element.transform = Matrix.scale(float(step_size), float(step_size))
+                element.transform.post_translate(tx, ty)
+                if hasattr(element, "node"):
+                    element.node.modified()
+                self.context.signal("element_property_reload", element)
+                self.context.signal("refresh_scene")
+            return "elements",
+
         @context.console_command(
             "select",
             help=_("Set these values as the selection."),
