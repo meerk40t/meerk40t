@@ -1814,20 +1814,20 @@ class Elemental(Modifier):
                 op.notify_update()
             return "ops", data
 
-        @context.console_argument("ppi", type=int, help=_("ppi in pulses per inch mm/s"))
+        @context.console_argument("power", type=int, help=_("power in pulses per inch (ppi, 1000=max)"))
         @context.console_command(
-            "ppi", help=_("ppi <ppi>"), input_type="ops", output_type="ops"
+            "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
         )
-        def op_ppi(command, channel, _, ppi=None, data=None, **kwrgs):
+        def op_power(command, channel, _, ppi=None, data=None, **kwrgs):
             if ppi is None:
                 for op in data:
-                    old_ppi = op.settings.ppi
-                    channel(_("PPI for '%s' is currently: %d") % (str(op), old_ppi))
+                    old_ppi = op.settings.power
+                    channel(_("Power for '%s' is currently: %d") % (str(op), old_ppi))
                 return
             for op in data:
-                old_ppi = op.settings.ppi
-                op.settings.ppi = ppi
-                channel(_("PPI for '%s' updated %d -> %d") % (str(op), old_ppi, ppi))
+                old_ppi = op.settings.power
+                op.settings.power = ppi
+                channel(_("Power for '%s' updated %d -> %d") % (str(op), old_ppi, ppi))
                 op.notify_update()
             return "ops", data
 
