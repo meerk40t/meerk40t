@@ -414,7 +414,9 @@ class LaserRender:
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
-        the step size etc.
+        the step size. The physical pixels in the image is reduced by the step size then the matrix for the element is
+        scaled up by the same amount. This makes step size work like inverse dpi and correctly sets the image scale to
+        the step scale for 1:1 sizes independent of the scale.
 
         This function requires both wxPython and Pillow.
 
