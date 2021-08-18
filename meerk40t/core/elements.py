@@ -2690,7 +2690,6 @@ class Elemental(Modifier):
         )
         @context.console_command("path", help=_("path <svg path>"), input_type="elements", output_type="elements")
         def element_path(path_d, data, **kwgs):
-
             try:
                 path = Path(path_d)
             except ValueError:
@@ -4845,13 +4844,11 @@ class Elemental(Modifier):
                         # Only do raster add to existing raster ops because new reaster ops is default / a different color
                         if op not in new_ops: # if an existing Operation, then we will not add opposite type later.
                             op.add(element, type="opnode")
-                            add_vector = add_non_vector = False
+                            add_non_vector = False
                     else:
                         # Always do vector add because newly created vector ops match colour
                         op.add(element, type="opnode")
                         add_vector = False
-                        if op not in new_ops: # if an existing Operation, then we will not add opposite type later.
-                            add_non_vector = False
                 elif (
                     isinstance(element, SVGText)
                     and op_operation == "Raster"
