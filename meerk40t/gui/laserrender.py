@@ -442,8 +442,6 @@ class LaserRender:
             width = image_width
         if height is None:
             height = image_height
-        width /= float(step)
-        height /= float(step)
         width = int(width)
         height = int(height)
         bmp = wx.Bitmap(width, height, 32)
