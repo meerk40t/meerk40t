@@ -422,7 +422,7 @@ class Scene(Module, Job):
         Called in the UI thread.
         """
         if self.screen_refresh_is_requested:
-            if self.screen_refresh_lock.acquire():
+            if self.screen_refresh_lock.acquire(timeout=0.2):
                 self.update_buffer_ui_thread()
                 self.gui.Refresh()
                 self.gui.Update()
@@ -681,6 +681,7 @@ class Scene(Module, Job):
                 if previous_top_element is not None:
                     previous_top_element.event(window_pos, window_pos, "hover_end")
                 current_widget.event(window_pos, space_pos, "hover_start")
+                previous_top_element = current_widget
             if event_type == "leftup" and time.time() - self.time <= 0.15:
                 response = current_widget.event(window_pos, space_pos, "leftclick")
             else:

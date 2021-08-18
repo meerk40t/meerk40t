@@ -111,6 +111,7 @@ class SelectionWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.elements
+        print(event_type)
         if event_type == "hover_start":
             self.cursor = wx.CURSOR_SIZING
             self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
@@ -123,47 +124,53 @@ class SelectionWidget(Widget):
             matrix = self.parent.matrix
             xin = space_pos[0] - self.left
             yin = space_pos[1] - self.top
+            # TODO Handle distance should be constant regardless of zoom factor. May need to scale by screen DPI.
             xmin = 5 / matrix.value_scale_x()
-            ymin = 5 / matrix.value_scale_x()
+            ymin = 5 / matrix.value_scale_y()
             xmax = self.width - xmin
             ymax = self.height - ymin
-            self.tool = self.tool_translate
+            print(xmin,ymin,xmax,ymax,xin,yin)
             cursor = self.cursor
-            self.cursor = wx.CURSOR_SIZING
-            first = elements.first_element(emphasized=True)
-            try:
-                if first.lock:
-                    if self.cursor != cursor:
-                        self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
-                        self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
-                    return RESPONSE_CHAIN
-            except (ValueError, AttributeError):
-                pass
-            if xin <= xmin:
-                self.cursor = wx.CURSOR_SIZEWE
-                self.tool = self.tool_scalex_w
-            if yin <= ymin:
-                self.cursor = wx.CURSOR_SIZENS
-                self.tool = self.tool_scaley_n
-            if xin >= xmax:
-                self.cursor = wx.CURSOR_SIZEWE
-                self.tool = self.tool_scalex_e
-            if yin >= ymax:
-                self.cursor = wx.CURSOR_SIZENS
-                self.tool = self.tool_scaley_s
+            for e in elements.elems(emphasized=True):
+                try:
+                    if e.lock:
+                        print("lock")
+                        self.cursor = wx.CURSOR_SIZING
+                        self.tool = self.tool_translate
+                        if self.cursor != cursor:
+                            self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
+                        return RESPONSE_CHAIN
+                except (ValueError, AttributeError):
+                    pass
             if xin >= xmax and yin >= ymax:
                 self.cursor = wx.CURSOR_SIZENWSE
                 self.tool = self.tool_scalexy_se
-            if xin <= xmin and yin <= ymin:
+            elif xin <= xmin and yin <= ymin:
                 self.cursor = wx.CURSOR_SIZENWSE
                 self.tool = self.tool_scalexy_nw
-            if xin >= xmax and yin <= ymin:
+            elif xin >= xmax and yin <= ymin:
                 self.cursor = wx.CURSOR_SIZENESW
                 self.tool = self.tool_scalexy_ne
-            if xin <= xmin and yin >= ymax:
+            elif xin <= xmin and yin >= ymax:
                 self.cursor = wx.CURSOR_SIZENESW
                 self.tool = self.tool_scalexy_sw
+            elif xin <= xmin:
+                self.cursor = wx.CURSOR_SIZEWE
+                self.tool = self.tool_scalex_w
+            elif yin <= ymin:
+                self.cursor = wx.CURSOR_SIZENS
+                self.tool = self.tool_scaley_n
+            elif xin >= xmax:
+                self.cursor = wx.CURSOR_SIZEWE
+                self.tool = self.tool_scalex_e
+            elif yin >= ymax:
+                self.cursor = wx.CURSOR_SIZENS
+                self.tool = self.tool_scaley_s
+            else:
+                self.cursor = wx.CURSOR_SIZING
+                self.tool = self.tool_translate
             if self.cursor != cursor:
+                print("change_cursor")
                 self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         dx = space_pos[4]
