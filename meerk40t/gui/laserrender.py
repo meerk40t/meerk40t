@@ -258,7 +258,11 @@ class LaserRender:
                     cache = None
                 if cache is None:
                     cut.c_width, cut.c_height = image.image.size
-                    cut.cache = self.make_thumbnail(image.image, dewhite=True)
+                    try:
+                        cut.cache = self.make_thumbnail(image.image, dewhite=True)
+                    except MemoryError:
+                        cut.cache = self.make_thumbnail(image.image, maximum=1000, dewhite=True)
+
                     cut.cache_id = id(image.image)
                 gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
                 gc.PopState()
@@ -498,7 +502,7 @@ class LaserRender:
             width = int(round(width * scale))
             height = int(round(height * scale))
         if image_width != width or image_height != height:
-            pil_data = pil_data.copy().resize((width, height))
+            pil_data = pil_data.resize((width, height))
         else:
             pil_data = pil_data.copy()
         if dewhite:
