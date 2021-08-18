@@ -10,6 +10,10 @@ from meerk40t.gui.zmatrix import ZMatrix
 
 
 class ButtonWidget(Widget):
+    """
+    ButtonWidget serves as an onscreen button backed by a bitmap that when clicked calls the click() function.
+    This is a general scene button widget.
+    """
     def __init__(self, scene, left, top, right, bottom, bitmap):
         Widget.__init__(self, scene, left, top, right, bottom)
         self.bitmap = bitmap
