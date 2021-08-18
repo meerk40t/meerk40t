@@ -446,6 +446,9 @@ class LaserRender:
             width = image_width
         if height is None:
             height = image_height
+        # Scale physical image down by step amount.
+        width /= float(step)
+        height /= float(step)
         width = int(width)
         height = int(height)
         bmp = wx.Bitmap(width, height, 32)
@@ -456,6 +459,8 @@ class LaserRender:
 
         matrix = Matrix()
         matrix.post_translate(-xmin, -ymin)
+
+        # Scale affine matrix up by step amount scaled down.
         scale_x = width / float(image_width)
         scale_y = height / float(image_height)
         scale = min(scale_x, scale_y)
