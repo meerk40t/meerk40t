@@ -237,12 +237,13 @@ class LaserRender:
                 )
             elif isinstance(cut, RasterCut):
                 image = cut.image
-                try:
-                    matrix = Matrix(image.transform)
-                except AttributeError:
-                    matrix = Matrix()
-                matrix.post_translate(x, y)
                 gc.PushState()
+                image_matrix = image.transform
+                matrix = Matrix()
+                matrix.post_translate(x, y)  # Add cutcode offset.
+
+                matrix.post_scale(cut.step)  # Scale up the image by the step for simulation
+                matrix.post_translate(image_matrix.value_trans_x(), image_matrix.value_trans_y())  # Adjust image xy
                 if matrix is not None and not matrix.is_identity():
                     gc.ConcatTransform(
                         wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
