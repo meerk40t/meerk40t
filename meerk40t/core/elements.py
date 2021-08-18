@@ -1945,7 +1945,7 @@ class Elemental(Modifier):
         )
         def op_disable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.settings.output = False
+                op.output = False
                 channel(_("Operation '%s' disabled.") % str(op))
                 op.notify_update()
             return "ops", data
@@ -1955,7 +1955,7 @@ class Elemental(Modifier):
         )
         def op_enable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.settings.output = True
+                op.output = True
                 channel(_("Operation '%s' enabled.") % str(op))
                 op.notify_update()
             return "ops", data
