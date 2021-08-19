@@ -441,19 +441,18 @@ class Node:
             if node._parent is not None:
                 raise ValueError("Cannot reparent node on add.")
         else:
-            node_class = Node
             try:
                 node_class = self._root.bootstrap[type]
-            except Exception:
-                pass
+            except KeyError:
+                node_class = Node
             node = node_class(data_object)
             node.set_label(label)
-            if self.root is not None:
-                self.root.notify_created(node)
+            if self._root is not None:
+                self._root.notify_created(node)
         node.type = type
 
         node._parent = self
-        node._root = self.root
+        node._root = self._root
         if pos is None:
             self._children.append(node)
         else:
