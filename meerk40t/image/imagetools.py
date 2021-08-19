@@ -785,7 +785,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_argument(
         "x",
-        type=int,
+        type=Length,
         help=_("X position at which to slice the image"),
     )
     @context.console_command(
@@ -793,6 +793,12 @@ def plugin(kernel, lifecycle=None):
     )
     def image(command, channel, _, data, x, **kwargs):
         for element in data:
+            x = int(
+                x.value(
+                    ppi=1000.0,
+                    relative_length=element.image_width,
+                )
+            )
             img = element.image
             image_left = img.crop((0, 0, x, element.image_height))
             image_right = img.crop((x, 0, element.image_width, element.image_height))
