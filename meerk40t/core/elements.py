@@ -1769,11 +1769,12 @@ class Elemental(Modifier):
             Apply a filter string to a filter particular operations from the current data.
             Operations are evaluated in an infix prioritized stack format without spaces.
 
-            Qualified values are speed, power, step, acceleration, passes
+            Qualified values are speed, power, step, acceleration, passes, color, op
 
-            Valid operators are >, >=, <, <=, =, ==, +, -, *, |, &&, and ||
+            Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
 
             eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
+            eg. filter engrave=op&speed=35|cut=op&speed=10
             """
             subops = list()
             _filter_parse = [
@@ -1782,9 +1783,13 @@ class Elemental(Modifier):
                 ("OP15", r"(\+|-)"),
                 ("OP11", r"(<=|>=|==|!=)"),
                 ("OP10", r"(<|>|=)"),
-                ("OP5", r"(&&|\|\|)"),
+                ("OP5", r"(&&)"),
+                ("OP4", r"(&)"),
+                ("OP3", r"(\|\|)"),
+                ("OP2", r"(\|)"),
                 ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
                 ("COLOR", r"(#[0123456789abcdefABCDEF]{6}|#[0123456789abcdefABCDEF]{3})"),
+                ("TYPE", r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)"),
                 ("VAL", r"(speed|power|step|acceleration|passes|color|op|overscan)"),
             ]
             filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
@@ -1809,7 +1814,7 @@ class Elemental(Modifier):
             def solve_to(order: int):
                 try:
                     while len(operator) and operator[0][0] >= order:
-                        prec, op = operator.pop()
+                        _p, op = operator.pop()
                         v2 = operand.pop()
                         v1 = operand.pop()
                         try:
@@ -1825,9 +1830,9 @@ class Elemental(Modifier):
                                 operand.append(v1 <= v2)
                             elif op == ">=":
                                 operand.append(v1 >= v2)
-                            elif op == "&&":
+                            elif op == "&&" or op == "&":
                                 operand.append(v1 and v2)
-                            elif op == "||":
+                            elif op == "||" or op == "|":
                                 operand.append(v1 or v2)
                             elif op == "*":
                                 operand.append(v1 * v2)
@@ -1854,11 +1859,13 @@ class Elemental(Modifier):
                         elif value == "color":
                             operand.append(e.color)
                         elif value == "op":
-                            operand.append(e.operation)
+                            operand.append(e.operation.lower())
                         else:
                             operand.append(getattr(e.settings, value))
                     elif kind == "NUM":
                         operand.append(float(value))
+                    elif kind == "TYPE":
+                        operand.append(value)
                     elif kind.startswith("OP"):
                         prec = int(kind[2:])
                         solve_to(prec)
