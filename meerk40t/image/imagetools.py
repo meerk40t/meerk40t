@@ -346,25 +346,25 @@ def plugin(kernel, lifecycle=None):
                 left = int(
                     left.value(
                         ppi=1000.0,
-                        relative_length=bed_dim.bed_width * MILS_IN_MM,
+                        relative_length=element.image_width,
                     )
                 )
                 upper = int(
                     upper.value(
                         ppi=1000.0,
-                        relative_length=bed_dim.bed_height * MILS_IN_MM,
+                        relative_length=element.image_height,
                     )
                 )
                 right = int(
                     right.value(
                         ppi=1000.0,
-                        relative_length=bed_dim.bed_width * MILS_IN_MM,
+                        relative_length=element.image_width,
                     )
                 )
                 lower = int(
                     lower.value(
                         ppi=1000.0,
-                        relative_length=bed_dim.bed_height * MILS_IN_MM,
+                        relative_length=element.image_height,
                     )
                 )
                 element.image = img.crop((left, upper, right, lower))
@@ -781,6 +781,106 @@ def plugin(kernel, lifecycle=None):
             if hasattr(element, "node"):
                 element.node.altered()
             channel(_("Image Equalized."))
+        return "image", data
+
+    @context.console_argument(
+        "x",
+        type=int,
+        help=_("X position at which to slice the image"),
+    )
+    @context.console_command(
+        "slice", help=_("Slice image for more efficient rastering"), input_type="image", output_type="image"
+    )
+    def image(command, channel, _, data, x, **kwargs):
+        for element in data:
+            img = element.image
+            image_left = img.crop((0, 0, x, element.image_height))
+            image_right = img.crop((x, 0, element.image_width, element.image_height))
+            element_left = copy(element)
+            element_left.image = image_left
+            element_left.image_width, element_left.image_height = element_left.image.size
+
+            element_right = copy(element)
+            element_right.image = image_right
+            element_right.image_width, element_right.image_height = element_right.image.size
+            element_right.transform.pre_translate(x)
+
+            if hasattr(element, "node"):
+                element.node.remove_node()
+
+            context.elements.add_elem(element_left, classify=True)
+            context.elements.add_elem(element_right, classify=True)
+
+            channel(_("Image sliced at position %d" % x))
+        return "image", data
+
+    @context.console_option("remain",
+                            "r",
+                            help="Do not blank the popped region from the remainder image",
+                            action="store_true",
+                            type=bool)
+    @context.console_argument("left", help="left side of crop", type=Length)
+    @context.console_argument("upper", help="upper side of crop", type=Length)
+    @context.console_argument("right", help="right side of crop", type=Length)
+    @context.console_argument("lower", help="lower side of crop", type=Length)
+    @context.console_command(
+        "pop", help=_("Pop pixels for more efficient rastering"), input_type="image", output_type="image"
+    )
+    def image(command, channel, _, data, left, upper, right, lower, remain=False, **kwargs):
+        from PIL import Image
+
+        for element in data:
+            left = int(
+                left.value(
+                    ppi=1000.0,
+                    relative_length=element.image_width,
+                )
+            )
+            upper = int(
+                upper.value(
+                    ppi=1000.0,
+                    relative_length=element.image_height,
+                )
+            )
+            right = int(
+                right.value(
+                    ppi=1000.0,
+                    relative_length=element.image_width,
+                )
+            )
+            lower = int(
+                lower.value(
+                    ppi=1000.0,
+                    relative_length=element.image_height,
+                )
+            )
+
+            img = element.image
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            image_pop = img.crop((left, upper, right, lower))
+            image_remain = img.copy()
+
+            if not remain:
+                image_blank = Image.new("L", image_pop.size, 255)
+                image_remain.paste(image_blank, (left, upper))
+
+            element_pop = copy(element)
+            element_pop.image = image_pop
+            element_pop.image_width, element_pop.image_height = element_pop.image.size
+
+            element_pop.transform.pre_translate(left,upper)
+
+            element_remain = copy(element)
+            element_remain.image = image_remain
+            element_remain.image_width, element_remain.image_height = element_remain.image.size
+
+            if hasattr(element, "node"):
+                element.node.remove_node()
+
+            context.elements.add_elem(element_remain, classify=True)
+            context.elements.add_elem(element_pop, classify=True)
+
         return "image", data
 
     @context.console_argument(
