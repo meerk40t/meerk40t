@@ -1757,6 +1757,97 @@ class Elemental(Modifier):
             self.set_emphasis(subops)
             return "ops", subops
 
+        @context.console_argument("filter", type=str, help=_("Filter to apply"))
+        @context.console_command(
+            "filter",
+            help=_("Filter data by given value"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_select_range(data=None, filter=None, **kwgs):
+            subops = list()
+            _filter_parse = [
+                ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
+                ("OP20", r"(\*|/)"),
+                ("OP15", r"(\+|-)"),
+                ("OP11", r"(<=|>=|==|!=)"),
+                ("OP10", r"(<|>|=)"),
+                ("OP5", r"(&&|\|\|)"),
+                ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
+                ("VAL", r"(speed|power|step|acceleration|passes)"),
+            ]
+            filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
+            operator = list()
+            operand = list()
+
+            def filter_parser(text: str):
+                pos = 0
+                limit = len(text)
+                while pos < limit:
+                    match = filter_re.match(text, pos)
+                    if match is None:
+                        break  # No more matches.
+                    kind = match.lastgroup
+                    start = pos
+                    pos = match.end()
+                    if kind == "SKIP":
+                        continue
+                    value = match.group()
+                    yield kind, value, start, pos
+
+            def solve_to(order: int):
+                try:
+                    while len(operator) and operator[0][0] >= order:
+                        prec, op = operator.pop(0)
+                        v2 = operand.pop(0)
+                        v1 = operand.pop(0)
+                        if op == "==" or op == '=':
+                            operand.insert(0, v1 == v2)
+                        elif op == "!=":
+                            operand.insert(0, v1 != v2)
+                        elif op == ">":
+                            operand.insert(0, v1 > v2)
+                        elif op == "<":
+                            operand.insert(0, v1 < v2)
+                        elif op == "<=":
+                            operand.insert(0, v1 <= v2)
+                        elif op == ">=":
+                            operand.insert(0, v1 >= v2)
+                        elif op == "&&":
+                            operand.insert(0, v1 and v2)
+                        elif op == "||":
+                            operand.insert(0, v1 or v2)
+                        elif op == "*":
+                            operand.insert(0, v1 * v2)
+                        elif op == "/":
+                            try:
+                                operand.insert(0, v1 / v2)
+                            except ZeroDivisionError:
+                                operand.insert(0, float('inf'))
+                        elif op == "+":
+                            operand.insert(0, v1 + v2)
+                        elif op == "-":
+                            operand.insert(0, v1 - v2)
+                except IndexError:
+                    pass
+
+            for e in data:
+                for kind, value, start, pos in filter_parser(filter):
+                    if kind == "VAL":
+                        if value == "step":
+                            value = "raster_step"
+                        operand.insert(0, getattr(e.settings, value))
+                    elif kind == "NUM":
+                        operand.insert(0, float(value))
+                    elif kind.startswith("OP"):
+                        prec = int(kind[2:])
+                        solve_to(prec)
+                        operator.insert(0, (prec, value))
+                solve_to(0)
+                if len(operand) and operand.pop(0):
+                    subops.append(e)
+            self.set_emphasis(subops)
+            return "ops", subops
 
         @context.console_command(
             "list",
