@@ -1784,7 +1784,8 @@ class Elemental(Modifier):
                 ("OP10", r"(<|>|=)"),
                 ("OP5", r"(&&|\|\|)"),
                 ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
-                ("VAL", r"(speed|power|step|acceleration|passes)"),
+                ("COLOR", r"(#[0123456789abcdefABCDEF]{6}|#[0123456789abcdefABCDEF]{3})"),
+                ("VAL", r"(speed|power|step|acceleration|passes|color|op|overscan)"),
             ]
             filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
             operator = list()
@@ -1811,42 +1812,51 @@ class Elemental(Modifier):
                         prec, op = operator.pop()
                         v2 = operand.pop()
                         v1 = operand.pop()
-                        if op == "==" or op == '=':
-                            operand.append(v1 == v2)
-                        elif op == "!=":
-                            operand.append(v1 != v2)
-                        elif op == ">":
-                            operand.append(v1 > v2)
-                        elif op == "<":
-                            operand.append(v1 < v2)
-                        elif op == "<=":
-                            operand.append(v1 <= v2)
-                        elif op == ">=":
-                            operand.append(v1 >= v2)
-                        elif op == "&&":
-                            operand.append(v1 and v2)
-                        elif op == "||":
-                            operand.append(v1 or v2)
-                        elif op == "*":
-                            operand.append(v1 * v2)
-                        elif op == "/":
-                            try:
+                        try:
+                            if op == "==" or op == '=':
+                                operand.append(v1 == v2)
+                            elif op == "!=":
+                                operand.append(v1 != v2)
+                            elif op == ">":
+                                operand.append(v1 > v2)
+                            elif op == "<":
+                                operand.append(v1 < v2)
+                            elif op == "<=":
+                                operand.append(v1 <= v2)
+                            elif op == ">=":
+                                operand.append(v1 >= v2)
+                            elif op == "&&":
+                                operand.append(v1 and v2)
+                            elif op == "||":
+                                operand.append(v1 or v2)
+                            elif op == "*":
+                                operand.append(v1 * v2)
+                            elif op == "/":
                                 operand.append(v1 / v2)
-                            except ZeroDivisionError:
-                                operand.append(float('inf'))
-                        elif op == "+":
-                            operand.append(v1 + v2)
-                        elif op == "-":
-                            operand.append(v1 - v2)
+                            elif op == "+":
+                                operand.append(v1 + v2)
+                            elif op == "-":
+                                operand.append(v1 - v2)
+                        except TypeError:
+                            raise SyntaxError("Cannot evaluate expression")
+                        except ZeroDivisionError:
+                            operand.append(float('inf'))
                 except IndexError:
                     pass
 
             for e in data:
                 for kind, value, start, pos in filter_parser(filter):
-                    if kind == "VAL":
+                    if kind == "COLOR":
+                        operand.append(Color(value))
+                    elif kind == "VAL":
                         if value == "step":
-                            value = "raster_step"
-                        operand.append(getattr(e.settings, value))
+                            operand.append(e.settings.raster_step)
+                        elif value == "color":
+                            operand.append(e.color)
+                        elif value == "op":
+                            operand.append(e.operation)
+                        else:
+                            operand.append(getattr(e.settings, value))
                     elif kind == "NUM":
                         operand.append(float(value))
                     elif kind.startswith("OP"):
