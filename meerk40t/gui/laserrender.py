@@ -237,12 +237,13 @@ class LaserRender:
                 )
             elif isinstance(cut, RasterCut):
                 image = cut.image
-                try:
-                    matrix = Matrix(image.transform)
-                except AttributeError:
-                    matrix = Matrix()
-                matrix.post_translate(x, y)
                 gc.PushState()
+                image_matrix = image.transform
+                matrix = Matrix()
+                matrix.post_translate(x, y)  # Add cutcode offset.
+
+                matrix.post_scale(cut.step)  # Scale up the image by the step for simulation
+                matrix.post_translate(image_matrix.value_trans_x(), image_matrix.value_trans_y())  # Adjust image xy
                 if matrix is not None and not matrix.is_identity():
                     gc.ConcatTransform(
                         wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
@@ -258,7 +259,11 @@ class LaserRender:
                     cache = None
                 if cache is None:
                     cut.c_width, cut.c_height = image.image.size
-                    cut.cache = self.make_thumbnail(image.image, dewhite=True)
+                    try:
+                        cut.cache = self.make_thumbnail(image.image, dewhite=True)
+                    except MemoryError:
+                        cut.cache = self.make_thumbnail(image.image, maximum=1000, dewhite=True)
+
                     cut.cache_id = id(image.image)
                 gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
                 gc.PopState()
@@ -410,7 +415,9 @@ class LaserRender:
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
-        the step size etc.
+        the step size. The physical pixels in the image is reduced by the step size then the matrix for the element is
+        scaled up by the same amount. This makes step size work like inverse dpi and correctly sets the image scale to
+        the step scale for 1:1 sizes independent of the scale.
 
         This function requires both wxPython and Pillow.
 
@@ -442,6 +449,7 @@ class LaserRender:
             width = image_width
         if height is None:
             height = image_height
+        # Scale physical image down by step amount.
         width /= float(step)
         height /= float(step)
         width = int(width)
@@ -454,6 +462,8 @@ class LaserRender:
 
         matrix = Matrix()
         matrix.post_translate(-xmin, -ymin)
+
+        # Scale affine matrix up by step amount scaled down.
         scale_x = width / float(image_width)
         scale_y = height / float(image_height)
         scale = min(scale_x, scale_y)
@@ -500,7 +510,7 @@ class LaserRender:
             width = int(round(width * scale))
             height = int(round(height * scale))
         if image_width != width or image_height != height:
-            pil_data = pil_data.copy().resize((width, height))
+            pil_data = pil_data.resize((width, height))
         else:
             pil_data = pil_data.copy()
         if dewhite:
