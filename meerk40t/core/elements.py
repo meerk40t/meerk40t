@@ -1764,7 +1764,7 @@ class Elemental(Modifier):
             input_type="ops",
             output_type="ops",
         )
-        def operation_filter(data=None, filter=None, **kwgs):
+        def operation_filter(channel=None, data=None, filter=None, **kwgs):
             """
             Apply a filter string to a filter particular operations from the current data.
             Operations are evaluated in an infix prioritized stack format without spaces.
@@ -1808,36 +1808,36 @@ class Elemental(Modifier):
             def solve_to(order: int):
                 try:
                     while len(operator) and operator[0][0] >= order:
-                        prec, op = operator.pop(0)
-                        v2 = operand.pop(0)
-                        v1 = operand.pop(0)
+                        prec, op = operator.pop()
+                        v2 = operand.pop()
+                        v1 = operand.pop()
                         if op == "==" or op == '=':
-                            operand.insert(0, v1 == v2)
+                            operand.append(v1 == v2)
                         elif op == "!=":
-                            operand.insert(0, v1 != v2)
+                            operand.append(v1 != v2)
                         elif op == ">":
-                            operand.insert(0, v1 > v2)
+                            operand.append(v1 > v2)
                         elif op == "<":
-                            operand.insert(0, v1 < v2)
+                            operand.append(v1 < v2)
                         elif op == "<=":
-                            operand.insert(0, v1 <= v2)
+                            operand.append(v1 <= v2)
                         elif op == ">=":
-                            operand.insert(0, v1 >= v2)
+                            operand.append(v1 >= v2)
                         elif op == "&&":
-                            operand.insert(0, v1 and v2)
+                            operand.append(v1 and v2)
                         elif op == "||":
-                            operand.insert(0, v1 or v2)
+                            operand.append(v1 or v2)
                         elif op == "*":
-                            operand.insert(0, v1 * v2)
+                            operand.append(v1 * v2)
                         elif op == "/":
                             try:
-                                operand.insert(0, v1 / v2)
+                                operand.append(v1 / v2)
                             except ZeroDivisionError:
-                                operand.insert(0, float('inf'))
+                                operand.append(float('inf'))
                         elif op == "+":
-                            operand.insert(0, v1 + v2)
+                            operand.append(v1 + v2)
                         elif op == "-":
-                            operand.insert(0, v1 - v2)
+                            operand.append(v1 - v2)
                 except IndexError:
                     pass
 
@@ -1846,16 +1846,20 @@ class Elemental(Modifier):
                     if kind == "VAL":
                         if value == "step":
                             value = "raster_step"
-                        operand.insert(0, getattr(e.settings, value))
+                        operand.append(getattr(e.settings, value))
                     elif kind == "NUM":
-                        operand.insert(0, float(value))
+                        operand.append(float(value))
                     elif kind.startswith("OP"):
                         prec = int(kind[2:])
                         solve_to(prec)
-                        operator.insert(0, (prec, value))
+                        operator.append((prec, value))
                 solve_to(0)
-                if len(operand) and operand.pop(0):
-                    subops.append(e)
+                if len(operand) == 1:
+                    if operand.pop():
+                        subops.append(e)
+                else:
+                    raise SyntaxError(_("Filter parse failed"))
+
             self.set_emphasis(subops)
             return "ops", subops
 
