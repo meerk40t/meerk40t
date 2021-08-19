@@ -5026,10 +5026,11 @@ class Elemental(Modifier):
                     default_raster_ops.append(op)
                     ops.append(op)
             for op in ops:
-                new_ops.append(op)
-                op.add(element, type="opnode")
-                add_op_function(op)
                 operations.append(op)
+                new_ops.append(op)
+                add_op_function(op)
+                # element cannot be added to op before op is added to operations - otherwise opnode is not created.
+                op.add(element, type="opnode")
 
 
     def load(self, pathname, **kwargs):
