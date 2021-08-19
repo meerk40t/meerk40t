@@ -1757,6 +1757,128 @@ class Elemental(Modifier):
             self.set_emphasis(subops)
             return "ops", subops
 
+        @context.console_argument("filter", type=str, help=_("Filter to apply"))
+        @context.console_command(
+            "filter",
+            help=_("Filter data by given value"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_filter(channel=None, data=None, filter=None, **kwgs):
+            """
+            Apply a filter string to a filter particular operations from the current data.
+            Operations are evaluated in an infix prioritized stack format without spaces.
+
+            Qualified values are speed, power, step, acceleration, passes, color, op
+
+            Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
+
+            eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
+            eg. filter engrave=op&speed=35|cut=op&speed=10
+            """
+            subops = list()
+            _filter_parse = [
+                ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
+                ("OP20", r"(\*|/)"),
+                ("OP15", r"(\+|-)"),
+                ("OP11", r"(<=|>=|==|!=)"),
+                ("OP10", r"(<|>|=)"),
+                ("OP5", r"(&&)"),
+                ("OP4", r"(&)"),
+                ("OP3", r"(\|\|)"),
+                ("OP2", r"(\|)"),
+                ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
+                ("COLOR", r"(#[0123456789abcdefABCDEF]{6}|#[0123456789abcdefABCDEF]{3})"),
+                ("TYPE", r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)"),
+                ("VAL", r"(speed|power|step|acceleration|passes|color|op|overscan)"),
+            ]
+            filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
+            operator = list()
+            operand = list()
+
+            def filter_parser(text: str):
+                pos = 0
+                limit = len(text)
+                while pos < limit:
+                    match = filter_re.match(text, pos)
+                    if match is None:
+                        break  # No more matches.
+                    kind = match.lastgroup
+                    start = pos
+                    pos = match.end()
+                    if kind == "SKIP":
+                        continue
+                    value = match.group()
+                    yield kind, value, start, pos
+
+            def solve_to(order: int):
+                try:
+                    while len(operator) and operator[0][0] >= order:
+                        _p, op = operator.pop()
+                        v2 = operand.pop()
+                        v1 = operand.pop()
+                        try:
+                            if op == "==" or op == '=':
+                                operand.append(v1 == v2)
+                            elif op == "!=":
+                                operand.append(v1 != v2)
+                            elif op == ">":
+                                operand.append(v1 > v2)
+                            elif op == "<":
+                                operand.append(v1 < v2)
+                            elif op == "<=":
+                                operand.append(v1 <= v2)
+                            elif op == ">=":
+                                operand.append(v1 >= v2)
+                            elif op == "&&" or op == "&":
+                                operand.append(v1 and v2)
+                            elif op == "||" or op == "|":
+                                operand.append(v1 or v2)
+                            elif op == "*":
+                                operand.append(v1 * v2)
+                            elif op == "/":
+                                operand.append(v1 / v2)
+                            elif op == "+":
+                                operand.append(v1 + v2)
+                            elif op == "-":
+                                operand.append(v1 - v2)
+                        except TypeError:
+                            raise SyntaxError("Cannot evaluate expression")
+                        except ZeroDivisionError:
+                            operand.append(float('inf'))
+                except IndexError:
+                    pass
+
+            for e in data:
+                for kind, value, start, pos in filter_parser(filter):
+                    if kind == "COLOR":
+                        operand.append(Color(value))
+                    elif kind == "VAL":
+                        if value == "step":
+                            operand.append(e.settings.raster_step)
+                        elif value == "color":
+                            operand.append(e.color)
+                        elif value == "op":
+                            operand.append(e.operation.lower())
+                        else:
+                            operand.append(getattr(e.settings, value))
+                    elif kind == "NUM":
+                        operand.append(float(value))
+                    elif kind == "TYPE":
+                        operand.append(value)
+                    elif kind.startswith("OP"):
+                        prec = int(kind[2:])
+                        solve_to(prec)
+                        operator.append((prec, value))
+                solve_to(0)
+                if len(operand) == 1:
+                    if operand.pop():
+                        subops.append(e)
+                else:
+                    raise SyntaxError(_("Filter parse failed"))
+
+            self.set_emphasis(subops)
+            return "ops", subops
 
         @context.console_command(
             "list",
@@ -1945,7 +2067,7 @@ class Elemental(Modifier):
         )
         def op_disable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.settings.output = False
+                op.output = False
                 channel(_("Operation '%s' disabled.") % str(op))
                 op.notify_update()
             return "ops", data
@@ -1955,7 +2077,7 @@ class Elemental(Modifier):
         )
         def op_enable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.settings.output = True
+                op.output = True
                 channel(_("Operation '%s' enabled.") % str(op))
                 op.notify_update()
             return "ops", data
