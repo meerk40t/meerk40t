@@ -1764,7 +1764,17 @@ class Elemental(Modifier):
             input_type="ops",
             output_type="ops",
         )
-        def operation_select_range(data=None, filter=None, **kwgs):
+        def operation_filter(data=None, filter=None, **kwgs):
+            """
+            Apply a filter string to a filter particular operations from the current data.
+            Operations are evaluated in an infix prioritized stack format without spaces.
+
+            Qualified values are speed, power, step, acceleration, passes
+
+            Valid operators are >, >=, <, <=, =, ==, +, -, *, |, &&, and ||
+
+            eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
+            """
             subops = list()
             _filter_parse = [
                 ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
