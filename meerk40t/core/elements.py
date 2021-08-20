@@ -512,19 +512,21 @@ class Node:
         return str(element)
 
     def set_label(self, name=None):
+        self.label = self.create_label(name)
+
+    def create_label(self, name=None):
         """
-        Set the name of this node to the name given.
+        Create a label for this node.
+        If a name is not specified either use a cascade (primarily for elements) or
+        use the string representation
         :param name: Name to be set for this node.
         :return: label
         """
-        if name is None:
-            if self.object is not None:
-                self.label = self.label_from_source_cascade(self.object)
-            else:
-                self.label = str(self)
-        else:
-            self.label = name
-        return self.label
+        if name is not None:
+            return name
+        if self.object is not None:
+            return self.label_from_source_cascade(self.object)
+        return str(self)
 
     def _flatten(self, node):
         """
