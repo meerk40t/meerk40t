@@ -350,6 +350,7 @@ class MeerK40t(MWindow):
         except AttributeError:
             # Not WX 4.1
             pass
+        self.usb_running = False
         context = self.context
         self.context.setting(bool, "disable_tool_tips", False)
         if self.context.disable_tool_tips:
@@ -3511,7 +3512,7 @@ class ShadowTree:
 
     def update_label(self, node, force=False):
         if node.label is None or force:
-            node.label = node.set_label()
+            node.label = node.create_label()
         if not hasattr(node, "item"):
             # Unregistered node updating name.
             self.rebuild_tree()
