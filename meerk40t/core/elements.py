@@ -445,6 +445,8 @@ class Node:
                 node_class = self._root.bootstrap[type]
             except KeyError:
                 node_class = Node
+            except AttributeError:
+                raise AttributeError(self.__class__.__name__ + ' needs to be added to tree before adding "' + type + '" for ' + data_object.__class__.__name__)
             node = node_class(data_object)
             node.set_label(label)
             if self._root is not None:
