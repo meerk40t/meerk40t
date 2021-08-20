@@ -441,12 +441,17 @@ class Node:
             if node._parent is not None:
                 raise ValueError("Cannot reparent node on add.")
         else:
-            try:
-                node_class = self._root.bootstrap[type]
-            except KeyError:
-                node_class = Node
-            except AttributeError:
-                raise AttributeError(self.__class__.__name__ + ' needs to be added to tree before adding "' + type + '" for ' + data_object.__class__.__name__)
+            node_class = Node
+            if type is not None:
+                try:
+                    node_class = self._root.bootstrap[type]
+                except (KeyError, AttributeError):
+                    # AttributeError indicates that we are adding a node with a type to an object which is NOT part of the tree.
+                    # This should be treated as an exception, however when we run Execute Job (and possibly other tasks)
+                    # it adds nodes even though the object isn't part of the tree.
+                    pass
+                # except AttributeError:
+                #    raise AttributeError('%s needs to be added to tree before adding "%s" for %s' % (self.__class__.__name__, type, data_object.__class__.__name__))
             node = node_class(data_object)
             node.set_label(label)
             if self._root is not None:
