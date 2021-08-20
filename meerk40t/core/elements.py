@@ -441,19 +441,20 @@ class Node:
             if node._parent is not None:
                 raise ValueError("Cannot reparent node on add.")
         else:
-            node_class = Node
             try:
                 node_class = self._root.bootstrap[type]
-            except Exception:
-                pass
+            except KeyError:
+                node_class = Node
+            except AttributeError:
+                raise AttributeError(self.__class__.__name__ + ' needs to be added to tree before adding "' + type + '" for ' + data_object.__class__.__name__)
             node = node_class(data_object)
             node.set_label(label)
-            if self.root is not None:
-                self.root.notify_created(node)
+            if self._root is not None:
+                self._root.notify_created(node)
         node.type = type
 
         node._parent = self
-        node._root = self.root
+        node._root = self._root
         if pos is None:
             self._children.append(node)
         else:
@@ -5027,10 +5028,11 @@ class Elemental(Modifier):
                     default_raster_ops.append(op)
                     ops.append(op)
             for op in ops:
-                new_ops.append(op)
-                op.add(element, type="opnode")
-                add_op_function(op)
                 operations.append(op)
+                new_ops.append(op)
+                add_op_function(op)
+                # element cannot be added to op before op is added to operations - otherwise opnode is not created.
+                op.add(element, type="opnode")
 
 
     def load(self, pathname, **kwargs):
