@@ -74,6 +74,7 @@ from ..svgelements import (
     Length,
     Matrix,
     Path,
+    Shape,
     SVGElement,
     SVGImage,
     SVGText,
@@ -3475,7 +3476,7 @@ class ShadowTree:
                 )
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
-            elif isinstance(data_object, (Path, SVGText)):
+            elif isinstance(data_object, (Shape, SVGText)):
                 image = self.renderer.make_raster(
                     node, data_object.bbox(), width=20, height=20, bitmap=True
                 )
