@@ -1795,7 +1795,4 @@ class ImageLoader:
         file_node = element_branch.add(type="file", label=basename)
         file_node.filepath = pathname
         file_node.add(image, type="elem")
-        file_node.focus()
-
-        elements_modifier.classify([image])
-        return True
+        return file_node
