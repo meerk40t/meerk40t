@@ -381,10 +381,10 @@ class OperationProperty(MWindow):
 
         # 0.6.1 freeze, drops.
         # self.radio_directional_raster.Enable(False)
-        self.slider_top.Enable(False)
-        self.slider_right.Enable(False)
-        self.slider_left.Enable(False)
-        self.slider_bottom.Enable(False)
+        # self.slider_top.Enable(False)
+        # self.slider_right.Enable(False)
+        # self.slider_left.Enable(False)
+        # self.slider_bottom.Enable(False)
 
     def __do_layout(self):
         # begin wxGlade: OperationProperty.__do_layout
@@ -537,75 +537,93 @@ class OperationProperty(MWindow):
         unidirectional = self.operation.settings.raster_swing
 
         if direction == 0 or direction == 1 or direction == 4:
+            # Direction Line
             d_start.append((w * 0.05, h * 0.05))
             d_end.append((w * 0.05, h * 0.95))
             if direction == 1:
+                # Bottom to Top
+                if self.operation.settings.raster_preference_bottom > 0:
+                    # if bottom preference is left
+                    right = False
+                # Direction Arrow
                 d_start.append((w * 0.05, h * 0.05))
                 d_end.append((w * 0.05 + 4, h * 0.05 + 4))
                 d_start.append((w * 0.05, h * 0.05))
                 d_end.append((w * 0.05 - 4, h * 0.05 + 4))
+                start = int(h * 0.9)
+                end = int(h * 0.1)
+                step = -self.operation.settings.raster_step * factor
             else:
+                # Top to Bottom or Crosshatch
+                if self.operation.settings.raster_preference_top > 0:
+                    # if top preference is left
+                    right = False
                 d_start.append((w * 0.05, h * 0.95))
                 d_end.append((w * 0.05 + 4, h * 0.95 - 4))
                 d_start.append((w * 0.05, h * 0.95))
                 d_end.append((w * 0.05 - 4, h * 0.95 - 4))
-            for pos in range(int(h*0.1), int(h*0.9), self.operation.settings.raster_step * factor):
+                start = int(h * 0.1)
+                end = int(h * 0.9)
+                step = self.operation.settings.raster_step * factor
+            for pos in range(start, end, step):
                 # Primary Line Horizontal Raster
                 r_start.append((w*0.1, pos))
                 r_end.append((w*0.9, pos))
 
                 # Arrow Segment
-                if right:
-                    if last is not None:
-                        # Travel Lines
-                        t_start.append((last[0], last[1]))
-                        t_end.append((w*0.1, pos))
-                    r_start.append((w*0.9, pos))
-                    r_end.append((w*0.9 - 2, pos - 2))
-                    last = r_start[-1]
-                else:
-                    if last is not None:
-                        # Travel Lines
-                        t_start.append((last[0], last[1]))
-                        t_end.append((w*0.9, pos))
-                    r_start.append((w*0.1, pos))
-                    r_end.append((w*0.1 + 2, pos - 2))
-                    last = r_start[-1]
+                if last is not None:
+                    # Travel Lines
+                    t_start.append((last[0], last[1]))
+                    t_end.append((w * 0.1 if right else w * 0.9, pos))
+
+                r_start.append((w * 0.9 if right else w * 0.1, pos))
+                r_end.append((w * 0.9 - 2 if right else w * 0.1 + 2, pos - 2))
+                last = r_start[-1]
                 if not unidirectional:
                     right = not right
         if direction == 2 or direction == 3 or direction == 4:
+            # Direction Line
             d_start.append((w * 0.05, h * 0.05))
             d_end.append((w*0.95, h*0.05))
             if direction == 2:
+                # Right to Left
+                if self.operation.settings.raster_preference_right > 0:
+                    # if right preference is bottom
+                    top = False
+                # Direction Arrow
                 d_start.append((w * 0.05, h * 0.05))
                 d_end.append((w * 0.05 + 4, h * 0.05 + 4))
                 d_start.append((w * 0.05, h * 0.05))
                 d_end.append((w * 0.05 + 4, h * 0.05 - 4))
+                start = int(w*0.9)
+                end = int(w*0.1)
+                step = -self.operation.settings.raster_step * factor
             else:
+                # Left to Right or Crosshatch
+                if self.operation.settings.raster_preference_left > 0:
+                    # if left preference is bottom
+                    top = False
                 d_start.append((w * 0.95, h * 0.05))
                 d_end.append((w * 0.95 - 4, h * 0.05 + 4))
                 d_start.append((w * 0.95, h * 0.05))
                 d_end.append((w * 0.95 - 4, h * 0.05 - 4))
-            for pos in range(int(w*0.1), int(w*0.9), self.operation.settings.raster_step * factor):
+                start = int(w*0.1)
+                end = int(w*0.9)
+                step = self.operation.settings.raster_step * factor
+            for pos in range(start, end, step):
                 # Primary Line Vertical Raster.
                 r_start.append((pos, h * 0.1))
                 r_end.append((pos, h * 0.9))
-                if top:
-                    if last is not None:
-                        # Travel Lines
-                        t_start.append((last[0], last[1]))
-                        t_end.append((pos, h * 0.1))
-                    r_start.append((pos, h * 0.9))
-                    r_end.append((pos - 2, (h * 0.9) - 2))
-                    last = r_start[-1]
-                else:
-                    if last is not None:
-                        # Travel Lines
-                        t_start.append((last[0], last[1]))
-                        t_end.append((pos, h * 0.9))
-                    r_start.append((pos, h * 0.1))
-                    r_end.append((pos - 2, (h * 0.1) + 2))
-                    last = r_start[-1]
+
+                # Arrow Segment
+                if last is not None:
+                    # Travel Lines
+                    t_start.append((last[0], last[1]))
+                    t_end.append((pos, h * 0.1 if top else h * 0.9))
+                r_start.append((pos, h * 0.9 if top else h * 0.1))
+                r_end.append((pos - 2, (h * 0.9) - 2 if top else (h * 0.1) + 2))
+
+                last = r_start[-1]
                 if not unidirectional:
                     top = not top
         self.raster_lines = r_start, r_end
