@@ -119,6 +119,19 @@ class OperationProperty(MWindow):
         self.travel_lines = None
         self.direction_lines = None
 
+        self.context.setting(bool, 'developer_mode', False)
+        if not self.context.developer_mode:
+            # 0.6.1 freeze, drops.
+            self.radio_directional_raster.Enable(False)
+            self.slider_top.Enable(False)
+            self.slider_right.Enable(False)
+            self.slider_left.Enable(False)
+            self.slider_bottom.Enable(False)
+            self.toggle_sliders = False
+        else:
+            self.toggle_sliders = True
+            self._toggle_sliders()
+
     def restore(self, *args, node=None, **kwds):
         self.operation = node
         self.set_widgets()
@@ -378,13 +391,6 @@ class OperationProperty(MWindow):
             _("Duplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to change the number of duplications because you need to add and delete the duplicates one by one."),
         )))
         # end wxGlade
-
-        # 0.6.1 freeze, drops.
-        # self.radio_directional_raster.Enable(False)
-        # self.slider_top.Enable(False)
-        # self.slider_right.Enable(False)
-        # self.slider_left.Enable(False)
-        # self.slider_bottom.Enable(False)
 
     def __do_layout(self):
         # begin wxGlade: OperationProperty.__do_layout
@@ -796,6 +802,25 @@ class OperationProperty(MWindow):
         self.operation.settings.overscan = overscan
         self.context.signal("element_property_reload", self.operation)
 
+    def _toggle_sliders(self):
+        if self.toggle_sliders:
+            direction = self.operation.settings.raster_direction
+            self.slider_top.Enable(False)
+            self.slider_right.Enable(False)
+            self.slider_left.Enable(False)
+            self.slider_bottom.Enable(False)
+            if direction == 0:
+                self.slider_top.Enable(True)
+            elif direction == 1:
+                self.slider_bottom.Enable(True)
+            elif direction == 2:
+                self.slider_right.Enable(True)
+            elif direction == 3:
+                self.slider_left.Enable(True)
+            elif direction == 4:
+                self.slider_top.Enable(True)
+                self.slider_left.Enable(True)
+
     def on_combo_raster_direction(
         self, event=None
     ):  # wxGlade: Preferences.<event_handler>
@@ -803,6 +828,8 @@ class OperationProperty(MWindow):
             self.combo_raster_direction.GetSelection()
         )
         self.context.raster_direction = self.operation.settings.raster_direction
+        self._toggle_sliders()
+
         self.raster_lines = None
         self.travel_lines = None
         self.refresh_display()
