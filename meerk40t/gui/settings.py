@@ -64,9 +64,10 @@ class Settings(MWindow):
             ),
             (
                 _("Image DPI Scaling"),
-                _(
-                    "Set: Use the DPI setting saved in the image to scale the image to the correct size. Unset: Use the image as if it were 1000 pixels per inch."
-                ),
+               "\n".join((
+                    _("Unset: Use the image as if it were 1000 pixels per inch."),
+                    _("Set: Use the DPI setting saved in the image to scale the image to the correct size."),
+                )),
                 "image_dpi",
                 True,
             ),
@@ -92,11 +93,12 @@ class Settings(MWindow):
             ),
             (
                 _("MouseWheel Pan"),
-                _(
-                    "Default MouseWheel is Zoom (and horizontal pan with Shift key) - this changes MouseWheel to pan, and zoom with Ctrl key"
-                ),
+                "\n".join((
+                    _("Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."),
+                    _("Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."),
+                )),
                 "mouse_wheel_pan",
-                False,
+                True,
             ),
             (
                 _("Invert MouseWheel Pan"),
@@ -128,11 +130,11 @@ class Settings(MWindow):
             ),
             (
                 _("Disable ToolTips"),
-                _(
-                    "If you do not want to see tooltips like this one, check this box.\n"
-                    "Particularly useful if you have a touch screen.\n"
-                    "Note: You will need to restart MeerK40t for any change to take effect.\n"
-                ),
+                "\n".join((
+                    _("If you do not want to see tooltips like this one, check this box."),
+                    _("Particularly useful if you have a touch screen."),
+                    _("Note: You will need to restart MeerK40t for any change to take effect."),
+                )),
                 "disable_tool_tips",
                 False,
             ),
