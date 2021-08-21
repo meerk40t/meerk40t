@@ -54,6 +54,9 @@ def plugin(kernel, lifecycle):
 
 
 class ScenePanel(wx.Panel):
+    """
+    wxPanel that holds the Scene. This serves as the wx.Control object that holds and draws the scene.
+    """
     def __init__(self, context, *args, scene_name="Scene", **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.WANTS_CHARS
         wx.Panel.__init__(self, *args, **kwds)
@@ -108,6 +111,10 @@ class ScenePanel(wx.Panel):
         self.Layout()
 
     def signal(self, *args, **kwargs):
+        """
+        Scene signal calls the signal command on the root which is used to pass message and data to deeper objects
+        within the scene.
+        """
         self.scene._signal_widget(self.scene.widget_root, *args, **kwargs)
 
     def on_size(self, event=None):
@@ -121,6 +128,14 @@ class ScenePanel(wx.Panel):
     # Mouse Events.
 
     def on_mousewheel(self, event):
+        """
+        ScenePanel mousewheel event.
+
+        If modifiers are present it calls the event 'wheelup_ctrl' or 'wheeldown_ctrl' this also triggers scene events
+        for up, down, and left and right which exist on some mice and trackpads. If shift is held down while the wheel
+        event occurs the up and down rotation is treated as left and right.
+
+        """
         if self.scene_panel.HasCapture():
             return
         rotation = event.GetWheelRotation()
@@ -142,6 +157,9 @@ class ScenePanel(wx.Panel):
                 self.scene.event(event.GetPosition(), "wheelright")
 
     def on_mousewheel_zoom(self, event):
+        """
+        The mousewheel zoom is not called.
+        """
         if self.scene_panel.HasCapture():
             return
         rotation = event.GetWheelRotation()
@@ -153,39 +171,63 @@ class ScenePanel(wx.Panel):
             self.scene.event(event.GetPosition(), "wheeldown")
 
     def on_mouse_middle_down(self, event):
+        """
+        Scene Panel middle click event for down.
+        """
         self.SetFocus()
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
         self.scene.event(event.GetPosition(), "middledown")
 
     def on_mouse_middle_up(self, event):
+        """
+        Scene Panel middle click event for up.
+        """
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
         self.scene.event(event.GetPosition(), "middleup")
 
     def on_left_mouse_down(self, event):
+        """
+        Scene Panel left click event for down.
+        """
         self.SetFocus()
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
         self.scene.event(event.GetPosition(), "leftdown")
 
     def on_left_mouse_up(self, event):
+        """
+        Scene Panel left click event for up.
+        """
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
         self.scene.event(event.GetPosition(), "leftup")
 
     def on_mouse_double_click(self, event):
+        """
+        Scene Panel doubleclick event.
+        """
         if self.scene_panel.HasCapture():
             return
         self.scene.event(event.GetPosition(), "doubleclick")
 
     def on_mouse_move(self, event: wx.MouseEvent):
+        """
+        Scene Panel move event. Calls hover if the mouse has no pressed buttons.
+        Calls move if the mouse is currently dragging.
+        """
         if event.Moving():
             self.scene.event(event.GetPosition(), "hover")
         else:
             self.scene.event(event.GetPosition(), "move")
 
     def on_right_mouse_down(self, event):
+        """
+        Scene Panel right mouse down event.
+
+        Offers alternative events if Alt or control is currently pressed.
+        """
         self.SetFocus()
         if event.AltDown():
             self.scene.event(event.GetPosition(), "rightdown+alt")
@@ -195,9 +237,15 @@ class ScenePanel(wx.Panel):
             self.scene.event(event.GetPosition(), "rightdown")
 
     def on_right_mouse_up(self, event):
+        """
+        Scene Panel right mouse up event.
+        """
         self.scene.event(event.GetPosition(), "rightup")
 
     def on_magnify_mouse(self, event):
+        """
+        Magnify Mouse is a Mac Event called with pinch to zoom on a trackpad.
+        """
         magnify = event.GetMagnification()
         if magnify > 0:
             self.scene.event(event.GetPosition(), "zoom-in")
@@ -206,6 +254,8 @@ class ScenePanel(wx.Panel):
 
     def on_gesture(self, event):
         """
+        Scene Panel TouchScreen Gestures events.
+
         This code requires WXPython 4.1 and the bind will fail otherwise.
         """
         if event.IsGestureStart():
@@ -220,6 +270,10 @@ class ScenePanel(wx.Panel):
             self.scene.event(event.GetPosition(), "zoom %f" % zoom)
 
     def on_paint(self, event=None):
+        """
+        Scene Panel paint event calls the paints the bitmap self._Buffer. If self._Buffer does not exist initially
+        it is created in the self.scene.update_buffer_ui_thread() call.
+        """
         try:
             if self._Buffer is None:
                 self.scene.update_buffer_ui_thread()
@@ -228,9 +282,15 @@ class ScenePanel(wx.Panel):
             pass
 
     def on_erase(self, event):
+        """
+        Scene Panel Screen erase call.
+        """
         pass
 
     def set_buffer(self):
+        """
+        Set the value for the self._Buffer bitmap equal to the panel's clientSize.
+        """
         width, height = self.ClientSize
         if width <= 0:
             width = 1
@@ -240,6 +300,18 @@ class ScenePanel(wx.Panel):
 
 
 class Scene(Module, Job):
+    """
+    The Scene Module holds all the needed references to widgets and catches the events from the ScenePanel which
+    stores this object primarily.
+
+    Scene overloads both Module being registered in "module/Scene" and the Job to handle the refresh.
+
+    The Scene is the infinite space of the scene as seen through the panel's viewpoint. It serves to zoom, pan, and
+    manipulate various elements. This is done through a matrix which translates the scene space to window space. The
+    scene space to window space. The widgets are stored in a tree within the scene. The primary widget is the
+    SceneSpaceWidget which draws elements in two different forms. It first draws the scene and all scenewidgets added
+    to the scene and then the interface widget which contains all the non-scene widget elements.
+    """
     def __init__(self, context, path, gui, **kwargs):
         Module.__init__(self, context, path)
         Job.__init__(
@@ -286,6 +358,9 @@ class Scene(Module, Job):
         self._init_widget(self.widget_root, context)
 
     def restore(self, gui, **kwargs):
+        """
+        Called if the scene is reinitialized with a second open command.
+        """
         self.gui = gui
 
     def finalize(self, *args, **kwargs):
@@ -317,6 +392,9 @@ class Scene(Module, Job):
             self._final_widget(w, context)
 
     def set_fps(self, fps):
+        """
+        Set the scene frames per second which sets the interval for the Job.
+        """
         if fps == 0:
             fps = 1
         self.context.fps = fps
@@ -341,7 +419,7 @@ class Scene(Module, Job):
     def refresh_scene(self, *args, **kwargs):
         """
         Called by the Scheduler at a given the specified framerate.
-        Called by in the UI thread.
+        Called in the UI thread.
         """
         if self.screen_refresh_is_requested:
             if self.screen_refresh_lock.acquire(timeout=0.2):
@@ -380,6 +458,9 @@ class Scene(Module, Job):
         del dc
 
     def rotary_stretch(self):
+        """
+        Rotary Stretch of Scene based on values in "rotary/1"
+        """
         r = self.context.get_context("rotary/1")
         scale_x = r.scale_x
         scale_y = r.scale_y
@@ -387,6 +468,9 @@ class Scene(Module, Job):
         self.context.signal("refresh_scene", 0)
 
     def rotary_unstretch(self):
+        """
+        Rotary UnStretch of Scene based on values in "rotary/1"
+        """
         r = self.context.get_context("rotary/1")
         scale_x = r.scale_x
         scale_y = r.scale_y
@@ -394,6 +478,9 @@ class Scene(Module, Job):
         self.context.signal("refresh_scene", 0)
 
     def _signal_widget(self, widget, *args, **kwargs):
+        """
+        Calls the signal widget with the given args. Calls signal for the entire widget node tree.
+        """
         try:
             widget.signal(*args)
         except AttributeError:
@@ -407,35 +494,61 @@ class Scene(Module, Job):
         pass
 
     def notify_added_to_parent(self, parent):
+        """
+        Called when node is added to parent. Notifying the scene as a whole.
+        """
         pass
 
     def notify_added_child(self, child):
+        """
+        Called when a child is added to the tree. Notifies scene as a whole.
+        """
         try:
             child.init(self.context)
         except AttributeError:
             pass
 
     def notify_removed_from_parent(self, parent):
+        """
+        Called when a widget is removed from it's parent. Notifies scene as a whole.
+        """
         pass
 
     def notify_removed_child(self, child):
+        """
+        Called when a widget's child is removed. Notifies scene as a whole.
+        """
         try:
             child.final(self.context)
         except AttributeError:
             pass
 
     def notify_moved_child(self, child):
+        """
+        Called when a widget is moved from one widget parent to another.
+        """
         pass
 
     def draw(self, canvas):
+        """
+        Scene Draw routine to be called on paint when the _Buffer bitmap needs to be redrawn.
+        """
         if self.widget_root is not None:
             self.widget_root.draw(canvas)
 
     def convert_scene_to_window(self, position):
+        """
+        Convert the scene space to the window space for a particular point.
+        The position given in the scene, produces the position on the screen.
+        """
         point = self.widget_root.scene_widget.matrix.point_in_matrix_space(position)
         return point[0], point[1]
 
     def convert_window_to_scene(self, position):
+        """
+        Convert the window space to the scene space for a particular point.
+        The position given is the window pixel, produces the position within the scene.
+        """
         point = self.widget_root.scene_widget.matrix.point_in_inverse_space(position)
         return point[0], point[1]
 
@@ -448,6 +561,20 @@ class Scene(Module, Job):
         self.rebuild_hit_chain(self.widget_root, self.matrix_root)
 
     def rebuild_hit_chain(self, current_widget, current_matrix=None):
+        """
+        Iterates through the hit chain to find elements which respond to their hit() function that they are HITCHAIN_HIT
+        and registers this within the hittable_elements list if they are arble to be hit at the current time. Given the
+        dimensions of the widget and the current matrix within the widget tree.
+
+        HITCHAIN_HIT means that this is a hit value and should the termination of this branch of the widget tree.
+        HITCHAIN_DELEGATE means that this is not a hittable widget and should not receive mouse events.
+        HITCHAIN_HIT_AND_DELEGATE means that this is a hittable widget, but other widgets within it might also matter.
+        HITCHAIN_DELEGATE_AND_HIT means that other widgets in the tree should be checked first, but after those this
+        widget should be checked.
+
+        The hitchain is the current matrix and current widget in the order of depth.
+
+        """
         # If there is a matrix for the widget concatenate it.
         if current_widget.matrix is not None:
             matrix_within_scene = Matrix(current_widget.matrix)
@@ -472,6 +599,11 @@ class Scene(Module, Job):
             self.hittable_elements.append((current_widget, matrix_within_scene))
 
     def find_hit_chain(self, position):
+        """
+        Processes the hittable_elements list and find which elements are hit at a given position.
+
+        This gives the actual hits with regard to the position of the event.
+        """
         self.hit_chain.clear()
         for current_widget, current_matrix in self.hittable_elements:
             hit_point = Point(current_matrix.point_in_inverse_space(position))
@@ -479,6 +611,20 @@ class Scene(Module, Job):
                 self.hit_chain.append((current_widget, current_matrix))
 
     def event(self, window_pos, event_type=""):
+        """
+        Scene event code. Processes all the events for a particular mouse event bound in the ScenePanel.
+
+        Many mousedown events trigger the specific start of the hitchain matching, and processes the given hitchain.
+        Subsequent delegation of the events will be processed with regard to whether the matching event struck a
+        particular widget. This permits a hit widget to get all further events.
+
+        Responses to events are:
+        RESPONSE_ABORT: Aborts any future mouse events within the sequence.
+        RESPONSE_CONSUME: Consumes the event and prevents any event further in the hitchain from getting the event
+        RESPONSE_CHAIN: Permit the event to move to the next event in the hitchain
+        RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
+        consider the dropped element within the hitchain.
+        """
         if self.last_position is None:
             self.last_position = window_pos
         dx = window_pos[0] - self.last_position[0]
@@ -535,6 +681,7 @@ class Scene(Module, Job):
                 if previous_top_element is not None:
                     previous_top_element.event(window_pos, window_pos, "hover_end")
                 current_widget.event(window_pos, space_pos, "hover_start")
+                previous_top_element = current_widget
             if event_type == "leftup" and time.time() - self.time <= 0.15:
                 response = current_widget.event(window_pos, space_pos, "leftclick")
             else:
@@ -552,13 +699,23 @@ class Scene(Module, Job):
                 break
 
     def add_scenewidget(self, widget, properties=ORIENTATION_RELATIVE):
+        """
+        Delegate to the SceneSpaceWidget scene.
+        """
         self.widget_root.scene_widget.add_widget(-1, widget, properties)
 
     def add_interfacewidget(self, widget, properties=ORIENTATION_RELATIVE):
+        """
+        Delegate to the SceneSpaceWidget interface.
+        """
         self.widget_root.interface_widget.add_widget(-1, widget, properties)
 
 
 class Widget(list):
+    """
+    Widgets are drawable, interaction objects within the scene. They have their own space, matrix, orientation, and
+    processing of events.
+    """
     def __init__(
         self,
         scene: "Scene",
@@ -569,7 +726,7 @@ class Widget(list):
         all: bool = False,
     ):
         """
-        All is whether this sends all points.
+        All produces a widget of infinite space rather than finite space.
         """
         list.__init__(self)
         self.matrix = Matrix()
@@ -610,9 +767,15 @@ class Widget(list):
         )
 
     def hit(self):
+        """
+        Default hit state delegates to child-widgets within the current object.
+        """
         return HITCHAIN_DELEGATE
 
     def draw(self, gc):
+        """
+        Widget.draw() routine which concat's the widgets matrix and call the process_draw() function.
+        """
         # Concat if this is a thing.
         matrix = self.matrix
         gc.PushState()
@@ -625,33 +788,64 @@ class Widget(list):
         gc.PopState()
 
     def process_draw(self, gc):
+        """
+        Overloaded function by derived widgets to process the drawing of this widget.
+        """
         pass
 
     def contains(self, x, y=None):
+        """
+        Query as to whether the current point is contained within the current widget.
+        """
         if y is None:
             y = x.y
             x = x.x
         return self.left <= x <= self.right and self.top <= y <= self.bottom
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        """
+        Default event which simply chains the event to the next hittable object.
+        """
         return RESPONSE_CHAIN
 
     def notify_added_to_parent(self, parent):
+        """
+        Widget notify that calls scene notify.
+        """
         self.scene.notify_added_to_parent(parent)
 
     def notify_added_child(self, child):
+        """
+        Widget notify that calls scene notify.
+        """
         self.scene.notify_added_child(child)
 
     def notify_removed_from_parent(self, parent):
+        """
+        Widget notify that calls scene notify.
+        """
         self.scene.notify_removed_from_parent(parent)
 
     def notify_removed_child(self, child):
+        """
+        Widget notify that calls scene notify.
+        """
         self.scene.notify_removed_child(child)
 
     def notify_moved_child(self, child):
+        """
+        Widget notify that calls scene notify.
+        """
         self.scene.notify_moved_child(child)
 
     def add_widget(self, index=-1, widget=None, properties=0):
+        """
+        Add a widget to the current widget.
+
+        Adds at the particular index according to the properties.
+
+        The properties can be used to trigger particular layouts or properties for the added widget.
+        """
         if len(self) == 0:
             last = None
         else:
@@ -666,6 +860,9 @@ class Widget(list):
         self.notify_added_child(widget)
 
     def translate(self, dx, dy):
+        """
+        Move the current widget and all child widgets.
+        """
         if dx == 0 and dy == 0:
             return
         if dx == float("nan"):
@@ -679,6 +876,9 @@ class Widget(list):
         self.translate_loop(dx, dy)
 
     def translate_loop(self, dx, dy):
+        """
+        Loop the translation call to all child objects.
+        """
         if self.properties & ORIENTATION_ABSOLUTE != 0:
             return  # Do not translate absolute oriented widgets.
         self.translate_self(dx, dy)
@@ -686,6 +886,9 @@ class Widget(list):
             w.translate_loop(dx, dy)
 
     def translate_self(self, dx, dy):
+        """
+        Perform the local translation of the current widget
+        """
         self.left += dx
         self.right += dx
         self.top += dy
@@ -694,6 +897,9 @@ class Widget(list):
             self.notify_moved_child(self)
 
     def union_children_bounds(self, bounds=None):
+        """
+        Find the bounds of the current widget and all child widgets.
+        """
         if bounds is None:
             bounds = [self.left, self.top, self.right, self.bottom]
         else:
@@ -711,13 +917,29 @@ class Widget(list):
 
     @property
     def height(self):
+        """
+        Height of the current widget.
+        """
         return self.bottom - self.top
 
     @property
     def width(self):
+        """
+        Width of the current widget.
+        """
         return self.right - self.left
 
     def layout_by_orientation(self, widget, last, properties):
+        """
+        Perform specific layout based on the properties given.
+        ORIENTATION_ABSOLUTE places the widget exactly in the scene.
+        ORIENTATION_NO_BUFFER nullifies any buffer between objects being laid out.
+        ORIENTATION_RELATIVE lays out the added widget relative to the parent.
+        ORIENTATION_GRID lays out the added widget in a DIM_MASK grid.
+        ORIENTATION_VERTICAL lays the added widget below the reference widget.
+        ORIENTATION_HORIZONTAL lays the added widget to the right of the reference widget.
+        ORIENTATION_CENTERED lays out the added widget and within the parent and all child centered.
+        """
         if properties & ORIENTATION_ABSOLUTE != 0:
             return
         if properties & ORIENTATION_NO_BUFFER != 0:
@@ -763,6 +985,9 @@ class Widget(list):
             self.center_children()
 
     def center_children(self):
+        """
+        Centers the children of the current widget within the current widget.
+        """
         child_bounds = self.union_children_bounds()
         dx = self.left - (child_bounds[0] + child_bounds[2]) / 2.0
         dy = self.top - (child_bounds[1] + child_bounds[3]) / 2.0
@@ -771,6 +996,9 @@ class Widget(list):
                 w.translate_loop(dx, dy)
 
     def center_widget(self, x, y=None):
+        """
+        Moves the current widget to center within the bounds of the children.
+        """
         if y is None:
             y = x.y
             x = x.x
@@ -780,6 +1008,10 @@ class Widget(list):
         self.translate(x - cx, y - cy)
 
     def set_position(self, x, y=None):
+        """
+        Sets the absolute position of this widget by moving it from its current position
+        to given position.
+        """
         if y is None:
             y = x.y
             x = x.x
@@ -788,6 +1020,9 @@ class Widget(list):
         self.translate(dx, dy)
 
     def remove_all_widgets(self):
+        """
+        Remove all widgets from the current widget.
+        """
         for w in self:
             if w is None:
                 continue
@@ -801,6 +1036,9 @@ class Widget(list):
             pass
 
     def remove_widget(self, widget=None):
+        """
+        Remove the given widget from being a child of the current widget.
+        """
         if widget is None:
             return
         if isinstance(widget, Widget):
@@ -818,6 +1056,9 @@ class Widget(list):
             pass
 
     def set_widget(self, index, widget):
+        """
+        Sets the given widget at the index to replace the child currently at the position of that widget.
+        """
         w = self[index]
         self[index] = widget
         widget.parent = self
@@ -829,56 +1070,103 @@ class Widget(list):
             pass
 
     def on_matrix_change(self):
+        """
+        Notification of a changed matrix.
+        """
         pass
 
     def scene_matrix_reset(self):
+        """
+        Resets the scene matrix.
+        """
         self.matrix.reset()
         self.on_matrix_change()
 
     def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
+        """
+        Adds a post_scale to the matrix.
+        """
         self.matrix.post_scale(sx, sy, ax, ay)
         self.on_matrix_change()
 
     def scene_post_pan(self, px, py):
+        """
+        Adds a post_pan to the matrix.
+        """
         self.matrix.post_translate(px, py)
         self.on_matrix_change()
 
     def scene_post_rotate(self, angle, rx=0, ry=0):
+        """
+        Adds a post_rotate to the matrix.
+        """
         self.matrix.post_rotate(angle, rx, ry)
         self.on_matrix_change()
 
     def scene_pre_scale(self, sx, sy=None, ax=0, ay=0):
+        """
+        Adds a pre_scale to the matrix()
+        """
         self.matrix.pre_scale(sx, sy, ax, ay)
         self.on_matrix_change()
 
     def scene_pre_pan(self, px, py):
+        """
+        Adds a pre_pan to the matrix()
+        """
         self.matrix.pre_translate(px, py)
         self.on_matrix_change()
 
     def scene_pre_rotate(self, angle, rx=0, ry=0):
+        """
+        Adds a pre_rotate to the matrix()
+        """
         self.matrix.pre_rotate(angle, rx, ry)
         self.on_matrix_change()
 
     def get_scale_x(self):
+        """
+        Gets the scale_x of the current matrix
+        """
         return self.matrix.value_scale_x()
 
     def get_scale_y(self):
+        """
+        Gets the scale_y of the current matrix
+        """
         return self.matrix.value_scale_y()
 
     def get_skew_x(self):
+        """
+        Gets the skew_x of the current matrix()
+        """
         return self.matrix.value_skew_x()
 
     def get_skew_y(self):
+        """
+        Gets the skew_y of the current matrix()
+        """
         return self.matrix.value_skew_y()
 
     def get_translate_x(self):
+        """
+        Gets the translate_x of the current matrix()
+        """
         return self.matrix.value_trans_x()
 
     def get_translate_y(self):
+        """
+        Gets the translate_y of the current matrix()
+        """
         return self.matrix.value_trans_y()
 
 
 class SceneSpaceWidget(Widget):
+    """
+    SceneSpaceWidget contains two sections:
+    Interface: Drawn on top, uses no matrix.
+    Scene: Drawn at a particular scale relative to the zoom-pan scene.
+    """
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self._view = None
@@ -895,9 +1183,18 @@ class SceneSpaceWidget(Widget):
         self._placement_event_type = None
 
     def hit(self):
+        """
+        If any event captures the events they take priority. But, if nothing is hit, then the events
+        should be dealt with here. These are mostly zoom and pan events.
+        """
         return HITCHAIN_DELEGATE_AND_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        """
+        Process the zooming and panning of otherwise unhit-widget events.
+
+        If nothing was otherwise hit by the event, we process the scene manipulation events
+        """
         if event_type == "hover":
             return RESPONSE_CHAIN
         if self.aspect:
@@ -999,6 +1296,7 @@ class SceneSpaceWidget(Widget):
             self.scene.context.signal("refresh_scene", 0)
 
             return RESPONSE_CONSUME
+
         # Movement
         if self._placement_event_type is None:
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
@@ -1047,10 +1345,16 @@ class SceneSpaceWidget(Widget):
         self.aspect_matrix()
 
     def aspect_matrix(self):
+        """
+        Specifically view the scene with the given Viewbox.
+        """
         if self._frame and self._view and self.aspect:
             self.scene_widget.matrix = Matrix(self._view.transform(self._frame))
 
     def focus_position_scene(self, scene_point, scene_size):
+        """
+        Focus on the specific point within the scene.
+        """
         window_width, window_height = self.scene.ClientSize
         scale_x = self.get_scale_x()
         scale_y = self.get_scale_y()

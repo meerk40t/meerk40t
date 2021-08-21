@@ -37,6 +37,9 @@ BUFFER = 10.0
 
 
 class ToolContainer(Widget):
+    """
+    Widget used to contain particular tools within the scene.
+    """
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
 
@@ -54,6 +57,9 @@ class ToolContainer(Widget):
 
 
 class CircleBrush:
+    """
+    Circular Brush to be drawn for area-based tools.
+    """
     def __init__(self):
         self.tool_size = 100
         self.pos = 0 + 0j
@@ -84,6 +90,9 @@ class CircleBrush:
 
 
 class ToolWidget(Widget):
+    """
+    AbstractClass for the ToolWidgets
+    """
     def __init__(self, scene: Scene):
         Widget.__init__(self, scene, all=True)
         self.brush = CircleBrush()
@@ -96,6 +105,9 @@ class ToolWidget(Widget):
 
 
 class DrawTool(ToolWidget):
+    """
+    Draw Tool adds paths that are clicked and drawn within the scene.
+    """
     def __init__(self, scene):
         ToolWidget.__init__(self, scene)
         self.preferred_length = 50
@@ -136,6 +148,12 @@ class DrawTool(ToolWidget):
 
 
 class RectTool(ToolWidget):
+    """
+    Rectangle Drawing Tool.
+
+    Adds Rectangles with click and drag.
+    """
+
     def __init__(self, scene):
         ToolWidget.__init__(self, scene)
         self.start_position = None
