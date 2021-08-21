@@ -36,6 +36,7 @@ from .scene.scenewidgets import (
 )
 from .scene.toolwidgets import DrawTool, RectTool, ToolContainer
 from .simulation import Simulation
+from ..main import MEERK40T_VERSION
 
 try:
     from math import tau
@@ -1040,12 +1041,12 @@ class MeerK40t(MWindow):
             )
             dlg.ShowModal()
             dlg.Destroy()
+
         context.register("function/interrupt", interrupt_popup)
 
         def interrupt():
             yield COMMAND_WAIT_FINISH
             yield COMMAND_FUNCTION, context.registered["function/interrupt"]
-
 
         context.register("plan/interrupt", interrupt)
 
@@ -3512,7 +3513,7 @@ class ShadowTree:
 
     def update_label(self, node, force=False):
         if node.label is None or force:
-            node.label = node.label_from_source_cascade()
+            node.label = node.create_label()
         if not hasattr(node, "item"):
             # Unregistered node updating name.
             self.rebuild_tree()
@@ -4384,7 +4385,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :return:
     """
     error_log = "MeerK40t crash log. Version: %s on %s\n" % (
-        "0.7.0 RC-8",
+        MEERK40T_VERSION,
         sys.platform,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))

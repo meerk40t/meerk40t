@@ -462,14 +462,11 @@ class Node:
         node.notify_attached(node, pos=pos)
         return node
 
-    def label_from_source_cascade(self) -> str:
+    def label_from_source_cascade(self, element) -> str:
         """
         Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
         node str. If something else provides a superior name it should be added in here.
         """
-        if self.object is None:
-            return self.label
-        element = abs(self.object)
         element_type = element.__class__.__name__
         if element_type == "SVGImage":
             element_type = "Image"
@@ -513,20 +510,24 @@ class Node:
                 desc = element_simplify_re.sub("", desc)
             return desc
 
-        return str(self)
+        return str(element)
 
-    def set_label(self, name):
+    def set_label(self, name=None):
+        self.label = self.create_label(name)
+
+    def create_label(self, name=None):
         """
-        Set the name of this node to the name given.
+        Create a label for this node.
+        If a name is not specified either use a cascade (primarily for elements) or
+        use the string representation
         :param name: Name to be set for this node.
-        :return:
+        :return: label
         """
-        self.label = name
-        if name is None:
-            if self.label is None:
-                self.label = self.label_from_source_cascade()
-        else:
-            self.label = name
+        if name is not None:
+            return name
+        if self.object is not None:
+            return self.label_from_source_cascade(self.object)
+        return str(self)
 
     def _flatten(self, node):
         """
@@ -776,7 +777,7 @@ class GroupNode(Node):
         data_object.node = self
 
     def __repr__(self):
-        return "ElemNode('%s', %s, %s)" % (
+        return "GroupNode('%s', %s, %s)" % (
             self.type,
             str(self.object),
             str(self._parent),
@@ -839,6 +840,7 @@ class LaserOperation(Node):
                 self.color = Color(obj.color)
                 self.output = obj.output
                 self.show = obj.show
+                self.default = obj.default
                 self.settings = LaserSettings(obj.settings)
 
         if self.operation == "Cut":
@@ -939,8 +941,9 @@ class LaserOperation(Node):
 
     @operation.setter
     def operation(self, v):
-        self._operation = v
-        self.notify_update()
+        if self._operation != v:
+            self._operation = v
+            self.notify_update()
 
     def time_estimate(self):
         if self._operation in ("Cut", "Engrave"):
@@ -1769,11 +1772,8 @@ class Elemental(Modifier):
             """
             Apply a filter string to a filter particular operations from the current data.
             Operations are evaluated in an infix prioritized stack format without spaces.
-
             Qualified values are speed, power, step, acceleration, passes, color, op
-
             Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
-
             eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
             eg. filter engrave=op&speed=35|cut=op&speed=10
             """
@@ -1880,6 +1880,7 @@ class Elemental(Modifier):
 
             self.set_emphasis(subops)
             return "ops", subops
+
 
         @context.console_command(
             "list",
