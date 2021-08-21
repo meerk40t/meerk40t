@@ -108,8 +108,8 @@ class OperationProperty(MWindow):
         self.raster_pen.SetWidth(2)
 
         self.travel_pen = wx.Pen()
-        self.travel_pen.SetColour(wx.Colour(255, 127, 255, 64))
-        self.travel_pen.SetWidth(1)
+        self.travel_pen.SetColour(wx.Colour(255, 127, 255, 127))
+        self.travel_pen.SetWidth(2)
 
         self.raster_lines = None
         self.travel_lines = None
@@ -517,38 +517,63 @@ class OperationProperty(MWindow):
 
     def calculate_raster_lines(self):
         w, h = self._Buffer.Size
-        pos = 20
-        steps = 20
-        try:
-            steps /= self.operation.settings.raster_step
-            steps = int(steps)
-        except (ValueError, ZeroDivisionError):
-            pass
-        step = (h - 40) / steps
         right = True
+        top = True
+
         last = None
+        direction = self.operation.settings.raster_direction
         r_start = list()
         r_end = list()
         t_start = list()
         t_end = list()
-        for j in range(steps):
-            r_start.append((20, pos))
-            r_end.append((w - 40, pos))
-            if right:
-                if last is not None:
-                    t_start.append((last[0], last[1]))
-                    t_end.append((w - 40, pos))
-                r_start.append((w - 40, pos))
-                r_end.append((w - 42, pos - 2))
-                last = (w - 40, pos)
-            else:
-                if last is not None:
-                    t_start.append((last[0], last[1]))
-                    t_end.append((20, pos))
-                r_start.append((20, pos))
-                r_end.append((22, pos - 2))
-            right = not right
-            pos += step
+        factor = 3
+
+        if direction == 0 or direction == 1 or direction == 4:
+            for pos in range(int(h*0.1), int(h*0.9), self.operation.settings.raster_step * factor):
+                # Primary Line Horizontal Raster
+                r_start.append((w*0.1, pos))
+                r_end.append((w*0.9, pos))
+
+                # Arrow Segment
+                if right:
+                    if last is not None:
+                        # Travel Lines
+                        t_start.append((last[0], last[1]))
+                        t_end.append((w*0.1, pos))
+                    r_start.append((w*0.9, pos))
+                    r_end.append((w*0.9 - 2, pos - 2))
+                    last = r_start[-1]
+                else:
+                    if last is not None:
+                        # Travel Lines
+                        t_start.append((last[0], last[1]))
+                        t_end.append((w*0.9, pos))
+                    r_start.append((w*0.1, pos))
+                    r_end.append((w*0.1 + 2, pos - 2))
+                    last = r_start[-1]
+                right = not right
+        if direction == 2 or direction == 3 or direction == 4:
+            for pos in range(int(w*0.1), int(w*0.9), self.operation.settings.raster_step * factor):
+                # Primary Line Vertical Raster.
+                r_start.append((pos, h * 0.1))
+                r_end.append((pos, h * 0.9))
+                if top:
+                    if last is not None:
+                        # Travel Lines
+                        t_start.append((last[0], last[1]))
+                        t_end.append((pos, h * 0.1))
+                    r_start.append((pos, h * 0.9))
+                    r_end.append((pos - 2, (h * 0.9) - 2))
+                    last = r_start[-1]
+                else:
+                    if last is not None:
+                        # Travel Lines
+                        t_start.append((last[0], last[1]))
+                        t_end.append((pos, h * 0.9))
+                    r_start.append((pos, h * 0.1))
+                    r_end.append((pos - 2, (h * 0.1) + 2))
+                    last = r_start[-1]
+                top = not top
         self.raster_lines = r_start, r_end
         self.travel_lines = t_start, t_end
 
@@ -562,13 +587,14 @@ class OperationProperty(MWindow):
         if self.raster_lines is None:
             self.calculate_raster_lines()
 
-        starts, ends = self.raster_lines
-        gc.SetPen(self.raster_pen)
-        gc.StrokeLineSegments(starts, ends)
-
-        gc.SetPen(self.travel_pen)
-        starts, ends = self.raster_lines
-        gc.StrokeLineSegments(starts, ends)
+        if self.raster_lines is not None:
+            starts, ends = self.raster_lines
+            gc.SetPen(self.raster_pen)
+            gc.StrokeLineSegments(starts, ends)
+        if self.travel_lines is not None:
+            starts, ends = self.travel_lines
+            gc.SetPen(self.travel_pen)
+            gc.StrokeLineSegments(starts, ends)
 
         gc.Destroy()
         del dc
@@ -721,6 +747,9 @@ class OperationProperty(MWindow):
             self.combo_raster_direction.GetSelection()
         )
         self.context.raster_direction = self.operation.settings.raster_direction
+        self.raster_lines = None
+        self.travel_lines = None
+        self.refresh_display()
         self.context.signal("element_property_reload", self.operation)
 
     def on_radio_directional(
@@ -729,26 +758,40 @@ class OperationProperty(MWindow):
         self.operation.settings.raster_swing = (
             self.radio_directional_raster.GetSelection()
         )
+        self.raster_lines = None
+        self.travel_lines = None
         self.context.signal("element_property_reload", self.operation)
 
     def on_slider_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        self.raster_lines = None
+        self.travel_lines = None
         self.operation.settings.raster_preference_top = self.slider_top.GetValue() - 1
+        self.refresh_display()
         self.context.signal("element_property_reload", self.operation)
 
     def on_slider_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        self.raster_lines = None
+        self.travel_lines = None
         self.operation.settings.raster_preference_left = self.slider_left.GetValue() - 1
+        self.refresh_display()
         self.context.signal("element_property_reload", self.operation)
 
     def on_slider_right(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        self.raster_lines = None
+        self.travel_lines = None
         self.operation.settings.raster_preference_right = (
             self.slider_right.GetValue() - 1
         )
+        self.refresh_display()
         self.context.signal("element_property_reload", self.operation)
 
     def on_slider_bottom(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        self.raster_lines = None
+        self.travel_lines = None
         self.operation.settings.raster_preference_bottom = (
             self.slider_bottom.GetValue() - 1
         )
+        self.refresh_display()
         self.context.signal("element_property_reload", self.operation)
 
     def on_check_advanced(self, event=None):  # wxGlade: OperationProperty.<event_handler>
