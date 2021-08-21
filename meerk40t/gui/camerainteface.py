@@ -514,6 +514,10 @@ class CamPerspectiveWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftdown":
+            self.cam.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+            return RESPONSE_CONSUME
+        if event_type == "leftup":
+            self.cam.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             return RESPONSE_CONSUME
         if event_type == "move":
             # self.translate_self(space_pos[4], space_pos[5])
