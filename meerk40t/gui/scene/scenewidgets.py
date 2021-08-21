@@ -119,14 +119,13 @@ class SelectionWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.elements
-        print(event_type)
         if event_type == "hover_start":
             self.cursor = wx.CURSOR_SIZING
-            self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
+            self.scene.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         if event_type == "hover_end":
             self.cursor = wx.CURSOR_ARROW
-            self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
+            self.scene.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         if event_type == "hover":
             matrix = self.parent.matrix
@@ -137,16 +136,14 @@ class SelectionWidget(Widget):
             ymin = 5 / matrix.value_scale_y()
             xmax = self.width - xmin
             ymax = self.height - ymin
-            print(xmin,ymin,xmax,ymax,xin,yin)
             cursor = self.cursor
             for e in elements.elems(emphasized=True):
                 try:
                     if e.lock:
-                        print("lock")
                         self.cursor = wx.CURSOR_SIZING
                         self.tool = self.tool_translate
                         if self.cursor != cursor:
-                            self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
+                            self.scene.gui.SetCursor(wx.Cursor(self.cursor))
                         return RESPONSE_CHAIN
                 except (ValueError, AttributeError):
                     pass
@@ -178,8 +175,7 @@ class SelectionWidget(Widget):
                 self.cursor = wx.CURSOR_SIZING
                 self.tool = self.tool_translate
             if self.cursor != cursor:
-                print("change_cursor")
-                self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
+                self.scene.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         dx = space_pos[4]
         dy = space_pos[5]
@@ -608,7 +604,7 @@ class ReticleWidget(Widget):
         Update of driver adds and ensures the location of the d+origin position
         """
         self.reticles["d" + origin] = pos[2], pos[3]
-        # self.request_refresh_for_animation()
+        self.request_refresh_for_animation()
 
     def on_update_emulator(self, origin, pos):
         """
