@@ -135,10 +135,11 @@ class SelectionWidget(Widget):
             xmin = 5 / matrix.value_scale_x()
             ymin = 5 / matrix.value_scale_y()
             # Adjust sizing of hover border as follows:
-            # 1. If object is very small so move area is smaller than border or even non-existent, prefer move to size by setting border to zero
-            # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded more than 1/3 of the width or height
-            xmin = min(xmin * 2.0, max(self.width / 3.0, xmin)) if xmin <= self.width / 3.0 else 0.0
-            ymin = min(ymin * 2.0, max(self.height / 3.0, ymin)) if ymin <= self.height / 3.0 else 0.0
+            # 1. If object is very small so move area is smaller than 1/2 or even non-existent, prefer move to size by setting border to zero
+            # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded 
+            #    to be more than 1/4 of the width or height
+            xmin = min(xmin * 2.0, max(self.width / 4.0, xmin)) if xmin <= self.width / 4.0 else 0.0
+            ymin = min(ymin * 2.0, max(self.height / 4.0, ymin)) if ymin <= self.height / 4.0 else 0.0
             xmax = self.width - xmin
             ymax = self.height - ymin
             cursor = self.cursor
