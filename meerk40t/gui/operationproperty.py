@@ -111,8 +111,13 @@ class OperationProperty(MWindow):
         self.travel_pen.SetColour(wx.Colour(255, 127, 255, 127))
         self.travel_pen.SetWidth(2)
 
+        self.direction_pen = wx.Pen()
+        self.direction_pen.SetColour(wx.Colour(127, 127, 255))
+        self.direction_pen.SetWidth(2)
+
         self.raster_lines = None
         self.travel_lines = None
+        self.direction_lines = None
 
     def restore(self, *args, node=None, **kwds):
         self.operation = node
@@ -526,9 +531,23 @@ class OperationProperty(MWindow):
         r_end = list()
         t_start = list()
         t_end = list()
+        d_start = list()
+        d_end = list()
         factor = 3
 
         if direction == 0 or direction == 1 or direction == 4:
+            d_start.append((w * 0.05, h * 0.05))
+            d_end.append((w * 0.05, h * 0.95))
+            if direction == 1:
+                d_start.append((w * 0.05, h * 0.05))
+                d_end.append((w * 0.05 + 4, h * 0.05 + 4))
+                d_start.append((w * 0.05, h * 0.05))
+                d_end.append((w * 0.05 - 4, h * 0.05 + 4))
+            else:
+                d_start.append((w * 0.05, h * 0.95))
+                d_end.append((w * 0.05 + 4, h * 0.95 - 4))
+                d_start.append((w * 0.05, h * 0.95))
+                d_end.append((w * 0.05 - 4, h * 0.95 - 4))
             for pos in range(int(h*0.1), int(h*0.9), self.operation.settings.raster_step * factor):
                 # Primary Line Horizontal Raster
                 r_start.append((w*0.1, pos))
@@ -553,6 +572,18 @@ class OperationProperty(MWindow):
                     last = r_start[-1]
                 right = not right
         if direction == 2 or direction == 3 or direction == 4:
+            d_start.append((w * 0.05, h * 0.05))
+            d_end.append((w*0.95, h*0.05))
+            if direction == 2:
+                d_start.append((w * 0.05, h * 0.05))
+                d_end.append((w * 0.05 + 4, h * 0.05 + 4))
+                d_start.append((w * 0.05, h * 0.05))
+                d_end.append((w * 0.05 + 4, h * 0.05 - 4))
+            else:
+                d_start.append((w * 0.95, h * 0.05))
+                d_end.append((w * 0.95 - 4, h * 0.05 + 4))
+                d_start.append((w * 0.95, h * 0.05))
+                d_end.append((w * 0.95 - 4, h * 0.05 - 4))
             for pos in range(int(w*0.1), int(w*0.9), self.operation.settings.raster_step * factor):
                 # Primary Line Vertical Raster.
                 r_start.append((pos, h * 0.1))
@@ -576,6 +607,7 @@ class OperationProperty(MWindow):
                 top = not top
         self.raster_lines = r_start, r_end
         self.travel_lines = t_start, t_end
+        self.direction_lines = d_start, d_end
 
     def refresh_in_ui(self):
         """Performs the redraw of the data in the UI thread."""
@@ -595,7 +627,10 @@ class OperationProperty(MWindow):
             starts, ends = self.travel_lines
             gc.SetPen(self.travel_pen)
             gc.StrokeLineSegments(starts, ends)
-
+        if self.direction_lines is not None:
+            starts, ends = self.direction_lines
+            gc.SetPen(self.direction_pen)
+            gc.StrokeLineSegments(starts, ends)
         gc.Destroy()
         del dc
         self.display_panel.Refresh()
