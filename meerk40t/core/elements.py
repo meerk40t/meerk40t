@@ -255,7 +255,10 @@ class Node:
     def bounds(self):
         if self._bounds_dirty:
             try:
-                self._bounds = self.object.bbox()
+                if not isinstance(self.object, Group):
+                    self._bounds = self.object.bbox()
+                else:
+                    self._bounds = self.object.bbox(False)
             except AttributeError:
                 self._bounds = None
             for e in self._children:
