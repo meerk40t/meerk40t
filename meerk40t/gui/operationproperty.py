@@ -380,7 +380,7 @@ class OperationProperty(MWindow):
         # end wxGlade
 
         # 0.6.1 freeze, drops.
-        self.radio_directional_raster.Enable(False)
+        # self.radio_directional_raster.Enable(False)
         self.slider_top.Enable(False)
         self.slider_right.Enable(False)
         self.slider_left.Enable(False)
@@ -534,6 +534,7 @@ class OperationProperty(MWindow):
         d_start = list()
         d_end = list()
         factor = 3
+        unidirectional = self.operation.settings.raster_swing
 
         if direction == 0 or direction == 1 or direction == 4:
             d_start.append((w * 0.05, h * 0.05))
@@ -570,7 +571,8 @@ class OperationProperty(MWindow):
                     r_start.append((w*0.1, pos))
                     r_end.append((w*0.1 + 2, pos - 2))
                     last = r_start[-1]
-                right = not right
+                if not unidirectional:
+                    right = not right
         if direction == 2 or direction == 3 or direction == 4:
             d_start.append((w * 0.05, h * 0.05))
             d_end.append((w*0.95, h*0.05))
@@ -604,7 +606,8 @@ class OperationProperty(MWindow):
                     r_start.append((pos, h * 0.1))
                     r_end.append((pos - 2, (h * 0.1) + 2))
                     last = r_start[-1]
-                top = not top
+                if not unidirectional:
+                    top = not top
         self.raster_lines = r_start, r_end
         self.travel_lines = t_start, t_end
         self.direction_lines = d_start, d_end
@@ -795,6 +798,7 @@ class OperationProperty(MWindow):
         )
         self.raster_lines = None
         self.travel_lines = None
+        self.refresh_display()
         self.context.signal("element_property_reload", self.operation)
 
     def on_slider_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
