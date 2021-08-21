@@ -643,21 +643,21 @@ class OperationProperty(MWindow):
         dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
-        if self.raster_lines is None:
-            self.calculate_raster_lines()
-
-        if self.raster_lines is not None:
-            starts, ends = self.raster_lines
-            gc.SetPen(self.raster_pen)
-            gc.StrokeLineSegments(starts, ends)
-        if self.travel_lines is not None:
-            starts, ends = self.travel_lines
-            gc.SetPen(self.travel_pen)
-            gc.StrokeLineSegments(starts, ends)
-        if self.direction_lines is not None:
-            starts, ends = self.direction_lines
-            gc.SetPen(self.direction_pen)
-            gc.StrokeLineSegments(starts, ends)
+        if self.raster_panel.Shown:
+            if self.raster_lines is None:
+                self.calculate_raster_lines()
+            if self.raster_lines is not None:
+                starts, ends = self.raster_lines
+                gc.SetPen(self.raster_pen)
+                gc.StrokeLineSegments(starts, ends)
+            if self.travel_lines is not None:
+                starts, ends = self.travel_lines
+                gc.SetPen(self.travel_pen)
+                gc.StrokeLineSegments(starts, ends)
+            if self.direction_lines is not None:
+                starts, ends = self.direction_lines
+                gc.SetPen(self.direction_pen)
+                gc.StrokeLineSegments(starts, ends)
         gc.Destroy()
         del dc
         self.display_panel.Refresh()

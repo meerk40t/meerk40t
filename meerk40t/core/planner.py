@@ -835,6 +835,9 @@ class Planner(Modifier):
                 if isinstance(c, CutCode):
                     copy_c = copy(c)
                     operations.add(copy_c, type="cutcode")
+                if isinstance(c, LaserOperation):
+                    copy_c = copy(c)
+                    operations.add(copy_c, type="op")
             channel(_("Returned Operations."))
             self.context.signal("plan", self._default_plan, None)
             return data_type, data
