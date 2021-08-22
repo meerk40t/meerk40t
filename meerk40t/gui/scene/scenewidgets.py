@@ -604,7 +604,7 @@ class ReticleWidget(Widget):
         Update of driver adds and ensures the location of the d+origin position
         """
         self.reticles["d" + origin] = pos[2], pos[3]
-        self.request_refresh_for_animation()
+        self.scene.request_refresh_for_animation()
 
     def on_update_emulator(self, origin, pos):
         """
