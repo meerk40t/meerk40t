@@ -95,7 +95,7 @@ def plugin(kernel, lifecycle=None):
             if input_driver is not None:
                 try:
                     t = input_driver.type
-                    match = "command/%s/%s" % (str(t), command)
+                    match = "command/%s/%s$" % (str(t), command)
                     for command_name in root.match(match):
                         command_funct = root.registered[command_name]
                         if command_funct is not None:
