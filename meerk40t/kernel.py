@@ -1868,6 +1868,7 @@ class Kernel:
                     channel(_("Syntax Error (%s): %s") % (command, message))
                     return None
                 except CommandMatchRejected:
+                    # If the command function raises a CommandMatchRejected more commands should be matched.
                     continue
             if command_executed:
                 text = remainder.strip()
