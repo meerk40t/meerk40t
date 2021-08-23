@@ -3927,12 +3927,13 @@ class Elemental(Modifier):
         def lasercode2cut(node, **kwgs):
             node.replace_node(CutCode.from_lasercode(node.object), type="cutcode")
 
+        @self.tree_conditional_try(lambda node: hasattr(node.object, "as_cutobjects"))
         @self.tree_operation(
             _("Convert to Cutcode"),
-            node_type="egv",
+            node_type="blob",
             help="",
         )
-        def egv2cut(node, **kwgs):
+        def blob2cut(node, **kwgs):
             node.replace_node(node.object.as_cutobjects(), type="cutcode")
 
         @self.tree_operation(

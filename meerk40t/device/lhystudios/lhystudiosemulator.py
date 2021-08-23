@@ -362,6 +362,7 @@ class EGVBlob:
     def __init__(self, data: bytearray, name=None):
         self.name = name
         self.data = data
+        self.operation = "blob"
 
     def __repr__(self):
         return "EGV(%s, %d bytes)" % (self.name, len(self.data))
@@ -385,6 +386,6 @@ class EgvLoader:
         with open(pathname, "rb") as f:
             blob = EGVBlob(bytearray(f.read()), basename)
             op_branch = elements_modifier.get(type="branch ops")
-            op_branch.add(blob, type="egv")
+            op_branch.add(blob, type="blob")
             kernel.root.close(basename)
         return True
