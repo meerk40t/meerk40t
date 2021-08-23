@@ -104,11 +104,12 @@ class DeviceManager(MWindow):
 
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
-        for i, dev in enumerate(self.context.match("device")):
+        for i, dev_suffix in enumerate(self.context.match("device", suffix=True)):
+            dev = "device/%s" % dev_suffix
             device = self.context.registered[dev]
             spooler, input_device, output = device
             device_context = self.context.get_context("devices")
-            dev_string = "device_%d" % i
+            dev_string = "device_%s" % dev_suffix
             if hasattr(device_context, dev_string):
                 line = getattr(device_context, dev_string)
                 registered = len(line) > 0
