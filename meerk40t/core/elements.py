@@ -134,7 +134,6 @@ class Node:
     Nodes are elements within the tree which stores most of the objects in Elements.
     """
 
-
     def __init__(self, data_object=None, type=None, *args, **kwargs):
         super().__init__()
         self._children = list()

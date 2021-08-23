@@ -555,6 +555,9 @@ class Planner(Modifier):
                         continue
                 except TypeError:
                     pass
+                if c.type == "cutcode":
+                    # CutNodes are denuded into normal cutcode.
+                    c = c.object
                 copy_c = copy(c)
                 try:
                     copy_c.deep_copy_children(c)
@@ -833,8 +836,7 @@ class Planner(Modifier):
 
             for c in data.plan:
                 if isinstance(c, CutCode):
-                    copy_c = copy(c)
-                    operations.add(copy_c, type="cutcode")
+                    operations.add(c, type="cutcode")
                 if isinstance(c, LaserOperation):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")
