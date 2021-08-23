@@ -18,7 +18,10 @@ class JobSpooler(MWindow):
         selected_spooler = self.context.root.active
         if len(args) >= 4 and args[3]:
             selected_spooler = args[3]
-        index = spools.index(selected_spooler)
+        try:
+            index = spools.index(selected_spooler)
+        except ValueError:
+            index = 0
         self.connected_name = spools[index]
         self.connected_spooler, self.connected_driver, self.connected_output = (
             None,
