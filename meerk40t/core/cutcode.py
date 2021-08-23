@@ -380,7 +380,8 @@ class CutCode(CutGroup):
         distance = 0
         for i in range(0, len(cutcode)):
             curr = cutcode[i]
-            distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
+            if curr.settings.speed:
+                distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
         return distance
 
     @classmethod
