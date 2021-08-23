@@ -178,11 +178,14 @@ def plugin(kernel, lifecycle=None):
             help=_("delete <index>"),
             input_type="device",
         )
-        def delete(index, **kwargs):
+        def delete(channel, _, index, **kwargs):
+            spools = [str(i) for i in kernel.root.match("device", suffix=True)]
+            device_name = spools[index]
+
             device_context = kernel.get_context("devices")
             try:
-                setattr(device_context, "device_%d" % index, "")
-                device = root.registered["device/%d" % index]
+                setattr(device_context, "device_%s" % device_name, "")
+                device = root.registered["device/%s" % device_name]
                 if device is not None:
                     spooler, driver, output = device
                     if driver is not None:
@@ -195,6 +198,6 @@ def plugin(kernel, lifecycle=None):
                             output.finalize()
                         except AttributeError:
                             pass
-                root.registered["device/%d" % index] = [None, None, None]
+                root.registered["device/%s" % device_name] = [None, None, None]
             except (KeyError, ValueError):
                 raise SyntaxError(_("Invalid device-string index."))
