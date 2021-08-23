@@ -53,6 +53,10 @@ class LhystudiosEmulator(Module):
         self.count_lines = 0
 
     def header_write(self, data):
+        """
+        Write data to the emulator including the header. This is intended for saved .egv files which include a default
+        header.
+        """
         if self.header_skipped:
             self.write(data)
         for i in range(len(data)):
@@ -324,9 +328,10 @@ class EgvLoader:
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
             lhymicroemulator = kernel.root.open_as(
-                "module/LhystudiosEmulator", basename
+                "emulator/lhystudios", basename
             )
-            lhymicroemulator.write_header(f.read())
+            lhymicroemulator.header_write(f.read())
             op_branch = elements_modifier.get(type="branch ops")
             op_branch.add(lhymicroemulator.cutcode, type="cutcode")
+            kernel.root.close(basename)
         return True

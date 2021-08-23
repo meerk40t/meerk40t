@@ -1158,6 +1158,8 @@ class LaserOperation(Node):
 class CutNode(Node):
     """
     Node type "cutcode"
+    Cutcode nodes store cutcode within the tree. When processing in a plan this should be converted to a normal cutcode
+    object.
     """
 
     def __init__(self, data_object, **kwargs):
