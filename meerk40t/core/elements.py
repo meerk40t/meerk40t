@@ -3911,6 +3911,7 @@ class Elemental(Modifier):
                 "opnode",
                 "lasercode",
                 "cutcode",
+                "egv"
             ),
             help="",
         )
@@ -3925,6 +3926,14 @@ class Elemental(Modifier):
         )
         def lasercode2cut(node, **kwgs):
             node.replace_node(CutCode.from_lasercode(node.object), type="cutcode")
+
+        @self.tree_operation(
+            _("Convert to Cutcode"),
+            node_type="egv",
+            help="",
+        )
+        def egv2cut(node, **kwgs):
+            node.replace_node(node.object.as_cutobjects(), type="cutcode")
 
         @self.tree_operation(
             _("Convert to Path"),
