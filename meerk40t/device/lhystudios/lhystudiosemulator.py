@@ -381,6 +381,15 @@ class EGVBlob:
 
     def as_cutobjects(self):
         parser = LhystudiosParser()
+        cut = RawCut()
+        parser.cutcode.append(cut)
+
+        def position(x0, y0, x1, y1):
+            cut.plot.append((int(x1), int(y1), parser.laser))
+
+        cut.settings = LaserSettings(parser.settings)
+
+        parser.position = position
         parser.header_write(self.data)
         return parser.cutcode
 
