@@ -35,12 +35,12 @@ class BufferView(MWindow):
 
     def window_open(self):
         active = self.context.root.active
-        spooler, input_driver, pipe = self.context.registered["device/%s" % active]
+        spooler, input_device, output = self.context.registered["device/%s" % active]
         # pipe = self.context.open("pipe")
         buffer = None
-        if pipe is not None:
+        if output is not None:
             try:
-                buffer = pipe.viewbuffer()
+                buffer = output.viewbuffer()
             except AttributeError:
                 buffer = None
         if buffer is None:
