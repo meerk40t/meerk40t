@@ -44,7 +44,7 @@ class LhystudiosParser:
         self.count_flag = 0
         self.settings = LaserSettings(speed=20.0, power=1000.0)
         self.cutcode = CutCode()
-        self.cut = RawCut()
+        self.cut = None
 
         self.small_jump = True
         self.speed_code = None
@@ -79,7 +79,7 @@ class LhystudiosParser:
         return self.settings.raster_step != 0
 
     def new_cut(self):
-        if len(self.cut):
+        if self.cut is not None and len(self.cut):
             self.cutcode.append(self.cut)
         self.cut = RawCut()
         self.cut.settings = LaserSettings(self.settings)
