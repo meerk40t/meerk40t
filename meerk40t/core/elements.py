@@ -693,7 +693,7 @@ class Node:
         self._parent._children.remove(self)
         self.notify_detached(self)
         self.notify_destroyed(self)
-        for ref in self._references:
+        for ref in list(self._references):
             ref.remove_node()
         self.item = None
         self._parent = None
