@@ -318,14 +318,15 @@ class EgvLoader:
         yield "Engrave Files", ("egv",), "application/x-egv"
 
     @staticmethod
-    def load(kernel, pathname, **kwargs):
+    def load(kernel, elements_modifier, pathname, **kwargs):
         import os
 
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
             lhymicroemulator = kernel.root.open_as(
-                "module/LhystudiossEmulator", basename
+                "module/LhystudiosEmulator", basename
             )
             lhymicroemulator.write_header(f.read())
-            kernel.root.close(basename)
+            op_branch = elements_modifier.get(type="branch ops")
+            op_branch.add(lhymicroemulator.cutcode, type="cutcode")
         return True
