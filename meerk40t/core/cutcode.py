@@ -315,6 +315,12 @@ class CutCode(CutGroup):
                 path.quad(e.c(), end)
             elif isinstance(e, CubicCut):
                 path.quad(e.c1(), e.c2(), end)
+            elif isinstance(e, RawCut):
+                for x, y, laser in e.plot:
+                    if laser:
+                        path.line(x, y)
+                    else:
+                        path.move(x, y)
             if previous_settings is not settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
                     yield path
