@@ -327,5 +327,4 @@ class EgvLoader:
                 "module/LhystudiossEmulator", basename
             )
             lhymicroemulator.write_header(f.read())
-            kernel.root.close(basename)
-        return True
+            return [lhymicroemulator.cutcode], None, None, pathname, basename
