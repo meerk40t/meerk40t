@@ -42,7 +42,7 @@ class LhystudiosParser:
         self.header_skipped = False
         self.count_lines = 0
         self.count_flag = 0
-        self.settings = LaserSettings()
+        self.settings = LaserSettings(speed=20.0, power=1000.0)
         self.cutcode = CutCode()
 
         self.small_jump = True
@@ -64,6 +64,18 @@ class LhystudiosParser:
         self.horizontal_major = False
         self.fix_speeds = False
         self.process = self.state_default
+
+    @property
+    def program_mode(self):
+        return self.process == self.state_compact
+
+    @property
+    def default_mode(self):
+        return self.process is self.state_default
+
+    @property
+    def raster_mode(self):
+        return self.settings.raster_step != 0
 
     def new_file(self):
         self.header_skipped = False
@@ -214,6 +226,9 @@ class LhystudiosParser:
         return True
 
     def execute_distance(self):
+        if self.position:
+            self.position(self.x, self.y, self.x + self.distance_x, self.y + self.distance_y)
+
         if self.distance_x != 0 or self.distance_y != 0:
             dx = self.distance_x
             dy = self.distance_y
@@ -224,10 +239,9 @@ class LhystudiosParser:
             self.distance_x = 0
             self.distance_y = 0
 
-            if self.position:
-                self.position(self.x, self.y, self.x + dx, self.y + dy)
             self.x += dx
             self.y += dy
+
             if self.channel:
                 self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
 
@@ -385,7 +399,8 @@ class EGVBlob:
         parser.cutcode.append(cut)
 
         def position(x0, y0, x1, y1):
-            cut.plot.append((int(x1), int(y1), parser.laser))
+            if parser.program_mode:
+                cut.plot.append((int(x0), int(y0), parser.laser))
 
         cut.settings = LaserSettings(parser.settings)
 
