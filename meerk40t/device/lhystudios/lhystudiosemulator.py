@@ -7,6 +7,37 @@ from .laserspeed import LaserSpeed
 class LhystudiosEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
+        self.context.setting(bool, "fix_speeds", False)
+
+        self.parser = LhystudiosParser()
+        self.parser.fix_speeds = self.context.fix_speeds
+        self.parser.channel = self.context.channel("lhy")
+
+        def pos(x0, y0, x1, y1):
+            self.context.signal("emulator;position", (x0, y0, x1, y1))
+
+        self.parser.position = pos
+
+    def __repr__(self):
+        return "LhystudiosEmulator(%s, %d cuts)" % (self.name, len(self.cutcode))
+
+    def initialize(self, *args, **kwargs):
+        context = self.context
+        active = self.context.root.active
+        send = context.channel("%s/usb_send" % active)
+        send.watch(self.parser.write_packet)
+
+    def finalize(self, *args, **kwargs):
+        context = self.context
+        active = self.context.root.active
+        send = context.channel("%s/usb_send" % active)
+        send.unwatch(self.parser.write_packet)
+
+
+class LhystudiosParser:
+    def __init__(self):
+        self.channel = lambda e: None
+        self.position = lambda e: None
         self.board = "M2"
         self.header_skipped = False
         self.count_lines = 0
@@ -30,22 +61,8 @@ class LhystudiosEmulator(Module):
         self.x_on = False
         self.y_on = False
         self.horizontal_major = False
-        self.context.setting(bool, "fix_speeds", False)
+        self.fix_speeds = False
         self.process = self.state_default
-
-        active = self.context.root.active
-        send = context.channel("%s/usb_send" % active)
-        send.watch(self.write_packet)
-
-        self.channel = self.context.channel("lhy")
-
-    def __repr__(self):
-        return "LhystudiosEmulator(%s, %d cuts)" % (self.name, len(self.cutcode))
-
-    def generate(self):
-        for cutobject in self.cutcode:
-            yield COMMAND_PLOT, cutobject
-        yield COMMAND_PLOT_START
 
     def new_file(self):
         self.header_skipped = False
@@ -110,7 +127,7 @@ class LhystudiosEmulator(Module):
     def state_pop(self, b, c):
         if c == "P":
             # Home sequence triggered.
-            self.context.signal("emulator;position", (self.x, self.y, 0, 0))
+            self.position(self.x, self.y, 0, 0)
             self.x = 0
             self.y = 0
             self.process = self.state_default
@@ -124,7 +141,7 @@ class LhystudiosEmulator(Module):
         if c in "GCV01234567890":
             self.speed_code += c
             return
-        speed = LaserSpeed(self.speed_code, fix_speeds=self.context.fix_speeds)
+        speed = LaserSpeed(self.speed_code, board=self.board, fix_speeds=self.fix_speeds)
         self.settings.steps = speed.raster_step
         self.settings.speed = speed.speed
         self.channel("Setting Speed: %f" % self.settings.speed)
@@ -199,9 +216,7 @@ class LhystudiosEmulator(Module):
             self.distance_x = 0
             self.distance_y = 0
 
-            self.context.signal(
-                "emulator;position", (self.x, self.y, self.x + dx, self.y + dy)
-            )
+            self.position(self.x, self.y, self.x + dx, self.y + dy)
             self.x += dx
             self.y += dy
             self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
@@ -316,6 +331,20 @@ class LhystudiosEmulator(Module):
             self.channel("Top")
 
 
+class EGVBlob:
+    def __init__(self, data: bytearray, name=None):
+        self.name = name
+        self.data = data
+
+    def __repr__(self):
+        return "EGV(%s, %d bytes)" % (self.name, len(self.data))
+
+    def as_cutobjects(self):
+        parser = LhystudiosParser()
+        parser.header_write(self.data)
+        return parser.cutcode
+
+
 class EgvLoader:
     @staticmethod
     def load_types():
@@ -327,11 +356,8 @@ class EgvLoader:
 
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            lhymicroemulator = kernel.root.open_as(
-                "emulator/lhystudios", basename
-            )
-            lhymicroemulator.header_write(f.read())
+            blob = EGVBlob(bytearray(f.read()), basename)
             op_branch = elements_modifier.get(type="branch ops")
-            op_branch.add(lhymicroemulator.cutcode, type="cutcode")
+            op_branch.add(blob, type="egv")
             kernel.root.close(basename)
         return True
