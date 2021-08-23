@@ -288,12 +288,15 @@ class SVGLoader:
         file_node = context_node.add(type="file", label=basename)
         file_node.filepath = pathname
         file_node.focus()
-        return SVGLoader.parse(
-            svg, elements_modifier, file_node, pathname, scale_factor, reverse
+        elements = []
+        result = SVGLoader.parse(
+            svg, elements_modifier, file_node, pathname, scale_factor, reverse, elements
         )
+        elements_modifier.classify(elements)
+        return result
 
     @staticmethod
-    def parse(svg, elements_modifier, context_node, pathname, scale_factor, reverse):
+    def parse(svg, elements_modifier, context_node, pathname, scale_factor, reverse, elements):
         operations_cleared = False
         if reverse:
             svg = reversed(svg)
@@ -309,16 +312,16 @@ class SVGLoader:
                 if element.text is None:
                     continue
                 context_node.add(element, type="elem")
-                elements_modifier.classify([element])
+                elements.append(element)
             elif isinstance(element, Path):
                 if len(element) == 0:
                     continue
                 element.approximate_arcs_with_cubics()
                 context_node.add(element, type="elem")
-                elements_modifier.classify([element])
+                elements.append(element)
             elif isinstance(element, Shape):
                 if not element.transform.is_identity():
-                    # Shape Reification failed.
+                    #1 Shape Reification failed.
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
@@ -329,13 +332,13 @@ class SVGLoader:
                     if len(e) == 0:
                         continue  # Degenerate.
                 context_node.add(element, type="elem")
-                elements_modifier.classify([element])
+                elements.append(element)
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
                     if element.image is not None:
                         context_node.add(element, type="elem")
-                        elements_modifier.classify([element])
+                        elements.append(element)
                 except OSError:
                     pass
             elif isinstance(element, SVG):
@@ -349,6 +352,7 @@ class SVGLoader:
                     pathname,
                     scale_factor,
                     reverse,
+                    elements,
                 )
                 continue
             elif isinstance(element, SVGElement):
@@ -409,4 +413,5 @@ class SVGLoader:
                         elements_modifier.add_op(op)
                 except KeyError:
                     pass
+
         return True
