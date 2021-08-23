@@ -1,4 +1,4 @@
-from ...core.cutcode import CutCode, LaserSettings
+from ...core.cutcode import CutCode, LaserSettings, RawCut
 from ...kernel import Module
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
@@ -56,6 +56,7 @@ class LhystudiosParser:
 
         self.filename = ""
 
+        self.laser = 0
         self.left = False
         self.top = False
         self.x_on = False
@@ -77,10 +78,11 @@ class LhystudiosParser:
         if self.header_skipped:
             self.write(data)
         for i in range(len(data)):
-            c = data[i]
-            if c == b"\n":
+            b = data[i]
+            c = chr(b)
+            if c == "\n":
                 self.count_lines += 1
-            elif c == b"%":
+            elif c == "%":
                 self.count_flag += 1
 
             if self.count_lines >= 3 and self.count_flag >= 5:
@@ -132,6 +134,7 @@ class LhystudiosParser:
                 self.position(self.x, self.y, 0, 0)
             self.x = 0
             self.y = 0
+            self.laser = 0
             self.process = self.state_default
             return
         elif c == "F":
@@ -234,18 +237,21 @@ class LhystudiosParser:
         self.execute_distance()
 
         if c == "F":
+            self.laser = 0
             if self.channel:
                 self.channel("Finish")
             self.process = self.state_finish
             self.process(b, c)
             return
         elif c == "@":
+            self.laser = 0
             if self.channel:
                 self.channel("Reset")
             self.process = self.state_reset
             self.process(b, c)
             return
         elif c == "P":
+            self.laser = 0
             if self.channel:
                 self.channel("Pause")
             self.process = self.state_pause
@@ -255,11 +261,13 @@ class LhystudiosParser:
             self.process = self.state_jog
             self.process(b, c)
         elif c == "S":
+            self.laser = 0
             if self.channel:
                 self.channel("Switch")
             self.process = self.state_switch
             self.process(b, c)
         elif c == "E":
+            self.laser = 0
             if self.channel:
                 self.channel("Compact-Compact")
             self.process = self.state_execute
@@ -295,6 +303,10 @@ class LhystudiosParser:
                 a = "Top" if self.top else "Bottom"
                 b = "Left" if self.left else "Right"
                 self.channel("Diagonal %s %s" % (a, b))
+        elif c == "U":
+            self.laser = 0
+        elif c == "D":
+            self.laser = 1
 
     def state_default(self, b, c):
         if self.state_distance(b, c):
