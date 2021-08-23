@@ -182,8 +182,6 @@ class JobSpooler(MWindow):
     def refresh_spooler_list(self):
         if not self.update_spooler:
             return
-        if not self.connected_spooler:
-            return
 
         try:
             self.list_job_spool.DeleteAllItems()
