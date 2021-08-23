@@ -914,14 +914,13 @@ class Kernel:
 
         self.bootstrap("shutdown")
         _ = self.translation
-        if channel is None:
-            channel = self.root.channel("shutdown")
 
         self.process_queue()  # Notify listeners of state.
         # Suspend Signals
 
         def signal(code, path, *message):
-            channel(_("Suspended Signal: %s for %s" % (code, message)))
+            if channel:
+                channel(_("Suspended Signal: %s for %s" % (code, message)))
 
         self.signal = signal  # redefine signal function.
         self.process_queue()  # Process last events.
@@ -933,10 +932,11 @@ class Kernel:
                 continue
             for opened_name in list(context.opened):
                 obj = context.opened[opened_name]
-                channel(
-                    _("%s: Finalizing Module %s: %s")
-                    % (str(context), opened_name, str(obj))
-                )
+                if channel:
+                    channel(
+                        _("%s: Finalizing Module %s: %s")
+                        % (str(context), opened_name, str(obj))
+                    )
                 context.close(opened_name, channel=channel)
 
         # Detach Modifiers
@@ -948,9 +948,10 @@ class Kernel:
                 continue
             for attached_name in list(context.attached):
                 obj = context.attached[attached_name]
-                channel(
-                    _("%s: Detaching %s: %s") % (str(context), attached_name, str(obj))
-                )
+                if channel:
+                    channel(
+                        _("%s: Detaching %s: %s") % (str(context), attached_name, str(obj))
+                    )
                 context.deactivate(attached_name, channel=channel)
 
         # Context Flush and Shutdown
@@ -958,17 +959,22 @@ class Kernel:
             context = self.contexts[context_name]
             if context is None:
                 continue
-            channel(_("Saving Context State: '%s'") % str(context))
+            if channel:
+                channel(_("Saving Context State: '%s'") % str(context))
             context.flush()
             del self.contexts[context_name]
-            channel(_("Context Shutdown Finished: '%s'") % str(context))
+            if channel:
+                channel(_("Context Shutdown Finished: '%s'") % str(context))
         try:
             del self._config
-            channel(_("Destroying persistence object"))
+            if channel:
+                channel(_("Destroying persistence object"))
         except AttributeError:
-            channel(_("Could not destroy persistence object"))
+            if channel:
+                channel(_("Could not destroy persistence object"))
             pass
-        channel(_("Shutting down."))
+        if channel:
+            channel(_("Shutting down."))
 
         # Stop/Wait for all threads
         thread_count = 0
@@ -977,40 +983,48 @@ class Kernel:
             try:
                 thread = self.threads[thread_name]
             except KeyError:
-                channel(_("Thread %s exited safely") % thread_name)
+                if channel:
+                    channel(_("Thread %s exited safely") % thread_name)
                 continue
 
             if not thread.is_alive:
-                channel(
-                    _("WARNING: Dead thread %s still registered to %s.")
-                    % (thread_name, str(thread))
-                )
+                if channel:
+                    channel(
+                        _("WARNING: Dead thread %s still registered to %s.")
+                        % (thread_name, str(thread))
+                    )
                 continue
-
-            channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
+            if channel:
+                channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
             try:
                 if thread is threading.currentThread():
-                    channel(_("%s is the current shutdown thread") % thread_name)
+                    if channel:
+                        channel(_("%s is the current shutdown thread") % thread_name)
                     continue
-                channel(_("Asking thread to stop."))
+                if channel:
+                    channel(_("Asking thread to stop."))
                 thread.stop()
             except AttributeError:
                 pass
             if not thread.daemon:
-                channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
+                if channel:
+                    channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
                 thread.join()
-                channel(_("Thread %s has finished. %s") % (thread_name, str(thread)))
+                if channel:
+                    channel(_("Thread %s has finished. %s") % (thread_name, str(thread)))
             else:
-                channel(
-                    _("Thread %s is daemon. It will die automatically: %s")
-                    % (thread_name, str(thread))
-                )
+                if channel:
+                    channel(
+                        _("Thread %s is daemon. It will die automatically: %s")
+                        % (thread_name, str(thread))
+                    )
         if thread_count == 0:
-            channel(_("No threads required halting."))
+            if channel:
+                channel(_("No threads required halting."))
 
         for key, listener in self.listeners.items():
             if len(listener):
-                if channel is not None:
+                if channel:
                     channel(
                         _("WARNING: Listener '%s' still registered to %s.")
                         % (key, str(listener))
@@ -1021,7 +1035,8 @@ class Kernel:
             self.scheduler_thread != threading.current_thread()
         ):  # Join if not this thread.
             self.scheduler_thread.join()
-        channel(_("Shutdown."))
+        if channel:
+            channel(_("Shutdown."))
         self._state = STATE_TERMINATE
 
     # ==========
