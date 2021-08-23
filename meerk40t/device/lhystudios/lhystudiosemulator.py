@@ -44,6 +44,7 @@ class LhystudiosParser:
         self.count_flag = 0
         self.settings = LaserSettings(speed=20.0, power=1000.0)
         self.cutcode = CutCode()
+        self.cut = RawCut()
 
         self.small_jump = True
         self.speed_code = None
@@ -76,6 +77,12 @@ class LhystudiosParser:
     @property
     def raster_mode(self):
         return self.settings.raster_step != 0
+
+    def new_cut(self):
+        if len(self.cut):
+            self.cutcode.append(self.cut)
+        self.cut = RawCut()
+        self.cut.settings = LaserSettings(self.settings)
 
     def new_file(self):
         self.header_skipped = False
@@ -143,7 +150,7 @@ class LhystudiosParser:
         if c == "P":
             # Home sequence triggered.
             if self.position:
-                self.position(self.x, self.y, 0, 0)
+                self.position((self.x, self.y, 0, 0))
             self.x = 0
             self.y = 0
             self.laser = 0
@@ -226,9 +233,6 @@ class LhystudiosParser:
         return True
 
     def execute_distance(self):
-        if self.position:
-            self.position(self.x, self.y, self.x + self.distance_x, self.y + self.distance_y)
-
         if self.distance_x != 0 or self.distance_y != 0:
             dx = self.distance_x
             dy = self.distance_y
@@ -244,6 +248,9 @@ class LhystudiosParser:
 
             if self.channel:
                 self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
+
+            if self.position:
+                self.position((self.x, self.y, self.x + dx, self.y + dy))
 
     def state_compact(self, b, c):
         if self.state_distance(b, c):
@@ -273,6 +280,8 @@ class LhystudiosParser:
             if self.channel:
                 self.channel("Jog")
             self.process = self.state_jog
+            if self.position:
+                self.position(None)
             self.process(b, c)
         elif c == "S":
             self.laser = 0
@@ -285,6 +294,8 @@ class LhystudiosParser:
             if self.channel:
                 self.channel("Compact-Compact")
             self.process = self.state_execute
+            if self.position:
+                self.position(None)
             self.process(b, c)
         elif c == "B":
             self.left = False
@@ -395,14 +406,16 @@ class EGVBlob:
 
     def as_cutobjects(self):
         parser = LhystudiosParser()
-        cut = RawCut()
-        parser.cutcode.append(cut)
 
-        def position(x0, y0, x1, y1):
+        def position(p):
+            if p is None or parser.cut is None:
+                parser.new_cut()
+                return
+
+            x0, y0, x1, y1 = p
+
             if parser.program_mode:
-                cut.plot.append((int(x0), int(y0), parser.laser))
-
-        cut.settings = LaserSettings(parser.settings)
+                parser.cut.plot_append(int(x0), int(y0), parser.laser)
 
         parser.position = position
         parser.header_write(self.data)
