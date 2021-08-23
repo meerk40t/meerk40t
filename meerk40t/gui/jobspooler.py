@@ -13,8 +13,11 @@ class JobSpooler(MWindow):
         self.available_devices = [
             self.context.registered[i] for i in self.context.match("device")
         ]
-        selected_spooler = self.context.root.active
+
         spools = [str(i) for i in self.context.match("device", suffix=True)]
+        selected_spooler = self.context.root.active
+        if len(args) >= 4 and args[3]:
+            selected_spooler = args[3]
         index = spools.index(selected_spooler)
         self.connected_name = spools[index]
         self.connected_spooler, self.connected_driver, self.connected_output = (
