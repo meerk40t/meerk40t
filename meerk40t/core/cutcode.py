@@ -291,6 +291,9 @@ class CutCode(CutGroup):
         parts.append("%d items" % len(self))
         return "CutCode(%s)" % " ".join(parts)
 
+    def __copy__(self):
+        return CutCode(self)
+
     def as_elements(self):
         last = None
         path = None
