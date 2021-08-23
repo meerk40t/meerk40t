@@ -3911,7 +3911,7 @@ class Elemental(Modifier):
                 "opnode",
                 "lasercode",
                 "cutcode",
-                "egv"
+                "blob"
             ),
             help="",
         )
