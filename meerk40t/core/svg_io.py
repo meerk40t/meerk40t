@@ -287,10 +287,11 @@ class SVGLoader:
         basename = os.path.basename(pathname)
         file_node = context_node.add(type="file", label=basename)
         file_node.filepath = pathname
-        file_node.focus()
-        return SVGLoader.parse(
+        if SVGLoader.parse(
             svg, elements_modifier, file_node, pathname, scale_factor, reverse
-        )
+        ):
+            return file_node
+        return None
 
     @staticmethod
     def parse(svg, elements_modifier, context_node, pathname, scale_factor, reverse):
@@ -309,13 +310,11 @@ class SVGLoader:
                 if element.text is None:
                     continue
                 context_node.add(element, type="elem")
-                elements_modifier.classify([element])
             elif isinstance(element, Path):
                 if len(element) == 0:
                     continue
                 element.approximate_arcs_with_cubics()
                 context_node.add(element, type="elem")
-                elements_modifier.classify([element])
             elif isinstance(element, Shape):
                 if not element.transform.is_identity():
                     # Shape Reification failed.
@@ -329,13 +328,11 @@ class SVGLoader:
                     if len(e) == 0:
                         continue  # Degenerate.
                 context_node.add(element, type="elem")
-                elements_modifier.classify([element])
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
                     if element.image is not None:
                         context_node.add(element, type="elem")
-                        elements_modifier.classify([element])
                 except OSError:
                     pass
             elif isinstance(element, SVG):

@@ -1944,4 +1944,4 @@ class RDLoader:
             ruidaemulator.elements = elements_modifier
             ruidaemulator.write(BytesIO(ruidaemulator.unswizzle(f.read())))
             kernel.root.close(basename)
-            return True
+        return True
