@@ -5043,7 +5043,6 @@ class Elemental(Modifier):
                 # element cannot be added to op before op is added to operations - otherwise opnode is not created.
                 op.add(element, type="opnode")
 
-
     def load(self, pathname, **kwargs):
         kernel = self.context.kernel
         for loader_name in kernel.match("load"):
