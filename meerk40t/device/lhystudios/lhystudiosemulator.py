@@ -19,7 +19,7 @@ class LhystudiosEmulator(Module):
         self.parser.position = pos
 
     def __repr__(self):
-        return "LhystudiosEmulator(%s, %d cuts)" % (self.name, len(self.cutcode))
+        return "LhystudiosEmulator(%s)" % self.name
 
     def initialize(self, *args, **kwargs):
         context = self.context
