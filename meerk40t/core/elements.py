@@ -4444,7 +4444,7 @@ class Elemental(Modifier):
         settings.clear_persistent()
 
         for i, op in enumerate(self.ops()):
-            op_set = settings.derive(str(i))
+            op_set = settings.derive("%06i" % i)
             if not hasattr(op, "settings"):
                 continue  # Might be a function.
             sets = op.settings
