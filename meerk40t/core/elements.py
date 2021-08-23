@@ -4913,11 +4913,6 @@ class Elemental(Modifier):
         default_cut_ops = []
         default_engrave_ops = []
         default_raster_ops = []
-        new_ops = []
-
-        raster_ops = []
-        deferred_raster_elements = []
-
         for op in operations:
             if op.default:
                 if op.operation == "Cut":
@@ -4926,8 +4921,8 @@ class Elemental(Modifier):
                     default_engrave_ops.append(op)
                 if op.operation == "Raster":
                     default_raster_ops.append(op)
-            if op.operation == "Raster":
-                raster_ops.append(op)
+
+        new_ops = []
 
         for element in elements:
             if hasattr(element, "operation"):
@@ -4945,7 +4940,7 @@ class Elemental(Modifier):
 
 
             add_vector = False    # For everything except shapes
-            add_non_vector = True # Text, Images and Dots
+            add_non_vector = True # Text - Dots and Images will also abuse this
             if isinstance(element,Shape) and not is_dot:
                 if element_color.rgb == Color("black").rgb: # Treated as a raster for user convenience
                     add_vector = False
@@ -5019,44 +5014,35 @@ class Elemental(Modifier):
                         op.add(element, type="opnode")
                     add_non_vector = False
 
-            # If element is a raster - defer creating a default raster op until we are sure that there are no empty existing raster ops to use first.
-            if add_non_vector and isinstance(element, (Shape, SVGText)) and not is_dot:
-                deferred_raster_elements.append(element)
-                add_non_vector = False
-
             # If we have matched element to an original operation or matched to all relavent new operations, we can move to the next element
-            if not add_vector and not add_non_vector:
+            if not (add_vector or add_non_vector):
                 continue
 
             # Need to add an operation to classify into
+            ops = []
             if is_dot:
-                op = LaserOperation(operation="Dots", color="Transparent", default=True)
+                ops.append(LaserOperation(operation="Dots", color="White", default=True))
             elif isinstance(element, SVGImage):
-                op = LaserOperation(operation="Image", color="Transparent", default=True)
-            elif isinstance(element, Shape):
-                if is_cut: # This will be initialised because criteria are same as above
-                    op = LaserOperation(operation="Cut", color=abs(element_color))
-                else:
-                    op = LaserOperation(operation="Engrave", color=abs(element_color))
-                    if element_color == Color("white"):
-                        op.settings.laser_enabled = False
-            operations.append(op)
-            new_ops.append(op)
-            add_op_function(op)
-            # element cannot be added to op before op is added to operations - otherwise opnode is not created.
-            op.add(element, type="opnode")
-
-        # Now deal with leftover raster elements
-        if deferred_raster_elements:
-            raster_ops = [op for op in raster_ops if len(op.children) == 0]
-            if not raster_ops:
-                op = LaserOperation(operation="Raster", color="Transparent", default=True)
+                ops.append(LaserOperation(operation="Image", color="Transparent", default=True))
+            elif isinstance(element, Shape) or isinstance(element, SVGText):
+                if add_vector:
+                    if is_cut: # This will be initialised because criteria are same as above
+                        ops.append(LaserOperation(operation="Cut", color=abs(element_color)))
+                    else:
+                        op = LaserOperation(operation="Engrave", color=abs(element_color))
+                        if element_color == Color("white"):
+                            op.settings.laser_enabled = False
+                        ops.append(op)
+                if add_non_vector:
+                    op = LaserOperation(operation="Raster", color="Black", default=True)
+                    default_raster_ops.append(op)
+                    ops.append(op)
+            for op in ops:
                 operations.append(op)
-                raster_ops.append(op)
+                new_ops.append(op)
                 add_op_function(op)
-            for element in deferred_raster_elements:
-                for op in raster_ops:
-                    op.add(element, type="opnode")
+                # element cannot be added to op before op is added to operations - otherwise opnode is not created.
+                op.add(element, type="opnode")
 
     def load(self, pathname, **kwargs):
         kernel = self.context.kernel
@@ -5066,16 +5052,13 @@ class Elemental(Modifier):
                 if str(pathname).lower().endswith(extensions):
                     try:
                         results = loader.load(self.context, self, pathname, **kwargs)
-                        if results and isinstance(results, Node):
-                            results.focus()
-                            self.classify([elem.object for elem in results.flat(types=("elem"))])
                     except FileNotFoundError:
                         return False
                     except OSError:
                         return False
-                    if results:
-                        return True
-        return False
+                    if not results:
+                        continue
+                    return True
 
     def load_types(self, all=True):
         kernel = self.context.kernel
