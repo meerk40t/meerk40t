@@ -95,7 +95,7 @@ def plugin(kernel, lifecycle=None):
             if input_driver is not None:
                 try:
                     t = input_driver.type
-                    match = "command/%s/%s" % (str(t), command)
+                    match = "command/%s/%s$" % (str(t), command)
                     for command_name in root.match(match):
                         command_funct = root.registered[command_name]
                         if command_funct is not None:
@@ -131,9 +131,11 @@ def plugin(kernel, lifecycle=None):
             input_type="device",
             output_type="device",
         )
-        def device(index, **kwargs):
-            root.active = str(index)
+        def device(channel, _, index, **kwargs):
+            spools = [str(i) for i in kernel.root.match("device", suffix=True)]
+            root.active = spools[index]
             root.signal("active", index)
+            channel(_("Activated device %s at index %d." % (root.active, index)))
             return "device", (None, str(index))
 
         @kernel.console_command(
@@ -178,11 +180,14 @@ def plugin(kernel, lifecycle=None):
             help=_("delete <index>"),
             input_type="device",
         )
-        def delete(index, **kwargs):
+        def delete(channel, _, index, **kwargs):
+            spools = [str(i) for i in kernel.root.match("device", suffix=True)]
+            device_name = spools[index]
+
             device_context = kernel.get_context("devices")
             try:
-                setattr(device_context, "device_%d" % index, "")
-                device = root.registered["device/%d" % index]
+                setattr(device_context, "device_%s" % device_name, "")
+                device = root.registered["device/%s" % device_name]
                 if device is not None:
                     spooler, driver, output = device
                     if driver is not None:
@@ -195,6 +200,6 @@ def plugin(kernel, lifecycle=None):
                             output.finalize()
                         except AttributeError:
                             pass
-                root.registered["device/%d" % index] = [None, None, None]
+                root.registered["device/%s" % device_name] = [None, None, None]
             except (KeyError, ValueError):
                 raise SyntaxError(_("Invalid device-string index."))

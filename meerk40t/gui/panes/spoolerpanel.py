@@ -14,7 +14,10 @@ class SpoolerPanel(wx.Panel):
         ]
         selected_spooler = self.context.root.active
         spools = [str(i) for i in self.context.match("device", suffix=True)]
-        index = spools.index(selected_spooler)
+        try:
+            index = spools.index(selected_spooler)
+        except ValueError:
+            index = 0
         self.connected_name = spools[index]
         self.connected_spooler, self.connected_driver, self.connected_output = (
             None,

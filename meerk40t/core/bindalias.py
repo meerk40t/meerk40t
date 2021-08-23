@@ -101,6 +101,11 @@ class BindAlias(Modifier):
 
         @self.context.console_command(".*", regex=True, hidden=True)
         def alias_execute(command, **kwgs):
+            """
+            Alias execution code. Checks values for matching alias and utilizes that.
+
+            Aliases with ; delimit multipart commands
+            """
             context = self.context
             if command in self.alias:
                 aliased_command = self.alias[command]

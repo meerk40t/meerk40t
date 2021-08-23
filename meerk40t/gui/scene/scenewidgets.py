@@ -134,6 +134,12 @@ class SelectionWidget(Widget):
             # TODO Handle distance should be constant regardless of zoom factor. May need to scale by screen DPI.
             xmin = 5 / matrix.value_scale_x()
             ymin = 5 / matrix.value_scale_y()
+            # Adjust sizing of hover border as follows:
+            # 1. If object is very small so move area is smaller than 1/2 or even non-existent, prefer move to size by setting border to zero
+            # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded 
+            #    to be more than 1/4 of the width or height
+            xmin = min(xmin * 2.0, max(self.width / 4.0, xmin)) if xmin <= self.width / 4.0 else 0.0
+            ymin = min(ymin * 2.0, max(self.height / 4.0, ymin)) if ymin <= self.height / 4.0 else 0.0
             xmax = self.width - xmin
             ymax = self.height - ymin
             cursor = self.cursor
@@ -604,7 +610,7 @@ class ReticleWidget(Widget):
         Update of driver adds and ensures the location of the d+origin position
         """
         self.reticles["d" + origin] = pos[2], pos[3]
-        self.request_refresh_for_animation()
+        self.scene.request_refresh_for_animation()
 
     def on_update_emulator(self, origin, pos):
         """

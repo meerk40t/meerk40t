@@ -277,8 +277,8 @@ class Outputs(Modifier):
                 raise SyntaxError(_("No address/port specified"))
             input_driver = None
             if data is None:
-                if len(command) > 6:
-                    device_name = command[6:]
+                if len(command) > 3:
+                    device_name = command[3:]
                 else:
                     device_name = self.context.active
             else:
