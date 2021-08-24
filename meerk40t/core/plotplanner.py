@@ -143,8 +143,7 @@ class PlotPlanner:
 
         if not self.abort:
             # If we were not aborted, flush and finish the last positions.
-            for n in self.process_plots(None):
-                yield n
+            yield from self.process_plots(None)
         self.shift_pixels = 0
         self.shift_buffer.clear()
         self.single_x = None
