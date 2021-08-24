@@ -9,16 +9,13 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "load",
-            help=_("load processed file"),
+            help=_("inkscape ... load  - load the previous conversion"),
             input_type="inkscape",
             output_type="inkscape",
         )
         def inscape_load(channel, _, data=None, **kwargs):
             inkscape_path, filename = data
-            if not os.path.exists(inkscape_path):
-                channel(_("Inkscape not found. Try 'inkscape locate'"))
-                return
-            channel(_("Loading..."))
+            channel(_("inkscape load - loading the previous conversion..."))
             e = kernel.root
             e.load(filename)
             e.signal("refresh_scene", 0)
@@ -26,7 +23,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "simplify",
-            help=_("simplify path"),
+            help=_("inkscape simplify  - convert to plain svg"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -35,7 +32,7 @@ def plugin(kernel, lifecycle):
             if not os.path.exists(inkscape_path):
                 channel(_("Inkscape not found. Try 'inkscape locate'"))
                 return
-            channel(_("Making plain_svg with Inkscape."))
+            channel(_("inkscape simplify - converting to plain svg"))
             c = run(
                 [
                     inkscape_path,
@@ -50,7 +47,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "text2path",
-            help=_("text to path"),
+            help=_("inkscape text2path - convert text objects to paths"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -59,7 +56,7 @@ def plugin(kernel, lifecycle):
             if not os.path.exists(inkscape_path):
                 channel(_("Inkscape not found. Try 'inkscape locate'"))
                 return
-            channel(_("Making plain_svg with Inkscape."))
+            channel(_("inkscape text2path - converting text objects to paths"))
             c = run(
                 [
                     inkscape_path,
@@ -77,7 +74,10 @@ def plugin(kernel, lifecycle):
         @kernel.console_option("dpi", "d", type=int, help=_("dpi to use"), default=1000)
         @kernel.console_option("step", "s", type=int, help=_("step to use"))
         @kernel.console_command(
-            "makepng", help=_("make png"), input_type="inkscape", output_type="inkscape"
+            "makepng",
+            help=_("inkscape makepng   - make a png of all elements"),
+            input_type="inkscape",
+            output_type="inkscape"
         )
         def inkscape_png(channel, _, dpi=1000, step=None, data=None, **kwargs):
             if step is not None and step > 0:
@@ -86,7 +86,7 @@ def plugin(kernel, lifecycle):
             if not os.path.exists(inkscape_path):
                 channel(_("Inkscape not found. Try 'inkscape locate'"))
                 return
-            channel(_("Making PNG with Inkscape."))
+            channel(_("inkscape makepng - making a png of all elements"))
             c = run(
                 [
                     inkscape_path,
@@ -110,22 +110,22 @@ def plugin(kernel, lifecycle):
         )
         @kernel.console_command(
             "input",
-            help=_("input filename"),
+            help=_("input filename fn ... - provide the filename to process"),
             input_type="inkscape",
             output_type="inkscape",
         )
         def inkscape_input_filename(channel, _, filename, data, **kwargs):
             inkscape_path, fn = data
             if filename is None:
-                channel(_("filename not specified"))
+                channel(_("inkscape filename fn - filename not specified"))
             if not os.path.exists(filename):
-                channel(_("file is not found."))
+                channel(_("inkscape filename %s - file not found") % filename)
                 return
             return "inkscape", (inkscape_path, filename)
 
         @kernel.console_command(
             "version",
-            help=_("determine inkscape version"),
+            help=_("inkscape version   - get the inkscape version"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -140,7 +140,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "locate",
-            help=_("Locate the inkscape program on your computer"),
+            help=_("inkscape locate    - set the path to inkscape on your computer"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -180,15 +180,15 @@ def plugin(kernel, lifecycle):
             root_context = kernel.root
             root_context.setting(str, "inkscape_path", "inkscape.exe")
             if match is None:
-                root_context.inkscape_path = ""
-                channel(_("Inkscape location: Inkscape not found"))
+                root_context.inkscape_path = "inkscape.exe"
+                channel(_("Inkscape location: Inkscape not found in default installation directories"))
                 return
             root_context.inkscape_path = match
             return "inkscape", (match, filename)
 
         @kernel.console_command(
             "inkscape",
-            help=_("perform a special inkscape function"),
+            help=_("invoke inkscape to convert elements"),
             output_type="inkscape",
         )
         def inkscape_base(**kwargs):
