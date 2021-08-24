@@ -145,7 +145,6 @@ def plugin(kernel, lifecycle):
             output_type="inkscape",
         )
         def inkscape_locate(channel, _, data, **kwargs):
-            print("platform",platform)
             if "darwin" in platform:
                 inkscape = [
                     "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
