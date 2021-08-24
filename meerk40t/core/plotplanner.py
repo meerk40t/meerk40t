@@ -98,7 +98,7 @@ class PlotPlanner:
                     distance = cur_set.jog_distance
                     if (
                         abs(self.single_x - new_start_x) < distance
-                        and abs(self.single_y - new_start_x) < distance
+                        and abs(self.single_y - new_start_y) < distance
                     ) or not cur_set.jog_enable:
                         # Jog distance smaller than threshold. Or jog isn't allowed
                         self.single_default = 0  # Turn laser off for movement.
