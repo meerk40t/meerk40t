@@ -103,12 +103,11 @@ class PlotPlanner:
                     ) or not cur_set.jog_enable:
                         # Jog distance smaller than threshold. Or jog isn't allowed
                         self.single_default = 0  # Turn laser off for movement.
-                        for n in self.process_plots(
+                        yield from self.process_plots(
                             ZinglPlotter.plot_line(
                                 self.single_x, self.single_y, new_start_x, new_start_y
                             )
-                        ):
-                            yield n  # Walk there.
+                        )  # Walk there.
                         self.single_default = 1
                     else:
                         # Request standard jog new location required.
@@ -120,8 +119,7 @@ class PlotPlanner:
 
             if flush:  # Flush if needed.
                 # Flush executed in current settings.
-                for n in self.process_plots(None):
-                    yield n
+                yield from self.process_plots(None)
 
             if jog:  # Jog if needed.
                 yield new_start_x, new_start_y, jog
@@ -141,8 +139,7 @@ class PlotPlanner:
 
             # Plot the current.
             # Current is executed in cut settings.
-            for n in self.process_plots(cut.generator()):
-                yield n
+            yield from self.process_plots(cut.generator())
 
         if not self.abort:
             # If we were not aborted, flush and finish the last positions.
