@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Group, Move, Path, Point, Polygon
+from meerk40t.svgelements import Group, Move, Path, Point, Polygon, Shape
 from meerk40t.tools.pathtools import VectorMontonizer
 
 
@@ -28,6 +28,8 @@ def plugin(kernel, lifecycle):
                     % length_travel(elements.elems(emphasized=True))
                 )
                 for element in elements.elems(emphasized=True):
+                    if not isinstance(element, Path):
+                        continue
                     e = optimize_travel(element)
                     element.clear()
                     element += e
