@@ -24,12 +24,12 @@ class TestPlotplanner(unittest.TestCase):
         :return:
         """
         plan = PlotPlanner(LaserSettings(power=1000))
-        settings = LaserSettings()
+        settings = LaserSettings(power=1000)
         for i in range(211):
             q = 0
             plan.push(LineCut(Point(0, 0), Point(5, 100), settings=settings))
             plan.push(LineCut(Point(100, 50), Point(0, 0), settings=settings))
-            plan.push(LineCut(Point(50, -50), Point(100, -100), settings=LaserSettings()))
+            plan.push(LineCut(Point(50, -50), Point(100, -100), settings=LaserSettings(power=0)))
             for x, y, on in plan.gen():
                 print(x, y, on)
                 if q == i:

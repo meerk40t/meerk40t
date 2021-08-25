@@ -238,6 +238,8 @@ class Driver:
                 self.unlock_rail()
             elif command == COMMAND_PLOT:
                 self.plot_plot(values[0])
+            elif command == COMMAND_BLOB:
+                self.send_blob(values[0], values[1])
             elif command == COMMAND_PLOT_START:
                 self.plot_start()
             elif command == COMMAND_SET_SPEED:

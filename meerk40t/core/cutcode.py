@@ -291,6 +291,9 @@ class CutCode(CutGroup):
         parts.append("%d items" % len(self))
         return "CutCode(%s)" % " ".join(parts)
 
+    def __copy__(self):
+        return CutCode(self)
+
     def as_elements(self):
         last = None
         path = None
@@ -312,6 +315,12 @@ class CutCode(CutGroup):
                 path.quad(e.c(), end)
             elif isinstance(e, CubicCut):
                 path.quad(e.c1(), e.c2(), end)
+            elif isinstance(e, RawCut):
+                for x, y, laser in e.plot:
+                    if laser:
+                        path.line(x, y)
+                    else:
+                        path.move(x, y)
             if previous_settings is not settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
                     yield path
@@ -371,7 +380,8 @@ class CutCode(CutGroup):
         distance = 0
         for i in range(0, len(cutcode)):
             curr = cutcode[i]
-            distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
+            if curr.settings.speed:
+                distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
         return distance
 
     @classmethod
@@ -630,8 +640,22 @@ class RawCut(CutObject):
         CutObject.__init__(self, settings=settings)
         self.plot = []
 
-    def plot(self, plot):
+    def __len__(self):
+        return len(self.plot)
+
+    def plot_extend(self, plot):
         self.plot.extend(plot)
+
+    def plot_append(self, x, y, laser):
+        self.plot.append((x, y, laser))
+        try:
+            x0, y0, l0 = self.plot[-1]
+            x1, y1, l1 = self.plot[-2]
+            dx = x1 - x0
+            dy = y1 - y0
+            assert (dx == 0 or dy == 0 or abs(dx) == abs(dy))
+        except IndexError:
+            pass
 
     def reversible(self):
         return False

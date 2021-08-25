@@ -1,4 +1,4 @@
-from ...core.cutcode import CutCode, LaserSettings
+from ...core.cutcode import CutCode, LaserSettings, RawCut
 from ...kernel import Module
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
@@ -7,12 +7,49 @@ from .laserspeed import LaserSpeed
 class LhystudiosEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
+        self.context.setting(bool, "fix_speeds", False)
+
+        self.parser = LhystudiosParser()
+        self.parser.fix_speeds = self.context.fix_speeds
+        self.parser.channel = self.context.channel("lhy")
+
+        def pos(p):
+            if p is None:
+                return
+            x0, y0, x1, y1 = p
+            self.context.signal("emulator;position", (x0, y0, x1, y1))
+
+        self.parser.position = pos
+
+    def __repr__(self):
+        return "LhystudiosEmulator(%s)" % self.name
+
+    def initialize(self, *args, **kwargs):
+        context = self.context
+        active = self.context.root.active
+        send = context.channel("%s/usb_send" % active)
+        send.watch(self.parser.write_packet)
+
+    def finalize(self, *args, **kwargs):
+        context = self.context
+        active = self.context.root.active
+        send = context.channel("%s/usb_send" % active)
+        send.unwatch(self.parser.write_packet)
+
+
+class LhystudiosParser:
+    """
+    LhystudiosParser parses LHYMicro-GL code with a state diagram. This should accurately reconstruct the values.
+    When the position is changed it calls a self.position() function if one exists.
+    """
+    def __init__(self):
+        self.channel = None
+        self.position = None
         self.board = "M2"
         self.header_skipped = False
         self.count_lines = 0
         self.count_flag = 0
-        self.settings = LaserSettings()
-        self.cutcode = CutCode()
+        self.settings = LaserSettings(speed=20.0, power=1000.0)
 
         self.small_jump = True
         self.speed_code = None
@@ -25,47 +62,56 @@ class LhystudiosEmulator(Module):
 
         self.filename = ""
 
+        self.laser = 0
         self.left = False
         self.top = False
         self.x_on = False
         self.y_on = False
         self.horizontal_major = False
-        self.context.setting(bool, "fix_speeds", False)
+        self.fix_speeds = False
         self.process = self.state_default
 
-        active = self.context.root.active
-        send = context.channel("%s/usb_send" % active)
-        send.watch(self.write_packet)
+    @property
+    def program_mode(self):
+        return self.process == self.state_compact
 
-        self.channel = self.context.channel("lhy")
+    @property
+    def default_mode(self):
+        return self.process is self.state_default
 
-    def __repr__(self):
-        return "LhystudiosEmulator(%s, %d cuts)" % (self.name, len(self.cutcode))
-
-    def generate(self):
-        for cutobject in self.cutcode:
-            yield COMMAND_PLOT, cutobject
-        yield COMMAND_PLOT_START
+    @property
+    def raster_mode(self):
+        return self.settings.raster_step != 0
 
     def new_file(self):
         self.header_skipped = False
         self.count_flag = 0
         self.count_lines = 0
 
+    @staticmethod
+    def remove_header(data):
+        count_lines = 0
+        count_flag = 0
+        for i in range(len(data)):
+            b = data[i]
+            c = chr(b)
+            if c == "\n":
+                count_lines += 1
+            elif c == "%":
+                count_flag += 1
+            if count_lines >= 3 and count_flag >= 5:
+                return data[i:]
+
     def header_write(self, data):
+        """
+        Write data to the emulator including the header. This is intended for saved .egv files which include a default
+        header.
+        """
         if self.header_skipped:
             self.write(data)
-        for i in range(len(data)):
-            c = data[i]
-            if c == b"\n":
-                self.count_lines += 1
-            elif c == b"%":
-                self.count_flag += 1
-
-            if self.count_lines >= 3 and self.count_flag >= 5:
-                self.header_skipped = True
-                self.write(data[i:])
-                break
+        else:
+            data = LhystudiosParser.remove_header(data)
+            self.write(data)
 
     def append_distance(self, amount):
         if self.x_on:
@@ -87,7 +133,8 @@ class LhystudiosEmulator(Module):
     def state_finish(self, b, c):
         if c in "NSEF":
             return
-        self.channel("Finish State Unknown: %s" % c)
+        if self.channel:
+            self.channel("Finish State Unknown: %s" % c)
 
     def state_reset(self, b, c):
         if c in "@NSE":
@@ -106,24 +153,28 @@ class LhystudiosEmulator(Module):
     def state_pop(self, b, c):
         if c == "P":
             # Home sequence triggered.
-            self.context.signal("emulator;position", (self.x, self.y, 0, 0))
+            if self.position:
+                self.position((self.x, self.y, 0, 0))
             self.x = 0
             self.y = 0
+            self.laser = 0
             self.process = self.state_default
             return
         elif c == "F":
             return
         else:
-            self.channel("Finish State Unknown: %s" % c)
+            if self.channel:
+                self.channel("Finish State Unknown: %s" % c)
 
     def state_speed(self, b, c):
         if c in "GCV01234567890":
             self.speed_code += c
             return
-        speed = LaserSpeed(self.speed_code, fix_speeds=self.context.fix_speeds)
+        speed = LaserSpeed(self.speed_code, board=self.board, fix_speeds=self.fix_speeds)
         self.settings.steps = speed.raster_step
         self.settings.speed = speed.speed
-        self.channel("Setting Speed: %f" % self.settings.speed)
+        if self.channel:
+            self.channel("Setting Speed: %f" % self.settings.speed)
         self.speed_code = None
 
         self.process = self.state_default
@@ -133,7 +184,8 @@ class LhystudiosEmulator(Module):
         if c in "S012":
             if c == "1":
                 self.horizontal_major = self.x_on
-                self.channel("Setting Axis.")
+                if self.channel:
+                    self.channel("Setting Axis.")
             return
         self.process = self.state_default
         self.process(b, c)
@@ -195,12 +247,17 @@ class LhystudiosEmulator(Module):
             self.distance_x = 0
             self.distance_y = 0
 
-            self.context.signal(
-                "emulator;position", (self.x, self.y, self.x + dx, self.y + dy)
-            )
+            ox = self.x
+            oy = self.y
+
             self.x += dx
             self.y += dy
-            self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
+
+            if self.position:
+                self.position((ox, oy, self.x, self.y))
+
+            if self.channel:
+                self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
 
     def state_compact(self, b, c):
         if self.state_distance(b, c):
@@ -208,56 +265,80 @@ class LhystudiosEmulator(Module):
         self.execute_distance()
 
         if c == "F":
-            self.channel("Finish")
+            self.laser = 0
+            if self.channel:
+                self.channel("Finish")
             self.process = self.state_finish
             self.process(b, c)
             return
         elif c == "@":
-            self.channel("Reset")
+            self.laser = 0
+            if self.channel:
+                self.channel("Reset")
             self.process = self.state_reset
             self.process(b, c)
             return
         elif c == "P":
-            self.channel("Pause")
+            self.laser = 0
+            if self.channel:
+                self.channel("Pause")
             self.process = self.state_pause
         elif c == "N":
-            self.channel("Jog")
+            if self.channel:
+                self.channel("Jog")
             self.process = self.state_jog
+            if self.position:
+                self.position(None)
             self.process(b, c)
         elif c == "S":
-            self.channel("Switch")
+            self.laser = 0
+            if self.channel:
+                self.channel("Switch")
             self.process = self.state_switch
             self.process(b, c)
         elif c == "E":
-            self.channel("Compact-Compact")
+            self.laser = 0
+            if self.channel:
+                self.channel("Compact-Compact")
             self.process = self.state_execute
+            if self.position:
+                self.position(None)
             self.process(b, c)
         elif c == "B":
             self.left = False
             self.x_on = True
             self.y_on = False
-            self.channel("Right")
+            if self.channel:
+                self.channel("Right")
         elif c == "T":
             self.left = True
             self.x_on = True
             self.y_on = False
-            self.channel("Left")
+            if self.channel:
+                self.channel("Left")
         elif c == "R":
             self.top = False
             self.x_on = False
             self.y_on = True
-            self.channel("Bottom")
+            if self.channel:
+                self.channel("Bottom")
         elif c == "L":
             self.top = True
             self.x_on = False
             self.y_on = True
-            self.channel("Top")
+            if self.channel:
+                self.channel("Top")
         elif c == "M":
             self.x_on = True
             self.y_on = True
-            a = "Top" if self.top else "Bottom"
-            b = "Left" if self.left else "Right"
-            self.channel("Diagonal %s %s" % (a, b))
+            if self.channel:
+                a = "Top" if self.top else "Bottom"
+                b = "Left" if self.left else "Right"
+                self.channel("Diagonal %s %s" % (a, b))
+        elif c == "U":
+            self.laser = 0
+        elif c == "D":
+            self.laser = 1
 
     def state_default(self, b, c):
         if self.state_distance(b, c):
@@ -267,49 +348,105 @@ class LhystudiosEmulator(Module):
         if c == "N":
             self.execute_distance()
         elif c == "F":
-            self.channel("Finish")
+            if self.channel:
+                self.channel("Finish")
             self.process = self.state_finish
             self.process(b, c)
             return
         elif c == "P":
-            self.channel("Popping")
+            if self.channel:
+                self.channel("Popping")
             self.process = self.state_pop
             return
         elif c in "CVG":
-            self.channel("Speedcode")
+            if self.channel:
+                self.channel("Speedcode")
             self.speed_code = ""
             self.process = self.state_speed
             self.process(b, c)
             return
         elif c == "S":
             self.execute_distance()
-            self.channel("Switch")
+            if self.channel:
+                self.channel("Switch")
             self.process = self.state_switch
             self.process(b, c)
         elif c == "E":
-            self.channel("Compact")
+            if self.channel:
+                self.channel("Compact")
             self.process = self.state_execute
             self.process(b, c)
         elif c == "B":
             self.left = False
             self.x_on = True
             self.y_on = False
-            self.channel("Right")
+            if self.channel:
+                self.channel("Right")
         elif c == "T":
             self.left = True
             self.x_on = True
             self.y_on = False
-            self.channel("Left")
+            if self.channel:
+                self.channel("Left")
         elif c == "R":
             self.top = False
             self.x_on = False
             self.y_on = True
-            self.channel("Bottom")
+            if self.channel:
+                self.channel("Bottom")
         elif c == "L":
             self.top = True
             self.x_on = False
             self.y_on = True
-            self.channel("Top")
+            if self.channel:
+                self.channel("Top")
+
+
+class EGVBlob:
+    def __init__(self, data: bytearray, name=None):
+        self.name = name
+        self.data = data
+        self.operation = "blob"
+        self._cutcode = None
+        self._cut = None
+
+    def __repr__(self):
+        return "EGV(%s, %d bytes)" % (self.name, len(self.data))
+
+    def as_cutobjects(self):
+        parser = LhystudiosParser()
+        self._cutcode = CutCode()
+        self._cut = RawCut()
+
+        def new_cut():
+            if self._cut is not None and len(self._cut):
+                self._cutcode.append(self._cut)
+            self._cut = RawCut()
+            self._cut.settings = LaserSettings(parser.settings)
+
+        def position(p):
+            if p is None or self._cut is None:
+                new_cut()
+                return
+
+            from_x, from_y, to_x, to_y = p
+
+            if parser.program_mode:
+                if len(self._cut.plot) == 0:
+                    self._cut.plot_append(int(from_x), int(from_y), parser.laser)
+                self._cut.plot_append(int(to_x), int(to_y), parser.laser)
+            else:
+                new_cut()
+        parser.position = position
+        parser.header_write(self.data)
+
+        cutcode = self._cutcode
+        self._cut = None
+        self._cutcode = None
+        return cutcode
+
+    def generate(self):
+        yield COMMAND_BLOB, "egv", LhystudiosParser.remove_header(self.data)
 
 
 class EgvLoader:
@@ -318,13 +455,13 @@ class EgvLoader:
         yield "Engrave Files", ("egv",), "application/x-egv"
 
     @staticmethod
-    def load(kernel, pathname, **kwargs):
+    def load(kernel, elements_modifier, pathname, **kwargs):
         import os
 
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            lhymicroemulator = kernel.root.open_as(
-                "module/LhystudiossEmulator", basename
-            )
-            lhymicroemulator.write_header(f.read())
-            return [lhymicroemulator.cutcode], None, None, pathname, basename
+            blob = EGVBlob(bytearray(f.read()), basename)
+            op_branch = elements_modifier.get(type="branch ops")
+            op_branch.add(blob, type="blob")
+            kernel.root.close(basename)
+        return True

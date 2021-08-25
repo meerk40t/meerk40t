@@ -134,7 +134,6 @@ class Node:
     Nodes are elements within the tree which stores most of the objects in Elements.
     """
 
-
     def __init__(self, data_object=None, type=None, *args, **kwargs):
         super().__init__()
         self._children = list()
@@ -1158,6 +1157,8 @@ class LaserOperation(Node):
 class CutNode(Node):
     """
     Node type "cutcode"
+    Cutcode nodes store cutcode within the tree. When processing in a plan this should be converted to a normal cutcode
+    object.
     """
 
     def __init__(self, data_object, **kwargs):
@@ -3910,6 +3911,7 @@ class Elemental(Modifier):
                 "opnode",
                 "lasercode",
                 "cutcode",
+                "blob"
             ),
             help="",
         )
@@ -3924,6 +3926,15 @@ class Elemental(Modifier):
         )
         def lasercode2cut(node, **kwgs):
             node.replace_node(CutCode.from_lasercode(node.object), type="cutcode")
+
+        @self.tree_conditional_try(lambda node: hasattr(node.object, "as_cutobjects"))
+        @self.tree_operation(
+            _("Convert to Cutcode"),
+            node_type="blob",
+            help="",
+        )
+        def blob2cut(node, **kwgs):
+            node.replace_node(node.object.as_cutobjects(), type="cutcode")
 
         @self.tree_operation(
             _("Convert to Path"),
