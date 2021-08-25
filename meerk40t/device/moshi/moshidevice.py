@@ -608,7 +608,10 @@ class MoshiDriver(Driver, Modifier):
             return
         if self.state == DRIVER_STATE_RASTER:
             self.ensure_rapid_mode()
-        speed = int(self.settings.speed)
+        if self.settings.speed is None:
+            speed = 20
+        else:
+            speed = int(self.settings.speed)
         # Normal speed is rapid. Passing same speed so PPI isn't crazy.
         self.write_vector_speed(speed, speed)
         x, y = self.calc_home_position()
