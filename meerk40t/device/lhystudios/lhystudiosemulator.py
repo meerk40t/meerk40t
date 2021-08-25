@@ -13,7 +13,10 @@ class LhystudiosEmulator(Module):
         self.parser.fix_speeds = self.context.fix_speeds
         self.parser.channel = self.context.channel("lhy")
 
-        def pos(x0, y0, x1, y1):
+        def pos(p):
+            if p is None:
+                return
+            x0, y0, x1, y1 = p
             self.context.signal("emulator;position", (x0, y0, x1, y1))
 
         self.parser.position = pos
@@ -85,6 +88,20 @@ class LhystudiosParser:
         self.count_flag = 0
         self.count_lines = 0
 
+    @staticmethod
+    def remove_header(data):
+        count_lines = 0
+        count_flag = 0
+        for i in range(len(data)):
+            b = data[i]
+            c = chr(b)
+            if c == "\n":
+                count_lines += 1
+            elif c == "%":
+                count_flag += 1
+            if count_lines >= 3 and count_flag >= 5:
+                return data[i:]
+
     def header_write(self, data):
         """
         Write data to the emulator including the header. This is intended for saved .egv files which include a default
@@ -92,18 +109,9 @@ class LhystudiosParser:
         """
         if self.header_skipped:
             self.write(data)
-        for i in range(len(data)):
-            b = data[i]
-            c = chr(b)
-            if c == "\n":
-                self.count_lines += 1
-            elif c == "%":
-                self.count_flag += 1
-
-            if self.count_lines >= 3 and self.count_flag >= 5:
-                self.header_skipped = True
-                self.write(data[i:])
-                break
+        else:
+            data = LhystudiosParser.remove_header(data)
+            self.write(data)
 
     def append_distance(self, amount):
         if self.x_on:
@@ -436,6 +444,9 @@ class EGVBlob:
         self._cut = None
         self._cutcode = None
         return cutcode
+
+    def generate(self):
+        yield COMMAND_BLOB, "egv", LhystudiosParser.remove_header(self.data)
 
 
 class EgvLoader:

@@ -846,6 +846,10 @@ class LhystudiosDriver(Driver):
         self.context.signal("driver;mode", self.state)
         self.is_paused = False
 
+    def send_blob(self, blob_type, data):
+        if blob_type == "egv":
+            self.data_output(data)
+
     def cut(self, x, y):
         self.goto(x, y, True)
 

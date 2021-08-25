@@ -543,7 +543,7 @@ class Planner(Modifier):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "lasercode"), depth=1
+                types=("op", "cutcode", "cmdop", "lasercode", "blob"), depth=1
             ):
                 try:
                     if not c.output:
@@ -555,8 +555,8 @@ class Planner(Modifier):
                         continue
                 except TypeError:
                     pass
-                if c.type == "cutcode":
-                    # CutNodes are denuded into normal cutcode.
+                if c.type in ("cutcode", "blob"):
+                    # CutNodes and BlobNodes are denuded into normal objects.
                     c = c.object
                 copy_c = copy(c)
                 try:

@@ -31,6 +31,7 @@ COMMAND_MODE_RASTER = 53
 
 COMMAND_PLOT = 100  # Takes a cutobject
 COMMAND_PLOT_START = 101  # Starts plotter
+COMMAND_BLOB = 110 # Data blob.
 
 COMMAND_SET_SPEED = 200  # sets the speed for the device
 COMMAND_SET_POWER = 201  # sets the power. Out of 1000. Unknown power method.
@@ -110,6 +111,8 @@ def lasercode_string(code):
         return "COMMAND_PLOT"  # Takes a cutobject
     if code == COMMAND_PLOT_START:
         return "COMMAND_PLOT_START"  # Starts plotter
+    if code == COMMAND_BLOB:
+        return "COMMAND_BLOB"  # Takes a datablob
     if code == COMMAND_SET_SPEED:
         return "COMMAND_SET_SPEED"  # sets the speed for the device
     if code == COMMAND_SET_POWER:
