@@ -37,32 +37,21 @@ of zero will remain zero.
 
 class PlotPlanner:
     def __init__(self, settings):
-        self.abort = False
-
         self.settings = settings
+
+        self.abort = False
+        self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
 
         self.queue = []
 
-        self.single_default = 1
-        self.single_x = None
-        self.single_y = None
+        self.single = Single(self)
+        self.ppi = PPI(self)
+        self.shift = Shift(self)
+        self.group = Group(self)
 
-        self.ppi_total = 0
-        self.ppi = 1000.0
-
-        self.dot_left = 0
-
-        self.group_x = None
-        self.group_y = None
-        self.group_on = None
-        self.group_dx = 0
-        self.group_dy = 0
-
-        self.shift_buffer = []
-        self.shift_pixels = 0
-
-        self.force_shift = False
+        self.pos_x = None
+        self.pos_y = None
 
     def push(self, plot):
         self.abort = False
@@ -87,46 +76,43 @@ class PlotPlanner:
             new_start_y = int(start.y)
             flush = False
             jog = 0
-            if self.single_x != new_start_x or self.single_y != new_start_y:
+            if self.pos_x != new_start_x or self.pos_y != new_start_y:
                 # This location is disjointed. We must flush and jog.
                 # Jog is executed in current settings.
-                if self.single_x is None or cur_set.raster_step != 0:
-                    # First movement or raster_step we must rapid_jog.
+                if self.pos_x is None or cur_set.raster_step != 0:
+                    # First movement or raster_step exists we must rapid_jog.
                     # Request rapid move new location
                     flush = True
                     jog |= PLOT_RAPID
                 else:
+                    # Slow Jog to position.
                     distance = cur_set.jog_distance
                     if (
-                        abs(self.single_x - new_start_x) < distance
-                        and abs(self.single_y - new_start_y) < distance
+                            abs(self.pos_x - new_start_x) < distance
+                            and abs(self.pos_y - new_start_y) < distance
                     ) or not cur_set.jog_enable:
                         # Jog distance smaller than threshold. Or jog isn't allowed
-                        self.single_default = 0  # Turn laser off for movement.
-                        yield from self.process_plots(
-                            ZinglPlotter.plot_line(
-                                self.single_x, self.single_y, new_start_x, new_start_y
-                            )
-                        )  # Walk there.
-                        self.single_default = 1
+                        yield from self.step_move(self.pos_x, self.pos_y, new_start_x, new_start_y)
+                        self.warp(new_start_x, new_start_y)
                     else:
                         # Request standard jog new location required.
                         flush = True
                         jog |= PLOT_JOG
 
+            # Laser Setting has changed, we must flush the buffer.
             if cut_set is not cur_set:
-                flush = True  # Laser Setting has changed, we must flush the buffer.
+                flush = True
 
+            # Flush executed in current settings.
             if flush:  # Flush if needed.
-                # Flush executed in current settings.
-                yield from self.process_plots(None)
+                yield from self.flush()
+                self.pos_x = self.single.single_x
+                self.pos_y = self.single.single_y
 
-            if jog:  # Jog if needed.
+            # Jog was needed.
+            if jog:
                 yield new_start_x, new_start_y, jog
-                self.single_x = new_start_x
-                self.single_y = new_start_y
-                self.group_x = new_start_x
-                self.group_y = new_start_y
+                self.warp(new_start_x, new_start_y)
 
             self.settings = cut.settings
             if cut_set is not cur_set:
@@ -140,18 +126,16 @@ class PlotPlanner:
             # Plot the current.
             # Current is executed in cut settings.
             yield from self.process_plots(cut.generator())
+            self.pos_x = self.single.single_x
+            self.pos_y = self.single.single_y
 
         if not self.abort:
             # If we were not aborted, flush and finish the last positions.
-            yield from self.process_plots(None)
-        self.shift_pixels = 0
-        self.shift_buffer.clear()
-        self.single_x = None
-        self.single_y = None
-        self.group_x = None
-        self.group_y = None
-        self.group_dx = 0
-        self.group_dy = 0
+            yield from self.flush()
+            self.pos_x = self.single.single_x
+            self.pos_y = self.single.single_y
+
+        self.reset()
         self.abort = False
         yield None, None, PLOT_FINISH
 
@@ -168,9 +152,60 @@ class PlotPlanner:
         :return: generator to produce plottable elements.
         """
         # Applies single, ppi, shift, then group.
-        return self.group(self.shift(self.apply_ppi(self.single(plot))))
+        return self.group.process(self.shift.process(self.ppi.process(self.single.process(plot))))
 
-    def single(self, plot):
+    def step_move(self, x0, y0, x1, y1):
+        """
+        Step move walks a line from a point to another point.
+        """
+        for event in ZinglPlotter.plot_line(x0, y0, x1, y1):
+            yield event[0], event[1], 0
+        self.pos_x = x1
+        self.pos_y = y1
+
+    def flush(self):
+        yield from self.group.process(self.shift.process(self.ppi.process(self.single.process(None))))
+
+    def warp(self, x, y):
+        self.pos_x = x
+        self.pos_y = y
+        self.single.warp(x, y)
+        self.ppi.warp(x, y)
+        self.shift.warp(x, y)
+        self.group.warp(x, y)
+
+    def reset(self):
+        self.single.clear()
+        self.shift.clear()
+        self.ppi.clear()
+        self.group.clear()
+
+
+class PlotManipulation:
+    def __init__(self, planner: PlotPlanner):
+        self.planner = planner
+
+    def process(self, plot):
+        pass
+
+    def flush(self):
+        pass
+
+    def warp(self, x, y):
+        pass
+
+    def clear(self):
+        pass
+
+
+class Single(PlotManipulation):
+    def __init__(self, planner: PlotPlanner):
+        super().__init__(planner)
+        self.single_default = 1
+        self.single_x = None
+        self.single_y = None
+
+    def process(self, plot):
         """
         Convert a sequence set of positions into single unit plotted sequences.
 
@@ -185,7 +220,7 @@ class PlotPlanner:
         """
         if plot is None:
             # None calls for a flush routine.
-            yield None, None, self.single_default
+            yield from self.flush()
             return
         for event in plot:
             x = event[0]
@@ -212,18 +247,34 @@ class PlotPlanner:
             cx = self.single_x
             cy = self.single_y
             for i in range(1, max(abs(total_dx), abs(total_dy)) + 1):
-                if self.abort:
+                if self.planner.abort:
                     self.single_x = None
                     self.single_y = None
                     return
                 self.single_x = cx + (i * dx)
                 self.single_y = cy + (i * dy)
                 yield self.single_x, self.single_y, on
-        if self.abort:
-            self.single_x = None
-            self.single_y = None
 
-    def apply_ppi(self, plot):
+    def flush(self):
+        yield None, None, self.single_default
+
+    def warp(self, x, y):
+        self.single_x = x
+        self.single_y = y
+
+    def clear(self):
+        self.single_x = None
+        self.single_y = None
+
+
+class PPI(PlotManipulation):
+    def __init__(self, planner: PlotPlanner):
+        super().__init__(planner)
+        self.ppi_total = 0
+        self.ppi = 1000.0
+        self.dot_left = 0
+
+    def process(self, plot):
         """
         Converts single stepped plots, to apply PPI.
 
@@ -243,7 +294,7 @@ class PlotPlanner:
             px = x
             py = y
             # PPI is always on.
-            self.ppi_total += self.settings.power * on
+            self.ppi_total += self.planner.settings.power * on
             if on and self.dot_left > 0:
                 # Process remaining dot_length, must be on or partially on.
                 self.dot_left -= 1
@@ -253,14 +304,21 @@ class PlotPlanner:
                 if self.ppi_total >= 1000.0:
                     # PPI >= 1000: triggers on.
                     on = 1
-                    self.ppi_total -= 1000.0 * self.settings.dot_length
-                    self.dot_left = self.settings.dot_length - 1
+                    self.ppi_total -= 1000.0 * self.planner.settings.dot_length
+                    self.dot_left = self.planner.settings.dot_length - 1
                 else:
                     # PPI < 1000: triggers off.
                     on = 0
             yield x, y, on
 
-    def shift(self, plot):
+
+class Shift(PlotManipulation):
+    def __init__(self, planner: PlotPlanner):
+        super().__init__(planner)
+        self.shift_buffer = []
+        self.shift_pixels = 0
+
+    def process(self, plot):
         """
         Tweaks on-values to simplify them into more coherent subsections.
 
@@ -271,14 +329,10 @@ class PlotPlanner:
         """
         for x, y, on in plot:
             if (x is None or y is None) or (
-                not self.force_shift and not self.settings.shift_enabled
+                not self.planner.force_shift and not self.planner.settings.shift_enabled
             ):
                 # If we have an established buffer, flush the buffer.
-                while len(self.shift_buffer) > 0:
-                    self.shift_pixels <<= 1
-                    bx, by = self.shift_buffer.pop()
-                    bon = (self.shift_pixels >> 3) & 1
-                    yield bx, by, bon
+                yield from self.flush()
                 # Yield the current event.
                 yield x, y, on
                 continue
@@ -301,11 +355,33 @@ class PlotPlanner:
                 bon = (self.shift_pixels >> 3) & 1
                 yield bx, by, bon
         # There are no more plots.
-        if self.abort:
-            self.shift_pixels = 0
-            self.shift_buffer.clear()
 
-    def group(self, plot):
+    def flush(self):
+        while len(self.shift_buffer) > 0:
+            self.shift_pixels <<= 1
+            bx, by = self.shift_buffer.pop()
+            bon = (self.shift_pixels >> 3) & 1
+            yield bx, by, bon
+        self.clear()
+
+    def warp(self, x, y):
+        self.clear()
+
+    def clear(self):
+        self.shift_pixels = 0
+        self.shift_buffer.clear()
+
+
+class Group(PlotManipulation):
+    def __init__(self, planner: PlotPlanner):
+        super().__init__(planner)
+        self.group_x = None
+        self.group_y = None
+        self.group_on = None
+        self.group_dx = 0
+        self.group_dy = 0
+
+    def process(self, plot):
         """
         Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
 
@@ -319,35 +395,14 @@ class PlotPlanner:
         py = None
         for x, y, on in plot:
             if x is None or y is None:
-                gx = self.group_x
-                gy = self.group_y
-                go = self.group_on
-                if gx is not None and gy is not None and go is not None:
-                    # If we have an established buffer, flush the buffer.
-                    self.group_x = None
-                    self.group_y = None
-                    self.group_on = None
-                    self.group_dx = 0
-                    self.group_dy = 0
-                    yield gx, gy, go
+                yield from self.flush()
                 continue
             if px is not None and py is not None:
                 assert abs(px - x) <= 1 or abs(py - y) <= 1
             px = x
             py = y
-
-            gx = self.group_x
-            gy = self.group_y
-            go = self.group_on
-            if not self.group_enabled:
-                if gx is not None and gy is not None and go is not None:
-                    # If we have an established buffer, flush the buffer.
-                    self.group_x = None
-                    self.group_y = None
-                    self.group_on = None
-                    self.group_dx = 0
-                    self.group_dy = 0
-                    yield gx, gy, go
+            if not self.planner.group_enabled:
+                yield from self.flush()
                 # Yield the current event.
                 yield x, y, on
                 continue
@@ -384,3 +439,28 @@ class PlotPlanner:
             self.group_y = y
             self.group_on = on
         # There are no more plots.
+
+    def flush(self):
+        gx = self.group_x
+        gy = self.group_y
+        go = self.group_on
+        if gx is not None and gy is not None and go is not None:
+            # If we have an established buffer, flush the buffer.
+            self.group_x = None
+            self.group_y = None
+            self.group_on = None
+            self.group_dx = 0
+            self.group_dy = 0
+            yield gx, gy, go
+
+    def warp(self, x, y):
+        self.group_x = x
+        self.group_y = y
+        self.group_dx = 0
+        self.group_dy = 0
+
+    def clear(self):
+        self.group_x = None
+        self.group_y = None
+        self.group_dx = 0
+        self.group_dy = 0
