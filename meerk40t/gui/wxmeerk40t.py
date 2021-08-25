@@ -1666,17 +1666,17 @@ class MeerK40t(MWindow):
         # FILE MENU
         # ==========
 
-        self.file_menu.Append(wx.ID_NEW, _("New\tCtrl-N"), "")
-        self.file_menu.Append(wx.ID_OPEN, _("Open Project\tCtrl-O"), "")
+        self.file_menu.Append(wx.ID_NEW, _("&New\tCtrl-N"), "")
+        self.file_menu.Append(wx.ID_OPEN, _("&Open Project\tCtrl-O"), "")
         self.recent_file_menu = wx.Menu()
-        self.file_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
-        self.file_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
+        self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
+        self.file_menu.Append(ID_MENU_IMPORT, _("&Import File"), "")
         self.file_menu.AppendSeparator()
-        self.file_menu.Append(wx.ID_SAVE, _("Save\tCtrl-S"), "")
-        self.file_menu.Append(wx.ID_SAVEAS, _("Save As\tCtrl-Shift-S"), "")
+        self.file_menu.Append(wx.ID_SAVE, _("&Save\tCtrl-S"), "")
+        self.file_menu.Append(wx.ID_SAVEAS, _("Save &As\tCtrl-Shift-S"), "")
         self.file_menu.AppendSeparator()
 
-        self.file_menu.Append(wx.ID_EXIT, _("Exit"), "")
+        self.file_menu.Append(wx.ID_EXIT, _("E&xit"), "")
         self.main_menubar.Append(self.file_menu, _("File"))
 
         # ==========
@@ -1684,9 +1684,9 @@ class MeerK40t(MWindow):
         # ==========
         self.view_menu = wx.Menu()
 
-        self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out\tCtrl--"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In\tCtrl-+"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To &Size"), "")
         self.view_menu.AppendSeparator()
 
         self.view_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
@@ -1803,50 +1803,50 @@ class MeerK40t(MWindow):
         self.window_menu = wx.Menu()
 
         self.window_menu.executejob = self.window_menu.Append(
-            ID_MENU_JOB, _("Execute Job"), ""
+            ID_MENU_JOB, _("E&xecute Job"), ""
         )
         self.window_menu.simulate = self.window_menu.Append(
-            ID_MENU_SIMULATE, _("Simulate"), ""
+            ID_MENU_SIMULATE, _("&Simulate"), ""
         )
         self.window_menu.rasterwizard = self.window_menu.Append(
-            ID_MENU_RASTER_WIZARD, _("RasterWizard"), ""
+            ID_MENU_RASTER_WIZARD, _("&RasterWizard"), ""
         )
-        self.window_menu.notes = self.window_menu.Append(ID_MENU_NOTES, _("Notes"), "")
+        self.window_menu.notes = self.window_menu.Append(ID_MENU_NOTES, _("&Notes"), "")
         self.window_menu.console = self.window_menu.Append(
-            ID_MENU_CONSOLE, _("Console"), ""
+            ID_MENU_CONSOLE, _("&Console"), ""
         )
 
         self.window_menu.navigation = self.window_menu.Append(
-            ID_MENU_NAVIGATION, _("Navigation"), ""
+            ID_MENU_NAVIGATION, _("N&avigation"), ""
         )
         if self.context.has_feature("modifier/Camera"):
             self.window_menu.camera = self.window_menu.Append(
-                ID_MENU_CAMERA, _("Camera"), ""
+                ID_MENU_CAMERA, _("C&amera"), ""
             )
         self.window_menu.jobspooler = self.window_menu.Append(
-            ID_MENU_SPOOLER, _("Spooler"), ""
+            ID_MENU_SPOOLER, _("S&pooler"), ""
         )
 
         self.window_menu.controller = self.window_menu.Append(
-            ID_MENU_CONTROLLER, _("Controller"), ""
+            ID_MENU_CONTROLLER, _("C&ontroller"), ""
         )
         self.window_menu.devices = self.window_menu.Append(
-            ID_MENU_DEVICE_MANAGER, _("Devices"), ""
+            ID_MENU_DEVICE_MANAGER, _("&Devices"), ""
         )
         self.window_menu.preferences = self.window_menu.Append(
-            wx.ID_PREFERENCES, _("Config"), ""
+            wx.ID_PREFERENCES, _("Confi&g"), ""
         )
         self.window_menu.settings = self.window_menu.Append(
-            ID_MENU_SETTINGS, _("Settings"), ""
+            ID_MENU_SETTINGS, _("Se&ttings"), ""
         )
 
         self.window_menu.keymap = self.window_menu.Append(
-            ID_MENU_KEYMAP, _("Keymap"), ""
+            ID_MENU_KEYMAP, _("&Keymap"), ""
         )
         self.window_menu.rotary = self.window_menu.Append(
-            ID_MENU_ROTARY, _("Rotary"), ""
+            ID_MENU_ROTARY, _("Rotar&y"), ""
         )
-        self.window_menu.usb = self.window_menu.Append(ID_MENU_USB, _("USB"), "")
+        self.window_menu.usb = self.window_menu.Append(ID_MENU_USB, _("&USB"), "")
 
         self.window_menu.AppendSeparator()
         self.window_menu.windowreset = self.window_menu.Append(
@@ -1868,14 +1868,14 @@ class MeerK40t(MWindow):
         # HELP MENU
         # ==========
         self.help_menu = wx.Menu()
-        self.help_menu.Append(wx.ID_HELP, _("Help"), "")
-        self.help_menu.Append(ID_HOMEPAGE, _("Github"), "")
-        self.help_menu.Append(ID_RELEASES, _("Releases"), "")
-        self.help_menu.Append(ID_FACEBOOK, _("Facebook"), "")
-        self.help_menu.Append(ID_MAKERS_FORUM, _("Makers Forum"), "")
-        self.help_menu.Append(ID_IRC, _("IRC"), "")
+        self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
+        self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
+        self.help_menu.Append(ID_RELEASES, _("&Releases"), "")
+        self.help_menu.Append(ID_FACEBOOK, _("&Facebook"), "")
+        self.help_menu.Append(ID_MAKERS_FORUM, _("&Makers Forum"), "")
+        self.help_menu.Append(ID_IRC, _("&IRC"), "")
         self.help_menu.AppendSeparator()
-        self.help_menu.Append(wx.ID_ABOUT, _("About"), "")
+        self.help_menu.Append(wx.ID_ABOUT, _("&About"), "")
         self.main_menubar.Append(self.help_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
