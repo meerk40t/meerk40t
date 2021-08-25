@@ -35,6 +35,10 @@ class LhystudiosEmulator(Module):
 
 
 class LhystudiosParser:
+    """
+    LhystudiosParser parses LHYMicro-GL code with a state diagram. This should accurately reconstruct the values.
+    When the position is changed it calls a self.position() function if one exists.
+    """
     def __init__(self):
         self.channel = None
         self.position = None
@@ -43,8 +47,6 @@ class LhystudiosParser:
         self.count_lines = 0
         self.count_flag = 0
         self.settings = LaserSettings(speed=20.0, power=1000.0)
-        self.cutcode = CutCode()
-        self.cut = None
 
         self.small_jump = True
         self.speed_code = None
@@ -77,12 +79,6 @@ class LhystudiosParser:
     @property
     def raster_mode(self):
         return self.settings.raster_step != 0
-
-    def new_cut(self):
-        if self.cut is not None and len(self.cut):
-            self.cutcode.append(self.cut)
-        self.cut = RawCut()
-        self.cut.settings = LaserSettings(self.settings)
 
     def new_file(self):
         self.header_skipped = False
@@ -403,29 +399,43 @@ class EGVBlob:
         self.name = name
         self.data = data
         self.operation = "blob"
+        self._cutcode = None
+        self._cut = None
 
     def __repr__(self):
         return "EGV(%s, %d bytes)" % (self.name, len(self.data))
 
     def as_cutobjects(self):
         parser = LhystudiosParser()
+        self._cutcode = CutCode()
+        self._cut = RawCut()
+
+        def new_cut():
+            if self._cut is not None and len(self._cut):
+                self._cutcode.append(self._cut)
+            self._cut = RawCut()
+            self._cut.settings = LaserSettings(parser.settings)
 
         def position(p):
-            if p is None or parser.cut is None:
-                parser.new_cut()
+            if p is None or self._cut is None:
+                new_cut()
                 return
 
             from_x, from_y, to_x, to_y = p
 
             if parser.program_mode:
-                if len(parser.cut.plot) == 0:
-                    parser.cut.plot_append(int(from_x), int(from_y), parser.laser)
-                parser.cut.plot_append(int(to_x), int(to_y), parser.laser)
+                if len(self._cut.plot) == 0:
+                    self._cut.plot_append(int(from_x), int(from_y), parser.laser)
+                self._cut.plot_append(int(to_x), int(to_y), parser.laser)
             else:
-                parser.new_cut()
+                new_cut()
         parser.position = position
         parser.header_write(self.data)
-        return parser.cutcode
+
+        cutcode = self._cutcode
+        self._cut = None
+        self._cutcode = None
+        return cutcode
 
 
 class EgvLoader:
