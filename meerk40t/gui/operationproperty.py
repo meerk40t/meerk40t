@@ -723,15 +723,14 @@ class OperationProperty(MWindow):
         self.text_dot_length.Enable(self.check_dot_length_custom.GetValue())
         self.text_passes.Enable(self.check_passes.GetValue())
         select = self.combo_type.GetSelection()
+        self.raster_panel.Show(False)
         if select == 0:
             self.operation.operation = "Engrave"
-            self.raster_panel.Show(False)
             self.check_dratio_custom.Enable(True)
             self.text_dratio.Enable(self.check_dratio_custom.GetValue())
             self.Layout()
         elif select == 1:
             self.operation.operation = "Cut"
-            self.raster_panel.Show(False)
             self.check_dratio_custom.Enable(True)
             self.text_dratio.Enable(self.check_dratio_custom.GetValue())
             self.Layout()
@@ -753,7 +752,6 @@ class OperationProperty(MWindow):
             self.Layout()
         elif select == 4:
             self.operation.operation = "Dots"
-            self.raster_panel.Show(False)
             self.check_dratio_custom.Enable(True)
             self.text_dratio.Enable(self.check_dratio_custom.GetValue())
             self.Layout()
