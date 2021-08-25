@@ -38,6 +38,7 @@ of zero will remain zero.
 class PlotPlanner:
     def __init__(self, settings):
         self.settings = settings
+        self.debug = False
 
         self.abort = False
         self.force_shift = False
@@ -88,11 +89,13 @@ class PlotPlanner:
                     # Slow Jog to position.
                     distance = cur_set.jog_distance
                     if (
-                            abs(self.pos_x - new_start_x) < distance
-                            and abs(self.pos_y - new_start_y) < distance
+                        abs(self.pos_x - new_start_x) < distance
+                        and abs(self.pos_y - new_start_y) < distance
                     ) or not cur_set.jog_enable:
                         # Jog distance smaller than threshold. Or jog isn't allowed
-                        yield from self.step_move(self.pos_x, self.pos_y, new_start_x, new_start_y)
+                        yield from self.step_move(
+                            self.pos_x, self.pos_y, new_start_x, new_start_y
+                        )
                         self.warp(new_start_x, new_start_y)
                     else:
                         # Request standard jog new location required.
@@ -152,7 +155,31 @@ class PlotPlanner:
         :return: generator to produce plottable elements.
         """
         # Applies single, ppi, shift, then group.
-        return self.group.process(self.shift.process(self.ppi.process(self.single.process(plot))))
+        if self.debug:
+            def debug(plot, manipulator):
+                for q in plot:
+                    print("Manipulator: %s, %s" % (str(q), str(manipulator)))
+                    yield q
+
+            return debug(
+                self.group.process(
+                    debug(
+                        self.shift.process(
+                            debug(
+                                self.ppi.process(
+                                    debug(self.single.process(plot), self.single)
+                                ),
+                                self.ppi,
+                            )
+                        ),
+                        self.shift,
+                    )
+                ),
+                self.group,
+            )
+        return self.group.process(
+            self.shift.process(self.ppi.process(self.single.process(plot)))
+        )
 
     def step_move(self, x0, y0, x1, y1):
         """
@@ -164,7 +191,9 @@ class PlotPlanner:
         self.pos_y = y1
 
     def flush(self):
-        yield from self.group.process(self.shift.process(self.ppi.process(self.single.process(None))))
+        if self.debug:
+            print("Flushing PlotPlanner")
+        yield from self.process_plots(None)
 
     def warp(self, x, y):
         self.pos_x = x
@@ -197,6 +226,9 @@ class PlotManipulation:
     def clear(self):
         pass
 
+    def flushed(self):
+        return True
+
 
 class Single(PlotManipulation):
     def __init__(self, planner: PlotPlanner):
@@ -204,6 +236,13 @@ class Single(PlotManipulation):
         self.single_default = 1
         self.single_x = None
         self.single_y = None
+
+    def __str__(self):
+        return "%s(%s,%s)" % (
+            self.__class__.__name__,
+            str(self.single_x),
+            str(self.single_y),
+        )
 
     def process(self, plot):
         """
@@ -271,8 +310,14 @@ class PPI(PlotManipulation):
     def __init__(self, planner: PlotPlanner):
         super().__init__(planner)
         self.ppi_total = 0
-        self.ppi = 1000.0
         self.dot_left = 0
+
+    def __str__(self):
+        return "%s(%s,%s)" % (
+            self.__class__.__name__,
+            str(self.ppi_total),
+            str(self.dot_left),
+        )
 
     def process(self, plot):
         """
@@ -317,6 +362,13 @@ class Shift(PlotManipulation):
         super().__init__(planner)
         self.shift_buffer = []
         self.shift_pixels = 0
+
+    def __str__(self):
+        return "%s(%s,%s)" % (
+            self.__class__.__name__,
+            str(self.shift_buffer),
+            bin(self.shift_pixels),
+        )
 
     def process(self, plot):
         """
@@ -364,6 +416,9 @@ class Shift(PlotManipulation):
             yield bx, by, bon
         self.clear()
 
+    def flushed(self):
+        return not len(self.shift_buffer)
+
     def warp(self, x, y):
         self.clear()
 
@@ -375,11 +430,28 @@ class Shift(PlotManipulation):
 class Group(PlotManipulation):
     def __init__(self, planner: PlotPlanner):
         super().__init__(planner)
+        self.last_x = None
+        self.last_y = None
+        self.last_on = None
+
         self.group_x = None
         self.group_y = None
         self.group_on = None
+
         self.group_dx = 0
         self.group_dy = 0
+
+    def __str__(self):
+        return "%s(%s,%s,%s,%s)" % (
+            self.__class__.__name__,
+            str(self.group_x),
+            str(self.group_y),
+            str(self.group_dx),
+            str(self.group_dy),
+        )
+
+    def flushed(self):
+        return self.last_x == self.group_x and self.last_y == self.group_y and self.last_on == self.group_on
 
     def process(self, plot):
         """
@@ -404,6 +476,9 @@ class Group(PlotManipulation):
             if not self.planner.group_enabled:
                 yield from self.flush()
                 # Yield the current event.
+                self.last_x = x
+                self.last_y = y
+                self.last_on = on
                 yield x, y, on
                 continue
             # Group() is enabled
@@ -425,6 +500,9 @@ class Group(PlotManipulation):
                     # Mark the latest position and continue.
                     continue
                 # This is non orth-diag point. Must drop a point.
+                self.last_x = self.group_x
+                self.last_y = self.group_y
+                self.last_on = self.group_on
                 yield self.group_x, self.group_y, self.group_on
             # If we do not have a defined direction, set our current direction.
             self.group_dx = x - self.group_x
@@ -441,23 +519,22 @@ class Group(PlotManipulation):
         # There are no more plots.
 
     def flush(self):
-        gx = self.group_x
-        gy = self.group_y
-        go = self.group_on
-        if gx is not None and gy is not None and go is not None:
+        if not self.flushed():
             # If we have an established buffer, flush the buffer.
-            self.group_x = None
-            self.group_y = None
-            self.group_on = None
             self.group_dx = 0
             self.group_dy = 0
-            yield gx, gy, go
+            self.last_x = self.group_x
+            self.last_y = self.group_y
+            self.last_on = self.group_on
+            yield self.group_x, self.group_y, self.group_on
 
     def warp(self, x, y):
         self.group_x = x
         self.group_y = y
         self.group_dx = 0
         self.group_dy = 0
+        self.last_x = x
+        self.last_y = y
 
     def clear(self):
         self.group_x = None
