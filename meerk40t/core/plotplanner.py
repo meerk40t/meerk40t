@@ -1,5 +1,4 @@
 from meerk40t.tools.zinglplotter import ZinglPlotter
-from .cutcode import LaserSettings
 
 from ..device.basedevice import (
     PLOT_AXIS,

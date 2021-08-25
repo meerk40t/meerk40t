@@ -243,14 +243,17 @@ class LhystudiosParser:
             self.distance_x = 0
             self.distance_y = 0
 
+            ox = self.x
+            oy = self.y
+
             self.x += dx
             self.y += dy
 
+            if self.position:
+                self.position((ox, oy, self.x, self.y))
+
             if self.channel:
                 self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
-
-            if self.position:
-                self.position((self.x, self.y, self.x + dx, self.y + dy))
 
     def state_compact(self, b, c):
         if self.state_distance(b, c):
@@ -412,11 +415,14 @@ class EGVBlob:
                 parser.new_cut()
                 return
 
-            x0, y0, x1, y1 = p
+            from_x, from_y, to_x, to_y = p
 
             if parser.program_mode:
-                parser.cut.plot_append(int(x0), int(y0), parser.laser)
-
+                if len(parser.cut.plot) == 0:
+                    parser.cut.plot_append(int(from_x), int(from_y), parser.laser)
+                parser.cut.plot_append(int(to_x), int(to_y), parser.laser)
+            else:
+                parser.new_cut()
         parser.position = position
         parser.header_write(self.data)
         return parser.cutcode

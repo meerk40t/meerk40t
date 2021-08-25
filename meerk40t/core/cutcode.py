@@ -648,14 +648,14 @@ class RawCut(CutObject):
 
     def plot_append(self, x, y, laser):
         self.plot.append((x, y, laser))
-
-    def valid(self):
-        for i in range(1, len(self.plot)):
-            x0, y0, l0 = self.plot[i-1]
-            x1, y1, l1 = self.plot[i]
+        try:
+            x0, y0, l0 = self.plot[-1]
+            x1, y1, l1 = self.plot[-2]
             dx = x1 - x0
             dy = y1 - y0
-            assert(dx == 0 or dy == 0 or abs(dx) == abs(dy))
+            assert (dx == 0 or dy == 0 or abs(dx) == abs(dy))
+        except IndexError:
+            pass
 
     def reversible(self):
         return False
