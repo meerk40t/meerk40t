@@ -4916,6 +4916,7 @@ class Elemental(Modifier):
 
         raster_ops = []
         deferred_raster_elements = []
+        white_raster_elements = []
 
         for op in operations:
             if op.default:
@@ -4946,7 +4947,7 @@ class Elemental(Modifier):
             add_vector = False    # For everything except shapes
             add_non_vector = True # Text, Images and Dots
             if isinstance(element,Shape) and not is_dot:
-                if element_color.rgb == Color("black").rgb: # Treated as a raster for user convenience
+                if element_color.rgb == 0x000000: # Black treated as a raster for user convenience
                     add_vector = False
                     add_non_vector = True
                 else:
@@ -4956,8 +4957,15 @@ class Elemental(Modifier):
                         add_non_vector = False
                     elif add_vector and add_non_vector and element.stroke == element.fill:
                         add_vector = False
+
             if not (add_vector or add_non_vector): # No stroke and (straight line or transparent fill)
                 continue
+
+            # White raster is a special case as it is ANTI-burn and typically used to mask other raster areas
+            # We need to add this to all Raster operations in order to mask out any burns in that operation
+            if element.fill is not None and element.fill.rgb == 0xffffff: # White
+                white_raster_elements.append(element)
+                add_non_vector = False
 
             # First classify to operations of exact color
             for op in operations:
@@ -4971,17 +4979,22 @@ class Elemental(Modifier):
                         break # May only classify in one Dots operation
                 elif (
                     isinstance(element, Shape)
-                    and op_operation in ["Cut", "Engrave", "Raster"]
-                    and op.color.rgb == element_color.rgb
+                    and op_operation in ["Cut", "Engrave"]
                     and op not in default_cut_ops
                     and op not in default_engrave_ops
-                    and op not in default_raster_ops
+                    and element.stroke is not None
+                    and op.color.rgb == element_color.rgb
                 ):
                     op.add(element, type="opnode")
-                    if op.operation == "Raster":
-                        add_non_vector = False
-                    else:
-                        add_vector = False
+                    add_vector = False
+                elif (
+                    isinstance(element, Shape)
+                    and op_operation == "Raster"
+                    and op not in default_raster_ops
+                    and op.color.rgb == element_color.rgb
+                ):
+                    op.add(element, type="opnode")
+                    add_non_vector = False
                 elif (
                     isinstance(element, SVGText)
                     and op_operation == "Raster"
@@ -5015,7 +5028,7 @@ class Elemental(Modifier):
                 deferred_raster_elements.append(element)
                 add_non_vector = False
 
-            # If we have matched element to an original operation or matched to all relavent new operations, we can move to the next element
+            # If we have matched element to an original operation or matched to all relevant new operations, we can move to the next element
             if not add_vector and not add_non_vector:
                 continue
 
@@ -5038,20 +5051,26 @@ class Elemental(Modifier):
 
         # Now deal with leftover raster elements
         if deferred_raster_elements:
-            if default_raster_ops:
-                raster_ops = default_raster_ops
-            else:
+            if not default_raster_ops:
                 # Because this is a check for an empty operation, this functionality relies on all elements in a file being classified at the same time.
                 # If you add elements individually, after the first raster operation the empty ops will no longer be empty and a default Raster op will be created instead.
-                raster_ops = [op for op in raster_ops if len(op.children) == 0 and op.color.alpha != 0 and not op.default]
-            if not raster_ops:
+                default_raster_ops = [op for op in raster_ops if len(op.children) == 0 and op.color.alpha != 0 and not op.default]
+            if not default_raster_ops:
                 op = LaserOperation(operation="Raster", color="Transparent", default=True)
                 operations.append(op)
                 raster_ops.append(op)
+                default_raster_ops.append(op)
                 add_op_function(op)
-            for element in deferred_raster_elements:
-                for op in raster_ops:
+            for op in default_raster_ops:
+                for element in deferred_raster_elements:
                     op.add(element, type="opnode")
+
+        # Finally add white rasters to every non-empty raster op
+        if white_raster_elements:
+            for op in raster_ops:
+                if len(op.children) > 0:
+                    for element in white_raster_elements:
+                        op.add(element, type="opnode")
 
     def load(self, pathname, **kwargs):
         kernel = self.context.kernel
