@@ -108,7 +108,9 @@ class DxfLoader:
         file_node = element_branch.add(type="file", label=basename)
         file_node.filepath = pathname
         file_node.add_all(elements, type="elem")
-        return file_node
+        file_node.focus()
+        elements_modifier.classify(elements)
+        return True
 
     @staticmethod
     def entity_to_svg(elements, dxf, entity, scale, translate_y):

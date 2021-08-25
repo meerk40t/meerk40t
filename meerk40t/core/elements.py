@@ -692,7 +692,7 @@ class Node:
         self._parent._children.remove(self)
         self.notify_detached(self)
         self.notify_destroyed(self)
-        for ref in self._references:
+        for ref in list(self._references):
             ref.remove_node()
         self.item = None
         self._parent = None
@@ -1899,7 +1899,7 @@ class Elemental(Modifier):
             output_type="ops",
         )
         def operation_list(channel, _, data=None, **kwgs):
-            channel(_("----------"))
+            channel("----------")
             channel(_("Operations:"))
             index_ops = list(self.ops())
             for op_obj in data:
@@ -1907,9 +1907,9 @@ class Elemental(Modifier):
                 selected = op_obj.emphasized
                 select_piece = " *" if selected else "  "
                 color = (
-                    "None"
-                    if not hasattr(op_obj, "color") or op_obj.color is None
-                    else Color(op_obj.color).hex
+                    Color(op_obj.color).hex
+                    if hasattr(op_obj, "color") and op_obj.color is not None
+                    else "None"
                 )
                 name = "%d: %s %s - %s" % (i, str(op_obj), select_piece, color)
                 channel(name)
@@ -1935,7 +1935,7 @@ class Elemental(Modifier):
                             fill_piece,
                         )
                         channel(name)
-            channel(_("----------"))
+            channel("----------")
 
         @context.console_option("color", "c", type=Color)
         @context.console_option("default", "d", type=bool)
@@ -2277,7 +2277,7 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element_list(command, channel, _, data=None, **kwgs):
-            channel(_("----------"))
+            channel("----------")
             channel(_("Graphical Elements:"))
             index_list = list(self.elems())
             for e in data:
@@ -2852,7 +2852,7 @@ class Elemental(Modifier):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if stroke_width is None:
-                channel(_("----------"))
+                channel("----------")
                 channel(_("Stroke-Width Values:"))
                 i = 0
                 for e in self.elems():
@@ -2864,7 +2864,7 @@ class Elemental(Modifier):
                     else:
                         channel(_("%d: stroke = %s - %s") % (i, e.stroke_width, name))
                     i += 1
-                channel(_("----------"))
+                channel("----------")
                 return
 
             if len(data) == 0:
@@ -2911,7 +2911,7 @@ class Elemental(Modifier):
                     except IndexError:
                         channel(_("index %d out of range") % value)
             if color is None:
-                channel(_("----------"))
+                channel("----------")
                 channel(_("Stroke Values:"))
                 i = 0
                 for e in self.elems():
@@ -2923,7 +2923,7 @@ class Elemental(Modifier):
                     else:
                         channel(_("%d: stroke = %s - %s") % (i, e.stroke.hex, name))
                     i += 1
-                channel(_("----------"))
+                channel("----------")
                 return
             elif color == "none":
                 for e in apply:
@@ -2967,7 +2967,7 @@ class Elemental(Modifier):
                     except IndexError:
                         channel(_("index %d out of range") % value)
             if color is None:
-                channel(_("----------"))
+                channel("----------")
                 channel(_("Fill Values:"))
                 i = 0
                 for e in self.elems():
@@ -2979,7 +2979,7 @@ class Elemental(Modifier):
                     else:
                         channel(_("%d: fill = %s - %s") % (i, e.fill.hex, name))
                     i += 1
-                channel(_("----------"))
+                channel("----------")
                 return "elements", data
             elif color == "none":
                 for e in apply:
@@ -3085,7 +3085,7 @@ class Elemental(Modifier):
             **kwgs
         ):
             if angle is None:
-                channel(_("----------"))
+                channel("----------")
                 channel(_("Rotate Values:"))
                 i = 0
                 for element in self.elems():
@@ -3097,7 +3097,7 @@ class Elemental(Modifier):
                         % (i, element.rotation.as_turns, name)
                     )
                     i += 1
-                channel(_("----------"))
+                channel("----------")
                 return
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -3178,7 +3178,7 @@ class Elemental(Modifier):
             **kwgs
         ):
             if scale_x is None:
-                channel(_("----------"))
+                channel("----------")
                 channel(_("Scale Values:"))
                 i = 0
                 for e in self.elems():
@@ -3195,7 +3195,7 @@ class Elemental(Modifier):
                         )
                     )
                     i += 1
-                channel(_("----------"))
+                channel("----------")
                 return
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -3275,7 +3275,7 @@ class Elemental(Modifier):
             command, channel, _, tx, ty, absolute=False, data=None, **kwgs
         ):
             if tx is None:
-                channel(_("----------"))
+                channel("----------")
                 channel(_("Translate Values:"))
                 i = 0
                 for e in self.elems():
@@ -3292,7 +3292,7 @@ class Elemental(Modifier):
                         )
                     )
                     i += 1
-                channel(_("----------"))
+                channel("----------")
                 return
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -3413,7 +3413,7 @@ class Elemental(Modifier):
             command, channel, _, sx, kx, sy, ky, tx, ty, data=None, **kwgs
         ):
             if tx is None:
-                channel(_("----------"))
+                channel("----------")
                 channel(_("Matrix Values:"))
                 i = 0
                 for e in self.elems():
@@ -3422,7 +3422,7 @@ class Elemental(Modifier):
                         name = name[:50] + "..."
                     channel("%d: %s - %s" % (i, str(e.transform), name))
                     i += 1
-                channel(_("----------"))
+                channel("----------")
                 return
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -3556,12 +3556,12 @@ class Elemental(Modifier):
         def tree_list(command, channel, _, data=None, **kwgs):
             if data is None:
                 data = self._tree
-            channel(_("----------"))
+            channel("----------")
             channel(_("Tree:"))
             path = ""
             for i, node in enumerate(data.children):
                 channel("%s:%d %s" % (path, i, str(node.label)))
-            channel(_("----------"))
+            channel("----------")
             return "tree", data
 
         # ==========
@@ -4455,7 +4455,7 @@ class Elemental(Modifier):
         settings.clear_persistent()
 
         for i, op in enumerate(self.ops()):
-            op_set = settings.derive(str(i))
+            op_set = settings.derive("%06i" % i)
             if not hasattr(op, "settings"):
                 continue  # Might be a function.
             sets = op.settings
@@ -4924,7 +4924,6 @@ class Elemental(Modifier):
         default_cut_ops = []
         default_engrave_ops = []
         default_raster_ops = []
-        new_ops = []
 
         raster_ops = []
         deferred_raster_elements = []
@@ -4989,14 +4988,10 @@ class Elemental(Modifier):
                     and op not in default_engrave_ops
                     and op not in default_raster_ops
                 ):
+                    op.add(element, type="opnode")
                     if op.operation == "Raster":
-                        # Only do raster add to existing raster ops because new reaster ops is default / a different color
-                        if op not in new_ops: # if an existing Operation, then we will not add opposite type later.
-                            op.add(element, type="opnode")
-                            add_non_vector = False
+                        add_non_vector = False
                     else:
-                        # Always do vector add because newly created vector ops match colour
-                        op.add(element, type="opnode")
                         add_vector = False
                 elif (
                     isinstance(element, SVGText)
@@ -5015,7 +5010,7 @@ class Elemental(Modifier):
                     break  # May only classify in one Image operation.
 
             # Check for default operations
-            if (isinstance(element,Shape) or isinstance(element,SVGText)) and not is_dot:
+            if isinstance(element, (Shape, SVGText)) and not is_dot:
                 is_cut = Color.distance_sq("red", element_color) <= 18825
                 if add_vector and is_cut and default_cut_ops:
                     for op in default_cut_ops:
@@ -5025,10 +5020,6 @@ class Elemental(Modifier):
                     for op in default_engrave_ops:
                         op.add(element, type="opnode")
                     add_vector = False
-                if add_non_vector and default_raster_ops:
-                    for op in default_raster_ops:
-                        op.add(element, type="opnode")
-                    add_non_vector = False
 
             # If element is a raster - defer creating a default raster op until we are sure that there are no empty existing raster ops to use first.
             if add_non_vector and isinstance(element, (Shape, SVGText)) and not is_dot:
@@ -5052,14 +5043,18 @@ class Elemental(Modifier):
                     if element_color == Color("white"):
                         op.settings.laser_enabled = False
             operations.append(op)
-            new_ops.append(op)
             add_op_function(op)
             # element cannot be added to op before op is added to operations - otherwise opnode is not created.
             op.add(element, type="opnode")
 
         # Now deal with leftover raster elements
         if deferred_raster_elements:
-            raster_ops = [op for op in raster_ops if len(op.children) == 0]
+            if default_raster_ops:
+                raster_ops = default_raster_ops
+            else:
+                # Because this is a check for an empty operation, this functionality relies on all elements in a file being classified at the same time.
+                # If you add elements individually, after the first raster operation the empty ops will no longer be empty and a default Raster op will be created instead.
+                raster_ops = [op for op in raster_ops if len(op.children) == 0 and op.color.alpha != 0 and not op.default]
             if not raster_ops:
                 op = LaserOperation(operation="Raster", color="Transparent", default=True)
                 operations.append(op)
@@ -5077,9 +5072,6 @@ class Elemental(Modifier):
                 if str(pathname).lower().endswith(extensions):
                     try:
                         results = loader.load(self.context, self, pathname, **kwargs)
-                        if results and isinstance(results, Node):
-                            results.focus()
-                            self.classify([elem.object for elem in results.flat(types=("elem"))])
                     except FileNotFoundError:
                         return False
                     except OSError:
