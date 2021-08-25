@@ -2434,70 +2434,70 @@ class MeerK40t(MWindow):
             self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
         context = self.context
         if context.file0 is not None and len(context.file0):
-            self.recent_file_menu.Append(ID_MENU_FILE0, "&1  " + context.file0, "")
+            self.recent_file_menu.Append(ID_MENU_FILE0, "&1   " + context.file0, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file0),
                 id=ID_MENU_FILE0,
             )
         if context.file1 is not None and len(context.file1):
-            self.recent_file_menu.Append(ID_MENU_FILE1, "&2  " + context.file1, "")
+            self.recent_file_menu.Append(ID_MENU_FILE1, "&2   " + context.file1, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file1),
                 id=ID_MENU_FILE1,
             )
         if context.file2 is not None and len(context.file2):
-            self.recent_file_menu.Append(ID_MENU_FILE2, "&3  " + context.file2, "")
+            self.recent_file_menu.Append(ID_MENU_FILE2, "&3   " + context.file2, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file2),
                 id=ID_MENU_FILE2,
             )
         if context.file3 is not None and len(context.file3):
-            self.recent_file_menu.Append(ID_MENU_FILE3, "&4  " + context.file3, "")
+            self.recent_file_menu.Append(ID_MENU_FILE3, "&4   " + context.file3, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file3),
                 id=ID_MENU_FILE3,
             )
         if context.file4 is not None and len(context.file4):
-            self.recent_file_menu.Append(ID_MENU_FILE4, "&5  " + context.file4, "")
+            self.recent_file_menu.Append(ID_MENU_FILE4, "&5   " + context.file4, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file4),
                 id=ID_MENU_FILE4,
             )
         if context.file5 is not None and len(context.file5):
-            self.recent_file_menu.Append(ID_MENU_FILE5, "&6  " + context.file5, "")
+            self.recent_file_menu.Append(ID_MENU_FILE5, "&6   " + context.file5, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file5),
                 id=ID_MENU_FILE5,
             )
         if context.file6 is not None and len(context.file6):
-            self.recent_file_menu.Append(ID_MENU_FILE6, "&7  " + context.file6, "")
+            self.recent_file_menu.Append(ID_MENU_FILE6, "&7   " + context.file6, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file6),
                 id=ID_MENU_FILE6,
             )
         if context.file7 is not None and len(context.file7):
-            self.recent_file_menu.Append(ID_MENU_FILE7, "&8  " + context.file7, "")
+            self.recent_file_menu.Append(ID_MENU_FILE7, "&8   " + context.file7, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file7),
                 id=ID_MENU_FILE7,
             )
         if context.file8 is not None and len(context.file8):
-            self.recent_file_menu.Append(ID_MENU_FILE8, "&9  " + context.file8, "")
+            self.recent_file_menu.Append(ID_MENU_FILE8, "&9   " + context.file8, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file8),
                 id=ID_MENU_FILE8,
             )
         if context.file9 is not None and len(context.file9):
-            self.recent_file_menu.Append(ID_MENU_FILE9, "1&0  " + context.file9, "")
+            self.recent_file_menu.Append(ID_MENU_FILE9, "1&0 " + context.file9, "")
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: self.load_or_open(context.file9),
