@@ -4879,21 +4879,30 @@ class Elemental(Modifier):
         Text is classified as Raster
         All other SVGElement types are Shapes
 
-        1. Classify first attempts to match Shapes to all EXISTING Operations of the same absolute color. Color match is on RGB only, not transparency.
+        Paths consisting of a move followed by a single stright line segment are never Raster (since no width) - testing for more complex stright line elements is
+        Stroke/Fill of same colour is a Raster
+        Stroke/Fill of different colors are both Cut/Engrave and Raster
+        No Stroke/Fill is a Raster
+        Reddish Stroke is a Cut.
+        Black Stroke is a Raster.
+        All other stroke colors are Engrave
+        White rasters are considered anti-rasters and are included in any Raster Operation where its bounding box overlaps existing raster elements
+        White Engrave operations created by classify will be created disabled.
 
-        2. If not, then we classify as follows:
-            * Paths consisting of a move followed by a single stright line segment are never Raster (since no width) - testing for more complex stright line elements is
-            * Stroke/Fill of same colour is a Raster
-            * Stroke/Fill of different colors are both Cut/Engrave and Raster
-            * No Stroke/Fill is a Raster
-            * Reddish Stroke is a Cut.
-            * Black Stroke is a Raster.
-            * All other stroke colors are Engrave
-            * Cut/Engraves/Raster elements are attenpted to match to an existing  to a matching Operation of same absolute color, creating it if necessary.
-            * Cut/Engraves/Raster elements are classified to a matching Operation of same absolute color, creating it if necessary.
-            *
-            * Cut/Engraves elements are classified to a matching Operation of same absolute color, creating it if necessary.
-            * White Engrave operations created by classify will be created disabled.
+        Cut/Engraves elements are attenpted to match to a matching Operation of same absolute color, creating it if necessary.
+
+        If all existing Raster Operations are the same color (default being considered a unique color),
+        then all raster elements are classified into all Raster operations as per v0.6
+
+        If there are existing Raster Operations of at least two different colors then:
+            Elements of exact same color are matched to non-default Raster Ops of exact same color
+            (regardless of whether they would otherwise be treated as a raster)
+
+            Elements which are Raster as per above rules but which are not matched by colour are all added to the same Raster Operations as follows:
+                If there are one or more existing default Raster ops, remaining raster elements are allocated to those. Otherwise...
+                If there are one or more empty non-default Raster ops, remaining raster elements are allocated to those. Otherwise...
+                A new default Raster op is created, and remaining elements are allocated to that.
+
 
         :param elements: list of elements to classify.
         :param operations: operations list to classify into.
@@ -4920,6 +4929,7 @@ class Elemental(Modifier):
         white_raster_elements = []
         have_non_white_deferred_rasters = False
 
+        raster_ops_single_color = None
         for op in operations:
             if op.default:
                 if op.operation == "Cut":
@@ -4930,6 +4940,14 @@ class Elemental(Modifier):
                     default_raster_ops.append(op)
             if op.operation == "Raster":
                 raster_ops.append(op)
+                op_color = op.color.rgb if not op.default else "default"
+                if raster_ops_single_color is not None and raster_ops_single_color is not False:
+                    if str(raster_ops_single_color) != str(op_color):
+                        raster_ops_single_color = False
+                else:
+                    raster_ops_single_color = op_color
+        if raster_ops_single_color is not False:
+            raster_ops_single_color = True
 
         for element in elements:
             if hasattr(element, "operation"):
@@ -5003,9 +5021,22 @@ class Elemental(Modifier):
                         op.add(element, type="opnode", pos=element_pos)
                 elif (
                     isinstance(element, (Shape, SVGText))
+                    and (
+                        (element.fill is not None and element.fill.rgb is not None and element.fill.rgb != 0xffffff) # White
+                        or
+                        (element.stroke is not None and element.stroke.rgb is not None and element.stroke.rgb == 0x000000) # Black
+                    )
+                    and op_operation == "Raster"
+                    and raster_ops_single_color
+                ):
+                    op.add(element, type="opnode", pos=element_pos)
+                    add_non_vector = False
+                elif (
+                    isinstance(element, (Shape, SVGText))
                     and op_operation == "Raster"
                     and op not in default_raster_ops
                     and op.color.rgb == element_color.rgb
+                    and not raster_ops_single_color
                 ):
                     op.add(element, type="opnode", pos=element_pos)
                     add_non_vector = False
