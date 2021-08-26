@@ -192,7 +192,7 @@ class BindAlias(Modifier):
         self.keymap["alt+r"] = "raster"
         self.keymap["alt+e"] = "engrave"
         self.keymap["alt+c"] = "cut"
-        self.keymap["delete"] = "element delete"
+        self.keymap["delete"] = "tree selected delete"
         self.keymap["control+f3"] = "rotaryview"
         self.keymap["alt+f3"] = "rotaryscale"
         self.keymap["f4"] = "window open CameraInterface"
