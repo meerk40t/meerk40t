@@ -3550,14 +3550,14 @@ class Elemental(Modifier):
             "tree", help=_("access and alter tree elements"), output_type="tree"
         )
         def tree(**kwgs):
-            return "tree", self._tree
+            return "tree", [self._tree]
 
         @context.console_command(
             "list", help=_("view tree"), input_type="tree", output_type="tree"
         )
         def tree_list(command, channel, _, data=None, **kwgs):
             if data is None:
-                data = self._tree
+                data = [self._tree]
 
             def t_list(path, node):
                 for i, n in enumerate(node.children):
@@ -3576,7 +3576,8 @@ class Elemental(Modifier):
 
             channel("----------")
             channel(_("Tree:"))
-            t_list([], data)
+            for d in data:
+                t_list([], d)
             channel("----------")
             return "tree", data
 
@@ -3591,7 +3592,7 @@ class Elemental(Modifier):
             Eg. "tree dnd 0.1 0.2" will drag node 0.1 into node 0.2
             """
             if data is None:
-                data = self._tree
+                data = [self._tree]
             if drop is None:
                 raise SyntaxError
             try:
@@ -3605,6 +3606,48 @@ class Elemental(Modifier):
             except (IndexError, AttributeError, ValueError):
                 raise SyntaxError
             return "tree", data
+
+        @context.console_command(
+            "emphasized",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def emphasized(channel, _, **kwargs):
+            """
+            Set tree list to emphasized nodes
+            """
+            return "tree", list(self.flat(emphasized=True))
+
+        @context.console_command(
+            "highlighted",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def highlighted(channel, _, **kwargs):
+            """
+            Set tree list to highlighted nodes
+            """
+            return "tree", list(self.flat(highlighted=True))
+
+        @context.console_command(
+            "delete",
+            help=_("delete the given nodes"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def delete(channel, _, data=None, **kwargs):
+            """
+            Delete node. Due to nodes within nodes, only the first node is deleted.
+            Structural nodes such as root, elements, and operations are not able to be deleted
+            """
+            for n in data:
+                if n.type not in ("root", "branch elems", "branch ops"):
+                    # Cannot delete structure nodes.
+                    n.remove_node()
+                    break
+            return "tree", [self._tree]
 
         @context.console_command(
             "delegate",
@@ -3623,7 +3666,6 @@ class Elemental(Modifier):
                     return "ops", list(self.ops(emphasized=True))
                 if item.type in ("elem", "file", "group"):
                     return "elements", list(self.elems(emphasized=True))
-
 
         # ==========
         # CLIPBOARD COMMANDS
