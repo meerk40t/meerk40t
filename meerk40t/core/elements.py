@@ -3580,6 +3580,32 @@ class Elemental(Modifier):
             channel("----------")
             return "tree", data
 
+        @context.console_argument("drag", help="Drag node address")
+        @context.console_argument("drop", help="Drop node address")
+        @context.console_command(
+            "dnd", help=_("Drag and Drop Node"), input_type="tree", output_type="tree"
+        )
+        def tree_dnd(command, channel, _, data=None, drag=None, drop=None, **kwgs):
+            """
+            Drag and Drop command performs a console based drag and drop operation
+            Eg. "tree dnd 0.1 0.2" will drag node 0.1 into node 0.2
+            """
+            if data is None:
+                data = self._tree
+            if drop is None:
+                raise SyntaxError
+            try:
+                drag_node = self._tree
+                for n in drag.split("."):
+                    drag_node = drag_node.children[int(n)]
+                drop_node = self._tree
+                for n in drop.split("."):
+                    drop_node = drop_node.children[int(n)]
+                drop_node.drop(drag_node)
+            except (IndexError, AttributeError, ValueError):
+                raise SyntaxError
+            return "tree", data
+
         @context.console_command(
             "delegate",
             help=_("delegate commands to focused value"),
