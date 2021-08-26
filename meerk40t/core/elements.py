@@ -499,7 +499,7 @@ class Node:
 
         try:
             if element.id is not None:
-                return element_type + ": id=" + str(element.id)
+                return element_type + ": " + str(element.id)
         except AttributeError:
             pass
 
