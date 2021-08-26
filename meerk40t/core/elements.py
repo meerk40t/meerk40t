@@ -5000,14 +5000,14 @@ class Elemental(Modifier):
                 ):
                     # Add this white_raster to this Raster op if it overlaps any other elements already added
                     if self.is_overlapping_existing([e.object for e in op.children], element):
-                        op.add(element, type="opnode")
+                        op.add(element, type="opnode", pos=element_pos)
                 elif (
                     isinstance(element, (Shape, SVGText))
                     and op_operation == "Raster"
                     and op not in default_raster_ops
                     and op.color.rgb == element_color.rgb
                 ):
-                    op.add(element, type="opnode")
+                    op.add(element, type="opnode", pos=element_pos)
                     add_non_vector = False
                 elif (
                     isinstance(element, SVGImage)
@@ -5074,7 +5074,7 @@ class Elemental(Modifier):
                 if element in white_raster_elements and added_elements and not self.is_overlapping_existing(added_elements,element):
                     continue
                 for op in default_raster_ops:
-                    op.add(element, type="opnode")
+                    op.add(element, type="opnode", pos=element_pos)
                 added_elements.append(element)
 
 
