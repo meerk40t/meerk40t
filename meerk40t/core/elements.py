@@ -4997,12 +4997,7 @@ class Elemental(Modifier):
                     and op.color.rgb == element_color.rgb
                 ):
                     # Add any white raster elements not already added before this new element
-                    for w in white_raster_elements:
-                        for e in op.children:
-                            if w is e.object:
-                                break
-                        else:
-                            op.add(w, type="opnode")
+                    self.op_add_missing_elements(op, white_raster_elements)
                     op.add(element, type="opnode")
                     add_non_vector = False
                 elif (
@@ -5056,8 +5051,7 @@ class Elemental(Modifier):
         if white_raster_elements:
             for op in raster_ops:
                 if len(op.children) > 0:
-                    for element in white_raster_elements:
-                        op.add(element, type="opnode")
+                    self.op_add_missing_elements(op, white_raster_elements)
 
         # Now deal with leftover raster elements
         if non_white_raster_elements:
@@ -5074,6 +5068,15 @@ class Elemental(Modifier):
             for op in default_raster_ops:
                 for element in deferred_raster_elements:
                     op.add(element, type="opnode")
+
+
+    def op_add_missing_elements(self, op: LaserOperation, elements):
+        for element in elements:
+            for e in op.children:
+                if element is e.object:
+                    break
+            else:
+                op.add(element, type="opnode")
 
 
     def load(self, pathname, **kwargs):
