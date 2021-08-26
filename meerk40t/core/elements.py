@@ -4918,7 +4918,7 @@ class Elemental(Modifier):
         raster_ops = []
         deferred_raster_elements = []
         white_raster_elements = []
-        non_white_raster_elements = False
+        have_non_white_deferred_rasters = False
 
         for op in operations:
             if op.default:
@@ -4966,9 +4966,12 @@ class Elemental(Modifier):
             # White raster is a special case as it is ANTI-burn and typically used to mask other raster areas
             # We need to add this to all Raster operations in order to mask out any burns in that operation
             if element.fill is not None and element.fill.rgb == 0xffffff: # White
+                is_white_raster = True
                 white_raster_elements.append(element)
                 deferred_raster_elements.append(element)
                 add_non_vector = False
+            else:
+                is_white_raster = False
 
             # First classify to operations of exact color
             for op in operations:
@@ -4991,13 +4994,19 @@ class Elemental(Modifier):
                     op.add(element, type="opnode", pos=element_pos)
                     add_vector = False
                 elif (
+                    is_white_raster
+                    and op_operation == "Raster"
+                    and op not in default_raster_ops
+                ):
+                    # Add this white_raster to this Raster op if it overlaps any other elements already added
+                    if self.is_overlapping_existing([e.object for e in op.children], element):
+                        op.add(element, type="opnode")
+                elif (
                     isinstance(element, (Shape, SVGText))
                     and op_operation == "Raster"
                     and op not in default_raster_ops
                     and op.color.rgb == element_color.rgb
                 ):
-                    # Add any white raster elements not already added before this new element
-                    self.op_add_missing_elements(op, white_raster_elements)
                     op.add(element, type="opnode")
                     add_non_vector = False
                 elif (
@@ -5023,7 +5032,7 @@ class Elemental(Modifier):
             # If element is a raster - defer creating a default raster op until we are sure that there are no empty existing raster ops to use first.
             if add_non_vector and isinstance(element, (Shape, SVGText)) and not is_dot:
                 deferred_raster_elements.append(element)
-                non_white_raster_elements = True
+                have_non_white_deferred_rasters = True
                 add_non_vector = False
 
             # If we have matched element to an original operation or matched to all relevant new operations, we can move to the next element
@@ -5046,15 +5055,10 @@ class Elemental(Modifier):
             add_op_function(op)
             # element cannot be added to op before op is added to operations - otherwise opnode is not created.
             op.add(element, type="opnode", pos=element_pos)
-
-        # Add remaining white_raster_elements to non-empty Raster operations
-        if white_raster_elements:
-            for op in raster_ops:
-                if len(op.children) > 0:
-                    self.op_add_missing_elements(op, white_raster_elements)
+        # End loop "for element in elements"
 
         # Now deal with leftover raster elements
-        if non_white_raster_elements:
+        if have_non_white_deferred_rasters:
             if not default_raster_ops:
                 # Because this is a check for an empty operation, this functionality relies on all elements in a file being classified at the same time.
                 # If you add elements individually, after the first raster operation the empty ops will no longer be empty and a default Raster op will be created instead.
@@ -5065,18 +5069,23 @@ class Elemental(Modifier):
                 raster_ops.append(op)
                 default_raster_ops.append(op)
                 add_op_function(op)
-            for op in default_raster_ops:
-                for element in deferred_raster_elements:
+            added_elements = []
+            for element in deferred_raster_elements:
+                if element in white_raster_elements and added_elements and not self.is_overlapping_existing(added_elements,element):
+                    continue
+                for op in default_raster_ops:
                     op.add(element, type="opnode")
+                added_elements.append(element)
 
 
-    def op_add_missing_elements(self, op: LaserOperation, elements):
-        for element in elements:
-            for e in op.children:
-                if element is e.object:
-                    break
-            else:
-                op.add(element, type="opnode")
+    def is_overlapping_existing(self, existing, new):
+        xmin, ymin, xmax, ymax = new.bbox()
+        for e in existing:
+            e_xmin, e_ymin, e_xmax, e_ymax = e.bbox()
+            if xmin <= e_xmax and xmax >= e_xmin and ymin <= e_ymax and ymax >= e_ymin:
+                # Overlaps
+                return True
+        return False
 
 
     def load(self, pathname, **kwargs):
