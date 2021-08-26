@@ -3611,6 +3611,73 @@ class Elemental(Modifier):
                 raise SyntaxError
             return "tree", data
 
+        @context.console_argument("node", help="Node address for menu")
+        @context.console_argument("execute", help="Command to execute")
+        @context.console_command(
+            "menu", help=_("Load menu for given node"), input_type="tree", output_type="tree"
+        )
+        def tree_menu(command, channel, _, data=None, node=None, execute=None, **kwgs):
+            """
+            Create menu for a particular node.
+            Processes submenus, references, radio_state as needed.
+            """
+            try:
+                menu_node = self._tree
+                for n in node.split("."):
+                    menu_node = menu_node.children[int(n)]
+            except (IndexError, AttributeError, ValueError):
+                raise SyntaxError
+
+            menu = []
+            submenus = {}
+
+            def menu_functions(f, cmd_node):
+                func_dict = dict(f.func_dict)
+
+                def specific(event=None):
+                    f(cmd_node, **func_dict)
+
+                return specific
+
+            for func in self.tree_operations_for_node(menu_node):
+                submenu_name = func.submenu
+                submenu = None
+                if submenu_name in submenus:
+                    submenu = submenus[submenu_name]
+                elif submenu_name is not None:
+                    submenu = list()
+                    menu.append((submenu_name, submenu))
+                    submenus[submenu_name] = submenu
+
+                menu_context = submenu if submenu is not None else menu
+                if func.reference is not None:
+                    pass
+                if func.radio_state is not None:
+                    if func.separate_before:
+                        menu_context.append(("------", None))
+                    n = func.real_name
+                    if func.radio_state:
+                       n = "✓" + n
+                    menu_context.append((n, menu_functions(func, menu_node)))
+                else:
+                    if func.separate_before:
+                        menu_context.append(("------", None))
+                    menu_context.append((func.real_name,menu_functions(func, menu_node)))
+                if func.separate:
+                    menu_context.append(("------", None))
+
+            def m_list(path, menu):
+                for i, n in enumerate(menu):
+                    p = list(path)
+                    p.append(str(i))
+                    name, submenu = n
+                    channel("%s: %s" % ('.'.join(p).ljust(10), str(name)))
+                    if isinstance(submenu, list):
+                        m_list(p, submenu)
+
+            m_list([], menu)
+            return "tree", data
+
         @context.console_command(
             "selected",
             help=_("delegate commands to focused value"),
