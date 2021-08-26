@@ -1782,10 +1782,11 @@ class Elemental(Modifier):
             """
             Apply a filter string to a filter particular operations from the current data.
             Operations are evaluated in an infix prioritized stack format without spaces.
-            Qualified values are speed, power, step, acceleration, passes, color, op
+            Qualified values are speed, power, step, acceleration, passes, color, op, overscan, len
             Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
             eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
             eg. filter engrave=op&speed=35|cut=op&speed=10
+            eg. filter len=0
             """
             subops = list()
             _filter_parse = [
@@ -1801,7 +1802,7 @@ class Elemental(Modifier):
                 ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
                 ("COLOR", r"(#[0123456789abcdefABCDEF]{6}|#[0123456789abcdefABCDEF]{3})"),
                 ("TYPE", r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)"),
-                ("VAL", r"(speed|power|step|acceleration|passes|color|op|overscan)"),
+                ("VAL", r"(speed|power|step|acceleration|passes|color|op|overscan|len)"),
             ]
             filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
             operator = list()
@@ -1871,8 +1872,11 @@ class Elemental(Modifier):
                             operand.append(e.color)
                         elif value == "op":
                             operand.append(e.operation.lower())
+                        elif value == "len":
+                            operand.append(len(e.children))
                         else:
                             operand.append(getattr(e.settings, value))
+
                     elif kind == "NUM":
                         operand.append(float(value))
                     elif kind == "TYPE":
