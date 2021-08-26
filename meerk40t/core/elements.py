@@ -1895,7 +1895,6 @@ class Elemental(Modifier):
             self.set_emphasis(subops)
             return "ops", subops
 
-
         @context.console_command(
             "list",
             help=_("Show information about the chained data"),
@@ -2295,7 +2294,6 @@ class Elemental(Modifier):
                     channel("%d: %s" % (i, name))
             channel("----------")
             return "elements", data
-
 
         @context.console_argument("start", type=int, help=_("elements start"))
         @context.console_argument("end", type=int, help=_("elements end"))
@@ -3560,13 +3558,46 @@ class Elemental(Modifier):
         def tree_list(command, channel, _, data=None, **kwgs):
             if data is None:
                 data = self._tree
+
+            def t_list(path, node):
+                for i, n in enumerate(node.children):
+                    p = list(path)
+                    p.append(str(i))
+                    if n.targeted:
+                        j = "+"
+                    elif n.emphasized:
+                        j = "~"
+                    elif n.highlighted:
+                        j = "-"
+                    else:
+                        j = ":"
+                    channel("%s%s %s - %s" % ('.'.join(p).ljust(10), j, str(n.type), str(n.label)))
+                    t_list(p, n)
+
             channel("----------")
             channel(_("Tree:"))
-            path = ""
-            for i, node in enumerate(data.children):
-                channel("%s:%d %s" % (path, i, str(node.label)))
+            t_list([], data)
             channel("----------")
             return "tree", data
+
+        @context.console_command(
+            "delegate",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type=("op", "elements"),
+        )
+        def delegate(channel, _, **kwargs):
+            """
+            Delegate to either ops or elements depending on the current node emphasis
+            """
+            for item in self.flat(
+                    types=("op", "elem", "file", "group"), emphasized=True
+            ):
+                if item.type == "op":
+                    return "ops", list(self.ops(emphasized=True))
+                if item.type in ("elem", "file", "group"):
+                    return "elements", list(self.elems(emphasized=True))
+
 
         # ==========
         # CLIPBOARD COMMANDS
