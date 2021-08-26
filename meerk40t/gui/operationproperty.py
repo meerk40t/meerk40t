@@ -571,6 +571,8 @@ class OperationProperty(MWindow):
                 start = int(h * 0.1)
                 end = int(h * 0.9)
                 step = self.operation.settings.raster_step * factor
+            if step == 0:
+                step = 1
             for pos in range(start, end, step):
                 # Primary Line Horizontal Raster
                 r_start.append((w*0.1, pos))
@@ -616,6 +618,8 @@ class OperationProperty(MWindow):
                 start = int(w*0.1)
                 end = int(w*0.9)
                 step = self.operation.settings.raster_step * factor
+            if step == 0:
+                step = 1
             for pos in range(start, end, step):
                 # Primary Line Vertical Raster.
                 r_start.append((pos, h * 0.1))
@@ -648,16 +652,19 @@ class OperationProperty(MWindow):
                 self.calculate_raster_lines()
             if self.raster_lines is not None:
                 starts, ends = self.raster_lines
-                gc.SetPen(self.raster_pen)
-                gc.StrokeLineSegments(starts, ends)
+                if len(starts):
+                    gc.SetPen(self.raster_pen)
+                    gc.StrokeLineSegments(starts, ends)
             if self.travel_lines is not None:
                 starts, ends = self.travel_lines
-                gc.SetPen(self.travel_pen)
-                gc.StrokeLineSegments(starts, ends)
+                if len(starts):
+                    gc.SetPen(self.travel_pen)
+                    gc.StrokeLineSegments(starts, ends)
             if self.direction_lines is not None:
                 starts, ends = self.direction_lines
-                gc.SetPen(self.direction_pen)
-                gc.StrokeLineSegments(starts, ends)
+                if len(starts):
+                    gc.SetPen(self.direction_pen)
+                    gc.StrokeLineSegments(starts, ends)
         gc.Destroy()
         del dc
         self.display_panel.Refresh()
@@ -716,15 +723,14 @@ class OperationProperty(MWindow):
         self.text_dot_length.Enable(self.check_dot_length_custom.GetValue())
         self.text_passes.Enable(self.check_passes.GetValue())
         select = self.combo_type.GetSelection()
+        self.raster_panel.Show(False)
         if select == 0:
             self.operation.operation = "Engrave"
-            self.raster_panel.Show(False)
             self.check_dratio_custom.Enable(True)
             self.text_dratio.Enable(self.check_dratio_custom.GetValue())
             self.Layout()
         elif select == 1:
             self.operation.operation = "Cut"
-            self.raster_panel.Show(False)
             self.check_dratio_custom.Enable(True)
             self.text_dratio.Enable(self.check_dratio_custom.GetValue())
             self.Layout()
@@ -746,7 +752,6 @@ class OperationProperty(MWindow):
             self.Layout()
         elif select == 4:
             self.operation.operation = "Dots"
-            self.raster_panel.Show(False)
             self.check_dratio_custom.Enable(True)
             self.text_dratio.Enable(self.check_dratio_custom.GetValue())
             self.Layout()

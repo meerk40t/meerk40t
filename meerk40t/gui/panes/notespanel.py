@@ -51,6 +51,10 @@ class NotePanel(wx.Panel):
         self.check_auto_open_notes.SetValue(self.context.auto_note)
         if self.context.elements.note is not None:
             self.text_notes.SetValue(self.context.elements.note)
+        self.context.listen("note", self.on_note_listen)
+
+    def finalize(self):
+        self.context.unlisten("note", self.on_note_listen)
 
     def on_check_auto_note_open(self, event=None):  # wxGlade: Notes.<event_handler>
         self.context.auto_note = self.check_auto_open_notes.GetValue()
@@ -60,3 +64,14 @@ class NotePanel(wx.Panel):
             self.context.elements.note = None
         else:
             self.context.elements.note = self.text_notes.GetValue()
+        self.context.signal("note", self)
+
+    def on_note_listen(self, origin, source):
+        if source is self:
+            return
+        note = self.context.elements.note
+        if self.context.elements.note is None:
+            note = ""
+        if self.text_notes.GetValue() != note:
+            self.text_notes.SetValue(note)
+

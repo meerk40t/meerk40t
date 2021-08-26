@@ -44,7 +44,7 @@ class Simulation(MWindow, Job):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
         self.max = max(len(self.cutcode), 0) + 1
-        self.progress = self.max - 1
+        self.progress = self.max
 
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)

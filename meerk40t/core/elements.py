@@ -1782,10 +1782,11 @@ class Elemental(Modifier):
             """
             Apply a filter string to a filter particular operations from the current data.
             Operations are evaluated in an infix prioritized stack format without spaces.
-            Qualified values are speed, power, step, acceleration, passes, color, op
+            Qualified values are speed, power, step, acceleration, passes, color, op, overscan, len
             Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
             eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
             eg. filter engrave=op&speed=35|cut=op&speed=10
+            eg. filter len=0
             """
             subops = list()
             _filter_parse = [
@@ -1801,7 +1802,7 @@ class Elemental(Modifier):
                 ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
                 ("COLOR", r"(#[0123456789abcdefABCDEF]{6}|#[0123456789abcdefABCDEF]{3})"),
                 ("TYPE", r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)"),
-                ("VAL", r"(speed|power|step|acceleration|passes|color|op|overscan)"),
+                ("VAL", r"(speed|power|step|acceleration|passes|color|op|overscan|len)"),
             ]
             filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
             operator = list()
@@ -1871,8 +1872,11 @@ class Elemental(Modifier):
                             operand.append(e.color)
                         elif value == "op":
                             operand.append(e.operation.lower())
+                        elif value == "len":
+                            operand.append(len(e.children))
                         else:
                             operand.append(getattr(e.settings, value))
+
                     elif kind == "NUM":
                         operand.append(float(value))
                     elif kind == "TYPE":
@@ -1890,7 +1894,6 @@ class Elemental(Modifier):
 
             self.set_emphasis(subops)
             return "ops", subops
-
 
         @context.console_command(
             "list",
@@ -2291,7 +2294,6 @@ class Elemental(Modifier):
                     channel("%d: %s" % (i, name))
             channel("----------")
             return "elements", data
-
 
         @context.console_argument("start", type=int, help=_("elements start"))
         @context.console_argument("end", type=int, help=_("elements end"))
@@ -3548,21 +3550,217 @@ class Elemental(Modifier):
             "tree", help=_("access and alter tree elements"), output_type="tree"
         )
         def tree(**kwgs):
-            return "tree", self._tree
+            return "tree", [self._tree]
 
         @context.console_command(
             "list", help=_("view tree"), input_type="tree", output_type="tree"
         )
         def tree_list(command, channel, _, data=None, **kwgs):
             if data is None:
-                data = self._tree
-            channel("----------")
-            channel(_("Tree:"))
-            path = ""
-            for i, node in enumerate(data.children):
-                channel("%s:%d %s" % (path, i, str(node.label)))
-            channel("----------")
+                data = [self._tree]
+
+            def t_list(path, node):
+                for i, n in enumerate(node.children):
+                    p = list(path)
+                    p.append(str(i))
+                    if n.targeted:
+                        j = "+"
+                    elif n.emphasized:
+                        j = "~"
+                    elif n.highlighted:
+                        j = "-"
+                    else:
+                        j = ":"
+                    channel("%s%s %s - %s" % ('.'.join(p).ljust(10), j, str(n.type), str(n.label)))
+                    t_list(p, n)
+
+            for d in data:
+                channel("----------")
+                if d.type == "root":
+                    channel(_("Tree:"))
+                else:
+                    channel("%s:" % d.label)
+                t_list([], d)
+                channel("----------")
+
             return "tree", data
+
+        @context.console_argument("drag", help="Drag node address")
+        @context.console_argument("drop", help="Drop node address")
+        @context.console_command(
+            "dnd", help=_("Drag and Drop Node"), input_type="tree", output_type="tree"
+        )
+        def tree_dnd(command, channel, _, data=None, drag=None, drop=None, **kwgs):
+            """
+            Drag and Drop command performs a console based drag and drop operation
+            Eg. "tree dnd 0.1 0.2" will drag node 0.1 into node 0.2
+            """
+            if data is None:
+                data = [self._tree]
+            if drop is None:
+                raise SyntaxError
+            try:
+                drag_node = self._tree
+                for n in drag.split("."):
+                    drag_node = drag_node.children[int(n)]
+                drop_node = self._tree
+                for n in drop.split("."):
+                    drop_node = drop_node.children[int(n)]
+                drop_node.drop(drag_node)
+            except (IndexError, AttributeError, ValueError):
+                raise SyntaxError
+            return "tree", data
+
+        @context.console_argument("node", help="Node address for menu")
+        @context.console_argument("execute", help="Command to execute")
+        @context.console_command(
+            "menu", help=_("Load menu for given node"), input_type="tree", output_type="tree"
+        )
+        def tree_menu(command, channel, _, data=None, node=None, execute=None, **kwgs):
+            """
+            Create menu for a particular node.
+            Processes submenus, references, radio_state as needed.
+            """
+            try:
+                menu_node = self._tree
+                for n in node.split("."):
+                    menu_node = menu_node.children[int(n)]
+            except (IndexError, AttributeError, ValueError):
+                raise SyntaxError
+
+            menu = []
+            submenus = {}
+
+            def menu_functions(f, cmd_node):
+                func_dict = dict(f.func_dict)
+
+                def specific(event=None):
+                    f(cmd_node, **func_dict)
+
+                return specific
+
+            for func in self.tree_operations_for_node(menu_node):
+                submenu_name = func.submenu
+                submenu = None
+                if submenu_name in submenus:
+                    submenu = submenus[submenu_name]
+                elif submenu_name is not None:
+                    submenu = list()
+                    menu.append((submenu_name, submenu))
+                    submenus[submenu_name] = submenu
+
+                menu_context = submenu if submenu is not None else menu
+                if func.reference is not None:
+                    pass
+                if func.radio_state is not None:
+                    if func.separate_before:
+                        menu_context.append(("------", None))
+                    n = func.real_name
+                    if func.radio_state:
+                       n = "✓" + n
+                    menu_context.append((n, menu_functions(func, menu_node)))
+                else:
+                    if func.separate_before:
+                        menu_context.append(("------", None))
+                    menu_context.append((func.real_name,menu_functions(func, menu_node)))
+                if func.separate:
+                    menu_context.append(("------", None))
+            if execute is not None:
+                try:
+                    execute_command = ("menu", menu)
+                    for n in execute.split("."):
+                        name, cmd = execute_command
+                        execute_command = cmd[int(n)]
+                    name, cmd = execute_command
+                    channel("Executing %s: %s" % (name, str(cmd)))
+                    cmd()
+                except (IndexError, AttributeError, ValueError, TypeError):
+                    raise SyntaxError
+            else:
+                def m_list(path, menu):
+                    for i, n in enumerate(menu):
+                        p = list(path)
+                        p.append(str(i))
+                        name, submenu = n
+                        channel("%s: %s" % ('.'.join(p).ljust(10), str(name)))
+                        if isinstance(submenu, list):
+                            m_list(p, submenu)
+
+                m_list([], menu)
+
+            return "tree", data
+
+        @context.console_command(
+            "selected",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def emphasized(channel, _, **kwargs):
+            """
+            Set tree list to selected node
+            """
+            return "tree", list(self.flat(emphasized=True))
+
+        @context.console_command(
+            "highlighted",
+            help=_("delegate commands to sub-focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def highlighted(channel, _, **kwargs):
+            """
+            Set tree list to highlighted nodes
+            """
+            return "tree", list(self.flat(highlighted=True))
+
+        @context.console_command(
+            "targeted",
+            help=_("delegate commands to sub-focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def targeted(channel, _, **kwargs):
+            """
+            Set tree list to highlighted nodes
+            """
+            return "tree", list(self.flat(targeted=True))
+
+        @context.console_command(
+            "delete",
+            help=_("delete the given nodes"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def delete(channel, _, data=None, **kwargs):
+            """
+            Delete node. Due to nodes within nodes, only the first node is deleted.
+            Structural nodes such as root, elements, and operations are not able to be deleted
+            """
+            for n in data:
+                if n.type not in ("root", "branch elems", "branch ops"):
+                    # Cannot delete structure nodes.
+                    n.remove_node()
+                    break
+            return "tree", [self._tree]
+
+        @context.console_command(
+            "delegate",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type=("op", "elements"),
+        )
+        def delegate(channel, _, **kwargs):
+            """
+            Delegate to either ops or elements depending on the current node emphasis
+            """
+            for item in self.flat(
+                    types=("op", "elem", "file", "group"), emphasized=True
+            ):
+                if item.type == "op":
+                    return "ops", list(self.ops(emphasized=True))
+                if item.type in ("elem", "file", "group"):
+                    return "elements", list(self.elems(emphasized=True))
 
         # ==========
         # CLIPBOARD COMMANDS
@@ -4879,7 +5077,6 @@ class Elemental(Modifier):
             if OP_PRIORITIES.index(old_op.operation) < priority:
                    return self.add_op(op, pos=pos + 1)
         return self.add_op(op, pos=0)
-
 
     def classify(self, elements, operations=None, add_op_function=None):
         """

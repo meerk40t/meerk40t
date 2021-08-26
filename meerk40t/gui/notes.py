@@ -35,9 +35,10 @@ class Notes(MWindow):
         self.check_auto_open_notes.SetValue(self.context.auto_note)
         if self.context.elements.note is not None:
             self.text_notes.SetValue(self.context.elements.note)
+        self.context.listen("note", self.on_note_listen)
 
     def window_close(self):
-        pass
+        self.context.unlisten("note", self.on_note_listen)
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -66,3 +67,13 @@ class Notes(MWindow):
             self.context.elements.note = None
         else:
             self.context.elements.note = self.text_notes.GetValue()
+        self.context.signal("note", self)
+
+    def on_note_listen(self, origin, source):
+        if source is self:
+            return
+        note = self.context.elements.note
+        if self.context.elements.note is None:
+            note = ""
+        if self.text_notes.GetValue() != note:
+            self.text_notes.SetValue(note)
