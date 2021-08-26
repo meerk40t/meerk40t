@@ -3574,11 +3574,15 @@ class Elemental(Modifier):
                     channel("%s%s %s - %s" % ('.'.join(p).ljust(10), j, str(n.type), str(n.label)))
                     t_list(p, n)
 
-            channel("----------")
-            channel(_("Tree:"))
             for d in data:
+                channel("----------")
+                if d.type == "root":
+                    channel(_("Tree:"))
+                else:
+                    channel("%s:" % d.label)
                 t_list([], d)
-            channel("----------")
+                channel("----------")
+
             return "tree", data
 
         @context.console_argument("drag", help="Drag node address")
@@ -3608,20 +3612,20 @@ class Elemental(Modifier):
             return "tree", data
 
         @context.console_command(
-            "emphasized",
+            "selected",
             help=_("delegate commands to focused value"),
             input_type="tree",
             output_type="tree",
         )
         def emphasized(channel, _, **kwargs):
             """
-            Set tree list to emphasized nodes
+            Set tree list to selected node
             """
             return "tree", list(self.flat(emphasized=True))
 
         @context.console_command(
             "highlighted",
-            help=_("delegate commands to focused value"),
+            help=_("delegate commands to sub-focused value"),
             input_type="tree",
             output_type="tree",
         )
@@ -3630,6 +3634,18 @@ class Elemental(Modifier):
             Set tree list to highlighted nodes
             """
             return "tree", list(self.flat(highlighted=True))
+
+        @context.console_command(
+            "targeted",
+            help=_("delegate commands to sub-focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def targeted(channel, _, **kwargs):
+            """
+            Set tree list to highlighted nodes
+            """
+            return "tree", list(self.flat(targeted=True))
 
         @context.console_command(
             "delete",
@@ -4982,7 +4998,6 @@ class Elemental(Modifier):
             if OP_PRIORITIES.index(old_op.operation) < priority:
                    return self.add_op(op, pos=pos + 1)
         return self.add_op(op, pos=0)
-
 
     def classify(self, elements, operations=None, add_op_function=None):
         """
