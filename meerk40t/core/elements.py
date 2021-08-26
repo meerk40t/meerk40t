@@ -3665,17 +3665,29 @@ class Elemental(Modifier):
                     menu_context.append((func.real_name,menu_functions(func, menu_node)))
                 if func.separate:
                     menu_context.append(("------", None))
+            if execute is not None:
+                try:
+                    execute_command = ("menu", menu)
+                    for n in execute.split("."):
+                        name, cmd = execute_command
+                        execute_command = cmd[int(n)]
+                    name, cmd = execute_command
+                    channel("Executing %s: %s" % (name, str(cmd)))
+                    cmd()
+                except (IndexError, AttributeError, ValueError, TypeError):
+                    raise SyntaxError
+            else:
+                def m_list(path, menu):
+                    for i, n in enumerate(menu):
+                        p = list(path)
+                        p.append(str(i))
+                        name, submenu = n
+                        channel("%s: %s" % ('.'.join(p).ljust(10), str(name)))
+                        if isinstance(submenu, list):
+                            m_list(p, submenu)
 
-            def m_list(path, menu):
-                for i, n in enumerate(menu):
-                    p = list(path)
-                    p.append(str(i))
-                    name, submenu = n
-                    channel("%s: %s" % ('.'.join(p).ljust(10), str(name)))
-                    if isinstance(submenu, list):
-                        m_list(p, submenu)
+                m_list([], menu)
 
-            m_list([], menu)
             return "tree", data
 
         @context.console_command(
