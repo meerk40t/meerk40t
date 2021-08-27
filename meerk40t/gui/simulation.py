@@ -85,7 +85,7 @@ class Simulation(MWindow, Job):
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.button_play = wx.Button(self, wx.ID_ANY, "")
-        self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 100, 1, 2000)
+        self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
         self.text_playback_speed = wx.TextCtrl(
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
@@ -334,8 +334,13 @@ class Simulation(MWindow, Job):
         self.slider_progress.SetValue(self.progress)
 
     def on_slider_playback(self, event=None):  # wxGlade: Simulation.<event_handler>
-        self.interval = 0.1 * 100.0 / float(self.slider_playbackspeed.GetValue())
-        self.text_playback_speed.SetValue("%d%%" % self.slider_playbackspeed.GetValue())
+        # Slider is now pseudo logarithmic in scale varying from 1% to 5,000%.
+
+        value = self.slider_playbackspeed.GetValue()
+        value = int((10.0 ** (value//90)) * (1.0 + float(value % 90) / 10.0))
+        self.interval = 0.1 * 100.0 / float(value)
+
+        self.text_playback_speed.SetValue("%d%%" % value)
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
         self.available_devices = [
