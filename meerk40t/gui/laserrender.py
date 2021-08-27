@@ -3,6 +3,8 @@ from math import ceil, floor, sqrt
 import wx
 from PIL import Image
 
+from .icons import icons8_image_50
+
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
 from ..core.elements import Node
 from ..svgelements import (
@@ -260,12 +262,16 @@ class LaserRender:
                 if cache is None:
                     cut.c_width, cut.c_height = image.image.size
                     try:
-                        cut.cache = self.make_thumbnail(image.image, dewhite=True)
-                    except MemoryError:
                         cut.cache = self.make_thumbnail(image.image, maximum=1000, dewhite=True)
-
+                    except (MemoryError, RuntimeError):
+                        cut.cache = None
                     cut.cache_id = id(image.image)
-                gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
+                if cut.cache is not None:
+                    gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
+                else:
+                    gc.SetBrush(wx.RED_BRUSH)
+                    gc.DrawRectangle(0, 0, cut.c_width, cut.c_height)
+                    gc.DrawBitmap(icons8_image_50.GetBitmap(), 0, 0, cut.c_width, cut.c_height)
                 gc.PopState()
             last_point = end
         if p is not None:
@@ -513,15 +519,13 @@ class LaserRender:
             pil_data = pil_data.resize((width, height))
         else:
             pil_data = pil_data.copy()
+
         if dewhite:
-            try:
-                img = pil_data.convert("L")
-                black = Image.new("L", img.size, color="black")
-                img = img.point(lambda e: 255 - e)
-                black.putalpha(img)
-                pil_data = black
-            except MemoryError:
-                pass  # Not enough memory to do this.
+            img = pil_data.convert("L")
+            black = Image.new("L", img.size, color="black")
+            img = img.point(lambda e: 255 - e)
+            black.putalpha(img)
+            pil_data = black
 
         if pil_data.mode != "RGBA":
             pil_data = pil_data.convert("RGBA")

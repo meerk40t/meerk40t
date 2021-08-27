@@ -525,7 +525,8 @@ class Group(PlotManipulation):
             self.last_x = self.group_x
             self.last_y = self.group_y
             self.last_on = self.group_on
-            yield self.group_x, self.group_y, self.group_on
+            if self.group_x is not None and self.group_y is not None:
+                yield self.group_x, self.group_y, self.group_on
 
     def warp(self, x, y):
         self.group_x = x

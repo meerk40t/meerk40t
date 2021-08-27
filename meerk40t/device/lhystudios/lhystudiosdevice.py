@@ -379,11 +379,32 @@ def plugin(kernel, lifecycle=None):
             channel(_("CH341 Closed."))
 
         @context.console_command(
+            "usb_reset", input_type="lhystudios", help=_("Reset USB device")
+        )
+        def usb_reset(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.usb_reset()
+
+        @context.console_command(
+            "usb_release", input_type="lhystudios", help=_("Release USB device")
+        )
+        def usb_release(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.usb_release()
+
+        @context.console_command(
             "usb_abort", input_type="lhystudios", help=_("Stops USB retries")
         )
-        def usb_disconnect(command, channel, _, data=None, **kwargs):
+        def usb_abort(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
             output.abort_retry()
+
+        @context.console_command(
+            "usb_continue", input_type="lhystudios", help=_("Continues USB retries")
+        )
+        def usb_continue(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.continue_retry()
 
         @kernel.console_option(
             "port", "p", type=int, default=23, help=_("port to listen on.")
@@ -1713,6 +1734,17 @@ class LhystudiosController:
 
     def abort_retry(self):
         self.aborted_retries = True
+        self.context.signal("pipe;state", "STATE_FAILED_SUSPENDED")
+
+    def continue_retry(self):
+        self.aborted_retries = False
+        self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
+
+    def usb_release(self):
+        self.connection.release()
+
+    def usb_reset(self):
+        self.connection.reset()
 
     def update_state(self, state):
         if state == self.state:
@@ -1751,9 +1783,13 @@ class LhystudiosController:
                 # If we are paused just keep sleeping until the state changes.
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
-                    time.sleep(0.25)
                     self.context.signal("pipe;running", False)
+                    time.sleep(0.25)
                     continue
+            if self.aborted_retries:
+                self.context.signal("pipe;running", False)
+                time.sleep(0.25)
+                continue
             try:
                 # We try to process the queue.
                 queue_processed = self.process_queue()
@@ -1766,13 +1802,7 @@ class LhystudiosController:
                 # The attempt refused the connection.
                 self.refuse_counts += 1
                 self.pre_ok = False
-                if self.aborted_retries:
-                    self.refuse_counts = 0
-                    self.aborted_retries = False
-                    self.context.signal('pipe;failing', 0)
-                    self.update_state(STATE_PAUSE)
-                    self.context.signal("pipe;state", "STATE_FAILED_SUSPENDED")
-                elif self.refuse_counts >= 5:
+                if self.refuse_counts >= 5:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal('pipe;failing', self.refuse_counts)
                 self.context.signal("pipe;running", False)
