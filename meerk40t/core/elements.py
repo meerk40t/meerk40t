@@ -68,7 +68,7 @@ MILS_IN_MM = 39.3701
 
 group_simplify_re = re.compile("(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE)
 element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href='data:.*?'(,\s?|\s|(?=\))))", re.IGNORECASE)
+image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))", re.IGNORECASE)
 
 OP_PRIORITIES = ["Dots","Image","Raster","Engrave","Cut"]
 
@@ -484,24 +484,6 @@ class Node:
         elif isDot(element):
             element_type = "Dot"
 
-        try:
-            attribs = element.values[SVG_STRUCT_ATTRIB]
-            return element_type + ": " + attribs["label"]
-        except (AttributeError, KeyError):
-            pass
-
-        try:
-            attribs = element.values[SVG_STRUCT_ATTRIB]
-            return element_type + ": " + attribs["{http://www.inkscape.org/namespaces/inkscape}label"]
-        except (AttributeError, KeyError):
-            pass
-
-        try:
-            if element.id is not None:
-                return element_type + ": " + str(element.id)
-        except AttributeError:
-            pass
-
         if element is not None:
             desc = str(element)
             if isinstance(element,Path):
@@ -510,14 +492,33 @@ class Node:
                 n = 1
                 while n:
                     desc, n = group_simplify_re.subn("", desc)
-                desc = element_type + ": " + desc
+                desc = "%s(%s)" % (element_type, desc[1:-1])
             elif element_type == "Image": # Image
                 desc = image_simplify_re.sub("", desc)
             else:
                 desc = element_simplify_re.sub("", desc)
-            return desc
+        else:
+            desc = None
 
-        return str(element)
+        try:
+            attribs = element.values[SVG_STRUCT_ATTRIB]
+            return attribs["label"] + (": " + desc if desc else "")
+        except (AttributeError, KeyError):
+            pass
+
+        try:
+            attribs = element.values[SVG_STRUCT_ATTRIB]
+            return attribs["{http://www.inkscape.org/namespaces/inkscape}label"] + (": " + desc if desc else "")
+        except (AttributeError, KeyError):
+            pass
+
+        try:
+            if element.id is not None:
+                return str(element.id) + (": " + desc if desc else "")
+        except AttributeError:
+            pass
+
+        return desc if desc else str(element)
 
     def set_label(self, name=None):
         self.label = self.create_label(name)
