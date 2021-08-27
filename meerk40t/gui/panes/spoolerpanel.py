@@ -136,17 +136,16 @@ class SpoolerPanel(wx.Panel):
     def finalize(self, *args):
         self.context.unlisten("spooler;queue", self.on_spooler_update)
 
+    @staticmethod
+    def _name_str(named_obj):
+        try:
+            return named_obj.__name__
+        except AttributeError:
+            return str(named_obj)
+
     def refresh_spooler_list(self):
         if not self.update_spooler:
             return
-        if not self.connected_spooler:
-            return
-
-        def name_str(named_obj):
-            try:
-                return named_obj.__name__
-            except AttributeError:
-                return str(named_obj)
 
         try:
             self.list_job_spool.DeleteAllItems()
@@ -154,12 +153,12 @@ class SpoolerPanel(wx.Panel):
             return
 
         spooler = self.connected_spooler
-        if len(spooler._queue) > 0:
+        if len(spooler.queue) > 0:
             # This should actually process and update the queue items.
-            for i, e in enumerate(spooler._queue):
+            for i, e in enumerate(spooler.queue):
                 m = self.list_job_spool.InsertItem(i, "#%d" % i)
                 if m != -1:
-                    self.list_job_spool.SetItem(m, 1, name_str(e))
+                    self.list_job_spool.SetItem(m, 1, SpoolerPanel._name_str(e))
                     try:
                         self.list_job_spool.SetItem(m, 2, e._status_value)
                     except AttributeError:
@@ -187,7 +186,7 @@ class SpoolerPanel(wx.Panel):
                         pass
                     self.list_job_spool.SetItem(m, 5, " ".join(settings))
 
-    def on_tree_popup_clear(self, element):
+    def on_tree_popup_clear(self, element=None):
         def delete(event=None):
             spooler = self.connected_spooler
             spooler.clear_queue()
@@ -195,10 +194,10 @@ class SpoolerPanel(wx.Panel):
 
         return delete
 
-    def on_tree_popup_delete(self, element):
+    def on_tree_popup_delete(self, element, index=None):
         def delete(event=None):
             spooler = self.connected_spooler
-            spooler.remove(element)
+            spooler.remove(element, index)
             self.refresh_spooler_list()
 
         return delete
