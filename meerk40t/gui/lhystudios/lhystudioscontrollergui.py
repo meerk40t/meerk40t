@@ -555,7 +555,7 @@ class LhystudiosControllerGui(MWindow):
             self.retries = 0
             self.context("dev usb_abort\n")
         elif state == "STATE_FAILED_SUSPENDED":
-            self.context("dev hold\ndev start\n")
+            self.context("dev usb_continue\n")
         elif state in (
             "STATE_USB_DISCONNECTED",
             "STATE_UNINITIALIZED",
