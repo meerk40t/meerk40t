@@ -261,9 +261,9 @@ class LaserRender:
                     cut.c_width, cut.c_height = image.image.size
                     try:
                         cut.cache = self.make_thumbnail(image.image, dewhite=True)
-                    except MemoryError:
-                        cut.cache = self.make_thumbnail(image.image, maximum=1000, dewhite=True)
-
+                    except (MemoryError, RuntimeError):
+                        from .icons import icons8_image_50
+                        cut.cache = icons8_image_50.GetBitmap()
                     cut.cache_id = id(image.image)
                 gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
                 gc.PopState()
@@ -513,15 +513,13 @@ class LaserRender:
             pil_data = pil_data.resize((width, height))
         else:
             pil_data = pil_data.copy()
+
         if dewhite:
-            try:
-                img = pil_data.convert("L")
-                black = Image.new("L", img.size, color="black")
-                img = img.point(lambda e: 255 - e)
-                black.putalpha(img)
-                pil_data = black
-            except MemoryError:
-                pass  # Not enough memory to do this.
+            img = pil_data.convert("L")
+            black = Image.new("L", img.size, color="black")
+            img = img.point(lambda e: 255 - e)
+            black.putalpha(img)
+            pil_data = black
 
         if pil_data.mode != "RGBA":
             pil_data = pil_data.convert("RGBA")
