@@ -1,5 +1,6 @@
 import wx
 
+from .icons import icons8_image_50
 from ..svgelements import Matrix
 from .mwindow import MWindow
 
@@ -79,6 +80,9 @@ class ImageProperty(MWindow):
 
     def __set_properties(self):
         # begin wxGlade: ImageProperty.__set_properties
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_image_50.GetBitmap())
+        self.SetIcon(_icon)
         self.SetTitle(_("Image Properties"))
         self.spin_step_size.SetMinSize((100, 23))
         self.spin_step_size.SetToolTip(_("Scan gap / step size image native value."))
