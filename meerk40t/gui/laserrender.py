@@ -262,7 +262,7 @@ class LaserRender:
                 if cache is None:
                     cut.c_width, cut.c_height = image.image.size
                     try:
-                        cut.cache = self.make_thumbnail(image.image, dewhite=True)
+                        cut.cache = self.make_thumbnail(image.image, maximum=1000, dewhite=True)
                     except (MemoryError, RuntimeError):
                         cut.cache = None
                     cut.cache_id = id(image.image)
