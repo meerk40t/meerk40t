@@ -134,18 +134,37 @@ class ImageProperty(MWindow):
         # end wxGlade
 
     def on_spin_step(self, event=None):  # wxGlade: ElementProperty.<event_handler>
-        self.element.values["raster_step"] = self.spin_step_size.GetValue()
-        self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
-        self.update_step_image()
+        try:
+            current_step = self.element.values["raster_step"]
+        except KeyError:
+            current_step = 1
+        new_step = self.spin_step_size.GetValue()
+        self.combo_dpi.SetSelection(new_step - 1)
+        self.element.values["raster_step"] = new_step
+        self.conditionally_update_image(current_step)
 
     def on_combo_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
-        self.spin_step_size.SetValue(self.combo_dpi.GetSelection() + 1)
-        self.element.values["raster_step"] = self.spin_step_size.GetValue()
-        self.update_step_image()
+        try:
+            current_step = self.element.values["raster_step"]
+        except KeyError:
+            current_step = float(self.spin_step_size.GetValue())
+        new_step = self.combo_dpi.GetSelection() + 1
+        self.spin_step_size.SetValue(new_step)
+        self.element.values["raster_step"] = new_step
+        self.conditionally_update_image(current_step)
+
+    def conditionally_update_image(self, current_step):
+        """
+        Calls update image only if the current scale is equal to the step size
+        """
+        m = self.element.transform
+        if abs(m.value_scale_x() - current_step) < 1e-5 or abs(m.value_scale_y() - current_step) < 1e-5:
+            self.update_step_image()
 
     def update_step_image(self):
         element = self.element
-        step_value = self.spin_step_size.GetValue()
+        step_value = self.element.values["raster_step"]
+
         m = element.transform
         tx = m.e
         ty = m.f
