@@ -3,6 +3,8 @@ from math import ceil, floor, sqrt
 import wx
 from PIL import Image
 
+from .icons import icons8_image_50
+
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
 from ..core.elements import Node
 from ..svgelements import (
@@ -262,10 +264,14 @@ class LaserRender:
                     try:
                         cut.cache = self.make_thumbnail(image.image, dewhite=True)
                     except (MemoryError, RuntimeError):
-                        from .icons import icons8_image_50
-                        cut.cache = icons8_image_50.GetBitmap()
+                        cut.cache = None
                     cut.cache_id = id(image.image)
-                gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
+                if cut.cache is not None:
+                    gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
+                else:
+                    gc.SetBrush(wx.RED_BRUSH)
+                    gc.DrawRectangle(0, 0, cut.c_width, cut.c_height)
+                    gc.DrawBitmap(icons8_image_50.GetBitmap(), 0, 0, cut.c_width, cut.c_height)
                 gc.PopState()
             last_point = end
         if p is not None:
