@@ -186,6 +186,9 @@ class CutPlan:
 
     def make_image_for_op(self, op):
         subitems = list(op.flat(types=("elem", "opnode")))
+        reverse = self.context.classify_reverse
+        if reverse:
+            subitems = list(reversed(subitems))
         make_raster = self.context.registered.get("render-op/make_raster")
         objs = [s.object for s in subitems]
         bounds = Group.union_bbox(objs)
