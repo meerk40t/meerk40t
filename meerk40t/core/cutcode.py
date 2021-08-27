@@ -530,8 +530,12 @@ class RasterCut(CutObject):
             traverse |= Y_AXIS
             traverse |= LEFT
         elif direction == 4:
-            traverse |= X_AXIS
-            traverse |= TOP
+            if hasattr(settings, "crosshatch") and settings.crosshatch:
+                traverse |= Y_AXIS
+                traverse |= RIGHT
+            else:
+                traverse |= X_AXIS
+                traverse |= TOP
         if self.settings.raster_swing:
             traverse |= UNIDIRECTIONAL
 
