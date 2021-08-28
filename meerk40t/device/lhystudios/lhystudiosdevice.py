@@ -435,6 +435,9 @@ def plugin(kernel, lifecycle=None):
                 spooler, input_driver, output = root.registered[
                     "device/%s" % root.active
                 ]
+                if output is None:
+                    channel(_("Output for device %s does not exist. Lhyserver cannot attach.") % root.active)
+                    return
                 server = root.open_as("module/TCPServer", "lhyserver", port=port)
                 if quit:
                     root.close("lhyserver")
