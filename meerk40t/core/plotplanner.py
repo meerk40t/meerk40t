@@ -67,6 +67,8 @@ class PlotPlanner:
 
         :return:
         """
+        self.pos_x = None
+        self.pos_y = None
         while len(self.queue):
             cut = self.queue.pop(0)
             cut_set = cut.settings
