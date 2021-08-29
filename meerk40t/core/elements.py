@@ -4941,8 +4941,7 @@ class Elemental(Modifier):
         boundary_points = []
         for e in self.elem_branch.flat(
             types="elem",
-            emphasized=True  # "file", "group"
-            # Reverted from https://github.com/meerk40t/meerk40t/commit/ac613d9f5a8eb24fa98f6de6ce7eb0570bd5e348
+            emphasized=True,
         ):
             if e.bounds is None:
                 continue
