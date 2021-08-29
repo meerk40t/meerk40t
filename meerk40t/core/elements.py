@@ -250,31 +250,37 @@ class Node:
     def root(self):
         return self._root
 
+    @staticmethod
+    def node_bbox(node):
+        for n in node._children:
+            Node.node_bbox(n)
+        # Recurse depth first. All children have been processed.
+        node._bounds_dirty = False
+        node._bounds = None
+        if node.type in ("file", "group"):
+            for c in node._children:
+                # Every child in n is already solved.
+                assert(not c._bounds_dirty)
+                if c._bounds is None:
+                    continue
+                if node._bounds is None:
+                    node._bounds = c._bounds
+                    continue
+                node._bounds = (
+                        min(node._bounds[0], c._bounds[0]),
+                        min(node._bounds[1], c._bounds[1]),
+                        max(node._bounds[2], c._bounds[2]),
+                        max(node._bounds[3], c._bounds[3]),
+                )
+        else:
+            e = node.object
+            if node.type == "elem" and hasattr(e, "bbox"):
+                node._bounds = e.bbox()
+
     @property
     def bounds(self):
         if self._bounds_dirty:
-            try:
-                if not isinstance(self.object, Group):
-                    self._bounds = self.object.bbox()
-                else:
-                    self._bounds = self.object.bbox(False)
-            except AttributeError:
-                self._bounds = None
-            for e in self._children:
-                bb = e.bounds
-                if bb is None:
-                    continue
-                elif self._bounds is None:
-                    self._bounds = bb
-                else:
-                    aa = self._bounds
-                    self._bounds = (
-                        min(aa[0], bb[0]),
-                        min(aa[1], bb[1]),
-                        max(aa[2], bb[2]),
-                        max(aa[3], bb[3]),
-                    )
-            self._bounds_dirty = False
+            self.node_bbox(self)
         return self._bounds
 
     def notify_created(self, node=None, **kwargs):
@@ -1045,7 +1051,8 @@ class LaserOperation(Node):
                     path.approximate_arcs_with_cubics()
                 settings.line_color = path.stroke
                 for subpath in path.as_subpaths():
-                    closed = isinstance(subpath[-1], Close) or abs(Path(subpath).first_point - Path(subpath).current_point) <= closed_distance
+                    sp = Path(subpath)
+                    closed = isinstance(sp, Close) or abs(sp.z_point - sp.current_point) <= closed_distance
                     group = CutGroup(None, closed=closed)
                     group.path = Path(subpath)
                     group.original_op = self._operation
@@ -3554,6 +3561,31 @@ class Elemental(Modifier):
             return "tree", [self._tree]
 
         @context.console_command(
+            "bounds", help=_("view tree bounds"), input_type="tree", output_type="tree"
+        )
+        def tree_bounds(command, channel, _, data=None, **kwgs):
+            if data is None:
+                data = [self._tree]
+
+            def b_list(path, node):
+                for i, n in enumerate(node.children):
+                    p = list(path)
+                    p.append(str(i))
+                    channel("%s: %s - %s %s - %s" % ('.'.join(p).ljust(10), str(n._bounds), str(n._bounds_dirty), str(n.type), str(n.label[:16])))
+                    b_list(p, n)
+
+            for d in data:
+                channel("----------")
+                if d.type == "root":
+                    channel(_("Tree:"))
+                else:
+                    channel("%s:" % d.label)
+                b_list([], d)
+                channel("----------")
+
+            return "tree", data
+
+        @context.console_command(
             "list", help=_("view tree"), input_type="tree", output_type="tree"
         )
         def tree_list(command, channel, _, data=None, **kwgs):
@@ -4916,8 +4948,7 @@ class Elemental(Modifier):
         boundary_points = []
         for e in self.elem_branch.flat(
             types="elem",
-            emphasized=True  # "file", "group"
-            # Reverted from https://github.com/meerk40t/meerk40t/commit/ac613d9f5a8eb24fa98f6de6ce7eb0570bd5e348
+            emphasized=True,
         ):
             if e.bounds is None:
                 continue
