@@ -103,29 +103,29 @@ class CutPlan:
                 len(self.plan)
                 and isinstance(self.plan[-1], CutCode)
                 and isinstance(blob_plan[i], CutObject)
-            )
+            )  # Sets merge whether appending to cutcode objects
             if (
                 merge
                 and not context.opt_merge_passes
                 and self.plan[-1].pass_index != c.pass_index
-            ):
+            ):  # Override merge if opt_merge_passes is off, and pass_index do not match
                 merge = False
             if (
                 merge
                 and not context.opt_merge_ops
                 and self.plan[-1].original_op != c.original_op
-            ):
+            ):  # Override merge if opt_merge_ops is off, and operations original ops do not match
                 merge = False
             if (
                 merge
                 and not context.opt_inner_first
                 and self.plan[-1].original_op == "Cut"
-            ):
+            ):  # Override merge if opt_inner_first is off, and operation was originally a cut.
                 merge = False
 
             if merge:
                 if blob_plan[i].constrained:
-                    self.plan[-1].constrained = True
+                    self.plan[-1].constrained = True  # if merge is constrained new blob is constrained.
                 self.plan[-1].extend(blob_plan[i])
             else:
                 if isinstance(c, CutObject) and not isinstance(c, CutCode):
@@ -1220,7 +1220,7 @@ def short_travel_cutcode(context: CutCode):
 
 def inner_selection_cutcode(context: CutCode):
     """
-    Selects cutcode from candidate cutcode permitted but does nothing to optimize byond
+    Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
     finding a valid solution.
     """
     for c in context.flat():
