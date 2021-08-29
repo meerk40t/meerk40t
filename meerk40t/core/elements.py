@@ -250,31 +250,37 @@ class Node:
     def root(self):
         return self._root
 
+    @staticmethod
+    def node_bbox(node):
+        for n in node._children:
+            Node.node_bbox(n)
+        # Recurse depth first. All children have been processed.
+        node._bounds_dirty = False
+        node._bounds = None
+        if node.type in ("file", "group"):
+            for c in node._children:
+                # Every child in n is already solved.
+                assert(not c._bounds_dirty)
+                if c._bounds is None:
+                    continue
+                if node._bounds is None:
+                    node._bounds = c._bounds
+                    continue
+                node._bounds = (
+                        min(node._bounds[0], c._bounds[0]),
+                        min(node._bounds[1], c._bounds[1]),
+                        max(node._bounds[2], c._bounds[2]),
+                        max(node._bounds[3], c._bounds[3]),
+                )
+        else:
+            e = node.object
+            if node.type == "elem" and hasattr(e, "bbox"):
+                node._bounds = e.bbox()
+
     @property
     def bounds(self):
         if self._bounds_dirty:
-            try:
-                if not isinstance(self.object, Group):
-                    self._bounds = self.object.bbox()
-                else:
-                    self._bounds = self.object.bbox(False)
-            except AttributeError:
-                self._bounds = None
-            for e in self._children:
-                bb = e.bounds
-                if bb is None:
-                    continue
-                elif self._bounds is None:
-                    self._bounds = bb
-                else:
-                    aa = self._bounds
-                    self._bounds = (
-                        min(aa[0], bb[0]),
-                        min(aa[1], bb[1]),
-                        max(aa[2], bb[2]),
-                        max(aa[3], bb[3]),
-                    )
-            self._bounds_dirty = False
+            self.node_bbox(self)
         return self._bounds
 
     def notify_created(self, node=None, **kwargs):
