@@ -243,6 +243,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, self.left, self.top)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], position[0], position[1]])
             self.scene.context.signal("refresh_scene", 0)
 
@@ -272,6 +274,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, self.left, self.top)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
             elements.update_bounds(
                 [b[0], b[1], b[0] + self.save_width, b[1] + self.save_height]
             )
@@ -303,6 +307,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
             elements.update_bounds(
                 [b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]]
             )
@@ -334,6 +340,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
             elements.update_bounds(
                 [b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]]
             )
@@ -365,6 +373,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, self.right, self.top)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
             elements.update_bounds(
                 [b[2] - self.save_width, b[1], b[2], b[1] + self.save_height]
             )
@@ -390,6 +400,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, 1, self.left, self.top)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], position[0], b[3]])
             self.scene.context.signal("refresh_scene", 0)
 
@@ -413,6 +425,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, 1, self.right, self.top)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
             elements.update_bounds([position[0], b[1], b[2], b[3]])
             self.scene.context.signal("refresh_scene", 0)
 
@@ -436,6 +450,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(1, scaley, self.left, self.top)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], b[2], position[1]])
             self.scene.context.signal("refresh_scene", 0)
 
@@ -459,6 +475,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(1, scaley, self.left, self.bottom)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
             elements.update_bounds([b[0], position[1], b[2], b[3]])
             self.scene.context.signal("refresh_scene", 0)
 
@@ -476,7 +494,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
-            for e in elements.flat(types=("group", "file"), emphasized=True):
+            for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
