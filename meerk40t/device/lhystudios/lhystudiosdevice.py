@@ -749,6 +749,7 @@ class LhystudiosDriver(Driver):
         for x, y, on in self.plot:
             sx = self.current_x
             sy = self.current_y
+            # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
             on = int(on)
             if on & PLOT_FINISH:  # Plot planner is ending.
                 self.ensure_rapid_mode()

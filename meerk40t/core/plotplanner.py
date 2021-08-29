@@ -92,10 +92,10 @@ class PlotPlanner:
                         and abs(self.pos_y - new_start_y) < distance
                     ) or not cur_set.jog_enable:
                         # Jog distance smaller than threshold. Or jog isn't allowed
-                        yield from self.step_move(
-                            self.pos_x, self.pos_y, new_start_x, new_start_y
-                        )
-                        self.warp(new_start_x, new_start_y)
+                        def walk():
+                            for event in ZinglPlotter.plot_line(self.pos_x, self.pos_y, new_start_x, new_start_y):
+                                yield event[0], event[1], 0
+                        yield from self.process_plots(walk())
                     else:
                         # Request standard jog new location required.
                         flush = True
