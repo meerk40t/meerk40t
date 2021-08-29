@@ -1051,7 +1051,8 @@ class LaserOperation(Node):
                     path.approximate_arcs_with_cubics()
                 settings.line_color = path.stroke
                 for subpath in path.as_subpaths():
-                    closed = isinstance(subpath[-1], Close) or abs(Path(subpath).first_point - Path(subpath).current_point) <= closed_distance
+                    sp = Path(subpath)
+                    closed = isinstance(sp, Close) or abs(sp.z_point - sp.current_point) <= closed_distance
                     group = CutGroup(None, closed=closed)
                     group.path = Path(subpath)
                     group.original_op = self._operation
