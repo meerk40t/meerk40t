@@ -3554,6 +3554,31 @@ class Elemental(Modifier):
             return "tree", [self._tree]
 
         @context.console_command(
+            "bounds", help=_("view tree bounds"), input_type="tree", output_type="tree"
+        )
+        def tree_bounds(command, channel, _, data=None, **kwgs):
+            if data is None:
+                data = [self._tree]
+
+            def b_list(path, node):
+                for i, n in enumerate(node.children):
+                    p = list(path)
+                    p.append(str(i))
+                    channel("%s: %s - %s %s - %s" % ('.'.join(p).ljust(10), str(n._bounds), str(n._bounds_dirty), str(n.type), str(n.label[:16])))
+                    b_list(p, n)
+
+            for d in data:
+                channel("----------")
+                if d.type == "root":
+                    channel(_("Tree:"))
+                else:
+                    channel("%s:" % d.label)
+                b_list([], d)
+                channel("----------")
+
+            return "tree", data
+
+        @context.console_command(
             "list", help=_("view tree"), input_type="tree", output_type="tree"
         )
         def tree_list(command, channel, _, data=None, **kwgs):
