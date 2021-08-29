@@ -4844,7 +4844,7 @@ class Elemental(Modifier):
         raise IndexError
 
     def get_elem_node(self, index, **kwargs):
-        for i, elem in enumerate(self.elems(**kwargs)):
+        for i, elem in enumerate(self.elems_nodes(**kwargs)):
             if i == index:
                 return elem
         raise IndexError
