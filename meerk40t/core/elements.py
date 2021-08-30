@@ -67,13 +67,18 @@ def plugin(kernel, lifecycle=None):
 MILS_IN_MM = 39.3701
 
 group_simplify_re = re.compile("(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE)
-element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))", re.IGNORECASE)
+subgroup_simplify_re = re.compile("\[[^][]*\]", re.IGNORECASE)
+# I deally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
+# but until then element descriptions are shown in mils and integer values should be sufficient for user to see
+# element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
+element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\d)(\.\d*))", re.IGNORECASE)
+# image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
+image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\d)(\.\d*))", re.IGNORECASE)
 
 OP_PRIORITIES = ["Dots","Image","Raster","Engrave","Cut"]
 
 def reversed_enumerate(collection: list):
-    for i in range(len(collection)-1, -1, -1):
+    for i in range(len(collection) - 1, -1, -1):
         yield i, collection[i]
 
 
@@ -495,10 +500,14 @@ class Node:
             if isinstance(element,Path):
                 desc = element_type + "(" + element_simplify_re.sub("", desc) + ")"
             elif element_type == "Group": # Group
+                desc = desc[1:-1] # strip leading and trailing []
                 n = 1
                 while n:
                     desc, n = group_simplify_re.subn("", desc)
-                desc = "%s(%s)" % (element_type, desc[1:-1])
+                n = 1
+                while n:
+                    desc, n = subgroup_simplify_re.subn("Group", desc)
+                desc = "%s(%s)" % (element_type, desc)
             elif element_type == "Image": # Image
                 desc = image_simplify_re.sub("", desc)
             else:
