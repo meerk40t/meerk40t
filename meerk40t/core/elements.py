@@ -1442,7 +1442,7 @@ class Elemental(Modifier):
             if reject:
                 continue
             func_dict = {
-                "name": str(node.label)[:15],
+                "name": str(node.label),
             }
 
             iterator = func.values
