@@ -1065,9 +1065,10 @@ class LaserOperation(Node):
                                     LineCut(seg.start, seg.end, settings=settings)
                                 )
                         elif isinstance(seg, Line):
-                            group.append(
-                                LineCut(seg.start, seg.end, settings=settings)
-                            )
+                            if seg.start != seg.end:
+                                group.append(
+                                    LineCut(seg.start, seg.end, settings=settings)
+                                )
                         elif isinstance(seg, QuadraticBezier):
                             group.append(
                                 QuadCut(
