@@ -622,9 +622,13 @@ class MeerK40t(MWindow):
             go = wx.BitmapButton(
                 self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap()
             )
+            def busy_go_plan(*args):
+                with wx.BusyInfo(_("Processing and sending...")):
+                    self.context("plan clear copy preprocess validate blob preopt optimize spool\n")
+
             self.Bind(
                 wx.EVT_BUTTON,
-                ConsoleFunction(self.context, "plan clear copy preprocess validate blob preopt optimize spool\n"),
+                busy_go_plan,
                 go,
             )
             go.SetBackgroundColour(wx.Colour(0, 127, 0))
