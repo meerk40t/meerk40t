@@ -114,7 +114,7 @@ from .icons import (
     icons8_save_50,
     icons8_scatter_plot_20,
     icons8_system_task_20,
-    icons8_vector_20,
+    icons8_vector_20, icons8_gas_industry_50,
 )
 from .imageproperty import ImageProperty
 from .jobspooler import JobSpooler
@@ -617,6 +617,34 @@ class MeerK40t(MWindow):
 
             from .panes.toolbarshapes import register_shapes_tools
             register_shapes_tools(context=self.context, gui=self)
+
+            #define go
+            go = wx.BitmapButton(
+                self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap()
+            )
+            self.Bind(
+                wx.EVT_BUTTON,
+                ConsoleFunction(self.context, "plan clear copy preprocess validate blob preopt optimize spool\n"),
+                go,
+            )
+            go.SetBackgroundColour(wx.Colour(0, 127, 0))
+            go.SetToolTip(_("One Touch: Send Job To Laser "))
+            go.SetSize(go.GetBestSize())
+            pane = (
+                aui.AuiPaneInfo()
+                .Bottom()
+                .Caption(_("Go"))
+                .MinSize(40, 40)
+                .FloatingSize(98, 98)
+                .Name("go")
+                .CaptionVisible(not self.context.pane_lock)
+                .Hide()
+            )
+            pane.dock_proportion = 98
+            pane.control = go
+
+            self.on_pane_add(pane)
+            self.context.register("pane/go", pane)
 
         # Define Stop.
         stop = wx.BitmapButton(
