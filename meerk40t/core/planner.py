@@ -769,9 +769,6 @@ class Planner(Modifier):
             self.context.signal("plan", self._default_plan, 0)
             return data_type, data
 
-        @self.context.console_option(
-            "op", "o", type=str, help=_("unlock, origin, home")
-        )
         @self.context.console_argument("cols", type=int, help=_("columns for the grid"))
         @self.context.console_argument("rows", type=int, help=_("rows for the grid"))
         @self.context.console_argument(
@@ -800,14 +797,23 @@ class Planner(Modifier):
         ):
             if y_distance is None:
                 raise SyntaxError
+            c_plan = list(data.plan)
             data.plan.clear()
             data.commands.clear()
+            try:
+                if x_distance is None:
+                    x_distance = Length("%f%%" % (100.0 / (cols + 1)))
+                if y_distance is None:
+                    y_distance = Length("%f%%" % (100.0 / (rows + 1)))
+            except Exception:
+                pass
             x_distance = x_distance.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            y_distance = x_distance.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
+            y_distance = y_distance.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
             x_last = 0
             y_last = 0
             y_pos = 0
             x_pos = 0
+
             for j in range(rows):
                 x_pos = 0
                 for k in range(cols):
@@ -817,7 +823,7 @@ class Planner(Modifier):
                     if x_offset != 0 or y_offset != 0:
                         data.plan.append(offset(x_offset, y_offset))
 
-                    data.plan.extend(list(data.original))
+                    data.plan.extend(c_plan)
                     x_last = x_pos
                     y_last = y_pos
                     x_pos += x_distance
