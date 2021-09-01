@@ -2617,16 +2617,18 @@ class Elemental(Modifier):
                 return
             if r is None:
                 raise SyntaxError
-            if x is not None and y is not None:
-                x = x.value(ppi=1000)
-                y = y.value(ppi=1000)
-            else:
-                try:
-                    bounds = self._emphasized_bounds
-                    x = bounds[2] - bounds[0]
-                    y = bounds[3] - bounds[1]
-                except Exception:
-                    raise SyntaxError
+            if x is None:
+                x = Length("100%")
+            if y is None:
+                y = Length("100%")
+            try:
+                bounds = self._emphasized_bounds
+                width = bounds[2] - bounds[0]
+                height = bounds[3] - bounds[1]
+            except Exception:
+                raise SyntaxError
+            x = x.value(ppi=1000, relative_length=width)
+            y = y.value(ppi=1000, relative_length=height)
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError
             y_pos = 0
