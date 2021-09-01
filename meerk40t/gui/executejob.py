@@ -1,3 +1,5 @@
+import math
+
 import wx
 
 from ..core.elements import LaserOperation
@@ -505,6 +507,13 @@ class ExecuteJob(MWindow):
             dlg.Destroy()
             return
         dlg.Destroy()
+        try:
+            bounds = self.context.elements._emphasized_bounds
+            width = math.ceil(bounds[2] - bounds[0])
+            height = math.ceil(bounds[3] - bounds[1])
+        except Exception:
+            width = None
+            height = None
 
         dlg = wx.TextEntryDialog(
             self,
@@ -512,14 +521,14 @@ class ExecuteJob(MWindow):
             _("Enter X Gap"),
             "",
         )
-        dlg.SetValue("")
+        dlg.SetValue(str(width) if width is not None else "%f%%" % (100.0 / cols))
         bed_dim = self.context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 x_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_PER_MM
+                    ppi=1000.0, relative_length=width if width is not None else bed_dim.bed_width * MILS_PER_MM
                 )
             except ValueError:
                 dlg.Destroy()
@@ -538,11 +547,11 @@ class ExecuteJob(MWindow):
             _("Enter Y Gap"),
             "",
         )
-        dlg.SetValue("")
+        dlg.SetValue(str(height) if height is not None else "%f%%" % (100.0 / rows))
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 y_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_PER_MM
+                    ppi=1000.0, relative_length=height if height is not None else bed_dim.bed_height * MILS_PER_MM
                 )
             except ValueError:
                 dlg.Destroy()
