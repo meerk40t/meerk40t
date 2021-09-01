@@ -1,3 +1,5 @@
+import math
+
 import wx
 
 from ..core.elements import LaserOperation
@@ -172,11 +174,11 @@ class ExecuteJob(MWindow):
         # ==========
         # Tools Menu
         # ==========
+        wx_menu = wx.Menu()
+        self.preview_menu.Append(wx_menu, _("Tools"))
+
         self.context.setting(bool, 'developer_mode', False)
         if self.context.developer_mode:
-            wx_menu = wx.Menu()
-            self.preview_menu.Append(wx_menu, _("Tools"))
-
             self.preview_menu.menu_send_back = wx_menu.Append(
                 wx.ID_ANY, _("Return to Operations"), _("Return the current Plan to Operations")
             )
@@ -186,14 +188,14 @@ class ExecuteJob(MWindow):
                 id=self.preview_menu.menu_send_back.GetId(),
             )
 
-            self.preview_menu.menu_step_repeat = wx_menu.Append(
-                wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
-            )
-            self.Bind(
-                wx.EVT_MENU,
-                self.jobchange_step_repeat,
-                id=self.preview_menu.menu_step_repeat.GetId(),
-            )
+        self.preview_menu.menu_step_repeat = wx_menu.Append(
+            wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.jobchange_step_repeat,
+            id=self.preview_menu.menu_step_repeat.GetId(),
+        )
 
         self.SetMenuBar(self.preview_menu)
         # ==========
@@ -505,6 +507,13 @@ class ExecuteJob(MWindow):
             dlg.Destroy()
             return
         dlg.Destroy()
+        try:
+            bounds = self.context.elements._emphasized_bounds
+            width = math.ceil(bounds[2] - bounds[0])
+            height = math.ceil(bounds[3] - bounds[1])
+        except Exception:
+            width = None
+            height = None
 
         dlg = wx.TextEntryDialog(
             self,
@@ -512,14 +521,14 @@ class ExecuteJob(MWindow):
             _("Enter X Gap"),
             "",
         )
-        dlg.SetValue("")
+        dlg.SetValue(str(width) if width is not None else "%f%%" % (100.0 / cols))
         bed_dim = self.context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 x_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_PER_MM
+                    ppi=1000.0, relative_length=width if width is not None else bed_dim.bed_width * MILS_PER_MM
                 )
             except ValueError:
                 dlg.Destroy()
@@ -538,11 +547,11 @@ class ExecuteJob(MWindow):
             _("Enter Y Gap"),
             "",
         )
-        dlg.SetValue("")
+        dlg.SetValue(str(height) if height is not None else "%f%%" % (100.0 / rows))
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 y_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_PER_MM
+                    ppi=1000.0, relative_length=height if height is not None else bed_dim.bed_height * MILS_PER_MM
                 )
             except ValueError:
                 dlg.Destroy()
