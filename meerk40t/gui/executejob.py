@@ -174,11 +174,11 @@ class ExecuteJob(MWindow):
         # ==========
         # Tools Menu
         # ==========
+        wx_menu = wx.Menu()
+        self.preview_menu.Append(wx_menu, _("Tools"))
+
         self.context.setting(bool, 'developer_mode', False)
         if self.context.developer_mode:
-            wx_menu = wx.Menu()
-            self.preview_menu.Append(wx_menu, _("Tools"))
-
             self.preview_menu.menu_send_back = wx_menu.Append(
                 wx.ID_ANY, _("Return to Operations"), _("Return the current Plan to Operations")
             )
@@ -188,14 +188,14 @@ class ExecuteJob(MWindow):
                 id=self.preview_menu.menu_send_back.GetId(),
             )
 
-            self.preview_menu.menu_step_repeat = wx_menu.Append(
-                wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
-            )
-            self.Bind(
-                wx.EVT_MENU,
-                self.jobchange_step_repeat,
-                id=self.preview_menu.menu_step_repeat.GetId(),
-            )
+        self.preview_menu.menu_step_repeat = wx_menu.Append(
+            wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.jobchange_step_repeat,
+            id=self.preview_menu.menu_step_repeat.GetId(),
+        )
 
         self.SetMenuBar(self.preview_menu)
         # ==========
