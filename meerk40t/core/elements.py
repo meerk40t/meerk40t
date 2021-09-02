@@ -5127,10 +5127,14 @@ class Elemental(Modifier):
             return self.add_op(op)
 
         for pos, old_op in reversed_enumerate(operations):
-            if OP_PRIORITIES.index(old_op.operation) < priority:
-                   return self.add_op(op, pos=pos + 1)
+            try:
+                if OP_PRIORITIES.index(old_op.operation) < priority:
+                    return self.add_op(op, pos=pos + 1)
+            except ValueError:
+                pass
         return self.add_op(op, pos=0)
 
+    
     def classify(self, elements, operations=None, add_op_function=None):
         """
         Classify does the placement of elements within operations.
