@@ -472,6 +472,8 @@ def plugin(kernel, lifecycle=None):
 
         for element in data:
             img = element.image
+            if img.mode == "P":
+                img = img.convert("RGBA")
             element.image = img.filter(filter=ImageFilter.BLUR)
             if hasattr(element, "node"):
                 element.node.altered()
@@ -486,6 +488,8 @@ def plugin(kernel, lifecycle=None):
 
         for element in data:
             img = element.image
+            if img.mode == "P":
+                img = img.convert("RGBA")
             element.image = img.filter(filter=ImageFilter.SHARPEN)
             if hasattr(element, "node"):
                 element.node.altered()
@@ -500,6 +504,8 @@ def plugin(kernel, lifecycle=None):
 
         for element in data:
             img = element.image
+            if img.mode == "P":
+                img = img.convert("RGBA")
             element.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
             if hasattr(element, "node"):
                 element.node.altered()
@@ -514,6 +520,8 @@ def plugin(kernel, lifecycle=None):
 
         for element in data:
             img = element.image
+            if img.mode == "P":
+                img = img.convert("RGBA")
             element.image = img.filter(filter=ImageFilter.FIND_EDGES)
             if hasattr(element, "node"):
                 element.node.altered()
@@ -528,6 +536,8 @@ def plugin(kernel, lifecycle=None):
 
         for element in data:
             img = element.image
+            if img.mode == "P":
+                img = img.convert("RGBA")
             element.image = img.filter(filter=ImageFilter.EMBOSS)
             if hasattr(element, "node"):
                 element.node.altered()
@@ -542,6 +552,8 @@ def plugin(kernel, lifecycle=None):
 
         for element in data:
             img = element.image
+            if img.mode == "P":
+                img = img.convert("RGBA")
             element.image = img.filter(filter=ImageFilter.SMOOTH)
             if hasattr(element, "node"):
                 element.node.altered()
@@ -556,6 +568,8 @@ def plugin(kernel, lifecycle=None):
 
         for element in data:
             img = element.image
+            if img.mode == "P":
+                img = img.convert("RGBA")
             element.image = img.filter(filter=ImageFilter.CONTOUR)
             if hasattr(element, "node"):
                 element.node.altered()
@@ -570,6 +584,8 @@ def plugin(kernel, lifecycle=None):
 
         for element in data:
             img = element.image
+            if img.mode == "P":
+                img = img.convert("RGBA")
             element.image = img.filter(filter=ImageFilter.DETAIL)
             if hasattr(element, "node"):
                 element.node.altered()
