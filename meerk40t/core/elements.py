@@ -5209,7 +5209,7 @@ class Elemental(Modifier):
         rasters_one_pass = None
 
         for op in operations:
-            if op.operation in ["Cut", "Engrave"]:
+            if op.operation in ("Cut", "Engrave"):
                 vector_ops.append(op)
             elif op.operation == "Raster":
                 raster_ops.append(op)
