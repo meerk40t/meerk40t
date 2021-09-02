@@ -5334,6 +5334,8 @@ class Elemental(Modifier):
 
         # End loop "for element in elements"
 
+        print(len(raster_elements))
+
         if not raster_elements:
             return
 
@@ -5341,7 +5343,7 @@ class Elemental(Modifier):
         # It is ESSENTIAL that elements are added to operations in the same order as original.
         # The easiest way to ensure this is to create groups using a copy of raster_elements and
         # then ensure that groups have elements in the same order as in raster_elements.
-        raster_groups = [[[e, e.bbox()]] for e in raster_elements]
+        raster_groups = [[(e, e.bbox())] for e in raster_elements]
         for i, g1 in reversed_enumerate(raster_groups[:-1]):
             for g2 in reversed(raster_groups[i + 1:]):
                 if self.group_elements_overlap(g1, g2):
@@ -5349,7 +5351,7 @@ class Elemental(Modifier):
                     raster_groups.remove(g2)
 
         # Remove bbox and add element colour from groups
-        raster_groups = list(map(lambda g: [[e[0], self.element_classify_color(e[0])] for e in g], raster_groups))
+        raster_groups = list(map(lambda g: tuple(((e[0], self.element_classify_color(e[0])) for e in g)), raster_groups))
 
         # Add groups to operations of matching colour (and remove from list)
         groups_added =[]
@@ -5364,7 +5366,7 @@ class Elemental(Modifier):
                                 groups_added.append(group)
                             break
                 if elements_to_add:
-                    elements_to_add = sorted([e[0] for e in elements_to_add], key=raster_elements.index)
+                    elements_to_add = sorted((e[0] for e in elements_to_add), key=raster_elements.index)
                     for element in elements_to_add:
                         op.add(element, type="opnode", pos=element_pos)
 
@@ -5379,7 +5381,7 @@ class Elemental(Modifier):
         elements_to_add = []
         for g in raster_groups:
             elements_to_add.extend(g)
-        elements_to_add = sorted([e[0] for e in elements_to_add], key=raster_elements.index)
+        elements_to_add = sorted((e[0] for e in elements_to_add), key=raster_elements.index)
 
         # Remaining elements are added to one of the following groups of operations:
         # 1. to default raster ops if they exist; otherwise
