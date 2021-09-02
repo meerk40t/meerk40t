@@ -204,12 +204,21 @@ class Node:
             elif drop_node.type == "branch ops":
                 # Dragging operation to op branch.
                 drop_node.append_child(drag_node)
+        elif drag_node.type in "file":
+            if drop_node.type == "op":
+                for e in drag_node.flat("elem"):
+                    drop_node.add(e.object, type="opnode")
+                return True
         elif drag_node.type == "group":
             if drop_node.type == "elem":
                 drop_node.insert_sibling(drag_node)
                 return True
-            elif drop_node.type == "group" or drop_node.type == "file":
+            elif drop_node.type in ("group", "file"):
                 drop_node.append_child(drag_node)
+                return True
+            elif drop_node.type == "op":
+                for e in drag_node.flat("elem"):
+                    drop_node.add(e.object, type="opnode")
                 return True
 
     def reverse(self):

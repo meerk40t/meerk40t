@@ -837,10 +837,6 @@ class MeerK40t(MWindow):
             self._mgr.LoadPerspective(self.context.perspective)
         self.on_config_panes()
 
-    def aui_open_pane(self, pane):
-        pane_init = self.context.registered["pane/%s" % pane]
-        self.on_pane_add(pane_init)
-
     def on_pane_reset(self, event=None):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
@@ -878,7 +874,9 @@ class MeerK40t(MWindow):
             if not pane.IsShown():
                 pane.Show()
                 pane.CaptionVisible(not self.context.pane_lock)
-                self.on_pane_reshow(pane)
+                if hasattr(pane.window, "initialize"):
+                    pane.window.initialize()
+                    wx.CallAfter(self.on_pane_changed, None)
                 self._mgr.Update()
             return
         self._mgr.AddPane(
@@ -896,11 +894,6 @@ class MeerK40t(MWindow):
         if pane.IsShown():
             if hasattr(pane.window, "finalize"):
                 pane.window.finalize()
-        wx.CallAfter(self.on_pane_changed, None)
-
-    def on_pane_reshow(self, pane):
-        if hasattr(pane.window, "initialize"):
-            pane.window.initialize()
         wx.CallAfter(self.on_pane_changed, None)
 
     def on_pane_changed(self, *args):
@@ -1772,10 +1765,13 @@ class MeerK40t(MWindow):
             def toggle(event=None):
                 pane_obj = self._mgr.GetPane(pane_toggle)
                 if pane_obj.IsShown():
+                    if hasattr(pane_obj.window, "finalize"):
+                        pane_obj.window.finalize()
                     pane_obj.Hide()
                     self._mgr.Update()
                     return
-                self.aui_open_pane(pane_toggle)
+                pane_init = self.context.registered["pane/%s" % pane_toggle]
+                self.on_pane_add(pane_init)
 
             return toggle
 
