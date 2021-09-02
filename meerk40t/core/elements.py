@@ -5334,8 +5334,6 @@ class Elemental(Modifier):
 
         # End loop "for element in elements"
 
-        print(len(raster_elements))
-
         if not raster_elements:
             return
 
