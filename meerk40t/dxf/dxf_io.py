@@ -2,7 +2,14 @@ import os
 
 import ezdxf
 from ezdxf import units
-from ezdxf.tools.rgb import DXF_DEFAULT_COLORS, int2rgb
+try:
+    # ezdxf <= 0.6.14
+    from ezdxf.tools.rgb import DXF_DEFAULT_COLORS, int2rgb
+except ImportError:
+    # ezdxf > 0.6.14
+    from ezdxf import int2rgb
+    from ezdxf.colors import DXF_DEFAULT_COLORS
+
 from ezdxf.units import decode
 
 from ..svgelements import (
