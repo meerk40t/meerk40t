@@ -367,6 +367,10 @@ def plugin(kernel, lifecycle=None):
                         relative_length=element.image_height,
                     )
                 )
+                if left >= right:
+                    raise SyntaxError(_("Right margin is to the left of the left margin."))
+                if upper >= lower:
+                    raise SyntaxError(_("Lower margin is higher than the upper margin."))
                 element.image = img.crop((left, upper, right, lower))
                 element.image_width = right - left
                 element.image_height = lower - upper
