@@ -3189,7 +3189,7 @@ class Elemental(Modifier):
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
             try:
                 if not absolute:
-                    for element in self.elems(emphasized=True):
+                    for element in data:
                         try:
                             if element.lock:
                                 continue
@@ -3200,7 +3200,7 @@ class Elemental(Modifier):
                         if hasattr(element, "node"):
                             element.node.modified()
                 else:
-                    for element in self.elems(emphasized=True):
+                    for element in data:
                         start_angle = element.rotation
                         amount = rot - start_angle
                         matrix = Matrix(
