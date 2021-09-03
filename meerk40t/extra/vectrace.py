@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Path, Polygon
+from meerk40t.svgelements import Path, Polygon, Matrix
 
 
 def plugin(kernel, lifecycle=None):
@@ -16,6 +16,7 @@ def plugin(kernel, lifecycle=None):
             path = Path(fill="black", stroke="blue")
             paths = []
             for element in data:
+                matrix = element.transform
                 image = element.image
                 width, height = element.image.size
                 if image.mode != "L":
@@ -23,8 +24,9 @@ def plugin(kernel, lifecycle=None):
                 image = image.point(lambda e: int(e > 127) * 255)
                 for points in _vectrace(image.load(), width, height):
                     path += Polygon(*points)
+                path.transform = Matrix(matrix)
                 paths.append(elements.elem_branch.add(path, "elem"))
-            return "elements", paths
+            return "elements", [p.object for p in paths]
 
 
 _NORTH = 3
