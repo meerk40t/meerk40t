@@ -441,8 +441,6 @@ class MoshiDriver(Driver):
         self.start_y = None
         self.is_paused = False
         self.context._buffer_size = 0
-        self.pipe = self.context.channel("pipe/send")
-        self.control = self.context.channel("pipe/control")
         self.thread = None
         context = self.context
         root_context = context.root
@@ -500,7 +498,7 @@ class MoshiDriver(Driver):
                 ]
             )
         )
-        self.pipe(v)
+        self.data_output(v)
 
     def pipe_int16le(self, value):
         v = bytes(
@@ -511,7 +509,7 @@ class MoshiDriver(Driver):
                 ]
             )
         )
-        self.pipe(v)
+        self.data_output(v)
 
     def write_vector_speed(self, speed_mms, normal_speed_mms):
         """
@@ -519,7 +517,7 @@ class MoshiDriver(Driver):
         Speed and Normal Speed.
         :return:
         """
-        self.pipe(swizzle_table[5][0])
+        self.data_output(swizzle_table[5][0])
         if speed_mms > 256:
             speed_mms = 256
         if speed_mms < 1:
@@ -528,7 +526,7 @@ class MoshiDriver(Driver):
         self.pipe_int8(normal_speed_mms - 1)  # Unknown
 
     def write_raster_speed(self, speed_mms):
-        self.pipe(swizzle_table[4][0])
+        self.data_output(swizzle_table[4][0])
         speed_cms = int(round(speed_mms / 10))
         if speed_cms == 0:
             speed_cms = 1
@@ -539,7 +537,7 @@ class MoshiDriver(Driver):
         2nd Command For Jump. (0x03 position), followed by 3 int16le (2)
         :return:
         """
-        self.pipe(swizzle_table[0][0])
+        self.data_output(swizzle_table[0][0])
         self.pipe_int16le(z)  # Unknown, always zero.
         self.pipe_int16le(x)  # x
         self.pipe_int16le(y)  # y
@@ -550,10 +548,10 @@ class MoshiDriver(Driver):
         :return:
         """
         for i in range(7):
-            self.pipe(swizzle_table[2][0])
+            self.data_output(swizzle_table[2][0])
 
     def write_cut_abs(self, x, y):
-        self.pipe(swizzle_table[15][1])
+        self.data_output(swizzle_table[15][1])
         if x < 0:
             x = 0
         if y < 0:
@@ -566,7 +564,7 @@ class MoshiDriver(Driver):
         self.pipe_int16le(int(y))
 
     def write_move_abs(self, x, y):
-        self.pipe(swizzle_table[7][0])
+        self.data_output(swizzle_table[7][0])
         if x < 0:
             x = 0
         if y < 0:
@@ -581,25 +579,25 @@ class MoshiDriver(Driver):
     def write_move_vertical_abs(self, y):
         self.current_y = y
         y -= self.offset_y
-        self.pipe(swizzle_table[3][0])
+        self.data_output(swizzle_table[3][0])
         self.pipe_int16le(int(y))
 
     def write_move_horizontal_abs(self, x):
         self.current_x = x
         x -= self.offset_x
-        self.pipe(swizzle_table[6][0])
+        self.data_output(swizzle_table[6][0])
         self.pipe_int16le(int(x))
 
     def write_cut_horizontal_abs(self, x):
         self.current_x = x
         x -= self.offset_x
-        self.pipe(swizzle_table[14][0])
+        self.data_output(swizzle_table[14][0])
         self.pipe_int16le(int(x))
 
     def write_cut_vertical_abs(self, y):
         self.current_y = y
         y -= self.offset_y
-        self.pipe(swizzle_table[11][0])
+        self.data_output(swizzle_table[11][0])
         self.pipe_int16le(int(y))
 
     def ensure_program_mode(self):
@@ -646,7 +644,7 @@ class MoshiDriver(Driver):
             or self.state == DRIVER_STATE_RASTER
         ):
             self.write_termination()
-            self.control("execute\n")
+            self.data_control("execute\n")
         self.state = DRIVER_STATE_RAPID
         self.context.signal("driver;mode", self.state)
 
@@ -746,7 +744,7 @@ class MoshiDriver(Driver):
         else:
             self.cut_absolute(x, y)
         self.ensure_rapid_mode()
-        self.control("execute\n")
+        self.data_control("execute\n")
 
     def cut_absolute(self, x, y):
         self.ensure_program_mode()
@@ -772,7 +770,7 @@ class MoshiDriver(Driver):
         else:
             self.move_absolute(x, y)
         self.ensure_rapid_mode()
-        self.control("execute\n")
+        self.data_control("execute\n")
 
     def move_absolute(self, x, y):
         self.ensure_program_mode()
@@ -835,10 +833,10 @@ class MoshiDriver(Driver):
 
     def unlock_rail(self, abort=False):
         self.ensure_rapid_mode()
-        self.control("unlock\n")
+        self.data_control("unlock\n")
 
     def abort(self):
-        self.control("stop\n")
+        self.data_control("stop\n")
 
     @property
     def type(self):
@@ -883,8 +881,17 @@ class MoshiController(Module):
         self.recv_channel = context.channel("%s/recv" % name)
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
 
-        control = context.channel("%s/control" % name)
-        control.watch(self.control)
+
+        context.setting(int, "usb_index", -1)
+        context.setting(int, "usb_bus", -1)
+        context.setting(int, "usb_address", -1)
+        context.setting(int, "usb_version", -1)
+        context.setting(bool, "mock", False)
+        context.setting(int, "packet_count", 0)
+        context.setting(int, "rejected_count", 0)
+        # control = context.channel("%s/control" % name)
+        # control.watch(self.control)
+        self.context.root.listen("lifecycle;ready", self.on_controller_ready)
 
     def initialize(self, *args, **kwargs):
         context = self.context
@@ -894,7 +901,11 @@ class MoshiController(Module):
 
         self.reset()
 
+    def on_controller_ready(self, origin, *args):
+        self.start()
+
     def finalize(self, *args, **kwargs):
+        self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
         if self._thread is not None:
             self.is_shutdown = True
 
