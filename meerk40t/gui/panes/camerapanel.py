@@ -17,7 +17,7 @@ CORNER_SIZE = 25
 
 
 class CameraPanel(wx.Panel, Job):
-    def __init__(self, *args, context=None, gui=None, index=0, **kwds):
+    def __init__(self, *args, context=None, gui=None, index: int = 0, **kwds):
         # begin wxGlade: Drag.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -226,19 +226,39 @@ class CamInterfaceWidget(Widget):
             menu = wx.Menu()
 
             item = menu.Append(wx.ID_ANY, _("Update Background"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d background\n" % self.cam.index), id=item.GetId())
+            self.cam.Bind(
+                wx.EVT_MENU,
+                lambda e: self.cam.context("camera%d background\n" % self.cam.index),
+                id=item.GetId(),
+            )
 
             item = menu.Append(wx.ID_ANY, _("Export Snapshot"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d export\n" % self.cam.index), id=item.GetId())
+            self.cam.Bind(
+                wx.EVT_MENU,
+                lambda e: self.cam.context("camera%d export\n" % self.cam.index),
+                id=item.GetId(),
+            )
 
             item = menu.Append(wx.ID_ANY, _("Reconnect Camera"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d stop start\n" % self.cam.index), id=item.GetId())
+            self.cam.Bind(
+                wx.EVT_MENU,
+                lambda e: self.cam.context("camera%d stop start\n" % self.cam.index),
+                id=item.GetId(),
+            )
 
             item = menu.Append(wx.ID_ANY, _("Stop Camera"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camera%d stop\n" % self.cam.index), id=item.GetId())
+            self.cam.Bind(
+                wx.EVT_MENU,
+                lambda e: self.cam.context("camera%d stop\n" % self.cam.index),
+                id=item.GetId(),
+            )
 
             item = menu.Append(wx.ID_ANY, _("Open CameraInterface"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.context("camwin %d\n" % self.cam.index), id=item.GetId())
+            self.cam.Bind(
+                wx.EVT_MENU,
+                lambda e: self.cam.context("camwin %d\n" % self.cam.index),
+                id=item.GetId(),
+            )
 
             menu.AppendSeparator()
 
@@ -281,9 +301,12 @@ class CamInterfaceWidget(Widget):
 
             def check_fisheye(event=None):
                 self.cam.setting.correction_fisheye = fisheye.IsChecked()
+
             self.cam.Bind(wx.EVT_MENU, check_fisheye, fisheye)
 
-            perspect = menu.Append(wx.ID_ANY, _("Correct Perspective"), "", wx.ITEM_CHECK)
+            perspect = menu.Append(
+                wx.ID_ANY, _("Correct Perspective"), "", wx.ITEM_CHECK
+            )
             perspect.Check(self.cam.setting.correction_perspective)
             self.cam.setting.correction_perspective = perspect.IsChecked()
 
@@ -293,9 +316,17 @@ class CamInterfaceWidget(Widget):
             self.cam.Bind(wx.EVT_MENU, check_perspect, perspect)
             menu.AppendSeparator()
             item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.setting("camera%d perspective reset\n" % self.index), id=item.GetId())
+            self.cam.Bind(
+                wx.EVT_MENU,
+                lambda e: self.cam.setting("camera%d perspective reset\n" % self.index),
+                id=item.GetId(),
+            )
             item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
-            self.cam.Bind(wx.EVT_MENU, lambda e: self.cam.setting("camera%d fisheye reset\n" % self.index), id=item.GetId())
+            self.cam.Bind(
+                wx.EVT_MENU,
+                lambda e: self.cam.setting("camera%d fisheye reset\n" % self.index),
+                id=item.GetId(),
+            )
             menu.AppendSeparator()
 
             sub_menu = wx.Menu()
@@ -309,7 +340,9 @@ class CamInterfaceWidget(Widget):
                 uri_list = [keylist[k] for k in keys]
                 for uri in uri_list:
                     item = sub_menu.Append(wx.ID_ANY, _("URI: %s") % uri, "")
-                    self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId())
+                    self.cam.Bind(
+                        wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId()
+                    )
 
             item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(0), id=item.GetId())
@@ -444,4 +477,3 @@ class CamImageWidget(Widget):
         gc.DrawBitmap(
             self.cam.frame_bitmap, 0, 0, self.cam.image_width, self.cam.image_height
         )
-
