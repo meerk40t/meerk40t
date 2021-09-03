@@ -418,10 +418,9 @@ def get_code_string_from_moshicode(code):
         return "UNK %02x" % code
 
 
-class MoshiDriver(Driver, Modifier):
+class MoshiDriver(Driver):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         context = context.get_context("moshi/driver/%s" % name)
-        Modifier.__init__(self, context, name, channel)
         Driver.__init__(self, context=context)
 
         self.next = None
@@ -445,8 +444,6 @@ class MoshiDriver(Driver, Modifier):
         self.pipe = self.context.channel("pipe/send")
         self.control = self.context.channel("pipe/control")
         self.thread = None
-
-    def attach(self, *a, **kwargs):
         context = self.context
         root_context = context.root
         kernel = context.kernel
@@ -454,10 +451,11 @@ class MoshiDriver(Driver, Modifier):
 
         context.driver = self
 
-        context.setting(int, "home_adjust_x", 0)
-        context.setting(int, "home_adjust_y", 0)
-        context.setting(bool, "home_right", False)
-        context.setting(bool, "home_bottom", False)
+        self.context.setting(bool, "home_right", False)
+        self.context.setting(bool, "home_bottom", False)
+        self.context.setting(int, "home_adjust_x", 0)
+        self.context.setting(int, "home_adjust_y", 0)
+
         root_context.setting(bool, "opt_rapid_between", True)
         root_context.setting(int, "opt_jog_mode", 0)
         root_context.setting(int, "opt_jog_minimum", 256)
@@ -466,6 +464,7 @@ class MoshiDriver(Driver, Modifier):
         context.setting(int, "usb_bus", -1)
         context.setting(int, "usb_address", -1)
         context.setting(int, "usb_version", -1)
+
 
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
@@ -802,13 +801,12 @@ class MoshiDriver(Driver, Modifier):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def calc_home_position(self):
-        self.context.setting(int, "home_adjust_x", 0)
-        self.context.setting(int, "home_adjust_y", 0)
         x = self.context.home_adjust_x
         y = self.context.home_adjust_y
         bed_dim = self.context.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
+
         if self.context.home_right:
             x += int(bed_dim.bed_width * MILS_IN_MM)
         if self.context.home_bottom:
