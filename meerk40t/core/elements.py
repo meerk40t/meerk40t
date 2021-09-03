@@ -2655,6 +2655,41 @@ class Elemental(Modifier):
                 y_pos += y
             return "elements", data_out
 
+        @context.console_option("step", "s", default=2.0, type=float)
+        @context.console_command(
+            "render",
+            help=_("Convert given elements to a raster image"),
+            input_type=(None, "elements"),
+            output_type="image",
+        )
+        def make_raster_image(command, channel, _, step=2.0, data=None, **kwgs):
+            context = self.context
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            elements = context.elements
+            make_raster = self.context.registered.get("render-op/make_raster")
+
+            bounds = Group.union_bbox(data)
+            if bounds is None:
+                return
+            if step <= 0:
+                step = 1.0
+            xmin, ymin, xmax, ymax = bounds
+
+            image = make_raster(
+                [n.node for n in data],
+                bounds,
+                width=(xmax - xmin),
+                height=(ymax - ymin),
+                step=step,
+            )
+            image_element = SVGImage(image=image)
+            image_element.transform.post_scale(step, step)
+            image_element.transform.post_translate(xmin, ymin)
+            image_element.values["raster_step"] = step
+            elements.add_elem(image_element)
+            return "image", [image_element]
+
         # ==========
         # ELEMENT/SHAPE COMMANDS
         # ==========
