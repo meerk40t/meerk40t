@@ -2415,8 +2415,9 @@ class Elemental(Modifier):
                 for d in data:
                     channel(_("Aligning: %s") % str(d))
             boundary_points = []
-            for d in data:
-                boundary_points.append(d.bounds)
+            for e in data:
+                node = e.node
+                boundary_points.append(node.bounds)
             if not len(boundary_points):
                 return
             left_edge = min([e[0] for e in boundary_points])
@@ -2425,7 +2426,8 @@ class Elemental(Modifier):
             bottom_edge = max([e[3] for e in boundary_points])
             if align == "top":
                 for e in data:
-                    subbox = e.bounds
+                    node = e.node
+                    subbox = node.bounds
                     top = subbox[1] - top_edge
                     matrix = "translate(0, %f)" % -top
                     if top != 0:
@@ -2436,7 +2438,7 @@ class Elemental(Modifier):
                             q.modified()
             elif align == "bottom":
                 for e in data:
-                    subbox = e.bounds
+                    subbox = e.node.bounds
                     bottom = subbox[3] - bottom_edge
                     matrix = "translate(0, %f)" % -bottom
                     if bottom != 0:
@@ -2447,18 +2449,20 @@ class Elemental(Modifier):
                             q.modified()
             elif align == "left":
                 for e in data:
-                    subbox = e.bounds
+                    node = e.node
+                    subbox = node.bounds
                     left = subbox[0] - left_edge
                     matrix = "translate(%f, 0)" % -left
                     if left != 0:
-                        for q in e.flat(types=("elem", "group", "file")):
+                        for q in node.flat(types=("elem", "group", "file")):
                             obj = q.object
                             if obj is not None:
                                 obj *= matrix
                             q.modified()
             elif align == "right":
                 for e in data:
-                    subbox = e.bounds
+                    node = e.node
+                    subbox = node.bounds
                     right = subbox[2] - right_edge
                     matrix = "translate(%f, 0)" % -right
                     if right != 0:
@@ -2469,18 +2473,20 @@ class Elemental(Modifier):
                             q.modified()
             elif align == "center":
                 for e in data:
-                    subbox = e.bounds
+                    node = e.node
+                    subbox = node.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
                     matrix = "translate(%f, %f)" % (-dx, -dy)
-                    for q in e.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types=("elem", "group", "file")):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
             elif align == "centerv":
                 for e in data:
-                    subbox = e.bounds
+                    node = e.node
+                    subbox = node.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                     matrix = "translate(%f, 0)" % -dx
                     for q in e.flat(types=("elem", "group", "file")):
@@ -2490,10 +2496,11 @@ class Elemental(Modifier):
                         q.modified()
             elif align == "centerh":
                 for e in data:
-                    subbox = e.bounds
+                    node = e.node
+                    subbox = node.bounds
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
                     matrix = "translate(0, %f)" % -dy
-                    for q in e.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types=("elem", "group", "file")):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -2505,12 +2512,13 @@ class Elemental(Modifier):
                 distance = right_edge - left_edge
                 step = distance / (len(data) - 1)
                 for e in data:
-                    subbox = e.bounds
+                    node = e.node
+                    subbox = node.bounds
                     left = subbox[0] - left_edge
                     left_edge += step
                     matrix = "translate(%f, 0)" % -left
                     if left != 0:
-                        for q in e.flat(types=("elem", "group", "file")):
+                        for q in node.flat(types=("elem", "group", "file")):
                             obj = q.object
                             if obj is not None:
                                 obj *= matrix
@@ -2519,22 +2527,24 @@ class Elemental(Modifier):
                 distance = bottom_edge - top_edge
                 step = distance / (len(data) - 1)
                 for e in data:
-                    subbox = e.bounds
+                    node = e.node
+                    subbox = node.bounds
                     top = subbox[1] - top_edge
                     top_edge += step
                     matrix = "translate(0, %f)" % -top
                     if top != 0:
-                        for q in e.flat(types=("elem", "group", "file")):
+                        for q in node.flat(types=("elem", "group", "file")):
                             obj = q.object
                             if obj is not None:
                                 obj *= matrix
                             q.modified()
             elif align == "topleft":
                 for e in data:
+                    node = e.node
                     dx = -left_edge
                     dy = -top_edge
                     matrix = "translate(%f, %f)" % (dx, dy)
-                    for q in e.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types=("elem", "group", "file")):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -2542,12 +2552,13 @@ class Elemental(Modifier):
                 self.context.signal("refresh_scene")
             elif align == "bedcenter":
                 for e in data:
+                    node = e.node
                     bw = bed_dim.bed_width
                     bh = bed_dim.bed_height
                     dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
                     dy = (bh * MILS_IN_MM - top_edge - bottom_edge) / 2.0
                     matrix = "translate(%f, %f)" % (dx, dy)
-                    for q in e.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types=("elem", "group", "file")):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -2584,6 +2595,7 @@ class Elemental(Modifier):
                 "none",
             ):
                 for e in data:
+                    node = e.node
                     bw = bed_dim.bed_width
                     bh = bed_dim.bed_height
 
@@ -2598,7 +2610,7 @@ class Elemental(Modifier):
                         bottom_edge - top_edge,
                         align,
                     )
-                    for q in e.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types=("elem", "group", "file")):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
