@@ -5256,12 +5256,9 @@ class Elemental(Modifier):
                     add_vector = element.stroke is not None and element.stroke.rgb is not None
                     add_non_vector = (
                         element.fill is not None
-                        and element.fill.rgb is not None   # Filled
-                        and not is_straight_line           # Cannot raster a straight line segment
-                        and (
-                            element.fill.alpha is None     # Not transparent
-                            or element.fill.alpha !=0
-                        )
+                        and element.fill.rgb is not None  # Filled
+                        and not is_straight_line          # Cannot raster a straight line segment
+                        and element.fill.alpha !=0        # Not transparent  
                     )
                     if add_vector and add_non_vector and element.stroke.rgb == element.fill.rgb: # Stroke same as fill - raster-only
                         add_vector = False
