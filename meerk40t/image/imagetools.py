@@ -880,6 +880,10 @@ def plugin(kernel, lifecycle=None):
             img = element.image
             if img.mode == "P":
                 img = img.convert("RGBA")
+            if left >= right:
+                raise SyntaxError(_("Right margin is to the left of the left margin."))
+            if upper >= lower:
+                raise SyntaxError(_("Lower margin is higher than the upper margin."))
             image_pop = img.crop((left, upper, right, lower))
             image_remain = img.copy()
 
