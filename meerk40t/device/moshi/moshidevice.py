@@ -212,7 +212,7 @@ class MoshiDriver(Driver):
             self.program.current_x = self.current_y
             self.program.current_y = self.current_y
 
-    def ensure_program_mode(self):
+    def ensure_program_mode(self, *values):
         """
         Ensure the laser is currently in a program state. If it is not currently in a program state we begin
         a program state.
@@ -234,12 +234,20 @@ class MoshiDriver(Driver):
         # Normal speed is rapid. Passing same speed so PPI isn't crazy.
         self.program.vector_speed(speed, speed)
         x, y = self.calc_home_position()
+        try:
+            x = int(values[0])
+        except (ValueError, IndexError):
+            pass
+        try:
+            y = int(values[1])
+        except (ValueError, IndexError):
+            pass
         self.program.set_offset(0, x, y)
 
         self.state = DRIVER_STATE_PROGRAM
         self.context.signal("driver;mode", self.state)
 
-    def ensure_raster_mode(self):
+    def ensure_raster_mode(self, *values):
         """
         Ensure the driver is currently in a raster program state. If it is not in a raster program state
         we write the raster program state.
@@ -253,12 +261,20 @@ class MoshiDriver(Driver):
         speed = int(self.settings.speed)
         self.program.raster_speed(speed)
         x, y = self.calc_home_position()
+        try:
+            x = int(values[0])
+        except (ValueError, IndexError):
+            pass
+        try:
+            y = int(values[1])
+        except (ValueError, IndexError):
+            pass
         self.program.set_offset(0, x, y)
         self.state = DRIVER_STATE_RASTER
         self.context.signal("driver;mode", self.state)
         self.program.move_abs(0, 0)
 
-    def ensure_rapid_mode(self):
+    def ensure_rapid_mode(self, *values):
         """
         Ensure the driver is currently in a default state. If we are not in a default state the driver
         should end the current program.
@@ -279,7 +295,7 @@ class MoshiDriver(Driver):
         self.state = DRIVER_STATE_RAPID
         self.context.signal("driver;mode", self.state)
 
-    def ensure_finished_mode(self):
+    def ensure_finished_mode(self, *values):
         """
         Ensure the driver is currently in a finished state. If we are not in a finished state the driver
         should end the current program and return to rapid mode.
@@ -343,7 +359,13 @@ class MoshiDriver(Driver):
                 PLOT_RAPID | PLOT_JOG
             ):  # Plot planner requests position change.
                 self.ensure_rapid_mode()
-                self.move_absolute(x, y)
+                self.ensure_program_mode(x, y)
+                oldx = self.program.current_x
+                oldy = self.program.current_y
+                self.program.move_abs(x, y)
+                x = self.program.current_x
+                y = self.program.current_y
+                self.context.signal("driver;position", (x, y, oldx, oldy))
                 continue
             self.goto_absolute(x, y, on & 1)
         self.plot = None
@@ -354,10 +376,10 @@ class MoshiDriver(Driver):
         Goto absolute position. Cut flags whether this should be with or without the laser.
         """
         if self.settings.raster_step == 0:
-            self.ensure_program_mode()
+            self.ensure_program_mode(x,y)
         else:
             # self.ensure_program_mode()
-            self.ensure_raster_mode()
+            self.ensure_raster_mode(x,y)
         if self.state == DRIVER_STATE_PROGRAM:
             if cut:
                 self.program.cut_abs(x, y)
@@ -398,7 +420,7 @@ class MoshiDriver(Driver):
         """
         Cut to a position x, y. This is an absolute position.
         """
-        self.ensure_program_mode()
+        self.ensure_program_mode(x,y)
         self.program.cut_abs(x, y)
 
         oldx = self.current_x
@@ -437,7 +459,7 @@ class MoshiDriver(Driver):
         """
         Move to a position x, y. This is an absolute position.
         """
-        self.ensure_program_mode()
+        self.ensure_program_mode(x,y)
         oldx = self.program.current_x
         oldy = self.program.current_y
         self.program.move_abs(x, y)
