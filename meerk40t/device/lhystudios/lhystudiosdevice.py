@@ -1174,7 +1174,7 @@ class LhystudiosDriver(Driver):
         self.state = DRIVER_STATE_FINISH
         self.context.signal("driver;mode", self.state)
 
-    def ensure_program_mode(self):
+    def ensure_program_mode(self, *values):
         if self.state == DRIVER_STATE_PROGRAM:
             return
         self.ensure_finished_mode()
