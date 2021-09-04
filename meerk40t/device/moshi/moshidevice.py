@@ -201,6 +201,7 @@ class MoshiDriver(Driver):
         return "MoshiDriver(%s)" % self.name
 
     def push_program(self):
+        self.pipe_channel("Pushed program to output...")
         if len(self.program):
             self.current_x = self.program.current_x
             self.current_y = self.program.current_y
@@ -459,7 +460,7 @@ class MoshiDriver(Driver):
         """
         Move to a position x, y. This is an absolute position.
         """
-        self.ensure_program_mode(x,y)
+        self.ensure_program_mode(x, y)
         oldx = self.program.current_x
         oldy = self.program.current_y
         self.program.move_abs(x, y)
@@ -509,11 +510,6 @@ class MoshiDriver(Driver):
         if self.context.home_bottom:
             y += int(bed_dim.bed_height * MILS_IN_MM)
         return x, y
-
-    def reset_home(self):
-        self.ensure_rapid_mode()
-
-        self.move(0,0)
 
     def home(self, *values):
         """
@@ -824,6 +820,7 @@ class MoshiController:
         Moshi data events are stored in programmed clumps of data. Simple jogs as well as full rasters
         are sent in a similar fashion. These programs are the core structure for the Moshiboard.
         """
+        self.pipe_channel("New Program")
         if len(self._buffer) == 0:
             if len(self._programs) == 0:
                 return  # There is nothing to run.
@@ -869,6 +866,7 @@ class MoshiController:
         """
         Wait until the buffer is fully sent.
         """
+        self.pipe_channel("Wait Cycle")
         if len(self._buffer) == 0:
             self.wait_finished()
             self.realtime_epilogue()
@@ -878,6 +876,7 @@ class MoshiController:
         Main threaded function to send data. While the controller is working the thread
         will be doing work in this function.
         """
+        self.pipe_channel("Send Thread Start...")
         self._main_lock.acquire(True)
         self.count = 0
         self.is_shutdown = False
@@ -890,6 +889,7 @@ class MoshiController:
                     # If we are initialized. Change that to active since we're running.
                     self.update_state(STATE_ACTIVE)
                 if stage == 0:
+                    self.pipe_channel("Stage 0")
                     # Stage 0: New Program send.
                     self.context.signal("pipe;running", True)
                     self._new_program()
@@ -898,6 +898,7 @@ class MoshiController:
                     break
                 # We try to process the queue.
                 if stage == 1:
+                    self.pipe_channel("Stage 1")
                     # Stage 1: Send Program.
                     self.context.signal("pipe;running", True)
                     self._send_buffer()
@@ -905,6 +906,7 @@ class MoshiController:
                 if self.is_shutdown:
                     break
                 if stage == 2:
+                    self.pipe_channel("Stage 2")
                     # Stage 2: Wait for Program to Finish.
                     self._wait_cycle()
                     stage = 0
@@ -930,6 +932,7 @@ class MoshiController:
         self.is_shutdown = False
         self.update_state(STATE_END)
         self._main_lock.release()
+        self.pipe_channel("Send Thread Finished...")
 
     def process_buffer(self):
         """
@@ -999,6 +1002,7 @@ class MoshiController:
         """
         Wait until the device has finished the current sending buffer.
         """
+        self.pipe_channel("Wait Finished")
         i = 0
         original_state = self.state
         if self.state != STATE_PAUSE:
