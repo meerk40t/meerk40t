@@ -1478,13 +1478,9 @@ class LhystudiosController:
     """
     K40 Controller controls the Lhystudios boards sending any queued data to the USB when the signal is not busy.
 
-    This is registered in the kernel as a module. Saving a few persistent settings like packet_count and registering
-    a couple controls like Connect_USB.
-
-    This is also a Pipe. Elements written to the Controller are sent to the USB to the matched device. Opening and
-    closing of the pipe are dealt with internally. There are three primary monitor data channels. 'send', 'recv' and
-    'usb'. They display the reading and writing of information to/from the USB and the USB connection log, providing
-    information about the connecting and error status of the USB device.
+    Opening and closing of the pipe are dealt with internally. There are three primary monitor data channels.
+    'send', 'recv' and 'usb'. They display the reading and writing of information to/from the USB and the USB connection
+    log, providing information about the connecting and error status of the USB device.
     """
 
     def __init__(self, context, name, channel=None, *args, **kwargs):

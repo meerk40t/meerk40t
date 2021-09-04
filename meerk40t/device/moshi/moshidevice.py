@@ -13,7 +13,6 @@ from ...kernel import (
     STATE_TERMINATE,
     STATE_UNKNOWN,
     STATE_WAIT,
-    Modifier,
     Module,
 )
 from ..basedevice import (
@@ -338,6 +337,9 @@ def plugin(kernel, lifecycle=None):
             "usb_connect", input_type="moshi", help=_("Connect USB")
         )
         def usb_connect(command, channel, _, data=None, **kwargs):
+            """
+            Force USB Connection Event for Moshiboard
+            """
             spooler, driver, output = data
             try:
                 output.open()
@@ -348,6 +350,9 @@ def plugin(kernel, lifecycle=None):
             "usb_disconnect", input_type="moshi", help=_("Disconnect USB")
         )
         def usb_disconnect(command, channel, _, data=None, **kwargs):
+            """
+            Force USB Disconnect Event for Moshiboard
+            """
             spooler, driver, output = data
             if output.connection is not None:
                 output.close()
@@ -358,6 +363,9 @@ def plugin(kernel, lifecycle=None):
             "start", input_type="moshi", help=_("Start Pipe to Controller")
         )
         def pipe_start(command, channel, _, data=None, **kwargs):
+            """
+            Start output sending.
+            """
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
@@ -365,6 +373,9 @@ def plugin(kernel, lifecycle=None):
 
         @context.console_command("hold", input_type="moshi", help=_("Hold Controller"))
         def pipe_pause(command, channel, _, data=None, **kwargs):
+            """
+            Pause output sending.
+            """
             spooler, driver, output = data
             output.update_state(STATE_PAUSE)
             output.pause()
@@ -374,6 +385,9 @@ def plugin(kernel, lifecycle=None):
             "resume", input_type="moshi", help=_("Resume Controller")
         )
         def pipe_resume(command, channel, _, data=None, **kwargs):
+            """
+            Resume output sending.
+            """
             spooler, driver, output = data
             output.update_state(STATE_ACTIVE)
             output.start()
@@ -381,6 +395,10 @@ def plugin(kernel, lifecycle=None):
 
         @context.console_command("abort", input_type="moshi", help=_("Abort Job"))
         def pipe_abort(command, channel, _, data=None, **kwargs):
+            """
+            Abort output job. Usually due to the functionality of Moshiboards this will do
+            nothing as the job will have already sent to the backend.
+            """
             spooler, driver, output = data
             output.reset()
             channel(_("Moshi Channel Aborted."))
@@ -388,9 +406,12 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "status",
             input_type="moshi",
-            help=_("abort waiting process on the controller."),
+            help=_("Update moshiboard controller status"),
         )
         def realtime_status(channel, _, data=None, **kwargs):
+            """
+            Updates the CH341 Status information for the Moshiboard.
+            """
             spooler, driver, output = data
             try:
                 output.update_status()
@@ -403,11 +424,18 @@ def plugin(kernel, lifecycle=None):
             help=_("abort waiting process on the controller."),
         )
         def realtime_pause(data=None, **kwargs):
+            """
+            Abort the waiting process for Moshiboard. This is usually a wait from BUSY (207) state until the board
+            reports its status as READY (205)
+            """
             spooler, driver, output = data
             output.abort_waiting = True
 
 
 def get_code_string_from_moshicode(code):
+    """
+    Moshiboard CH341 codes into code strings.
+    """
     if code == STATUS_OK:
         return "OK"
     elif code == STATUS_PROCESSING:
@@ -419,6 +447,12 @@ def get_code_string_from_moshicode(code):
 
 
 class MoshiDriver(Driver):
+    """
+    A driver takes spoolable commands and turns those commands into states and code in a language
+    agnostic fashion. The Moshibaord Driver overloads the Driver class to take spoolable values from
+    the spooler and converts them into Moshiboard specific actions.
+
+    """
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         context = context.get_context("moshi/driver/%s" % name)
         Driver.__init__(self, context=context)
@@ -463,11 +497,10 @@ class MoshiDriver(Driver):
         context.setting(int, "usb_address", -1)
         context.setting(int, "usb_version", -1)
 
-
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
 
-    def swizzle(self, b, p7, p6, p5, p4, p3, p2, p1, p0):
+    def _swizzle(self, b, p7, p6, p5, p4, p3, p2, p1, p0):
         return (
             ((b >> 0) & 1) << p0
             | ((b >> 1) & 1) << p1
@@ -480,17 +513,30 @@ class MoshiDriver(Driver):
         )
 
     def convert(self, q):
+        """
+        Translated Moshiboard swizzle into correct Moshi command code.
+
+        Moshiboards command codes have 16 values with 16 different swizzled values. There are
+        two different swizzles depending on the parity of the particular code. These codes are used
+        randomly by Moshi's native software. The board itself reads these all the same.
+        """
         if q & 1:
-            return self.swizzle(q, 7, 6, 2, 4, 3, 5, 1, 0)
+            return self._swizzle(q, 7, 6, 2, 4, 3, 5, 1, 0)
         else:
-            return self.swizzle(q, 5, 1, 7, 2, 4, 3, 6, 0)
+            return self._swizzle(q, 5, 1, 7, 2, 4, 3, 6, 0)
 
     def reconvert(self, q):
+        """
+        Counter-translate a particular command code back into correct values.
+        """
         for m in range(5):
             q = self.convert(q)
         return q
 
     def pipe_int8(self, value):
+        """
+        Write an 8 bit into to the current program.
+        """
         v = bytes(
             bytearray(
                 [
@@ -501,6 +547,9 @@ class MoshiDriver(Driver):
         self.data_output(v)
 
     def pipe_int16le(self, value):
+        """
+        Write a 16 bit little-endian value to the current program.
+        """
         v = bytes(
             bytearray(
                 [
@@ -514,7 +563,9 @@ class MoshiDriver(Driver):
     def write_vector_speed(self, speed_mms, normal_speed_mms):
         """
         Vector Speed Byte. (0x00 position), followed by 2 int8 values.
-        Speed and Normal Speed.
+        Jog and Normal Speed. These values are limited to integer values which
+        are 1 to 256.
+
         :return:
         """
         self.data_output(swizzle_table[5][0])
@@ -523,9 +574,12 @@ class MoshiDriver(Driver):
         if speed_mms < 1:
             speed_mms = 1
         self.pipe_int8(speed_mms - 1)
-        self.pipe_int8(normal_speed_mms - 1)  # Unknown
+        self.pipe_int8(normal_speed_mms - 1)
 
     def write_raster_speed(self, speed_mms):
+        """
+        Write speed for raster programs.
+        """
         self.data_output(swizzle_table[4][0])
         speed_cms = int(round(speed_mms / 10))
         if speed_cms == 0:
@@ -545,12 +599,19 @@ class MoshiDriver(Driver):
     def write_termination(self):
         """
         Terminal Commands for Jump/Program. (last 7 bytes). (4)
+
         :return:
         """
         for i in range(7):
             self.data_output(swizzle_table[2][0])
 
     def write_cut_abs(self, x, y):
+        """
+        Write an absolute position cut value.
+
+        Laser will cut to this position from the current stored head position.
+        Head position is stored on the Moshiboard
+        """
         self.data_output(swizzle_table[15][1])
         if x < 0:
             x = 0
@@ -564,6 +625,12 @@ class MoshiDriver(Driver):
         self.pipe_int16le(int(y))
 
     def write_move_abs(self, x, y):
+        """
+        Write an absolute position move value.
+
+        Laser will move without cutting to this position from the current stored head position.
+        Head position is stored on the Moshiboard
+        """
         self.data_output(swizzle_table[7][0])
         if x < 0:
             x = 0
@@ -577,30 +644,60 @@ class MoshiDriver(Driver):
         self.pipe_int16le(int(y))
 
     def write_move_vertical_abs(self, y):
+        """
+        Write an absolute position vertical move.
+
+        Laser will move the y position without cutting to the new position from the head position
+        stored in the Moshiboard.
+        """
         self.current_y = y
         y -= self.offset_y
         self.data_output(swizzle_table[3][0])
         self.pipe_int16le(int(y))
 
     def write_move_horizontal_abs(self, x):
+        """
+        Write an absolute position horizontal move.
+
+        Laser will move the x position without cutting to the new position from the head position
+        stored in the Moshiboard.
+        """
         self.current_x = x
         x -= self.offset_x
         self.data_output(swizzle_table[6][0])
         self.pipe_int16le(int(x))
 
     def write_cut_horizontal_abs(self, x):
+        """
+        Write an absolute position horizontal cut.
+
+        Laser will cut to the x position with laser firing to the new position from the head position
+        stored in the Moshiboard.
+        """
         self.current_x = x
         x -= self.offset_x
         self.data_output(swizzle_table[14][0])
         self.pipe_int16le(int(x))
 
     def write_cut_vertical_abs(self, y):
+        """
+        Write an absolute position vertical cut.
+
+        Laser will cut to the y position with laser firing to the new position from the head position
+        stored in the Moshiboard
+        """
         self.current_y = y
         y -= self.offset_y
         self.data_output(swizzle_table[11][0])
         self.pipe_int16le(int(y))
 
     def ensure_program_mode(self):
+        """
+        Ensure the laser is currently in a program state. If it is not currently in a program state we begin
+        a program state.
+
+        If the the driver is currently in a program state the assurance is made.
+        """
         if self.state == DRIVER_STATE_PROGRAM:
             return
         if self.state == DRIVER_STATE_RASTER:
@@ -619,6 +716,10 @@ class MoshiDriver(Driver):
         self.context.signal("driver;mode", self.state)
 
     def ensure_raster_mode(self):
+        """
+        Ensure the driver is currently in a raster program state. If it is not in a raster program state
+        we write the raster program state.
+        """
         if self.state == DRIVER_STATE_RASTER:
             return
         if self.state == DRIVER_STATE_PROGRAM:
@@ -634,6 +735,10 @@ class MoshiDriver(Driver):
         self.write_move_abs(0, 0)
 
     def ensure_rapid_mode(self):
+        """
+        Ensure the driver is currently in a default state. If we are not in a default state the driver
+        should end the current program.
+        """
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
@@ -649,6 +754,10 @@ class MoshiDriver(Driver):
         self.context.signal("driver;mode", self.state)
 
     def ensure_finished_mode(self):
+        """
+        Ensure the driver is currently in a finished state. If we are not in a finished state the driver
+        should end the current program and return to rapid mode.
+        """
         if self.state == DRIVER_STATE_FINISH:
             return
         if (
@@ -666,49 +775,48 @@ class MoshiDriver(Driver):
 
         :return:
         """
-        if self.plot is not None:
-            while True:
-                try:
-                    if self.hold():
-                        return True
-                    x, y, on = next(self.plot)
-                except StopIteration:
-                    break
-                except TypeError:
-                    break
-                on = int(on)
-                if on & PLOT_FINISH:  # Plot planner is ending.
+        if self.plot is None:
+            return False
+        if self.hold():
+            return True
+
+        for x, y, on in self.plot():
+            on = int(on)
+            if on & PLOT_FINISH:  # Plot planner is ending.
+                self.ensure_rapid_mode()
+                continue
+            if on & PLOT_SETTING:  # Plot planner settings have changed.
+                p_set = self.plot_planner.settings
+                s_set = self.settings
+                if p_set.power != s_set.power:
+                    self.set_power(p_set.power)
+                if (
+                    p_set.speed != s_set.speed
+                    or p_set.raster_step != s_set.raster_step
+                ):
+                    self.set_speed(p_set.speed)
+                    self.set_step(p_set.raster_step)
                     self.ensure_rapid_mode()
-                    continue
-                if on & PLOT_SETTING:  # Plot planner settings have changed.
-                    p_set = self.plot_planner.settings
-                    s_set = self.settings
-                    if p_set.power != s_set.power:
-                        self.set_power(p_set.power)
-                    if (
-                        p_set.speed != s_set.speed
-                        or p_set.raster_step != s_set.raster_step
-                    ):
-                        self.set_speed(p_set.speed)
-                        self.set_step(p_set.raster_step)
-                        self.ensure_rapid_mode()
-                    self.settings.set_values(p_set)
-                    continue
-                if on & PLOT_AXIS:  # Major Axis.
-                    continue
-                if on & PLOT_DIRECTION:
-                    continue
-                if on & (
-                    PLOT_RAPID | PLOT_JOG
-                ):  # Plot planner requests position change.
-                    self.ensure_rapid_mode()
-                    self.move_absolute(x, y)
-                    continue
-                self.goto_absolute(x, y, on & 1)
-            self.plot = None
+                self.settings.set_values(p_set)
+                continue
+            if on & PLOT_AXIS:  # Major Axis.
+                continue
+            if on & PLOT_DIRECTION:
+                continue
+            if on & (
+                PLOT_RAPID | PLOT_JOG
+            ):  # Plot planner requests position change.
+                self.ensure_rapid_mode()
+                self.move_absolute(x, y)
+                continue
+            self.goto_absolute(x, y, on & 1)
+        self.plot = None
         return False
 
     def goto_absolute(self, x, y, cut):
+        """
+        Goto absolute position. Cut flags whether this should be with or without the laser.
+        """
         if self.settings.raster_step == 0:
             self.ensure_program_mode()
         else:
@@ -739,6 +847,10 @@ class MoshiDriver(Driver):
         self.context.signal("driver;position", (x, y, oldx, oldy))
 
     def cut(self, x, y):
+        """
+        Cut to a position x, y. Either absolute or relative depending on the state of
+        is_relative.
+        """
         if self.is_relative:
             self.cut_relative(x, y)
         else:
@@ -747,6 +859,9 @@ class MoshiDriver(Driver):
         self.data_control("execute\n")
 
     def cut_absolute(self, x, y):
+        """
+        Cut to a position x, y. This is an absolute position.
+        """
         self.ensure_program_mode()
         self.write_cut_abs(x, y)
 
@@ -757,14 +872,24 @@ class MoshiDriver(Driver):
         self.context.signal("driver;position", (x, y, oldx, oldy))
 
     def cut_relative(self, dx, dy):
+        """
+        Cut to a position dx, dy. This is relative to the currently laser position.
+        """
         x = dx + self.current_x
         y = dy + self.current_y
         self.cut_absolute(x, y)
 
     def jog(self, x, y, **kwargs):
+        """
+        Perform a rapid jog. In Moshiboard this is merely a move.
+        """
         self.move(x, y)
 
     def move(self, x, y):
+        """
+        Move to a position x,y. Either absolute or relative depending on the state of
+        is_relative.
+        """
         if self.is_relative:
             self.move_relative(x, y)
         else:
@@ -773,6 +898,9 @@ class MoshiDriver(Driver):
         self.data_control("execute\n")
 
     def move_absolute(self, x, y):
+        """
+        Move to a position x, y. This is an absolute position.
+        """
         self.ensure_program_mode()
         oldx = self.current_x
         oldy = self.current_y
@@ -782,23 +910,36 @@ class MoshiDriver(Driver):
         self.context.signal("driver;position", (x, y, oldx, oldy))
 
     def move_relative(self, dx, dy):
+        """
+        Move to a position dx, dy. This is a relative position.
+        """
         x = dx + self.current_x
         y = dy + self.current_y
         self.move_absolute(x, y)
 
     def set_speed(self, speed=None):
+        """
+        Set the speed for the driver.
+        """
         if self.settings.speed != speed:
             self.settings.speed = speed
             if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_RASTER:
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_step(self, step=None):
+        """
+        Set the raster step for the driver.
+        """
         if self.settings.raster_step != step:
             self.settings.raster_step = step
             if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_RASTER:
                 self.state = DRIVER_STATE_MODECHANGE
 
     def calc_home_position(self):
+        """
+        Calculate the home position with the given home adjust and the corner the device is
+        expected to home to.
+        """
         x = self.context.home_adjust_x
         y = self.context.home_adjust_y
         bed_dim = self.context.root
@@ -812,6 +953,10 @@ class MoshiDriver(Driver):
         return x, y
 
     def home(self, *values):
+        """
+        Send a home command to the device. In the case of Moshiboards this is merely a move to
+        0,0 in absolute position.
+        """
         self.offset_x = 0
         self.offset_y = 0
 
@@ -832,10 +977,16 @@ class MoshiDriver(Driver):
         pass
 
     def unlock_rail(self, abort=False):
+        """
+        Unlock the Rail or send a "FreeMotor" command.
+        """
         self.ensure_rapid_mode()
         self.data_control("unlock\n")
 
     def abort(self):
+        """
+        Abort the current work.
+        """
         self.data_control("stop\n")
 
     @property
@@ -843,16 +994,24 @@ class MoshiDriver(Driver):
         return "moshi"
 
 
-class MoshiController(Module):
+class MoshiController:
+    """
+    The Moshiboard Controller takes data programs built by the MoshiDriver and sends them across the
+    USB when the Moshiboard is not busy processing.
+
+    The output device is concerned with sending data pushed to it with write and control events and
+    relaying that information to the CH341 chip on the Moshiboard.
+    """
+
     def __init__(self, context, name, channel=None, *args, **kwargs):
         context = context.get_context("moshi/output/%s" % name)
-        Module.__init__(self, context, name, channel)
+        self.context = context
+        self.name = name
         self.state = STATE_UNKNOWN
+        self.is_shutdown = False
 
         self.next = None
         self.prev = None
-
-        self.is_shutdown = False
 
         self._thread = None
         self._buffer = b""  # Threadsafe buffered commands to be sent to controller.
@@ -881,7 +1040,6 @@ class MoshiController(Module):
         self.recv_channel = context.channel("%s/recv" % name)
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
 
-
         context.setting(int, "usb_index", -1)
         context.setting(int, "usb_bus", -1)
         context.setting(int, "usb_address", -1)
@@ -889,17 +1047,21 @@ class MoshiController(Module):
         context.setting(bool, "mock", False)
         context.setting(int, "packet_count", 0)
         context.setting(int, "rejected_count", 0)
-        # control = context.channel("%s/control" % name)
-        # control.watch(self.control)
-        self.context.root.listen("lifecycle;ready", self.on_controller_ready)
-
-    def initialize(self, *args, **kwargs):
-        context = self.context
-
-        context.setting(int, "packet_count", 0)
-        context.setting(int, "rejected_count", 0)
 
         self.reset()
+        self.context.root.listen("lifecycle;ready", self.on_controller_ready)
+
+    def viewbuffer(self):
+        """
+        Viewbuffer is used by the BufferView class if such a value exists it provides a view of the
+        buffered data. Without this class the BufferView displays nothing. This is optional for any output
+        device.
+        """
+        buffer = "Current Working Buffer: %s\n" % str(self._buffer)
+        for p in self._programs:
+            buffer += "%s\n" % str(p)
+        buffer += "Building Buffer: %s\n" % str(self._queue)
+        return buffer
 
     def on_controller_ready(self, origin, *args):
         self.start()
@@ -908,13 +1070,6 @@ class MoshiController(Module):
         self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
         if self._thread is not None:
             self.is_shutdown = True
-
-    def viewbuffer(self):
-        buffer = "Current Working Buffer: %s\n" % str(self._buffer)
-        for p in self._programs:
-            buffer += "%s\n" % str(p)
-        buffer += "Building Buffer: %s\n" % str(self._queue)
-        return buffer
 
     def __repr__(self):
         return "MoshiController()"
@@ -989,7 +1144,7 @@ class MoshiController(Module):
         else:
             self.connection.open()
         if self.connection is None:
-            raise ConnectionRefusedError
+            raise ConnectionRefusedError("ch341 connect did not return a connection.")
 
     def close(self):
         self.pipe_channel("close()")
@@ -998,6 +1153,9 @@ class MoshiController(Module):
             self.connection = None
 
     def control(self, command):
+        """
+        The Moshiboard control values are non-data based control events.
+        """
         if command == "execute\n":
             if len(self._queue) == 0:
                 return
@@ -1063,21 +1221,33 @@ class MoshiController(Module):
             self.update_state(STATE_ACTIVE)
 
     def abort(self):
+        """
+        Abort the current buffer and data queue.
+        """
         self._buffer = b""
         self._queue = bytearray()
         self.context.signal("pipe;buffer", 0)
         self.update_state(STATE_TERMINATE)
 
     def reset(self):
+        """
+        Reinitialize the device.
+        """
         self.update_state(STATE_INITIALIZE)
 
     def stop(self, *args):
+        """
+        Start the shutdown of the local send thread.
+        """
         self.abort()
         if self._thread is not None:
             self._thread.join()  # Wait until stop completes before continuing.
         self._thread = None
 
     def update_state(self, state):
+        """
+        Update the local state for the output device
+        """
         if state == self.state:
             return
         self.state = state
@@ -1085,16 +1255,28 @@ class MoshiController(Module):
             self.context.signal("pipe;thread", self.state)
 
     def update_buffer(self):
+        """
+        Notify listening processes that the buffer size of this output has changed.
+        """
         if self.context is not None:
             self.context._buffer_size = len(self._buffer)
             self.context.signal("pipe;buffer", self.context._buffer_size)
 
     def update_packet(self, packet):
+        """
+        Notify listening processes that the last sent packet has changed.
+        """
         if self.context is not None:
             self.context.signal("pipe;packet_text", packet)
             self.usb_send_channel(packet)
 
     def _new_program(self):
+        """
+        Start a new MoshiProgram.
+
+        Moshi data events are stored in programmed clumps of data. Simple jogs as well as full rasters
+        are sent in a similar fashion. These programs are the core structure for the Moshiboard.
+        """
         if len(self._buffer) == 0:
             if len(self._programs) == 0:
                 return  # There is nothing to run.
@@ -1103,6 +1285,9 @@ class MoshiController(Module):
             self._buffer = self._programs.pop(0)
 
     def _send_buffer(self):
+        """
+        Send the current Moshiboard buffer
+        """
         while len(self._buffer) != 0:
             queue_processed = self.process_buffer()
             self.refuse_counts = 0
@@ -1133,6 +1318,9 @@ class MoshiController(Module):
                 self.count += 1
 
     def _wait_cycle(self):
+        """
+        Wait until the buffer is fully sent.
+        """
         if len(self._buffer) == 0:
             self.realtime_epilogue()
             self.wait_finished()
@@ -1142,53 +1330,63 @@ class MoshiController(Module):
         Main threaded function to send data. While the controller is working the thread
         will be doing work in this function.
         """
+        self._main_lock.acquire(True)
+        self.count = 0
+        self.is_shutdown = False
+        stage = 0
 
-        with self._main_lock:
-            self.count = 0
-            self.is_shutdown = False
-            stage = 0
-            while self.state != STATE_END and self.state != STATE_TERMINATE:
-                try:
-                    self.open()
-                    if self.state == STATE_INITIALIZE:
-                        # If we are initialized. Change that to active since we're running.
-                        self.update_state(STATE_ACTIVE)
-                    if stage == 0:
-                        self._new_program()
-                        stage = 1
-                    if len(self._buffer) == 0:
-                        break
-                    # We try to process the queue.
-                    if stage == 1:
-                        self._send_buffer()
-                        stage = 2
-                    if self.is_shutdown:
-                        break
-                    if stage == 2:
-                        self._wait_cycle()
-                        stage = 0
-                except ConnectionRefusedError:
-                    # The attempt refused the connection.
-                    self.refuse_counts += 1
-                    time.sleep(3)  # 3 second sleep on failed connection attempt.
-                    if self.refuse_counts >= self.max_attempts:
-                        # We were refused too many times, kill the thread.
-                        self.update_state(STATE_TERMINATE)
-                        self.context.signal("pipe;failing", self.refuse_counts)
-                        break
-                    continue
-                except ConnectionError:
-                    # There was an error with the connection, close it and try again.
-                    self.connection_errors += 1
-                    time.sleep(0.5)
-                    self.close()
-                    continue
-            self._thread = None
-            self.is_shutdown = False
-            self.update_state(STATE_END)
+        while self.state != STATE_END and self.state != STATE_TERMINATE:
+            try:
+                self.open()
+                if self.state == STATE_INITIALIZE:
+                    # If we are initialized. Change that to active since we're running.
+                    self.update_state(STATE_ACTIVE)
+                if stage == 0:
+                    # Stage 0: New Program send.
+                    self.context.signal("pipe;running", True)
+                    self._new_program()
+                    stage = 1
+                if len(self._buffer) == 0:
+                    break
+                # We try to process the queue.
+                if stage == 1:
+                    # Stage 1: Send Program.
+                    self.context.signal("pipe;running", True)
+                    self._send_buffer()
+                    stage = 2
+                if self.is_shutdown:
+                    break
+                if stage == 2:
+                    # Stage 2: Wait for Program to Finish.
+                    self._wait_cycle()
+                    stage = 0
+            except ConnectionRefusedError:
+                # The attempt refused the connection.
+                self.refuse_counts += 1
+                time.sleep(3)  # 3 second sleep on failed connection attempt.
+                if self.refuse_counts >= self.max_attempts:
+                    # We were refused too many times, kill the thread.
+                    self.update_state(STATE_TERMINATE)
+                    self.context.signal("pipe;failing", self.refuse_counts)
+                    self.context.signal("pipe;running", False)
+                    break
+                continue
+            except ConnectionError:
+                # There was an error with the connection, close it and try again.
+                self.connection_errors += 1
+                time.sleep(0.5)
+                self.close()
+                continue
+        self.context.signal("pipe;running", True)
+        self._thread = None
+        self.is_shutdown = False
+        self.update_state(STATE_END)
+        self._main_lock.release()
 
     def process_buffer(self):
         """
+        Attempts to process the program send from the buffer.
+
         :return: queue process success.
         """
         if len(self._buffer) > 0:
@@ -1210,10 +1408,16 @@ class MoshiController(Module):
         return True  # A packet was prepped and sent correctly.
 
     def send_packet(self, packet):
+        """
+        Send packet to the CH341 connection.
+        """
         self.connection.write(packet)
         self.update_packet(packet)
 
     def update_status(self):
+        """
+        Request a status update from the CH341 connection.
+        """
         if self.connection is None:
             raise ConnectionError
         self._status = self.connection.get_status()
@@ -1226,6 +1430,9 @@ class MoshiController(Module):
             self.recv_channel(str(self._status))
 
     def wait_until_accepting_packets(self):
+        """
+        Wait until the device can accept packets.
+        """
         i = 0
         while self.state != STATE_TERMINATE:
             self.update_status()
@@ -1241,6 +1448,9 @@ class MoshiController(Module):
                 return  # Wait abort was requested.
 
     def wait_finished(self):
+        """
+        Wait until the device has finished the current sending buffer.
+        """
         i = 0
         original_state = self.state
         if self.state != STATE_PAUSE:
