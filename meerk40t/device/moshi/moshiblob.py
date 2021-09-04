@@ -290,6 +290,24 @@ swizzle_table = [
     ],
 ]
 
+MOSHI_SET_OFFSET = 0
+MOSHI_TERMINATION = 2
+MOSHI_VECTOR_SPEED = 5
+MOSHI_RASTER_SPEED = 4
+MOSHI_CUT_ABS = 15
+MOSHI_CUT_HORIZ = 14
+MOSHI_CUT_VERT = 11
+MOSHI_MOVE_ABS = 7
+MOSHI_MOVE_HORIZ = 6
+MOSHI_MOVE_VERT = 3
+
+MOSHI_FREEMOTOR = 1
+MOSHI_ESTOP = 1
+MOSHI_EPILOGUE = 2
+MOSHI_PROLOGUE = 6
+MOSHI_LASER = 7
+MOSHI_READ = 14
+
 
 class MoshiBlob:
     """
@@ -361,7 +379,7 @@ class MoshiBlob:
         self._stage = 1
         if self.channel:
             self.channel("Vector Cut Speed: %d mm/s Normal Speed: %d mm/s" % (int(speed_mms), int(normal_speed_mms)))
-        self.write(swizzle_table[5][0])
+        self.write(swizzle_table[MOSHI_VECTOR_SPEED][0])
         if speed_mms > 256:
             speed_mms = 256
         if speed_mms < 1:
@@ -377,7 +395,7 @@ class MoshiBlob:
         self._stage = 1
         if self.channel:
             self.channel("Raster Header Speed: %d cm/s" % int(speed_mms))
-        self.write(swizzle_table[4][0])
+        self.write(swizzle_table[MOSHI_RASTER_SPEED][0])
         speed_cms = int(round(speed_mms / 10))
         if speed_cms == 0:
             speed_cms = 1
@@ -395,7 +413,7 @@ class MoshiBlob:
 
         if self.channel:
             self.channel("Set Location z: %d, x: %d, y: %d" % (int(z), int(x), int(y)))
-        self.write(swizzle_table[0][0])
+        self.write(swizzle_table[MOSHI_SET_OFFSET][0])
         self.pipe_int16le(z)  # Unknown, always zero.
         self.pipe_int16le(x)  # x
         self.pipe_int16le(y)  # y
@@ -411,7 +429,7 @@ class MoshiBlob:
         if self.channel:
             self.channel("Termination.")
         for i in range(7):
-            self.write(swizzle_table[2][0])
+            self.write(swizzle_table[MOSHI_TERMINATION][0])
 
     def cut_abs(self, x, y):
         """
@@ -432,7 +450,7 @@ class MoshiBlob:
         y -= self.offset_y
         if self.channel:
             self.channel("Cut x: %d y: %d" % (int(x), int(y)))
-        self.write(swizzle_table[15][1])
+        self.write(swizzle_table[MOSHI_CUT_ABS][1])
         self.pipe_int16le(int(x))
         self.pipe_int16le(int(y))
 
@@ -455,7 +473,7 @@ class MoshiBlob:
         y -= self.offset_y
         if self.channel:
             self.channel("Move x: %d y: %d" % (int(x), int(y)))
-        self.write(swizzle_table[7][0])
+        self.write(swizzle_table[MOSHI_MOVE_ABS][0])
         self.pipe_int16le(int(x))
         self.pipe_int16le(int(y))
 
@@ -473,7 +491,7 @@ class MoshiBlob:
         y -= self.offset_y
         if self.channel:
             self.channel("Move Vertical y: %d" % int(y))
-        self.write(swizzle_table[3][0])
+        self.write(swizzle_table[MOSHI_MOVE_VERT][0])
         self.pipe_int16le(int(y))
 
     def move_horizontal_abs(self, x):
@@ -489,7 +507,7 @@ class MoshiBlob:
         x -= self.offset_x
         if self.channel:
             self.channel("Move Horizontal x: %d" % int(x))
-        self.write(swizzle_table[6][0])
+        self.write(swizzle_table[MOSHI_MOVE_HORIZ][0])
         self.pipe_int16le(int(x))
 
     def cut_horizontal_abs(self, x):
@@ -505,7 +523,7 @@ class MoshiBlob:
         x -= self.offset_x
         if self.channel:
             self.channel("Cut Horizontal x: %d" % int(x))
-        self.write(swizzle_table[14][0])
+        self.write(swizzle_table[MOSHI_CUT_HORIZ][0])
         self.pipe_int16le(int(x))
 
     def cut_vertical_abs(self, y):
@@ -521,7 +539,7 @@ class MoshiBlob:
         y -= self.offset_y
         if self.channel:
             self.channel("Cut Vertical y: %d" % int(y))
-        self.write(swizzle_table[11][0])
+        self.write(swizzle_table[MOSHI_CUT_VERT][0])
         self.pipe_int16le(int(y))
 
     @staticmethod

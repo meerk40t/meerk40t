@@ -1,7 +1,8 @@
 import threading
 import time
 
-from .moshiblob import swizzle_table, MoshiBlob
+from .moshiblob import swizzle_table, MoshiBlob, MOSHI_ESTOP, MOSHI_LASER, MOSHI_FREEMOTOR, MOSHI_EPILOGUE, \
+    MOSHI_PROLOGUE, MOSHI_READ
 from ...core.drivers import Driver
 from ...core.plotplanner import PlotPlanner
 from ...kernel import (
@@ -642,7 +643,7 @@ class MoshiController:
         :return:
         """
         self.pipe_channel("Realtime: Read...")
-        self.realtime_pipe(swizzle_table[14][0])
+        self.realtime_pipe(swizzle_table[MOSHI_READ][0])
 
     def realtime_prologue(self):
         """
@@ -650,7 +651,7 @@ class MoshiController:
         :return:
         """
         self.pipe_channel("Realtime: Prologue")
-        self.realtime_pipe(swizzle_table[6][0])
+        self.realtime_pipe(swizzle_table[MOSHI_PROLOGUE][0])
 
     def realtime_epilogue(self):
         """
@@ -661,7 +662,7 @@ class MoshiController:
         :return:
         """
         self.pipe_channel("Realtime: Epilogue")
-        self.realtime_pipe(swizzle_table[2][0])
+        self.realtime_pipe(swizzle_table[MOSHI_EPILOGUE][0])
 
     def realtime_freemotor(self):
         """
@@ -669,7 +670,7 @@ class MoshiController:
         :return:
         """
         self.pipe_channel("Realtime: FreeMotor")
-        self.realtime_pipe(swizzle_table[1][0])
+        self.realtime_pipe(swizzle_table[MOSHI_FREEMOTOR][0])
 
     def realtime_laser(self):
         """
@@ -677,7 +678,7 @@ class MoshiController:
         :return:
         """
         self.pipe_channel("Realtime: Laser Active")
-        self.realtime_pipe(swizzle_table[7][0])
+        self.realtime_pipe(swizzle_table[MOSHI_LASER][0])
 
     def realtime_stop(self):
         """
@@ -685,7 +686,7 @@ class MoshiController:
         :return:
         """
         self.pipe_channel("Realtime: Stop")
-        self.realtime_pipe(swizzle_table[1][0])
+        self.realtime_pipe(swizzle_table[MOSHI_ESTOP][0])
 
     def realtime_pipe(self, data):
         self.connection.write_addr(data)
