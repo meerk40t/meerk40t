@@ -599,7 +599,7 @@ class MoshiController:
         """
         buffer = "Current Working Buffer: %s\n" % str(self._buffer)
         for p in self._programs:
-            buffer += "%s\n" % str(p)
+            buffer += "%s\n" % str(p.data)
         buffer += "Building Buffer: %s\n" % str(self._queue)
         return buffer
 
@@ -616,7 +616,7 @@ class MoshiController:
 
     def __len__(self):
         """Provides the length of the buffer of this device."""
-        return len(self._buffer) + sum(map(len, self._programs)) + len(self._queue)
+        return len(self._buffer) + sum(map(len, self._programs))
 
     def realtime_read(self):
         """
@@ -807,7 +807,7 @@ class MoshiController:
                 return  # There is nothing to run.
             self.wait_until_accepting_packets()
             self.realtime_prologue()
-            self._buffer = self._programs.pop(0)
+            self._buffer = self._programs.pop(0).data
 
     def _send_buffer(self):
         """
