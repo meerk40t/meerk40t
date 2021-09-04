@@ -13,7 +13,6 @@ from ...kernel import (
     STATE_TERMINATE,
     STATE_UNKNOWN,
     STATE_WAIT,
-    Module,
 )
 from ..basedevice import (
     DRIVER_STATE_FINISH,
@@ -465,28 +464,13 @@ class MoshiDriver(Driver):
 
         self.offset_x = 0
         self.offset_y = 0
-        self.next_x = None
-        self.next_y = None
-        self.max_x = None
-        self.max_y = None
-        self.min_x = None
-        self.min_y = None
-        self.start_x = None
-        self.start_y = None
+
         self.is_paused = False
         self.context._buffer_size = 0
         self.thread = None
-        context = self.context
         root_context = context.root
-        kernel = context.kernel
-        _ = context._
 
         context.driver = self
-
-        self.context.setting(bool, "home_right", False)
-        self.context.setting(bool, "home_bottom", False)
-        self.context.setting(int, "home_adjust_x", 0)
-        self.context.setting(int, "home_adjust_y", 0)
 
         root_context.setting(bool, "opt_rapid_between", True)
         root_context.setting(int, "opt_jog_mode", 0)
@@ -496,6 +480,11 @@ class MoshiDriver(Driver):
         context.setting(int, "usb_bus", -1)
         context.setting(int, "usb_address", -1)
         context.setting(int, "usb_version", -1)
+
+        context.setting(bool, "home_right", False)
+        context.setting(bool, "home_bottom", False)
+        context.setting(int, "home_adjust_x", 0)
+        context.setting(int, "home_adjust_y", 0)
 
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
@@ -1038,6 +1027,7 @@ class MoshiController:
         self.usb_log = context.channel("%s/usb" % name, buffer_size=20)
         self.usb_send_channel = context.channel("%s/usb_send" % name)
         self.recv_channel = context.channel("%s/recv" % name)
+
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
 
         context.setting(int, "usb_index", -1)
