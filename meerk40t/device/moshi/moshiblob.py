@@ -422,9 +422,6 @@ class MoshiBlob:
         """
         assert (2 <= self._stage <= 3)
         self._stage = 3
-        if self.channel:
-            self.channel("Cut x: %d y: %d" % (int(x), int(y)))
-        self.write(swizzle_table[15][1])
         if x < 0:
             x = 0
         if y < 0:
@@ -433,6 +430,9 @@ class MoshiBlob:
         self.current_y = y
         x -= self.offset_x
         y -= self.offset_y
+        if self.channel:
+            self.channel("Cut x: %d y: %d" % (int(x), int(y)))
+        self.write(swizzle_table[15][1])
         self.pipe_int16le(int(x))
         self.pipe_int16le(int(y))
 
@@ -445,9 +445,6 @@ class MoshiBlob:
         """
         assert (2 <= self._stage <= 3)
         self._stage = 3
-        if self.channel:
-            self.channel("Move x: %d y: %d" % (int(x), int(y)))
-        self.write(swizzle_table[7][0])
         if x < 0:
             x = 0
         if y < 0:
@@ -456,6 +453,9 @@ class MoshiBlob:
         self.current_y = y
         x -= self.offset_x
         y -= self.offset_y
+        if self.channel:
+            self.channel("Move x: %d y: %d" % (int(x), int(y)))
+        self.write(swizzle_table[7][0])
         self.pipe_int16le(int(x))
         self.pipe_int16le(int(y))
 
@@ -468,10 +468,11 @@ class MoshiBlob:
         """
         assert (2 <= self._stage <= 3)
         self._stage = 3
-        if self.channel:
-            self.channel("Move Vertical y: %d" % int(y))
+
         self.current_y = y
         y -= self.offset_y
+        if self.channel:
+            self.channel("Move Vertical y: %d" % int(y))
         self.write(swizzle_table[3][0])
         self.pipe_int16le(int(y))
 
@@ -484,10 +485,10 @@ class MoshiBlob:
         """
         assert (2 <= self._stage <= 3)
         self._stage = 3
-        if self.channel:
-            self.channel("Move Horizontal x: %d" % int(x))
         self.current_x = x
         x -= self.offset_x
+        if self.channel:
+            self.channel("Move Horizontal x: %d" % int(x))
         self.write(swizzle_table[6][0])
         self.pipe_int16le(int(x))
 
@@ -500,10 +501,10 @@ class MoshiBlob:
         """
         assert (2 <= self._stage <= 3)
         self._stage = 3
-        if self.channel:
-            self.channel("Cut Horizontal x: %d" % int(x))
         self.current_x = x
         x -= self.offset_x
+        if self.channel:
+            self.channel("Cut Horizontal x: %d" % int(x))
         self.write(swizzle_table[14][0])
         self.pipe_int16le(int(x))
 
@@ -516,10 +517,10 @@ class MoshiBlob:
         """
         assert (2 <= self._stage <= 3)
         self._stage = 3
-        if self.channel:
-            self.channel("Cut Vertical y: %d" % int(y))
         self.current_y = y
         y -= self.offset_y
+        if self.channel:
+            self.channel("Cut Vertical y: %d" % int(y))
         self.write(swizzle_table[11][0])
         self.pipe_int16le(int(y))
 
