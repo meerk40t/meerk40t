@@ -5260,18 +5260,6 @@ class Elemental(Modifier):
         rasters_one_pass = None
 
         for op in operations:
-            if op.operation in ("Cut", "Engrave"):
-                vector_ops.append(op)
-            elif op.operation == "Raster":
-                raster_ops.append(op)
-                op_color = op.color.rgb if not op.default else "default"
-                if rasters_one_pass is not None and rasters_one_pass is not False:
-                    if str(rasters_one_pass) != str(op_color):
-                        rasters_one_pass = False
-                else:
-                    rasters_one_pass = op_color
-            else:
-                special_ops.append(op)
             if op.default:
                 if op.operation == "Cut":
                     default_cut_ops.append(op)
@@ -5279,6 +5267,19 @@ class Elemental(Modifier):
                     default_engrave_ops.append(op)
                 if op.operation == "Raster":
                     default_raster_ops.append(op)
+            if op.operation in ("Cut", "Engrave"):
+                vector_ops.append(op)
+            elif op.operation == "Raster":
+                raster_ops.append(op)
+                op_color = op.color.rgb if not op.default else "default"
+                if rasters_one_pass is not False:
+                    if rasters_one_pass is not None:
+                        if str(rasters_one_pass) != str(op_color):
+                            rasters_one_pass = False
+                    else:
+                        rasters_one_pass = op_color
+            else:
+                special_ops.append(op)
         if rasters_one_pass is not False:
             rasters_one_pass = True
 
