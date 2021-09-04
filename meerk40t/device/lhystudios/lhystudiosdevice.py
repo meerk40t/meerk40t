@@ -1117,7 +1117,7 @@ class LhystudiosDriver(Driver):
         self.laser = True
         return True
 
-    def ensure_rapid_mode(self):
+    def ensure_rapid_mode(self, *values):
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
@@ -1163,7 +1163,7 @@ class LhystudiosDriver(Driver):
         self.data_output(b"S1E")
         self.state = DRIVER_STATE_PROGRAM
 
-    def ensure_finished_mode(self):
+    def ensure_finished_mode(self, *values):
         if self.state == DRIVER_STATE_FINISH:
             return
         if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_MODECHANGE:
