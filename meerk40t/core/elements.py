@@ -2466,7 +2466,7 @@ class Elemental(Modifier):
                     top = subbox[1] - top_edge
                     matrix = "translate(0, %f)" % -top
                     if top != 0:
-                        for q in e.flat(types=("elem", "group", "file")):
+                        for q in node.flat(types=("elem", "group", "file")):
                             obj = q.object
                             if obj is not None:
                                 obj *= matrix
