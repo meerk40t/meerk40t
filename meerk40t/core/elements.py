@@ -4225,7 +4225,11 @@ class Elemental(Modifier):
             self.context.signal("element_property_reload", node)
 
         def radio_match(node, passvalue=1, **kwgs):
-            return node.settings.passes == passvalue and node.settings.passes_custom
+            return (
+                (node.settings.passes_custom and passvalue == node.settings.passes)
+                or
+                (not node.settings.passes_custom and passvalue == 1)
+            )
 
         @self.tree_submenu(_("Set operation passes"))
         @self.tree_radio(radio_match)
