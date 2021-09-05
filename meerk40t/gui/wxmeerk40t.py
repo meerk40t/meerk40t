@@ -114,7 +114,8 @@ from .icons import (
     icons8_save_50,
     icons8_scatter_plot_20,
     icons8_system_task_20,
-    icons8_vector_20, icons8_gas_industry_50,
+    icons8_vector_20,
+    icons8_gas_industry_50,
 )
 from .imageproperty import ImageProperty
 from .jobspooler import JobSpooler
@@ -618,7 +619,7 @@ class MeerK40t(MWindow):
             from .panes.toolbarshapes import register_shapes_tools
             register_shapes_tools(context=self.context, gui=self)
 
-        #define go
+        # Define Go
         go = wx.BitmapButton(
             self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap()
         )
@@ -3348,6 +3349,8 @@ class ShadowTree:
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.wxtree.CollapseAllChildren(item)
+        if self.wxtree.GetItemParent(item) == self.wxtree.GetRootItem():
+            self.wxtree.Expand(item)
 
     def reorder(self, node):
         self.rebuild_tree()
@@ -3425,7 +3428,21 @@ class ShadowTree:
         node_elements = self.element_root.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap(True))
 
-        self.wxtree.ExpandAll()
+        # Expand Ops and Element nodes only
+        # We check these two exist but will open any additional siblings just in case
+        self.wxtree.CollapseAll()
+        item = self.wxtree.GetFirstVisibleItem()
+        if not item.IsOk():
+            raise ValueError("Bad Item")
+        self.wxtree.Expand(item)
+        item = self.wxtree.GetNextSibling(item)
+        if not item.IsOk():
+            raise ValueError("Bad Item")
+        self.wxtree.Expand(item)
+        item = self.wxtree.GetNextSibling(item)
+        while item.IsOk():
+            self.wxtree.Expand(item)
+            item = self.wxtree.GetNextSibling(item)
 
     def register_children(self, node):
         for child in node.children:
@@ -3754,6 +3771,7 @@ class ShadowTree:
         """
         menu = wx.Menu()
         submenus = {}
+        radio_check_not_needed = []
 
         def menu_functions(f, node):
             func_dict = dict(f.func_dict)
@@ -3768,10 +3786,13 @@ class ShadowTree:
             submenu = None
             if submenu_name in submenus:
                 submenu = submenus[submenu_name]
-            elif submenu_name is not None:
-                submenu = wx.Menu()
-                menu.AppendSubMenu(submenu, submenu_name)
-                submenus[submenu_name] = submenu
+            else:
+                if func.separate_before:
+                    menu.AppendSeparator()
+                if submenu_name is not None:
+                    submenu = wx.Menu()
+                    menu.AppendSubMenu(submenu, submenu_name)
+                    submenus[submenu_name] = submenu
 
             menu_context = submenu if submenu is not None else menu
             if func.reference is not None:
@@ -3780,25 +3801,31 @@ class ShadowTree:
                 )
                 continue
             if func.radio_state is not None:
-                if func.separate_before:
-                    menu_context.AppendSeparator()
                 item = menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_RADIO)
                 gui.Bind(
                     wx.EVT_MENU,
                     menu_functions(func, node),
                     item,
                 )
-                item.Check(func.radio_state)
+                check = func.radio_state
+                item.Check(check)
+                if check and menu_context not in radio_check_not_needed:
+                    radio_check_not_needed.append(menu_context)
             else:
-                if func.separate_before:
-                    menu_context.AppendSeparator()
                 gui.Bind(
                     wx.EVT_MENU,
                     menu_functions(func, node),
                     menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL),
                 )
-            if func.separate:
-                menu_context.AppendSeparator()
+                if menu_context not in radio_check_not_needed:
+                    radio_check_not_needed.append(menu_context)
+            if not submenu and func.separate_after:
+                menu.AppendSeparator()
+
+        for submenu in submenus.values():
+            if submenu not in radio_check_not_needed:
+                item = submenu.Append(wx.ID_ANY, _("Other"), "", wx.ITEM_RADIO)
+                item.Check(True)
         return menu
 
     def create_menu(self, gui, node):
