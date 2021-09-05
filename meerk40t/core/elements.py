@@ -4871,6 +4871,7 @@ class Elemental(Modifier):
         def cutcode_operation(node, **kwgs):
             self.context.elements.add_op(node.object)
 
+        @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_separator_before()
         @self.tree_operation(
             _("Expand all children"),
@@ -4880,6 +4881,7 @@ class Elemental(Modifier):
         def expand_all_children(node, **kwgs):
             node.notify_expand()
 
+        @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_operation(
             _("Collapse all children"),
             node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
