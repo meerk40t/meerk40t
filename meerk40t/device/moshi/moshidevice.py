@@ -28,6 +28,8 @@ from ..basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
+    PLOT_LEFT_UPPER,
+    PLOT_RIGHT_LOWER, PLOT_START,
 )
 
 MILS_IN_MM = 39.3701
@@ -180,6 +182,9 @@ class MoshiDriver(Driver):
         self.thread = None
         root_context = context.root
 
+        self.preferred_offset_x = 0
+        self.preferred_offset_y = 0
+
         context.driver = self
 
         root_context.setting(bool, "opt_rapid_between", True)
@@ -195,6 +200,7 @@ class MoshiDriver(Driver):
         context.setting(bool, "home_bottom", False)
         context.setting(int, "home_adjust_x", 0)
         context.setting(int, "home_adjust_y", 0)
+        context.setting(bool, "enable_raster", True)
 
         self.pipe_channel = context.channel("%s/events" % name)
 
@@ -204,15 +210,10 @@ class MoshiDriver(Driver):
     def push_program(self):
         self.pipe_channel("Pushed program to output...")
         if len(self.program):
-            self.current_x = self.program.current_x
-            self.current_y = self.program.current_y
-
             self.output.push_program(self.program)
 
             self.program = MoshiBlob()
             self.program.channel = self.pipe_channel
-            self.program.current_x = self.current_y
-            self.program.current_y = self.current_y
 
     def ensure_program_mode(self, *values):
         """
@@ -223,31 +224,29 @@ class MoshiDriver(Driver):
         """
         if self.state == DRIVER_STATE_PROGRAM:
             return
+
         if self.pipe_channel:
             self.pipe_channel("Program Mode")
         if self.state == DRIVER_STATE_RASTER:
             self.ensure_finished_mode()
             self.ensure_rapid_mode()
-        if self.settings.speed is None:
-            speed = 20
-        else:
-            speed = int(self.settings.speed)
-
-        # Normal speed is rapid. Passing same speed so PPI isn't crazy.
-        self.program.vector_speed(speed, speed)
-        x, y = self.calc_home_position()
         try:
-            x = int(values[0])
+            offset_x = int(values[0])
         except (ValueError, IndexError):
-            pass
+            offset_x = 0
         try:
-            y = int(values[1])
+            offset_y = int(values[1])
         except (ValueError, IndexError):
-            pass
-        self.program.set_offset(0, x, y)
-
-        self.state = DRIVER_STATE_PROGRAM
-        self.context.signal("driver;mode", self.state)
+            offset_y = 0
+        try:
+            move_x = int(values[2])
+        except (ValueError, IndexError):
+            move_x = 0
+        try:
+            move_y = int(values[3])
+        except (ValueError, IndexError):
+            move_y = 0
+        self.start_program_mode(offset_x, offset_y, move_x, move_y)
 
     def ensure_raster_mode(self, *values):
         """
@@ -256,25 +255,69 @@ class MoshiDriver(Driver):
         """
         if self.state == DRIVER_STATE_RASTER:
             return
+
         if self.pipe_channel:
             self.pipe_channel("Raster Mode")
         if self.state == DRIVER_STATE_PROGRAM:
             self.ensure_finished_mode()
-        speed = int(self.settings.speed)
+            self.ensure_rapid_mode()
+        try:
+            offset_x = int(values[0])
+        except (ValueError, IndexError):
+            offset_x = 0
+        try:
+            offset_y = int(values[1])
+        except (ValueError, IndexError):
+            offset_y = 0
+        try:
+            move_x = int(values[2])
+        except (ValueError, IndexError):
+            move_x = 0
+        try:
+            move_y = int(values[3])
+        except (ValueError, IndexError):
+            move_y = 0
+        self.start_raster_mode(offset_x, offset_y, move_x, move_y)
+
+    def start_program_mode(self, offset_x, offset_y, move_x=None, move_y=None, speed=None, normal_speed=None):
+        if move_x is None:
+            move_x = offset_x
+        if move_y is None:
+            move_y = offset_y
+        if speed is None and self.settings.speed is not None:
+            speed = int(self.settings.speed)
+        if speed is None:
+            speed = 20
+        if normal_speed is None:
+            normal_speed = speed
+
+        # Normal speed is rapid. Passing same speed so PPI isn't crazy.
+        self.program.vector_speed(speed, normal_speed)
+        self.program.set_offset(0, offset_x, offset_y)
+        self.state = DRIVER_STATE_PROGRAM
+        self.context.signal("driver;mode", self.state)
+
+        self.program.move_abs(move_x, move_y)
+        self.current_x = move_x
+        self.current_y = move_y
+
+    def start_raster_mode(self, offset_x, offset_y, move_x=None, move_y=None, speed=None):
+        if move_x is None:
+            move_x = offset_x
+        if move_y is None:
+            move_y = offset_y
+        if speed is None and self.settings.speed is not None:
+            speed = int(self.settings.speed)
+        if speed is None:
+            speed = 160
         self.program.raster_speed(speed)
-        x, y = self.calc_home_position()
-        try:
-            x = int(values[0])
-        except (ValueError, IndexError):
-            pass
-        try:
-            y = int(values[1])
-        except (ValueError, IndexError):
-            pass
-        self.program.set_offset(0, x, y)
+        self.program.set_offset(0, offset_x, offset_y)
         self.state = DRIVER_STATE_RASTER
         self.context.signal("driver;mode", self.state)
-        self.program.move_abs(0, 0)
+
+        self.program.move_abs(move_x, move_y)
+        self.current_x = move_x
+        self.current_y = move_y
 
     def ensure_rapid_mode(self, *values):
         """
@@ -283,15 +326,12 @@ class MoshiDriver(Driver):
         """
         if self.state == DRIVER_STATE_RAPID:
             return
+
         if self.pipe_channel:
             self.pipe_channel("Rapid Mode")
         if self.state == DRIVER_STATE_FINISH:
-            self.state = DRIVER_STATE_RAPID
-        elif (
-            self.state == DRIVER_STATE_PROGRAM
-            or self.state == DRIVER_STATE_MODECHANGE
-            or self.state == DRIVER_STATE_RASTER
-        ):
+            pass
+        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_MODECHANGE, DRIVER_STATE_RASTER):
             self.program.termination()
             self.push_program()
         self.state = DRIVER_STATE_RAPID
@@ -306,21 +346,16 @@ class MoshiDriver(Driver):
         """
         if self.state == DRIVER_STATE_FINISH:
             return
+
         if self.pipe_channel:
             self.pipe_channel("Finished Mode")
-        if (
-            self.state == DRIVER_STATE_PROGRAM
-            or self.state == DRIVER_STATE_MODECHANGE
-            or self.state == DRIVER_STATE_RASTER
-        ):
+        if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_MODECHANGE):
             self.ensure_rapid_mode()
-            if self.state == DRIVER_STATE_RASTER:
-                self.program.vector_speed(20, 40)
-                self.program.set_offset(0, 0, 0)
-                self.program.move_abs(0, 0)
-                self.program.termination()
-                self.push_program()
-            self.state = DRIVER_STATE_FINISH
+
+        if self.state == self.state == DRIVER_STATE_RASTER:
+            self.pipe_channel("Final Raster Home")
+            self.home()
+        self.state = DRIVER_STATE_FINISH
 
     def plotplanner_process(self):
         """
@@ -336,75 +371,97 @@ class MoshiDriver(Driver):
 
         for x, y, on in self.plot:
             on = int(on)
-            if on & PLOT_FINISH:  # Plot planner is ending.
-                self.ensure_finished_mode()
-                continue
-            if on & PLOT_SETTING:  # Plot planner settings have changed.
-                p_set = self.plot_planner.settings
-                s_set = self.settings
-                if p_set.power != s_set.power:
-                    self.set_power(p_set.power)
-                if (
-                    p_set.speed != s_set.speed
-                    or p_set.raster_step != s_set.raster_step
-                ):
-                    self.set_speed(p_set.speed)
-                    self.set_step(p_set.raster_step)
-                    self.ensure_rapid_mode()
-                self.settings.set_values(p_set)
-                continue
-            if on & PLOT_AXIS:  # Major Axis.
-                continue
-            if on & PLOT_DIRECTION:
-                continue
-            if on & (
-                PLOT_RAPID | PLOT_JOG
-            ):  # Plot planner requests position change.
-                self.ensure_rapid_mode()
-                self.ensure_program_mode(x, y)
-                oldx = self.program.current_x
-                oldy = self.program.current_y
-                self.program.move_abs(x, y)
-                x = self.program.current_x
-                y = self.program.current_y
-                self.context.signal("driver;position", (oldx, oldy, x, y))
+            if on > 1:
+                # Special Command.
+                if on & (
+                    PLOT_RAPID | PLOT_JOG
+                ):  # Plot planner requests position change.
+                    # self.rapid_jog(x, y)
+                    self.current_x = x
+                    self.current_y = y
+                    if self.state != DRIVER_STATE_RAPID:
+                        self.move_absolute(x,y)
+                    continue
+                elif on & PLOT_FINISH:  # Plot planner is ending.
+                    self.ensure_finished_mode()
+                    break
+                elif on & PLOT_START:
+                    self.ensure_program_or_raster_mode(
+                        self.preferred_offset_x,
+                        self.preferred_offset_y,
+                        self.current_x,
+                        self.current_y
+                    )
+                elif on & PLOT_LEFT_UPPER:
+                    self.preferred_offset_x = x
+                    self.preferred_offset_y = y
+                elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                    p_set = self.plot_planner.settings
+                    s_set = self.settings
+                    if p_set.power != s_set.power:
+                        self.set_power(p_set.power)
+                    if (
+                        p_set.speed != s_set.speed
+                        or p_set.raster_step != s_set.raster_step
+                    ):
+                        self.set_speed(p_set.speed)
+                        self.set_step(p_set.raster_step)
+                        self.ensure_rapid_mode()
+                    self.settings.set_values(p_set)
                 continue
             self.goto_absolute(x, y, on & 1)
         self.plot = None
         return False
 
+    def ensure_program_or_raster_mode(self, x, y, x1=None, y1=None):
+        """
+        Ensure blob mode makes sure it's in program or raster mode.
+        """
+        if self.state in (DRIVER_STATE_RASTER, DRIVER_STATE_PROGRAM):
+            return
+
+        if x1 is None:
+            x1 = x
+        if y1 is None:
+            y1 = y
+        if self.settings.raster_step == 0:
+            self.ensure_program_mode(x, y, x1, y1)
+        else:
+            if self.context.enable_raster:
+                self.ensure_raster_mode(x, y, x1, y1)
+            else:
+                self.ensure_program_mode(x, y, x1, y1)
+
     def goto_absolute(self, x, y, cut):
         """
         Goto absolute position. Cut flags whether this should be with or without the laser.
         """
-        if self.settings.raster_step == 0:
-            self.ensure_program_mode(x,y)
-        else:
-            # self.ensure_program_mode()
-            self.ensure_raster_mode(x,y)
+        self.ensure_program_or_raster_mode(x, y)
+        old_x = self.program.last_x
+        old_y = self.program.last_y
+
         if self.state == DRIVER_STATE_PROGRAM:
             if cut:
                 self.program.cut_abs(x, y)
             else:
                 self.program.move_abs(x, y)
         else:
-            if x == self.program.current_x and y == self.program.current_y:
+            # DRIVER_STATE_RASTER
+            if x == self.current_x and y == self.current_y:
                 return
             if cut:
-                if x == self.program.current_x:
+                if x == self.current_x:
                     self.program.cut_vertical_abs(y=y)
-                if y == self.program.current_y:
+                if y == self.current_y:
                     self.program.cut_horizontal_abs(x=x)
             else:
-                if x == self.program.current_x:
+                if x == self.current_x:
                     self.program.move_vertical_abs(y=y)
                 if y == self.current_y:
                     self.program.move_horizontal_abs(x=x)
-        oldx = self.program.current_x
-        oldy = self.program.current_y
         self.current_x = x
         self.current_y = y
-        self.context.signal("driver;position", (oldx, oldy, x, y))
+        self.context.signal("driver;position", (old_x, old_y, x, y))
 
     def cut(self, x, y):
         """
@@ -422,7 +479,7 @@ class MoshiDriver(Driver):
         """
         Cut to a position x, y. This is an absolute position.
         """
-        self.ensure_program_mode(x,y)
+        self.ensure_program_or_raster_mode(x, y)
         self.program.cut_abs(x, y)
 
         oldx = self.current_x
@@ -439,11 +496,19 @@ class MoshiDriver(Driver):
         y = dy + self.current_y
         self.cut_absolute(x, y)
 
-    def jog(self, x, y, **kwargs):
+    def rapid_jog(self, x, y, **kwargs):
         """
         Perform a rapid jog. In Moshiboard this is merely a move.
         """
-        self.move(x, y)
+        self.ensure_program_or_raster_mode(x, y)
+        old_x = self.program.last_x
+        old_y = self.program.last_y
+        self.program.move_abs(x, y)
+        self.current_x = x
+        self.current_y = y
+        new_x = self.program.last_x
+        new_y = self.program.last_y
+        self.context.signal("driver;position", (old_x, old_y, new_x, new_y))
 
     def move(self, x, y):
         """
@@ -455,26 +520,27 @@ class MoshiDriver(Driver):
         else:
             self.move_absolute(x, y)
         self.ensure_rapid_mode()
-        self.push_program()
 
     def move_absolute(self, x, y):
         """
         Move to a position x, y. This is an absolute position.
         """
-        self.ensure_program_mode(x, y)
-        oldx = self.program.current_x
-        oldy = self.program.current_y
+        self.ensure_program_or_raster_mode(x, y)
+        oldx = self.current_x
+        oldy = self.current_y
         self.program.move_abs(x, y)
-        x = self.program.current_x
-        y = self.program.current_y
+        self.current_x = x
+        self.current_y = y
+        x = self.current_x
+        y = self.current_y
         self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def move_relative(self, dx, dy):
         """
         Move to a position dx, dy. This is a relative position.
         """
-        x = dx + self.program.current_x
-        y = dy + self.program.current_y
+        x = dx + self.current_x
+        y = dy + self.current_y
         self.move_absolute(x, y)
 
     def set_speed(self, speed=None):
@@ -483,7 +549,7 @@ class MoshiDriver(Driver):
         """
         if self.settings.speed != speed:
             self.settings.speed = speed
-            if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_RASTER:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_step(self, step=None):
@@ -492,7 +558,7 @@ class MoshiDriver(Driver):
         """
         if self.settings.raster_step != step:
             self.settings.raster_step = step
-            if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_RASTER:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def calc_home_position(self):
@@ -517,9 +583,6 @@ class MoshiDriver(Driver):
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        self.program.offset_x = 0
-        self.program.offset_y = 0
-
         x, y = self.calc_home_position()
         try:
             x = int(values[0])
@@ -530,8 +593,11 @@ class MoshiDriver(Driver):
         except (ValueError, IndexError):
             pass
         self.ensure_rapid_mode()
-        self.is_relative = False
-        self.move(x, y)
+        self.settings.speed = 40
+        self.ensure_program_mode(x, y, x, y)
+        self.ensure_rapid_mode()
+        self.current_x = x
+        self.current_y = y
 
     def lock_rail(self):
         pass
@@ -905,6 +971,7 @@ class MoshiController:
                 self.context.signal("pipe;running", True)
                 self.pipe_channel("Sending Data... %d bytes" % len(self._buffer))
                 self._send_buffer()
+                self.update_status()
                 self.realtime_epilogue()
                 if self.is_shutdown:
                     break

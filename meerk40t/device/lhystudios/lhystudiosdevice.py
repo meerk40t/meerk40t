@@ -13,7 +13,8 @@ from ...kernel import (
     STATE_PAUSE,
     STATE_TERMINATE,
     STATE_UNKNOWN,
-    STATE_WAIT, STATE_SUSPEND,
+    STATE_WAIT,
+    STATE_SUSPEND,
 )
 from ..basedevice import (
     DRIVER_STATE_FINISH,
@@ -26,6 +27,9 @@ from ..basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
+    PLOT_LEFT_UPPER,
+    PLOT_RIGHT_LOWER,
+    DRIVER_STATE_RASTER, PLOT_START,
 )
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
@@ -754,99 +758,95 @@ class LhystudiosDriver(Driver):
             sy = self.current_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
             on = int(on)
-            if on & PLOT_FINISH:  # Plot planner is ending.
-                self.ensure_rapid_mode()
-                break
-            if on & PLOT_SETTING:  # Plot planner settings have changed.
-                p_set = self.plot_planner.settings
-                s_set = self.settings
-                if p_set.power != s_set.power:
-                    self.set_power(p_set.power)
-                if (
-                    p_set.raster_step != s_set.raster_step
-                    or p_set.speed != s_set.speed
-                    or s_set.implicit_d_ratio != p_set.implicit_d_ratio
-                    or s_set.implicit_accel != p_set.implicit_accel
-                ):
-                    self.set_speed(p_set.speed)
-                    self.set_step(p_set.raster_step)
-                    self.set_acceleration(p_set.implicit_accel)
-                    self.set_d_ratio(p_set.implicit_d_ratio)
-                self.settings.set_values(p_set)
-                continue
-            if on & PLOT_AXIS:  # Major Axis.
-                self.set_prop(REQUEST_AXIS)
-                if x == 0:  # X Major / Horizontal.
-                    self.set_prop(REQUEST_HORIZONTAL_MAJOR)
-                else:  # Y Major / Vertical
-                    self.unset_prop(REQUEST_HORIZONTAL_MAJOR)
-                continue
-            if on & PLOT_DIRECTION:
-                self.set_prop(REQUEST_X)
-                self.set_prop(REQUEST_Y)
-                if x == 1:  # Moving Right. +x
-                    self.unset_prop(REQUEST_X_FORWARD_LEFT)
-                else:  # Moving Left -x
-                    self.set_prop(REQUEST_X_FORWARD_LEFT)
-                if y == 1:  # Moving Bottom +y
-                    self.unset_prop(REQUEST_Y_FORWARD_TOP)
-                else:  # Moving Top. -y
-                    self.set_prop(REQUEST_Y_FORWARD_TOP)
-                continue
-            if on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
-                if (
-                    on & PLOT_RAPID
-                    or self.state != DRIVER_STATE_PROGRAM
-                    or self.settings.raster_step != 0
-                ):
-                    # Perform a rapid position change. Always perform this for raster moves.
+            if on > 1:
+                # Special Command.
+                if on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_rapid_mode()
-                    self.move_absolute(x, y)
-                    continue
-                # Jog is performable and requested. # We have not flagged our direction or state.
-                self.jog_absolute(x, y, mode=self.root_context.opt_jog_mode)
+                    break
+                elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                    p_set = self.plot_planner.settings
+                    s_set = self.settings
+                    if p_set.power != s_set.power:
+                        self.set_power(p_set.power)
+                    if (
+                        p_set.raster_step != s_set.raster_step
+                        or p_set.speed != s_set.speed
+                        or s_set.implicit_d_ratio != p_set.implicit_d_ratio
+                        or s_set.implicit_accel != p_set.implicit_accel
+                    ):
+                        self.set_speed(p_set.speed)
+                        self.set_step(p_set.raster_step)
+                        self.set_acceleration(p_set.implicit_accel)
+                        self.set_d_ratio(p_set.implicit_d_ratio)
+                    self.settings.set_values(p_set)
+                elif on & PLOT_AXIS:  # Major Axis.
+                    self.set_prop(REQUEST_AXIS)
+                    if x == 0:  # X Major / Horizontal.
+                        self.set_prop(REQUEST_HORIZONTAL_MAJOR)
+                    else:  # Y Major / Vertical
+                        self.unset_prop(REQUEST_HORIZONTAL_MAJOR)
+                elif on & PLOT_DIRECTION:
+                    self.set_prop(REQUEST_X)
+                    self.set_prop(REQUEST_Y)
+                    if x == 1:  # Moving Right. +x
+                        self.unset_prop(REQUEST_X_FORWARD_LEFT)
+                    else:  # Moving Left -x
+                        self.set_prop(REQUEST_X_FORWARD_LEFT)
+                    if y == 1:  # Moving Bottom +y
+                        self.unset_prop(REQUEST_Y_FORWARD_TOP)
+                    else:  # Moving Top. -y
+                        self.set_prop(REQUEST_Y_FORWARD_TOP)
+                elif on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
+                    if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM:
+                        # Perform a rapid position change. Always perform this for raster moves.
+                        # DRIVER_STATE_RASTER should call this code as well.
+                        self.ensure_rapid_mode()
+                        self.move_absolute(x, y)
+                    else:
+                        # Jog is performable and requested. # We have not flagged our direction or state.
+                        self.jog_absolute(x, y, mode=self.root_context.opt_jog_mode)
                 continue
-            else:
-                self.ensure_program_mode()
             dx = x - sx
             dy = y - sy
-            if self.settings.raster_step != 0:
+            step = self.settings.raster_step
+            if step == 0:
+                self.ensure_program_mode()
+            else:
+                self.ensure_raster_mode()
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
                         if self.is_prop(STATE_Y_FORWARD_TOP):
-                            if abs(dy) > self.settings.raster_step:
+                            if abs(dy) > step:
                                 self.ensure_finished_mode()
-                                self.move_relative(0, dy + self.settings.raster_step)
+                                self.move_relative(0, dy + step)
                                 self.set_prop(STATE_X_STEPPER_ENABLE)
                                 self.unset_prop(STATE_Y_STEPPER_ENABLE)
-                                self.ensure_program_mode()
-                            self.h_switch()
+                                self.ensure_raster_mode()
                         else:
-                            if abs(dy) > self.settings.raster_step:
+                            if abs(dy) > step:
                                 self.ensure_finished_mode()
-                                self.move_relative(0, dy - self.settings.raster_step)
+                                self.move_relative(0, dy - step)
                                 self.set_prop(STATE_X_STEPPER_ENABLE)
                                 self.unset_prop(STATE_Y_STEPPER_ENABLE)
-                                self.ensure_program_mode()
-                            self.h_switch()
+                                self.ensure_raster_mode()
+                        self.h_switch()
                 elif self.is_prop(STATE_Y_STEPPER_ENABLE):
                     if dx != 0:
                         if self.is_prop(STATE_X_FORWARD_LEFT):
-                            if abs(dx) > self.settings.raster_step:
+                            if abs(dx) > step:
                                 self.ensure_finished_mode()
-                                self.move_relative(dx + self.settings.raster_step, 0)
+                                self.move_relative(dx + step, 0)
                                 self.set_prop(STATE_Y_STEPPER_ENABLE)
                                 self.unset_prop(STATE_X_STEPPER_ENABLE)
-                                self.ensure_program_mode()
-                            self.v_switch()
+                                self.ensure_raster_mode()
                         else:
-                            if abs(dx) > self.settings.raster_step:
+                            if abs(dx) > step:
                                 self.ensure_finished_mode()
-                                self.move_relative(dx - self.settings.raster_step, 0)
+                                self.move_relative(dx - step, 0)
                                 self.set_prop(STATE_Y_STEPPER_ENABLE)
                                 self.unset_prop(STATE_X_STEPPER_ENABLE)
-                                self.ensure_program_mode()
-                            self.v_switch()
+                                self.ensure_raster_mode()
+                        self.v_switch()
             self.goto_octent_abs(x, y, on & 1)
             if self.hold():
                 return True
@@ -898,17 +898,27 @@ class LhystudiosDriver(Driver):
         dx = int(round(dx))
         dy = int(round(dy))
         if mode == 0:
-            self._program_mode_jog_event(dx, dy)
+            self._nse_jog_event(dx, dy)
         elif mode == 1:
-            self.fly_switch_speed(dx, dy)
+            self.mode_shift_on_the_fly(dx, dy)
         else:
+            # Finish-out Jog
             self.ensure_rapid_mode()
             self.move_relative(dx, dy)
             self.ensure_program_mode()
 
-    def _program_mode_jog_event(self, dx=0, dy=0):
+    def _nse_jog_event(self, dx=0, dy=0):
+        """
+        NSE Jog events are performed from program or raster mode and skip out to rapid mode to perform
+        a single jog command. This jog effect varies based on the horizontal vertical major setting and
+        needs to counteract the jogged head according to those settings.
+
+        NSE jogs will not change the underlying mode even though they temporarily switch into
+        rapid mode. nse jogs are not done in raster mode.
+        """
         dx = int(round(dx))
         dy = int(round(dy))
+        original_state = self.state
         self.state = DRIVER_STATE_RAPID
         self.laser = False
         if self.is_prop(STATE_HORIZONTAL_MAJOR):
@@ -928,7 +938,7 @@ class LhystudiosDriver(Driver):
             self.goto_x(dx)
         self.data_output(b"SE")
         self.declare_directions()
-        self.state = DRIVER_STATE_PROGRAM
+        self.state = original_state
 
     def move(self, x, y):
         self.goto(x, y, False)
@@ -981,6 +991,7 @@ class LhystudiosDriver(Driver):
         dy = int(round(dy))
         if self.state == DRIVER_STATE_RAPID:
             if self.rapid_override and (dx != 0 or dy != 0):
+                # Rapid movement override. Should make programmed jogs.
                 self.set_acceleration(None)
                 self.set_step(0)
                 if dx != 0:
@@ -1004,6 +1015,11 @@ class LhystudiosDriver(Driver):
                 self.data_output(b"S1P\n")
                 if not self.context.autolock:
                     self.data_output(b"IS2P\n")
+        elif self.state == DRIVER_STATE_RASTER:
+            # goto in raster, switches to program to recall this function.
+            self.ensure_program_mode()
+            self.goto_relative(dx, dy, cut)
+            return
         elif self.state == DRIVER_STATE_PROGRAM:
             mx = 0
             my = 0
@@ -1018,7 +1034,7 @@ class LhystudiosDriver(Driver):
                 self.goto_y(dy)
             self.data_output(b"N")
         elif self.state == DRIVER_STATE_MODECHANGE:
-            self.fly_switch_speed(dx, dy)
+            self.mode_shift_on_the_fly(dx, dy)
         self.check_bounds()
         self.context.signal(
             "driver;position",
@@ -1062,25 +1078,25 @@ class LhystudiosDriver(Driver):
     def set_speed(self, speed=None):
         if self.settings.speed != speed:
             self.settings.speed = speed
-            if self.state == DRIVER_STATE_PROGRAM:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_d_ratio(self, dratio=None):
         if self.settings.dratio != dratio:
             self.settings.dratio = dratio
-            if self.state == DRIVER_STATE_PROGRAM:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_acceleration(self, accel=None):
         if self.settings.acceleration != accel:
             self.settings.acceleration = accel
-            if self.state == DRIVER_STATE_PROGRAM:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_step(self, step=None):
         if self.settings.raster_step != step:
             self.settings.raster_step = step
-            if self.state == DRIVER_STATE_PROGRAM:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def laser_off(self):
@@ -1092,7 +1108,7 @@ class LhystudiosDriver(Driver):
             self.data_output(b"S1P\n")
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
-        elif self.state == DRIVER_STATE_PROGRAM:
+        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_LASER_OFF)
         elif self.state == DRIVER_STATE_FINISH:
             self.data_output(self.CODE_LASER_OFF)
@@ -1109,7 +1125,7 @@ class LhystudiosDriver(Driver):
             self.data_output(b"S1P\n")
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
-        elif self.state == DRIVER_STATE_PROGRAM:
+        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_LASER_ON)
         elif self.state == DRIVER_STATE_FINISH:
             self.data_output(self.CODE_LASER_ON)
@@ -1125,14 +1141,24 @@ class LhystudiosDriver(Driver):
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
         elif (
-            self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_MODECHANGE
+            self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER, DRIVER_STATE_MODECHANGE)
         ):
             self.data_output(b"FNSE-\n")
             self.laser = False
         self.state = DRIVER_STATE_RAPID
         self.context.signal("driver;mode", self.state)
 
-    def fly_switch_speed(self, dx=0, dy=0):
+    def mode_shift_on_the_fly(self, dx=0, dy=0):
+        """
+        Mode shift on the fly changes the current modes while in programmed or raster mode
+        this exits with a @ command that resets the modes. A movement operation can be added after
+        the speed code and before the return to into programmed or raster mode.
+
+        This switch is often avoided because testing revealed some chance of a runaway during reset
+        switching.
+
+        If the raster step has been changed from zero this can result in shifting from program to raster mode
+        """
         dx = int(round(dx))
         dy = int(round(dy))
         self.data_output(b"@NSE")
@@ -1161,17 +1187,48 @@ class LhystudiosDriver(Driver):
         self.set_requested_directions()
         self.data_output(self.code_declare_directions())
         self.data_output(b"S1E")
-        self.state = DRIVER_STATE_PROGRAM
+        if self.settings.raster_step == 0:
+            self.state = DRIVER_STATE_PROGRAM
+        else:
+            self.state = DRIVER_STATE_RASTER
 
     def ensure_finished_mode(self, *values):
         if self.state == DRIVER_STATE_FINISH:
             return
-        if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_MODECHANGE:
+        if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER, DRIVER_STATE_MODECHANGE):
             self.data_output(b"@NSE")
             self.laser = False
         elif self.state == DRIVER_STATE_RAPID:
             self.data_output(b"I")
         self.state = DRIVER_STATE_FINISH
+        self.context.signal("driver;mode", self.state)
+
+    def ensure_raster_mode(self, *values):
+        if self.state == DRIVER_STATE_RASTER:
+            return
+        self.ensure_finished_mode()
+
+        speed_code = LaserSpeed(
+            self.context.board,
+            self.settings.speed,
+            self.settings.raster_step,
+            d_ratio=self.settings.implicit_d_ratio,
+            acceleration=self.settings.implicit_accel,
+            fix_limit=True,
+            fix_lows=True,
+            fix_speeds=self.context.fix_speeds,
+            raster_horizontal=True,
+        ).speedcode
+        try:
+            speed_code = bytes(speed_code)
+        except TypeError:
+            speed_code = bytes(speed_code, "utf8")
+        self.data_output(speed_code)
+        self.data_output(b"N")
+        self.set_requested_directions()
+        self.declare_directions()
+        self.data_output(b"S1E")
+        self.state = DRIVER_STATE_RASTER
         self.context.signal("driver;mode", self.state)
 
     def ensure_program_mode(self, *values):
@@ -1435,7 +1492,7 @@ class LhystudiosDriver(Driver):
 
     def move_right(self, dx=0):
         self.current_x += dx
-        if not self.is_right or self.state != DRIVER_STATE_PROGRAM:
+        if not self.is_right or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_RIGHT)
             self.set_right()
         if dx != 0:
@@ -1444,7 +1501,7 @@ class LhystudiosDriver(Driver):
 
     def move_left(self, dx=0):
         self.current_x -= abs(dx)
-        if not self.is_left or self.state != DRIVER_STATE_PROGRAM:
+        if not self.is_left or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_LEFT)
             self.set_left()
         if dx != 0:
@@ -1453,7 +1510,7 @@ class LhystudiosDriver(Driver):
 
     def move_bottom(self, dy=0):
         self.current_y += dy
-        if not self.is_bottom or self.state != DRIVER_STATE_PROGRAM:
+        if not self.is_bottom or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_BOTTOM)
             self.set_bottom()
         if dy != 0:
@@ -1462,7 +1519,7 @@ class LhystudiosDriver(Driver):
 
     def move_top(self, dy=0):
         self.current_y -= abs(dy)
-        if not self.is_top or self.state != DRIVER_STATE_PROGRAM:
+        if not self.is_top or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_TOP)
             self.set_top()
         if dy != 0:

@@ -10,6 +10,8 @@ from ..basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
+    PLOT_LEFT_UPPER,
+    PLOT_RIGHT_LOWER, PLOT_START,
 )
 from ..lasercommandconstants import *
 
@@ -197,31 +199,29 @@ class GRBLDriver(Driver):
                 except TypeError:
                     break
                 on = int(on)
-                if on & PLOT_FINISH:  # Plot planner is ending.
-                    self.ensure_rapid_mode()
-                    continue
-                if on & PLOT_SETTING:  # Plot planner settings have changed.
-                    p_set = self.plot_planner.settings
-                    s_set = self.settings
-                    if p_set.power != s_set.power:
-                        self.set_power(p_set.power)
-                    if (
-                        p_set.speed != s_set.speed
-                        or p_set.raster_step != s_set.raster_step
-                    ):
-                        self.set_speed(p_set.speed)
-                        self.set_step(p_set.raster_step)
+                if on > 1:
+                    # Special Command.
+                    if on & PLOT_FINISH:  # Plot planner is ending.
                         self.ensure_rapid_mode()
-                    self.settings.set_values(p_set)
+                        break
+                    elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                        p_set = self.plot_planner.settings
+                        s_set = self.settings
+                        if p_set.power != s_set.power:
+                            self.set_power(p_set.power)
+                        if (
+                            p_set.speed != s_set.speed
+                            or p_set.raster_step != s_set.raster_step
+                        ):
+                            self.set_speed(p_set.speed)
+                            self.set_step(p_set.raster_step)
+                            self.ensure_rapid_mode()
+                        self.settings.set_values(p_set)
+                    elif on & (
+                        PLOT_RAPID | PLOT_JOG
+                    ):  # Plot planner requests position change.
+                        self.ensure_rapid_mode()
                     continue
-                if on & PLOT_AXIS:  # Major Axis.
-                    continue
-                if on & PLOT_DIRECTION:
-                    continue
-                if on & (
-                    PLOT_RAPID | PLOT_JOG
-                ):  # Plot planner requests position change.
-                    self.ensure_rapid_mode()
                 if on == 0:
                     self.laser_on()
                 else:

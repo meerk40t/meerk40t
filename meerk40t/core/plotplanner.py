@@ -7,6 +7,9 @@ from ..device.basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
+    PLOT_LEFT_UPPER,
+    PLOT_RIGHT_LOWER,
+    PLOT_START,
 )
 
 """
@@ -64,6 +67,27 @@ class PlotPlanner:
     def gen(self):
         """
         Main method of generating the plot stream.
+
+        The plotplanner emits a series of 3 item values. These are x, y and on. For most plotting
+        the values for on is 0 or 1 for off and on respectively. Values for on greater than 0 give
+        additional information. This includes an initial jog. Settings change. Major axis. Plot direction.
+        left_upper position and right_lower position.
+
+        * If new position is not coincident with previous position
+             * If new position is close
+                  * Plot line if close within current settings
+        * Flush steps from planner if going to new location or using new settings.
+             * If new position is far
+                  * Send jog if too far away.
+        * Send PLOT_SETTING: None None - if settings have changed.
+        * Send PLOT_AXIS: major_axis, None - Major axis is horizontal vs. vertical raster
+        * Send PLOT_DIRECTION: x_dir(), y_dir() - Direction X, Direction Y for initial cut.
+        * Send PLOT_LEFT_UPPER: left point, upper point - Point at upper left
+        * Send PLOT_RIGHT_LOWER: right point, left point - Point at lower right
+        * Send all X, Y points for cut.
+
+        If the next position is too far away and jogging is allowed we jog to the position. This
+        jog is sent after the previous data is planner is
 
         :return:
         """
@@ -126,9 +150,12 @@ class PlotPlanner:
                 # set the directions. Post Jog, Post Settings.
                 yield cut.major_axis(), None, PLOT_AXIS
                 yield cut.x_dir(), cut.y_dir(), PLOT_DIRECTION
+                yield cut.left(), cut.upper(), PLOT_LEFT_UPPER
+                yield cut.right(), cut.lower(), PLOT_RIGHT_LOWER
 
             # Plot the current.
             # Current is executed in cut settings.
+            yield None, None, PLOT_START
             yield from self.process_plots(cut.generator())
             self.pos_x = self.single.single_x
             self.pos_y = self.single.single_y

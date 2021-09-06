@@ -163,6 +163,18 @@ class CutObject:
     def length(self):
         return Point.distance(self.start(), self.end())
 
+    def upper(self):
+        return min(self.start()[0], self.end()[0])
+
+    def lower(self):
+        return max(self.start()[0], self.end()[0])
+
+    def left(self):
+        return min(self.start()[1], self.end()[1])
+
+    def right(self):
+        return max(self.start()[1], self.end()[1])
+
     def extra(self):
         return 0
 
@@ -611,6 +623,18 @@ class RasterCut(CutObject):
 
     def end(self):
         return Point(self.plot.final_position_in_scene())
+
+    def lower(self):
+        return self.plot.offset_x + self.height
+
+    def upper(self):
+        return self.plot.offset_x
+
+    def right(self):
+        return self.plot.offset_y + self.width
+
+    def left(self):
+        return self.plot.offset_y
 
     def length(self):
         return (
