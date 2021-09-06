@@ -29,7 +29,7 @@ from ..basedevice import (
     PLOT_SETTING,
     PLOT_LEFT_UPPER,
     PLOT_RIGHT_LOWER,
-    DRIVER_STATE_RASTER,
+    DRIVER_STATE_RASTER, PLOT_START,
 )
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
@@ -758,7 +758,7 @@ class LhystudiosDriver(Driver):
             sy = self.current_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
             on = int(on)
-            if on < 1:
+            if on > 1:
                 # Special Command.
                 if on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_rapid_mode()
@@ -796,10 +796,6 @@ class LhystudiosDriver(Driver):
                         self.unset_prop(REQUEST_Y_FORWARD_TOP)
                     else:  # Moving Top. -y
                         self.set_prop(REQUEST_Y_FORWARD_TOP)
-                elif on & PLOT_LEFT_UPPER:
-                    pass
-                elif on & PLOT_RIGHT_LOWER:
-                    pass
                 elif on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
                     if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM:
                         # Perform a rapid position change. Always perform this for raster moves.

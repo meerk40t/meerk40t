@@ -336,39 +336,31 @@ class MoshiDriver(Driver):
 
         for x, y, on in self.plot:
             on = int(on)
-            if 0 <= on <= 1:
-                self.goto_absolute(x, y, on & 1)
+            if on > 1:
+                # Special Command.
+                if on & (
+                    PLOT_RAPID | PLOT_JOG
+                ):  # Plot planner requests position change.
+                    self.rapid_jog(x, y)
+                    continue
+                if on & PLOT_FINISH:  # Plot planner is ending.
+                    self.ensure_finished_mode()
+                    break
+                if on & PLOT_SETTING:  # Plot planner settings have changed.
+                    p_set = self.plot_planner.settings
+                    s_set = self.settings
+                    if p_set.power != s_set.power:
+                        self.set_power(p_set.power)
+                    if (
+                        p_set.speed != s_set.speed
+                        or p_set.raster_step != s_set.raster_step
+                    ):
+                        self.set_speed(p_set.speed)
+                        self.set_step(p_set.raster_step)
+                        self.ensure_rapid_mode()
+                    self.settings.set_values(p_set)
                 continue
-            if on & (
-                PLOT_RAPID | PLOT_JOG
-            ):  # Plot planner requests position change.
-                self.rapid_jog(x, y)
-                continue
-            if on & PLOT_FINISH:  # Plot planner is ending.
-                self.ensure_finished_mode()
-                break
-            if on & PLOT_SETTING:  # Plot planner settings have changed.
-                p_set = self.plot_planner.settings
-                s_set = self.settings
-                if p_set.power != s_set.power:
-                    self.set_power(p_set.power)
-                if (
-                    p_set.speed != s_set.speed
-                    or p_set.raster_step != s_set.raster_step
-                ):
-                    self.set_speed(p_set.speed)
-                    self.set_step(p_set.raster_step)
-                    self.ensure_rapid_mode()
-                self.settings.set_values(p_set)
-                continue
-            if on & PLOT_AXIS:  # Major Axis.
-                continue
-            if on & PLOT_DIRECTION:
-                continue
-            if on & PLOT_LEFT_UPPER:
-                continue
-            if on & PLOT_RIGHT_LOWER:
-                continue
+            self.goto_absolute(x, y, on & 1)
         self.plot = None
         return False
 

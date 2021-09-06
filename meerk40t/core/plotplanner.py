@@ -9,6 +9,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_LEFT_UPPER,
     PLOT_RIGHT_LOWER,
+    PLOT_START,
 )
 
 """
@@ -154,6 +155,7 @@ class PlotPlanner:
 
             # Plot the current.
             # Current is executed in cut settings.
+            yield None, None, PLOT_START
             yield from self.process_plots(cut.generator())
             self.pos_x = self.single.single_x
             self.pos_y = self.single.single_y
