@@ -28,6 +28,8 @@ from ..basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
+    PLOT_LEFT_UPPER,
+    PLOT_RIGHT_LOWER,
 )
 
 MILS_IN_MM = 39.3701
@@ -218,6 +220,7 @@ class MoshiDriver(Driver):
         """
         if self.state == DRIVER_STATE_PROGRAM:
             return
+
         if self.pipe_channel:
             self.pipe_channel("Program Mode")
         if self.state == DRIVER_STATE_RASTER:
@@ -251,10 +254,12 @@ class MoshiDriver(Driver):
         """
         if self.state == DRIVER_STATE_RASTER:
             return
+
         if self.pipe_channel:
             self.pipe_channel("Raster Mode")
         if self.state == DRIVER_STATE_PROGRAM:
             self.ensure_finished_mode()
+            self.ensure_rapid_mode()
         speed = int(self.settings.speed)
         self.program.raster_speed(speed)
         x, y = self.calc_home_position()
@@ -280,10 +285,11 @@ class MoshiDriver(Driver):
         """
         if self.state == DRIVER_STATE_RAPID:
             return
+
         if self.pipe_channel:
             self.pipe_channel("Rapid Mode")
         if self.state == DRIVER_STATE_FINISH:
-            self.state = DRIVER_STATE_RAPID
+            pass
         elif (
             self.state == DRIVER_STATE_PROGRAM
             or self.state == DRIVER_STATE_MODECHANGE
@@ -303,6 +309,7 @@ class MoshiDriver(Driver):
         """
         if self.state == DRIVER_STATE_FINISH:
             return
+
         if self.pipe_channel:
             self.pipe_channel("Finished Mode")
         if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_MODECHANGE):
@@ -330,9 +337,12 @@ class MoshiDriver(Driver):
 
         for x, y, on in self.plot:
             on = int(on)
+            if 0 <= on <= 1:
+                self.goto_absolute(x, y, on & 1)
+                continue
             if on & PLOT_FINISH:  # Plot planner is ending.
                 self.ensure_finished_mode()
-                continue
+                break
             if on & PLOT_SETTING:  # Plot planner settings have changed.
                 p_set = self.plot_planner.settings
                 s_set = self.settings
@@ -351,21 +361,15 @@ class MoshiDriver(Driver):
                 continue
             if on & PLOT_DIRECTION:
                 continue
+            if on & PLOT_LEFT_UPPER:
+                continue
+            if on & PLOT_RIGHT_LOWER:
+                continue
             if on & (
                 PLOT_RAPID | PLOT_JOG
             ):  # Plot planner requests position change.
-                self.ensure_rapid_mode()
-                self.ensure_program_mode(x, y)
-                old_x = self.program.last_x
-                old_y = self.program.last_y
-                self.program.move_abs(x, y)
-                self.current_x = x
-                self.current_y = y
-                new_x = self.program.last_x
-                new_y = self.program.last_y
-                self.context.signal("driver;position", (old_x, old_y, new_x, new_y))
+                self.jog(x, y)
                 continue
-            self.goto_absolute(x, y, on & 1)
         self.plot = None
         return False
 
@@ -376,8 +380,8 @@ class MoshiDriver(Driver):
         if self.settings.raster_step == 0:
             self.ensure_program_mode(x, y)
         else:
-            if self.root_context.setting(bool, "moshi_hard_raster", False):
-                self.ensure_program_mode()
+            if self.context.setting(bool, "moshi_hard_raster", False):
+                self.ensure_program_mode(x, y)
             else:
                 self.ensure_raster_mode(x, y)
 
@@ -422,7 +426,7 @@ class MoshiDriver(Driver):
         """
         Cut to a position x, y. This is an absolute position.
         """
-        self.ensure_program_mode(x,y)
+        self.ensure_program_mode(x, y)
         self.program.cut_abs(x, y)
 
         oldx = self.current_x
@@ -443,7 +447,16 @@ class MoshiDriver(Driver):
         """
         Perform a rapid jog. In Moshiboard this is merely a move.
         """
-        self.move(x, y)
+        self.ensure_rapid_mode()
+        self.ensure_program_mode(x, y)
+        old_x = self.program.last_x
+        old_y = self.program.last_y
+        self.program.move_abs(x, y)
+        self.current_x = x
+        self.current_y = y
+        new_x = self.program.last_x
+        new_y = self.program.last_y
+        self.context.signal("driver;position", (old_x, old_y, new_x, new_y))
 
     def move(self, x, y):
         """
@@ -455,7 +468,6 @@ class MoshiDriver(Driver):
         else:
             self.move_absolute(x, y)
         self.ensure_rapid_mode()
-        self.push_program()
 
     def move_absolute(self, x, y):
         """
@@ -529,7 +541,7 @@ class MoshiDriver(Driver):
         except (ValueError, IndexError):
             pass
         self.ensure_rapid_mode()
-        self.ensure_program_mode(0,0)
+        self.ensure_program_mode(x,y)
         self.move_absolute(x, y)
         self.ensure_rapid_mode()
         self.current_x = x
