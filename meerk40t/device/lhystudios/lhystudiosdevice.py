@@ -1117,7 +1117,7 @@ class LhystudiosDriver(Driver):
         self.laser = True
         return True
 
-    def ensure_rapid_mode(self):
+    def ensure_rapid_mode(self, *values):
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
@@ -1163,7 +1163,7 @@ class LhystudiosDriver(Driver):
         self.data_output(b"S1E")
         self.state = DRIVER_STATE_PROGRAM
 
-    def ensure_finished_mode(self):
+    def ensure_finished_mode(self, *values):
         if self.state == DRIVER_STATE_FINISH:
             return
         if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_MODECHANGE:
@@ -1174,7 +1174,7 @@ class LhystudiosDriver(Driver):
         self.state = DRIVER_STATE_FINISH
         self.context.signal("driver;mode", self.state)
 
-    def ensure_program_mode(self):
+    def ensure_program_mode(self, *values):
         if self.state == DRIVER_STATE_PROGRAM:
             return
         self.ensure_finished_mode()
@@ -1269,7 +1269,7 @@ class LhystudiosDriver(Driver):
 
         self.context.signal("driver;mode", self.state)
         self.context.signal(
-            "driver;position", (self.current_x, self.current_y, old_x, old_y)
+            "driver;position", (old_x, old_y, self.current_x, self.current_y)
         )
 
     def lock_rail(self):
@@ -1478,13 +1478,9 @@ class LhystudiosController:
     """
     K40 Controller controls the Lhystudios boards sending any queued data to the USB when the signal is not busy.
 
-    This is registered in the kernel as a module. Saving a few persistent settings like packet_count and registering
-    a couple controls like Connect_USB.
-
-    This is also a Pipe. Elements written to the Controller are sent to the USB to the matched device. Opening and
-    closing of the pipe are dealt with internally. There are three primary monitor data channels. 'send', 'recv' and
-    'usb'. They display the reading and writing of information to/from the USB and the USB connection log, providing
-    information about the connecting and error status of the USB device.
+    Opening and closing of the pipe are dealt with internally. There are three primary monitor data channels.
+    'send', 'recv' and 'usb'. They display the reading and writing of information to/from the USB and the USB connection
+    log, providing information about the connecting and error status of the USB device.
     """
 
     def __init__(self, context, name, channel=None, *args, **kwargs):

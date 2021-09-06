@@ -267,13 +267,13 @@ class Driver:
             elif command == COMMAND_SET_POSITION:
                 self.set_position(values[0], values[1])
             elif command == COMMAND_MODE_RAPID:
-                self.ensure_rapid_mode()
+                self.ensure_rapid_mode(*values)
             elif command == COMMAND_MODE_PROGRAM:
-                self.ensure_program_mode()
+                self.ensure_program_mode(*values)
             elif command == COMMAND_MODE_RASTER:
-                self.ensure_raster_mode()
+                self.ensure_raster_mode(*values)
             elif command == COMMAND_MODE_FINISHED:
-                self.ensure_finished_mode()
+                self.ensure_finished_mode(*values)
             elif command == COMMAND_WAIT:
                 self.wait(values[0])
             elif command == COMMAND_WAIT_FINISH:
