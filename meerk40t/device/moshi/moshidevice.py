@@ -197,6 +197,7 @@ class MoshiDriver(Driver):
         context.setting(bool, "home_bottom", False)
         context.setting(int, "home_adjust_x", 0)
         context.setting(int, "home_adjust_y", 0)
+        context.setting(bool, "enable_raster", True)
 
         self.pipe_channel = context.channel("%s/events" % name)
 
@@ -226,6 +227,7 @@ class MoshiDriver(Driver):
         if self.state == DRIVER_STATE_RASTER:
             self.ensure_finished_mode()
             self.ensure_rapid_mode()
+
         if self.settings.speed is None:
             speed = 20
         else:
@@ -260,6 +262,7 @@ class MoshiDriver(Driver):
         if self.state == DRIVER_STATE_PROGRAM:
             self.ensure_finished_mode()
             self.ensure_rapid_mode()
+
         speed = int(self.settings.speed)
         self.program.raster_speed(speed)
         x, y = self.calc_home_position()
@@ -336,6 +339,11 @@ class MoshiDriver(Driver):
             if 0 <= on <= 1:
                 self.goto_absolute(x, y, on & 1)
                 continue
+            if on & (
+                PLOT_RAPID | PLOT_JOG
+            ):  # Plot planner requests position change.
+                self.rapid_jog(x, y)
+                continue
             if on & PLOT_FINISH:  # Plot planner is ending.
                 self.ensure_finished_mode()
                 break
@@ -361,26 +369,26 @@ class MoshiDriver(Driver):
                 continue
             if on & PLOT_RIGHT_LOWER:
                 continue
-            if on & (
-                PLOT_RAPID | PLOT_JOG
-            ):  # Plot planner requests position change.
-                self.jog(x, y)
-                continue
         self.plot = None
         return False
+
+    def ensure_program_or_raster_mode(self, x, y):
+        """
+        Ensure blob mode makes sure it's in program or raster mode.
+        """
+        if self.settings.raster_step == 0:
+            self.ensure_program_mode(x, y)
+        else:
+            if self.context.enable_raster:
+                self.ensure_raster_mode(591, 591)
+            else:
+                self.ensure_program_mode(x, y)
 
     def goto_absolute(self, x, y, cut):
         """
         Goto absolute position. Cut flags whether this should be with or without the laser.
         """
-        if self.settings.raster_step == 0:
-            self.ensure_program_mode(x, y)
-        else:
-            if self.context.setting(bool, "moshi_hard_raster", False):
-                self.ensure_program_mode(x, y)
-            else:
-                self.ensure_raster_mode(x, y)
-
+        self.ensure_program_or_raster_mode(x, y)
         old_x = self.program.last_x
         old_y = self.program.last_y
 
@@ -423,7 +431,7 @@ class MoshiDriver(Driver):
         """
         Cut to a position x, y. This is an absolute position.
         """
-        self.ensure_program_mode(x, y)
+        self.ensure_program_or_raster_mode(x, y)
         self.program.cut_abs(x, y)
 
         oldx = self.current_x
@@ -440,12 +448,11 @@ class MoshiDriver(Driver):
         y = dy + self.current_y
         self.cut_absolute(x, y)
 
-    def jog(self, x, y, **kwargs):
+    def rapid_jog(self, x, y, **kwargs):
         """
         Perform a rapid jog. In Moshiboard this is merely a move.
         """
-        self.ensure_rapid_mode()
-        self.ensure_program_mode(x, y)
+        self.ensure_program_or_raster_mode(x, y)
         old_x = self.program.last_x
         old_y = self.program.last_y
         self.program.move_abs(x, y)
@@ -470,7 +477,7 @@ class MoshiDriver(Driver):
         """
         Move to a position x, y. This is an absolute position.
         """
-        self.ensure_program_mode(x, y)
+        self.ensure_program_or_raster_mode(x, y)
         oldx = self.current_x
         oldy = self.current_y
         self.program.move_abs(x, y)
@@ -916,6 +923,7 @@ class MoshiController:
                 self.context.signal("pipe;running", True)
                 self.pipe_channel("Sending Data... %d bytes" % len(self._buffer))
                 self._send_buffer()
+                self.update_status()
                 self.realtime_epilogue()
                 if self.is_shutdown:
                     break

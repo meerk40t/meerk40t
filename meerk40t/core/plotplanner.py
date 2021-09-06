@@ -67,6 +67,27 @@ class PlotPlanner:
         """
         Main method of generating the plot stream.
 
+        The plotplanner emits a series of 3 item values. These are x, y and on. For most plotting
+        the values for on is 0 or 1 for off and on respectively. Values for on greater than 0 give
+        additional information. This includes an initial jog. Settings change. Major axis. Plot direction.
+        left_upper position and right_lower position.
+
+        * If new position is not coincident with previous position
+             * If new position is close
+                  * Plot line if close within current settings
+        * Flush steps from planner if going to new location or using new settings.
+             * If new position is far
+                  * Send jog if too far away.
+        * Send PLOT_SETTING: None None - if settings have changed.
+        * Send PLOT_AXIS: major_axis, None - Major axis is horizontal vs. vertical raster
+        * Send PLOT_DIRECTION: x_dir(), y_dir() - Direction X, Direction Y for initial cut.
+        * Send PLOT_LEFT_UPPER: left point, upper point - Point at upper left
+        * Send PLOT_RIGHT_LOWER: right point, left point - Point at lower right
+        * Send all X, Y points for cut.
+
+        If the next position is too far away and jogging is allowed we jog to the position. This
+        jog is sent after the previous data is planner is
+
         :return:
         """
         self.pos_x = None
