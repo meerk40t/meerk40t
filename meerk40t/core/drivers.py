@@ -353,9 +353,6 @@ class Driver:
     def data_output(self, e):
         self.output.write(e)
 
-    def data_control(self, e):
-        self.output.control(e)
-
     def hold(self):
         """
         Holds are criteria to use to pause the data interpretation. These halt the production of new data until the

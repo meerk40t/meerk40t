@@ -305,8 +305,10 @@ MOSHI_FREEMOTOR = 1
 MOSHI_ESTOP = 1
 MOSHI_EPILOGUE = 2
 MOSHI_PROLOGUE = 6
+# 6 also seen at laster startup.
 MOSHI_LASER = 7
 MOSHI_READ = 14
+# 14 is also sometimes done as a keepalive each 3.4 seconds.
 
 
 class MoshiBlob:

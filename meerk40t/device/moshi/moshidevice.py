@@ -541,13 +541,20 @@ class MoshiDriver(Driver):
         Unlock the Rail or send a "FreeMotor" command.
         """
         self.ensure_rapid_mode()
-        self.data_control("unlock\n")
+        try:
+            self.output.unlock_rail()
+        except AttributeError:
+            pass
 
     def abort(self):
         """
         Abort the current work.
         """
-        self.data_control("stop\n")
+        self.ensure_rapid_mode()
+        try:
+            self.output.estop()
+        except AttributeError:
+            pass
 
     @property
     def type(self):
@@ -556,11 +563,26 @@ class MoshiDriver(Driver):
 
 class MoshiController:
     """
-    The Moshiboard Controller takes data programs built by the MoshiDriver and sends them across the
-    USB when the Moshiboard is not busy processing.
+    The Moshiboard Controller takes data programs built by the MoshiDriver and sends to the Moshiboard
+    according to established moshi protocols.
 
-    The output device is concerned with sending data pushed to it with write and control events and
-    relaying that information to the CH341 chip on the Moshiboard.
+    The output device is concerned with sending the moshiblobs to the control board and control events and
+    to the CH341 chip on the Moshiboard. We use the same ch341 driver as the Lhystudios boards. Giving us
+    access to both libusb drivers and windll drivers.
+
+    The protocol for sending rasters is as follows:
+    Check processing-state of board, seeking 205
+    Send Preamble.
+    Check processing-state of board, seeking 205
+    Send bulk data of moshiblob. No checks between packets.
+    Send Epilogue.
+    While Check processing-state is 207:
+        wait 0.2 seconds
+    Send Preamble
+    Send 0,0 offset 0,0 move.
+    Send Epilogue
+
+    Checks done before the Epilogue will have 205 state.
     """
 
     def __init__(self, context, name, channel=None, *args, **kwargs):
@@ -640,6 +662,8 @@ class MoshiController:
     def realtime_read(self):
         """
         The a7xx values used before the AC01 commands. Read preamble.
+
+        Also seen randomly 3.2 seconds apart. Maybe keep-alive.
         :return:
         """
         self.pipe_channel("Realtime: Read...")
@@ -721,18 +745,12 @@ class MoshiController:
         self._programs.append(program)
         self.start()
 
-    def control(self, command):
-        """
-        The Moshiboard control values are non-data based control events.
-        """
-        self.pipe_channel("Control Request: %s" % command)
-        if command == "stop\n":
-            self.realtime_stop()
-        if command == "unlock\n":
-            if self._main_lock.locked():
-                return
-            else:
-                self.realtime_freemotor()
+    def unlock_rail(self):
+        self.pipe_channel("Control Request: Unlock")
+        if self._main_lock.locked():
+            return
+        else:
+            self.realtime_freemotor()
 
     def start(self):
         """
@@ -772,10 +790,10 @@ class MoshiController:
         Abort the current buffer and data queue.
         """
         self._buffer = b""
-        self._queue = bytearray()
         self.context.signal("pipe;buffer", 0)
         self.realtime_stop()
         self.update_state(STATE_TERMINATE)
+        self.pipe_channel("Control Request: Stop")
 
     def stop(self, *args):
         """
@@ -814,21 +832,6 @@ class MoshiController:
             self.context.signal("pipe;packet_text", packet)
             self.usb_send_channel(packet)
 
-    def _new_program(self):
-        """
-        Start a new MoshiProgram.
-
-        Moshi data events are stored in programmed clumps of data. Simple jogs as well as full rasters
-        are sent in a similar fashion. These programs are the core structure for the Moshiboard.
-        """
-        self.pipe_channel("New Program")
-        if len(self._buffer) == 0:
-            if len(self._programs) == 0:
-                return  # There is nothing to run.
-            self.wait_until_accepting_packets()
-            self.realtime_prologue()
-            self._buffer = self._programs.pop(0).data
-
     def _send_buffer(self):
         """
         Send the current Moshiboard buffer
@@ -863,15 +866,6 @@ class MoshiController:
                 # will tick up to 1 second waits if there's never a queue.
                 self.count += 1
 
-    def _wait_cycle(self):
-        """
-        Wait until the buffer is fully sent.
-        """
-        self.pipe_channel("Wait Cycle")
-        if len(self._buffer) == 0:
-            self.wait_finished()
-            self.realtime_epilogue()
-
     def _thread_data_send(self):
         """
         Main threaded function to send data. While the controller is working the thread
@@ -881,7 +875,6 @@ class MoshiController:
         self._main_lock.acquire(True)
         self.count = 0
         self.is_shutdown = False
-        stage = 0
 
         while self.state != STATE_END and self.state != STATE_TERMINATE:
             try:
@@ -889,28 +882,36 @@ class MoshiController:
                 if self.state == STATE_INITIALIZE:
                     # If we are initialized. Change that to active since we're running.
                     self.update_state(STATE_ACTIVE)
-                if stage == 0:
-                    self.pipe_channel("Stage 0")
-                    # Stage 0: New Program send.
-                    self.context.signal("pipe;running", True)
-                    self._new_program()
-                    stage = 1
-                if len(self._buffer) == 0:
-                    break
-                # We try to process the queue.
-                if stage == 1:
-                    self.pipe_channel("Stage 1")
-                    # Stage 1: Send Program.
-                    self.context.signal("pipe;running", True)
-                    self._send_buffer()
-                    stage = 2
+
                 if self.is_shutdown:
                     break
-                if stage == 2:
-                    self.pipe_channel("Stage 2")
-                    # Stage 2: Wait for Program to Finish.
-                    self._wait_cycle()
-                    stage = 0
+                # Stage 0: New Program send.
+                self.context.signal("pipe;running", True)
+                if len(self._buffer) == 0:
+                    if len(self._programs) == 0:
+                        self.pipe_channel("Nothing to process")
+                        time.sleep(0.4)
+                        continue  # There is nothing to run.
+                    self.pipe_channel("New Program")
+                    self.wait_until_accepting_packets()
+
+                    self.realtime_prologue()
+                    self._buffer = self._programs.pop(0).data
+                    assert(len(self._buffer) != 0)
+
+                # Stage 1: Send Program.
+                self.context.signal("pipe;running", True)
+                self.pipe_channel("Sending Data... %d bytes" % len(self._buffer))
+                self._send_buffer()
+                self.realtime_epilogue()
+                if self.is_shutdown:
+                    break
+
+                # Stage 2: Wait for Program to Finish.
+                self.pipe_channel("Waiting for finish processing.")
+                if len(self._buffer) == 0:
+                    self.wait_finished()
+
             except ConnectionRefusedError:
                 # The attempt refused the connection.
                 self.refuse_counts += 1
