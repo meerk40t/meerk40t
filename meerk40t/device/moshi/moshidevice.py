@@ -248,9 +248,20 @@ class MoshiDriver(Driver):
         except (ValueError, IndexError):
             pass
         self.program.set_offset(0, x, y)
-
         self.state = DRIVER_STATE_PROGRAM
         self.context.signal("driver;mode", self.state)
+        try:
+            x = int(values[2])
+        except (ValueError, IndexError):
+            pass
+        try:
+            y = int(values[3])
+        except (ValueError, IndexError):
+            pass
+        if x != self.program.offset_x or y != self.program.offset_y:
+            self.program.move_abs(x, y)
+        self.current_x = x
+        self.current_y = y
 
     def ensure_raster_mode(self, *values):
         """
@@ -328,10 +339,7 @@ class MoshiDriver(Driver):
 
         if self.state == self.state == DRIVER_STATE_RASTER:
             self.pipe_channel("Final Raster Home")
-            self.ensure_rapid_mode()
-            self.ensure_program_mode(0, 0)
-            self.program.move_abs(0, 0)
-            self.ensure_rapid_mode()
+            self.home()
         self.state = DRIVER_STATE_FINISH
 
     def plotplanner_process(self):
@@ -362,8 +370,8 @@ class MoshiDriver(Driver):
                     break
                 elif on & PLOT_START:
                     self.ensure_program_or_raster_mode(
-                        self.preferred_offset_x - 30,
-                        self.preferred_offset_y - 30,
+                        self.preferred_offset_x,
+                        self.preferred_offset_y,
                         self.current_x,
                         self.current_y
                     )
@@ -392,17 +400,20 @@ class MoshiDriver(Driver):
         """
         Ensure blob mode makes sure it's in program or raster mode.
         """
+        if self.state in (DRIVER_STATE_RASTER, DRIVER_STATE_PROGRAM):
+            return
+
+        if x1 is None:
+            x1 = x
+        if y1 is None:
+            y1 = y
         if self.settings.raster_step == 0:
-            self.ensure_program_mode(x, y)
+            self.ensure_program_mode(x, y, x1, y1)
         else:
             if self.context.enable_raster:
-                if x1 is None:
-                    x1 = x
-                if y1 is None:
-                    y1 = y
                 self.ensure_raster_mode(x, y, x1, y1)
             else:
-                self.ensure_program_mode(x, y)
+                self.ensure_program_mode(x, y, x1, y1)
 
     def goto_absolute(self, x, y, cut):
         """
@@ -565,8 +576,8 @@ class MoshiDriver(Driver):
         except (ValueError, IndexError):
             pass
         self.ensure_rapid_mode()
-        self.ensure_program_mode(x,y)
-        self.move_absolute(x, y)
+        self.settings.speed = 40
+        self.ensure_program_mode(x, y, x, y)
         self.ensure_rapid_mode()
         self.current_x = x
         self.current_y = y
