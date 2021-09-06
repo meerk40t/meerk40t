@@ -26,6 +26,8 @@ from ..basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
+    PLOT_LEFT_UPPER,
+    PLOT_RIGHT_LOWER,
 )
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
@@ -754,99 +756,100 @@ class LhystudiosDriver(Driver):
             sy = self.current_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
             on = int(on)
-            if on & PLOT_FINISH:  # Plot planner is ending.
-                self.ensure_rapid_mode()
-                break
-            if on & PLOT_SETTING:  # Plot planner settings have changed.
-                p_set = self.plot_planner.settings
-                s_set = self.settings
-                if p_set.power != s_set.power:
-                    self.set_power(p_set.power)
-                if (
-                    p_set.raster_step != s_set.raster_step
-                    or p_set.speed != s_set.speed
-                    or s_set.implicit_d_ratio != p_set.implicit_d_ratio
-                    or s_set.implicit_accel != p_set.implicit_accel
-                ):
-                    self.set_speed(p_set.speed)
-                    self.set_step(p_set.raster_step)
-                    self.set_acceleration(p_set.implicit_accel)
-                    self.set_d_ratio(p_set.implicit_d_ratio)
-                self.settings.set_values(p_set)
-                continue
-            if on & PLOT_AXIS:  # Major Axis.
-                self.set_prop(REQUEST_AXIS)
-                if x == 0:  # X Major / Horizontal.
-                    self.set_prop(REQUEST_HORIZONTAL_MAJOR)
-                else:  # Y Major / Vertical
-                    self.unset_prop(REQUEST_HORIZONTAL_MAJOR)
-                continue
-            if on & PLOT_DIRECTION:
-                self.set_prop(REQUEST_X)
-                self.set_prop(REQUEST_Y)
-                if x == 1:  # Moving Right. +x
-                    self.unset_prop(REQUEST_X_FORWARD_LEFT)
-                else:  # Moving Left -x
-                    self.set_prop(REQUEST_X_FORWARD_LEFT)
-                if y == 1:  # Moving Bottom +y
-                    self.unset_prop(REQUEST_Y_FORWARD_TOP)
-                else:  # Moving Top. -y
-                    self.set_prop(REQUEST_Y_FORWARD_TOP)
-                continue
-            if on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
-                if (
-                    on & PLOT_RAPID
-                    or self.state != DRIVER_STATE_PROGRAM
-                    or self.settings.raster_step != 0
-                ):
-                    # Perform a rapid position change. Always perform this for raster moves.
+            if on < 1:
+                # Special Command.
+                if on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_rapid_mode()
-                    self.move_absolute(x, y)
-                    continue
-                # Jog is performable and requested. # We have not flagged our direction or state.
-                self.jog_absolute(x, y, mode=self.root_context.opt_jog_mode)
+                    break
+                elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                    p_set = self.plot_planner.settings
+                    s_set = self.settings
+                    if p_set.power != s_set.power:
+                        self.set_power(p_set.power)
+                    if (
+                        p_set.raster_step != s_set.raster_step
+                        or p_set.speed != s_set.speed
+                        or s_set.implicit_d_ratio != p_set.implicit_d_ratio
+                        or s_set.implicit_accel != p_set.implicit_accel
+                    ):
+                        self.set_speed(p_set.speed)
+                        self.set_step(p_set.raster_step)
+                        self.set_acceleration(p_set.implicit_accel)
+                        self.set_d_ratio(p_set.implicit_d_ratio)
+                    self.settings.set_values(p_set)
+                elif on & PLOT_AXIS:  # Major Axis.
+                    self.set_prop(REQUEST_AXIS)
+                    if x == 0:  # X Major / Horizontal.
+                        self.set_prop(REQUEST_HORIZONTAL_MAJOR)
+                    else:  # Y Major / Vertical
+                        self.unset_prop(REQUEST_HORIZONTAL_MAJOR)
+                elif on & PLOT_DIRECTION:
+                    self.set_prop(REQUEST_X)
+                    self.set_prop(REQUEST_Y)
+                    if x == 1:  # Moving Right. +x
+                        self.unset_prop(REQUEST_X_FORWARD_LEFT)
+                    else:  # Moving Left -x
+                        self.set_prop(REQUEST_X_FORWARD_LEFT)
+                    if y == 1:  # Moving Bottom +y
+                        self.unset_prop(REQUEST_Y_FORWARD_TOP)
+                    else:  # Moving Top. -y
+                        self.set_prop(REQUEST_Y_FORWARD_TOP)
+                elif on & PLOT_LEFT_UPPER:
+                    pass
+                elif on & PLOT_RIGHT_LOWER:
+                    pass
+                elif on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
+                    if (
+                        on & PLOT_RAPID
+                        or self.state != DRIVER_STATE_PROGRAM
+                        or self.settings.raster_step != 0
+                    ):
+                        # Perform a rapid position change. Always perform this for raster moves.
+                        self.ensure_rapid_mode()
+                        self.move_absolute(x, y)
+                    else:
+                        # Jog is performable and requested. # We have not flagged our direction or state.
+                        self.jog_absolute(x, y, mode=self.root_context.opt_jog_mode)
                 continue
-            else:
-                self.ensure_program_mode()
+            self.ensure_program_mode()
             dx = x - sx
             dy = y - sy
-            if self.settings.raster_step != 0:
+            step = self.settings.raster_step
+            if step != 0:
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
                         if self.is_prop(STATE_Y_FORWARD_TOP):
-                            if abs(dy) > self.settings.raster_step:
+                            if abs(dy) > step:
                                 self.ensure_finished_mode()
-                                self.move_relative(0, dy + self.settings.raster_step)
+                                self.move_relative(0, dy + step)
                                 self.set_prop(STATE_X_STEPPER_ENABLE)
                                 self.unset_prop(STATE_Y_STEPPER_ENABLE)
                                 self.ensure_program_mode()
-                            self.h_switch()
                         else:
-                            if abs(dy) > self.settings.raster_step:
+                            if abs(dy) > step:
                                 self.ensure_finished_mode()
-                                self.move_relative(0, dy - self.settings.raster_step)
+                                self.move_relative(0, dy - step)
                                 self.set_prop(STATE_X_STEPPER_ENABLE)
                                 self.unset_prop(STATE_Y_STEPPER_ENABLE)
                                 self.ensure_program_mode()
-                            self.h_switch()
+                        self.h_switch()
                 elif self.is_prop(STATE_Y_STEPPER_ENABLE):
                     if dx != 0:
                         if self.is_prop(STATE_X_FORWARD_LEFT):
-                            if abs(dx) > self.settings.raster_step:
+                            if abs(dx) > step:
                                 self.ensure_finished_mode()
-                                self.move_relative(dx + self.settings.raster_step, 0)
+                                self.move_relative(dx + step, 0)
                                 self.set_prop(STATE_Y_STEPPER_ENABLE)
                                 self.unset_prop(STATE_X_STEPPER_ENABLE)
                                 self.ensure_program_mode()
-                            self.v_switch()
                         else:
-                            if abs(dx) > self.settings.raster_step:
+                            if abs(dx) > step:
                                 self.ensure_finished_mode()
-                                self.move_relative(dx - self.settings.raster_step, 0)
+                                self.move_relative(dx - step, 0)
                                 self.set_prop(STATE_Y_STEPPER_ENABLE)
                                 self.unset_prop(STATE_X_STEPPER_ENABLE)
                                 self.ensure_program_mode()
-                            self.v_switch()
+                        self.v_switch()
             self.goto_octent_abs(x, y, on & 1)
             if self.hold():
                 return True
