@@ -13,7 +13,8 @@ from ...kernel import (
     STATE_PAUSE,
     STATE_TERMINATE,
     STATE_UNKNOWN,
-    STATE_WAIT, STATE_SUSPEND,
+    STATE_WAIT,
+    STATE_SUSPEND,
 )
 from ..basedevice import (
     DRIVER_STATE_FINISH,
@@ -800,12 +801,9 @@ class LhystudiosDriver(Driver):
                 elif on & PLOT_RIGHT_LOWER:
                     pass
                 elif on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
-                    if (
-                        on & PLOT_RAPID
-                        or self.state != DRIVER_STATE_PROGRAM
-                        or self.settings.raster_step != 0
-                    ):
+                    if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM:
                         # Perform a rapid position change. Always perform this for raster moves.
+                        # DRIVER_STATE_RASTER should call this code as well.
                         self.ensure_rapid_mode()
                         self.move_absolute(x, y)
                     else:
@@ -908,6 +906,7 @@ class LhystudiosDriver(Driver):
         elif mode == 1:
             self.mode_shift_on_the_fly(dx, dy)
         else:
+            # Finish-out Jog
             self.ensure_rapid_mode()
             self.move_relative(dx, dy)
             self.ensure_program_mode()
@@ -1021,6 +1020,7 @@ class LhystudiosDriver(Driver):
                 if not self.context.autolock:
                     self.data_output(b"IS2P\n")
         elif self.state == DRIVER_STATE_RASTER:
+            # goto in raster, switches to program to recall this function.
             self.ensure_program_mode()
             self.goto_relative(dx, dy, cut)
             return
@@ -1082,25 +1082,25 @@ class LhystudiosDriver(Driver):
     def set_speed(self, speed=None):
         if self.settings.speed != speed:
             self.settings.speed = speed
-            if self.state == DRIVER_STATE_PROGRAM:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_d_ratio(self, dratio=None):
         if self.settings.dratio != dratio:
             self.settings.dratio = dratio
-            if self.state == DRIVER_STATE_PROGRAM:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_acceleration(self, accel=None):
         if self.settings.acceleration != accel:
             self.settings.acceleration = accel
-            if self.state == DRIVER_STATE_PROGRAM:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_step(self, step=None):
         if self.settings.raster_step != step:
             self.settings.raster_step = step
-            if self.state == DRIVER_STATE_PROGRAM:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def laser_off(self):
@@ -1112,7 +1112,7 @@ class LhystudiosDriver(Driver):
             self.data_output(b"S1P\n")
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
-        elif self.state == DRIVER_STATE_PROGRAM:
+        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_LASER_OFF)
         elif self.state == DRIVER_STATE_FINISH:
             self.data_output(self.CODE_LASER_OFF)
@@ -1129,7 +1129,7 @@ class LhystudiosDriver(Driver):
             self.data_output(b"S1P\n")
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
-        elif self.state == DRIVER_STATE_PROGRAM:
+        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_LASER_ON)
         elif self.state == DRIVER_STATE_FINISH:
             self.data_output(self.CODE_LASER_ON)
@@ -1145,7 +1145,7 @@ class LhystudiosDriver(Driver):
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
         elif (
-            self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_MODECHANGE
+            self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER, DRIVER_STATE_MODECHANGE)
         ):
             self.data_output(b"FNSE-\n")
             self.laser = False
@@ -1199,7 +1199,7 @@ class LhystudiosDriver(Driver):
     def ensure_finished_mode(self, *values):
         if self.state == DRIVER_STATE_FINISH:
             return
-        if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_MODECHANGE:
+        if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER, DRIVER_STATE_MODECHANGE):
             self.data_output(b"@NSE")
             self.laser = False
         elif self.state == DRIVER_STATE_RAPID:
@@ -1496,7 +1496,7 @@ class LhystudiosDriver(Driver):
 
     def move_right(self, dx=0):
         self.current_x += dx
-        if not self.is_right or self.state != DRIVER_STATE_PROGRAM:
+        if not self.is_right or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_RIGHT)
             self.set_right()
         if dx != 0:
@@ -1505,7 +1505,7 @@ class LhystudiosDriver(Driver):
 
     def move_left(self, dx=0):
         self.current_x -= abs(dx)
-        if not self.is_left or self.state != DRIVER_STATE_PROGRAM:
+        if not self.is_left or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_LEFT)
             self.set_left()
         if dx != 0:
@@ -1514,7 +1514,7 @@ class LhystudiosDriver(Driver):
 
     def move_bottom(self, dy=0):
         self.current_y += dy
-        if not self.is_bottom or self.state != DRIVER_STATE_PROGRAM:
+        if not self.is_bottom or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_BOTTOM)
             self.set_bottom()
         if dy != 0:
@@ -1523,7 +1523,7 @@ class LhystudiosDriver(Driver):
 
     def move_top(self, dy=0):
         self.current_y -= abs(dy)
-        if not self.is_top or self.state != DRIVER_STATE_PROGRAM:
+        if not self.is_top or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_TOP)
             self.set_top()
         if dy != 0:
