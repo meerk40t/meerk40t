@@ -290,11 +290,7 @@ class MoshiDriver(Driver):
             self.pipe_channel("Rapid Mode")
         if self.state == DRIVER_STATE_FINISH:
             pass
-        elif (
-            self.state == DRIVER_STATE_PROGRAM
-            or self.state == DRIVER_STATE_MODECHANGE
-            or self.state == DRIVER_STATE_RASTER
-        ):
+        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_MODECHANGE, DRIVER_STATE_RASTER):
             self.program.termination()
             self.push_program()
         self.state = DRIVER_STATE_RAPID
@@ -394,6 +390,7 @@ class MoshiDriver(Driver):
             else:
                 self.program.move_abs(x, y)
         else:
+            # DRIVER_STATE_RASTER
             if x == self.current_x and y == self.current_y:
                 return
             if cut:
@@ -497,7 +494,7 @@ class MoshiDriver(Driver):
         """
         if self.settings.speed != speed:
             self.settings.speed = speed
-            if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_RASTER:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_step(self, step=None):
@@ -506,7 +503,7 @@ class MoshiDriver(Driver):
         """
         if self.settings.raster_step != step:
             self.settings.raster_step = step
-            if self.state == DRIVER_STATE_PROGRAM or self.state == DRIVER_STATE_RASTER:
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def calc_home_position(self):
