@@ -197,7 +197,7 @@ class MoshiDriver(Driver):
         context.setting(bool, "home_bottom", False)
         context.setting(int, "home_adjust_x", 0)
         context.setting(int, "home_adjust_y", 0)
-        context.setting(bool, "enable_raster", True)
+        context.setting(bool, "enable_raster", False)
 
         self.pipe_channel = context.channel("%s/events" % name)
 
