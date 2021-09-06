@@ -7,6 +7,8 @@ from ..device.basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
+    PLOT_LEFT_UPPER,
+    PLOT_RIGHT_LOWER,
 )
 
 """
@@ -126,6 +128,8 @@ class PlotPlanner:
                 # set the directions. Post Jog, Post Settings.
                 yield cut.major_axis(), None, PLOT_AXIS
                 yield cut.x_dir(), cut.y_dir(), PLOT_DIRECTION
+                yield cut.left(), cut.upper(), PLOT_LEFT_UPPER
+                yield cut.right(), cut.lower(), PLOT_RIGHT_LOWER
 
             # Plot the current.
             # Current is executed in cut settings.

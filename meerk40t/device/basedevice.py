@@ -12,6 +12,8 @@ PLOT_JOG = 2
 PLOT_SETTING = 128
 PLOT_AXIS = 64
 PLOT_DIRECTION = 32
+PLOT_LEFT_UPPER = 512
+PLOT_RIGHT_LOWER = 1024
 
 
 def plugin(kernel, lifecycle=None):

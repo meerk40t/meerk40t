@@ -10,6 +10,8 @@ from ..basedevice import (
     PLOT_JOG,
     PLOT_RAPID,
     PLOT_SETTING,
+    PLOT_LEFT_UPPER,
+    PLOT_RIGHT_LOWER,
 )
 from ..lasercommandconstants import *
 
@@ -199,7 +201,7 @@ class GRBLDriver(Driver):
                 on = int(on)
                 if on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_rapid_mode()
-                    continue
+                    break
                 if on & PLOT_SETTING:  # Plot planner settings have changed.
                     p_set = self.plot_planner.settings
                     s_set = self.settings
@@ -217,6 +219,10 @@ class GRBLDriver(Driver):
                 if on & PLOT_AXIS:  # Major Axis.
                     continue
                 if on & PLOT_DIRECTION:
+                    continue
+                if on & PLOT_LEFT_UPPER:
+                    continue
+                if on & PLOT_RIGHT_LOWER:
                     continue
                 if on & (
                     PLOT_RAPID | PLOT_JOG

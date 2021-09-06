@@ -31,7 +31,7 @@ COMMAND_MODE_RASTER = 53
 
 COMMAND_PLOT = 100  # Takes a cutobject
 COMMAND_PLOT_START = 101  # Starts plotter
-COMMAND_BLOB = 110 # Data blob.
+COMMAND_BLOB = 110  # Data blob.
 
 COMMAND_SET_SPEED = 200  # sets the speed for the device
 COMMAND_SET_POWER = 201  # sets the power. Out of 1000. Unknown power method.
