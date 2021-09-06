@@ -1269,7 +1269,7 @@ class LhystudiosDriver(Driver):
 
         self.context.signal("driver;mode", self.state)
         self.context.signal(
-            "driver;position", (self.current_x, self.current_y, old_x, old_y)
+            "driver;position", (old_x, old_y, self.current_x, self.current_y)
         )
 
     def lock_rail(self):

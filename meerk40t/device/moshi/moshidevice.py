@@ -367,7 +367,7 @@ class MoshiDriver(Driver):
                 self.program.move_abs(x, y)
                 x = self.program.current_x
                 y = self.program.current_y
-                self.context.signal("driver;position", (x, y, oldx, oldy))
+                self.context.signal("driver;position", (oldx, oldy, x, y))
                 continue
             self.goto_absolute(x, y, on & 1)
         self.plot = None
@@ -404,7 +404,7 @@ class MoshiDriver(Driver):
         oldy = self.program.current_y
         self.current_x = x
         self.current_y = y
-        self.context.signal("driver;position", (x, y, oldx, oldy))
+        self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def cut(self, x, y):
         """
@@ -429,7 +429,7 @@ class MoshiDriver(Driver):
         oldy = self.current_y
         self.current_x = x
         self.current_y = y
-        self.context.signal("driver;position", (x, y, oldx, oldy))
+        self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def cut_relative(self, dx, dy):
         """
@@ -467,7 +467,7 @@ class MoshiDriver(Driver):
         self.program.move_abs(x, y)
         x = self.program.current_x
         y = self.program.current_y
-        self.context.signal("driver;position", (x, y, oldx, oldy))
+        self.context.signal("driver;position", (oldx, oldy, x, y))
 
     def move_relative(self, dx, dy):
         """
@@ -742,6 +742,7 @@ class MoshiController:
             self.connection = None
 
     def push_program(self, program):
+        self.pipe_channel("Pushed: %s" % str(program.data))
         self._programs.append(program)
         self.start()
 
@@ -871,12 +872,13 @@ class MoshiController:
         Main threaded function to send data. While the controller is working the thread
         will be doing work in this function.
         """
-        self.pipe_channel("Send Thread Start...")
+        self.pipe_channel("Send Thread Start... %d" % len(self._programs))
         self._main_lock.acquire(True)
         self.count = 0
         self.is_shutdown = False
 
-        while self.state != STATE_END and self.state != STATE_TERMINATE:
+        while True:
+            self.pipe_channel("While Loop")
             try:
                 self.open()
                 if self.state == STATE_INITIALIZE:
@@ -890,8 +892,8 @@ class MoshiController:
                 if len(self._buffer) == 0:
                     if len(self._programs) == 0:
                         self.pipe_channel("Nothing to process")
-                        time.sleep(0.4)
-                        continue  # There is nothing to run.
+                        # time.sleep(0.4)
+                        break  # There is nothing to run.
                     self.pipe_channel("New Program")
                     self.wait_until_accepting_packets()
 
@@ -913,6 +915,8 @@ class MoshiController:
                     self.wait_finished()
 
             except ConnectionRefusedError:
+                if self.is_shutdown:
+                    break
                 # The attempt refused the connection.
                 self.refuse_counts += 1
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
@@ -925,6 +929,8 @@ class MoshiController:
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.
+                if self.is_shutdown:
+                    break
                 self.connection_errors += 1
                 time.sleep(0.5)
                 self.close()

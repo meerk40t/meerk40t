@@ -545,7 +545,7 @@ class MoshiBlob:
         self.pipe_int16le(int(y))
 
     @staticmethod
-    def _swizzle(self, b, p7, p6, p5, p4, p3, p2, p1, p0):
+    def _swizzle(b, p7, p6, p5, p4, p3, p2, p1, p0):
         return (
             ((b >> 0) & 1) << p0
             | ((b >> 1) & 1) << p1
