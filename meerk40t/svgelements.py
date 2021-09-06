@@ -31,7 +31,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.0"
+SVGELEMENTS_VERSION = "1.6.1"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -4684,35 +4684,35 @@ class Arc(Curve):
             if control is not None:
                 delta_a = control - self.start
                 delta_b = self.end - control
-                try:
+                if abs(delta_a.x) > 1e-12:
                     slope_a = delta_a.y / delta_a.x
-                except ZeroDivisionError:
+                else:
                     slope_a = float("inf")
-                try:
+                if abs(delta_b.x) > 1e-12:
                     slope_b = delta_b.y / delta_b.x
-                except ZeroDivisionError:
+                else:
                     slope_b = float("inf")
                 ab_mid = Point.towards(self.start, control, 0.5)
                 bc_mid = Point.towards(control, self.end, 0.5)
-                if delta_a.y == 0:  # slope_a == 0
+                if abs(delta_a.y) < 1e-12:  # slope_a == 0
                     cx = ab_mid.x
-                    if delta_b.x == 0:  # slope_b == inf
+                    if abs(delta_b.x) < 1e-12:  # slope_b == inf
                         cy = bc_mid.y
                     else:
                         cy = bc_mid.y + (bc_mid.x - cx) / slope_b
-                elif delta_b.y == 0:  # slope_b == 0
+                elif abs(delta_b.y) < 1e-12:  # slope_b == 0
                     cx = bc_mid.x
-                    if delta_a.y == 0:  # slope_a == inf
+                    if abs(delta_a.y) < 1e-12:  # slope_a == inf
                         cy = ab_mid.y
                     else:
                         cy = ab_mid.y + (ab_mid.x - cx) / slope_a
-                elif delta_a.x == 0:  # slope_a == inf
+                elif abs(delta_a.x) < 1e-12:  # slope_a == inf
                     cy = ab_mid.y
                     cx = slope_b * (bc_mid.y - cy) + bc_mid.x
-                elif delta_b.x == 0:  # slope_b == inf
+                elif abs(delta_b.x) < 1e-12:  # slope_b == inf
                     cy = bc_mid.y
                     cx = slope_a * (ab_mid.y - cy) + ab_mid.x
-                elif slope_a == slope_b:
+                elif abs(slope_a - slope_b) < 1e-12:
                     cx = ab_mid.x
                     cy = ab_mid.y
                 else:
