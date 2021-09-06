@@ -29,7 +29,7 @@ from ..basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
     PLOT_LEFT_UPPER,
-    PLOT_RIGHT_LOWER,
+    PLOT_RIGHT_LOWER, PLOT_START,
 )
 
 MILS_IN_MM = 39.3701
@@ -182,6 +182,9 @@ class MoshiDriver(Driver):
         self.thread = None
         root_context = context.root
 
+        self.preferred_offset_x = 0
+        self.preferred_offset_y = 0
+
         context.driver = self
 
         root_context.setting(bool, "opt_rapid_between", True)
@@ -197,7 +200,7 @@ class MoshiDriver(Driver):
         context.setting(bool, "home_bottom", False)
         context.setting(int, "home_adjust_x", 0)
         context.setting(int, "home_adjust_y", 0)
-        context.setting(bool, "enable_raster", False)
+        context.setting(bool, "enable_raster", True)
 
         self.pipe_channel = context.channel("%s/events" % name)
 
@@ -277,7 +280,16 @@ class MoshiDriver(Driver):
         self.program.set_offset(0, x, y)
         self.state = DRIVER_STATE_RASTER
         self.context.signal("driver;mode", self.state)
-        self.program.move_abs(x, y)
+        try:
+            x = int(values[2])
+        except (ValueError, IndexError):
+            pass
+        try:
+            y = int(values[3])
+        except (ValueError, IndexError):
+            pass
+        if x != self.program.offset_x or y != self.program.offset_y:
+            self.program.move_abs(x, y)
         self.current_x = x
         self.current_y = y
 
@@ -341,12 +353,24 @@ class MoshiDriver(Driver):
                 if on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    self.rapid_jog(x, y)
+                    # self.rapid_jog(x, y)
+                    self.current_x = x
+                    self.current_y = y
                     continue
-                if on & PLOT_FINISH:  # Plot planner is ending.
+                elif on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_finished_mode()
                     break
-                if on & PLOT_SETTING:  # Plot planner settings have changed.
+                elif on & PLOT_START:
+                    self.ensure_program_or_raster_mode(
+                        self.preferred_offset_x - 30,
+                        self.preferred_offset_y - 30,
+                        self.current_x,
+                        self.current_y
+                    )
+                elif on & PLOT_LEFT_UPPER:
+                    self.preferred_offset_x = x
+                    self.preferred_offset_y = y
+                elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     p_set = self.plot_planner.settings
                     s_set = self.settings
                     if p_set.power != s_set.power:
@@ -364,7 +388,7 @@ class MoshiDriver(Driver):
         self.plot = None
         return False
 
-    def ensure_program_or_raster_mode(self, x, y):
+    def ensure_program_or_raster_mode(self, x, y, x1=None, y1=None):
         """
         Ensure blob mode makes sure it's in program or raster mode.
         """
@@ -372,7 +396,11 @@ class MoshiDriver(Driver):
             self.ensure_program_mode(x, y)
         else:
             if self.context.enable_raster:
-                self.ensure_raster_mode(591, 591)
+                if x1 is None:
+                    x1 = x
+                if y1 is None:
+                    y1 = y
+                self.ensure_raster_mode(x, y, x1, y1)
             else:
                 self.ensure_program_mode(x, y)
 
