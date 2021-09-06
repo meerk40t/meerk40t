@@ -321,8 +321,8 @@ class MoshiBlob:
         self.data = bytearray()  # Queued additional commands programs.
         self.channel = None
 
-        self.current_x = 0
-        self.current_y = 0
+        self.last_x = 0
+        self.last_y = 0
 
         self.offset_x = 0
         self.offset_y = 0
@@ -446,8 +446,8 @@ class MoshiBlob:
             x = 0
         if y < 0:
             y = 0
-        self.current_x = x
-        self.current_y = y
+        self.last_x = x
+        self.last_y = y
         x -= self.offset_x
         y -= self.offset_y
         if self.channel:
@@ -469,8 +469,8 @@ class MoshiBlob:
             x = 0
         if y < 0:
             y = 0
-        self.current_x = x
-        self.current_y = y
+        self.last_x = x
+        self.last_y = y
         x -= self.offset_x
         y -= self.offset_y
         if self.channel:
@@ -489,7 +489,7 @@ class MoshiBlob:
         assert (2 <= self._stage <= 3)
         self._stage = 3
 
-        self.current_y = y
+        self.last_y = y
         y -= self.offset_y
         if self.channel:
             self.channel("Move Vertical y: %d" % int(y))
@@ -505,7 +505,7 @@ class MoshiBlob:
         """
         assert (2 <= self._stage <= 3)
         self._stage = 3
-        self.current_x = x
+        self.last_x = x
         x -= self.offset_x
         if self.channel:
             self.channel("Move Horizontal x: %d" % int(x))
@@ -521,7 +521,7 @@ class MoshiBlob:
         """
         assert (2 <= self._stage <= 3)
         self._stage = 3
-        self.current_x = x
+        self.last_x = x
         x -= self.offset_x
         if self.channel:
             self.channel("Cut Horizontal x: %d" % int(x))
@@ -537,7 +537,7 @@ class MoshiBlob:
         """
         assert (2 <= self._stage <= 3)
         self._stage = 3
-        self.current_y = y
+        self.last_y = y
         y -= self.offset_y
         if self.channel:
             self.channel("Cut Vertical y: %d" % int(y))
