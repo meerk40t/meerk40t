@@ -379,6 +379,8 @@ class MoshiDriver(Driver):
                     # self.rapid_jog(x, y)
                     self.current_x = x
                     self.current_y = y
+                    if self.state != DRIVER_STATE_RAPID:
+                        self.move_absolute(x,y)
                     continue
                 elif on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_finished_mode()
