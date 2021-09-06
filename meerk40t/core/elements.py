@@ -4316,7 +4316,7 @@ class Elemental(Modifier):
             help=""
         )
         def remove_n_ops(node, **kwgs):
-            self.context("element delete\n")
+            self.context("operation delete\n")
 
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
