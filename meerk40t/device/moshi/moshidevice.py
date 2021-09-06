@@ -230,38 +230,23 @@ class MoshiDriver(Driver):
         if self.state == DRIVER_STATE_RASTER:
             self.ensure_finished_mode()
             self.ensure_rapid_mode()
-
-        if self.settings.speed is None:
-            speed = 20
-        else:
-            speed = int(self.settings.speed)
-
-        # Normal speed is rapid. Passing same speed so PPI isn't crazy.
-        self.program.vector_speed(speed, speed)
-        x, y = self.calc_home_position()
         try:
-            x = int(values[0])
+            offset_x = int(values[0])
         except (ValueError, IndexError):
-            pass
+            offset_x = 0
         try:
-            y = int(values[1])
+            offset_y = int(values[1])
         except (ValueError, IndexError):
-            pass
-        self.program.set_offset(0, x, y)
-        self.state = DRIVER_STATE_PROGRAM
-        self.context.signal("driver;mode", self.state)
+            offset_y = 0
         try:
-            x = int(values[2])
+            move_x = int(values[2])
         except (ValueError, IndexError):
-            pass
+            move_x = 0
         try:
-            y = int(values[3])
+            move_y = int(values[3])
         except (ValueError, IndexError):
-            pass
-        if x != self.program.offset_x or y != self.program.offset_y:
-            self.program.move_abs(x, y)
-        self.current_x = x
-        self.current_y = y
+            move_y = 0
+        self.start_program_mode(offset_x, offset_y, move_x, move_y)
 
     def ensure_raster_mode(self, *values):
         """
@@ -276,33 +261,63 @@ class MoshiDriver(Driver):
         if self.state == DRIVER_STATE_PROGRAM:
             self.ensure_finished_mode()
             self.ensure_rapid_mode()
+        try:
+            offset_x = int(values[0])
+        except (ValueError, IndexError):
+            offset_x = 0
+        try:
+            offset_y = int(values[1])
+        except (ValueError, IndexError):
+            offset_y = 0
+        try:
+            move_x = int(values[2])
+        except (ValueError, IndexError):
+            move_x = 0
+        try:
+            move_y = int(values[3])
+        except (ValueError, IndexError):
+            move_y = 0
+        self.start_raster_mode(offset_x, offset_y, move_x, move_y)
 
-        speed = int(self.settings.speed)
+    def start_program_mode(self, offset_x, offset_y, move_x=None, move_y=None, speed=None, normal_speed=None):
+        if move_x is None:
+            move_x = offset_x
+        if move_y is None:
+            move_y = offset_y
+        if speed is None and self.settings.speed is not None:
+            speed = int(self.settings.speed)
+        if speed is None:
+            speed = 20
+        if normal_speed is None:
+            normal_speed = speed
+
+        # Normal speed is rapid. Passing same speed so PPI isn't crazy.
+        self.program.vector_speed(speed, normal_speed)
+        self.program.set_offset(0, offset_x, offset_y)
+        self.state = DRIVER_STATE_PROGRAM
+        self.context.signal("driver;mode", self.state)
+
+        self.program.move_abs(move_x, move_y)
+        self.current_x = move_x
+        self.current_y = move_y
+
+    def start_raster_mode(self, offset_x, offset_y, move_x=None, move_y=None, speed=None):
+        if move_x is None:
+            move_x = offset_x
+        if move_y is None:
+            move_y = offset_y
+        if speed is None and self.settings.speed is not None:
+            speed = int(self.settings.speed)
+        if speed is None:
+            speed = 160
         self.program.raster_speed(speed)
-        x, y = self.calc_home_position()
-        try:
-            x = int(values[0])
-        except (ValueError, IndexError):
-            pass
-        try:
-            y = int(values[1])
-        except (ValueError, IndexError):
-            pass
-        self.program.set_offset(0, x, y)
+        self.program.set_offset(0, offset_x, offset_y)
         self.state = DRIVER_STATE_RASTER
         self.context.signal("driver;mode", self.state)
-        try:
-            x = int(values[2])
-        except (ValueError, IndexError):
-            pass
-        try:
-            y = int(values[3])
-        except (ValueError, IndexError):
-            pass
-        if x != self.program.offset_x or y != self.program.offset_y:
-            self.program.move_abs(x, y)
-        self.current_x = x
-        self.current_y = y
+
+        self.program.move_abs(move_x, move_y)
+        self.current_x = move_x
+        self.current_y = move_y
 
     def ensure_rapid_mode(self, *values):
         """
