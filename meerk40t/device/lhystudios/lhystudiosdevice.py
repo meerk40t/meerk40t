@@ -1639,7 +1639,10 @@ class LhystudiosController:
                 mock=self.context.mock,
             )
         else:
-            self.connection.open()
+            try:
+                self.connection.open()
+            except AttributeError:
+                raise ConnectionRefusedError("Mock Driver cannot connect with USB")
 
         if self.connection is None:
             raise ConnectionRefusedError("ch341 connect did not return a connection.")
