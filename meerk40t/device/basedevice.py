@@ -99,6 +99,7 @@ def plugin(kernel, lifecycle=None):
                 try:
                     t = input_driver.type
                     match = "command/%s/%s$" % (str(t), command)
+                    match = ''.join([i for i in match if i not in "(){}[]"])
                     for command_name in root.match(match):
                         command_funct = root.registered[command_name]
                         if command_funct is not None:
@@ -113,6 +114,7 @@ def plugin(kernel, lifecycle=None):
                 try:
                     t = output.type + "out"
                     match = "command/%s/%s" % (str(t), command)
+                    match = ''.join([i for i in match if i not in "(){}[]"])
                     for command_name in root.match(match):
                         command_funct = root.registered[command_name]
                         if command_funct is not None:
