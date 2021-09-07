@@ -327,9 +327,9 @@ _ = wx.GetTranslation
 supported_languages = (
     ("en", u"English", wx.LANGUAGE_ENGLISH),
     ("it", u"italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", u"franÃ§ais", wx.LANGUAGE_FRENCH),
+    ("fr", u"français", wx.LANGUAGE_FRENCH),
     ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", u"espaÃ±ol", wx.LANGUAGE_SPANISH),
+    ("es", u"español", wx.LANGUAGE_SPANISH),
     ("zh", u"Chinese", wx.LANGUAGE_CHINESE),
 )
 
