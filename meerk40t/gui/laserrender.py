@@ -460,6 +460,10 @@ class LaserRender:
         height /= float(step)
         width = int(width)
         height = int(height)
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
         bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
