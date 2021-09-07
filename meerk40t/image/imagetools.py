@@ -1561,6 +1561,8 @@ class RasterScripts:
                                 image = image.convert("RGB")
                                 image = image.convert("L", matrix=[r, g, b, 1.0])
                             if op["invert"]:
+                                if image.mode == 'F':
+                                    image = image.convert('L')
                                 empty_mask = image.point(lambda e: 0 if e == 0 else 255)
                                 image = ImageOps.invert(image)
                             else:
