@@ -623,6 +623,7 @@ class Node:
         types=None,
         cascade=True,
         depth=None,
+        selected=None,
         emphasized=None,
         targeted=None,
         highlighted=None,
@@ -635,6 +636,7 @@ class Node:
         :param types: types of nodes permitted to be returned
         :param cascade: cascade all subitems if a group matches the criteria.
         :param depth: depth to search within the tree.
+        :param selected: match only selected nodes
         :param emphasized: match only emphasized nodes.
         :param targeted: match only targeted nodes
         :param highlighted: match only highlighted nodes
@@ -644,6 +646,7 @@ class Node:
         if (
             (targeted is None or targeted == node.targeted)
             and (emphasized is None or emphasized == node.emphasized)
+            and (selected is None or selected == node.selected)
             and (highlighted is None or highlighted != node.highlighted)
         ):
             # Matches the emphases.
@@ -664,7 +667,7 @@ class Node:
             depth -= 1
         # Check all children.
         for c in node.children:
-            for q in c.flat(types, cascade, depth, emphasized, targeted, highlighted):
+            for q in c.flat(types, cascade, depth, selected, emphasized, targeted, highlighted):
                 yield q
 
     def count_children(self):
@@ -4295,6 +4298,29 @@ class Elemental(Modifier):
         def clear_all_ops(node, **kwgs):
             self.context("element* delete\n")
             self.elem_branch.remove_all_children()
+
+        @self.tree_conditional(lambda node: len(list(self.flat(selected=True))) > 1)
+        @self.tree_calc("ecount", lambda i: len(list(self.flat(selected=True))))
+        @self.tree_operation(
+            _("Remove %s selected items") % "{ecount}",
+            node_type=(
+                "op",
+                "opnode",
+                "cmdop",
+                "lasercode",
+                "cutcode",
+                "blob",
+                "elem",
+                "file",
+                "group",
+            ),
+            help="",
+        )
+        def remove_multi_nodes(node, **kwgs):
+            nodes = list(self.flat(selected=True))
+            for node in nodes:
+                node.remove_node()
+            self.set_emphasis(None)
 
         @self.tree_operation(
             _("Remove '%s'") % "{name}",
