@@ -4319,6 +4319,16 @@ class Elemental(Modifier):
         def remove_n_ops(node, **kwgs):
             self.context("operation delete\n")
 
+        @self.tree_conditional(lambda node: len(list(self.op_branch.flat(types="opnode", emphasized=True))) > 1)
+        @self.tree_calc("ecount", lambda i: len(list(self.op_branch.flat(types="opnode", emphasized=True))))
+        @self.tree_operation(
+            _("Remove %s items from operation") % "{ecount}",
+            node_type="op",
+            help=""
+        )
+        def remove_n_opnodes(node, **kwgs):
+            node.remove_all_children()
+
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
