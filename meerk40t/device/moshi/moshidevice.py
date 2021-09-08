@@ -946,7 +946,6 @@ class MoshiController:
         while True:
             self.pipe_channel("While Loop")
             try:
-                self.open()
                 if self.state == STATE_INITIALIZE:
                     # If we are initialized. Change that to active since we're running.
                     self.update_state(STATE_ACTIVE)
@@ -961,6 +960,7 @@ class MoshiController:
                         # time.sleep(0.4)
                         break  # There is nothing to run.
                     self.pipe_channel("New Program")
+                    self.open()
                     self.wait_until_accepting_packets()
 
                     self.realtime_prologue()
@@ -986,13 +986,12 @@ class MoshiController:
                     break
                 # The attempt refused the connection.
                 self.refuse_counts += 1
+
+                if self.refuse_counts >= 5:
+                    self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
+                self.context.signal("pipe;failing", self.refuse_counts)
+                self.context.signal("pipe;running", False)
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
-                if self.refuse_counts >= self.max_attempts:
-                    # We were refused too many times, kill the thread.
-                    self.update_state(STATE_TERMINATE)
-                    self.context.signal("pipe;failing", self.refuse_counts)
-                    self.context.signal("pipe;running", False)
-                    break
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.
