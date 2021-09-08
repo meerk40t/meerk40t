@@ -4306,7 +4306,14 @@ class Elemental(Modifier):
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
-            node_type="op",
+            node_type=(
+                    "op",
+                    "opnode",
+                    "cmdop",
+                    "lasercode",
+                    "cutcode",
+                    "blob"
+            ),
             help=""
         )
         def remove_n_ops(node, **kwgs):
@@ -4316,7 +4323,11 @@ class Elemental(Modifier):
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
             _("Remove %s elements") % "{ecount}",
-            node_type=("elem", "opnode"),
+            node_type=(
+                "elem",
+                "file",
+                "group",
+            ),
             help=""
         )
         def remove_n_elements(node, **kwgs):
