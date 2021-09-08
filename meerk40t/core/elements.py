@@ -667,8 +667,7 @@ class Node:
             depth -= 1
         # Check all children.
         for c in node.children:
-            for q in c.flat(types, cascade, depth, selected, emphasized, targeted, highlighted):
-                yield q
+            yield from c.flat(types, cascade, depth, selected, emphasized, targeted, highlighted)
 
     def count_children(self):
         return len(self._children)
@@ -1558,8 +1557,7 @@ class Elemental(Modifier):
                 yield func
 
     def flat(self, **kwargs):
-        for e in self._tree.flat(**kwargs):
-            yield e
+        yield from self._tree.flat(**kwargs)
 
     @staticmethod
     def tree_calc(value_name, calc_func):
@@ -4128,6 +4126,19 @@ class Elemental(Modifier):
 
         _ = self.context._
 
+
+        non_structural_nodes = (
+            "op",
+            "opnode",
+            "cmdop",
+            "lasercode",
+            "cutcode",
+            "blob",
+            "elem",
+            "file",
+            "group",
+        )
+
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(_("Operation properties"), node_type="op", help="")
@@ -4299,27 +4310,19 @@ class Elemental(Modifier):
             self.context("element* delete\n")
             self.elem_branch.remove_all_children()
 
-        @self.tree_conditional(lambda node: len(list(self.flat(selected=True))) > 1)
-        @self.tree_calc("ecount", lambda i: len(list(self.flat(selected=True))))
+        @self.tree_calc("ecount", lambda i: len(list(self.flat(selected=True,
+                                                               cascade=False,
+                                                               types=non_structural_nodes))))
         @self.tree_operation(
-            _("Remove %s selected items") % "{ecount}",
-            node_type=(
-                "op",
-                "opnode",
-                "cmdop",
-                "lasercode",
-                "cutcode",
-                "blob",
-                "elem",
-                "file",
-                "group",
-            ),
+            _("Remove (%s)") % "{ecount}",
+            node_type=non_structural_nodes,
             help="",
         )
         def remove_multi_nodes(node, **kwgs):
-            nodes = list(self.flat(selected=True))
+            nodes = list(self.flat(selected=True, cascade=False, types=non_structural_nodes))
             for node in nodes:
-                node.remove_node()
+                if node.parent is not None:  # May have already removed.
+                    node.remove_node()
             self.set_emphasis(None)
 
         @self.tree_operation(
