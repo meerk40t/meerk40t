@@ -151,6 +151,7 @@ class Node:
         self.object = data_object
         self.type = type
 
+        self._selected = False
         self._emphasized = False
         self._highlighted = False
         self._target = False
@@ -259,6 +260,15 @@ class Node:
         self.notify_emphasized(self)
 
     @property
+    def selected(self):
+        return self._selected
+
+    @selected.setter
+    def selected(self, value):
+        self._selected = value
+        self.notify_selected(self)
+
+    @property
     def parent(self):
         return self._parent
 
@@ -328,6 +338,12 @@ class Node:
             if node is None:
                 node = self
             self._root.notify_changed(node=node, **kwargs)
+
+    def notify_selected(self, node=None, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_selected(node=node, **kwargs)
 
     def notify_emphasized(self, node=None, **kwargs):
         if self._root is not None:
@@ -1381,6 +1397,13 @@ class RootNode(Node):
         for listen in self.listeners:
             if hasattr(listen, "node_changed"):
                 listen.node_changed(node, **kwargs)
+
+    def notify_selected(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "selected"):
+                listen.selected(node, **kwargs)
 
     def notify_emphasized(self, node=None, **kwargs):
         if node is None:
@@ -5246,6 +5269,24 @@ class Elemental(Modifier):
                 continue
             if object_search is child.object:
                 child.targeted = True
+
+    def set_selected(self, selected):
+        """
+        Selected is the sublist of specifically selected nodes.
+        """
+        for s in self._tree.flat():
+            in_list = selected is not None and (
+                s in selected or (hasattr(s, "object") and s.object in selected)
+            )
+            if s.selected:
+                if not in_list:
+                    s.selected = False
+            else:
+                if in_list:
+                    s.selected = True
+        if selected is not None:
+            for e in selected:
+                e.selected = True
 
     def set_emphasis(self, emphasize):
         """

@@ -3290,6 +3290,14 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_label(node)
 
+    def selected(self, node):
+        item = node.item
+        if not item.IsOk():
+            raise ValueError("Bad Item")
+        self.update_label(node)
+        self.set_enhancements(node)
+        self.context.signal("selected", node)
+
     def emphasized(self, node):
         item = node.item
         if not item.IsOk():
@@ -3715,7 +3723,6 @@ class ShadowTree:
         elif isinstance(obj, CutCode):
             self.context.open("window/Simulation", self.gui, node=node)
 
-
     def on_item_selection_changed(self, event):
         """
         Tree menu item is changed. Modify the selection.
@@ -3724,22 +3731,27 @@ class ShadowTree:
         :return:
         """
         if self.do_not_select:
+            # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
+            # cause them to appear to drop invalid nodes.
             return
         selected = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
-        for i in range(len(selected)):
-            node = selected[i]
+        self.elements.set_selected(selected)
+
+        emphasized = list(selected)
+        for i in range(len(emphasized)):
+            node = emphasized[i]
             if node.type == "opnode":
-                selected[i] = node.object.node
+                emphasized[i] = node.object.node
             elif node.type == "op":
                 for n in node.flat(types=("opnode",), cascade=False):
                     try:
-                        selected.append(n.object.node)
+                        emphasized.append(n.object.node)
                     except Exception:
                         pass
 
-        self.elements.set_emphasis(selected)
+        self.elements.set_emphasis(emphasized)
         self.refresh_tree()
         self.gui.request_refresh()
         # self.do_not_select = True
