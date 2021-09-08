@@ -4290,7 +4290,6 @@ class Elemental(Modifier):
             node.remove_node()
             self.set_emphasis(None)
 
-        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) == 1)
         @self.tree_operation(
             _("Remove '%s'") % "{name}",
             node_type=(
