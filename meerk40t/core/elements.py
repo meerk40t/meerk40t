@@ -4310,6 +4310,9 @@ class Elemental(Modifier):
             self.context("element* delete\n")
             self.elem_branch.remove_all_children()
 
+        @self.tree_conditional(lambda cond: len(list(self.flat(selected=True,
+                                                               cascade=False,
+                                                               types=non_structural_nodes))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.flat(selected=True,
                                                                cascade=False,
                                                                types=non_structural_nodes))))
@@ -4325,42 +4328,27 @@ class Elemental(Modifier):
                     node.remove_node()
             self.set_emphasis(None)
 
+        @self.tree_conditional(lambda cond: len(list(self.flat(selected=True,
+                                                               cascade=False,
+                                                               types=non_structural_nodes))) == 1)
         @self.tree_operation(
             _("Remove '%s'") % "{name}",
-            node_type=(
-                "op",
-                "opnode",
-                "cmdop",
-                "lasercode",
-                "cutcode",
-                "blob"
-            ),
+            node_type=non_structural_nodes,
             help="",
         )
         def remove_type_op(node, **kwgs):
             node.remove_node()
             self.set_emphasis(None)
 
-        @self.tree_operation(
-            _("Remove '%s'") % "{name}",
-            node_type=(
-                "elem",
-                "file",
-                "group",
-            ),
-            help="",
-        )
-        def remove_type_elem(node, **kwgs):
-            node.remove_node()
-            self.set_emphasis(None)
-
+        @self.tree_conditional(lambda cond: len(list(self.flat(selected=True,
+                                                               cascade=False,
+                                                               types=non_structural_nodes))) == 0)
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
             node_type=(
                     "op",
-                    "opnode",
                     "cmdop",
                     "lasercode",
                     "cutcode",
