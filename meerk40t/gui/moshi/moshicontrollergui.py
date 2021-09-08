@@ -264,14 +264,16 @@ class MoshiControllerGui(MWindow):
         # end wxGlade
 
     def window_open(self):
-        self.context.channel("pipe/usb", buffer_size=500).watch(self.update_text)
+        active = self.context.path.split('/')[-1]
+        self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
         self.context.listen("pipe;state", self.on_connection_state_change)
         self.context.listen("active", self.on_active_change)
 
     def window_close(self):
-        self.context.channel("pipe/usb").unwatch(self.update_text)
+        active = self.context.path.split('/')[-1]
+        self.context.channel("%s/usb" % active).unwatch(self.update_text)
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)

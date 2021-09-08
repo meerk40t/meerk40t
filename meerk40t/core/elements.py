@@ -2,6 +2,15 @@ import functools
 import re
 from copy import copy
 
+from .cutcode import (
+    CubicCut,
+    CutCode,
+    CutGroup,
+    LaserSettings,
+    LineCut,
+    QuadCut,
+    RasterCut,
+)
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
@@ -40,15 +49,6 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Viewbox,
-)
-from .cutcode import (
-    CubicCut,
-    CutCode,
-    CutGroup,
-    LaserSettings,
-    LineCut,
-    QuadCut,
-    RasterCut,
 )
 
 
@@ -151,6 +151,7 @@ class Node:
         self.object = data_object
         self.type = type
 
+        self._selected = False
         self._emphasized = False
         self._highlighted = False
         self._target = False
@@ -259,6 +260,15 @@ class Node:
         self.notify_emphasized(self)
 
     @property
+    def selected(self):
+        return self._selected
+
+    @selected.setter
+    def selected(self, value):
+        self._selected = value
+        self.notify_selected(self)
+
+    @property
     def parent(self):
         return self._parent
 
@@ -328,6 +338,12 @@ class Node:
             if node is None:
                 node = self
             self._root.notify_changed(node=node, **kwargs)
+
+    def notify_selected(self, node=None, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_selected(node=node, **kwargs)
 
     def notify_emphasized(self, node=None, **kwargs):
         if self._root is not None:
@@ -607,6 +623,7 @@ class Node:
         types=None,
         cascade=True,
         depth=None,
+        selected=None,
         emphasized=None,
         targeted=None,
         highlighted=None,
@@ -619,6 +636,7 @@ class Node:
         :param types: types of nodes permitted to be returned
         :param cascade: cascade all subitems if a group matches the criteria.
         :param depth: depth to search within the tree.
+        :param selected: match only selected nodes
         :param emphasized: match only emphasized nodes.
         :param targeted: match only targeted nodes
         :param highlighted: match only highlighted nodes
@@ -628,6 +646,7 @@ class Node:
         if (
             (targeted is None or targeted == node.targeted)
             and (emphasized is None or emphasized == node.emphasized)
+            and (selected is None or selected == node.selected)
             and (highlighted is None or highlighted != node.highlighted)
         ):
             # Matches the emphases.
@@ -648,8 +667,7 @@ class Node:
             depth -= 1
         # Check all children.
         for c in node.children:
-            for q in c.flat(types, cascade, depth, emphasized, targeted, highlighted):
-                yield q
+            yield from c.flat(types, cascade, depth, selected, emphasized, targeted, highlighted)
 
     def count_children(self):
         return len(self._children)
@@ -1382,6 +1400,13 @@ class RootNode(Node):
             if hasattr(listen, "node_changed"):
                 listen.node_changed(node, **kwargs)
 
+    def notify_selected(self, node=None, **kwargs):
+        if node is None:
+            node = self
+        for listen in self.listeners:
+            if hasattr(listen, "selected"):
+                listen.selected(node, **kwargs)
+
     def notify_emphasized(self, node=None, **kwargs):
         if node is None:
             node = self
@@ -1532,8 +1557,7 @@ class Elemental(Modifier):
                 yield func
 
     def flat(self, **kwargs):
-        for e in self._tree.flat(**kwargs):
-            yield e
+        yield from self._tree.flat(**kwargs)
 
     @staticmethod
     def tree_calc(value_name, calc_func):
@@ -4102,6 +4126,19 @@ class Elemental(Modifier):
 
         _ = self.context._
 
+
+        non_structural_nodes = (
+            "op",
+            "opnode",
+            "cmdop",
+            "lasercode",
+            "cutcode",
+            "blob",
+            "elem",
+            "file",
+            "group",
+        )
+
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(_("Operation properties"), node_type="op", help="")
@@ -4273,61 +4310,87 @@ class Elemental(Modifier):
             self.context("element* delete\n")
             self.elem_branch.remove_all_children()
 
-        @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
+        # ==========
+        # REMOVE MULTI (Tree Selected)
+        # ==========
+        @self.tree_conditional(
+            lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) > 1
+        )
+        @self.tree_calc(
+            "ecount",
+            lambda i: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes)))
+        )
+        @self.tree_operation(
+            _("Remove %s selected items") % "{ecount}",
+            node_type=non_structural_nodes,
+            help="",
+        )
+        def remove_multi_nodes(node, **kwgs):
+            nodes = list(self.flat(selected=True, cascade=False, types=non_structural_nodes))
+            for node in nodes:
+                if node.parent is not None:  # May have already removed.
+                    node.remove_node()
+            self.set_emphasis(None)
+
+        # ==========
+        # REMOVE SINGLE (Tree Selected)
+        # ==========
+        @self.tree_conditional(
+            lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 1
+        )
         @self.tree_operation(
             _("Remove '%s'") % "{name}",
-            node_type=(
-                "op",
-                "cmdop",
-                "elem",
-                "lasercode",
-                "cutcode",
-                "blob"
-            ),
+            node_type=non_structural_nodes,
             help="",
         )
         def remove_type_op(node, **kwgs):
             node.remove_node()
             self.set_emphasis(None)
 
-        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) == 1)
-        @self.tree_operation(
-            _("Remove '%s'") % "{name}",
-            node_type=(
-                "opnode",
-                "cmdop",
-                "file",
-                "group",
-                "lasercode",
-                "cutcode",
-                "blob"
-            ),
-            help="",
+        # ==========
+        # Remove Operations (If No Tree Selected)
+        # Note: This code would rarely match anything since the tree selected will almost always be true if we have
+        # match this conditional. The tree-selected delete functions are superior.
+        # ==========
+        @self.tree_conditional(
+            lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 0
         )
-        def remove_type_elem(node, **kwgs):
-            node.remove_node()
-            self.set_emphasis(None)
-
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
-            node_type="op",
+            node_type=(
+                    "op",
+                    "cmdop",
+                    "lasercode",
+                    "cutcode",
+                    "blob"
+            ),
             help=""
         )
         def remove_n_ops(node, **kwgs):
             self.context("operation delete\n")
 
+        # ==========
+        # REMOVE ELEMENTS
+        # ==========
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
             _("Remove %s elements") % "{ecount}",
-            node_type=("elem", "opnode"),
+            node_type=(
+                "elem",
+                "file",
+                "group",
+            ),
             help=""
         )
         def remove_n_elements(node, **kwgs):
             self.context("element delete\n")
 
+        # ==========
+        # CONVERT TREE OPERATIONS
+        # ==========
         @self.tree_operation(
             _("Convert to Cutcode"),
             node_type="lasercode",
@@ -5041,12 +5104,26 @@ class Elemental(Modifier):
         ):
             yield item
 
+    def top_element(self, **kwargs):
+        """
+        Returns the first matching node via a depth first search.
+        """
+        for e in self.elem_branch.flat(**kwargs):
+            return e
+        return None
+
     def first_element(self, **kwargs):
+        """
+        Returns the first matching element node via a depth first search. Elements must be type elem.
+        """
         for e in self.elems(**kwargs):
             return e
         return None
 
     def has_emphasis(self):
+        """
+        Returns whether any element is emphasized
+        """
         for e in self.elems_nodes(emphasized=True):
             return True
         return False
@@ -5231,6 +5308,24 @@ class Elemental(Modifier):
                 continue
             if object_search is child.object:
                 child.targeted = True
+
+    def set_selected(self, selected):
+        """
+        Selected is the sublist of specifically selected nodes.
+        """
+        for s in self._tree.flat():
+            in_list = selected is not None and (
+                s in selected or (hasattr(s, "object") and s.object in selected)
+            )
+            if s.selected:
+                if not in_list:
+                    s.selected = False
+            else:
+                if in_list:
+                    s.selected = True
+        if selected is not None:
+            for e in selected:
+                e.selected = True
 
     def set_emphasis(self, emphasize):
         """

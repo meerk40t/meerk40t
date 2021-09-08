@@ -672,7 +672,6 @@ class MoshiController:
         self._status = [0] * 6
         self._usb_state = -1
 
-        self.ch341 = self.context.open("module/ch341")
         self.connection = None
 
         self.max_attempts = 5
@@ -682,9 +681,11 @@ class MoshiController:
         self.abort_waiting = False
 
         self.pipe_channel = context.channel("%s/events" % name)
-        self.usb_log = context.channel("%s/usb" % name, buffer_size=20)
+        self.usb_log = context.channel("%s/usb" % name, buffer_size=500)
         self.usb_send_channel = context.channel("%s/usb_send" % name)
         self.recv_channel = context.channel("%s/recv" % name)
+
+        self.ch341 = self.context.open("module/ch341", log=self.usb_log)
 
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
 
@@ -779,7 +780,8 @@ class MoshiController:
         self.realtime_pipe(swizzle_table[MOSHI_ESTOP][0])
 
     def realtime_pipe(self, data):
-        self.connection.write_addr(data)
+        if self.connection is not None:
+            self.connection.write_addr(data)
 
     realtime_write = realtime_pipe
 
@@ -946,7 +948,6 @@ class MoshiController:
         while True:
             self.pipe_channel("While Loop")
             try:
-                self.open()
                 if self.state == STATE_INITIALIZE:
                     # If we are initialized. Change that to active since we're running.
                     self.update_state(STATE_ACTIVE)
@@ -961,6 +962,7 @@ class MoshiController:
                         # time.sleep(0.4)
                         break  # There is nothing to run.
                     self.pipe_channel("New Program")
+                    self.open()
                     self.wait_until_accepting_packets()
 
                     self.realtime_prologue()
@@ -986,13 +988,12 @@ class MoshiController:
                     break
                 # The attempt refused the connection.
                 self.refuse_counts += 1
+
+                if self.refuse_counts >= 5:
+                    self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
+                self.context.signal("pipe;failing", self.refuse_counts)
+                self.context.signal("pipe;running", False)
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
-                if self.refuse_counts >= self.max_attempts:
-                    # We were refused too many times, kill the thread.
-                    self.update_state(STATE_TERMINATE)
-                    self.context.signal("pipe;failing", self.refuse_counts)
-                    self.context.signal("pipe;running", False)
-                    break
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.

@@ -191,7 +191,7 @@ class SelectionWidget(Widget):
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
             self.root.create_menu(
-                self.scene.context.gui, elements.first_element(emphasized=True)
+                self.scene.context.gui, elements.top_element(emphasized=True)
             )
             return RESPONSE_CONSUME
         if event_type == "doubleclick":

@@ -23,12 +23,16 @@ class UsbConnect(MWindow):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
         # end wxGlade
         self.pipe = None
+        self._active_when_loaded = None
 
     def window_open(self):
-        self.context.channel("pipe/usb", buffer_size=500).watch(self.update_text)
+        active = self.context.root.active
+        self._active_when_loaded = active
+        self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 
     def window_close(self):
-        self.context.channel("pipe/usb").unwatch(self.update_text)
+        active = self._active_when_loaded
+        self.context.channel("%s/usb" % active).unwatch(self.update_text)
 
     def update_text(self, text):
         if not wx.IsMainThread():
