@@ -5099,16 +5099,25 @@ class Elemental(Modifier):
             yield item
 
     def top_element(self, **kwargs):
+        """
+        Returns the first matching node via a depth first search.
+        """
         for e in self.elem_branch.flat(**kwargs):
             return e
         return None
 
     def first_element(self, **kwargs):
+        """
+        Returns the first matching element node via a depth first search. Elements must be type elem.
+        """
         for e in self.elems(**kwargs):
             return e
         return None
 
     def has_emphasis(self):
+        """
+        Returns whether any element is emphasized
+        """
         for e in self.elems_nodes(emphasized=True):
             return True
         return False
