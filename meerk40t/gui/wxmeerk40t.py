@@ -4188,11 +4188,10 @@ class wxMeerK40t(wx.App, Module):
             help=_("Load Output Specific Window"),
         )
         @kernel.console_option(
-            "input",
-            "i",
-            type=bool,
-            action="store_true",
-            help=_("Load Source Specific Window"),
+            "source",
+            "s",
+            type=str,
+            help=_("Specify source window type"),
         )
         @kernel.console_argument("window", type=str, help=_("window to be opened"))
         @kernel.console_command(
@@ -4208,7 +4207,7 @@ class wxMeerK40t(wx.App, Module):
             window=None,
             driver=False,
             output=False,
-            source=False,
+            source=None,
             args=(),
             **kwargs
         ):
@@ -4218,17 +4217,24 @@ class wxMeerK40t(wx.App, Module):
             except AttributeError:
                 parent = None
             window_uri = "window/%s" % window
-            if output or driver or source:
-                # Specific class subwindow.
-                active = context.root.active
-                _spooler, _input_driver, _output = context.registered[
-                    "device/%s" % active
-                ]
+
+            active = context.root.active
+            if source is not None:
+                active = source
+            if output or driver:
+                # Specific class subwindow
+                try:
+                    _spooler, _input_driver, _output = context.registered[
+                        "device/%s" % active
+                    ]
+                except KeyError:
+                    channel(_("Device not found."))
+                    return
                 if output:
                     q = _output
                 elif driver:
                     q = _input_driver
-                else:  # source
+                else:
                     q = _input_driver
                 t = "default"
                 m = "/"
