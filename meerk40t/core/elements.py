@@ -41,15 +41,6 @@ from ..svgelements import (
     SVGText,
     Viewbox,
 )
-from .cutcode import (
-    CubicCut,
-    CutCode,
-    CutGroup,
-    LaserSettings,
-    LineCut,
-    QuadCut,
-    RasterCut,
-)
 
 
 def plugin(kernel, lifecycle=None):
@@ -4310,12 +4301,16 @@ class Elemental(Modifier):
             self.context("element* delete\n")
             self.elem_branch.remove_all_children()
 
-        @self.tree_conditional(lambda cond: len(list(self.flat(selected=True,
-                                                               cascade=False,
-                                                               types=non_structural_nodes))) > 1)
-        @self.tree_calc("ecount", lambda i: len(list(self.flat(selected=True,
-                                                               cascade=False,
-                                                               types=non_structural_nodes))))
+        # ==========
+        # REMOVE MULTI (Tree Selected)
+        # ==========
+        @self.tree_conditional(
+            lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) > 1
+        )
+        @self.tree_calc(
+            "ecount",
+            lambda i: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes)))
+        )
         @self.tree_operation(
             _("Remove (%s)") % "{ecount}",
             node_type=non_structural_nodes,
@@ -4328,9 +4323,12 @@ class Elemental(Modifier):
                     node.remove_node()
             self.set_emphasis(None)
 
-        @self.tree_conditional(lambda cond: len(list(self.flat(selected=True,
-                                                               cascade=False,
-                                                               types=non_structural_nodes))) == 1)
+        # ==========
+        # Remove Singular (Tree Selected)
+        # ==========
+        @self.tree_conditional(
+            lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 1
+        )
         @self.tree_operation(
             _("Remove '%s'") % "{name}",
             node_type=non_structural_nodes,
@@ -4340,25 +4338,31 @@ class Elemental(Modifier):
             node.remove_node()
             self.set_emphasis(None)
 
-        @self.tree_conditional(lambda cond: len(list(self.flat(selected=True,
-                                                               cascade=False,
-                                                               types=non_structural_nodes))) == 0)
-        @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
-        @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
-        @self.tree_operation(
-            _("Remove %s operations") % "{ecount}",
-            node_type=(
-                    "op",
-                    "cmdop",
-                    "lasercode",
-                    "cutcode",
-                    "blob"
-            ),
-            help=""
-        )
-        def remove_n_ops(node, **kwgs):
-            self.context("operation delete\n")
+        # # ==========
+        # # Remove Operations (If No Tree Selected)
+        # # ==========
+        # @self.tree_conditional(
+        #     lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 0
+        # )
+        # @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
+        # @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
+        # @self.tree_operation(
+        #     _("Remove %s operations") % "{ecount}",
+        #     node_type=(
+        #             "op",
+        #             "cmdop",
+        #             "lasercode",
+        #             "cutcode",
+        #             "blob"
+        #     ),
+        #     help=""
+        # )
+        # def remove_n_ops(node, **kwgs):
+        #     self.context("operation delete\n")
 
+        # ==========
+        # REMOVE ELEMENTS
+        # ==========
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
@@ -4373,6 +4377,9 @@ class Elemental(Modifier):
         def remove_n_elements(node, **kwgs):
             self.context("element delete\n")
 
+        # ==========
+        # CONVERT TREE OPERATIONS
+        # ==========
         @self.tree_operation(
             _("Convert to Cutcode"),
             node_type="lasercode",
