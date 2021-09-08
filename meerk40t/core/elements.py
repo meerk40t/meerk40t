@@ -4273,13 +4273,12 @@ class Elemental(Modifier):
             self.context("element* delete\n")
             self.elem_branch.remove_all_children()
 
-        @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(
             _("Remove '%s'") % "{name}",
             node_type=(
                 "op",
+                "opnode",
                 "cmdop",
-                "elem",
                 "lasercode",
                 "cutcode",
                 "blob"
@@ -4293,13 +4292,9 @@ class Elemental(Modifier):
         @self.tree_operation(
             _("Remove '%s'") % "{name}",
             node_type=(
-                "opnode",
-                "cmdop",
+                "elem",
                 "file",
                 "group",
-                "lasercode",
-                "cutcode",
-                "blob"
             ),
             help="",
         )
