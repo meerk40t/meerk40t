@@ -4347,27 +4347,27 @@ class Elemental(Modifier):
             node.remove_node()
             self.set_emphasis(None)
 
-        # # ==========
-        # # Remove Operations (If No Tree Selected)
-        # # ==========
-        # @self.tree_conditional(
-        #     lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 0
-        # )
-        # @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
-        # @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
-        # @self.tree_operation(
-        #     _("Remove %s operations") % "{ecount}",
-        #     node_type=(
-        #             "op",
-        #             "cmdop",
-        #             "lasercode",
-        #             "cutcode",
-        #             "blob"
-        #     ),
-        #     help=""
-        # )
-        # def remove_n_ops(node, **kwgs):
-        #     self.context("operation delete\n")
+        # ==========
+        # Remove Operations (If No Tree Selected)
+        # ==========
+        @self.tree_conditional(
+            lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 0
+        )
+        @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
+        @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
+        @self.tree_operation(
+            _("Remove %s operations") % "{ecount}",
+            node_type=(
+                    "op",
+                    "cmdop",
+                    "lasercode",
+                    "cutcode",
+                    "blob"
+            ),
+            help=""
+        )
+        def remove_n_ops(node, **kwgs):
+            self.context("operation delete\n")
 
         # ==========
         # REMOVE ELEMENTS
