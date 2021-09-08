@@ -780,7 +780,8 @@ class MoshiController:
         self.realtime_pipe(swizzle_table[MOSHI_ESTOP][0])
 
     def realtime_pipe(self, data):
-        self.connection.write_addr(data)
+        if self.connection is not None:
+            self.connection.write_addr(data)
 
     realtime_write = realtime_pipe
 
