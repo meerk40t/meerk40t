@@ -105,7 +105,6 @@ class MoshiControllerGui(MWindow):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
         self.last_control_state = None
         self.set_widgets()
-        self._active_when_loaded = None
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -265,8 +264,7 @@ class MoshiControllerGui(MWindow):
         # end wxGlade
 
     def window_open(self):
-        active = self.context.root.active
-        self._active_when_loaded = active
+        active = self.context.path.split('/')[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
@@ -274,7 +272,7 @@ class MoshiControllerGui(MWindow):
         self.context.listen("active", self.on_active_change)
 
     def window_close(self):
-        active = self._active_when_loaded
+        active = self.context.path.split('/')[-1]
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)

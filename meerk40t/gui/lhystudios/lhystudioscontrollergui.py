@@ -138,7 +138,6 @@ class LhystudiosControllerGui(MWindow):
         self.last_control_state = None
         self.retries = 0
         self.set_widgets()
-        self._active_when_loaded = None
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -342,8 +341,7 @@ class LhystudiosControllerGui(MWindow):
         # end wxGlade
 
     def window_open(self):
-        active = self.context.root.active
-        self._active_when_loaded = active
+        active = self.context.path.split('/')[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 
         self.context.listen("pipe;index", self.on_update_pipe_index)
@@ -360,7 +358,7 @@ class LhystudiosControllerGui(MWindow):
         self.context.listen("active", self.on_active_change)
 
     def window_close(self):
-        active = self._active_when_loaded
+        active = self.context.path.split('/')[-1]
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
 
         self.context.unlisten("pipe;index", self.on_update_pipe_index)
