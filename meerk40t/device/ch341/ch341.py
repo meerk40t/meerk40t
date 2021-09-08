@@ -105,8 +105,14 @@ class CH341(Module, Handler):
 
     def __init__(self, *args, **kwargs):
         Module.__init__(self, *args, **kwargs)
+        if "log" in kwargs:
+            channel = kwargs["log"]
+            if isinstance(channel, str):
+                channel = self.context.channel(channel, buffer_size=500)
+        else:
+            channel = self.context.channel("ch341/usb", buffer_size=500)
         Handler.__init__(
-            self, self.context.channel("pipe/usb", buffer_size=500), self._state_change
+            self, channel, self._state_change
         )
 
     def connect(self, driver_index=-1, chipv=-1, bus=-1, address=-1, mock=False):

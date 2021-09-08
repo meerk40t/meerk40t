@@ -1569,7 +1569,6 @@ class LhystudiosController:
         self._status = [0] * 6
         self._usb_state = -1
 
-        self.ch341 = self.context.open("module/ch341")
         self.connection = None
         self.max_attempts = 5
         self.refuse_counts = 0
@@ -1581,10 +1580,12 @@ class LhystudiosController:
 
         self.abort_waiting = False
         self.pipe_channel = context.channel("%s/events" % name)
-        self.usb_log = context.channel("%s/usb" % name, buffer_size=20)
+        self.usb_log = context.channel("%s/usb" % name, buffer_size=500)
         self.usb_send_channel = context.channel("%s/usb_send" % name)
         self.recv_channel = context.channel("%s/recv" % name)
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
+
+        self.ch341 = self.context.open("module/ch341", log=self.usb_log)
 
         context = self.context
 
