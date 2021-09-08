@@ -630,7 +630,7 @@ class RectSelectWidget(Widget):
             y0 = self.start_location[1]
             x1 = self.end_location[0]
             y1 = self.end_location[1]
-            linewidth = 3.0 / matrix.value_scale_x()
+            linewidth = 2.0 / matrix.value_scale_x()
             self.selection_pen.SetWidth(linewidth)
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(x0, y0, x1, y0)
