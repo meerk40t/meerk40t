@@ -4321,7 +4321,7 @@ class Elemental(Modifier):
             lambda i: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes)))
         )
         @self.tree_operation(
-            _("Remove (%s)") % "{ecount}",
+            _("Remove %s selected items") % "{ecount}",
             node_type=non_structural_nodes,
             help="",
         )
@@ -4333,7 +4333,7 @@ class Elemental(Modifier):
             self.set_emphasis(None)
 
         # ==========
-        # Remove Singular (Tree Selected)
+        # REMOVE SINGLE (Tree Selected)
         # ==========
         @self.tree_conditional(
             lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 1
@@ -4349,6 +4349,8 @@ class Elemental(Modifier):
 
         # ==========
         # Remove Operations (If No Tree Selected)
+        # Note: This code would rarely match anything since the tree selected will almost always be true if we have
+        # match this conditional. The tree-selected delete functions are superior.
         # ==========
         @self.tree_conditional(
             lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 0
