@@ -1,24 +1,53 @@
 # ----------------------------------------------------------------------
-from wx import Bitmap
+from wx import Bitmap, IMAGE_ALPHA_OPAQUE
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
 DARKMODE = False
-icon_r = 230
-icon_g = 230
-icon_b = 230
 
 
 class PyEmbeddedImage(py_embedded_image):
     def __init__(self, data):
         super().__init__(data)
 
-    def GetBitmap(self, use_theme=True, resize=None):
+    def GetBitmap(self, use_theme=True, resize=None, color=None):
+        # Assumes greyscale icon black on transparent background using alpha for shading
+        # Ready for Dark Theme
+        # If color is provided, the black is changed to this
+        # If color is close to background, alpha is removed and negative background added
+        # so we don't get black icon on black background or white on white background.
+
         image = py_embedded_image.GetImage(self)
-        if DARKMODE and use_theme:
-            image.Replace(0, 0, 0, icon_r, icon_g, icon_b)
         if resize is not None:
             image = image.Scale(*resize)
+
+        if color is not None:
+            image.Replace(0, 0, 0, color.red, color.green, color.blue)
+            if DARKMODE and use_theme:
+                reverse = color.distance_to("black") <= 200
+                black_bg = False
+            else:
+                reverse = color.distance_to("white") <= 200
+                black_bg = True
+            if reverse:
+                self.RemoveAlpha(image, black_bg=black_bg)
+        elif DARKMODE and use_theme:
+            image.Replace(0, 0, 0, 255, 255, 255)
         return Bitmap(image)
+
+    def RemoveAlpha(self, image, black_bg=False):
+        if not image.HasAlpha():
+            return
+        bg_rgb = 0 if black_bg else 255
+        for x in range(image.GetWidth()):
+            for y in range(image.GetHeight()):
+                a = image.GetAlpha(x, y)
+                bg = int((255 - a) * bg_rgb / 255)
+                r = int(image.GetRed(x, y) * a / 255) + bg
+                g = int(image.GetGreen(x, y) * a / 255) + bg
+                b = int(image.GetBlue(x, y) * a / 255) + bg
+                image.SetRGB(x, y, r, g, b)
+                image.SetAlpha(x, y, IMAGE_ALPHA_OPAQUE);
+        image.ClearAlpha()
 
 
 icons8_add_file_50 = PyEmbeddedImage(
