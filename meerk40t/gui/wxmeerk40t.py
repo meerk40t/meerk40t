@@ -327,9 +327,9 @@ _ = wx.GetTranslation
 supported_languages = (
     ("en", u"English", wx.LANGUAGE_ENGLISH),
     ("it", u"italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", u"français", wx.LANGUAGE_FRENCH),
+    ("fr", u"franÃ§ais", wx.LANGUAGE_FRENCH),
     ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", u"español", wx.LANGUAGE_SPANISH),
+    ("es", u"espaÃ±ol", wx.LANGUAGE_SPANISH),
     ("zh", u"Chinese", wx.LANGUAGE_CHINESE),
 )
 
@@ -3429,13 +3429,13 @@ class ShadowTree:
         self.register_children(self.element_root)
 
         node_operations = self.element_root.get(type="branch ops")
-        self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap(True))
+        self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap())
 
         for n in node_operations.children:
             self.set_icon(n)
 
         node_elements = self.element_root.get(type="branch elems")
-        self.set_icon(node_elements, icons8_vector_20.GetBitmap(True))
+        self.set_icon(node_elements, icons8_vector_20.GetBitmap())
 
         # Expand Ops and Element nodes only
         # We check these two exist but will open any additional siblings just in case
@@ -3545,23 +3545,23 @@ class ShadowTree:
                     op = node.operation
                 except AttributeError:
                     op = None
-                if op in ("Raster", "Image"):
-                    self.set_icon(node, icons8_direction_20.GetBitmap(True))
-                elif op in ("Engrave", "Cut"):
-                    self.set_icon(node, icons8_laser_beam_20.GetBitmap(True))
-                elif op == "Dots":
-                    self.set_icon(node, icons8_scatter_plot_20.GetBitmap(True))
-                else:
-                    self.set_icon(node, icons8_system_task_20.GetBitmap(True))
                 try:
                     c = node.color
                     self.set_color(node, c)
                 except AttributeError:
-                    pass
+                    c = None
+                if op in ("Raster", "Image"):
+                    self.set_icon(node, icons8_direction_20.GetBitmap(color=c))
+                elif op in ("Engrave", "Cut"):
+                    self.set_icon(node, icons8_laser_beam_20.GetBitmap(color=c))
+                elif op == "Dots":
+                    self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
+                else:
+                    self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
             elif node.type == "file":
-                self.set_icon(node, icons8_file_20.GetBitmap(True))
+                self.set_icon(node, icons8_file_20.GetBitmap())
             elif node.type == "group":
-                self.set_icon(node, icons8_group_objects_20.GetBitmap(True))
+                self.set_icon(node, icons8_group_objects_20.GetBitmap())
         else:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
@@ -3569,6 +3569,7 @@ class ShadowTree:
     def update_label(self, node, force=False):
         if node.label is None or force:
             node.label = node.create_label()
+            self.set_icon(node)
         if not hasattr(node, "item"):
             # Unregistered node updating name.
             self.rebuild_tree()
