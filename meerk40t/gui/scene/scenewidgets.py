@@ -107,6 +107,20 @@ class SelectionWidget(Widget):
             self.top = bounds[1]
             self.right = bounds[2]
             self.bottom = bounds[3]
+            width = self.right - self.left
+            height = self.bottom - self.top
+            matrix = self.parent.matrix
+            # Twice size of equivalent in event:hover
+            xmin = 10 / matrix.value_scale_x()
+            ymin = 10 / matrix.value_scale_y()
+            if width < xmin:
+                width = (xmin - width) / 2
+                self.left -= width
+                self.right += width
+            if height < ymin:
+                height = (ymin - height) / 2
+                self.top -= height
+                self.bottom += height
             self.clear()
             self.scene.context.signal("refresh_scene", 0)
             return HITCHAIN_HIT
@@ -133,7 +147,7 @@ class SelectionWidget(Widget):
             matrix = self.parent.matrix
             xin = space_pos[0] - self.left
             yin = space_pos[1] - self.top
-            # TODO Handle distance should be constant regardless of zoom factor. May need to scale by screen DPI.
+            # Half size of equivalent in hit
             xmin = 5 / matrix.value_scale_x()
             ymin = 5 / matrix.value_scale_y()
             # Adjust sizing of hover border as follows:
