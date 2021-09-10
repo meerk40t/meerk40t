@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Path, Polygon, Matrix
+from meerk40t.svgelements import Matrix, Path, Polygon
 
 
 def plugin(kernel, lifecycle=None):

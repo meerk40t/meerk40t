@@ -173,7 +173,9 @@ class Driver:
         element = self.spooler.peek()
 
         if self.last_fetch is not None:
-            self.context.channel("spooler")("Time between fetches: %f" % (time.time() - self.last_fetch))
+            self.context.channel("spooler")(
+                "Time between fetches: %f" % (time.time() - self.last_fetch)
+            )
             self.last_fetch = None
 
         if element is None:

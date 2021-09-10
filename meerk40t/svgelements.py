@@ -8,8 +8,20 @@ except ImportError:
     from collections import MutableSequence  # noqa
 
 from copy import copy
-from math import (acos, atan, atan2, ceil, cos, degrees, hypot, log, radians,
-                  sin, sqrt, tan)
+from math import (
+    acos,
+    atan,
+    atan2,
+    ceil,
+    cos,
+    degrees,
+    hypot,
+    log,
+    radians,
+    sin,
+    sqrt,
+    tan,
+)
 from xml.etree.ElementTree import iterparse
 
 try:

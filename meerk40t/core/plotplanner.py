@@ -5,10 +5,10 @@ from ..device.basedevice import (
     PLOT_DIRECTION,
     PLOT_FINISH,
     PLOT_JOG,
-    PLOT_RAPID,
-    PLOT_SETTING,
     PLOT_LEFT_UPPER,
+    PLOT_RAPID,
     PLOT_RIGHT_LOWER,
+    PLOT_SETTING,
     PLOT_START,
 )
 
@@ -119,8 +119,11 @@ class PlotPlanner:
                     ) or not cur_set.jog_enable:
                         # Jog distance smaller than threshold. Or jog isn't allowed
                         def walk():
-                            for event in ZinglPlotter.plot_line(self.pos_x, self.pos_y, new_start_x, new_start_y):
+                            for event in ZinglPlotter.plot_line(
+                                self.pos_x, self.pos_y, new_start_x, new_start_y
+                            ):
                                 yield event[0], event[1], 0
+
                         yield from self.process_plots(walk())
                     else:
                         # Request standard jog new location required.
@@ -184,6 +187,7 @@ class PlotPlanner:
         """
         # Applies single, ppi, shift, then group.
         if self.debug:
+
             def debug(plot, manipulator):
                 for q in plot:
                     print("Manipulator: %s, %s" % (str(q), str(manipulator)))
@@ -479,7 +483,11 @@ class Group(PlotManipulation):
         )
 
     def flushed(self):
-        return self.last_x == self.group_x and self.last_y == self.group_y and self.last_on == self.group_on
+        return (
+            self.last_x == self.group_x
+            and self.last_y == self.group_y
+            and self.last_on == self.group_on
+        )
 
     def process(self, plot):
         """

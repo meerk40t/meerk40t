@@ -42,6 +42,7 @@ class LhystudiosParser:
     LhystudiosParser parses LHYMicro-GL code with a state diagram. This should accurately reconstruct the values.
     When the position is changed it calls a self.position() function if one exists.
     """
+
     def __init__(self):
         self.channel = None
         self.position = None
@@ -170,7 +171,9 @@ class LhystudiosParser:
         if c in "GCV01234567890":
             self.speed_code += c
             return
-        speed = LaserSpeed(self.speed_code, board=self.board, fix_speeds=self.fix_speeds)
+        speed = LaserSpeed(
+            self.speed_code, board=self.board, fix_speeds=self.fix_speeds
+        )
         self.settings.steps = speed.raster_step
         self.settings.speed = speed.speed
         if self.channel:
@@ -437,6 +440,7 @@ class EGVBlob:
                 self._cut.plot_append(int(to_x), int(to_y), parser.laser)
             else:
                 new_cut()
+
         parser.position = position
         parser.header_write(self.data)
 

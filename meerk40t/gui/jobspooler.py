@@ -159,8 +159,10 @@ class JobSpooler(MWindow):
             return
         menu = wx.Menu()
         convert = menu.Append(
-
-            wx.ID_ANY, _("Remove %s") % JobSpooler._name_str(element)[:16], "", wx.ITEM_NORMAL
+            wx.ID_ANY,
+            _("Remove %s") % JobSpooler._name_str(element)[:16],
+            "",
+            wx.ITEM_NORMAL,
         )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element, index), convert)
         convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)

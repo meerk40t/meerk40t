@@ -77,7 +77,7 @@ def plugin(kernel, lifecycle):
             "makepng",
             help=_("inkscape makepng   - make a png of all elements"),
             input_type="inkscape",
-            output_type="inkscape"
+            output_type="inkscape",
         )
         def inkscape_png(channel, _, dpi=1000, step=None, data=None, **kwargs):
             if step is not None and step > 0:
@@ -135,7 +135,10 @@ def plugin(kernel, lifecycle):
                 channel(_("Inkscape not found. Try 'inkscape locate'"))
                 return
             c = run([inkscape_path, "-V"], stdout=PIPE)
-            channel('Inkscape executable at "%s" is: %s' % (inkscape_path, c.stdout.decode("utf-8")))
+            channel(
+                'Inkscape executable at "%s" is: %s'
+                % (inkscape_path, c.stdout.decode("utf-8"))
+            )
             return "inkscape", data
 
         @kernel.console_command(
@@ -163,7 +166,12 @@ def plugin(kernel, lifecycle):
                     "/usr/bin/inkscape",
                 ]
             else:
-                channel(_("Inkscape location: Platform '%s' unknown so no idea where to look") % platform)
+                channel(
+                    _(
+                        "Inkscape location: Platform '%s' unknown so no idea where to look"
+                    )
+                    % platform
+                )
                 return
             inkscape_path, filename = data
             channel(_("----------"))
@@ -181,7 +189,11 @@ def plugin(kernel, lifecycle):
             root_context.setting(str, "inkscape_path", "inkscape.exe")
             if match is None:
                 root_context.inkscape_path = "inkscape.exe"
-                channel(_("Inkscape location: Inkscape not found in default installation directories"))
+                channel(
+                    _(
+                        "Inkscape location: Inkscape not found in default installation directories"
+                    )
+                )
                 return
             root_context.inkscape_path = match
             return "inkscape", (match, filename)

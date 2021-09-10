@@ -1,5 +1,6 @@
 import wx
 from wx import aui
+
 from ..icons import (
     icons8_administrative_tools_50,
     icons8_computer_support_50,

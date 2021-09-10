@@ -8,10 +8,11 @@ from ..basedevice import (
     PLOT_DIRECTION,
     PLOT_FINISH,
     PLOT_JOG,
-    PLOT_RAPID,
-    PLOT_SETTING,
     PLOT_LEFT_UPPER,
-    PLOT_RIGHT_LOWER, PLOT_START,
+    PLOT_RAPID,
+    PLOT_RIGHT_LOWER,
+    PLOT_SETTING,
+    PLOT_START,
 )
 from ..lasercommandconstants import *
 

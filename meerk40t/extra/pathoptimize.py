@@ -35,8 +35,7 @@ def plugin(kernel, lifecycle):
                     element += e
                     element.node.altered()
                 channel(
-                    _("Optimized: %f")
-                    % length_travel(elements.elems(emphasized=True))
+                    _("Optimized: %f") % length_travel(elements.elems(emphasized=True))
                 )
             elif args[0] == "cut_travel":
                 channel(

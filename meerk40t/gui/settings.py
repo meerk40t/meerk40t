@@ -64,10 +64,14 @@ class Settings(MWindow):
             ),
             (
                 _("Image DPI Scaling"),
-               "\n".join((
-                    _("Unset: Use the image as if it were 1000 pixels per inch."),
-                    _("Set: Use the DPI setting saved in the image to scale the image to the correct size."),
-                )),
+                "\n".join(
+                    (
+                        _("Unset: Use the image as if it were 1000 pixels per inch."),
+                        _(
+                            "Set: Use the DPI setting saved in the image to scale the image to the correct size."
+                        ),
+                    )
+                ),
                 "image_dpi",
                 True,
             ),
@@ -93,10 +97,14 @@ class Settings(MWindow):
             ),
             (
                 _("MouseWheel Pan"),
-                "\n".join((
-                    _("Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."),
-                    _("Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."),
-                )),
+                "\n".join(
+                    (
+                        _("Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."),
+                        _(
+                            "Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."
+                        ),
+                    )
+                ),
                 "mouse_wheel_pan",
                 True,
             ),
@@ -130,11 +138,17 @@ class Settings(MWindow):
             ),
             (
                 _("Disable ToolTips"),
-                "\n".join((
-                    _("If you do not want to see tooltips like this one, check this box."),
-                    _("Particularly useful if you have a touch screen."),
-                    _("Note: You will need to restart MeerK40t for any change to take effect."),
-                )),
+                "\n".join(
+                    (
+                        _(
+                            "If you do not want to see tooltips like this one, check this box."
+                        ),
+                        _("Particularly useful if you have a touch screen."),
+                        _(
+                            "Note: You will need to restart MeerK40t for any change to take effect."
+                        ),
+                    )
+                ),
                 "disable_tool_tips",
                 False,
             ),

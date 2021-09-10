@@ -3,7 +3,7 @@ from copy import copy
 from math import ceil
 from os import path as ospath
 
-from ..core.planner import needs_actualization, make_actual
+from ..core.planner import make_actual, needs_actualization
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 
 MILS_IN_MM = 39.3701
@@ -368,9 +368,13 @@ def plugin(kernel, lifecycle=None):
                     )
                 )
                 if left >= right:
-                    raise SyntaxError(_("Right margin is to the left of the left margin."))
+                    raise SyntaxError(
+                        _("Right margin is to the left of the left margin.")
+                    )
                 if upper >= lower:
-                    raise SyntaxError(_("Lower margin is higher than the upper margin."))
+                    raise SyntaxError(
+                        _("Lower margin is higher than the upper margin.")
+                    )
                 element.image = img.crop((left, upper, right, lower))
                 element.image_width = right - left
                 element.image_height = lower - upper
@@ -809,7 +813,10 @@ def plugin(kernel, lifecycle=None):
         help=_("X position at which to slice the image"),
     )
     @context.console_command(
-        "slice", help=_("Slice image for more efficient rastering"), input_type="image", output_type="image"
+        "slice",
+        help=_("Slice image for more efficient rastering"),
+        input_type="image",
+        output_type="image",
     )
     def image(command, channel, _, data, x, **kwargs):
         for element in data:
@@ -824,11 +831,17 @@ def plugin(kernel, lifecycle=None):
             image_right = img.crop((x, 0, element.image_width, element.image_height))
             element_left = copy(element)
             element_left.image = image_left
-            element_left.image_width, element_left.image_height = element_left.image.size
+            (
+                element_left.image_width,
+                element_left.image_height,
+            ) = element_left.image.size
 
             element_right = copy(element)
             element_right.image = image_right
-            element_right.image_width, element_right.image_height = element_right.image.size
+            (
+                element_right.image_width,
+                element_right.image_height,
+            ) = element_right.image.size
             element_right.transform.pre_translate(x)
 
             if hasattr(element, "node"):
@@ -840,19 +853,26 @@ def plugin(kernel, lifecycle=None):
             channel(_("Image sliced at position %d" % x))
         return "image", data
 
-    @context.console_option("remain",
-                            "r",
-                            help="Do not blank the popped region from the remainder image",
-                            action="store_true",
-                            type=bool)
+    @context.console_option(
+        "remain",
+        "r",
+        help="Do not blank the popped region from the remainder image",
+        action="store_true",
+        type=bool,
+    )
     @context.console_argument("left", help="left side of crop", type=Length)
     @context.console_argument("upper", help="upper side of crop", type=Length)
     @context.console_argument("right", help="right side of crop", type=Length)
     @context.console_argument("lower", help="lower side of crop", type=Length)
     @context.console_command(
-        "pop", help=_("Pop pixels for more efficient rastering"), input_type="image", output_type="image"
+        "pop",
+        help=_("Pop pixels for more efficient rastering"),
+        input_type="image",
+        output_type="image",
     )
-    def image(command, channel, _, data, left, upper, right, lower, remain=False, **kwargs):
+    def image(
+        command, channel, _, data, left, upper, right, lower, remain=False, **kwargs
+    ):
         from PIL import Image
 
         for element in data:
@@ -899,11 +919,14 @@ def plugin(kernel, lifecycle=None):
             element_pop.image = image_pop
             element_pop.image_width, element_pop.image_height = element_pop.image.size
 
-            element_pop.transform.pre_translate(left,upper)
+            element_pop.transform.pre_translate(left, upper)
 
             element_remain = copy(element)
             element_remain.image = image_remain
-            element_remain.image_width, element_remain.image_height = element_remain.image.size
+            (
+                element_remain.image_width,
+                element_remain.image_height,
+            ) = element_remain.image.size
 
             if hasattr(element, "node"):
                 element.node.remove_node()
@@ -1561,8 +1584,8 @@ class RasterScripts:
                                 image = image.convert("RGB")
                                 image = image.convert("L", matrix=[r, g, b, 1.0])
                             if op["invert"]:
-                                if image.mode == 'F':
-                                    image = image.convert('L')
+                                if image.mode == "F":
+                                    image = image.convert("L")
                                 empty_mask = image.point(lambda e: 0 if e == 0 else 255)
                                 image = ImageOps.invert(image)
                             else:
@@ -1809,7 +1832,12 @@ class ImageLoader:
             context.setting(bool, "image_dpi", True)
             if context.image_dpi:
                 dpi = image.image.info["dpi"]
-                if isinstance(dpi, tuple) and len(dpi) >= 2 and dpi[0] != 0 and dpi[1] != 0:
+                if (
+                    isinstance(dpi, tuple)
+                    and len(dpi) >= 2
+                    and dpi[0] != 0
+                    and dpi[1] != 0
+                ):
                     image *= "scale(%f,%f)" % (1000.0 / dpi[0], 1000.0 / dpi[1])
         except (KeyError, IndexError):
             pass

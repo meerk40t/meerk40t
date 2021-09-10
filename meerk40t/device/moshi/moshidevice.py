@@ -1,8 +1,6 @@
 import threading
 import time
 
-from .moshiblob import swizzle_table, MoshiBlob, MOSHI_ESTOP, MOSHI_LASER, MOSHI_FREEMOTOR, MOSHI_EPILOGUE, \
-    MOSHI_PROLOGUE, MOSHI_READ
 from ...core.drivers import Driver
 from ...core.plotplanner import PlotPlanner
 from ...kernel import (
@@ -26,10 +24,21 @@ from ..basedevice import (
     PLOT_DIRECTION,
     PLOT_FINISH,
     PLOT_JOG,
-    PLOT_RAPID,
-    PLOT_SETTING,
     PLOT_LEFT_UPPER,
-    PLOT_RIGHT_LOWER, PLOT_START,
+    PLOT_RAPID,
+    PLOT_RIGHT_LOWER,
+    PLOT_SETTING,
+    PLOT_START,
+)
+from .moshiblob import (
+    MOSHI_EPILOGUE,
+    MOSHI_ESTOP,
+    MOSHI_FREEMOTOR,
+    MOSHI_LASER,
+    MOSHI_PROLOGUE,
+    MOSHI_READ,
+    MoshiBlob,
+    swizzle_table,
 )
 
 MILS_IN_MM = 39.3701
@@ -105,7 +114,9 @@ def plugin(kernel, lifecycle=None):
             output.start()
             channel(_("Moshi Channel Resumed."))
 
-        @context.console_command(("estop", "abort"), input_type="moshi", help=_("Abort Job"))
+        @context.console_command(
+            ("estop", "abort"), input_type="moshi", help=_("Abort Job")
+        )
         def pipe_abort(command, channel, _, data=None, **kwargs):
             """
             Abort output job. Usually due to the functionality of Moshiboards this will do
@@ -165,6 +176,7 @@ class MoshiDriver(Driver):
     the spooler and converts them into Moshiboard specific actions.
 
     """
+
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         context = context.get_context("moshi/driver/%s" % name)
         Driver.__init__(self, context=context)
@@ -279,7 +291,15 @@ class MoshiDriver(Driver):
             move_y = 0
         self.start_raster_mode(offset_x, offset_y, move_x, move_y)
 
-    def start_program_mode(self, offset_x, offset_y, move_x=None, move_y=None, speed=None, normal_speed=None):
+    def start_program_mode(
+        self,
+        offset_x,
+        offset_y,
+        move_x=None,
+        move_y=None,
+        speed=None,
+        normal_speed=None,
+    ):
         if move_x is None:
             move_x = offset_x
         if move_y is None:
@@ -301,7 +321,9 @@ class MoshiDriver(Driver):
         self.current_x = move_x
         self.current_y = move_y
 
-    def start_raster_mode(self, offset_x, offset_y, move_x=None, move_y=None, speed=None):
+    def start_raster_mode(
+        self, offset_x, offset_y, move_x=None, move_y=None, speed=None
+    ):
         if move_x is None:
             move_x = offset_x
         if move_y is None:
@@ -331,7 +353,11 @@ class MoshiDriver(Driver):
             self.pipe_channel("Rapid Mode")
         if self.state == DRIVER_STATE_FINISH:
             pass
-        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_MODECHANGE, DRIVER_STATE_RASTER):
+        elif self.state in (
+            DRIVER_STATE_PROGRAM,
+            DRIVER_STATE_MODECHANGE,
+            DRIVER_STATE_RASTER,
+        ):
             self.program.termination()
             self.push_program()
         self.state = DRIVER_STATE_RAPID
@@ -380,7 +406,7 @@ class MoshiDriver(Driver):
                     self.current_x = x
                     self.current_y = y
                     if self.state != DRIVER_STATE_RAPID:
-                        self.move_absolute(x,y)
+                        self.move_absolute(x, y)
                     continue
                 elif on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_finished_mode()
@@ -390,7 +416,7 @@ class MoshiDriver(Driver):
                         self.preferred_offset_x,
                         self.preferred_offset_y,
                         self.current_x,
-                        self.current_y
+                        self.current_y,
                     )
                 elif on & PLOT_LEFT_UPPER:
                     self.preferred_offset_x = x
@@ -967,7 +993,7 @@ class MoshiController:
 
                     self.realtime_prologue()
                     self._buffer = self._programs.pop(0).data
-                    assert(len(self._buffer) != 0)
+                    assert len(self._buffer) != 0
 
                 # Stage 1: Send Program.
                 self.context.signal("pipe;running", True)

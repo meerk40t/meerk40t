@@ -177,10 +177,12 @@ class ExecuteJob(MWindow):
         wx_menu = wx.Menu()
         self.preview_menu.Append(wx_menu, _("Tools"))
 
-        self.context.setting(bool, 'developer_mode', False)
+        self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             self.preview_menu.menu_send_back = wx_menu.Append(
-                wx.ID_ANY, _("Return to Operations"), _("Return the current Plan to Operations")
+                wx.ID_ANY,
+                _("Return to Operations"),
+                _("Return the current Plan to Operations"),
             )
             self.Bind(
                 wx.EVT_MENU,
@@ -245,12 +247,8 @@ class ExecuteJob(MWindow):
             self, wx.ID_ANY, _("Reduce Travel Time")
         )
 
-        self.check_merge_passes = wx.CheckBox(
-            self, wx.ID_ANY, _("Merge Passes")
-        )
-        self.check_merge_ops = wx.CheckBox(
-            self, wx.ID_ANY, _("Merge Operations")
-        )
+        self.check_merge_passes = wx.CheckBox(self, wx.ID_ANY, _("Merge Passes"))
+        self.check_merge_ops = wx.CheckBox(self, wx.ID_ANY, _("Merge Operations"))
         self.check_cut_inner_first = wx.CheckBox(self, wx.ID_ANY, _("Cut Inner First"))
         # self.check_reduce_direction_changes = wx.CheckBox(
         #     self, wx.ID_ANY, _("Reduce Direction Changes")
@@ -274,12 +272,8 @@ class ExecuteJob(MWindow):
         self.Bind(
             wx.EVT_LISTBOX_DCLICK, self.on_listbox_commands_dclick, self.list_command
         )
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_merge_passes, self.check_merge_passes
-        )
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_merge_ops, self.check_merge_ops
-        )
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_merge_passes, self.check_merge_passes)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_merge_ops, self.check_merge_ops)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_rapid_between, self.check_rapid_moves_between
         )
@@ -322,14 +316,10 @@ class ExecuteJob(MWindow):
         # self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
         # self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.check_merge_passes.SetToolTip(
-            _(
-                "Combine passes into the same optimization"
-            )
+            _("Combine passes into the same optimization")
         )
         self.check_merge_ops.SetToolTip(
-            _(
-                "Combine operations into the same optimization"
-            )
+            _("Combine operations into the same optimization")
         )
         self.check_rapid_moves_between.SetToolTip(
             _(
@@ -528,7 +518,10 @@ class ExecuteJob(MWindow):
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 x_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=width if width is not None else bed_dim.bed_width * MILS_PER_MM
+                    ppi=1000.0,
+                    relative_length=width
+                    if width is not None
+                    else bed_dim.bed_width * MILS_PER_MM,
                 )
             except ValueError:
                 dlg.Destroy()
@@ -551,7 +544,10 @@ class ExecuteJob(MWindow):
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 y_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0, relative_length=height if height is not None else bed_dim.bed_height * MILS_PER_MM
+                    ppi=1000.0,
+                    relative_length=height
+                    if height is not None
+                    else bed_dim.bed_height * MILS_PER_MM,
                 )
             except ValueError:
                 dlg.Destroy()

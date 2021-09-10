@@ -2,6 +2,7 @@ import os
 
 import ezdxf
 from ezdxf import units
+
 try:
     # ezdxf <= 0.6.14
     from ezdxf.tools.rgb import DXF_DEFAULT_COLORS, int2rgb

@@ -1,4 +1,3 @@
-
 swizzle_table = [
     [
         b"\x00",
@@ -377,10 +376,13 @@ class MoshiBlob:
 
         :return:
         """
-        assert (self._stage == 0)
+        assert self._stage == 0
         self._stage = 1
         if self.channel:
-            self.channel("Vector Cut Speed: %d mm/s Normal Speed: %d mm/s" % (int(speed_mms), int(normal_speed_mms)))
+            self.channel(
+                "Vector Cut Speed: %d mm/s Normal Speed: %d mm/s"
+                % (int(speed_mms), int(normal_speed_mms))
+            )
         self.write(swizzle_table[MOSHI_VECTOR_SPEED][0])
         if speed_mms > 256:
             speed_mms = 256
@@ -393,7 +395,7 @@ class MoshiBlob:
         """
         Write speed for raster programs.
         """
-        assert(self._stage == 0)
+        assert self._stage == 0
         self._stage = 1
         if self.channel:
             self.channel("Raster Header Speed: %d cm/s" % int(speed_mms))
@@ -408,7 +410,7 @@ class MoshiBlob:
         2nd Command For Jump. (0x03 position), followed by 3 int16le (2)
         :return:
         """
-        assert (self._stage == 1)
+        assert self._stage == 1
         self._stage = 2
         self.offset_x = x
         self.offset_y = y
@@ -426,7 +428,7 @@ class MoshiBlob:
 
         :return:
         """
-        assert (self._stage == 3)
+        assert self._stage == 3
         self._stage = 4
         if self.channel:
             self.channel("Termination.")
@@ -440,7 +442,7 @@ class MoshiBlob:
         Laser will cut to this position from the current stored head position.
         Head position is stored on the Moshiboard
         """
-        assert (2 <= self._stage <= 3)
+        assert 2 <= self._stage <= 3
         self._stage = 3
         if x < 0:
             x = 0
@@ -463,7 +465,7 @@ class MoshiBlob:
         Laser will move without cutting to this position from the current stored head position.
         Head position is stored on the Moshiboard
         """
-        assert (2 <= self._stage <= 3)
+        assert 2 <= self._stage <= 3
         self._stage = 3
         if x < 0:
             x = 0
@@ -486,7 +488,7 @@ class MoshiBlob:
         Laser will move the y position without cutting to the new position from the head position
         stored in the Moshiboard.
         """
-        assert (2 <= self._stage <= 3)
+        assert 2 <= self._stage <= 3
         self._stage = 3
 
         self.last_y = y
@@ -503,7 +505,7 @@ class MoshiBlob:
         Laser will move the x position without cutting to the new position from the head position
         stored in the Moshiboard.
         """
-        assert (2 <= self._stage <= 3)
+        assert 2 <= self._stage <= 3
         self._stage = 3
         self.last_x = x
         x -= self.offset_x
@@ -519,7 +521,7 @@ class MoshiBlob:
         Laser will cut to the x position with laser firing to the new position from the head position
         stored in the Moshiboard.
         """
-        assert (2 <= self._stage <= 3)
+        assert 2 <= self._stage <= 3
         self._stage = 3
         self.last_x = x
         x -= self.offset_x
@@ -535,7 +537,7 @@ class MoshiBlob:
         Laser will cut to the y position with laser firing to the new position from the head position
         stored in the Moshiboard
         """
-        assert (2 <= self._stage <= 3)
+        assert 2 <= self._stage <= 3
         self._stage = 3
         self.last_y = y
         y -= self.offset_y

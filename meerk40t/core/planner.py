@@ -1,7 +1,7 @@
 from copy import copy
 from math import ceil
 
-from ..core.cutcode import CutCode, CutObject, CutGroup
+from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
@@ -83,7 +83,9 @@ class CutPlan:
                     cutcode = CutCode(
                         c.as_cutobjects(closed_distance=context.opt_closed_distance)
                     )
-                    cutcode.constrained = c.operation == "Cut" and context.opt_inner_first
+                    cutcode.constrained = (
+                        c.operation == "Cut" and context.opt_inner_first
+                    )
                     cutcode.pass_index = p
                     cutcode.original_op = c.operation
                     if len(cutcode):
@@ -125,7 +127,11 @@ class CutPlan:
 
             if merge:
                 if blob_plan[i].constrained:
-                    self.plan[-1].constrained = True  # if merge is constrained new blob is constrained.
+                    self.plan[
+                        -1
+                    ].constrained = (
+                        True  # if merge is constrained new blob is constrained.
+                    )
                 self.plan[-1].extend(blob_plan[i])
             else:
                 if isinstance(c, CutObject) and not isinstance(c, CutCode):
@@ -807,8 +813,12 @@ class Planner(Modifier):
                     y_distance = Length("%f%%" % (100.0 / (rows + 1)))
             except Exception:
                 pass
-            x_distance = x_distance.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            y_distance = y_distance.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
+            x_distance = x_distance.value(
+                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            y_distance = y_distance.value(
+                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+            )
             x_last = 0
             y_last = 0
             y_pos = 0
@@ -1184,15 +1194,7 @@ def short_travel_cutcode(context: CutCode):
             s = complex(s[0], s[1])
             d = abs(s - curr)
             l = cut.length()
-            if (d < distance
-                or (
-                    d == distance
-                    and (
-                        backwards
-                        or l < closest_length
-                    )
-                )
-            ):
+            if d < distance or (d == distance and (backwards or l < closest_length)):
                 distance = d
                 backwards = False
                 closest = cut
@@ -1201,13 +1203,7 @@ def short_travel_cutcode(context: CutCode):
                 e = cut.end()
                 e = complex(e[0], e[1])
                 d = abs(e - curr)
-                if (d < distance
-                    or (
-                        d == distance
-                        and backwards
-                        and l < closest_length
-                    )
-                ):
+                if d < distance or (d == distance and backwards and l < closest_length):
                     distance = d
                     backwards = True
                     closest = cut

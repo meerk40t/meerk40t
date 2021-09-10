@@ -2,15 +2,14 @@ import wx
 from wx import aui
 
 from ..icons import (
-    icons8_place_marker_50,
-    icons8_oval_50,
     icons8_circle_50,
+    icons8_oval_50,
+    icons8_place_marker_50,
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
     icons8_type_50,
 )
-
 
 ID_TOOL_POSITION = wx.NewId()
 ID_TOOL_OVAL = wx.NewId()

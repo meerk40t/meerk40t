@@ -49,7 +49,9 @@ class GroupProperty(MWindow):
     def __do_layout(self):
         # begin wxGlade: GroupProperty.__do_layout
         sizer_8 = wx.BoxSizer(wx.VERTICAL)
-        sizer_2 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL)
+        sizer_2 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
+        )
         sizer_1 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL)
         sizer_1.Add(self.text_id, 0, wx.EXPAND, 0)
         sizer_8.Add(sizer_1, 1, wx.EXPAND, 0)
@@ -61,9 +63,7 @@ class GroupProperty(MWindow):
         self.Centre()
         # end wxGlade
 
-    def on_text_id_change(
-        self, event=None
-    ):  # wxGlade: ElementProperty.<event_handler>
+    def on_text_id_change(self, event=None):  # wxGlade: ElementProperty.<event_handler>
         try:
             self.element.id = self.text_id.GetValue()
             self.element.values[SVG_ATTR_ID] = self.element.id
@@ -72,7 +72,7 @@ class GroupProperty(MWindow):
             pass
 
     def on_text_label_change(
-            self, event=None
+        self, event=None
     ):  # wxGlade: ElementProperty.<event_handler>
         if len(self.text_label.GetValue()):
             self.element_node.label = self.text_label.GetValue()
@@ -84,5 +84,6 @@ class GroupProperty(MWindow):
             except KeyError:
                 pass
         self.context.signal("element_property_update", self.element)
+
 
 # end of class GroupProperty

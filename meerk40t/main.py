@@ -20,7 +20,7 @@ for full details.
 
 """
 
-MEERK40T_VERSION = "0.7.0 RC-13d"
+MEERK40T_VERSION = "0.7.1"
 
 if not getattr(sys, "frozen", False):
     MEERK40T_VERSION += "s"
@@ -105,12 +105,10 @@ def run():
         return
     python_version_required = (3, 5)
     if sys.version_info < python_version_required:
-        print("MeerK40t %s requires Python %d.%d or greater." %
-              (
-                    MEERK40T_VERSION,
-                    python_version_required[0],
-                    python_version_required[1])
-              )
+        print(
+            "MeerK40t %s requires Python %d.%d or greater."
+            % (MEERK40T_VERSION, python_version_required[0], python_version_required[1])
+        )
         return
 
     if args.profile is not None:

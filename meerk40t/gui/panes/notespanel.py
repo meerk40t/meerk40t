@@ -74,4 +74,3 @@ class NotePanel(wx.Panel):
             note = ""
         if self.text_notes.GetValue() != note:
             self.text_notes.SetValue(note)
-
