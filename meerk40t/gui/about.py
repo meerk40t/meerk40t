@@ -53,10 +53,18 @@ class About(MWindow):
         meerk40t_about_text_header = wx.StaticText(
             self,
             wx.ID_ANY,
-            _("MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\n")
-            + _("Participation in the project is highly encouraged. Past participation, and \n")
-            + _("continuing participation is graciously thanked. This program is mostly the\n")
-            + _("brainchild of Tatarize, who sincerely hopes his contributions will be but \n")
+            _(
+                "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\n"
+            )
+            + _(
+                "Participation in the project is highly encouraged. Past participation, and \n"
+            )
+            + _(
+                "continuing participation is graciously thanked. This program is mostly the\n"
+            )
+            + _(
+                "brainchild of Tatarize, who sincerely hopes his contributions will be but \n"
+            )
             + _("the barest trickle that becomes a raging river."),
         )
         meerk40t_about_text_header.SetFont(
@@ -79,14 +87,28 @@ class About(MWindow):
             + _("* Scorch for lighting our path.\n")
             + _("* Alois Zingl for his accurate Bresenham Plotting algorithms.\n")
             + "\n"
-            + _("* @joerlane for his hardware wizardry investigating how the m2-nano works.\n")
-            + _("* All the MeerKittens, past and present, great and small, who contributed to code.\n")
-            + _("* Beta testers and anyone who reported issues that helped us improve things.\n")
-            + _("* Translators who helped internationalise MeerK40t for worldwide use.\n")
-            + _("* Users who have added to or edited the Wiki documentation to help other users.\n") 
+            + _(
+                "* @joerlane for his hardware wizardry investigating how the m2-nano works.\n"
+            )
+            + _(
+                "* All the MeerKittens, past and present, great and small, who contributed to code.\n"
+            )
+            + _(
+                "* Beta testers and anyone who reported issues that helped us improve things.\n"
+            )
+            + _(
+                "* Translators who helped internationalise MeerK40t for worldwide use.\n"
+            )
+            + _(
+                "* Users who have added to or edited the Wiki documentation to help other users.\n"
+            )
             + "\n"
-            + _("* Icons8 (https://icons8.com/) for their great icons used throughout the project.\n")
-            + _("* The works of countless developers who created other software that we use internally.\n")
+            + _(
+                "* Icons8 (https://icons8.com/) for their great icons used throughout the project.\n"
+            )
+            + _(
+                "* The works of countless developers who created other software that we use internally.\n"
+            )
             + _("* Regebro for his svg.path module which inspired svgelements.\n")
             + _("* The SVG Working Group.\n")
             + _("* Hackers (in the positive sense)."),
