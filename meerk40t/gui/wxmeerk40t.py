@@ -603,30 +603,35 @@ class MeerK40t(MWindow):
         self.context.register("pane/ribbon", pane)
 
         from .panes.toolbarproject import register_project_tools
+
         register_project_tools(context=self.context, gui=self)
 
         from .panes.toolbarcontrol import register_control_tools
+
         register_control_tools(context=self.context, gui=self)
 
         from .panes.toolbarpreferences import register_preferences_tools
+
         register_preferences_tools(context=self.context, gui=self)
 
-        self.context.setting(bool, 'developer_mode', False)
+        self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             from .panes.toolbaralign import register_align_tools
+
             register_align_tools(context=self.context, gui=self)
 
             from .panes.toolbarshapes import register_shapes_tools
+
             register_shapes_tools(context=self.context, gui=self)
 
         # Define Go
-        go = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap()
-        )
+        go = wx.BitmapButton(self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
 
         def busy_go_plan(*args):
             with wx.BusyInfo(_("Processing and sending...")):
-                self.context("plan clear copy preprocess validate blob preopt optimize spool\n")
+                self.context(
+                    "plan clear copy preprocess validate blob preopt optimize spool\n"
+                )
 
         self.Bind(
             wx.EVT_BUTTON,
@@ -680,7 +685,9 @@ class MeerK40t(MWindow):
         self.context.register("pane/stop", pane)
 
         # Define Pause.
-        pause = wx.BitmapButton(self, wx.ID_ANY, icons8_pause_50.GetBitmap(use_theme=False))
+        pause = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_pause_50.GetBitmap(use_theme=False)
+        )
 
         def on_pause_button(event=None):
             try:
@@ -812,7 +819,9 @@ class MeerK40t(MWindow):
         # Define Camera
         if self.context.has_feature("modifier/Camera"):
             for index in range(5):
-                panel = CameraPanel(self, wx.ID_ANY, context=self.context, gui=self, index=index)
+                panel = CameraPanel(
+                    self, wx.ID_ANY, context=self.context, gui=self, index=index
+                )
                 pane = (
                     aui.AuiPaneInfo()
                     .Left()
@@ -992,7 +1001,6 @@ class MeerK40t(MWindow):
         @context.console_command("laserpath_clear", hidden=True)
         def gear(**kwargs):
             self.laserpath_widget.clear_laserpath()
-
 
         context.register("control/Transform", self.open_transform_dialog)
         context.register("control/Flip", self.open_flip_dialog)

@@ -68,15 +68,21 @@ MILS_IN_MM = 39.3701
 
 # Regex expressions
 label_truncate_re = re.compile("((:|\().*)")
-group_simplify_re = re.compile("(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE)
+group_simplify_re = re.compile(
+    "(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE
+)
 subgroup_simplify_re = re.compile("\[[^][]*\]", re.IGNORECASE)
 # I deally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
 # but until then element descriptions are shown in mils and 2 decimal places (for opacity) should be sufficient for user to see
 element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
 # image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\d)(\.\d*))", re.IGNORECASE)
+image_simplify_re = re.compile(
+    "(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\d)(\.\d*))",
+    re.IGNORECASE,
+)
 
-OP_PRIORITIES = ["Dots","Image","Raster","Engrave","Cut"]
+OP_PRIORITIES = ["Dots", "Image", "Raster", "Engrave", "Cut"]
+
 
 def reversed_enumerate(collection: list):
     for i in range(len(collection) - 1, -1, -1):
@@ -285,17 +291,17 @@ class Node:
         if node.type in ("file", "group"):
             for c in node._children:
                 # Every child in n is already solved.
-                assert(not c._bounds_dirty)
+                assert not c._bounds_dirty
                 if c._bounds is None:
                     continue
                 if node._bounds is None:
                     node._bounds = c._bounds
                     continue
                 node._bounds = (
-                        min(node._bounds[0], c._bounds[0]),
-                        min(node._bounds[1], c._bounds[1]),
-                        max(node._bounds[2], c._bounds[2]),
-                        max(node._bounds[3], c._bounds[3]),
+                    min(node._bounds[0], c._bounds[0]),
+                    min(node._bounds[1], c._bounds[1]),
+                    max(node._bounds[2], c._bounds[2]),
+                    max(node._bounds[3], c._bounds[3]),
                 )
         else:
             e = node.object
@@ -533,7 +539,9 @@ class Node:
                 if element.fill is not None:
                     values.append("%s='%s'" % ("fill", element.fill))
                 if element.stroke_width is not None and element.stroke_width != 1.0:
-                    values.append("%s=%s" % ("stroke-width", str(round(element.stroke_width, 2))))
+                    values.append(
+                        "%s=%s" % ("stroke-width", str(round(element.stroke_width, 2)))
+                    )
                 if not element.transform.is_identity():
                     values.append("%s=%s" % ("transform", repr(element.transform)))
                 if element.id is not None:
@@ -541,8 +549,8 @@ class Node:
                 if values:
                     desc = "d='%s', %s" % (desc, ", ".join(values))
                 desc = element_type + "(" + desc + ")"
-            elif element_type == "Group": # Group
-                desc = desc[1:-1] # strip leading and trailing []
+            elif element_type == "Group":  # Group
+                desc = desc[1:-1]  # strip leading and trailing []
                 n = 1
                 while n:
                     desc, n = group_simplify_re.subn("", desc)
@@ -550,7 +558,7 @@ class Node:
                 while n:
                     desc, n = subgroup_simplify_re.subn("Group", desc)
                 desc = "%s(%s)" % (element_type, desc)
-            elif element_type == "Image": # Image
+            elif element_type == "Image":  # Image
                 desc = image_simplify_re.sub("", desc)
             else:
                 desc = element_simplify_re.sub("", desc)
@@ -565,7 +573,9 @@ class Node:
 
         try:
             attribs = element.values[SVG_STRUCT_ATTRIB]
-            return attribs["{http://www.inkscape.org/namespaces/inkscape}label"] + (": " + desc if desc else "")
+            return attribs["{http://www.inkscape.org/namespaces/inkscape}label"] + (
+                ": " + desc if desc else ""
+            )
         except (AttributeError, KeyError):
             pass
 
@@ -666,7 +676,9 @@ class Node:
             depth -= 1
         # Check all children.
         for c in node.children:
-            yield from c.flat(types, cascade, depth, selected, emphasized, targeted, highlighted)
+            yield from c.flat(
+                types, cascade, depth, selected, emphasized, targeted, highlighted
+            )
 
     def count_children(self):
         return len(self._children)
@@ -1122,7 +1134,10 @@ class LaserOperation(Node):
                 settings.line_color = path.stroke
                 for subpath in path.as_subpaths():
                     sp = Path(subpath)
-                    closed = isinstance(sp, Close) or abs(sp.z_point - sp.current_point) <= closed_distance
+                    closed = (
+                        isinstance(sp, Close)
+                        or abs(sp.z_point - sp.current_point) <= closed_distance
+                    )
                     group = CutGroup(None, closed=closed)
                     group.path = Path(subpath)
                     group.original_op = self._operation
@@ -1671,7 +1686,9 @@ class Elemental(Modifier):
             for _in in ins:
                 p = "tree/%s/%s" % (_in, registered_name)
                 if p in kernel.registered:
-                    raise NameError("A function of this name was already registered: %s" % p)
+                    raise NameError(
+                        "A function of this name was already registered: %s" % p
+                    )
                 kernel.register(p, inner)
             return inner
 
@@ -1885,11 +1902,22 @@ class Elemental(Modifier):
                 ("OP3", r"(\|\|)"),
                 ("OP2", r"(\|)"),
                 ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
-                ("COLOR", r"(#[0123456789abcdefABCDEF]{6}|#[0123456789abcdefABCDEF]{3})"),
-                ("TYPE", r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)"),
-                ("VAL", r"(speed|power|step|acceleration|passes|color|op|overscan|len)"),
+                (
+                    "COLOR",
+                    r"(#[0123456789abcdefABCDEF]{6}|#[0123456789abcdefABCDEF]{3})",
+                ),
+                (
+                    "TYPE",
+                    r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)",
+                ),
+                (
+                    "VAL",
+                    r"(speed|power|step|acceleration|passes|color|op|overscan|len)",
+                ),
             ]
-            filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
+            filter_re = re.compile(
+                "|".join("(?P<%s>%s)" % pair for pair in _filter_parse)
+            )
             operator = list()
             operand = list()
 
@@ -1915,7 +1943,7 @@ class Elemental(Modifier):
                         v2 = operand.pop()
                         v1 = operand.pop()
                         try:
-                            if op == "==" or op == '=':
+                            if op == "==" or op == "=":
                                 operand.append(v1 == v2)
                             elif op == "!=":
                                 operand.append(v1 != v2)
@@ -1942,7 +1970,7 @@ class Elemental(Modifier):
                         except TypeError:
                             raise SyntaxError("Cannot evaluate expression")
                         except ZeroDivisionError:
-                            operand.append(float('inf'))
+                            operand.append(float("inf"))
                 except IndexError:
                     pass
 
@@ -2109,7 +2137,9 @@ class Elemental(Modifier):
                     op.notify_update()
             return "ops", data
 
-        @context.console_argument("speed", type=float, help=_("operation speed in mm/s"))
+        @context.console_argument(
+            "speed", type=float, help=_("operation speed in mm/s")
+        )
         @context.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
@@ -2122,11 +2152,15 @@ class Elemental(Modifier):
             for op in data:
                 old_speed = op.settings.speed
                 op.settings.speed = speed
-                channel(_("Speed for '%s' updated %f -> %f") % (str(op), old_speed, speed))
+                channel(
+                    _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, speed)
+                )
                 op.notify_update()
             return "ops", data
 
-        @context.console_argument("power", type=int, help=_("power in pulses per inch (ppi, 1000=max)"))
+        @context.console_argument(
+            "power", type=int, help=_("power in pulses per inch (ppi, 1000=max)")
+        )
         @context.console_command(
             "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
         )
@@ -2139,7 +2173,9 @@ class Elemental(Modifier):
             for op in data:
                 old_ppi = op.settings.power
                 op.settings.power = power
-                channel(_("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power))
+                channel(
+                    _("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power)
+                )
                 op.notify_update()
             return "ops", data
 
@@ -2151,19 +2187,27 @@ class Elemental(Modifier):
             if passes is None:
                 for op in data:
                     old_passes = op.settings.passes
-                    channel(_("Passes for '%s' is currently: %d") % (str(op), old_passes))
+                    channel(
+                        _("Passes for '%s' is currently: %d") % (str(op), old_passes)
+                    )
                 return
             for op in data:
                 old_passes = op.settings.passes
                 op.settings.passes = passes
                 if passes >= 1:
                     op.settings.passes_custom = True
-                channel(_("Passes for '%s' updated %d -> %d") % (str(op), old_passes, passes))
+                channel(
+                    _("Passes for '%s' updated %d -> %d")
+                    % (str(op), old_passes, passes)
+                )
                 op.notify_update()
             return "ops", data
 
         @context.console_command(
-            "disable", help=_("Disable the given operations"), input_type="ops", output_type="ops"
+            "disable",
+            help=_("Disable the given operations"),
+            input_type="ops",
+            output_type="ops",
         )
         def op_disable(command, channel, _, data=None, **kwrgs):
             for op in data:
@@ -2173,7 +2217,10 @@ class Elemental(Modifier):
             return "ops", data
 
         @context.console_command(
-            "enable", help=_("Enable the given operations"), input_type="ops", output_type="ops"
+            "enable",
+            help=_("Enable the given operations"),
+            input_type="ops",
+            output_type="ops",
         )
         def op_enable(command, channel, _, data=None, **kwrgs):
             for op in data:
@@ -2272,7 +2319,10 @@ class Elemental(Modifier):
 
         @context.console_argument("step_size", type=int, help=_("element step size"))
         @context.console_command(
-            "step", help=_("step <element step-size>"), input_type="elements", output_type="elements"
+            "step",
+            help=_("step <element step-size>"),
+            input_type="elements",
+            output_type="elements",
         )
         def step_command(command, channel, _, data, step_size=None, **kwrgs):
             if step_size is None:
@@ -2302,7 +2352,7 @@ class Elemental(Modifier):
                     element.node.modified()
                 self.context.signal("element_property_reload", element)
                 self.context.signal("refresh_scene")
-            return "elements",
+            return ("elements",)
 
         @context.console_command(
             "select",
@@ -2959,7 +3009,12 @@ class Elemental(Modifier):
         @context.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
         )
-        @context.console_command("path", help=_("path <svg path>"), input_type="elements", output_type="elements")
+        @context.console_command(
+            "path",
+            help=_("path <svg path>"),
+            input_type="elements",
+            output_type="elements",
+        )
         def element_path(path_d, data, **kwgs):
             try:
                 path = Path(path_d)
@@ -3032,7 +3087,9 @@ class Elemental(Modifier):
             ),
             output_type="elements",
         )
-        def element_stroke(command, channel, _, color, data=None, filter=None, **kwargs):
+        def element_stroke(
+            command, channel, _, color, data=None, filter=None, **kwargs
+        ):
             if data is None:
                 data = list(self.elems(emphasized=True))
             apply = data
@@ -3698,7 +3755,16 @@ class Elemental(Modifier):
                 for i, n in enumerate(node.children):
                     p = list(path)
                     p.append(str(i))
-                    channel("%s: %s - %s %s - %s" % ('.'.join(p).ljust(10), str(n._bounds), str(n._bounds_dirty), str(n.type), str(n.label[:16])))
+                    channel(
+                        "%s: %s - %s %s - %s"
+                        % (
+                            ".".join(p).ljust(10),
+                            str(n._bounds),
+                            str(n._bounds_dirty),
+                            str(n.type),
+                            str(n.label[:16]),
+                        )
+                    )
                     b_list(p, n)
 
             for d in data:
@@ -3731,7 +3797,10 @@ class Elemental(Modifier):
                         j = "-"
                     else:
                         j = ":"
-                    channel("%s%s %s - %s" % ('.'.join(p).ljust(10), j, str(n.type), str(n.label)))
+                    channel(
+                        "%s%s %s - %s"
+                        % (".".join(p).ljust(10), j, str(n.type), str(n.label))
+                    )
                     t_list(p, n)
 
             for d in data:
@@ -3774,7 +3843,10 @@ class Elemental(Modifier):
         @context.console_argument("node", help="Node address for menu")
         @context.console_argument("execute", help="Command to execute")
         @context.console_command(
-            "menu", help=_("Load menu for given node"), input_type="tree", output_type="tree"
+            "menu",
+            help=_("Load menu for given node"),
+            input_type="tree",
+            output_type="tree",
         )
         def tree_menu(command, channel, _, data=None, node=None, execute=None, **kwgs):
             """
@@ -3817,12 +3889,14 @@ class Elemental(Modifier):
                         menu_context.append(("------", None))
                     n = func.real_name
                     if func.radio_state:
-                       n = "✓" + n
+                        n = "✓" + n
                     menu_context.append((n, menu_functions(func, menu_node)))
                 else:
                     if func.separate_before:
                         menu_context.append(("------", None))
-                    menu_context.append((func.real_name,menu_functions(func, menu_node)))
+                    menu_context.append(
+                        (func.real_name, menu_functions(func, menu_node))
+                    )
                 if func.separate_after:
                     menu_context.append(("------", None))
             if execute is not None:
@@ -3837,12 +3911,13 @@ class Elemental(Modifier):
                 except (IndexError, AttributeError, ValueError, TypeError):
                     raise SyntaxError
             else:
+
                 def m_list(path, menu):
                     for i, n in enumerate(menu):
                         p = list(path)
                         p.append(str(i))
                         name, submenu = n
-                        channel("%s: %s" % ('.'.join(p).ljust(10), str(name)))
+                        channel("%s: %s" % (".".join(p).ljust(10), str(name)))
                         if isinstance(submenu, list):
                             m_list(p, submenu)
 
@@ -3915,7 +3990,7 @@ class Elemental(Modifier):
             Delegate to either ops or elements depending on the current node emphasis
             """
             for item in self.flat(
-                    types=("op", "elem", "file", "group"), emphasized=True
+                types=("op", "elem", "file", "group"), emphasized=True
             ):
                 if item.type == "op":
                     return "ops", list(self.ops(emphasized=True))
@@ -4125,7 +4200,6 @@ class Elemental(Modifier):
 
         _ = self.context._
 
-
         non_structural_nodes = (
             "op",
             "opnode",
@@ -4221,11 +4295,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
-        @self.tree_operation(
-            _("Speed %smm/s") % "{speed}",
-            node_type="op",
-            help=""
-        )
+        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
         def set_speed_raster(node, speed=150, **kwgs):
             node.settings.speed = float(speed)
             self.context.signal("element_property_reload", node)
@@ -4234,11 +4304,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
-        @self.tree_operation(
-            _("Speed %smm/s") % "{speed}",
-            node_type="op",
-            help=""
-        )
+        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
         def set_speed_vector(node, speed=35, **kwgs):
             node.settings.speed = float(speed)
             self.context.signal("element_property_reload", node)
@@ -4262,10 +4328,8 @@ class Elemental(Modifier):
 
         def radio_match(node, passvalue=1, **kwgs):
             return (
-                (node.settings.passes_custom and passvalue == node.settings.passes)
-                or
-                (not node.settings.passes_custom and passvalue == 1)
-            )
+                node.settings.passes_custom and passvalue == node.settings.passes
+            ) or (not node.settings.passes_custom and passvalue == 1)
 
         @self.tree_submenu(_("Set operation passes"))
         @self.tree_radio(radio_match)
@@ -4313,11 +4377,20 @@ class Elemental(Modifier):
         # REMOVE MULTI (Tree Selected)
         # ==========
         @self.tree_conditional(
-            lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) > 1
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                )
+            )
+            > 1
         )
         @self.tree_calc(
             "ecount",
-            lambda i: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes)))
+            lambda i: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                )
+            ),
         )
         @self.tree_operation(
             _("Remove %s selected items") % "{ecount}",
@@ -4325,7 +4398,9 @@ class Elemental(Modifier):
             help="",
         )
         def remove_multi_nodes(node, **kwgs):
-            nodes = list(self.flat(selected=True, cascade=False, types=non_structural_nodes))
+            nodes = list(
+                self.flat(selected=True, cascade=False, types=non_structural_nodes)
+            )
             for node in nodes:
                 if node.parent is not None:  # May have already removed.
                     node.remove_node()
@@ -4335,7 +4410,12 @@ class Elemental(Modifier):
         # REMOVE SINGLE (Tree Selected)
         # ==========
         @self.tree_conditional(
-            lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 1
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                )
+            )
+            == 1
         )
         @self.tree_operation(
             _("Remove '%s'") % "{name}",
@@ -4352,20 +4432,19 @@ class Elemental(Modifier):
         # match this conditional. The tree-selected delete functions are superior.
         # ==========
         @self.tree_conditional(
-            lambda cond: len(list(self.flat(selected=True, cascade=False, types=non_structural_nodes))) == 0
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                )
+            )
+            == 0
         )
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
-            node_type=(
-                    "op",
-                    "cmdop",
-                    "lasercode",
-                    "cutcode",
-                    "blob"
-            ),
-            help=""
+            node_type=("op", "cmdop", "lasercode", "cutcode", "blob"),
+            help="",
         )
         def remove_n_ops(node, **kwgs):
             self.context("operation delete\n")
@@ -4382,7 +4461,7 @@ class Elemental(Modifier):
                 "file",
                 "group",
             ),
-            help=""
+            help="",
         )
         def remove_n_elements(node, **kwgs):
             self.context("element delete\n")
@@ -4429,7 +4508,9 @@ class Elemental(Modifier):
 
         @self.tree_submenu(_("Clone reference"))
         @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(_("Make %s copies") % "{copies}", node_type="opnode", help="")
+        @self.tree_operation(
+            _("Make %s copies") % "{copies}", node_type="opnode", help=""
+        )
         def clone_element_op(node, copies=1, **kwgs):
             index = node.parent.children.index(node)
             for i in range(copies):
@@ -4485,7 +4566,9 @@ class Elemental(Modifier):
         @self.tree_values(
             "opname", values=self.context.get_context("operations").derivable
         )
-        @self.tree_operation(_("Load: %s") % "{opname}", node_type="branch ops", help="")
+        @self.tree_operation(
+            _("Load: %s") % "{opname}", node_type="branch ops", help=""
+        )
         def load_ops(node, opname, **kwgs):
             self.context("operation load %s\n" % opname)
 
@@ -4639,9 +4722,7 @@ class Elemental(Modifier):
             lambda node: node.operation in ("Image", "Engrave", "Cut")
         )
         @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(
-            _("Duplicate elements 1 time"), node_type="op", help=""
-        )
+        @self.tree_operation(_("Duplicate elements 1 time"), node_type="op", help="")
         def dup_1_copy(node, **kwgs):
             dup_n_copies(node, 1, **kwgs)
 
@@ -4707,7 +4788,9 @@ class Elemental(Modifier):
 
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(_("Make %s copies") % "{copies}", node_type="elem", help="")
+        @self.tree_operation(
+            _("Make %s copies") % "{copies}", node_type="elem", help=""
+        )
         def duplicate_element_n(node, copies, **kwgs):
             context = self.context
             elements = context.elements
@@ -4757,11 +4840,49 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Rotate"))
-        @self.tree_values("angle",
+        @self.tree_values(
+            "angle",
             (
-                180,150,135,120,90,60,45,30,20,15,10,9,8,7,6,5,4,3,2,1,
-                -1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-15,-20,-30,-45,-60,-90,-120,-135,-150
-            )
+                180,
+                150,
+                135,
+                120,
+                90,
+                60,
+                45,
+                30,
+                20,
+                15,
+                10,
+                9,
+                8,
+                7,
+                6,
+                5,
+                4,
+                3,
+                2,
+                1,
+                -1,
+                -2,
+                -3,
+                -4,
+                -5,
+                -6,
+                -7,
+                -8,
+                -9,
+                -10,
+                -15,
+                -20,
+                -30,
+                -45,
+                -60,
+                -90,
+                -120,
+                -135,
+                -150,
+            ),
         )
         @self.tree_operation(_(u"Rotate %s°") % ("{angle}"), node_type="elem", help="")
         def rotate_elem_amount(node, angle, **kwgs):
@@ -4910,7 +5031,9 @@ class Elemental(Modifier):
         @self.tree_values(
             "script", values=list(self.context.match("raster_script", suffix=True))
         )
-        @self.tree_operation(_("RasterWizard: %s") % "{script}", node_type="elem", help="")
+        @self.tree_operation(
+            _("RasterWizard: %s") % "{script}", node_type="elem", help=""
+        )
         def image_rasterwizard_open(node, script=None, **kwgs):
             self.context("window open RasterWizard %s\n" % script)
 
@@ -5593,11 +5716,12 @@ class Elemental(Modifier):
                 continue
 
             element_color = self.element_classify_color(element)
-            if isinstance(element, (Shape, SVGText)) and (element_color is None or element_color.rgb is None):
+            if isinstance(element, (Shape, SVGText)) and (
+                element_color is None or element_color.rgb is None
+            ):
                 continue
             is_dot = isDot(element)
             is_straight_line = isStraightLine(element)
-
 
             # Check for default vector operations
             element_vector = False
@@ -5639,13 +5763,12 @@ class Elemental(Modifier):
             element_added = False
             if is_dot or isinstance(element, SVGImage):
                 for op in special_ops:
-                    if (
-                        (is_dot and op.operation == "Dots")
-                        or (isinstance(element, SVGImage) and op.operation == "Image")
+                    if (is_dot and op.operation == "Dots") or (
+                        isinstance(element, SVGImage) and op.operation == "Image"
                     ):
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
-                        break # May only classify in one Dots or Image operation and indeed in one operation
+                        break  # May only classify in one Dots or Image operation and indeed in one operation
             elif element_vector or rasters_one_pass:
                 for op in raster_ops:
                     # Raster ops are never new
@@ -5681,7 +5804,12 @@ class Elemental(Modifier):
                     for op in default_engrave_ops:
                         op.add(element, type="opnode", pos=element_pos)
                     element_added = True
-            elif rasters_one_pass and isinstance(element, (Shape, SVGText)) and not is_dot and raster_ops:
+            elif (
+                rasters_one_pass
+                and isinstance(element, (Shape, SVGText))
+                and not is_dot
+                and raster_ops
+            ):
                 for op in raster_ops:
                     op.add(element, type="opnode", pos=element_pos)
                 element_added = True
@@ -5699,15 +5827,21 @@ class Elemental(Modifier):
                 special_ops.append(op)
             elif isinstance(element, (Shape, SVGText)):
                 if element_vector:
-                    if is_cut: # This will be initialised because criteria are same as above
+                    if (
+                        is_cut
+                    ):  # This will be initialised because criteria are same as above
                         op = LaserOperation(operation="Cut", color=abs(element_color))
                     else:
-                        op = LaserOperation(operation="Engrave", color=abs(element_color))
+                        op = LaserOperation(
+                            operation="Engrave", color=abs(element_color)
+                        )
                         if element_color == Color("white"):
                             op.output = False
                     vector_ops.append(op)
                 elif rasters_one_pass:
-                    op = LaserOperation(operation="Raster", color="Transparent", default=True)
+                    op = LaserOperation(
+                        operation="Raster", color="Transparent", default=True
+                    )
                     default_raster_ops.append(op)
                     raster_ops.append(op)
                 else:
@@ -5757,15 +5891,24 @@ class Elemental(Modifier):
 
         # Remove bbox and add element colour from groups
         # Change list to groups which are a list of tuples, each tuple being element and its classification color
-        raster_groups = list(map(lambda g: tuple(((e[0], self.element_classify_color(e[0])) for e in g)), raster_groups))
+        raster_groups = list(
+            map(
+                lambda g: tuple(((e[0], self.element_classify_color(e[0])) for e in g)),
+                raster_groups,
+            )
+        )
 
         # print("grouped", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
 
         # Add groups to operations of matching colour (and remove from list)
         # groups added to at least one existing raster op will not be added to default raster ops.
-        groups_added =[]
+        groups_added = []
         for op in raster_ops:
-            if op not in default_raster_ops and op.color is not None and op.color.rgb is not None:
+            if (
+                op not in default_raster_ops
+                and op.color is not None
+                and op.color.rgb is not None
+            ):
                 # Make a list of elements to add (same tupes)
                 elements_to_add = []
                 for group in raster_groups:
@@ -5779,7 +5922,9 @@ class Elemental(Modifier):
                             break  # to next group
                 if elements_to_add:
                     # Create simple list of elements sorted by original element order
-                    elements_to_add = sorted((e[0] for e in elements_to_add), key=raster_elements.index)
+                    elements_to_add = sorted(
+                        (e[0] for e in elements_to_add), key=raster_elements.index
+                    )
                     for element in elements_to_add:
                         op.add(element, type="opnode", pos=element_pos)
 
@@ -5787,14 +5932,16 @@ class Elemental(Modifier):
         for group in groups_added:
             raster_groups.remove(group)
 
-        if not raster_groups: # added all groups
+        if not raster_groups:  # added all groups
             return
 
         #  Because groups don't matter further simplify back to a simple element_list
         elements_to_add = []
         for g in raster_groups:
             elements_to_add.extend(g)
-        elements_to_add = sorted((e[0] for e in elements_to_add), key=raster_elements.index)
+        elements_to_add = sorted(
+            (e[0] for e in elements_to_add), key=raster_elements.index
+        )
 
         # Remaining elements are added to one of the following groups of operations:
         # 1. to default raster ops if they exist; otherwise
@@ -5823,23 +5970,25 @@ class Elemental(Modifier):
             for op in default_raster_ops:
                 op.add(element, type="opnode", pos=element_pos)
 
-
     def group_elements_overlap(self, g1, g2):
         for e1 in g1:
             e1xmin, e1ymin, e1xmax, e1ymax = e1[1]
             for e2 in g2:
                 e2xmin, e2ymin, e2xmax, e2ymax = e2[1]
-                if e1xmin <= e2xmax and e1xmax >= e2xmin and e1ymin <= e2ymax and e1ymax >= e2ymin:
+                if (
+                    e1xmin <= e2xmax
+                    and e1xmax >= e2xmin
+                    and e1ymin <= e2ymax
+                    and e1ymax >= e2ymin
+                ):
                     return True
         return False
-
 
     def element_classify_color(self, element: SVGElement):
         element_color = element.stroke
         if element_color is None or element_color.rgb is None:
             element_color = element.fill
         return element_color
-
 
     def load(self, pathname, **kwargs):
         kernel = self.context.kernel

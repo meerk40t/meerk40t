@@ -57,6 +57,7 @@ class ScenePanel(wx.Panel):
     """
     wxPanel that holds the Scene. This serves as the wx.Control object that holds and draws the scene.
     """
+
     def __init__(self, context, *args, scene_name="Scene", **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.WANTS_CHARS
         wx.Panel.__init__(self, *args, **kwds)
@@ -312,6 +313,7 @@ class Scene(Module, Job):
     SceneSpaceWidget which draws elements in two different forms. It first draws the scene and all scenewidgets added
     to the scene and then the interface widget which contains all the non-scene widget elements.
     """
+
     def __init__(self, context, path, gui, **kwargs):
         Module.__init__(self, context, path)
         Job.__init__(
@@ -716,6 +718,7 @@ class Widget(list):
     Widgets are drawable, interaction objects within the scene. They have their own space, matrix, orientation, and
     processing of events.
     """
+
     def __init__(
         self,
         scene: "Scene",
@@ -1167,6 +1170,7 @@ class SceneSpaceWidget(Widget):
     Interface: Drawn on top, uses no matrix.
     Scene: Drawn at a particular scale relative to the zoom-pan scene.
     """
+
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self._view = None

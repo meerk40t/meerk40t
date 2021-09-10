@@ -50,6 +50,7 @@ class ElementsWidget(Widget):
     The ElementsWidget is tasked with drawing the elements within the scene. It also
     server to process leftclick in order to emphasize the given object.
     """
+
     def __init__(self, scene, root, renderer):
         Widget.__init__(self, scene, all=True)
         self.renderer = renderer
@@ -84,6 +85,7 @@ class SelectionWidget(Widget):
     Selection Widget it tasked with drawing the selection box and managing the events
     dealing with moving, resizing and altering the selected object.
     """
+
     def __init__(self, scene, root):
         Widget.__init__(self, scene, all=False)
         self.root = root
@@ -136,10 +138,18 @@ class SelectionWidget(Widget):
             ymin = 5 / matrix.value_scale_y()
             # Adjust sizing of hover border as follows:
             # 1. If object is very small so move area is smaller than 1/2 or even non-existent, prefer move to size by setting border to zero
-            # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded 
+            # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded
             #    to be more than 1/4 of the width or height
-            xmin = min(xmin * 2.0, max(self.width / 4.0, xmin)) if xmin <= self.width / 4.0 else 0.0
-            ymin = min(ymin * 2.0, max(self.height / 4.0, ymin)) if ymin <= self.height / 4.0 else 0.0
+            xmin = (
+                min(xmin * 2.0, max(self.width / 4.0, xmin))
+                if xmin <= self.width / 4.0
+                else 0.0
+            )
+            ymin = (
+                min(ymin * 2.0, max(self.height / 4.0, ymin))
+                if ymin <= self.height / 4.0
+                else 0.0
+            )
             xmax = self.width - xmin
             ymax = self.height - ymin
             cursor = self.cursor
@@ -549,6 +559,7 @@ class RectSelectWidget(Widget):
 
     Rectangle Selection Widget, draws the selection rectangle if left-clicked and dragged
     """
+
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.selection_pen = wx.Pen()
@@ -646,6 +657,7 @@ class ReticleWidget(Widget):
     Draw the tracking reticles. Each different origin for the driver;position and emulator;position
     gives a new tracking reticle.
     """
+
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
         self.reticles = {}
@@ -710,6 +722,7 @@ class LaserPathWidget(Widget):
 
     These are blue lines that track the previous position of the laser-head.
     """
+
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
         self.laserpath = [[0, 0] for _ in range(1000)], [[0, 0] for _ in range(1000)]
@@ -735,7 +748,7 @@ class LaserPathWidget(Widget):
         self.laserpath_index = index
 
     def clear_laserpath(self):
-        self.laserpath = [[0,0] for _ in range(1000)], [[0,0] for _ in range(1000)]
+        self.laserpath = [[0, 0] for _ in range(1000)], [[0, 0] for _ in range(1000)]
         self.laserpath_index = 0
 
     def process_draw(self, gc):
@@ -756,6 +769,7 @@ class GridWidget(Widget):
     """
     Interface Widget
     """
+
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.grid = None
@@ -780,7 +794,11 @@ class GridWidget(Widget):
             _ = self.scene.context._
             if self.background is not None:
                 item = menu.Append(wx.ID_ANY, _("Remove Background"), "")
-                self.scene.gui.Bind(wx.EVT_MENU, lambda e: self.scene.gui.signal("background", None), id=item.GetId())
+                self.scene.gui.Bind(
+                    wx.EVT_MENU,
+                    lambda e: self.scene.gui.signal("background", None),
+                    id=item.GetId(),
+                )
                 if menu.MenuItemCount != 0:
                     self.scene.gui.PopupMenu(menu)
                     menu.Destroy()
@@ -876,6 +894,7 @@ class GuideWidget(Widget):
 
     Guide lines drawn at along the scene edges.
     """
+
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
         self.scene.context.setting(bool, "show_negative_guide", True)

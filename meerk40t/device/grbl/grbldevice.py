@@ -11,7 +11,8 @@ from ..basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
     PLOT_LEFT_UPPER,
-    PLOT_RIGHT_LOWER, PLOT_START,
+    PLOT_RIGHT_LOWER,
+    PLOT_START,
 )
 from ..lasercommandconstants import *
 

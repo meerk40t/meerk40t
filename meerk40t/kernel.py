@@ -950,7 +950,8 @@ class Kernel:
                 obj = context.attached[attached_name]
                 if channel:
                     channel(
-                        _("%s: Detaching %s: %s") % (str(context), attached_name, str(obj))
+                        _("%s: Detaching %s: %s")
+                        % (str(context), attached_name, str(obj))
                     )
                 context.deactivate(attached_name, channel=channel)
 
@@ -1011,7 +1012,9 @@ class Kernel:
                     channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
                 thread.join()
                 if channel:
-                    channel(_("Thread %s has finished. %s") % (thread_name, str(thread)))
+                    channel(
+                        _("Thread %s has finished. %s") % (thread_name, str(thread))
+                    )
             else:
                 if channel:
                     channel(

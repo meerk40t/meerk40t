@@ -141,16 +141,34 @@ class LhystudiosDriverGui(MWindow):
         self.button_home_by_current.SetToolTip(
             _("Set Home Position based on the current position")
         )
-        self.checkbox_plot_shift.SetToolTip("\n".join((
-            _("Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."),
-            _("This setting is a global equivalent to the Pulse Grouping option in Operation Properties."),
-            _("It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."),
-            _("As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000\", the difference should not be visible even under magnification."),
-            _("Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly,") +
-            " " +
-            _("this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process."),
-            _("Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked.")
-        )))
+        self.checkbox_plot_shift.SetToolTip(
+            "\n".join(
+                (
+                    _(
+                        "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
+                    ),
+                    _(
+                        "This setting is a global equivalent to the Pulse Grouping option in Operation Properties."
+                    ),
+                    _(
+                        "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
+                    ),
+                    _(
+                        'As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
+                    ),
+                    _(
+                        "Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly,"
+                    )
+                    + " "
+                    + _(
+                        "this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process."
+                    ),
+                    _(
+                        "Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked."
+                    ),
+                )
+            )
+        )
         self.checkbox_random_ppi.SetToolTip(
             _("Rather than orderly PPI, we perform PPI based on a randomized average")
         )

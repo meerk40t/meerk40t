@@ -162,7 +162,10 @@ class ImageProperty(MWindow):
         Calls update image only if the current scale is equal to the step size
         """
         m = self.element.transform
-        if abs(m.value_scale_x() - current_step) < 1e-5 or abs(m.value_scale_y() - current_step) < 1e-5:
+        if (
+            abs(m.value_scale_x() - current_step) < 1e-5
+            or abs(m.value_scale_y() - current_step) < 1e-5
+        ):
             self.update_step_image()
 
     def update_step_image(self):

@@ -29,7 +29,8 @@ from ..basedevice import (
     PLOT_SETTING,
     PLOT_LEFT_UPPER,
     PLOT_RIGHT_LOWER,
-    DRIVER_STATE_RASTER, PLOT_START,
+    DRIVER_STATE_RASTER,
+    PLOT_START,
 )
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
@@ -440,7 +441,12 @@ def plugin(kernel, lifecycle=None):
                     "device/%s" % root.active
                 ]
                 if output is None:
-                    channel(_("Output for device %s does not exist. Lhyserver cannot attach.") % root.active)
+                    channel(
+                        _(
+                            "Output for device %s does not exist. Lhyserver cannot attach."
+                        )
+                        % root.active
+                    )
                     return
                 server = root.open_as("module/TCPServer", "lhyserver", port=port)
                 if quit:
@@ -796,7 +802,9 @@ class LhystudiosDriver(Driver):
                         self.unset_prop(REQUEST_Y_FORWARD_TOP)
                     else:  # Moving Top. -y
                         self.set_prop(REQUEST_Y_FORWARD_TOP)
-                elif on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
+                elif on & (
+                    PLOT_RAPID | PLOT_JOG
+                ):  # Plot planner requests position change.
                     if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM:
                         # Perform a rapid position change. Always perform this for raster moves.
                         # DRIVER_STATE_RASTER should call this code as well.
@@ -1140,8 +1148,10 @@ class LhystudiosDriver(Driver):
             self.data_output(b"S1P\n")
             if not self.context.autolock:
                 self.data_output(b"IS2P\n")
-        elif (
-            self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER, DRIVER_STATE_MODECHANGE)
+        elif self.state in (
+            DRIVER_STATE_PROGRAM,
+            DRIVER_STATE_RASTER,
+            DRIVER_STATE_MODECHANGE,
         ):
             self.data_output(b"FNSE-\n")
             self.laser = False
@@ -1195,7 +1205,11 @@ class LhystudiosDriver(Driver):
     def ensure_finished_mode(self, *values):
         if self.state == DRIVER_STATE_FINISH:
             return
-        if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER, DRIVER_STATE_MODECHANGE):
+        if self.state in (
+            DRIVER_STATE_PROGRAM,
+            DRIVER_STATE_RASTER,
+            DRIVER_STATE_MODECHANGE,
+        ):
             self.data_output(b"@NSE")
             self.laser = False
         elif self.state == DRIVER_STATE_RAPID:
@@ -1492,7 +1506,10 @@ class LhystudiosDriver(Driver):
 
     def move_right(self, dx=0):
         self.current_x += dx
-        if not self.is_right or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+        if not self.is_right or self.state not in (
+            DRIVER_STATE_PROGRAM,
+            DRIVER_STATE_RASTER,
+        ):
             self.data_output(self.CODE_RIGHT)
             self.set_right()
         if dx != 0:
@@ -1501,7 +1518,10 @@ class LhystudiosDriver(Driver):
 
     def move_left(self, dx=0):
         self.current_x -= abs(dx)
-        if not self.is_left or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+        if not self.is_left or self.state not in (
+            DRIVER_STATE_PROGRAM,
+            DRIVER_STATE_RASTER,
+        ):
             self.data_output(self.CODE_LEFT)
             self.set_left()
         if dx != 0:
@@ -1510,7 +1530,10 @@ class LhystudiosDriver(Driver):
 
     def move_bottom(self, dy=0):
         self.current_y += dy
-        if not self.is_bottom or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+        if not self.is_bottom or self.state not in (
+            DRIVER_STATE_PROGRAM,
+            DRIVER_STATE_RASTER,
+        ):
             self.data_output(self.CODE_BOTTOM)
             self.set_bottom()
         if dy != 0:
@@ -1519,7 +1542,10 @@ class LhystudiosDriver(Driver):
 
     def move_top(self, dy=0):
         self.current_y -= abs(dy)
-        if not self.is_top or self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+        if not self.is_top or self.state not in (
+            DRIVER_STATE_PROGRAM,
+            DRIVER_STATE_RASTER,
+        ):
             self.data_output(self.CODE_TOP)
             self.set_top()
         if dy != 0:
@@ -1855,7 +1881,7 @@ class LhystudiosController:
                 # We try to process the queue.
                 queue_processed = self.process_queue()
                 if self.refuse_counts:
-                    self.context.signal('pipe;failing', 0)
+                    self.context.signal("pipe;failing", 0)
                 self.refuse_counts = 0
                 if self.is_shutdown:
                     break  # Sometimes it could reset this and escape.
@@ -1865,7 +1891,7 @@ class LhystudiosController:
                 self.pre_ok = False
                 if self.refuse_counts >= 5:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
-                self.context.signal('pipe;failing', self.refuse_counts)
+                self.context.signal("pipe;failing", self.refuse_counts)
                 self.context.signal("pipe;running", False)
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
                 continue
@@ -1908,7 +1934,7 @@ class LhystudiosController:
         self.is_shutdown = False
         self.update_state(STATE_END)
         self.pre_ok = False
-        self.context.signal('pipe;running', False)
+        self.context.signal("pipe;running", False)
         self._main_lock.release()
 
     def process_queue(self):

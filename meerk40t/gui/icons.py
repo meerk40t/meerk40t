@@ -46,7 +46,7 @@ class PyEmbeddedImage(py_embedded_image):
                 g = int(image.GetGreen(x, y) * a / 255) + bg
                 b = int(image.GetBlue(x, y) * a / 255) + bg
                 image.SetRGB(x, y, r, g, b)
-                image.SetAlpha(x, y, IMAGE_ALPHA_OPAQUE);
+                image.SetAlpha(x, y, IMAGE_ALPHA_OPAQUE)
         image.ClearAlpha()
 
 
@@ -1849,12 +1849,13 @@ icons8_smartphone_ram_50 = PyEmbeddedImage(
 )
 
 icons8_image_50 = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB'
-    b'lklEQVRoge2YP0oDQRSHv2ghiFqZwl5whWgluYAgnsXGzhS5g72HUJEk4BFSiYJXMGJKBQMW'
-    b'iUVmyBB23Jnd2cyA74MfYZd9w3w7b/9kQRCEf0EDmMWeRAjWYk8gFCKSGiKSGiKSGiJSE32g'
-    b'DWyp34FP8SyR9Czzu3esjy6gc2IRabvUp/SutQN85ezfBj6Lin2ukTHw4nG8LweW/YeuA7gs'
-    b'+xg4AjLg27HGN33L/AaO9YUHfAAtY+CrmkS0zPJdy7XWWWIfWFcZ1ihTNoXtBPOWelerobfr'
-    b'arGgIuZKtNT2DJiwuPg6ltqfVERsEjpDFi3WA+6ALnAONC01KxfJa6e8og5/kwGjWCJFK2FG'
-    b't1hTrUQXuAWePcaoRcRHwpTJ219mrCAiru3kE3NMGxnwFFKkrrO3/CDNYwO4BqYhRPTZCbES'
-    b'rpkAl8w/EAKcAm9VRVYtYeYR2FMyu8BDFZEY93wzI+BMyTSAC8q9NUSV0JkCN8AmFYgtYeYV'
-    b'OC4jkdI/xEqk9hWlNCKSGiKSGiKSGiIiCIIQhV9aqvtgADl99gAAAABJRU5ErkJggg==')
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
+    b"lklEQVRoge2YP0oDQRSHv2ghiFqZwl5whWgluYAgnsXGzhS5g72HUJEk4BFSiYJXMGJKBQMW"
+    b"iUVmyBB23Jnd2cyA74MfYZd9w3w7b/9kQRCEf0EDmMWeRAjWYk8gFCKSGiKSGiKSGiJSE32g"
+    b"DWyp34FP8SyR9Czzu3esjy6gc2IRabvUp/SutQN85ezfBj6Lin2ukTHw4nG8LweW/YeuA7gs"
+    b"+xg4AjLg27HGN33L/AaO9YUHfAAtY+CrmkS0zPJdy7XWWWIfWFcZ1ihTNoXtBPOWelerobfr"
+    b"arGgIuZKtNT2DJiwuPg6ltqfVERsEjpDFi3WA+6ALnAONC01KxfJa6e8og5/kwGjWCJFK2FG"
+    b"t1hTrUQXuAWePcaoRcRHwpTJ219mrCAiru3kE3NMGxnwFFKkrrO3/CDNYwO4BqYhRPTZCbES"
+    b"rpkAl8w/EAKcAm9VRVYtYeYR2FMyu8BDFZEY93wzI+BMyTSAC8q9NUSV0JkCN8AmFYgtYeYV"
+    b"OC4jkdI/xEqk9hWlNCKSGiKSGiKSGiIiCIIQhV9aqvtgADl99gAAAABJRU5ErkJggg=="
+)

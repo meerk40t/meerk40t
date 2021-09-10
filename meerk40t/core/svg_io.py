@@ -255,7 +255,7 @@ class SVGWriter:
 class SVGLoader:
     @staticmethod
     def load_types():
-        yield "Scalable Vector Graphics", ("svg","svgz"), "image/svg+xml"
+        yield "Scalable Vector Graphics", ("svg", "svgz"), "image/svg+xml"
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
@@ -296,7 +296,9 @@ class SVGLoader:
         return result
 
     @staticmethod
-    def parse(svg, elements_modifier, context_node, pathname, scale_factor, reverse, elements):
+    def parse(
+        svg, elements_modifier, context_node, pathname, scale_factor, reverse, elements
+    ):
         operations_cleared = False
         if reverse:
             svg = reversed(svg)
@@ -321,7 +323,7 @@ class SVGLoader:
                 elements.append(element)
             elif isinstance(element, Shape):
                 if not element.transform.is_identity():
-                    #1 Shape Reification failed.
+                    # 1 Shape Reification failed.
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()

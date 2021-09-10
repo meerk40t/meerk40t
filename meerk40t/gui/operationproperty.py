@@ -37,7 +37,11 @@ class OperationProperty(MWindow):
         self.checkbox_default = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Default"))
         self.text_speed = wx.TextCtrl(self.main_panel, wx.ID_ANY, "20.0")
         self.text_power = wx.TextCtrl(self.main_panel, wx.ID_ANY, "1000.0")
-        self.power_label = wx.StaticBox(self.main_panel, wx.ID_ANY, _("Power (ppi)") + ("⚠️" if node.settings.power <= 100 else ""))
+        self.power_label = wx.StaticBox(
+            self.main_panel,
+            wx.ID_ANY,
+            _("Power (ppi)") + ("⚠️" if node.settings.power <= 100 else ""),
+        )
         self.raster_panel = wx.Panel(self.main_panel, wx.ID_ANY)
         self.text_raster_step = wx.TextCtrl(self.raster_panel, wx.ID_ANY, "1")
         self.text_overscan = wx.TextCtrl(self.raster_panel, wx.ID_ANY, "20")
@@ -119,7 +123,7 @@ class OperationProperty(MWindow):
         self.travel_lines = None
         self.direction_lines = None
 
-        self.context.setting(bool, 'developer_mode', False)
+        self.context.setting(bool, "developer_mode", False)
         if not self.context.developer_mode:
             # 0.6.1 freeze, drops.
             self.radio_directional_raster.Enable(False)
@@ -281,115 +285,229 @@ class OperationProperty(MWindow):
         # self.listbox_layer.SetMinSize((40, -1))
         # self.button_remove_layer.SetSize(self.button_remove_layer.GetBestSize())
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
-        self.button_layer_color.SetToolTip("\n".join((
-            _("Change/View color of this layer. When Meerk40t classifies elements to operations, this exact color is used to match elements to this operation."),
-        )))
-        self.combo_type.SetToolTip("\n".join((
-            _("Operation Type"),
-            "",
-            _("Cut & Engrave are vector operations, Raster and Image are raster operations."),
-            _("Cut and Engrave operations are essentially the same except that for a Cut operation with Cut Outer Paths last, only closed Paths in Cut operations are considered as being Outer-most."),
-        )))
-        self.checkbox_output.SetToolTip("\n".join((
-            _("Enable this operation for inclusion in Execute Job."),
-        )))
+        self.button_layer_color.SetToolTip(
+            "\n".join(
+                (
+                    _(
+                        "Change/View color of this layer. When Meerk40t classifies elements to operations, this exact color is used to match elements to this operation."
+                    ),
+                )
+            )
+        )
+        self.combo_type.SetToolTip(
+            "\n".join(
+                (
+                    _("Operation Type"),
+                    "",
+                    _(
+                        "Cut & Engrave are vector operations, Raster and Image are raster operations."
+                    ),
+                    _(
+                        "Cut and Engrave operations are essentially the same except that for a Cut operation with Cut Outer Paths last, only closed Paths in Cut operations are considered as being Outer-most."
+                    ),
+                )
+            )
+        )
+        self.checkbox_output.SetToolTip(
+            "\n".join((_("Enable this operation for inclusion in Execute Job."),))
+        )
         self.checkbox_output.SetValue(1)
-        self.checkbox_default.SetToolTip("\n".join((
-            _("When classifying elements, Default operations gain all appropriate elements not matched to an existing operation of the same colour, rather than a new operation of that color being created."),
-            _("Raster operations created automatically by Meerkat "),
-        )))
+        self.checkbox_default.SetToolTip(
+            "\n".join(
+                (
+                    _(
+                        "When classifying elements, Default operations gain all appropriate elements not matched to an existing operation of the same colour, rather than a new operation of that color being created."
+                    ),
+                    _("Raster operations created automatically by Meerkat "),
+                )
+            )
+        )
         self.checkbox_default.SetValue(0)
-        self.text_speed.SetToolTip("\n".join((
-            _("Speed at which the head moves in mm/s."),
-            _("For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction."),
-            _("For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."),
-        )))
-        self.text_power.SetToolTip("\n".join((
-            _("Pulses Per Inch - This is software created laser power control."),
-            _("1000 is always on, 500 is half power (fire every other step)."),
-            _("Values of 100 or have pulses > 1/10\" and are generally used only for dotted or perforated lines."),
-        )))
-        self.text_raster_step.SetToolTip("\n".join((
-            _("In a raster engrave, the step size is the distance between raster lines in 1/1000\" and also the number of raster dots that get combined together."),
-            _("Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster lines overlap a lot, and consequently  you can raster with steps > 1 without leaving gaps between the lines."),
-            _("The step size before you get gaps will depend on your focus and the size of your laser dot."),
-            _("Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed."),
-            _("Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed this can prevent your laser from stuttering."),
-        )))
-        self.text_overscan.SetToolTip("\n".join((
-            _("Overscan amount - BETTER EXPLANATION TO BE ADDED"),
-        )))
-        self.combo_raster_direction.SetToolTip("\n".join((
-            _("Direction to perform a raster"),
-            _("Normally you would raster in an X-direction and select Top-to-Bottom (T2B) or Bottom-to-Top (B2T).") +
-            " " +
-            _("This is because rastering in the X-direction involve moving only the laser head which is relatively low mass."),
-            _("Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not only the laser head but additionally the entire x-axis gantry assembly including the stepper motor, mirror and the gantry itself.") +
-            " " +
-            _("This total mass is much greater, acceleration therefore needs to be much slower, and allow for space at each end of the raster to reverse direction the speed has to be much slower."),
-            _("Crosshatch - DESCRIPTION needed."),
-        )))
+        self.text_speed.SetToolTip(
+            "\n".join(
+                (
+                    _("Speed at which the head moves in mm/s."),
+                    _(
+                        "For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction."
+                    ),
+                    _(
+                        "For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
+                    ),
+                )
+            )
+        )
+        self.text_power.SetToolTip(
+            "\n".join(
+                (
+                    _(
+                        "Pulses Per Inch - This is software created laser power control."
+                    ),
+                    _("1000 is always on, 500 is half power (fire every other step)."),
+                    _(
+                        'Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines.'
+                    ),
+                )
+            )
+        )
+        self.text_raster_step.SetToolTip(
+            "\n".join(
+                (
+                    _(
+                        'In a raster engrave, the step size is the distance between raster lines in 1/1000" and also the number of raster dots that get combined together.'
+                    ),
+                    _(
+                        'Because the laser dot is >> 1/1000" in diameter, at step 1 the raster lines overlap a lot, and consequently  you can raster with steps > 1 without leaving gaps between the lines.'
+                    ),
+                    _(
+                        "The step size before you get gaps will depend on your focus and the size of your laser dot."
+                    ),
+                    _(
+                        "Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed."
+                    ),
+                    _(
+                        "Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed this can prevent your laser from stuttering."
+                    ),
+                )
+            )
+        )
+        self.text_overscan.SetToolTip(
+            "\n".join((_("Overscan amount - BETTER EXPLANATION TO BE ADDED"),))
+        )
+        self.combo_raster_direction.SetToolTip(
+            "\n".join(
+                (
+                    _("Direction to perform a raster"),
+                    _(
+                        "Normally you would raster in an X-direction and select Top-to-Bottom (T2B) or Bottom-to-Top (B2T)."
+                    )
+                    + " "
+                    + _(
+                        "This is because rastering in the X-direction involve moving only the laser head which is relatively low mass."
+                    ),
+                    _(
+                        "Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not only the laser head but additionally the entire x-axis gantry assembly including the stepper motor, mirror and the gantry itself."
+                    )
+                    + " "
+                    + _(
+                        "This total mass is much greater, acceleration therefore needs to be much slower, and allow for space at each end of the raster to reverse direction the speed has to be much slower."
+                    ),
+                    _("Crosshatch - DESCRIPTION needed."),
+                )
+            )
+        )
         self.combo_raster_direction.SetSelection(0)
-        self.radio_directional_raster.SetToolTip("\n".join((
-            _("Raster on forward and backswing or only forward swing?"),
-            _("Rastering only on forward swings will double the time required to complete the raster."),
-            _("It seems doubtful that there will be significant quality benefits from rastering in one direction."),
-        )))
+        self.radio_directional_raster.SetToolTip(
+            "\n".join(
+                (
+                    _("Raster on forward and backswing or only forward swing?"),
+                    _(
+                        "Rastering only on forward swings will double the time required to complete the raster."
+                    ),
+                    _(
+                        "It seems doubtful that there will be significant quality benefits from rastering in one direction."
+                    ),
+                )
+            )
+        )
         self.radio_directional_raster.SetSelection(0)
-        self.checkbox_advanced.SetToolTip("\n".join((
-            _("Show advanced options?"),
-        )))
-        self.check_dratio_custom.SetToolTip("\n".join((
-            _("Enables the ability to modify the diagonal ratio."),
-        )))
-        self.text_dratio.SetToolTip("\n".join((
-            _("Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step. (0.261 default)"),
-        )))
-        self.checkbox_custom_accel.SetToolTip("\n".join((
-            _("Enables acceleration override"),
-        )))
-        self.slider_accel.SetToolTip("\n".join((
-            _("The m2-nano controller has four acceleration settings, and automatically selects the appropriate setting for the Cut or Raster speed."),
-            _("This setting allows you to override the automoatic selection and specify your own. The default settings are as follows:"),
-            "",
-            _("VECTOR"),
-            _("1: 0mm/s - 25.4mm/s"),
-            _("2: 25.4mm/s - 60mm/s"),
-            _("3: 60mm/s - 127mm/s"),
-            _("4: 127mm/s+"),
-            "",
-            _("RASTER"),
-            _("1: 0mm/s - 25.4mm/s"),
-            _("2: 25.4mm/s - 127mm/s"),
-            _("3: 127mm/s - 320mm/s"),
-            _("4: 320mm/s+"),
-            "",
-            _("This setting might be particularly useful if you want to raster L2R or R2L or possibly crosshatch to try to maximise speed whilst avoiding losing position."),
-        )))
-        self.check_dot_length_custom.SetToolTip("\n".join((
-            _("Enable Dot Length"),
-        )))
-        self.text_dot_length.SetToolTip("\n".join((
-            _("For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length for the laser to be on in order to change a continuous lower power burn into a series of dashes."),
-            _("When this is set, the PPI effectively becomes the ratio of dashes to gaps. For example:"),
-            _("If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" dashes and 1/2\" gaps."),
-            _("If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" dashes and 3/4\" gaps."),
-        )))
-        self.check_shift_enabled.SetToolTip("\n".join((
-            _("Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."),
-            _("This setting is an operation-by-operation equivalent to the Pulse Grouping option in Device Config."),
-            _("It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."),
-            _("As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000\", the difference should not be visible even under magnification."),
-        )))
-        self.check_passes.SetToolTip("\n".join((
-            _("Enable Operation Passes"),
-        )))
-        self.text_passes.SetToolTip("\n".join((
-            _("How many times to repeat this operation?"),
-            _("Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, creating a second identical operation with the same settings and same elements."),
-            _("The number of Operation Passes can be changed extremely easily, but you cannot change any of the other settings."),
-            _("Duplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to change the number of duplications because you need to add and delete the duplicates one by one."),
-        )))
+        self.checkbox_advanced.SetToolTip("\n".join((_("Show advanced options?"),)))
+        self.check_dratio_custom.SetToolTip(
+            "\n".join((_("Enables the ability to modify the diagonal ratio."),))
+        )
+        self.text_dratio.SetToolTip(
+            "\n".join(
+                (
+                    _(
+                        "Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step. (0.261 default)"
+                    ),
+                )
+            )
+        )
+        self.checkbox_custom_accel.SetToolTip(
+            "\n".join((_("Enables acceleration override"),))
+        )
+        self.slider_accel.SetToolTip(
+            "\n".join(
+                (
+                    _(
+                        "The m2-nano controller has four acceleration settings, and automatically selects the appropriate setting for the Cut or Raster speed."
+                    ),
+                    _(
+                        "This setting allows you to override the automoatic selection and specify your own. The default settings are as follows:"
+                    ),
+                    "",
+                    _("VECTOR"),
+                    _("1: 0mm/s - 25.4mm/s"),
+                    _("2: 25.4mm/s - 60mm/s"),
+                    _("3: 60mm/s - 127mm/s"),
+                    _("4: 127mm/s+"),
+                    "",
+                    _("RASTER"),
+                    _("1: 0mm/s - 25.4mm/s"),
+                    _("2: 25.4mm/s - 127mm/s"),
+                    _("3: 127mm/s - 320mm/s"),
+                    _("4: 320mm/s+"),
+                    "",
+                    _(
+                        "This setting might be particularly useful if you want to raster L2R or R2L or possibly crosshatch to try to maximise speed whilst avoiding losing position."
+                    ),
+                )
+            )
+        )
+        self.check_dot_length_custom.SetToolTip("\n".join((_("Enable Dot Length"),)))
+        self.text_dot_length.SetToolTip(
+            "\n".join(
+                (
+                    _(
+                        "For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length for the laser to be on in order to change a continuous lower power burn into a series of dashes."
+                    ),
+                    _(
+                        "When this is set, the PPI effectively becomes the ratio of dashes to gaps. For example:"
+                    ),
+                    _(
+                        'If you set Dot Length to 500 = 1/2", a PPI of 500 would result in 1/2" dashes and 1/2" gaps.'
+                    ),
+                    _(
+                        'If you set Dot Length to 250 = 1/4", a PPI of 250 would result in 1/4" dashes and 3/4" gaps.'
+                    ),
+                )
+            )
+        )
+        self.check_shift_enabled.SetToolTip(
+            "\n".join(
+                (
+                    _(
+                        "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
+                    ),
+                    _(
+                        "This setting is an operation-by-operation equivalent to the Pulse Grouping option in Device Config."
+                    ),
+                    _(
+                        "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
+                    ),
+                    _(
+                        'As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
+                    ),
+                )
+            )
+        )
+        self.check_passes.SetToolTip("\n".join((_("Enable Operation Passes"),)))
+        self.text_passes.SetToolTip(
+            "\n".join(
+                (
+                    _("How many times to repeat this operation?"),
+                    _(
+                        "Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, creating a second identical operation with the same settings and same elements."
+                    ),
+                    _(
+                        "The number of Operation Passes can be changed extremely easily, but you cannot change any of the other settings."
+                    ),
+                    _(
+                        "Duplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to change the number of duplications because you need to add and delete the duplicates one by one."
+                    ),
+                )
+            )
+        )
         # end wxGlade
 
     def __do_layout(self):
@@ -575,8 +693,8 @@ class OperationProperty(MWindow):
                 step = 1
             for pos in range(start, end, step):
                 # Primary Line Horizontal Raster
-                r_start.append((w*0.1, pos))
-                r_end.append((w*0.9, pos))
+                r_start.append((w * 0.1, pos))
+                r_end.append((w * 0.9, pos))
 
                 # Arrow Segment
                 if last is not None:
@@ -592,7 +710,7 @@ class OperationProperty(MWindow):
         if direction == 2 or direction == 3 or direction == 4:
             # Direction Line
             d_start.append((w * 0.05, h * 0.05))
-            d_end.append((w*0.95, h*0.05))
+            d_end.append((w * 0.95, h * 0.05))
             if direction == 2:
                 # Right to Left
                 if self.operation.settings.raster_preference_right > 0:
@@ -603,8 +721,8 @@ class OperationProperty(MWindow):
                 d_end.append((w * 0.05 + 4, h * 0.05 + 4))
                 d_start.append((w * 0.05, h * 0.05))
                 d_end.append((w * 0.05 + 4, h * 0.05 - 4))
-                start = int(w*0.9)
-                end = int(w*0.1)
+                start = int(w * 0.9)
+                end = int(w * 0.1)
                 step = -self.operation.settings.raster_step * factor
             else:
                 # Left to Right or Crosshatch
@@ -615,8 +733,8 @@ class OperationProperty(MWindow):
                 d_end.append((w * 0.95 - 4, h * 0.05 + 4))
                 d_start.append((w * 0.95, h * 0.05))
                 d_end.append((w * 0.95 - 4, h * 0.05 - 4))
-                start = int(w*0.1)
-                end = int(w*0.9)
+                start = int(w * 0.1)
+                end = int(w * 0.9)
                 step = self.operation.settings.raster_step * factor
             if step == 0:
                 step = 1
@@ -874,7 +992,9 @@ class OperationProperty(MWindow):
         self.refresh_display()
         self.context.signal("element_property_reload", self.operation)
 
-    def on_slider_bottom(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_slider_bottom(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         self.raster_lines = None
         self.travel_lines = None
         self.operation.settings.raster_preference_bottom = (
@@ -883,7 +1003,9 @@ class OperationProperty(MWindow):
         self.refresh_display()
         self.context.signal("element_property_reload", self.operation)
 
-    def on_check_advanced(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_advanced(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_advanced.GetValue()
         self.advanced_panel.Show(on)
         self.operation.settings.advanced = bool(on)
@@ -905,7 +1027,9 @@ class OperationProperty(MWindow):
             return
         self.context.signal("element_property_reload", self.operation)
 
-    def on_check_acceleration(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_acceleration(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_custom_accel.GetValue()
         self.slider_accel.Enable(on)
         self.operation.settings.acceleration_custom = bool(on)
@@ -915,20 +1039,26 @@ class OperationProperty(MWindow):
         self.operation.settings.acceleration = self.slider_accel.GetValue()
         self.context.signal("element_property_reload", self.operation)
 
-    def on_check_dot_length(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_dot_length(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dot_length_custom.GetValue()
         self.text_dot_length.Enable(on)
         self.operation.settings.dot_length_custom = bool(on)
         self.context.signal("element_property_reload", self.operation)
 
-    def on_text_dot_length(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dot_length(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.dot_length = int(self.text_dot_length.GetValue())
         except ValueError:
             return
         self.context.signal("element_property_reload", self.operation)
 
-    def on_check_group_pulses(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_group_pulses(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         self.operation.settings.shift_enabled = bool(
             self.check_shift_enabled.GetValue()
         )

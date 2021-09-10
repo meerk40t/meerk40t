@@ -105,12 +105,10 @@ def run():
         return
     python_version_required = (3, 5)
     if sys.version_info < python_version_required:
-        print("MeerK40t %s requires Python %d.%d or greater." %
-              (
-                    MEERK40T_VERSION,
-                    python_version_required[0],
-                    python_version_required[1])
-              )
+        print(
+            "MeerK40t %s requires Python %d.%d or greater."
+            % (MEERK40T_VERSION, python_version_required[0], python_version_required[1])
+        )
         return
 
     if args.profile is not None:

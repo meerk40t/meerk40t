@@ -337,7 +337,7 @@ class Simulation(MWindow, Job):
         # Slider is now pseudo logarithmic in scale varying from 1% to 5,000%.
 
         value = self.slider_playbackspeed.GetValue()
-        value = int((10.0 ** (value//90)) * (1.0 + float(value % 90) / 10.0))
+        value = int((10.0 ** (value // 90)) * (1.0 + float(value % 90) / 10.0))
         self.interval = 0.1 * 100.0 / float(value)
 
         self.text_playback_speed.SetValue("%d%%" % value)
@@ -366,6 +366,7 @@ class SimulationWidget(Widget):
     The simulation widget is responsible for rendering the cutcode to the scene. This should be
     done such that both progress of 0 and 1 render nothing and items begin to draw at 2.
     """
+
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
         self.renderer = LaserRender(self.scene.context)
@@ -385,6 +386,7 @@ class SimulationTravelWidget(Widget):
     The simulation Travel Widget is responsible for the background of dotted lines and arrows
     within the simulation scene.
     """
+
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
         self.sim = sim
@@ -445,6 +447,7 @@ class SimReticleWidget(Widget):
     The position at 0 should be 0,0. At 1 the start position. And at all other positions
     the end of the current cut object.
     """
+
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
         self.sim = sim
@@ -452,7 +455,11 @@ class SimReticleWidget(Widget):
     def process_draw(self, gc):
         x = 0
         y = 0
-        if self.sim.progress > 0 and self.sim.cutcode is not None and len(self.sim.cutcode):
+        if (
+            self.sim.progress > 0
+            and self.sim.cutcode is not None
+            and len(self.sim.cutcode)
+        ):
             if self.sim.progress != self.sim.max:
                 pos = self.sim.cutcode[self.sim.progress - 1].start()
             else:

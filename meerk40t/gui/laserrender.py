@@ -244,8 +244,12 @@ class LaserRender:
                 matrix = Matrix()
                 matrix.post_translate(x, y)  # Add cutcode offset.
 
-                matrix.post_scale(cut.step)  # Scale up the image by the step for simulation
-                matrix.post_translate(image_matrix.value_trans_x(), image_matrix.value_trans_y())  # Adjust image xy
+                matrix.post_scale(
+                    cut.step
+                )  # Scale up the image by the step for simulation
+                matrix.post_translate(
+                    image_matrix.value_trans_x(), image_matrix.value_trans_y()
+                )  # Adjust image xy
                 if matrix is not None and not matrix.is_identity():
                     gc.ConcatTransform(
                         wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
@@ -262,7 +266,9 @@ class LaserRender:
                 if cache is None:
                     cut.c_width, cut.c_height = image.image.size
                     try:
-                        cut.cache = self.make_thumbnail(image.image, maximum=1000, dewhite=True)
+                        cut.cache = self.make_thumbnail(
+                            image.image, maximum=1000, dewhite=True
+                        )
                     except (MemoryError, RuntimeError):
                         cut.cache = None
                     cut.cache_id = id(image.image)
@@ -271,7 +277,9 @@ class LaserRender:
                 else:
                     gc.SetBrush(wx.RED_BRUSH)
                     gc.DrawRectangle(0, 0, cut.c_width, cut.c_height)
-                    gc.DrawBitmap(icons8_image_50.GetBitmap(), 0, 0, cut.c_width, cut.c_height)
+                    gc.DrawBitmap(
+                        icons8_image_50.GetBitmap(), 0, 0, cut.c_width, cut.c_height
+                    )
                 gc.PopState()
             last_point = end
         if p is not None:
