@@ -139,7 +139,7 @@ class ImageProperty(MWindow):
 
     def on_spin_step(self, event=None):  # wxGlade: ElementProperty.<event_handler>
         try:
-            current_step = self.element.values["raster_step"]
+            current_step = int(self.element.values["raster_step"])
         except KeyError:
             current_step = 1
         new_step = self.spin_step_size.GetValue()
