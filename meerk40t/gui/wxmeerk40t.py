@@ -9,12 +9,13 @@ import traceback
 
 from meerk40t.gui.panes.jog import Jog
 from meerk40t.gui.panes.position import PositionPanel
-from .groupproperties import GroupProperty
-from .panes.camerapanel import CameraPanel
 
 from ..core.cutcode import CutCode
+from ..main import MEERK40T_VERSION
 from .file.fileoutput import FileOutput
+from .groupproperties import GroupProperty
 from .mwindow import MWindow
+from .panes.camerapanel import CameraPanel
 from .panes.consolepanel import ConsolePanel
 from .panes.devicespanel import DevicesPanel
 from .panes.dragpanel import Drag
@@ -36,7 +37,6 @@ from .scene.scenewidgets import (
 )
 from .scene.toolwidgets import DrawTool, RectTool, ToolContainer
 from .simulation import Simulation
-from ..main import MEERK40T_VERSION
 
 try:
     from math import tau
@@ -99,6 +99,7 @@ from .icons import (
     icons8_emergency_stop_button_50,
     icons8_fantasy_50,
     icons8_file_20,
+    icons8_gas_industry_50,
     icons8_group_objects_20,
     icons8_home_filled_50,
     icons8_keyboard_50,
@@ -115,7 +116,6 @@ from .icons import (
     icons8_scatter_plot_20,
     icons8_system_task_20,
     icons8_vector_20,
-    icons8_gas_industry_50,
 )
 from .imageproperty import ImageProperty
 from .jobspooler import JobSpooler

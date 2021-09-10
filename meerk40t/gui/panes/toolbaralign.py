@@ -2,15 +2,14 @@ import wx
 from wx import aui
 
 from ..icons import (
+    icons8_align_bottom_50,
     icons8_align_left_50,
     icons8_align_right_50,
     icons8_align_top_50,
-    icons8_align_bottom_50,
     icons_centerize,
-    icons_evenspace_vert,
     icons_evenspace_horiz,
+    icons_evenspace_vert,
 )
-
 
 ID_ALIGN_LEFT = wx.NewId()
 ID_ALIGN_RIGHT = wx.NewId()

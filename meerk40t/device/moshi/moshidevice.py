@@ -1,16 +1,6 @@
 import threading
 import time
 
-from .moshiblob import (
-    swizzle_table,
-    MoshiBlob,
-    MOSHI_ESTOP,
-    MOSHI_LASER,
-    MOSHI_FREEMOTOR,
-    MOSHI_EPILOGUE,
-    MOSHI_PROLOGUE,
-    MOSHI_READ,
-)
 from ...core.drivers import Driver
 from ...core.plotplanner import PlotPlanner
 from ...kernel import (
@@ -34,11 +24,21 @@ from ..basedevice import (
     PLOT_DIRECTION,
     PLOT_FINISH,
     PLOT_JOG,
-    PLOT_RAPID,
-    PLOT_SETTING,
     PLOT_LEFT_UPPER,
+    PLOT_RAPID,
     PLOT_RIGHT_LOWER,
+    PLOT_SETTING,
     PLOT_START,
+)
+from .moshiblob import (
+    MOSHI_EPILOGUE,
+    MOSHI_ESTOP,
+    MOSHI_FREEMOTOR,
+    MOSHI_LASER,
+    MOSHI_PROLOGUE,
+    MOSHI_READ,
+    MoshiBlob,
+    swizzle_table,
 )
 
 MILS_IN_MM = 39.3701

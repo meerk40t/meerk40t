@@ -2,15 +2,6 @@ import functools
 import re
 from copy import copy
 
-from .cutcode import (
-    CubicCut,
-    CutCode,
-    CutGroup,
-    LaserSettings,
-    LineCut,
-    QuadCut,
-    RasterCut,
-)
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
@@ -49,6 +40,15 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Viewbox,
+)
+from .cutcode import (
+    CubicCut,
+    CutCode,
+    CutGroup,
+    LaserSettings,
+    LineCut,
+    QuadCut,
+    RasterCut,
 )
 
 

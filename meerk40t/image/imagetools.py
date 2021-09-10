@@ -3,7 +3,7 @@ from copy import copy
 from math import ceil
 from os import path as ospath
 
-from ..core.planner import needs_actualization, make_actual
+from ..core.planner import make_actual, needs_actualization
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 
 MILS_IN_MM = 39.3701

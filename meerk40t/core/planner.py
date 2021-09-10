@@ -1,7 +1,7 @@
 from copy import copy
 from math import ceil
 
-from ..core.cutcode import CutCode, CutObject, CutGroup
+from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,

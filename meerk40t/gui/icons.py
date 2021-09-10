@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-from wx import Bitmap, IMAGE_ALPHA_OPAQUE
+from wx import IMAGE_ALPHA_OPAQUE, Bitmap
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
 DARKMODE = False

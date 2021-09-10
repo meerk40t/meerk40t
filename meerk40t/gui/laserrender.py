@@ -3,8 +3,6 @@ from math import ceil, floor, sqrt
 import wx
 from PIL import Image
 
-from .icons import icons8_image_50
-
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
 from ..core.elements import Node
 from ..svgelements import (
@@ -22,6 +20,7 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
+from .icons import icons8_image_50
 from .zmatrix import ZMatrix
 
 DRAW_MODE_FILLS = 0x000001

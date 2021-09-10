@@ -1,7 +1,7 @@
 import wx
 
-from .icons import icons8_image_50
 from ..svgelements import Matrix
+from .icons import icons8_image_50
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
