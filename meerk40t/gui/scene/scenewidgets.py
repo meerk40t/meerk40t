@@ -107,6 +107,9 @@ class SelectionWidget(Widget):
             self.top = bounds[1]
             self.right = bounds[2]
             self.bottom = bounds[3]
+
+            # Adjust boundaries to ensure a minimum height / width so that
+            # dots and horizontal / vertical lines get a move icon
             width = self.right - self.left
             height = self.bottom - self.top
             matrix = self.parent.matrix
@@ -121,6 +124,7 @@ class SelectionWidget(Widget):
                 height = (ymin - height) / 2
                 self.top -= height
                 self.bottom += height
+
             self.clear()
             self.scene.context.signal("refresh_scene", 0)
             return HITCHAIN_HIT
