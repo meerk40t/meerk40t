@@ -4064,7 +4064,10 @@ class Elemental(Modifier):
                 m = Matrix("translate(%s, %s)" % (dx, dy))
                 for e in pasted:
                     e *= m
-            self.add_elems(pasted)
+            group = self.elem_branch.add(type="group", label="Group")
+            for p in pasted:
+                group.add(p, type="elem")
+            self.set_emphasis([group])
             return "elements", pasted
 
         @context.console_command(
