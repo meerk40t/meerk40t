@@ -4334,9 +4334,12 @@ class wxMeerK40t(wx.App, Module):
         except Exception:
             pass
 
-        wx.Locale.AddCatalogLookupPathPrefix(
-            "locale"
-        )  # Default Locale, prepended. Check this first.
+        wx.Locale.AddCatalogLookupPathPrefix("locale")
+
+        # Default Locale, prepended. Check this first.
+        basepath = os.path.abspath(os.path.dirname(sys.argv[0]))
+        localedir = os.path.join(basepath, "locale")
+        wx.Locale.AddCatalogLookupPathPrefix(localedir)
 
         kernel.translation = wx.GetTranslation
         kernel.set_config(wx.FileConfig(kernel.profile))
