@@ -71,9 +71,8 @@ label_truncate_re = re.compile("((:|\().*)")
 group_simplify_re = re.compile("(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE)
 subgroup_simplify_re = re.compile("\[[^][]*\]", re.IGNORECASE)
 # I deally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
-# but until then element descriptions are shown in mils and integer values should be sufficient for user to see
-# element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\d)(\.\d*))", re.IGNORECASE)
+# but until then element descriptions are shown in mils and 2 decimal places (for opacity) should be sufficient for user to see
+element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
 # image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
 image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\d)(\.\d*))", re.IGNORECASE)
 
@@ -524,7 +523,7 @@ class Node:
 
         if element is not None:
             desc = str(element)
-            if isinstance(element,Path):
+            if isinstance(element, Path):
                 desc = element_simplify_re.sub("", desc)
                 if len(desc) > 100:
                     desc = desc[:100] + "…"
@@ -534,7 +533,7 @@ class Node:
                 if element.fill is not None:
                     values.append("%s='%s'" % ("fill", element.fill))
                 if element.stroke_width is not None and element.stroke_width != 1.0:
-                    values.append("%s=%s" % ("stroke-width", str(element.stroke_width)))
+                    values.append("%s=%s" % ("stroke-width", str(round(element.stroke_width, 2))))
                 if not element.transform.is_identity():
                     values.append("%s=%s" % ("transform", repr(element.transform)))
                 if element.id is not None:
@@ -5443,50 +5442,94 @@ class Elemental(Modifier):
 
         SVGImage is classified as Image.
         Dots are a special type of Path
-        Text is classified as Raster
-        All other SVGElement types are Shapes
+        All other SVGElement types are Shapes / Text
 
         Paths consisting of a move followed by a single stright line segment are never Raster (since no width) -
             testing for more complex stright line elements is too difficult
-        Stroke/Fill of same colour is a Raster
-        Stroke/Fill of different colors are both Cut/Engrave and Raster
-        No Stroke/Fill is a Raster
-        Reddish Stroke is a Cut.
-        Black Stroke is a Raster.
-        All other stroke colors are Engrave
-        White Engrave operations created by classify will be created disabled.
-        Cut/Engraves elements are attenpted to match to a matching Operation of same absolute color, creating it if necessary.
+        Shapes/Text with Fill are raster by default
+        Shapes/Text with Black strokes are raster by default regardless of fill
+        All other Shapes/Text with no fill are vector by default
 
-        Rasters are classified to Raster Operations differently based on whether
-            1. all existing rasters have the same color (default being a different colour to any other); or
-            2. there are existing raster ops of different colors
+        All Shapes/Text are attempted to match to Cut/Engrave/Raster operations of exact same color (regardless of default raster or vector)
 
-         1. All existing raster ops are of the same color (or there are no existing raster ops):
-            In this case all raster operations will be assigned either to all existing raster ops or to a new Default Raster operation we create
-            in exactly the same wasy as vector Cut/Engrave operations.
+        If not matched by colour then...
 
-         2. There are at least 2 raster ops of different colours:
-            In this case we are going to try to match raster elements to raster operations by colour. But this is complicated because
-            we need to keep overlapping raster elements together.
-            So in this case we classify vector and special elements in a first pass, and then analyse and classify raster operations in a special second pass.
-            Because we have to analyse all raster elements together, we cannot add elements one by one.
+        VECTOR ELEMENTS
+        Elements which are vector by default are classified based on colour:
+            1. Redish strokes are considered cuts
+            2. Other colours are considered engraves
+        If a default Cut/Engrave operation exists then the element is classified to it.
+        Otherwise a new operation of matching color and type is created.
+        New White Engrave operations are disabled by default.
 
-            In the second pass, we do the following:
-             1. Group rasters by whether they have overlapping bounding boxes. The order of rasters MUST be maintained within these groups.
-                After this, if rasters are in separate groups then they are in entirely separate areas of the burn which do not overlap.
-             2. For each group of raster objects, determine which operations are of the same colour as at least one element in the group.
-                All the raster elements of the group will be added to those operations.
-             3. If there are any raster elements that are not classified in this way then:
-                 A) If there are Default Raster Operation(s), then the remaining raster elements are allocated to those.
-                 B) Otherwise, if there are any non-default raster operations that are empty and those raster operations are of the same colour,
-                    then the remaining raster operations will be allocated to those Raster Operations.
-                 C) Otherwise, a new Default Raster operation will be created and remaining Raster elements will be added to that.
+        RASTER ELEMENTS
+        Raster elements are handled differently depending on whether existing Raster operations are simple or complex:
+            1. Simple - all existing raster ops have the same color (default being a different colour to any other); or
+            2. Complex - there are existing raster ops of two different colors (default being a different colour to any other)
 
-        The current code does not do the following:
-        a)  Handle rasters in second or later files which overlap elements from earlier files which have already been classified into operations.
+        Either way, because rastering of overlapping elements depends on the sequence of the elements
+        (think of the difference between a white fill above or below a black fill)
+        it is essential that raster elements are added to operations in the same order that they exist
+        in the file/elements branch.
+
+
+        SIMPLE RASTER CLASSIFICATION
+        All existing raster ops are of the same color (or there are no existing raster ops)
+
+        In this case all raster operations will be assigned either to:
+            A. all existing raster ops (if there are any); or
+            B. to a new Default Raster operation we create in a similar way as vector elements
+
+        Because raster elements are all added to the same operations in pass 1 and without being grouped,
+        retaining the sequence of elements happens by default, and no special handling is needed.
+
+        (Note: Not true for later classification of single elements due to e.g. colour change. See below.)
+
+        COMPLEX RASTER CLASSIFICATION
+        There are existing raster ops of at least 2 different colours.
+
+        In this case we are going to try to match raster elements to raster operations by colour.
+        But this is complicated becausewe need to keep overlapping raster elements together.
+
+        So in this case we classify vector and special elements in a first pass,
+        and then analyse and classify raster operations in a special second pass.
+
+        Because we have to analyse all raster elements together, when you load a new file
+        classify has to be called once with all elements in the file rather than on an element-by-element basis.
+
+        In the second pass, we do the following:
+
+        1.  Group rasters by whether they have overlapping bounding boxes.
+            After this, if rasters are in separate groups then they are in entirely separate areas of the burn which do not overlap.
+
+            Note: It is difficult to ensure that elements are retained in the sequence when doing iterative grouping.
+            To avoid the complexities, before adding to the raster operations, we sort back into the original element sequence.
+
+        2.  For each group of raster objects, determine whether there are existing Raster operations
+            of the same colour as at least one element in the group.
+            If any element in a group matches the color of an operation, then
+            all the raster elements of the group will be added to that operation.
+
+        3.  If there are any raster elements that are not classified in this way, then:
+            A)  If there are Default Raster Operation(s), then the remaining raster elements are allocated to those.
+            B)  Otherwise, if there are any non-default raster operations that are empty and those raster operations are all of the same colour,
+                then the remaining raster operations will be allocated to those Raster operations.
+            C)  Otherwise, a new Default Raster operation will be created and remaining Raster elements will be added to that.
+
+        The current code does NOT do the following:
+
+        a.  Handle rasters in second or later files which overlap elements from earlier files which have already been classified into operations.
             It is assumed that if they happen to overlap that is coincidence. After all the files could have been added in a different order and
             then would have a different result.
-        b)  Handle any differently the reclassifications of single elements which have e.g. had their colour changed. (This needs to be checked.)
+        b.  Handle the reclassifications of single elements which have e.g. had their colour changed any differently.
+            (The multitude of potential use cases are many and varied, and difficult or impossible comprehensively to predict.)
+
+        It may be that we will need to:
+
+        1.  Use the total list of Shape / Text elements loaded in the Elements Branch sequence to keep elements in the correct sequence in an operation.
+        2.  Handle cases where the user resequences elements by ensuring that a drag and drop of elements in the Elements branch of the tree
+            are reflected in the sequence in Operations and vice versa. This could, however, get messy.
+
 
         :param elements: list of elements to classify.
         :param operations: operations list to classify into.
@@ -5509,12 +5552,15 @@ class Elemental(Modifier):
         vector_ops = []
         raster_ops = []
         special_ops = []
+        new_ops = []
         default_cut_ops = []
         default_engrave_ops = []
         default_raster_ops = []
         rasters_one_pass = None
 
         for op in operations:
+            if not isinstance(op, LaserOperation):
+                continue
             if op.default:
                 if op.operation == "Cut":
                     default_cut_ops.append(op)
@@ -5553,127 +5599,186 @@ class Elemental(Modifier):
             is_straight_line = isStraightLine(element)
 
 
-            add_vector = False    # For everything except shapes
-            add_non_vector = True # Text, Images and Dots
+            # Check for default vector operations
+            element_vector = False
+            # print(element.stroke, element.fill, element.fill.alpha, is_straight_line, is_dot)
             if isinstance(element, (Shape, SVGText)) and not is_dot:
-                if element_color.rgb == 0x000000: # Black treated as a raster for user convenience
-                    add_vector = False
-                    add_non_vector = True
-                else:
-                    add_vector = element.stroke is not None and element.stroke.rgb is not None
-                    add_non_vector = (
-                        element.fill is not None
-                        and element.fill.rgb is not None  # Filled
-                        and not is_straight_line          # Cannot raster a straight line segment
-                        and element.fill.alpha !=0        # Not Transparent
+                # Vector if not filled
+                if (
+                    element.fill is None
+                    or element.fill.rgb is None
+                    or (element.fill.alpha is not None and element.fill.alpha == 0)
+                    or is_straight_line
+                ):
+                    element_vector = True
+
+                # Not vector if black stroke or stroke same color as fill
+                if (
+                    element_vector
+                    and not is_straight_line
+                    and element.stroke is not None
+                    and element.stroke.rgb is not None
+                    and (
+                        # Grey
+                        (
+                            element.stroke.red == element.stroke.green
+                            and element.stroke.red == element.stroke.blue
+                        )
+                        # Same color as fill
+                        or (
+                            element.fill is not None
+                            and element.fill.rgb is not None
+                            and element.fill.alpha is not None
+                            and element.fill.alpha > 0
+                            and element.fill.rgb != element.stroke.rgb
+                        )
                     )
-                    if add_vector and add_non_vector and element.stroke.rgb == element.fill.rgb: # Stroke same as fill - raster-only
-                        add_vector = False
+                ):
+                    element_vector = False
 
-            if not (add_vector or add_non_vector): # No stroke and (straight line or transparent fill)
-                continue
-
-            # First classify to operations of exact color
-            if add_vector:
+            element_added = False
+            if is_dot or isinstance(element, SVGImage):
+                for op in special_ops:
+                    if (
+                        (is_dot and op.operation == "Dots")
+                        or (isinstance(element, SVGImage) and op.operation == "Image")
+                    ):
+                        op.add(element, type="opnode", pos=element_pos)
+                        element_added = True
+                        break # May only classify in one Dots or Image operation and indeed in one operation
+            elif element_vector or rasters_one_pass:
+                for op in raster_ops:
+                    # Raster ops are never new
+                    if (
+                        op.color is not None
+                        and op.color.rgb == element_color.rgb
+                        and op not in default_raster_ops
+                    ):
+                        op.add(element, type="opnode", pos=element_pos)
+                        element_added = True
                 for op in vector_ops:
                     if (
-                        op.color.rgb == element_color.rgb
+                        op.color is not None
+                        and op.color.rgb == element_color.rgb
                         and op not in default_cut_ops
                         and op not in default_engrave_ops
                     ):
-                        op.add(element, type="opnode", pos=element_pos)
-                        add_vector = False
-            if add_non_vector:
-                if is_dot or isinstance(element, SVGImage):
-                    for op in special_ops:
-                        if (
-                            (is_dot and op.operation == "Dots")
-                            or (isinstance(element, SVGImage) and op.operation == "Image")
-                        ):
+                        # Vector ops can be new - only add a raster if not new
+                        if op not in new_ops or element_vector:
                             op.add(element, type="opnode", pos=element_pos)
-                            add_non_vector = False
-                            break # May only classify in one Dots or Image operation and indeed in one operation
-                elif raster_ops and rasters_one_pass:
-                    for op in raster_ops:
-                        op.add(element, type="opnode", pos=element_pos)
-                        add_non_vector = False
+                            element_added = True
 
-            # Check for default vector operations
-            if add_vector:
+            if element_added:
+                continue
+
+            if element_vector:
                 is_cut = Color.distance_sq("red", element_color) <= 18825
                 if is_cut and default_cut_ops:
                     for op in default_cut_ops:
                         op.add(element, type="opnode", pos=element_pos)
-                    add_vector = False
+                    element_added = True
                 elif not is_cut and default_engrave_ops:
                     for op in default_engrave_ops:
                         op.add(element, type="opnode", pos=element_pos)
-                    add_vector = False
+                    element_added = True
+            elif rasters_one_pass and isinstance(element, (Shape, SVGText)) and not is_dot and raster_ops:
+                for op in raster_ops:
+                    op.add(element, type="opnode", pos=element_pos)
+                element_added = True
 
-            # Need to add a vector operation to classify into
-            if add_vector:
-                if is_cut: # This will be initialised because criteria are same as above
-                    op = LaserOperation(operation="Cut", color=abs(element_color))
-                else:
-                    op = LaserOperation(operation="Engrave", color=abs(element_color))
-                    if element_color == Color("white"):
-                        op.settings.laser_enabled = False
-                vector_ops.append(op)
-                add_op_function(op)
-                # element cannot be added to op before op is added to operations - otherwise opnode is not created.
-                op.add(element, type="opnode", pos=element_pos)
+            if element_added:
+                continue
 
-            # Need to add a special or raster operation to classify into
-            if add_non_vector:
-                if is_dot:
-                    op = LaserOperation(operation="Dots", default=True)
-                    special_ops.append(op)
-                elif isinstance(element, SVGImage):
-                    op = LaserOperation(operation="Image", default=True)
-                    special_ops.append(op)
+            # Need to add a new operation to classify into
+            op = None
+            if is_dot:
+                op = LaserOperation(operation="Dots", default=True)
+                special_ops.append(op)
+            elif isinstance(element, SVGImage):
+                op = LaserOperation(operation="Image", default=True)
+                special_ops.append(op)
+            elif isinstance(element, (Shape, SVGText)):
+                if element_vector:
+                    if is_cut: # This will be initialised because criteria are same as above
+                        op = LaserOperation(operation="Cut", color=abs(element_color))
+                    else:
+                        op = LaserOperation(operation="Engrave", color=abs(element_color))
+                        if element_color == Color("white"):
+                            op.output = False
+                    vector_ops.append(op)
                 elif rasters_one_pass:
                     op = LaserOperation(operation="Raster", color="Transparent", default=True)
                     default_raster_ops.append(op)
                     raster_ops.append(op)
                 else:
                     raster_elements.append(element)
-                    continue
+            if op:
+                new_ops.append(op)
                 add_op_function(op)
                 # element cannot be added to op before op is added to operations - otherwise opnode is not created.
                 op.add(element, type="opnode", pos=element_pos)
+                continue
 
         # End loop "for element in elements"
 
-        if not raster_elements:
+        if rasters_one_pass:
             return
 
         # Now deal with two-pass raster elements
         # It is ESSENTIAL that elements are added to operations in the same order as original.
         # The easiest way to ensure this is to create groups using a copy of raster_elements and
         # then ensure that groups have elements in the same order as in raster_elements.
+
+        # Debugging print statements have been left in as comments as this code can
+        # be complex to debug and even print statements can be difficult to craft
+
+        # This is a list of groups, where each group is a list of tuples, each an element and its bbox.
+        # Initial list has a separate group for each element.
         raster_groups = [[(e, e.bbox())] for e in raster_elements]
-        for i, g1 in reversed_enumerate(raster_groups[:-1]):
-            for g2 in reversed(raster_groups[i + 1:]):
+        # print("initial", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
+
+        # We are using old fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
+        for i in range(len(raster_groups) - 2, -1, -1):
+            g1 = raster_groups[i]
+            for j in range(len(raster_groups) - 1, i, -1):
+                g2 = raster_groups[j]
                 if self.group_elements_overlap(g1, g2):
+                    # print("g1", list(map(lambda e: e[0].id,g1)))
+                    # print("g2", list(map(lambda e: e[0].id,g2)))
+
+                    # if elements in the group overlap
+                    # add the element tuples from group 2 to group 1
                     g1.extend(g2)
-                    raster_groups.remove(g2)
+                    # and remove group 2
+                    del raster_groups[j]
+
+                    # print("g1+g2", list(map(lambda e: e[0].id,g1)))
+                    # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
 
         # Remove bbox and add element colour from groups
+        # Change list to groups which are a list of tuples, each tuple being element and its classification color
         raster_groups = list(map(lambda g: tuple(((e[0], self.element_classify_color(e[0])) for e in g)), raster_groups))
 
+        # print("grouped", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
+
         # Add groups to operations of matching colour (and remove from list)
+        # groups added to at least one existing raster op will not be added to default raster ops.
         groups_added =[]
         for op in raster_ops:
-            if op not in default_raster_ops:
+            if op not in default_raster_ops and op.color is not None and op.color.rgb is not None:
+                # Make a list of elements to add (same tupes)
                 elements_to_add = []
                 for group in raster_groups:
                     for e in group:
-                        if e[1].rgb == op.color.rgb:
+                        if e[1].hex == op.color.hex:
+                            # An element in this group matches op color
+                            # So add elements to list
                             elements_to_add.extend(group)
                             if group not in groups_added:
                                 groups_added.append(group)
-                            break
+                            break  # to next group
                 if elements_to_add:
+                    # Create simple list of elements sorted by original element order
                     elements_to_add = sorted((e[0] for e in elements_to_add), key=raster_elements.index)
                     for element in elements_to_add:
                         op.add(element, type="opnode", pos=element_pos)
@@ -5685,7 +5790,7 @@ class Elemental(Modifier):
         if not raster_groups: # added all groups
             return
 
-        #  Because groups don't matter further simplify back to an element_list
+        #  Because groups don't matter further simplify back to a simple element_list
         elements_to_add = []
         for g in raster_groups:
             elements_to_add.extend(g)
@@ -5701,9 +5806,13 @@ class Elemental(Modifier):
             default_raster_ops = [op for op in raster_ops if len(op.children) == 0]
             color = False
             for op in default_raster_ops:
+                if op.color is None or op.color.rgb is None:
+                    op_color = "None"
+                else:
+                    op_color = op.color.rgb
                 if color is False:
-                    color = op.color.rgb
-                elif color != op.color.rgb:
+                    color = op_color
+                elif color != op_color:
                     default_raster_ops = []
                     break
         if not default_raster_ops:
