@@ -40,3 +40,10 @@ The Kernel serves as the central code that binds modules together within Meerk40
 
 # Kernel Server
 The Server governs interactions within TCP and UDP sockets.
+
+# Main
+The main file deals with the CLI for Meerk40t as well as loading and processing of different plugins, both internal and external.
+
+# svgelements
+The svgelements file is a directly included version of the svgelements project ( https://github.com/meerk40t/svgelements ) which deals with the high fidelity parsing of SVG data and geometric rendering. It provides a number of robust objects like `Angle`, `Length`, `Color`, `Point` and `Matrix` and these are used throughout MeerK40t. The Paths are used as the elements for vector shapes. Images are the regular values for the images within MeerK40t. Many commands accept Angles and Lengths as real values. The Viewbox functions is used to do things like center the camera image in the window. These are fundamental objects within MeerK40t.
+
