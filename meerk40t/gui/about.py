@@ -8,7 +8,7 @@ _ = wx.GetTranslation
 
 class About(MWindow):
     def __init__(self, *args, **kwargs):
-        super().__init__(699, 442, *args, **kwargs)
+        super().__init__(603, 500, *args, **kwargs)
 
         self.bitmap_button_1 = wx.BitmapButton(
             self, wx.ID_ANY, icon_meerk40t.GetBitmap()
@@ -85,13 +85,15 @@ class About(MWindow):
             _("Thanks go out to...\n")
             + _("* Li Huiyu for their controller. \n")
             + _("* Scorch for lighting our path.\n")
-            + _("* Alois Zingl for his accurate Bresenham Plotting algorithms.\n")
+            + _(
+                "* Alois Zingl for his brilliant Bresenham curve plotting algorithms.\n"
+            )
             + "\n"
             + _(
-                "* @joerlane for his hardware wizardry investigating how the m2-nano works.\n"
+                "* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
             )
             + _(
-                "* All the MeerKittens, past and present, great and small, who contributed to code.\n"
+                "* All the MeerKittens, Sophist-UK,  tiger12506, frogmaster, inspectionsbybob. \n"
             )
             + _(
                 "* Beta testers and anyone who reported issues that helped us improve things.\n"
@@ -107,11 +109,11 @@ class About(MWindow):
                 "* Icons8 (https://icons8.com/) for their great icons used throughout the project.\n"
             )
             + _(
-                "* The works of countless developers who created other software that we use internally.\n"
+                "* The countless developers who created other software that we use internally.\n"
             )
             + _("* Regebro for his svg.path module which inspired svgelements.\n")
             + _("* The SVG Working Group.\n")
-            + _("* Hackers (in the positive sense)."),
+            + _("* Hackers and tinkerers."),
         )
         meerk40t_about_text.SetFont(
             wx.Font(

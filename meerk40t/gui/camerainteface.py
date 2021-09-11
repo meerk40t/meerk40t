@@ -198,7 +198,7 @@ class CameraInterface(MWindow, Job):
         self.SetTitle(_("CameraInterface %d") % self.index)
         self.button_update.SetToolTip(_("Update Image"))
         self.button_update.SetSize(self.button_update.GetBestSize())
-        self.button_export.SetToolTip(_("Export Snapsnot"))
+        self.button_export.SetToolTip(_("Export Snapshot"))
         self.button_export.SetSize(self.button_export.GetBestSize())
         self.button_reconnect.SetToolTip(_("Reconnect Camera"))
         self.button_reconnect.SetSize(self.button_reconnect.GetBestSize())
