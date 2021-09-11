@@ -18,6 +18,10 @@ The vector monotonizer takes a series of segments and sorts them according to th
 
 The Eulerian Fill performs creates a graph made out of edges and a series of horizontal rungs. It then solves for an optimal walk that visits all of the horizontal rungs and as many of the edge nodes as needed to perform this walk. This should at most walk the entire edge plus 50% for scaffolding.
 
+## Point Finder
+
+Point Finder is intended as an accelleration structure for solving the nearest point algorithm.
+
 ## RasterPlotter
 
 Rasterplotter deals with the conversion of pixels into discrete laser commands, performing a `Raster` operation.
