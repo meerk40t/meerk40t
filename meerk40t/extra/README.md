@@ -10,15 +10,15 @@ Many of these resemble addons that are built-in to meerk40t.
 
 ## Embroider
 
-Embroider permits console calls to "embroider" which performs an Eulerian Fill operation on particular shapes.
+Embroider permits console calls to "embroider" which performs an Eulerian Fill operation on selected closed shapes.
 
 ## Inkscape
 
-Inkscape permits and refers to calls to Inkscape. Some operations with the Commandline of Inkscape are reasonable operations and calling them to perform those functions can be helpful.
+Inkscape permits and refers to calls to Inkscape. Some operations with the Commandline of Inkscape are useful operations and calling them to perform those functions can be helpful in some automated contexts.
 
 ## PathOptimize
 
-Path Optimize are the older path-based optimizations routines from 0.6.x that worked on Path objects themselves. With the switch to cutcode this is less needed.
+Path Optimize are the older path-based optimizations routines from 0.6.x that worked on Path objects themselves. With the switch to `CutCode` this is less needed, but still provided.
 
 ## Vectrace
 
