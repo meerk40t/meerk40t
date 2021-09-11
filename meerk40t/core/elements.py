@@ -1012,6 +1012,12 @@ class LaserOperation(Node):
                 parts.append("±%s" % self.settings.overscan)
             else:
                 parts.append("±%d" % self.settings.overscan)
+        if (
+            self.operation in ("Cut", "Engrave", "Raster")
+            and not self.default
+            and self.color is not None
+        ):
+            parts.append("%s" % self.color.hex)
         if self.settings.dratio_custom:
             parts.append("d:%g" % self.settings.dratio)
         if self.settings.acceleration_custom:
@@ -5772,7 +5778,18 @@ class Elemental(Modifier):
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
                         break  # May only classify in one Dots or Image operation and indeed in one operation
-            elif element_vector or rasters_one_pass:
+            elif element_vector:
+                for op in vector_ops:
+                    if (
+                        op.color is not None
+                        and op.color.rgb == element_color.rgb
+                        and op not in default_cut_ops
+                        and op not in default_engrave_ops
+                    ):
+                        # Vector ops can be new - only add a raster if not new
+                        op.add(element, type="opnode", pos=element_pos)
+                        element_added = True
+            elif rasters_one_pass:
                 for op in raster_ops:
                     # Raster ops are never new
                     if (
@@ -5782,17 +5799,6 @@ class Elemental(Modifier):
                     ):
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
-                for op in vector_ops:
-                    if (
-                        op.color is not None
-                        and op.color.rgb == element_color.rgb
-                        and op not in default_cut_ops
-                        and op not in default_engrave_ops
-                    ):
-                        # Vector ops can be new - only add a raster if not new
-                        if op not in new_ops or element_vector:
-                            op.add(element, type="opnode", pos=element_pos)
-                            element_added = True
 
             if element_added:
                 continue
