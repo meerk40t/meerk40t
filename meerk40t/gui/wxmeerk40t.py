@@ -49,7 +49,7 @@ import wx
 import wx.aui as aui
 import wx.ribbon as RB
 
-from ..core.elements import LaserOperation
+from ..core.elements import LaserOperation, isDot
 from ..device.lasercommandconstants import (
     COMMAND_FUNCTION,
     COMMAND_HOME,
@@ -3541,6 +3541,13 @@ class ShadowTree:
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
             elif isinstance(data_object, (Shape, SVGText)):
+                if isDot(data_object):
+                    if data_object.stroke is not None and data_object.stroke.rgb is not None:
+                        c = data_object.stroke
+                    else:
+                        c = Color("black")
+                    self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
+                    return
                 image = self.renderer.make_raster(
                     node, data_object.bbox(), width=20, height=20, bitmap=True
                 )
