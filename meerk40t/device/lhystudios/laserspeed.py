@@ -316,7 +316,7 @@ class LaserSpeed:
         step_value = 0
         diagonal = 0
         if (end + 1) - start >= 9:
-            step_value = int(speed_code[start : start + 4])
+            step_value = int(speed_code[start : start + 3])
             diagonal = LaserSpeed.decode_16bit(speed_code[start + 3 : end])
         return code_value, accel, step_value, diagonal, raster_step, suffix_c
 
