@@ -4701,7 +4701,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Passes"))
         @self.tree_operation(_("Add 1 pass"), node_type="op", help="")
         def add_1_pass(node, **kwgs):
-            add_n_passes(node, 1, **kwgs)
+            add_n_passes(node, copies=1, **kwgs)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_conditional(
@@ -4733,7 +4733,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_operation(_("Duplicate elements 1 time"), node_type="op", help="")
         def dup_1_copy(node, **kwgs):
-            dup_n_copies(node, 1, **kwgs)
+            dup_n_copies(node, copies=1, **kwgs)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_conditional(
