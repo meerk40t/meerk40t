@@ -4793,7 +4793,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
         def duplicate_element_1(node, **kwgs):
-            duplicate_element_n(node, 1, **kwgs)
+            duplicate_element_n(node, copies=1, **kwgs)
 
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
