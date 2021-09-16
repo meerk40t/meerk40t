@@ -4513,7 +4513,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Clone reference"))
         @self.tree_operation(_("Make 1 copy"), node_type="opnode", help="")
         def clone_single_element_op(node, **kwgs):
-            clone_element_op(node, 1, **kwgs)
+            clone_element_op(node, copies=1, **kwgs)
 
         @self.tree_submenu(_("Clone reference"))
         @self.tree_iterate("copies", 2, 10)
