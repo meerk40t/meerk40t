@@ -64,7 +64,7 @@ jobs:
       id: vars
       run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=tag::${GITHUB_REF/refs\/tags\//}"
+          echo "::set-output name=tag::$(git tag --points-at)"
     - name: Check outputs
       run: |
           echo ${{ steps.vars.outputs.sha_short }}
