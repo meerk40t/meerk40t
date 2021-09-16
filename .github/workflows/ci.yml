@@ -62,10 +62,13 @@ jobs:
 
     - name: Set outputs
       id: vars
-      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+      run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=tag::${GITHUB_REF/refs\/tags\//}"
     - name: Check outputs
-      run: echo ${{ steps.vars.outputs.sha_short }}
-
+      run: |
+          echo ${{ steps.vars.outputs.sha_short }}
+          echo ${{ steps.vars.outputs.tag }}
     - name: Set up Python 3.7
       uses: actions/setup-python@v2
       with:
@@ -84,7 +87,7 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
-        python3 ./waf distclean all
+        python3 ./waf distclean all --target-arch=32bit
         cd ..
         python3 setup.py install
         cd ..
@@ -105,8 +108,8 @@ jobs:
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-          tag_name: release-${{ steps.vars.outputs.sha_short }}
-          release_name: Release ${{ steps.vars.outputs.sha_short }}
+          tag_name: release-${{ steps.vars.outputs.tag }}
+          release_name: ${{ steps.vars.outputs.tag }}
           draft: false
           prerelease: false
 
