@@ -69,6 +69,7 @@ jobs:
       id: vars
       if: ${{ steps.prevars.outputs.tag == '' }}
       run: |
+          echo "::set-output name=sha_short::${{ steps.prevars.outputs.sha_short }}"
           echo "::set-output name=tag::${{ steps.prevars.outputs.sha_short }}"
     - name: Check outputs
       run: |
