@@ -65,6 +65,10 @@ jobs:
       run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=tag::$(git tag --points-at)"
+    - name: Fix outputs
+      if: ${{ steps.vars.outputs.tag == '' }}
+      run: |
+          echo "::set-output name=tag::${{ steps.vars.outputs.sha_short }}"
     - name: Check outputs
       run: |
           echo ${{ steps.vars.outputs.sha_short }}
