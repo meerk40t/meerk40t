@@ -61,14 +61,15 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Set outputs
-      id: vars
+      id: prevars
       run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=tag::$(git tag --points-at)"
     - name: Fix outputs
-      if: ${{ steps.vars.outputs.tag == '' }}
+      id: vars
+      if: ${{ steps.prevars.outputs.tag == '' }}
       run: |
-          echo "::set-output name=tag::${{ steps.vars.outputs.sha_short }}"
+          echo "::set-output name=tag::${{ steps.prevars.outputs.sha_short }}"
     - name: Check outputs
       run: |
           echo ${{ steps.vars.outputs.sha_short }}
