@@ -832,6 +832,8 @@ class ResamplePanel(wx.Panel):
             step = 1
         boundary_points = []
         box = image.getbbox()
+        if box is None:
+            box = (0, 0, image.width, image.height)
         top_left = matrix.point_in_matrix_space([box[0], box[1]])
         top_right = matrix.point_in_matrix_space([box[2], box[1]])
         bottom_left = matrix.point_in_matrix_space([box[0], box[3]])
