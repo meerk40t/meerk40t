@@ -874,6 +874,18 @@ class MeerK40t(wx.Frame, Module):
             dlg.Destroy()
 
     def on_usb_running(self, value):
+        if self.usb_running != value:
+            if sys.platform == 'win32':
+                try:
+                    import ctypes
+                    if value:
+                        # ES_CONTINUOUS, 0x80000000, # ES_SYSTEM_REQUIRED = 0x00000001
+                        ctypes.windll.kernel32.SetThreadExecutionState(0x80000001)
+                    else:
+                        # ES_CONTINUOUS, 0x80000000
+                        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+                except AttributeError:
+                    pass
         self.usb_running = value
 
     def on_usb_state_text(self, value):
