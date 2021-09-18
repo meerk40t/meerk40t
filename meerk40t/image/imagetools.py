@@ -1417,7 +1417,11 @@ class RasterScripts:
         from PIL import Image
 
         boundary_points = []
-        box = image.getbbox()
+        box = None
+        try:
+            box = image.convert("L").point(lambda e: 255 - e).getbbox()
+        except ValueError:
+            pass
         if box is None:
             box = (0, 0, image.width, image.height)
         top_left = matrix.point_in_matrix_space([box[0], box[1]])
@@ -1459,8 +1463,11 @@ class RasterScripts:
                 resample=Image.BICUBIC,
             )
         matrix.reset()
-
-        box = image.getbbox()
+        box = None
+        try:
+            box = image.convert("L").point(lambda e: 255 - e).getbbox()
+        except ValueError:
+            pass
         if box is None:
             return image, matrix
         width = box[2] - box[0]
