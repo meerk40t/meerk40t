@@ -1192,7 +1192,7 @@ def actualize(image, matrix, step_level=1):
         matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
         matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
         matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
-        matrix.point_in_matrix_space([box[2], box[3]])  # Bottom-right
+        matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
     ]
     xs = [e[0] for e in boundary_points]
     ys = [e[1] for e in boundary_points]
@@ -1212,7 +1212,9 @@ def actualize(image, matrix, step_level=1):
         matrix.reset()
         matrix.post_translate(-tx, -ty)
         matrix.post_scale(step_scale, step_scale)
-    if (matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0) and image.mode != "RGBA":
+    if (
+        matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0
+    ) and image.mode != "RGBA":
         # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
         image = image.convert("RGBA")
     image = image.transform(
@@ -1566,9 +1568,7 @@ class RasterScripts:
             elif name == "resample":
                 try:
                     if op["enable"]:
-                        image, matrix = actualize(
-                            image, matrix, step_level=op["step"]
-                        )
+                        image, matrix = actualize(image, matrix, step_level=op["step"])
                         step = op["step"]
                         if alpha_mask is not None:
                             alpha_mask = image.getchannel("A")

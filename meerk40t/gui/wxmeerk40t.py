@@ -3542,7 +3542,10 @@ class ShadowTree:
                 tree.SetItemImage(item, image=image_id)
             elif isinstance(data_object, (Shape, SVGText)):
                 if isDot(data_object):
-                    if data_object.stroke is not None and data_object.stroke.rgb is not None:
+                    if (
+                        data_object.stroke is not None
+                        and data_object.stroke.rgb is not None
+                    ):
                         c = data_object.stroke
                     else:
                         c = Color("black")

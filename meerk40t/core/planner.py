@@ -896,6 +896,7 @@ def make_actual(image_element, step_level=None):
     if not isinstance(image_element, SVGImage):
         return
     from ..image.imagetools import actualize
+
     if step_level is None:
         # If we are not told the step amount either draw it from the object or set it to default.
         if "raster_step" in image_element.values:
@@ -903,12 +904,16 @@ def make_actual(image_element, step_level=None):
         else:
             step_level = 1.0
     image_element.image, image_element.transform = actualize(
-        image_element.image,
-        image_element.transform,
-        step_level=step_level
+        image_element.image, image_element.transform, step_level=step_level
     )
-    image_element.image_width, image_element.image_height = image_element.image.width, image_element.image.height
-    image_element.width, image_element.height = image_element.image_width, image_element.image_height
+    image_element.image_width, image_element.image_height = (
+        image_element.image.width,
+        image_element.image.height,
+    )
+    image_element.width, image_element.height = (
+        image_element.image_width,
+        image_element.image_height,
+    )
     image_element.cache = None
 
 
