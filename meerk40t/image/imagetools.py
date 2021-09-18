@@ -1227,13 +1227,12 @@ def actualize(image, matrix, step_level=1):
         box = image.convert("L").point(lambda e: 255 - e).getbbox()
     except ValueError:
         pass
-    if box is None:
-        return image, matrix
-    width = box[2] - box[0]
-    height = box[3] - box[1]
-    if width != element_width or height != element_height:
-        image = image.crop(box)
-        matrix.post_translate(box[0], box[1])
+    if box is not None:
+        width = box[2] - box[0]
+        height = box[3] - box[1]
+        if width != element_width or height != element_height:
+            image = image.crop(box)
+            matrix.post_translate(box[0], box[1])
     # step level requires the new actualized matrix be scaled up.
     matrix.post_scale(step_level, step_level)
     matrix.post_translate(tx, ty)
