@@ -3530,7 +3530,10 @@ class ShadowTree:
         drawmode = self.context.draw_mode
         if drawmode & DRAW_MODE_ICONS != 0:
             return
-        item = node.item
+        try:
+            item = node.item
+        except AttributeError:
+            return  # Node.item can be none if launched from ExecuteJob where the nodes are not part of the tree.
         data_object = node.object
         tree = root.wxtree
         if icon is None:
