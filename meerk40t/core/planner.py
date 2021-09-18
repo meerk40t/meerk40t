@@ -448,9 +448,9 @@ class Planner(Modifier):
                 self._default_plan = command[4:]
                 self.context.signal("plan", self._default_plan, None)
 
+            cutplan = self.get_or_make_plan(self._default_plan)
             if data is not None:
                 # If ops data is in data, then we copy that and move on to next step.
-                cutplan = self.get_or_make_plan(self._default_plan)
                 for c in data:
                     if not c.output:
                         continue
@@ -467,24 +467,21 @@ class Planner(Modifier):
                     cutplan.plan.append(copy_c)
                 self.context.signal("plan", self._default_plan, 1)
                 return "plan", cutplan
-
-            data = self.get_or_make_plan(self._default_plan)
             if remainder is None:
-                plan, original, commands, name = data
                 channel(_("----------"))
                 channel(_("Plan:"))
-                for i, plan_name in enumerate(self._plan):
+                for i, plan_name in enumerate(cutplan.name):
                     channel("%d: %s" % (i, plan_name))
                 channel(_("----------"))
                 channel(_("Plan %s:" % self._default_plan))
-                for i, op_name in enumerate(plan):
+                for i, op_name in enumerate(cutplan.plan):
                     channel("%d: %s" % (i, op_name))
                 channel(_("Commands %s:" % self._default_plan))
-                for i, cmd_name in enumerate(commands):
+                for i, cmd_name in enumerate(cutplan.commands):
                     channel("%d: %s" % (i, cmd_name))
                 channel(_("----------"))
 
-            return "plan", data
+            return "plan", cutplan
 
         @self.context.console_command(
             "list",
