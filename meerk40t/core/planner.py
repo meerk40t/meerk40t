@@ -924,7 +924,7 @@ def make_actual(image_element, step_level=None):
         matrix.post_translate(-tx, -ty)
         matrix.post_scale(step_scale, step_scale)
     if (
-        matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0
+        matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0
     ) and pil_image.mode != "RGBA":
         # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
         pil_image = pil_image.convert("RGBA")
@@ -940,8 +940,12 @@ def make_actual(image_element, step_level=None):
         element_height,
     )
     matrix.reset()
+    box = None
+    try:
+        box = pil_image.convert("L").point(lambda e: 255 - e).getbbox()
+    except ValueError:
+        pass
 
-    box = pil_image.getbbox()
     if box is None:
         matrix.post_scale(step_level, step_level)
         matrix.post_translate(tx, ty)
