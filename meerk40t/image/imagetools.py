@@ -1168,6 +1168,17 @@ def dither(image, method="Floyd-Steinberg"):
 
 
 def actualize(image, matrix, step_level=1):
+    """
+    Makes PIL image actual in that it manipulates the pixels to actually exist
+    rather than simply apply the transform on the image to give the resulting image.
+    Since our goal is to raster the images real pixels this is required.
+
+    SVG matrices are defined as follows.
+    [a c e]
+    [b d f]
+
+    Pil requires a, c, e, b, d, f accordingly.
+    """
     from PIL import Image
 
     boundary_points = []
