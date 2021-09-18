@@ -1194,11 +1194,14 @@ def actualize(image, matrix, step_level=1):
         matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
         matrix.point_in_matrix_space([box[2], box[3]])  # Bottom-right
     ]
-    xmin = min([e[0] for e in boundary_points])
-    ymin = min([e[1] for e in boundary_points])
-    xmax = max([e[0] for e in boundary_points])
-    ymax = max([e[1] for e in boundary_points])
-    bbox = xmin, ymin, xmax, ymax
+    xs = [e[0] for e in boundary_points]
+    ys = [e[1] for e in boundary_points]
+    bbox = (
+        min(xs),  # xmin
+        min(ys),  # ymin
+        max(xs),  # xmax
+        max(ys)  # ymax
+    )
     # bbox here is expanded matrix size of box.
     step_scale = 1 / float(step_level)
     element_width = int(ceil(bbox[2] - bbox[0]) * step_scale)
