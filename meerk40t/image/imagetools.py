@@ -1444,24 +1444,22 @@ class RasterScripts:
         ty = bbox[1]
         matrix.post_translate(-tx, -ty)
         matrix.post_scale(step_scale, step_scale)
-        matrix.inverse()
-        if matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0:
+        try:
+            matrix.inverse()
+        except ZeroDivisionError:
+            # Rare crash if matrix is malformed and cannot invert.
+            matrix.reset()
+            matrix.post_translate(-tx, -ty)
+            matrix.post_scale(step_scale, step_scale)
+        if (matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0) and image.mode != "RGBA":
             # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-            if image.mode != "RGBA":
-                image = image.convert("RGBA")
-            image = image.transform(
-                (element_width, element_height),
-                Image.AFFINE,
-                (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-                resample=Image.BICUBIC,
-            )
-        else:
-            image = image.transform(
-                (element_width, element_height),
-                Image.AFFINE,
-                (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-                resample=Image.BICUBIC,
-            )
+            image = image.convert("RGBA")
+        image = image.transform(
+            (element_width, element_height),
+            Image.AFFINE,
+            (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+            resample=Image.BICUBIC,
+        )
         matrix.reset()
         box = None
         try:
