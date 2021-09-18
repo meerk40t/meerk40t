@@ -901,8 +901,7 @@ def make_actual(image_element, step_level=None):
     image_element.cache = None
     matrix = image_element.transform
     bbox = Group.union_bbox([image_element])
-    element_width = int(ceil(bbox[2] - bbox[0]))
-    element_height = int(ceil(bbox[3] - bbox[1]))
+    # bbox here is expanded matrix size of box.
     if step_level is None:
         # If we are not told the step amount either draw it from the object or set it to default.
         if "raster_step" in image_element.values:
@@ -910,6 +909,8 @@ def make_actual(image_element, step_level=None):
         else:
             step_level = 1.0
     step_scale = 1 / float(step_level)
+    element_width = int(ceil(bbox[2] - bbox[0]) * step_scale)
+    element_height = int(ceil(bbox[3] - bbox[1]) * step_scale)
     tx = bbox[0]
     ty = bbox[1]
     matrix.post_translate(-tx, -ty)
