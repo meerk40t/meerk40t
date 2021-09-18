@@ -909,6 +909,7 @@ def make_actual(image_element, step_level=None):
     )
     image_element.image_width, image_element.image_height = image_element.image.width, image_element.image.height
     image_element.cache = None
+    image_element.node.altered()
 
 
 def origin():
