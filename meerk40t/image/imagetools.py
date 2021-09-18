@@ -1424,6 +1424,7 @@ class RasterScripts:
             pass
         if box is None:
             box = (0, 0, image.width, image.height)
+        # Box here is pixel bounds not matrix bounded.
         top_left = matrix.point_in_matrix_space([box[0], box[1]])
         top_right = matrix.point_in_matrix_space([box[2], box[1]])
         bottom_left = matrix.point_in_matrix_space([box[0], box[3]])
@@ -1437,9 +1438,10 @@ class RasterScripts:
         xmax = max([e[0] for e in boundary_points])
         ymax = max([e[1] for e in boundary_points])
         bbox = xmin, ymin, xmax, ymax
-        element_width = int(ceil(bbox[2] - bbox[0]))
-        element_height = int(ceil(bbox[3] - bbox[1]))
+        # bbox here is expanded matrix size of box.
         step_scale = 1 / float(step_level)
+        element_width = int(ceil(bbox[2] - bbox[0]) * step_scale)
+        element_height = int(ceil(bbox[3] - bbox[1]) * step_scale)
         tx = bbox[0]
         ty = bbox[1]
         matrix.post_translate(-tx, -ty)
