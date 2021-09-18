@@ -895,68 +895,26 @@ def make_actual(image_element, step_level=None):
     """
     if not isinstance(image_element, SVGImage):
         return
-    from PIL import Image
+    from ..image.imagetools import actualize
 
-    pil_image = image_element.image
-    image_element.cache = None
-    matrix = image_element.transform
-    bbox = Group.union_bbox([image_element])
-    element_width = int(ceil(bbox[2] - bbox[0]))
-    element_height = int(ceil(bbox[3] - bbox[1]))
     if step_level is None:
         # If we are not told the step amount either draw it from the object or set it to default.
         if "raster_step" in image_element.values:
             step_level = float(image_element.values["raster_step"])
         else:
             step_level = 1.0
-    step_scale = 1 / float(step_level)
-    tx = bbox[0]
-    ty = bbox[1]
-    matrix.post_translate(-tx, -ty)
-    matrix.post_scale(
-        step_scale, step_scale
-    )  # step level requires the actual image be scaled down.
-    try:
-        matrix.inverse()
-    except ZeroDivisionError:
-        # Rare crash if matrix is malformed and cannot invert.
-        matrix.reset()
-        matrix.post_translate(-tx, -ty)
-        matrix.post_scale(step_scale, step_scale)
-    if (
-        matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0
-    ) and pil_image.mode != "RGBA":
-        # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-        pil_image = pil_image.convert("RGBA")
-
-    pil_image = pil_image.transform(
-        (element_width, element_height),
-        Image.AFFINE,
-        (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-        resample=Image.BICUBIC,
+    image_element.image, image_element.transform = actualize(
+        image_element.image, image_element.transform, step_level=step_level
     )
     image_element.image_width, image_element.image_height = (
-        element_width,
-        element_height,
+        image_element.image.width,
+        image_element.image.height,
     )
-    matrix.reset()
-
-    box = pil_image.getbbox()
-    if box is None:
-        matrix.post_scale(step_level, step_level)
-        matrix.post_translate(tx, ty)
-        image_element.image = pil_image
-        return
-    width = box[2] - box[0]
-    height = box[3] - box[1]
-    if width != element_width and height != element_height:
-        image_element.image_width, image_element.image_height = (width, height)
-        pil_image = pil_image.crop(box)
-        matrix.post_translate(box[0], box[1])
-    # step level requires the new actualized matrix be scaled up.
-    matrix.post_scale(step_level, step_level)
-    matrix.post_translate(tx, ty)
-    image_element.image = pil_image
+    image_element.width, image_element.height = (
+        image_element.image_width,
+        image_element.image_height,
+    )
+    image_element.cache = None
 
 
 def origin():

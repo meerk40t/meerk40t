@@ -3347,7 +3347,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_label(node)
+        self.update_label(node, force=True)
         try:
             c = node.color
             self.set_color(node, c)
@@ -3542,7 +3542,10 @@ class ShadowTree:
                 tree.SetItemImage(item, image=image_id)
             elif isinstance(data_object, (Shape, SVGText)):
                 if isDot(data_object):
-                    if data_object.stroke is not None and data_object.stroke.rgb is not None:
+                    if (
+                        data_object.stroke is not None
+                        and data_object.stroke.rgb is not None
+                    ):
                         c = data_object.stroke
                     else:
                         c = Color("black")

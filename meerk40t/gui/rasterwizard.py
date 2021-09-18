@@ -822,16 +822,26 @@ class ResamplePanel(wx.Panel):
             )
 
     def refresh_dims(self):
+        """
+        This routine is responsible for setting the width and height values in the resample
+        pane of the raster wizard.
+
+        The size of that value is the result matrix and the image size.
+        Reduced by any amount of truncated edge.
+        """
         if self.svg_image is None:
             return
         image = self.svg_image.image
         matrix = Matrix(self.svg_image.transform)
-        try:
-            step = self.svg_image.values["raster_step"]
-        except KeyError:
-            step = 1
         boundary_points = []
-        box = image.getbbox()
+        box = None
+        try:
+            rev = image.convert("L").point(lambda e: 255 - e)
+            box = rev.getbbox()
+        except TypeError:
+            pass
+        if box is None:
+            box = (0, 0, image.width, image.height)
         top_left = matrix.point_in_matrix_space([box[0], box[1]])
         top_right = matrix.point_in_matrix_space([box[2], box[1]])
         bottom_left = matrix.point_in_matrix_space([box[0], box[3]])
@@ -846,37 +856,24 @@ class ResamplePanel(wx.Panel):
         ymax = max([e[1] for e in boundary_points])
         bbox = xmin, ymin, xmax, ymax
 
-        # tx = bbox[0]
-        # ty = bbox[1]
-        px_width = int(ceil(bbox[2] - bbox[0]))
-        px_height = int(ceil(bbox[3] - bbox[1]))
-
-        px_width *= step
-        px_height *= step
+        width = int(ceil(bbox[2] - bbox[0]))
+        height = int(ceil(bbox[3] - bbox[1]))
 
         units = self.op["units"]
-        width = str(px_width)
-        height = str(px_height)
         if units == 1:
-            width = "100"
-            height = "100"
+            width = 100
+            height = 100
         elif units == 2:
-            px_width /= 1000.0
-            px_height /= 1000.0
-            width = str(px_width)
-            height = str(px_height)
+            width /= 1000.0
+            height /= 1000.0
         elif units == 3:
-            px_width /= MILS_IN_MM
-            px_height /= MILS_IN_MM
-            width = str(px_width)
-            height = str(px_height)
+            width /= MILS_IN_MM
+            height /= MILS_IN_MM
         elif units == 4:
-            px_width /= 10 * MILS_IN_MM
-            px_height /= 10 * MILS_IN_MM
-            width = str(px_width)
-            height = str(px_height)
-        self.text_resample_height.SetValue(width)
-        self.text_resample_width.SetValue(height)
+            width /= 10 * MILS_IN_MM
+            height /= 10 * MILS_IN_MM
+        self.text_resample_height.SetValue(str(width))
+        self.text_resample_width.SetValue(str(height))
 
     def on_check_enable_resample(
         self, event=None
