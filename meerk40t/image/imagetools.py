@@ -1196,12 +1196,7 @@ def actualize(image, matrix, step_level=1):
     ]
     xs = [e[0] for e in boundary_points]
     ys = [e[1] for e in boundary_points]
-    bbox = (
-        min(xs),  # xmin
-        min(ys),  # ymin
-        max(xs),  # xmax
-        max(ys)  # ymax
-    )
+    bbox = min(xs), min(ys), max(xs), max(ys)
     # bbox here is expanded matrix size of box.
     step_scale = 1 / float(step_level)
     element_width = int(ceil(bbox[2] - bbox[0]) * step_scale)
