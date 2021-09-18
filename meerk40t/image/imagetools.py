@@ -1181,7 +1181,6 @@ def actualize(image, matrix, step_level=1):
     """
     from PIL import Image
 
-    boundary_points = []
     box = None
     try:
         box = image.convert("L").point(lambda e: 255 - e).getbbox()
@@ -1189,15 +1188,12 @@ def actualize(image, matrix, step_level=1):
         pass
     if box is None:
         box = (0, 0, image.width, image.height)
-    # Box here is pixel bounds not matrix bounded.
-    top_left = matrix.point_in_matrix_space([box[0], box[1]])
-    top_right = matrix.point_in_matrix_space([box[2], box[1]])
-    bottom_left = matrix.point_in_matrix_space([box[0], box[3]])
-    bottom_right = matrix.point_in_matrix_space([box[2], box[3]])
-    boundary_points.append(top_left)
-    boundary_points.append(top_right)
-    boundary_points.append(bottom_left)
-    boundary_points.append(bottom_right)
+    boundary_points = [
+        matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
+        matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
+        matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
+        matrix.point_in_matrix_space([box[2], box[3]])  # Bottom-right
+    ]
     xmin = min([e[0] for e in boundary_points])
     ymin = min([e[1] for e in boundary_points])
     xmax = max([e[0] for e in boundary_points])
