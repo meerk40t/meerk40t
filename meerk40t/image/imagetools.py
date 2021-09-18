@@ -1199,8 +1199,8 @@ def actualize(image, matrix, step_level=1):
     bbox = min(xs), min(ys), max(xs), max(ys)
     # bbox here is expanded matrix size of box.
     step_scale = 1 / float(step_level)
-    element_width = int(ceil(bbox[2] - bbox[0]) * step_scale)
-    element_height = int(ceil(bbox[3] - bbox[1]) * step_scale)
+    element_width = int(ceil((bbox[2] - bbox[0]) * step_scale))
+    element_height = int(ceil((bbox[3] - bbox[1]) * step_scale))
     tx = bbox[0]
     ty = bbox[1]
     matrix.post_translate(-tx, -ty)
@@ -1231,7 +1231,7 @@ def actualize(image, matrix, step_level=1):
         return image, matrix
     width = box[2] - box[0]
     height = box[3] - box[1]
-    if width != element_width and height != element_height:
+    if width != element_width or height != element_height:
         image = image.crop(box)
         matrix.post_translate(box[0], box[1])
     # step level requires the new actualized matrix be scaled up.
