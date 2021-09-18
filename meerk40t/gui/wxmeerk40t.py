@@ -3347,7 +3347,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_label(node)
+        self.update_label(node, force=True)
         try:
             c = node.color
             self.set_color(node, c)
