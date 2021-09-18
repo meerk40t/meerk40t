@@ -1167,6 +1167,74 @@ def dither(image, method="Floyd-Steinberg"):
     return diff
 
 
+def actualize(image, matrix, step_level=1):
+    from PIL import Image
+
+    boundary_points = []
+    box = None
+    try:
+        box = image.convert("L").point(lambda e: 255 - e).getbbox()
+    except ValueError:
+        pass
+    if box is None:
+        box = (0, 0, image.width, image.height)
+    # Box here is pixel bounds not matrix bounded.
+    top_left = matrix.point_in_matrix_space([box[0], box[1]])
+    top_right = matrix.point_in_matrix_space([box[2], box[1]])
+    bottom_left = matrix.point_in_matrix_space([box[0], box[3]])
+    bottom_right = matrix.point_in_matrix_space([box[2], box[3]])
+    boundary_points.append(top_left)
+    boundary_points.append(top_right)
+    boundary_points.append(bottom_left)
+    boundary_points.append(bottom_right)
+    xmin = min([e[0] for e in boundary_points])
+    ymin = min([e[1] for e in boundary_points])
+    xmax = max([e[0] for e in boundary_points])
+    ymax = max([e[1] for e in boundary_points])
+    bbox = xmin, ymin, xmax, ymax
+    # bbox here is expanded matrix size of box.
+    step_scale = 1 / float(step_level)
+    element_width = int(ceil(bbox[2] - bbox[0]) * step_scale)
+    element_height = int(ceil(bbox[3] - bbox[1]) * step_scale)
+    tx = bbox[0]
+    ty = bbox[1]
+    matrix.post_translate(-tx, -ty)
+    matrix.post_scale(step_scale, step_scale)
+    try:
+        matrix.inverse()
+    except ZeroDivisionError:
+        # Rare crash if matrix is malformed and cannot invert.
+        matrix.reset()
+        matrix.post_translate(-tx, -ty)
+        matrix.post_scale(step_scale, step_scale)
+    if (matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0) and image.mode != "RGBA":
+        # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
+        image = image.convert("RGBA")
+    image = image.transform(
+        (element_width, element_height),
+        Image.AFFINE,
+        (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+        resample=Image.BICUBIC,
+    )
+    matrix.reset()
+    box = None
+    try:
+        box = image.convert("L").point(lambda e: 255 - e).getbbox()
+    except ValueError:
+        pass
+    if box is None:
+        return image, matrix
+    width = box[2] - box[0]
+    height = box[3] - box[1]
+    if width != element_width and height != element_height:
+        image = image.crop(box)
+        matrix.post_translate(box[0], box[1])
+    # step level requires the new actualized matrix be scaled up.
+    matrix.post_scale(step_level, step_level)
+    matrix.post_translate(tx, ty)
+    return image, matrix
+
+
 class RasterScripts:
     """
     This module serves as the raster scripting routine. It registers raster-scripts and
@@ -1413,74 +1481,6 @@ class RasterScripts:
         return ops
 
     @staticmethod
-    def actualize(image, matrix, step_level=1):
-        from PIL import Image
-
-        boundary_points = []
-        box = None
-        try:
-            box = image.convert("L").point(lambda e: 255 - e).getbbox()
-        except ValueError:
-            pass
-        if box is None:
-            box = (0, 0, image.width, image.height)
-        # Box here is pixel bounds not matrix bounded.
-        top_left = matrix.point_in_matrix_space([box[0], box[1]])
-        top_right = matrix.point_in_matrix_space([box[2], box[1]])
-        bottom_left = matrix.point_in_matrix_space([box[0], box[3]])
-        bottom_right = matrix.point_in_matrix_space([box[2], box[3]])
-        boundary_points.append(top_left)
-        boundary_points.append(top_right)
-        boundary_points.append(bottom_left)
-        boundary_points.append(bottom_right)
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        bbox = xmin, ymin, xmax, ymax
-        # bbox here is expanded matrix size of box.
-        step_scale = 1 / float(step_level)
-        element_width = int(ceil(bbox[2] - bbox[0]) * step_scale)
-        element_height = int(ceil(bbox[3] - bbox[1]) * step_scale)
-        tx = bbox[0]
-        ty = bbox[1]
-        matrix.post_translate(-tx, -ty)
-        matrix.post_scale(step_scale, step_scale)
-        try:
-            matrix.inverse()
-        except ZeroDivisionError:
-            # Rare crash if matrix is malformed and cannot invert.
-            matrix.reset()
-            matrix.post_translate(-tx, -ty)
-            matrix.post_scale(step_scale, step_scale)
-        if (matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0) and image.mode != "RGBA":
-            # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-            image = image.convert("RGBA")
-        image = image.transform(
-            (element_width, element_height),
-            Image.AFFINE,
-            (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-            resample=Image.BICUBIC,
-        )
-        matrix.reset()
-        box = None
-        try:
-            box = image.convert("L").point(lambda e: 255 - e).getbbox()
-        except ValueError:
-            pass
-        if box is None:
-            return image, matrix
-        width = box[2] - box[0]
-        height = box[3] - box[1]
-        if width != element_width and height != element_height:
-            image = image.crop(box)
-            matrix.post_translate(box[0], box[1])
-        # step level requires the new actualized matrix be scaled up.
-        matrix.post_scale(step_level, step_level)
-        matrix.post_translate(tx, ty)
-        return image, matrix
-
-    @staticmethod
     def halftone(image, sample=10, scale=3.0, angle=22.0, oversample=2, black=False):
         from PIL import Image, ImageDraw, ImageStat
 
@@ -1562,7 +1562,7 @@ class RasterScripts:
             elif name == "resample":
                 try:
                     if op["enable"]:
-                        image, matrix = RasterScripts.actualize(
+                        image, matrix = actualize(
                             image, matrix, step_level=op["step"]
                         )
                         step = op["step"]
