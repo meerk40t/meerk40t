@@ -13,7 +13,7 @@ _ = wx.GetTranslation
 
 class Settings(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(490, 311, *args, **kwds)
+        super().__init__(490, 331, *args, **kwds)
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
@@ -134,6 +134,14 @@ class Settings(MWindow):
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
                 "classify_reverse",
+                False,
+            ),
+            (
+                _("Legacy Classify"),
+                _(
+                    "Use the legacy classification algorithm rather than the modern classification algorithm."
+                ),
+                "legacy_classification",
                 False,
             ),
             (
