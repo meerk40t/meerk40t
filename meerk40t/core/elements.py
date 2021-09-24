@@ -1715,6 +1715,7 @@ class Elemental(Modifier):
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         context.root.setting(bool, "classify_reverse", False)
+        context.root.setting(bool, "legacy_classification", False)
 
         # ==========
         # OPERATION BASE
@@ -5540,6 +5541,79 @@ class Elemental(Modifier):
         self._emphasized_bounds = None
         self.set_emphasis(None)
 
+    def classify_legacy(self, elements, operations=None, add_op_function=None):
+        """
+        Classify does the placement of elements within operations.
+        "Image" is the default for images.
+        Typically,
+        If element strokes are red they get classed as cut operations
+        If they are otherwise they get classed as engrave.
+        However, this differs based on the ops in question.
+        :param elements: list of elements to classify.
+        :param operations: operations list to classify into.
+        :param add_op_function: function to add a new operation, because of a lack of classification options.
+        :return:
+        """
+        if elements is None:
+            return
+        reverse = self.context.classify_reverse
+        if reverse:
+            elements = reversed(elements)
+        if operations is None:
+            operations = list(self.ops())
+        if add_op_function is None:
+            add_op_function = self.add_op
+        for element in elements:
+            was_classified = False
+            if hasattr(element, "operation"):
+                add_op_function(element)
+                continue
+            if element is None:
+                continue
+            for op in operations:
+                if op.operation == "Raster":
+                    if element.stroke is not None and op.color == abs(element.stroke):
+                        op.add(element, type="opnode")
+                        was_classified = True
+                    elif isinstance(element, SVGImage):
+                        op.add(element, type="opnode")
+                        was_classified = True
+                    elif isinstance(element, SVGText):
+                        op.add(element)
+                        was_classified = True
+                    elif element.fill is not None and element.fill.argb is not None:
+                        op.add(element, type="opnode")
+                        was_classified = True
+                elif (
+                    op.operation in ("Engrave", "Cut")
+                    and element.stroke is not None
+                    and op.color == abs(element.stroke)
+                ):
+                    op.add(element, type="opnode")
+                    was_classified = True
+                elif op.operation == "Image" and isinstance(element, SVGImage):
+                    op.add(element, type="opnode")
+                    was_classified = True
+                    break  # May only classify in one image operation.
+                elif (
+                    op.operation == "Dots"
+                    and isinstance(element, Path)
+                    and len(element) == 2
+                    and isinstance(element[0], Move)
+                    and isinstance(element[1], Close)
+                ):
+                    op.add(element, type="opnode")
+                    was_classified = True
+                    break  # May only classify in Dots.
+            if not was_classified:
+                if element.stroke is not None and element.stroke.value is not None:
+                    op = LaserOperation(
+                        operation="Engrave", color=element.stroke, speed=35.0
+                    )
+                    add_op_function(op)
+                    op.add(element, type="opnode")
+                    operations.append(op)
+
     def add_classify_op(self, op):
         """
         Ops are added as part of classify as elements are iterated that need a new op.
@@ -5668,6 +5742,9 @@ class Elemental(Modifier):
         :param add_op_function: function to add a new operation, because of a lack of classification options.
         :return:
         """
+        if self.context.legacy_classification:
+            self.classify_legacy(elements, operations, add_op_function)
+            return
 
         if elements is None:
             return
