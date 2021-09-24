@@ -5786,12 +5786,10 @@ class Elemental(Modifier):
                         and op not in default_cut_ops
                         and op not in default_engrave_ops
                     ):
-                        # Vector ops can be new - only add a raster if not new
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
-            elif rasters_one_pass:
+                # Vector op (i.e. no fill) with exact colour match can be added out of sequence
                 for op in raster_ops:
-                    # Raster ops are never new
                     if (
                         op.color is not None
                         and op.color.rgb == element_color.rgb
@@ -5799,6 +5797,26 @@ class Elemental(Modifier):
                     ):
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
+            else:
+                if element.stroke is not None:
+                    for op in vector_ops:
+                        if (
+                            op.color is not None
+                            and op.color.rgb == element_color.rgb
+                            and op not in default_raster_ops
+                            and op not in new_ops
+                        ):
+                            op.add(element, type="opnode", pos=element_pos)
+                if rasters_one_pass:
+                    for op in raster_ops:
+                        # New Raster ops are always default so excluded
+                        if (
+                            op.color is not None
+                            and op.color.rgb == element_color.rgb
+                            and op not in default_raster_ops
+                        ):
+                            op.add(element, type="opnode", pos=element_pos)
+                            element_added = True
 
             if element_added:
                 continue
