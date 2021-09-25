@@ -1319,7 +1319,7 @@ class Elemental(Module):
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
                     op.append(element)
                     was_classified = True
-                    image_added = True
+                    break
 
             if not was_classified:
                 # This code definitely classifies more elements, and should classify all, however
