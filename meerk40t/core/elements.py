@@ -5565,13 +5565,13 @@ class Elemental(Modifier):
         if add_op_function is None:
             add_op_function = self.add_op
         for element in elements:
-            was_classified = False
-            image_added = False
             if hasattr(element, "operation"):
                 add_op_function(element)
                 continue
             if element is None:
                 continue
+            was_classified = False
+            image_added = False
             for op in operations:
                 if op.operation == "Raster" and not op.default:
                     if image_added:
@@ -5599,6 +5599,7 @@ class Elemental(Modifier):
                 elif op.operation == "Image" and isinstance(element, SVGImage):
                     op.add(element, type="opnode")
                     was_classified = True
+                    image_added = True
                     break  # May only classify in one image operation.
                 elif (
                     op.operation == "Dots"
@@ -5629,7 +5630,7 @@ class Elemental(Modifier):
                 if (
                     isinstance(element, (Shape, SVGText))
                     and element.fill is not None
-                    and element.fill.value is not None
+                    and element.fill.argb is not None
                 ):
                     op = LaserOperation(operation="Raster", color=0, output=False)
                     add_op_function(op)
