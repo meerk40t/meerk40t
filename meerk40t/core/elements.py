@@ -1541,6 +1541,7 @@ class Elemental(Modifier):
                 continue
             func_dict = {
                 "name": label_truncate_re.sub("", str(node.label)),
+                "label": str(node.label),
             }
 
             iterator = func.values
