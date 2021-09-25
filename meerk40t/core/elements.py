@@ -5557,6 +5557,9 @@ class Elemental(Modifier):
         """
         if elements is None:
             return
+
+        # Use of Classify in reverse is new functionality in 0.7.1
+        # So using it is incompatible, but not using it would be inconsistent in
         reverse = self.context.classify_reverse
         if reverse:
             elements = reversed(elements)
@@ -5565,17 +5568,17 @@ class Elemental(Modifier):
         if add_op_function is None:
             add_op_function = self.add_op
         for element in elements:
+            # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(element, "operation"):
                 add_op_function(element)
                 continue
+            # Following lines added that are not in 0.6
             if element is None:
                 continue
             was_classified = False
-            image_added = False
+            # image_added code removed because it could never be used
             for op in operations:
                 if op.operation == "Raster" and not op.default:
-                    if image_added:
-                        continue  # already added to an image operation, is not added here.
                     if element.stroke is not None and op.color == abs(element.stroke):
                         op.add(element, type="opnode")
                         was_classified = True
@@ -5599,7 +5602,6 @@ class Elemental(Modifier):
                 elif op.operation == "Image" and isinstance(element, SVGImage):
                     op.add(element, type="opnode")
                     was_classified = True
-                    image_added = True
                     break  # May only classify in one image operation.
                 elif (
                     op.operation == "Dots"
@@ -5609,12 +5611,17 @@ class Elemental(Modifier):
                     was_classified = True
                     break  # May only classify in Dots.
             if not was_classified:
+                # Additional code over and above 0.6.23 to add new DISABLED operations
+                # so that all elements are classified.
                 op = None
                 if isinstance(element, SVGImage):
                     op = LaserOperation(operation="Image", output=False)
                 elif isDot(element):
                     op = LaserOperation(operation="Dots", output=False)
                 elif (
+                    # test for Shape or SVGText instance is probably unnecessary,
+                    # but we should probably not test for stroke without ensuring
+                    # that the object has a stroke attribute.
                     isinstance(element, (Shape, SVGText))
                     and element.stroke is not None
                     and element.stroke.value is not None
@@ -5622,15 +5629,19 @@ class Elemental(Modifier):
                     op = LaserOperation(
                         operation="Engrave", color=element.stroke, speed=35.0
                     )
+                # This code is separated out to avoid duplication
                 if op is not None:
                     add_op_function(op)
                     op.add(element, type="opnode")
                     operations.append(op)
 
+                # Seperate code for Raster ops because we might add a Raster op
+                # and a vector op for same element.
                 if (
                     isinstance(element, (Shape, SVGText))
                     and element.fill is not None
                     and element.fill.argb is not None
+                    and not isDot(element)
                 ):
                     op = LaserOperation(operation="Raster", color=0, output=False)
                     add_op_function(op)
@@ -5679,28 +5690,28 @@ class Elemental(Modifier):
         Shapes/Text with Black strokes are raster by default regardless of fill
         All other Shapes/Text with no fill are vector by default
 
-        All Shapes/Text are attempted to match to Cut/Engrave/Raster operations of exact same color (regardless of default raster or vector)
-
-        If not matched by colour then...
-
-        VECTOR ELEMENTS
-        Elements which are vector by default are classified based on colour:
-            1. Redish strokes are considered cuts
-            2. Other colours are considered engraves
-        If a default Cut/Engrave operation exists then the element is classified to it.
-        Otherwise a new operation of matching color and type is created.
-        New White Engrave operations are disabled by default.
-
         RASTER ELEMENTS
-        Raster elements are handled differently depending on whether existing Raster operations are simple or complex:
-            1. Simple - all existing raster ops have the same color (default being a different colour to any other); or
-            2. Complex - there are existing raster ops of two different colors (default being a different colour to any other)
-
-        Either way, because rastering of overlapping elements depends on the sequence of the elements
+        Because rastering of overlapping elements depends on the sequence of the elements
         (think of the difference between a white fill above or below a black fill)
         it is essential that raster elements are added to operations in the same order that they exist
         in the file/elements branch.
 
+        Raster elements are handled differently depending on whether existing Raster operations are simple or complex:
+            1. Simple - all existing raster ops have the same color (default being a different colour to any other); or
+            2. Complex - there are existing raster ops of two different colors (default being a different colour to any other)
+
+        Simple - Raster elements are matched immediately to all Raster operations in the correct sequence.
+        Complex - Raster elements are saved for processing in a more complex second pass (see below)
+
+        VECTOR ELEMENTS
+        Vector Shapes/Text are attempted to match to Cut/Engrave/Raster operations of exact same color (regardless of default raster or vector)
+
+        If not matched to exact colour, vector elements are classified based on colour:
+            1. Redish strokes are considered cuts
+            2. Other colours are considered engraves
+        If a default Cut/Engrave operation exists then the element is classified to it.
+        Otherwise a new operation of matching color and type is created.
+        New White Engrave operations are created disabled by default.
 
         SIMPLE RASTER CLASSIFICATION
         All existing raster ops are of the same color (or there are no existing raster ops)
