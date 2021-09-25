@@ -189,8 +189,13 @@ class PositionPanel(wx.Panel):
                 w = float(self.text_w.GetValue())
             except ValueError:
                 if self.position_units == 0:
-                    w = Length(self.text_w.GetValue()).to_mm(
-                        ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
+                    w = (
+                        Length(self.text_w.GetValue())
+                        .to_mm(
+                            ppi=1000,
+                            relative_length=self.bed_dim.bed_width * MILS_IN_MM,
+                        )
+                        .amount
                     )
                 elif self.position_units == 1:
                     w = (
