@@ -5562,7 +5562,7 @@ class Elemental(Modifier):
         if operations is None:
             operations = list(self.ops())
         if add_op_function is None:
-            add_op_function = self.add_op
+            add_op_function = self.add_classify_op
         for element in elements:
             was_classified = False
             if hasattr(element, "operation"):
@@ -5571,11 +5571,8 @@ class Elemental(Modifier):
             if element is None:
                 continue
             for op in operations:
-                if op.operation == "Raster":
+                if op.operation == "Raster" and not op.default:
                     if element.stroke is not None and op.color == abs(element.stroke):
-                        op.add(element, type="opnode")
-                        was_classified = True
-                    elif isinstance(element, SVGImage):
                         op.add(element, type="opnode")
                         was_classified = True
                     elif isinstance(element, SVGText):
@@ -5588,6 +5585,7 @@ class Elemental(Modifier):
                     op.operation in ("Engrave", "Cut")
                     and element.stroke is not None
                     and op.color == abs(element.stroke)
+                    and not op.default
                 ):
                     op.add(element, type="opnode")
                     was_classified = True
@@ -5597,18 +5595,37 @@ class Elemental(Modifier):
                     break  # May only classify in one image operation.
                 elif (
                     op.operation == "Dots"
-                    and isinstance(element, Path)
-                    and len(element) == 2
-                    and isinstance(element[0], Move)
-                    and isinstance(element[1], Close)
+                    and isDot(element)
                 ):
                     op.add(element, type="opnode")
                     was_classified = True
                     break  # May only classify in Dots.
             if not was_classified:
-                if element.stroke is not None and element.stroke.value is not None:
+                op = None
+                if isinstance(element, SVGImage):
+                    op = LaserOperation(operation="Image", output=False)
+                elif isDot(element):
+                    op = LaserOperation(operation="Dots", output=False)
+                elif (
+                    isinstance(element, Shape)
+                    and element.stroke is not None
+                    and element.stroke.value is not None
+                ):
                     op = LaserOperation(
                         operation="Engrave", color=element.stroke, speed=35.0
+                    )
+                if op is not None:
+                    add_op_function(op)
+                    op.add(element, type="opnode")
+                    operations.append(op)
+
+                if (
+                    isinstance(element, (Shape, SVGText))
+                    and element.fill is not None
+                    and element.fill.value is not None
+                ):
+                    op = LaserOperation(
+                        operation="Raster", color=0, output=False
                     )
                     add_op_function(op)
                     op.add(element, type="opnode")
@@ -5874,26 +5891,16 @@ class Elemental(Modifier):
                     ):
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
-            else:
-                if element.stroke is not None:
-                    for op in vector_ops:
-                        if (
-                            op.color is not None
-                            and op.color.rgb == element_color.rgb
-                            and op not in default_raster_ops
-                            and op not in new_ops
-                        ):
-                            op.add(element, type="opnode", pos=element_pos)
-                if rasters_one_pass:
-                    for op in raster_ops:
-                        # New Raster ops are always default so excluded
-                        if (
-                            op.color is not None
-                            and op.color.rgb == element_color.rgb
-                            and op not in default_raster_ops
-                        ):
-                            op.add(element, type="opnode", pos=element_pos)
-                            element_added = True
+            elif rasters_one_pass:
+                for op in raster_ops:
+                    # New Raster ops are always default so excluded
+                    if (
+                        op.color is not None
+                        and op.color.rgb == element_color.rgb
+                        and op not in default_raster_ops
+                    ):
+                        op.add(element, type="opnode", pos=element_pos)
+                        element_added = True
 
             if element_added:
                 continue
