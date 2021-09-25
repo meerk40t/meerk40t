@@ -5559,7 +5559,8 @@ class Elemental(Modifier):
             return
 
         # Use of Classify in reverse is new functionality in 0.7.1
-        # So using it is incompatible, but not using it would be inconsistent in
+        # So using it is incompatible, but not using it would be inconsistent
+        # Perhaps classify_reverse should be cleared and disabled if classify_legacy is set.
         reverse = self.context.classify_reverse
         if reverse:
             elements = reversed(elements)
