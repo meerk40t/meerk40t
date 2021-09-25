@@ -5614,6 +5614,8 @@ class Elemental(Modifier):
             if not was_classified:
                 # Additional code over and above 0.6.23 to add new DISABLED operations
                 # so that all elements are classified.
+                # This code definitely classifies more elements, and should classify all, however
+                # it is not guaranteed to classify all elements as this is not explicitly checked.
                 op = None
                 if isinstance(element, SVGImage):
                     op = LaserOperation(operation="Image", output=False)
