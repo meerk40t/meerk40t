@@ -67,7 +67,7 @@ def plugin(kernel, lifecycle=None):
 MILS_IN_MM = 39.3701
 
 # Regex expressions
-label_truncate_re = re.compile("((:|\().*)")
+label_truncate_re = re.compile("(:.*)|(\([^ )]*\s.*)")
 group_simplify_re = re.compile(
     "(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE
 )
