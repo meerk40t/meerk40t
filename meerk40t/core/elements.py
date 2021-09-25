@@ -5611,6 +5611,7 @@ class Elemental(Modifier):
                     op.add(element, type="opnode")
                     was_classified = True
                     break  # May only classify in Dots.
+
             if not was_classified:
                 # Additional code over and above 0.6.23 to add new DISABLED operations
                 # so that all elements are classified.
