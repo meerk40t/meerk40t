@@ -5615,7 +5615,7 @@ class Elemental(Modifier):
                 elif isDot(element):
                     op = LaserOperation(operation="Dots", output=False)
                 elif (
-                    isinstance(element, Shape)
+                    isinstance(element, (Shape, SVGText))
                     and element.stroke is not None
                     and element.stroke.value is not None
                 ):
