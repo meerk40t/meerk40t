@@ -67,7 +67,7 @@ def plugin(kernel, lifecycle=None):
 MILS_IN_MM = 39.3701
 
 # Regex expressions
-label_truncate_re = re.compile("(:.*)|(\([^ )]*\s.*)")
+label_truncate_re = re.compile("((:|\().*)")
 group_simplify_re = re.compile(
     "(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE
 )
@@ -1541,7 +1541,6 @@ class Elemental(Modifier):
                 continue
             func_dict = {
                 "name": label_truncate_re.sub("", str(node.label)),
-                "label": str(node.label),
             }
 
             iterator = func.values
@@ -5563,9 +5562,10 @@ class Elemental(Modifier):
         if operations is None:
             operations = list(self.ops())
         if add_op_function is None:
-            add_op_function = self.add_classify_op
+            add_op_function = self.add_op
         for element in elements:
             was_classified = False
+            image_added = False
             if hasattr(element, "operation"):
                 add_op_function(element)
                 continue
@@ -5573,7 +5573,12 @@ class Elemental(Modifier):
                 continue
             for op in operations:
                 if op.operation == "Raster" and not op.default:
+                    if image_added:
+                        continue  # already added to an image operation, is not added here.
                     if element.stroke is not None and op.color == abs(element.stroke):
+                        op.add(element, type="opnode")
+                        was_classified = True
+                    elif isinstance(element, SVGImage):
                         op.add(element, type="opnode")
                         was_classified = True
                     elif isinstance(element, SVGText):
@@ -5625,9 +5630,7 @@ class Elemental(Modifier):
                     and element.fill is not None
                     and element.fill.value is not None
                 ):
-                    op = LaserOperation(
-                        operation="Raster", color=0, output=False
-                    )
+                    op = LaserOperation(operation="Raster", color=0, output=False)
                     add_op_function(op)
                     op.add(element, type="opnode")
                     operations.append(op)
