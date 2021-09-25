@@ -1,0 +1,78 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python code quality
+
+on:
+  push:
+    branches: [main, legacy, 0.7]
+  pull_request:
+    branches: [main, legacy, 0.7]
+  schedule:
+    - cron: '0 23 * * 5'
+
+jobs:
+  build:
+
+    runs-on: [ubuntu-20.04]
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8]
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pylint flake8 flake8-deprecated black mypy isort
+        wget -nv https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-20.04/wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
+        pip install wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Create output directory
+      run: mkdir -p analysis
+
+    - name: Analyse with pylint
+      run: |
+        pylint --rcfile=.pylintrc --ignore=svgelements.py --fail-under=0 -output-format=text:analysis/pylint.txt,colorize meerk40t
+
+    - name: Analyse with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        # flake8 meerk40t --select=E9,F63,F7,F82
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 meerk40t --tee --output-file=analysis/flake8.txt --exit-zero
+
+    - name: Analyse with black
+      run: |
+        black --diff --color meerk40t
+        #black --diff --color meerk40t ZZ analysis/black.txt
+        #cat .github/workflows-reports/black.txt
+        exit 0
+
+    - name: Analyse with isort
+      run: |
+        isort meerk40t -c --diff
+        #isort meerk40t -c --diff ZZ analysis/isort.txt
+        #cat .github/workflows-reports/isort.txt
+        exit 0
+
+#    - name: Analyse with mypy
+#      run: |
+#        # MK Not strongly typed - mypy is not going to be run
+#        # mypy meerk40t
+#        exit 0
+
+    - name: Upload analysis results
+      uses: actions/upload-artifact@v2
+      with:
+        name: Analysis
+        path: analysis/

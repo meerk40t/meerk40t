@@ -1,0 +1,48 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Unittest
+
+on:
+  push:
+    branches: [main, legacy, 0.7]
+  pull_request:
+    branches: [main, legacy, 0.7]
+  schedule:
+    - cron: '0 23 * * 5'
+
+jobs:
+  build:
+
+#    runs-on: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, windows-2016, windows-2019, windows-2022, macos-10.15, macos-11]
+    runs-on: [ubuntu-20.04]
+    strategy:
+      fail-fast: false
+      matrix:
+#        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, 3.10.0-rc.2]
+        python-version: [3.8]
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+#    - name: Install Ubuntu dependencies
+#      run: >
+#        sudo apt-get update -q && sudo apt-get install -y libgtk-3-dev
+
+    - name: Install Python dependencies
+      run: |
+        pip install --upgrade pip
+        pip install flake8 pytest pylint
+        wget -nv https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-20.04/wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
+        pip install wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
+        if [ -f requireoptions.txt ]; then pip install -r requireoptions.txt; fi
+
+    - name: Run Unittests
+      run: |
+        python -m unittest discover test
