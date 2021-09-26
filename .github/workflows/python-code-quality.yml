@@ -57,31 +57,38 @@ jobs:
       run: mkdir -p analysis
 
     - name: Analyse with pylint
+      id: pylint
+      continue-on-error: true
       run: |
-        pylint --rcfile=.pylintrc --ignore=svgelements.py --fail-under=0 --output-format=text:analysis/pylint.txt,colorized meerk40t
-        exit 0
+        pylint --rcfile=.pylintrc --ignore=svgelements.py --output-format=text:analysis/pylint.txt,colorized meerk40t
 
     - name: Analyse with flake8
+      id: flake8
+      continue-on-error: true
       run: |
         # stop the build if there are Python syntax errors or undefined names
         # flake8 meerk40t --select=E9,F63,F7,F82
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 meerk40t --tee --output-file=analysis/flake8.txt --exit-zero
+        flake8 meerk40t --tee --output-file=analysis/flake8.txt
 
     - name: Analyse with black
+      id: black
+      continue-on-error: true
       run: |
         black --diff --color meerk40t
-        exit 0
 
     - name: Analyse with isort
+      id: isort
+      continue-on-error: true
       run: |
         isort meerk40t -c --diff
-        exit 0
 
+# MK Not strongly typed - mypy is not going to be run
 #    - name: Analyse with mypy
+#      id: mypy
+#      continue-on-error: true
 #      run: |
-#        # MK Not strongly typed - mypy is not going to be run
-#        # mypy meerk40t
+#        mypy meerk40t
 #        exit 0
 
     - name: Upload analysis results
@@ -89,3 +96,9 @@ jobs:
       with:
         name: Analysis
         path: analysis/
+
+    - name: "Set status"
+      run: |
+        if ${{ steps.pylint.outcome != 'success' || steps.flake8.outcome != 'success' || steps.black.outcome != 'success' || steps.isort.outcome != 'success' }}; then
+         exit 1
+        fi
