@@ -94,5 +94,6 @@ jobs:
     - name: "Set status"
       run: |
         if ${{ steps.pylint.outcome != 'success' || steps.flake8.outcome != 'success' || steps.black.outcome != 'success' || steps.isort.outcome != 'success' }}; then
+         exit 0
          exit 1
         fi
