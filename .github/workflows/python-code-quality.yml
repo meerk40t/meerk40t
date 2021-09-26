@@ -33,13 +33,18 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('requireoptions.txt') }}
+
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pylint flake8 flake8-deprecated black mypy isort
+        pip install --upgrade --upgrade-strategy eager pylint flake8 flake8-deprecated black mypy isort
         wget -nv https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-20.04/wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
         pip install wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requireoptions.txt ]; then pip install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
 
     - name: Create output directory
       run: mkdir -p analysis
