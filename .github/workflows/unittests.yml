@@ -11,6 +11,10 @@ on:
   schedule:
     - cron: '0 23 * * 5'
 
+concurrency:
+  group: unittests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
 

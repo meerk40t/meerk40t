@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   analyze:
-    name: Analyze
+    name: CodeQL
     runs-on: ubuntu-latest
 
     steps:
