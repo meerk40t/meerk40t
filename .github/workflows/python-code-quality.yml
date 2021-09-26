@@ -1,6 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: Python code quality
 
 on:
@@ -54,22 +51,19 @@ jobs:
         if [ -f requireoptions.txt ]; then pip install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
 
     - name: Create output directory
-      run: mkdir -p analysis
+      run: mkdir -p artifiacts
 
     - name: Analyse with pylint
       id: pylint
       continue-on-error: true
       run: |
-        pylint --rcfile=.pylintrc --ignore=svgelements.py --output-format=text:analysis/pylint.txt,colorized meerk40t
+        pylint --rcfile=.pylintrc --ignore=svgelements.py --output-format=text:artifiacts/pylint.txt,colorized meerk40t
 
     - name: Analyse with flake8
       id: flake8
       continue-on-error: true
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-        # flake8 meerk40t --select=E9,F63,F7,F82
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 meerk40t --tee --output-file=analysis/flake8.txt
+        flake8 meerk40t --tee --output-file=artifiacts/flake8.txt
 
     - name: Analyse with black
       id: black
@@ -94,8 +88,8 @@ jobs:
     - name: Upload analysis results
       uses: actions/upload-artifact@v2
       with:
-        name: Analysis
-        path: analysis/
+        name: Artifacts
+        path: artifacts/
 
     - name: "Set status"
       run: |
