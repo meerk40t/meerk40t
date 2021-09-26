@@ -42,7 +42,8 @@ jobs:
 
     - name: Analyse with pylint
       run: |
-        pylint --rcfile=.pylintrc --ignore=svgelements.py --fail-under=0 --output-format=text:analysis/pylint.txt,colorize meerk40t
+        pylint --rcfile=.pylintrc --ignore=svgelements.py --fail-under=0 --output-format=text:analysis/pylint.txt,colorized meerk40t
+        exit 0
 
     - name: Analyse with flake8
       run: |
