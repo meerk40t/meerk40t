@@ -20,8 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
-        python-version: [3.8]
+        os: [ubuntu-18.04]
+        python-version: [3.9]
 
     steps:
 
@@ -46,24 +46,23 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel babel
         pip install --upgrade --upgrade-strategy eager pylint flake8 flake8-deprecated black mypy isort
-        wget -nv https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-20.04/wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
-        pip install wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
+        pip install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
         if [ -f requireoptions.txt ]; then pip install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
 
     - name: Create output directory
-      run: mkdir -p artifiacts
+      run: mkdir -p artifacts
 
     - name: Analyse with pylint
       id: pylint
       continue-on-error: true
       run: |
-        pylint --rcfile=.pylintrc --ignore=svgelements.py --output-format=text:artifiacts/pylint.txt,colorized meerk40t
+        pylint --rcfile=.pylintrc --ignore=svgelements.py --output-format=text:artifacts/pylint.txt,colorized meerk40t
 
     - name: Analyse with flake8
       id: flake8
       continue-on-error: true
       run: |
-        flake8 meerk40t --tee --output-file=artifiacts/flake8.txt
+        flake8 meerk40t --tee --output-file=artifacts/flake8.txt
 
     - name: Analyse with black
       id: black
