@@ -11,6 +11,10 @@ on:
   schedule:
     - cron: '0 23 * * 5'
 
+concurrency:
+  group: codequality-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
 
@@ -55,15 +59,11 @@ jobs:
     - name: Analyse with black
       run: |
         black --diff --color meerk40t
-        #black --diff --color meerk40t ZZ analysis/black.txt
-        #cat .github/workflows-reports/black.txt
         exit 0
 
     - name: Analyse with isort
       run: |
         isort meerk40t -c --diff
-        #isort meerk40t -c --diff ZZ analysis/isort.txt
-        #cat .github/workflows-reports/isort.txt
         exit 0
 
 #    - name: Analyse with mypy
