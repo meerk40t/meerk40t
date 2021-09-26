@@ -21,9 +21,9 @@ jobs:
       fail-fast: false
       matrix:
 #         os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, windows-2016, windows-2019, windows-2022, macos-10.15, macos-11]
-        os: [ubuntu-20.04]
+        os: [ubuntu-18.02]
 #        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, 3.10.0-rc.2]
-        python-version: [3.8]
+        python-version: [3.9]
 
     steps:
 
@@ -52,8 +52,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel babel
         pip install --upgrade --upgrade-strategy eager pylint flake8 flake8-deprecated black mypy isort
-        wget -nv https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-20.04/wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
-        pip install wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
+        pip install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
         if [ -f requireoptions.txt ]; then pip install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
 
     - name: Run Unittests
