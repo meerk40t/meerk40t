@@ -26,15 +26,15 @@ class TestPlotplanner(unittest.TestCase):
         plan = PlotPlanner(LaserSettings(power=1000))
         settings = LaserSettings(power=1000)
         for i in range(211):
-            q = 0
             plan.push(LineCut(Point(0, 0), Point(5, 100), settings=settings))
             plan.push(LineCut(Point(100, 50), Point(0, 0), settings=settings))
             plan.push(LineCut(Point(50, -50), Point(100, -100), settings=LaserSettings(power=0)))
+            q = 0
             for x, y, on in plan.gen():
-                print(x, y, on)
+                # print(x, y, on)
                 if q == i:
-                    for x, y, on in plan.process_plots(None):
-                        print("FLUSH!", x, y, on)
-                    # plan.clear()
-                    # break
+                    # for x, y, on in plan.process_plots(None):
+                        # print("FLUSH!", x, y, on)
+                    plan.clear()
+                    break
                 q += 1
