@@ -16,7 +16,7 @@ class TestElements(unittest.TestCase):
         kernel_root = kernel.get_context("/")
         kernel_root("circle 1in 1in 1in\n")
         for element in kernel_root.elements.elems():
-            print(element)
+            # print(element)
             self.assertEqual(element, Circle(center=(1000, 1000), r=1000, stroke="black"))
 
     def test_elements_rect(self):
