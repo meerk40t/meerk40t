@@ -37,8 +37,11 @@ class TestCutcode(unittest.TestCase):
         laserop = LaserOperation()
         laserop.operation = "Cut"
         laserop.add(path, type="opnode")
-        cutcode = list(laserop.as_blob())[0]
-        path = Path(*list(cutcode.as_elements()))
+        cutcode = CutCode(laserop.as_cutobjects())
+        path = list(cutcode.as_elements())[0]
+        for i, p in enumerate(path):
+            print(str(i) + str(p))
+        print(initial)
         self.assertEqual(path, initial)
 
     def test_cutcode_engrave(self):
@@ -52,7 +55,7 @@ class TestCutcode(unittest.TestCase):
         laserop = LaserOperation()
         laserop.operation = "Engrave"
         laserop.add(path, type="opnode")
-        cutcode = list(laserop.as_blob())[0]
+        cutcode = list(laserop.as_cutobjects())[0]
         path = Path(*list(cutcode.as_elements()))
         self.assertEqual(path, initial)
 
@@ -67,7 +70,7 @@ class TestCutcode(unittest.TestCase):
         laserop = LaserOperation()
         # Operation type is unset.
         laserop.add(path, type="opnode")
-        cutcode = list(laserop.as_blob())[0]
+        cutcode = list(laserop.as_cutobjects())[0]
         self.assertEqual(cutcode, None)
 
     def test_cutcode_raster(self):
