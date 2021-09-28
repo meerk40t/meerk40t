@@ -4152,9 +4152,13 @@ class Elemental(Modifier):
         )
         def trace_trace_hull(command, channel, _, **kwgs):
             active = self.context.active
-            spooler, input_device, output = self.context.registered[
-                "device/%s" % active
-            ]
+            try:
+                spooler, input_device, output = self.context.registered[
+                    "device/%s" % active
+                ]
+            except KeyError:
+                channel(_("No active device found."))
+                return
             pts = []
             for obj in self.elems(emphasized=True):
                 if isinstance(obj, Path):
@@ -4187,9 +4191,13 @@ class Elemental(Modifier):
         )
         def trace_trace_quick(command, channel, _, **kwgs):
             active = self.context.active
-            spooler, input_device, output = self.context.registered[
-                "device/%s" % active
-            ]
+            try:
+                spooler, input_device, output = self.context.registered[
+                    "device/%s" % active
+                ]
+            except KeyError:
+                channel(_("No active device found."))
+                return
             bbox = self.selected_area()
             if bbox is None:
                 channel(_("No elements bounds to trace."))
