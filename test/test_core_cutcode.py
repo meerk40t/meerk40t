@@ -1,4 +1,3 @@
-
 import unittest
 
 from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode, QuadCut
@@ -28,7 +27,7 @@ class TestCutcode(unittest.TestCase):
 
     def test_cutcode_cut(self):
         """
-        Convert and Engrave Operation into Cutcode and Back.
+        Convert a Cut Operation into Cutcode and Back.
 
         :return:
         """
@@ -39,14 +38,11 @@ class TestCutcode(unittest.TestCase):
         laserop.add(path, type="opnode")
         cutcode = CutCode(laserop.as_cutobjects())
         path = list(cutcode.as_elements())[0]
-        for i, p in enumerate(path):
-            print(str(i) + str(p))
-        print(initial)
         self.assertEqual(path, initial)
 
     def test_cutcode_engrave(self):
         """
-        Convert and Engrave Operation into Cutcode and Back.
+        Convert an Engrave Operation into Cutcode and Back.
 
         :return:
         """
@@ -55,13 +51,13 @@ class TestCutcode(unittest.TestCase):
         laserop = LaserOperation()
         laserop.operation = "Engrave"
         laserop.add(path, type="opnode")
-        cutcode = list(laserop.as_cutobjects())[0]
-        path = Path(*list(cutcode.as_elements()))
+        cutcode = CutCode(laserop.as_cutobjects())
+        path = list(cutcode.as_elements())[0]
         self.assertEqual(path, initial)
 
     def test_cutcode_no_type(self):
         """
-        Convert and Engrave Operation into Cutcode and Back.
+        Convert an Unknown Operation into Cutcode and Back.
 
         :return:
         """
@@ -70,8 +66,9 @@ class TestCutcode(unittest.TestCase):
         laserop = LaserOperation()
         # Operation type is unset.
         laserop.add(path, type="opnode")
-        cutcode = list(laserop.as_cutobjects())[0]
-        self.assertEqual(cutcode, None)
+        cutcode = CutCode(laserop.as_cutobjects())
+
+        self.assertEqual(len(list(cutcode.flat())), 0)  # Unknown is blank.
 
     def test_cutcode_raster(self):
         """
