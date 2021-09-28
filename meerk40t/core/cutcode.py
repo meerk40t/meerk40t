@@ -310,7 +310,7 @@ class CutCode(CutGroup):
         last = None
         path = None
         previous_settings = None
-        for e in self:
+        for e in self.flat():
             start = e.start()
             end = e.end()
             settings = e.settings
