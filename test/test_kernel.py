@@ -15,5 +15,7 @@ class TestKernel(unittest.TestCase):
 
         for command in kernel.match("command/.*"):
             cmd = kernel.registered[command]
+            if "server" in command:
+                continue
             if not cmd.regex:
                 kernel.console(command.split("/")[-1] + "\n")
