@@ -15,13 +15,13 @@ concurrency:
 jobs:
   test:
 
-    name: ${{ matrix.os }} / ${{ matrix.python-version }}
+    name: Unittest on ${{ matrix.os }} + python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
 #         os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, windows-2016, windows-2019, windows-2022, macos-10.15, macos-11]
-        os: [ubuntu-18.02]
+        os: [ubuntu-18.04]
 #        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, 3.10.0-rc.2]
         python-version: [3.9]
 
