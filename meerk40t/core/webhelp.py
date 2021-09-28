@@ -1,10 +1,13 @@
-MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
-MEERK40T_HELP = "https://github.com/meerk40t/meerk40t/wiki"
-MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
-MEERK40T_RELEASES = "https://github.com/meerk40t/meerk40t/releases"
-FACEBOOK_MEERK40t = "https://www.facebook.com/groups/716000085655097"
+import requests
+
+MEERK40T_ISSUES       = "https://github.com/meerk40t/meerk40t/issues"
+MEERK40T_HELP         = "https://github.com/meerk40t/meerk40t/wiki"
+MEERK40T_BEGINNERS    = "https://github.com/meerk40t/meerk40t/wiki/Beginners:-0.-Index"
+MEERK40T_WEBSITE      = "https://github.com/meerk40t/meerk40t"
+MEERK40T_RELEASES     = "https://github.com/meerk40t/meerk40t/releases"
+FACEBOOK_MEERK40t     = "https://www.facebook.com/groups/716000085655097"
 MAKERS_FORUM_MEERK40T = "https://forum.makerforums.info/c/k40/meerk40t/120"
-IRC_CLIENT = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
+IRC_CLIENT            = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
 
 
 def plugin(kernel, lifecycle):
@@ -44,6 +47,7 @@ def plugin(kernel, lifecycle):
                 channel(_("Webhelp not found."))
 
         kernel.register("webhelp/help", MEERK40T_HELP)
+        kernel.register("webhelp/beginners", MEERK40T_BEGINNERS)
         kernel.register("webhelp/main", MEERK40T_WEBSITE)
         kernel.register("webhelp/issues", MEERK40T_ISSUES)
         kernel.register("webhelp/releases", MEERK40T_RELEASES)

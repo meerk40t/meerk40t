@@ -235,6 +235,7 @@ ID_CONSOLE = wx.NewId()
 ID_ROTARY = wx.NewId()
 ID_RASTER = wx.NewId()
 
+ID_BEGINNERS = wx.NewId()
 ID_HOMEPAGE = wx.NewId()
 ID_RELEASES = wx.NewId()
 ID_FACEBOOK = wx.NewId()
@@ -1907,6 +1908,7 @@ class MeerK40t(MWindow):
         # ==========
         self.help_menu = wx.Menu()
         self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
+        self.help_menu.Append(ID_BEGINNERS, _("&Beginners' Help"), "")
         self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
         self.help_menu.Append(ID_RELEASES, _("&Releases"), "")
         self.help_menu.Append(ID_FACEBOOK, _("&Facebook"), "")
@@ -2118,6 +2120,11 @@ class MeerK40t(MWindow):
             id=ID_MENU_PANE_LOCK,
         )
         self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp beginners\n"),
+            id=ID_BEGINNERS,
+        )
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp main\n"),
