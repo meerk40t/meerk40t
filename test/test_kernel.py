@@ -19,3 +19,4 @@ class TestKernel(unittest.TestCase):
                 continue
             if not cmd.regex:
                 kernel.console(command.split("/")[-1] + "\n")
+        kernel.shutdown()
