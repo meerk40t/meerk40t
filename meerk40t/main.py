@@ -268,6 +268,15 @@ def run():
     except ImportError:
         pass
 
+    if sys.platform == 'win32':
+        # Windows only plugin.
+        try:
+            from .extra import winsleep
+
+            kernel.add_plugin(winsleep.plugin)
+        except ImportError:
+            pass
+
     try:
         from camera import camera
 
