@@ -96,8 +96,11 @@ class BindAlias(Modifier):
                     context.default_alias()
                     channel(_("Set default aliases."))
                     return
-                context.alias[args[0]] = " ".join(args[1:])
-            return
+                value = " ".join(args[1:])
+                if value == "":
+                    del context.alias[args[0]]
+                else:
+                    context.alias[args[0]] = value
 
         @self.context.console_command(".*", regex=True, hidden=True)
         def alias_execute(command, **kwgs):
