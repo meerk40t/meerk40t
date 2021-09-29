@@ -3,6 +3,7 @@ import asyncio
 import sys
 
 from .kernel import Kernel
+from .core.exceptions import Mk40tImportAbort
 
 try:
     from math import tau
@@ -95,7 +96,6 @@ parser.add_argument(
     help="Do not load meerk40t.plugins entrypoints",
 )
 
-
 def run():
     argv = sys.argv[1:]
     args = parser.parse_args(argv)
@@ -123,179 +123,182 @@ def run():
     """
     try:
         from . import kernelserver
-
-        kernel.add_plugin(kernelserver.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(kernelserver.plugin)
 
     try:
         from .device.ch341 import ch341
-
-        kernel.add_plugin(ch341.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(ch341.plugin)
 
     try:
         from .device import basedevice
-
-        kernel.add_plugin(basedevice.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(basedevice.plugin)
 
     try:
         from .core import spoolers
-
-        kernel.add_plugin(spoolers.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(spoolers.plugin)
 
     try:
         from .core import drivers
-
-        kernel.add_plugin(drivers.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(drivers.plugin)
 
     try:
         from .core import output
-
-        kernel.add_plugin(output.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(output.plugin)
 
     try:
         from .core import inputs
-
-        kernel.add_plugin(inputs.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(inputs.plugin)
 
     try:
         from .core import elements
-
-        kernel.add_plugin(elements.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(elements.plugin)
 
     try:
         from .core import bindalias
-
-        kernel.add_plugin(bindalias.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(bindalias.plugin)
 
     try:
         from .core import webhelp
-
-        kernel.add_plugin(webhelp.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(webhelp.plugin)
 
     try:
         from .core import planner
-
-        kernel.add_plugin(planner.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(planner.plugin)
 
     try:
         from .image import imagetools
-
-        kernel.add_plugin(imagetools.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(imagetools.plugin)
 
     try:
         from .device.lhystudios import lhystudiosdevice
-
-        kernel.add_plugin(lhystudiosdevice.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(lhystudiosdevice.plugin)
 
     try:
         from .device.moshi import moshidevice
-
-        kernel.add_plugin(moshidevice.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(moshidevice.plugin)
 
     try:
         from .device.grbl import grbldevice
-
-        kernel.add_plugin(grbldevice.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(grbldevice.plugin)
 
     try:
         from .device.ruida import ruidadevice
-
-        kernel.add_plugin(ruidadevice.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(ruidadevice.plugin)
 
     try:
         from .core import svg_io
-
-        kernel.add_plugin(svg_io.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(svg_io.plugin)
 
     try:
         from .extra import vectrace
-
-        kernel.add_plugin(vectrace.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(vectrace.plugin)
 
     try:
         from .extra import inkscape
-
-        kernel.add_plugin(inkscape.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(inkscape.plugin)
 
     try:
         from .extra import embroider
-
-        kernel.add_plugin(embroider.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(embroider.plugin)
 
     try:
         from .extra import pathoptimize
-
-        kernel.add_plugin(pathoptimize.plugin)
-    except ImportError:
+    except Mk40tImportAbort:
         pass
+    else:
+        kernel.add_plugin(pathoptimize.plugin)
 
     try:
         from camera import camera
-
-        kernel.add_plugin(camera.plugin)
     except ImportError:
-        # This module cannot be loaded. opencv is missing.
-        pass
+        print("Cannot install external 'camera' plugin - see https://github.com/meerk40t/meerk40t-camera")
+    except Mk40tImportAbort as e:
+        print("Cannot install meerk40t 'camera' plugin - prerequisite '%s' needs to be installed" % e)
+    else:
+        kernel.add_plugin(camera.plugin)
 
     try:
         from .dxf import dxf_io
-
+    except Mk40tImportAbort as e:
+        print("Cannot install meerk40t 'dxf' plugin - prerequisite '%s' needs to be installed" % e)
+    else:
         kernel.add_plugin(dxf_io.plugin)
-    except ImportError:
-        # This module cannot be loaded. ezdxf missing.
-        pass
 
     if not args.gui_suppress:
         try:
             from .gui import wxmeerk40t
-
-            kernel.add_plugin(wxmeerk40t.plugin)
-
-            from .gui.scene import scene
-
-            kernel.add_plugin(scene.plugin)
-        except ImportError:
-            # This module cannot be loaded. wxPython missing.
+        except Mk40tImportAbort as e:
             args.no_gui = True
+            print("Cannot install meerk40t gui - prerequisite '%s' needs to be installed" % e)
+        else:
+            kernel.add_plugin(wxmeerk40t.plugin)
+        try:
+            from .gui.scene import scene
+        except Mk40tImportAbort as e:
+            args.no_gui = True
+            print("Cannot install meerk40t gui scene - prerequisite '%s' needs to be installed" % e)
+        else:
+            kernel.add_plugin(scene.plugin)
     else:
         # Complete Gui Suppress implies no-gui.
         args.no_gui = True
@@ -309,9 +312,12 @@ def run():
         for entry_point in pkg_resources.iter_entry_points("meerk40t.plugins"):
             try:
                 plugin = entry_point.load()
-                kernel.add_plugin(plugin)
+            except Mk40tImportAbort as e:
+                print("Cannot install external plugin '%s' - pre-requisite '%s' needs to be installed" % (str(entry_point), e))
             except pkg_resources.DistributionNotFound:
                 pass
+            else:
+                kernel.add_plugin(plugin)
 
     if args.no_gui:
         kernel.bootstrap("console")
