@@ -2180,6 +2180,8 @@ class Kernel:
                     channel(_("Attempt failed. Produced a runtime error."))
                 except ValueError:
                     channel(_("Attempt failed. Produced a value error."))
+                except AttributeError:
+                    channel(_("Attempt failed. Produced an attribute error."))
             return
 
         @self.console_option(
