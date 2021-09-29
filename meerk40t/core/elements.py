@@ -3020,7 +3020,6 @@ class Elemental(Modifier):
         @context.console_command(
             "path",
             help=_("path <svg path>"),
-            input_type="elements",
             output_type="elements",
         )
         def element_path(path_d, data, **kwgs):
