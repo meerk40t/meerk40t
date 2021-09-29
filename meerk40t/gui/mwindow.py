@@ -66,6 +66,9 @@ class MWindow(wx.Frame, Module):
         if self.state == 5:
             event.Veto()
         else:
+            if hasattr(self, "window_close_veto") and self.window_close_veto():
+                event.Veto()
+                return
             self.window_context.width, self.window_context.height = self.Size
             self.window_context.x, self.window_context.y = self.GetPosition()
             self.state = 5
