@@ -109,7 +109,7 @@ def plugin(kernel, lifecycle=None):
             )
             p.closed()
             paths.append(p)
-        elements.add(paths, type="elem")
+            elements.elem_branch.add(p, type="elem")
         return "elements", paths
 
     @context.console_argument("script", help=_("script to apply"), type=str)
