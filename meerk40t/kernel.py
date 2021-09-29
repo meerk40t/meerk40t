@@ -1720,10 +1720,11 @@ class Kernel:
                 listeners = self.listeners[signal]
                 for listener in listeners:
                     listener(path, *message)
-                    signal_channel(
-                        "%s %s: %s was sent %s"
-                        % (path, signal, str(listener), str(message))
-                    )
+                    if signal_channel:
+                        signal_channel(
+                            "%s %s: %s was sent %s"
+                            % (path, signal, str(listener), str(message))
+                        )
             if path is None:
                 self.last_message[signal] = message
             else:
