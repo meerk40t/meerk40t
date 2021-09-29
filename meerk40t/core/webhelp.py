@@ -1,5 +1,3 @@
-import requests
-
 MEERK40T_ISSUES       = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_HELP         = "https://github.com/meerk40t/meerk40t/wiki"
 MEERK40T_BEGINNERS    = "https://github.com/meerk40t/meerk40t/wiki/Beginners:-0.-Index"
