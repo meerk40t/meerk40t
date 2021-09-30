@@ -24,6 +24,7 @@ for full details.
 MEERK40T_VERSION = "0.7.1"
 
 if not getattr(sys, "frozen", False):
+
     MEERK40T_VERSION += "s"
 
 
@@ -121,152 +122,68 @@ def run():
     These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
     hardcoded addons and plugins permitted by MeerK40t in a compiled bundle.
     """
-    try:
-        from . import kernelserver
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(kernelserver.plugin)
+    from . import kernelserver
+    kernel.add_plugin(kernelserver.plugin)
 
-    try:
-        from .device.ch341 import ch341
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(ch341.plugin)
+    from .device.ch341 import ch341
+    kernel.add_plugin(ch341.plugin)
 
-    try:
-        from .device import basedevice
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(basedevice.plugin)
+    from .device import basedevice
+    kernel.add_plugin(basedevice.plugin)
 
-    try:
-        from .core import spoolers
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(spoolers.plugin)
+    from .core import spoolers
+    kernel.add_plugin(spoolers.plugin)
 
-    try:
-        from .core import drivers
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(drivers.plugin)
+    from .core import drivers
+    kernel.add_plugin(drivers.plugin)
 
-    try:
-        from .core import output
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(output.plugin)
+    from .core import output
+    kernel.add_plugin(output.plugin)
 
-    try:
-        from .core import inputs
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(inputs.plugin)
+    from .core import inputs
+    kernel.add_plugin(inputs.plugin)
 
-    try:
-        from .core import elements
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(elements.plugin)
+    from .core import elements
+    kernel.add_plugin(elements.plugin)
 
-    try:
-        from .core import bindalias
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(bindalias.plugin)
+    from .core import bindalias
+    kernel.add_plugin(bindalias.plugin)
 
-    try:
-        from .core import webhelp
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(webhelp.plugin)
+    from .core import webhelp
+    kernel.add_plugin(webhelp.plugin)
 
-    try:
-        from .core import planner
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(planner.plugin)
+    from .core import planner
+    kernel.add_plugin(planner.plugin)
 
-    try:
-        from .image import imagetools
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(imagetools.plugin)
+    from .image import imagetools
+    kernel.add_plugin(imagetools.plugin)
 
-    try:
-        from .device.lhystudios import lhystudiosdevice
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(lhystudiosdevice.plugin)
+    from .device.lhystudios import lhystudiosdevice
+    kernel.add_plugin(lhystudiosdevice.plugin)
 
-    try:
-        from .device.moshi import moshidevice
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(moshidevice.plugin)
+    from .device.moshi import moshidevice
+    kernel.add_plugin(moshidevice.plugin)
 
-    try:
-        from .device.grbl import grbldevice
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(grbldevice.plugin)
+    from .device.grbl import grbldevice
+    kernel.add_plugin(grbldevice.plugin)
 
-    try:
-        from .device.ruida import ruidadevice
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(ruidadevice.plugin)
+    from .device.ruida import ruidadevice
+    kernel.add_plugin(ruidadevice.plugin)
 
-    try:
-        from .core import svg_io
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(svg_io.plugin)
+    from .core import svg_io
+    kernel.add_plugin(svg_io.plugin)
 
-    try:
-        from .extra import vectrace
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(vectrace.plugin)
+    from .extra import vectrace
+    kernel.add_plugin(vectrace.plugin)
 
-    try:
-        from .extra import inkscape
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(inkscape.plugin)
+    from .extra import inkscape
+    kernel.add_plugin(inkscape.plugin)
 
-    try:
-        from .extra import embroider
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(embroider.plugin)
+    from .extra import embroider
+    kernel.add_plugin(embroider.plugin)
 
-    try:
-        from .extra import pathoptimize
-    except Mk40tImportAbort:
-        pass
-    else:
-        kernel.add_plugin(pathoptimize.plugin)
+    from .extra import pathoptimize
+    kernel.add_plugin(pathoptimize.plugin)
 
     try:
         from camera import camera
@@ -287,17 +204,12 @@ def run():
     if not args.gui_suppress:
         try:
             from .gui import wxmeerk40t
+            from .gui.scene import scene
         except Mk40tImportAbort as e:
             args.no_gui = True
             print("Cannot install meerk40t gui - prerequisite '%s' needs to be installed" % e)
         else:
             kernel.add_plugin(wxmeerk40t.plugin)
-        try:
-            from .gui.scene import scene
-        except Mk40tImportAbort as e:
-            args.no_gui = True
-            print("Cannot install meerk40t gui scene - prerequisite '%s' needs to be installed" % e)
-        else:
             kernel.add_plugin(scene.plugin)
     else:
         # Complete Gui Suppress implies no-gui.
@@ -312,8 +224,6 @@ def run():
         for entry_point in pkg_resources.iter_entry_points("meerk40t.plugins"):
             try:
                 plugin = entry_point.load()
-            except Mk40tImportAbort as e:
-                print("Cannot install external plugin '%s' - pre-requisite '%s' needs to be installed" % (str(entry_point), e))
             except pkg_resources.DistributionNotFound:
                 pass
             else:
