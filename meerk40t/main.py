@@ -20,7 +20,7 @@ for full details.
 
 """
 
-MEERK40T_VERSION = "0.7.1"
+MEERK40T_VERSION = "0.7.2"
 
 if not getattr(sys, "frozen", False):
     MEERK40T_VERSION += "s"
