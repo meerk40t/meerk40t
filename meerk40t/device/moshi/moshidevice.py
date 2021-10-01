@@ -981,12 +981,12 @@ class MoshiController:
                 if self.is_shutdown:
                     break
                 # Stage 0: New Program send.
-                self.context.signal("pipe;running", True)
                 if len(self._buffer) == 0:
                     if len(self._programs) == 0:
                         self.pipe_channel("Nothing to process")
                         # time.sleep(0.4)
                         break  # There is nothing to run.
+                    self.context.signal("pipe;running", True)
                     self.pipe_channel("New Program")
                     self.open()
                     self.wait_until_accepting_packets()
@@ -1008,6 +1008,7 @@ class MoshiController:
                 self.pipe_channel("Waiting for finish processing.")
                 if len(self._buffer) == 0:
                     self.wait_finished()
+                self.context.signal("pipe;running", False)
 
             except ConnectionRefusedError:
                 if self.is_shutdown:
@@ -1029,7 +1030,7 @@ class MoshiController:
                 time.sleep(0.5)
                 self.close()
                 continue
-        self.context.signal("pipe;running", True)
+        self.context.signal("pipe;running", False)
         self._thread = None
         self.is_shutdown = False
         self.update_state(STATE_END)
