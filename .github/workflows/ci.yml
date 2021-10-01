@@ -9,7 +9,6 @@ on:
 
 jobs:
   build-ubuntu:
-    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout meerk40t
@@ -81,7 +80,6 @@ jobs:
         cd ..
 
     - name: Build MeerK40t (wxPython 4.0.7-post2)
-      if: ${{ false }}
       run: |
         move meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
