@@ -4491,9 +4491,16 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :param exc_traceback:
     :return:
     """
-    error_log = "MeerK40t crash log. Version: %s on %s\n" % (
+    wxversion = "wx"
+    try:
+        wxversion = wx.version()
+    except:
+        pass
+
+    error_log = "MeerK40t crash log. Version: %s on %s - %s\n" % (
         MEERK40T_VERSION,
         sys.platform,
+        wxversion,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     print(error_log)
