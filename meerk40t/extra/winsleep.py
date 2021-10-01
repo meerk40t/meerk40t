@@ -1,12 +1,20 @@
 import sys
 
-SLEEP_DISABLED = [False, None]
+SLEEP_DISABLED = [dict(), None, False]
 
 
 def on_usb_running(origin, value):
-    if value != SLEEP_DISABLED[0]:
-        SLEEP_DISABLED[0] = value
-        if value:
+    running = SLEEP_DISABLED[0]
+    running[origin] = value
+    any = False
+    for v in running:
+        q = running[v]
+        if q:
+            any = True
+            break
+    if any != SLEEP_DISABLED[2]:
+        SLEEP_DISABLED[2] = any
+        if any:
             SLEEP_DISABLED[1](".sleepmode_disable\n")
         else:
             SLEEP_DISABLED[1](".sleepmode_enable\n")
