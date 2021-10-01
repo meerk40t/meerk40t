@@ -1950,6 +1950,7 @@ class LhystudiosController:
         * : clear the buffers, and abort the thread.
         ! : pause.
         & : resume.
+        % : fail checksum, do not resend
         ~ : begin/end realtime exception (Note, these characters would be consumed during
                 the write process and should not exist in the queue)
         \x18 : quit.
@@ -1990,10 +1991,11 @@ class LhystudiosController:
         packet = bytes(buffer[:length])
 
         # edge condition of catching only pipe command without '\n'
-        if packet.endswith((b"-", b"*", b"&", b"!", b"#", b"\x18")):
+        if packet.endswith((b"-", b"*", b"&", b"!", b"#", b"%", b"\x18")):
             packet += buffer[length : length + 1]
             length += 1
         post_send_command = None
+        default_checksum = True
 
         # find pipe commands.
         if packet.endswith(b"\n"):
@@ -2009,6 +2011,9 @@ class LhystudiosController:
                 packet = packet[:-1]
             elif packet.endswith(b"!"):  # pause
                 self._pause_busy()
+                packet = packet[:-1]
+            elif packet.endswith(b"%"):  # alt-checksum
+                default_checksum = False
                 packet = packet[:-1]
             elif packet.endswith(b"\x18"):
                 self.state = STATE_TERMINATE
@@ -2034,7 +2039,10 @@ class LhystudiosController:
             # We have a sendable packet.
             if not self.pre_ok:
                 self.wait_until_accepting_packets()
-            packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
+            if default_checksum:
+                packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
+            else:
+                packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet) ^ 0xFF])
             self.connection.write(packet)
             self.pre_ok = False
 
@@ -2061,6 +2069,8 @@ class LhystudiosController:
                     # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
                     continue
                 elif status == STATUS_ERROR:
+                    if not default_checksum:
+                        break
                     self.context.rejected_count += 1
                     if flawless:  # Packet was rejected. The CRC failed.
                         return False
