@@ -136,11 +136,14 @@ def plugin(kernel, lifecycle=None):
                 emulator.spooler = spooler
                 emulator.driver = input_driver
                 emulator.output = output
+                emulator.elements = root.elements
 
                 if command == "ruidadesign":
-                    emulator.elements = root.elements
-                emulator.control = command == "ruidacontrol"
-
+                    emulator.design = True
+                elif command == "ruidacontrol":
+                    emulator.control = True
+                elif command == "ruidaemulator":
+                    pass
             except OSError:
                 channel(_("Server failed."))
             return
@@ -149,6 +152,8 @@ def plugin(kernel, lifecycle=None):
 class RuidaEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
+        self.design = False
+        self.control = False
 
         self.cutcode = CutCode()
 
@@ -158,8 +163,8 @@ class RuidaEmulator(Module):
         self.spooler = None
         self.driver = None
         self.output = None
+
         self.elements = None
-        self.control = False
         self.color = None
 
         self.x = 0.0
@@ -785,11 +790,9 @@ class RuidaEmulator(Module):
             self.in_file = False
             if self.control:
                 self.spooler.append(self.cutcode)
-                self.cutcode = CutCode()
-            else:
-                if self.elements is not None:
-                    self.elements.op_branch.add(self.cutcode, type="cutcode")
-                    self.cutcode = CutCode()
+            if self.design and self.elements is not None:
+                self.elements.op_branch.add(self.cutcode, type="cutcode")
+            self.cutcode = CutCode()
             # Also could be in design mode without elements. Preserves cutcode
             desc = "End Of File"
         elif array[0] == 0xD8:
