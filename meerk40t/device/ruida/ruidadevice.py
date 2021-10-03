@@ -1106,14 +1106,17 @@ class RuidaEmulator(Module):
                 v = self.decode14(array[2:4])
                 desc = "RD-FUNCTION-UNK1 %d" % v
         elif array[0] == 0xE5:  # 0xE502
-            if array[1] == 0x00:
-                # RDWorks File Upload
-                filenumber = array[2]
-                desc = "Document Page Number %d" % filenumber
-                # TODO: Requires Response.
-            if array[1] == 0x02:
-                # len 3
-                desc = "Document Data End"
+            if len(array) == 1:
+                desc("Lightburn E5")
+            else:
+                if array[1] == 0x00:
+                    # RDWorks File Upload
+                    filenumber = array[2]
+                    desc = "Document Page Number %d" % filenumber
+                    # TODO: Requires Response.
+                if array[1] == 0x02:
+                    # len 3
+                    desc = "Document Data End"
         elif array[0] == 0xE6:
             if array[1] == 0x01:
                 desc = "Set Absolute"
