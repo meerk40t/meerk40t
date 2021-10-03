@@ -237,6 +237,14 @@ class RuidaEmulator(Module):
             return v
 
     @staticmethod
+    def signed32(v):
+        v &= 0xFFFFFFFF
+        if v > 0x7FFFFFFF:
+            return -0x100000000 + v
+        else:
+            return v
+
+    @staticmethod
     def signed14(v):
         v &= 0x7FFF
         if v > 0x1FFF:
@@ -264,6 +272,10 @@ class RuidaEmulator(Module):
         return RuidaEmulator.signed35(RuidaEmulator.decodeu35(data))
 
     @staticmethod
+    def decode32(data):
+        return RuidaEmulator.signed32(RuidaEmulator.decodeu35(data))
+
+    @staticmethod
     def decodeu35(data):
         return (
             (data[0] & 0x7F) << 28
@@ -285,7 +297,7 @@ class RuidaEmulator(Module):
 
     @staticmethod
     def abscoord(data):
-        return RuidaEmulator.decode35(data)
+        return RuidaEmulator.decode32(data)
 
     @staticmethod
     def relcoord(data):
@@ -1903,7 +1915,6 @@ class RuidaEmulator(Module):
             from os.path import join, realpath
 
             files = [name for name in glob(join(realpath("."), "*.rd"))]
-            print(files)
             v = len(files)
             return "Total Doc Number", v
         if mem == 0x0206:
