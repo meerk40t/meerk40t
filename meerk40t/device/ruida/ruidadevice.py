@@ -1062,6 +1062,7 @@ class RuidaEmulator(Module):
         elif array[0] == 0xE6:
             if array[1] == 0x01:
                 desc = "Set Absolute"
+                # Only seen in Absolute Coords. MachineZero is Ref2 but does not Set Absolute.
         elif array[0] == 0xE7:
             if array[1] == 0x00:
                 desc = "Block End"
