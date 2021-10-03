@@ -1292,6 +1292,17 @@ class RuidaEmulator(Module):
                 desc = "File transfer"
             elif array[1] == 0x03:
                 filenumber = self.parse_filenumber(array[2:4])
+
+                from glob import glob
+                from os.path import join, realpath
+
+                files = [name for name in glob(join(realpath("."), "*.rd"))]
+                name = files[filenumber - 1]
+                try:
+                    with open(name, "rb") as f:
+                        self.write(BytesIO(self.unswizzle(f.read())))
+                except IOError:
+                    pass
                 desc = "Start Select Document %d" % filenumber
             elif array[1] == 0x04:
                 filenumber = self.parse_filenumber(array[2:4])
