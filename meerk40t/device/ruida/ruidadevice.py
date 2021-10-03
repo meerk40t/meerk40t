@@ -1110,7 +1110,7 @@ class RuidaEmulator(Module):
                 desc = "RD-FUNCTION-UNK1 %d" % v
         elif array[0] == 0xE5:  # 0xE502
             if len(array) == 1:
-                desc("Lightburn E5")
+                desc = "Singleton E5"
             else:
                 if array[1] == 0x00:
                     # RDWorks File Upload
