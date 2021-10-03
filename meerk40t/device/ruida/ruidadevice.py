@@ -447,11 +447,11 @@ class RuidaEmulator(Module):
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            desc = "Move Horizontal Relative (%f mil)" % dx / um_per_mil
+            desc = "Move Horizontal Relative (%f mil)" % (dx / um_per_mil)
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            desc = "Move Vertical Relative (%f mil)" % dy / um_per_mil
+            desc = "Move Vertical Relative (%f mil)" % (dy / um_per_mil)
         elif array[0] == 0xA0:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:
@@ -568,7 +568,7 @@ class RuidaEmulator(Module):
                     settings=self.cutset,
                 )
             )
-            desc = "Cut Horizontal Relative (%f mil)" % dx / um_per_mil
+            desc = "Cut Horizontal Relative (%f mil)" % (dx / um_per_mil)
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
@@ -579,7 +579,7 @@ class RuidaEmulator(Module):
                     settings=self.cutset,
                 )
             )
-            desc = "Cut Vertical Relative (%f mil)" % dy / um_per_mil
+            desc = "Cut Vertical Relative (%f mil)" % (dy / um_per_mil)
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])
             desc = "Imd Power 1 (%f)" % v0
