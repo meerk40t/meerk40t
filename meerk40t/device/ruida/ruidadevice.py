@@ -1246,7 +1246,8 @@ class RuidaEmulator(Module):
                 document = array[2]
                 desc = "Start Select Document %d" % document
             elif array[1] == 0x04:
-                desc = "Calculate Document Time"
+                filenumber = self.parse_filenumber(array[2:4])
+                desc = "Calculate Document Time %d" % filenumber
         elif array[0] == 0xEA:
             index = array[1]
             desc = "Array Start (%d)" % index
@@ -1942,6 +1943,9 @@ class RuidaEmulator(Module):
             return "Axis Preferred Position 8, Pos D", int(self.d)
         if mem == 0x0260:
             return "DocumentWorkNum", 0
+        if 0x0261 <= mem < 0x02C4:
+            # Unsure if this is where the document numbers end.
+            return "Document Number", mem - 0x25F  # 260
         if mem == 0x02C4:
             return "Read Scan Backlash Flag", 0
         if mem == 0x02C5:
