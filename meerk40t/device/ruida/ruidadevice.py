@@ -967,68 +967,71 @@ class RuidaEmulator(Module):
             if array[1] == 0x51:
                 desc = "Inhale On/Off"
         elif array[0] == 0xD9:
-            options = array[2]
-            if options == 0x03:
-                param = "Light"
-            elif options == 0x02:
-                param = ""
-            elif options == 0x01:
-                param = "Light/Origin"
-            else:  # options == 0x00:
-                param = "Origin"
-            if array[1] == 0x00 or array[1] == 0x50:
-                coord = -self.abscoord(array[3:8])
-                self.x += coord
-                desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
-                if self.control:
-                    self.context(
-                        "move %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
-                    )
-            elif array[1] == 0x01 or array[1] == 0x51:
-                coord = self.abscoord(array[3:8])
-                self.y += coord
-                desc = "Move %s Y: %f (%f,%f)" % (param, coord, self.x, self.y)
-                if self.control:
-                    self.context(
-                        "move %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
-                    )
-            elif array[1] == 0x02 or array[1] == 0x52:
-                coord = self.abscoord(array[3:8])
-                self.z += coord
-                desc = "Move %s Z: %f (%f,%f)" % (param, coord, self.x, self.y)
-            elif array[1] == 0x03 or array[1] == 0x53:
-                coord = self.abscoord(array[3:8])
-                self.u += coord
-                desc = "Move %s U: %f (%f,%f)" % (param, coord, self.x, self.y)
-            elif array[1] == 0x0F:
-                desc = "Feed Axis Move"
-            elif array[1] == 0x10 or array[1] == 0x60:
-                self.x = self.abscoord(array[3:8])
-                self.y = self.abscoord(array[8:13])
-                desc = "Move %s XY (%f, %f)" % (
-                    param,
-                    self.x / UM_PER_MIL,
-                    self.y / UM_PER_MIL,
-                )
-                # self.x = 0
-                # self.y = 0
-                if self.control:
-                    if "Origin" in param:
+            if len(array) == 1:
+                desc = "Unknown Directional Setting"
+            else:
+                options = array[2]
+                if options == 0x03:
+                    param = "Light"
+                elif options == 0x02:
+                    param = ""
+                elif options == 0x01:
+                    param = "Light/Origin"
+                else:  # options == 0x00:
+                    param = "Origin"
+                if array[1] == 0x00 or array[1] == 0x50:
+                    coord = self.abscoord(array[3:8])
+                    self.x += coord
+                    desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
+                    if self.control:
                         self.context(
                             "move %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
                         )
-                    else:
-                        self.context("home\n")
-            elif array[1] == 0x30 or array[1] == 0x70:
-                self.x = self.abscoord(array[3:8])
-                self.y = self.abscoord(array[8:13])
-                self.u = self.abscoord(array[13 : 13 + 5])
-                desc = "Move %s XYU: %f (%f,%f)" % (
-                    param,
-                    self.x / UM_PER_MIL,
-                    self.y / UM_PER_MIL,
-                    self.u / UM_PER_MIL,
-                )
+                elif array[1] == 0x01 or array[1] == 0x51:
+                    coord = self.abscoord(array[3:8])
+                    self.y += coord
+                    desc = "Move %s Y: %f (%f,%f)" % (param, coord, self.x, self.y)
+                    if self.control:
+                        self.context(
+                            "move %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
+                        )
+                elif array[1] == 0x02 or array[1] == 0x52:
+                    coord = self.abscoord(array[3:8])
+                    self.z += coord
+                    desc = "Move %s Z: %f (%f,%f)" % (param, coord, self.x, self.y)
+                elif array[1] == 0x03 or array[1] == 0x53:
+                    coord = self.abscoord(array[3:8])
+                    self.u += coord
+                    desc = "Move %s U: %f (%f,%f)" % (param, coord, self.x, self.y)
+                elif array[1] == 0x0F:
+                    desc = "Feed Axis Move"
+                elif array[1] == 0x10 or array[1] == 0x60:
+                    self.x = self.abscoord(array[3:8])
+                    self.y = self.abscoord(array[8:13])
+                    desc = "Move %s XY (%f, %f)" % (
+                        param,
+                        self.x / UM_PER_MIL,
+                        self.y / UM_PER_MIL,
+                    )
+                    # self.x = 0
+                    # self.y = 0
+                    if self.control:
+                        if "Origin" in param:
+                            self.context(
+                                "move %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
+                            )
+                        else:
+                            self.context("home\n")
+                elif array[1] == 0x30 or array[1] == 0x70:
+                    self.x = self.abscoord(array[3:8])
+                    self.y = self.abscoord(array[8:13])
+                    self.u = self.abscoord(array[13 : 13 + 5])
+                    desc = "Move %s XYU: %f (%f,%f)" % (
+                        param,
+                        self.x / UM_PER_MIL,
+                        self.y / UM_PER_MIL,
+                        self.u / UM_PER_MIL,
+                    )
         elif array[0] == 0xDA:
             mem = self.parse_mem(array[2:4])
             name, v = self.mem_lookup(mem)
