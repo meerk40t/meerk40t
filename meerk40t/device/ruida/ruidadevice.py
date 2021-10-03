@@ -1997,7 +1997,7 @@ class RuidaEmulator(Module):
         if mem == 0x02D5:
             return "Read Scan Backlash 2", 0
         if mem == 0x02FE:
-            return "Card ID", 0x65006500
+            return "Card ID", 0x65006500  # RDC6442G
         if mem == 0x02FF:
             return "Mainboard Version", b"MEERK40T\x00"
         if mem == 0x0313:
