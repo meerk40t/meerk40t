@@ -1,15 +1,24 @@
-name: BuildBoxTest
+name: Platform configurations
 
 on:
   workflow_dispatch:
 
 jobs:
   check-mac:
-    runs-on: [macos-10.15, macos-11]
+    name: Mac System_Profiler: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    [macos-10.15, macos-11]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-10.15, macos-11]
+
+
     steps:
     - name: system_profiler basic
       run: |
         system_profiler -detailLevel basic
+
     - name: system_profiler full
       run: |
         system_profiler
