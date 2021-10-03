@@ -470,6 +470,8 @@ class RuidaEmulator(Module):
             dy = self.relcoord(array[1:3])
             self.y += dy
             desc = "Move Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
+        elif array[0] == 0x97:
+            desc = "Unknown 97"
         elif array[0] == 0x9b:
             desc = "Unknown 9b"
         elif array[0] == 0x9e:
