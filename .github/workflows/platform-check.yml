@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   check-mac:
-    name: Mac System_Profiler ${{ matrix.os }}
+    name: ${{ matrix.os }} system_profiler
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -32,12 +32,12 @@ jobs:
     - name: Upload analysis results
       uses: actions/upload-artifact@v2
       with:
-        name: Mac-Platform-System-Profiles
+        name: System-Information
         path: artifacts/
 
 
   check-ubuntu:
-    name: Ubuntu lshw ${{ matrix.os }}
+    name: ${{ matrix.os }} lshw
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -57,12 +57,12 @@ jobs:
     - name: Upload analysis results
       uses: actions/upload-artifact@v2
       with:
-        name: Artifacts
+        name: System-Information
         path: artifacts/
 
 
   check-windows:
-    name: Windows lshw ${{ matrix.os }}
+    name: ${{ matrix.os }} systeminfo
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -74,7 +74,7 @@ jobs:
     - name: Create artifacts directory
       run: mkdir -p artifacts
 
-    - name: system_profiler basic
+    - name: systeminfo
       run: |
         systeminfo
         systeminfo > artifacts/${{ matrix.os }}-systeminfo.txt
@@ -82,5 +82,5 @@ jobs:
     - name: Upload analysis results
       uses: actions/upload-artifact@v2
       with:
-        name: Artifacts
+        name: System-Information
         path: artifacts/
