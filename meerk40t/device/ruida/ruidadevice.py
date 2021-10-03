@@ -818,16 +818,26 @@ class RuidaEmulator(Module):
                 self.x = 0.0
                 self.y = 0.0
                 desc = "Home XY"
+                if self.control:
+                    self.context("home\n")
             if array[1] == 0x2E:
                 desc = "FocusZ"
             if array[1] == 0x20:
                 desc = "KeyDown -X +Left"
+                if self.control:
+                    self.context("+left\n")
             if array[1] == 0x21:
                 desc = "KeyDown +X +Right"
+                if self.control:
+                    self.context("+right\n")
             if array[1] == 0x22:
                 desc = "KeyDown +Y +Top"
+                if self.control:
+                    self.context("+up\n")
             if array[1] == 0x23:
                 desc = "KeyDown -Y +Bottom"
+                if self.control:
+                    self.context("+down\n")
             if array[1] == 0x24:
                 desc = "KeyDown +Z"
             if array[1] == 0x25:
@@ -840,12 +850,20 @@ class RuidaEmulator(Module):
                 desc = "KeyDown 0x21"
             if array[1] == 0x30:
                 desc = "KeyUp -X +Left"
+                if self.control:
+                    self.context("-left\n")
             if array[1] == 0x31:
                 desc = "KeyUp +X +Right"
+                if self.control:
+                    self.context("-right\n")
             if array[1] == 0x32:
                 desc = "KeyUp +Y +Top"
+                if self.control:
+                    self.context("-up\n")
             if array[1] == 0x33:
                 desc = "KeyUp -Y +Bottom"
+                if self.control:
+                    self.context("-down\n")
             if array[1] == 0x34:
                 desc = "KeyUp +Z"
             if array[1] == 0x35:
