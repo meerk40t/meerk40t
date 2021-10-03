@@ -909,7 +909,7 @@ class RuidaEmulator(Module):
             else:  # options == 0x00:
                 param = "Origin"
             if array[1] == 0x00 or array[1] == 0x50:
-                coord = self.abscoord(array[3:8])
+                coord = -self.abscoord(array[3:8])
                 self.x += coord
                 desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
                 if self.control:
