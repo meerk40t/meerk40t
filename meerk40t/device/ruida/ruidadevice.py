@@ -164,7 +164,10 @@ class RuidaEmulator(Module):
         Module.__init__(self, context, path)
         self.design = False
         self.control = False
-        self.record = False
+        self.saving = False
+
+        self.filename = None
+        self.filestream = None
 
         self.cutcode = CutCode()
 
@@ -192,7 +195,6 @@ class RuidaEmulator(Module):
         # self.magic = 0x38
         self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(self.magic)
 
-        self.filename = ""
         self.power1_min = 0
         self.power1_max = 0
         self.power2_min = 0
@@ -206,7 +208,6 @@ class RuidaEmulator(Module):
 
         self.process_commands = True
         self.parse_lasercode = True
-        self.in_file = False
         self.swizzle_mode = True
 
     def __repr__(self):
@@ -219,6 +220,7 @@ class RuidaEmulator(Module):
 
     @property
     def cutset(self):
+        # self.settings.jog_enable = False
         if self._use_set is None:
             self._use_set = LaserSettings(self.settings)
         return self._use_set
@@ -414,6 +416,8 @@ class RuidaEmulator(Module):
         respond_desc = None
         start_x = self.x
         start_y = self.y
+        if self.filestream:
+            self.filestream.write(self.swizzle(array))
         if array[0] < 0x80:
             self.ruida_channel("NOT A COMMAND: %d" % array[0])
             raise SyntaxError
@@ -808,16 +812,20 @@ class RuidaEmulator(Module):
             if array[1] == 0x29:
                 desc = "Unknown LB Command"
         elif array[0] == 0xD7:
-            self.in_file = False
-            if self.control:
-                self.spooler.append(self.cutcode)
-            if self.design and self.elements is not None:
-                self.elements.op_branch.add(self.cutcode, type="cutcode")
+            # If not saving send to spooler in control or elements if design.
+            if not self.saving and len(self.cutcode):
+                if self.control:
+                    self.spooler.append(self.cutcode)
+                if self.design and self.elements is not None:
+                    self.elements.op_branch.add(self.cutcode, type="cutcode")
             self.cutcode = CutCode()
-            # Also could be in design mode without elements. Preserves cutcode
+            self.saving = False
+            self.filename = None
+            if self.filestream is not None:
+                self.filestream.close()
+                self.filestream = None
             desc = "End Of File"
         elif array[0] == 0xD8:
-            self.in_file = True
             if array[1] == 0x00:
                 desc = "Start Process"
             if array[1] == 0x01:
@@ -1089,6 +1097,8 @@ class RuidaEmulator(Module):
                         break
                     self.filename += chr(a)
                 desc = "Filename: %s" % self.filename
+                if self.saving:
+                    self.filestream = open("%s.rd" % self.filename, "wb")
             elif array[1] == 0x03:
                 c_x = self.abscoord(array[2:7]) / um_per_mil
                 c_y = self.abscoord(array[7:12]) / um_per_mil
@@ -1228,8 +1238,9 @@ class RuidaEmulator(Module):
                 name = name.upper()[:8]
 
                 respond = bytes(array[:4]) + bytes(name, "utf8") + b"\00"
-                # respond_desc = "Document %d Named: %s" % (filenumber, name)
+                respond_desc = "Document %d Named: %s" % (filenumber, name)
             elif array[1] == 0x02:
+                self.saving = True
                 desc = "File transfer"
             elif array[1] == 0x03:
                 document = array[2]
