@@ -1291,8 +1291,8 @@ class RuidaEmulator(Module):
                 self.saving = True
                 desc = "File transfer"
             elif array[1] == 0x03:
-                document = array[2]
-                desc = "Start Select Document %d" % document
+                filenumber = self.parse_filenumber(array[2:4])
+                desc = "Start Select Document %d" % filenumber
             elif array[1] == 0x04:
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = "Calculate Document Time %d" % filenumber
