@@ -1073,13 +1073,26 @@ class RuidaEmulator(Module):
                 desc = "Unknown/System Time."
             elif array[1] == 0x10 or array[1] == 0x53:
                 desc = "Unknown Function--3"
+            elif array[1] == 0x30:
+                # Property requested with select document, upload button "fresh property"
+                filenumber = self.parse_filenumber(array[2:4])
+                desc = "Upload Info 0x30 Document %d" % filenumber
+                # TODO: Requires Response.
+            elif array[1] == 0x31:
+                # Property requested with select document, upload button "fresh property"
+                filenumber = self.parse_filenumber(array[2:4])
+                desc = "Upload Info 0x31 Document %d" % filenumber
+                # TODO: Requires Response.
             elif array[1] == 0x60:
                 # len: 14
                 v = self.decode14(array[2:4])
                 desc = "RD-FUNCTION-UNK1 %d" % v
         elif array[0] == 0xE5:  # 0xE502
             if array[1] == 0x00:
-                desc = "Document Page Number"
+                # RDWorks File Upload
+                filenumber = array[2]
+                desc = "Document Page Number %d" % filenumber
+                # TODO: Requires Response.
             if array[1] == 0x02:
                 # len 3
                 desc = "Document Data End"
