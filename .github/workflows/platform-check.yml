@@ -5,7 +5,7 @@ on:
 
 jobs:
   check-mac:
-    name: Mac System_Profiler: ${{ matrix.os }}
+    name: Mac System_Profiler ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     [macos-10.15, macos-11]
     strategy:
