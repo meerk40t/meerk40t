@@ -3,6 +3,10 @@ name: Platform configurations
 on:
   workflow_dispatch:
 
+concurrency:
+  group: platform-configuration
+  cancel-in-progress: true
+
 jobs:
   check-mac:
     name: Mac System_Profiler ${{ matrix.os }}
@@ -14,10 +18,19 @@ jobs:
 
 
     steps:
+    - name: Create artifacts directory
+      run: mkdir -p artifacts
+
     - name: system_profiler basic
       run: |
-        system_profiler -detailLevel basic
+        system_profiler -detailLevel basic | tee artifacts/system_profile_basic.txt
 
     - name: system_profiler full
       run: |
-        system_profiler
+        system_profiler -detailLevel full | tee artifacts/system_profile_full.txt
+
+    - name: Upload analysis results
+      uses: actions/upload-artifact@v2
+      with:
+        name: Artifacts
+        path: artifacts/
