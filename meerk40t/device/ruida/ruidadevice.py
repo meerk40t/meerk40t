@@ -467,16 +467,16 @@ class RuidaEmulator(Module):
                     desc = "Interface +Y %s" % key
                     if self.control:
                         if key == "Down":
-                            self.context("+down\n")
+                            self.context("+up\n")
                         else:
-                            self.context("-down\n")
+                            self.context("-up\n")
                 elif array[2] == 0x04:
                     desc = "Interface -Y %s" % key
                     if self.control:
                         if key == "Down":
-                            self.context("+up\n")
+                            self.context("+down\n")
                         else:
-                            self.context("-up\n")
+                            self.context("-down\n")
                 if array[2] == 0x0A:
                     desc = "Interface +Z %s" % key
                 elif array[2] == 0x0B:
