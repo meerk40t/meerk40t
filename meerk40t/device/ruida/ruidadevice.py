@@ -154,6 +154,7 @@ class RuidaEmulator(Module):
         Module.__init__(self, context, path)
         self.design = False
         self.control = False
+        self.record = False
 
         self.cutcode = CutCode()
 
@@ -810,11 +811,11 @@ class RuidaEmulator(Module):
             if array[1] == 0x03:
                 desc = "Restore Process"
             if array[1] == 0x10:
-                desc = "Ref Point Mode 2"
+                desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
             if array[1] == 0x11:
-                desc = "Ref Point Mode 1"
+                desc = "Ref Point Mode 1, Anchor Point"
             if array[1] == 0x12:
-                desc = "Ref Point Mode 0"
+                desc = "Ref Point Mode 0, Current Position"
             if array[1] == 0x2C:
                 self.z = 0.0
                 desc = "Home Z"
