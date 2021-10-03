@@ -1224,7 +1224,18 @@ class RuidaEmulator(Module):
                 # e8 00 00 00 00 00
                 v1 = self.parse_filenumber(array[2:4])
                 v2 = self.parse_filenumber(array[4:6])
-                desc = "Delete Document %d %d" % (v1, v2)
+                from glob import glob
+                from os.path import join, realpath
+
+                files = [name for name in glob(join(realpath("."), "*.rd"))]
+                if v1 == 0:
+                    for f in files:
+                        os.remove(f)
+                    desc = "Delete All Documents"
+                else:
+                    name = files[v1 - 1]
+                    os.remove(name)
+                    desc = "Delete Document %d %d" % (v1, v2)
             elif array[1] == 0x01:
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = "Document Name %d" % filenumber
