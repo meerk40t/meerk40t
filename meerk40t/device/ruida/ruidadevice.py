@@ -72,8 +72,18 @@ def plugin(kernel, lifecycle=None):
                 r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)
                 r2mj = root.open_as("module/UDPServer", "rd2mk-jog", port=50207)
                 if laser:
-                    m2l = root.open_as("module/UDPServer", "mk2lz", port=40200, upd_address=(laser, 50200))
-                    m2lj = root.open_as("module/UDPServer", "mk2lz-jog", port=40207, upd_address=(laser, 50207))
+                    m2l = root.open_as(
+                        "module/UDPServer",
+                        "mk2lz",
+                        port=40200,
+                        upd_address=(laser, 50200),
+                    )
+                    m2lj = root.open_as(
+                        "module/UDPServer",
+                        "mk2lz-jog",
+                        port=40207,
+                        upd_address=(laser, 50207),
+                    )
                 else:
                     m2l = None
                     m2lj = None
