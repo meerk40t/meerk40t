@@ -609,13 +609,13 @@ class RuidaEmulator(Module):
                 power = self.parse_power(array[2:4])
                 desc = "Power 1 min=%f" % power
                 self.power1_min = power
-                self.settings.power = self.power1_max * 1000.0
+                self.settings.power = self.power1_max * 10.0  # 1000 / 100
                 self._use_set = None
             elif array[1] == 0x02:
                 power = self.parse_power(array[2:4])
                 desc = "Power 1 max=%f" % power
                 self.power1_max = power
-                self.settings.power = self.power1_max * 1000.0
+                self.settings.power = self.power1_max * 10.0  # 1000 / 100
                 self._use_set = None
             elif array[1] == 0x05:
                 power = self.parse_power(array[2:4])
