@@ -1940,33 +1940,51 @@ class RuidaEmulator(Module):
         if mem == 0x021F:
             return "Ring Number", 0
         if mem == 0x0221:
-            return "Axis Preferred Position 1, Pos X", int(self.x)
+            if self.driver is not None:
+                try:
+                    self.x = int(self.driver.current_x * UM_PER_MIL)
+                except AttributeError:
+                    pass
+            x = int(self.x)
+            return "Axis Preferred Position 1, Pos X", x
         if mem == 0x0223:
             return "X Total Travel (m)", 0
         if mem == 0x0224:
             return "Position Point 0", 0
         if mem == 0x0231:
-            return "Axis Preferred Position 2, Pos Y", int(self.y)
+            if self.driver is not None:
+                try:
+                    self.y = int(self.driver.current_y * UM_PER_MIL)
+                except AttributeError:
+                    pass
+            y = int(self.y)
+            return "Axis Preferred Position 2, Pos Y", y
         if mem == 0x0233:
             return "Y Total Travel (m)", 0
         if mem == 0x0234:
             return "Position Point 1", 0
         if mem == 0x0241:
-            return "Axis Preferred Position 3, Pos Z", int(self.z)
+            z = int(self.z)
+            return "Axis Preferred Position 3, Pos Z", z
         if mem == 0x0243:
             return "Z Total Travel (m)", 0
         if mem == 0x0251:
-            return "Axis Preferred Position 4, Pos U", int(self.u)
+            u = int(self.u)
+            return "Axis Preferred Position 4, Pos U", u
         if mem == 0x0253:
             return "U Total Travel (m)", 0
         if mem == 0x025A:
-            return "Axis Preferred Position 5, Pos A", int(self.a)
+            a = int(self.a)
+            return "Axis Preferred Position 5, Pos A", a
         if mem == 0x025B:
-            return "Axis Preferred Position 6, Pos B", int(self.b)
+            b = int(self.b)
+            return "Axis Preferred Position 6, Pos B", b
         if mem == 0x025C:
-            return "Axis Preferred Position 7, Pos C", int(self.c)
+            c = int(self.c)
+            return "Axis Preferred Position 7, Pos C", c
         if mem == 0x025D:
-            return "Axis Preferred Position 8, Pos D", int(self.d)
+            d = int(self.d)
+            return "Axis Preferred Position 8, Pos D", d
         if mem == 0x0260:
             return "DocumentWorkNum", 0
         if 0x0261 <= mem < 0x02C4:
