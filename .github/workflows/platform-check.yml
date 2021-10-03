@@ -23,11 +23,61 @@ jobs:
 
     - name: system_profiler basic
       run: |
-        system_profiler -detailLevel basic | tee artifacts/system_profile_basic.txt
+        system_profiler -detailLevel basic | tee artifacts/${{ matrix.os }}_system_profile_basic.txt
 
     - name: system_profiler full
       run: |
-        system_profiler -detailLevel full | tee artifacts/system_profile_full.txt
+        system_profiler -detailLevel full | tee artifacts/${{ matrix.os }}_system_profile_full.txt
+
+    - name: Upload analysis results
+      uses: actions/upload-artifact@v2
+      with:
+        name: Mac-Platform-System-Profiles
+        path: artifacts/
+
+
+  check-ubuntu:
+    name: Ubuntu lshw ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04]
+
+
+    steps:
+    - name: Create artifacts directory
+      run: mkdir -p artifacts
+
+    - name: lshw
+      run: |
+        sudo lshw | tee artifacts/${{ matrix.os }}-lshw.txt
+        sudo lshw -html > artifacts/${{ matrix.os }}-lshw.html
+
+    - name: Upload analysis results
+      uses: actions/upload-artifact@v2
+      with:
+        name: Artifacts
+        path: artifacts/
+
+
+  check-windows:
+    name: Windows lshw ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2016, windows-2019, windows-2022]
+
+
+    steps:
+    - name: Create artifacts directory
+      run: mkdir -p artifacts
+
+    - name: system_profiler basic
+      run: |
+        systeminfo
+        systeminfo > artifacts/${{ matrix.os }}-systeminfo.txt
 
     - name: Upload analysis results
       uses: actions/upload-artifact@v2
