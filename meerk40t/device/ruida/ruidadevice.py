@@ -1956,7 +1956,7 @@ class RuidaEmulator(Module):
             return "DocumentWorkNum", 0
         if 0x0261 <= mem < 0x02C4:
             # Unsure if this is where the document numbers end.
-            return "Document Number", mem - 0x25F  # 260
+            return "Document Number", mem - 0x260
         if mem == 0x02C4:
             return "Read Scan Backlash Flag", 0
         if mem == 0x02C5:
