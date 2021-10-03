@@ -428,17 +428,20 @@ class RuidaEmulator(Module):
                 dy = self.relcoord(array[3:5])
                 self.x += dx
                 self.y += dy
-                desc = "Move Relative (%f, %f)" % (dx, dy)
+                desc = "Move Relative (%f mil, %f mil)" % (
+                    dx / um_per_mil,
+                    dy / um_per_mil,
+                )
             else:
                 desc = "Move Relative (no coords)"
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            desc = "Move Horizontal Relative (%f)" % dx
+            desc = "Move Horizontal Relative (%f mil)" % dx / um_per_mil
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            desc = "Move Vertical Relative (%f)" % dy
+            desc = "Move Vertical Relative (%f mil)" % dy / um_per_mil
         elif array[0] == 0xA0:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:
@@ -528,7 +531,10 @@ class RuidaEmulator(Module):
                     settings=self.cutset,
                 )
             )
-            desc = "Cut Absolute (%f, %f)" % (self.x, self.y)
+            desc = "Cut Absolute (%f mil, %f mil)" % (
+                self.x / um_per_mil,
+                self.y / um_per_mil,
+            )
         elif array[0] == 0xA9:  # 0b10101001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
@@ -541,7 +547,7 @@ class RuidaEmulator(Module):
                     settings=self.cutset,
                 )
             )
-            desc = "Cut Relative (%f, %f)" % (dx, dy)
+            desc = "Cut Relative (%f mil, %f mil)" % (dx / um_per_mil, dy / um_per_mil)
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
@@ -552,7 +558,7 @@ class RuidaEmulator(Module):
                     settings=self.cutset,
                 )
             )
-            desc = "Cut Horizontal Relative (%f)" % dx
+            desc = "Cut Horizontal Relative (%f mil)" % dx / um_per_mil
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
@@ -563,7 +569,7 @@ class RuidaEmulator(Module):
                     settings=self.cutset,
                 )
             )
-            desc = "Cut Vertical Relative (%f)" % dy
+            desc = "Cut Vertical Relative (%f mil)" % dy / um_per_mil
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])
             desc = "Imd Power 1 (%f)" % v0
