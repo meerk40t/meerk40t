@@ -646,7 +646,7 @@ class RuidaEmulator(Module):
             elif array[1] == 0x32:
                 part = array[2]
                 self.power1_max = self.parse_power(array[3:5])
-                desc = "%d, Power 1 Max=(%f)" % (part, self.power1_min)
+                desc = "%d, Power 1 Max=(%f)" % (part, self.power1_max)
             elif array[1] == 0x35:
                 part = array[2]
                 power = self.parse_power(array[3:5])
