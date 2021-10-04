@@ -944,6 +944,7 @@ class MeerK40t(MWindow):
 
         context.listen("device;noactive", self.on_device_noactive)
         context.listen("pipe;failing", self.on_usb_error)
+        context.listen("pipe;running", self.on_usb_running)
         context.listen("pipe;usb_status", self.on_usb_state_text)
         context.listen("pipe;thread", self.on_pipe_state)
         context.listen("spooler;thread", self.on_spooler_state)
@@ -2218,6 +2219,14 @@ class MeerK40t(MWindow):
     def on_active_change(self, origin, active):
         self.__set_titlebar()
 
+    def window_close_veto(self):
+        if self.usb_running:
+            message = _("The device is actively sending data. Really quit?")
+            answer = wx.MessageBox(
+                message, _("Currently Sending Data..."), wx.YES_NO | wx.CANCEL, None
+            )
+            return answer != wx.YES
+
     def window_close(self):
         context = self.context
 
@@ -2243,6 +2252,7 @@ class MeerK40t(MWindow):
 
         context.unlisten("device;noactive", self.on_device_noactive)
         context.unlisten("pipe;failing", self.on_usb_error)
+        context.unlisten("pipe;running", self.on_usb_running)
         context.unlisten("pipe;usb_status", self.on_usb_state_text)
         context.unlisten("pipe;thread", self.on_pipe_state)
         context.unlisten("spooler;thread", self.on_spooler_state)
@@ -2348,7 +2358,7 @@ class MeerK40t(MWindow):
             dlg.ShowModal()
             dlg.Destroy()
 
-    def on_usb_running(self, value):
+    def on_usb_running(self, origin, value):
         self.usb_running = value
 
     def on_usb_state_text(self, origin, value):

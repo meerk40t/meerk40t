@@ -1914,7 +1914,6 @@ class LhystudiosController:
                 ):
                     self.update_state(STATE_ACTIVE)
                 self.count = 0
-                continue
             else:
                 # No packet could be sent.
                 if self.state not in (
