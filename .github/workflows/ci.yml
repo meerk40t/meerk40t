@@ -8,7 +8,34 @@ on:
     types: [published]
 
 jobs:
+  build-centos7:
+    runs-on: centos7
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v2
+    
+    - name: Ensure latest meerk40t-camera
+      run: |
+        pip3 install meerk40t-camera opencv-python-headless
+
+    - name: Build Meerk40t
+      run: |
+        mv meerk40t.py mk40t.py
+        pyinstaller --windowed --onefile --name meerk40t .github/workflows/linux/meerk40t.spec
+        mv mk40t.py meerk40t.py
+        mv dist/MeerK40t dist/MeerK40t-centos7-glibc2.17
+
+    - name: Upload Release Assets
+      id: release
+      uses: softprops/action-gh-release@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          dist/MeerK40t-centos7-glibc2.17
+
+       
   build-ubuntu:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout meerk40t
@@ -44,6 +71,7 @@ jobs:
 
 
   build-windows:
+    if: ${{ false }}
     runs-on: windows-latest
     steps:
     - name: Checkout meerk40t
