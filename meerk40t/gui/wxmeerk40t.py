@@ -4401,7 +4401,8 @@ class wxMeerK40t(wx.App, Module):
             assert sys.getrefcount(self.locale) <= 2
             del self.locale
         self.locale = wx.Locale(language_index)
-        if self.locale.IsOk():
+        # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
+        if self.locale.IsOk() or 'linux' in sys.platform:
             self.locale.AddCatalog("meerk40t")
         else:
             self.locale = None
