@@ -23,7 +23,7 @@ jobs:
         mv meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/linux/meerk40t.spec
         mv mk40t.py meerk40t.py
-        mv dist/MeerK40t dist/MeerK40t-centos7-glibc2.17
+        mv dist/MeerK40t dist/MeerK40t-Linux
 
     - name: Upload Release Assets
       id: release
@@ -31,7 +31,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          dist/MeerK40t-centos7-glibc2.17
+          dist/MeerK40t-Linux
 
        
   build-ubuntu:
@@ -71,7 +71,6 @@ jobs:
 
 
   build-windows:
-    if: ${{ false }}
     runs-on: windows-latest
     steps:
     - name: Checkout meerk40t
