@@ -1222,6 +1222,7 @@ def actualize(image, matrix, step_level=1):
         Image.AFFINE,
         (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
         resample=Image.BICUBIC,
+        fillcolor="white",
     )
     matrix.reset()
     box = None
