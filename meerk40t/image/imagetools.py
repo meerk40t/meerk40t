@@ -1182,10 +1182,12 @@ def actualize(image, matrix, step_level=1):
     from PIL import Image
 
     try:
-        alpha_mask = image.getchannel("A")
+        white = Image.new("L", image.size, color="white")
+        white.paste(image, (0, 0), image.getchannel("A"))
+        image = white
     except ValueError:
-        alpha_mask = None
-    image = image.convert("L")
+        image = image.convert("L")
+
     box = None
     try:
         box = image.point(lambda e: 255 - e).getbbox()
@@ -1217,11 +1219,6 @@ def actualize(image, matrix, step_level=1):
         matrix.reset()
         matrix.post_translate(-tx, -ty)
         matrix.post_scale(step_scale, step_scale)
-    # if (
-    #     matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0
-    # ) and image.mode != "RGBA":
-    #     # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-    #     image = image.convert("RGBA")
     image = image.transform(
         (element_width, element_height),
         Image.AFFINE,
@@ -1229,14 +1226,6 @@ def actualize(image, matrix, step_level=1):
         resample=Image.BICUBIC,
         fillcolor="white",
     )
-    if alpha_mask is not None:
-        alpha_mask = alpha_mask.transform(
-            (element_width, element_height),
-            Image.AFFINE,
-            (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-            resample=Image.BICUBIC,
-            fillcolor=0,
-        )
     matrix.reset()
     box = None
     try:
@@ -1248,17 +1237,11 @@ def actualize(image, matrix, step_level=1):
         height = box[3] - box[1]
         if width != element_width or height != element_height:
             image = image.crop(box)
-            if alpha_mask is not None:
-                alpha_mask = alpha_mask.crop(box)
             matrix.post_translate(box[0], box[1])
     # step level requires the new actualized matrix be scaled up.
     matrix.post_scale(step_level, step_level)
     matrix.post_translate(tx, ty)
-    if alpha_mask is not None:
-        background = Image.new(image.mode, image.size, "white")
-        background.paste(image, mask=alpha_mask)
-        image = background  # Mask exists use it to remove any pixels that were pure reject.
-        image.putalpha(alpha_mask)
+    image.putalpha(image.point(lambda e: 255 - e))
     return image, matrix
 
 
