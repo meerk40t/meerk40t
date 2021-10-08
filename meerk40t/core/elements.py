@@ -4969,6 +4969,9 @@ class Elemental(Modifier):
         @self.tree_operation(_("Actualize pixels"), node_type="elem", help="")
         def image_actualize_pixels(node, **kwgs):
             self.context("image resample\n")
+            node.object.node.modified()
+            self.context.signal("element_property_reload", node.object)
+            self.context.signal("refresh_scene")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Z-depth divide"))

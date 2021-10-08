@@ -1195,20 +1195,29 @@ def actualize(image, matrix, step_level=1, burn=False):
         and (matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0)
     ):
         new_mode = new_mode + "A"
+    print("actualize", mode, new_mode)
     if mode != new_mode:
         image = image.convert(new_mode)
 
-    image_L = image if image.mode == "L" else image.convert("L")
+    # Unfortunately Pillow does not allow to fill new areas created by transform with transparent
+    # so if there is an alpha layer we:
+    # 1. peel off alpha layer as an L mode image and set alpha to opaque
+    # 2. transform both main and alpha images using the same matrix and appropriate fill color
+    # 3. reapply the alpha back to the image
 
-    try:
-        box = image_L.point(lambda e: 255 - e).getbbox()
-        # Crop to reduce memory for a sparse image
-        # if box is not None:
-            # image = image.crop(box)
-            # matrix.pre_translate(box[0], box[1])
-            # box = (0, 0, box[2] - box[0], box[3] - box[1])
-    except ValueError:
-        box = None
+    if image.mode.endswith("A"):
+        alpha = image.getchannel("A")
+        image.putalpha(255)
+    else:
+        alpha = None
+
+    box = bbox_with_alpha(image, alpha)
+
+    # Crop to reduce memory for a sparse image
+    # if box is not None:
+        # image = image.crop(box)
+        # matrix.pre_translate(box[0], box[1])
+        # box = (0, 0, box[2] - box[0], box[3] - box[1])
 
     if box is None:
         box = (0, 0, image.width, image.height)
@@ -1230,6 +1239,7 @@ def actualize(image, matrix, step_level=1, burn=False):
     ty = bbox[1]
     matrix.post_translate(-tx, -ty)
     matrix.post_scale(step_scale, step_scale)
+
     try:
         matrix.inverse()
     except ZeroDivisionError:
@@ -1237,18 +1247,6 @@ def actualize(image, matrix, step_level=1, burn=False):
         matrix.reset()
         matrix.post_translate(-tx, -ty)
         matrix.post_scale(step_scale, step_scale)
-
-    # Unfortunately Pillow does not allow to fill new areas created by transform with transparent
-    # so if there is an alpha layer we:
-    # 1. peel off alpha layer as an L mode image and set alpha to opaque
-    # 2. transform both main and alpha images using the same matrix and appropriate fill color
-    # 3. reapply the alpha back to the image
-
-    if image.mode.endswith("A"):
-        alpha = image.getchannel("A")
-        image.putalpha(255)
-    else:
-        alpha = None
 
     image = image.transform(
         (element_width, element_height),
@@ -1270,13 +1268,7 @@ def actualize(image, matrix, step_level=1, burn=False):
 
     matrix.reset()
 
-    image_L = image if image.mode == "L" else image.convert("L")
-
-    try:
-        box = image_L.point(lambda e: 255 - e).getbbox()
-    except ValueError:
-        box = None
-
+    box = bbox_with_alpha(image, alpha)
     if box is not None:
         width = box[2] - box[0]
         height = box[3] - box[1]
@@ -1287,6 +1279,30 @@ def actualize(image, matrix, step_level=1, burn=False):
     matrix.post_scale(step_level, step_level)
     matrix.post_translate(tx, ty)
     return image, matrix
+
+def bbox_with_alpha(image, alpha=None):
+    # bbox is the smallest area bounded by both the bbox of the main image and that of the alpha channel
+    image_L = image if image.mode == "L" else image.convert("L")
+
+    try:
+        box = image_L.point(lambda e: 255 - e).getbbox()
+    except ValueError:
+        box = None
+
+    if box and alpha:
+        try:
+            alphabox = alpha.getbbox()
+            if alphabox:
+                box = (
+                    max(box[0], alphabox[0]),
+                    max(box[1], alphabox[1]),
+                    min(box[2], alphabox[2]),
+                    min(box[3], alphabox[3])
+                )
+        except ValueError:
+            pass
+
+    return box
 
 
 class RasterScripts:
@@ -1600,6 +1616,7 @@ class RasterScripts:
         except ValueError:
             alpha_mask = None
         empty_mask = None
+
         for op in operations:
             name = op["name"]
             if name == "crop":
@@ -1616,11 +1633,11 @@ class RasterScripts:
             elif name == "resample":
                 try:
                     if op["enable"]:
-                        image, matrix = actualize(image, matrix, step_level=op["step"])
                         step = op["step"]
+                        image, matrix = actualize(image, matrix, step_level=step)
                         if alpha_mask is not None:
-                            alpha_mask = image.getchannel("A")
                             # Get the resized alpha mask.
+                            alpha_mask = image.getchannel("A")
                         empty_mask = None
                 except KeyError:
                     pass
@@ -1641,15 +1658,18 @@ class RasterScripts:
                             except ZeroDivisionError:
                                 pass
                             if image.mode != "L":
+                                # Two stage process
                                 image = image.convert("RGB")
                                 image = image.convert("L", matrix=[r, g, b, 1.0])
                             if op["invert"]:
-                                if image.mode == "F":
-                                    image = image.convert("L")
+                                # Following lines commented out because above two lines mean image.mode != "F"
+                                # if image.mode == "F":
+                                    # image = image.convert("L")
                                 empty_mask = image.point(lambda e: 0 if e == 0 else 255)
                                 image = ImageOps.invert(image)
-                            else:
-                                empty_mask = image.point(
+                            elif alpha_mask:
+                                # When NOT inverting we can use the alpha mask
+                                empty_mask = alpha_mask.point(
                                     lambda e: 0 if e == 255 else 255
                                 )
                         except (KeyError, OSError):
