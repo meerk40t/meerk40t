@@ -531,12 +531,12 @@ class LaserRender:
         else:
             pil_data = pil_data.copy()
 
-        if dewhite:
-            img = pil_data.convert("L")
-            black = Image.new("L", img.size, color="black")
-            img = img.point(lambda e: 255 - e)
-            black.putalpha(img)
-            pil_data = black
+        # if dewhite:
+        #     img = pil_data.convert("L")
+        #     black = Image.new("L", img.size, color="black")
+        #     img = img.point(lambda e: 255 - e)
+        #     black.putalpha(img)
+        #     pil_data = black
 
         if pil_data.mode != "RGBA":
             pil_data = pil_data.convert("RGBA")
