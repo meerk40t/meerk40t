@@ -1667,9 +1667,8 @@ class RasterScripts:
                                     # image = image.convert("L")
                                 empty_mask = image.point(lambda e: 0 if e == 0 else 255)
                                 image = ImageOps.invert(image)
-                            elif alpha_mask:
-                                # When NOT inverting we can use the alpha mask
-                                empty_mask = alpha_mask.point(
+                            else:
+                                empty_mask = image.point(
                                     lambda e: 0 if e == 255 else 255
                                 )
                         except (KeyError, OSError):
