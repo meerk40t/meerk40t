@@ -1181,13 +1181,38 @@ def actualize(image, matrix, step_level=1):
     """
     from PIL import Image
 
-    box = None
+    # We reduce the number of image types to reduce the bug-surface
+    # See https://pillow.readthedocs.io/en/stable/handbook/concepts.html#modes
+    # If image already has alpha itis retained.
+    # If we are doing a skew or rotate then we need to add alpha so that we can ensure that triangular additions are transparent
+    new_mode = mode = image.mode
+    if (burn and mode not in ("1", "L", "LA")):
+        new_mode = "L"
+    elif (mode not in ("1", "L", "LA", "RGB", "RGBA")):
+        new_mode = "RGB"
+    if (
+        not new_mode.endswith("A")
+        and (matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0)
+    ):
+        new_mode = new_mode + "A"
+    if mode != new_mode:
+        image = image.convert(new_mode)
+
+    image_L = image if image.mode == "L" else image.convert("L")
+
     try:
-        box = image.convert("L").point(lambda e: 255 - e).getbbox()
+        box = image_L.point(lambda e: 255 - e).getbbox()
+        # Crop to reduce memory for a sparse image
+        # if box is not None:
+            # image = image.crop(box)
+            # matrix.pre_translate(box[0], box[1])
+            # box = (0, 0, box[2] - box[0], box[3] - box[1])
     except ValueError:
-        pass
+        box = None
+
     if box is None:
         box = (0, 0, image.width, image.height)
+
     boundary_points = [
         matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
         matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
@@ -1212,11 +1237,19 @@ def actualize(image, matrix, step_level=1):
         matrix.reset()
         matrix.post_translate(-tx, -ty)
         matrix.post_scale(step_scale, step_scale)
-    if (
-        matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0
-    ) and image.mode != "RGBA":
-        # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-        image = image.convert("RGBA")
+
+    # Unfortunately Pillow does not allow to fill new areas created by transform with transparent
+    # so if there is an alpha layer we:
+    # 1. peel off alpha layer as an L mode image and set alpha to opaque
+    # 2. transform both main and alpha images using the same matrix and appropriate fill color
+    # 3. reapply the alpha back to the image
+
+    if image.mode.endswith("A"):
+        alpha = image.getchannel("A")
+        image.putalpha(255)
+    else:
+        alpha = None
+
     image = image.transform(
         (element_width, element_height),
         Image.AFFINE,
@@ -1224,12 +1257,26 @@ def actualize(image, matrix, step_level=1):
         resample=Image.BICUBIC,
         fillcolor="white",
     )
+
+    if alpha:
+        alpha = alpha.transform(
+            (element_width, element_height),
+            Image.AFFINE,
+            (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+            resample=Image.BICUBIC,
+            fillcolor="black",
+        )
+        image.putalpha(alpha)
+
     matrix.reset()
-    box = None
+
+    image_L = image if image.mode == "L" else image.convert("L")
+
     try:
-        box = image.convert("L").point(lambda e: 255 - e).getbbox()
+        box = image_L.point(lambda e: 255 - e).getbbox()
     except ValueError:
-        pass
+        box = None
+
     if box is not None:
         width = box[2] - box[0]
         height = box[3] - box[1]
