@@ -1167,7 +1167,7 @@ def dither(image, method="Floyd-Steinberg"):
     return diff
 
 
-def actualize(image, matrix, step_level=1):
+def actualize(image, matrix, step_level=1, burn=False):
     """
     Makes PIL image actual in that it manipulates the pixels to actually exist
     rather than simply apply the transform on the image to give the resulting image.
