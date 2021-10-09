@@ -471,11 +471,11 @@ class RuidaEmulator(Module):
             self.y += dy
             desc = "Move Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
         elif array[0] == 0x97:
-            desc = "Unknown 97"
+            desc = "Lightburn Swizzle Modulation 97"
         elif array[0] == 0x9b:
-            desc = "Unknown 9b"
+            desc = "Lightburn Swizzle Modulation 9b"
         elif array[0] == 0x9e:
-            desc = "Unknown 9e"
+            desc = "Lightburn Swizzle Modulation 9e"
         elif array[0] == 0xA0:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:
@@ -1114,7 +1114,7 @@ class RuidaEmulator(Module):
                 desc = "RD-FUNCTION-UNK1 %d" % v
         elif array[0] == 0xE5:  # 0xE502
             if len(array) == 1:
-                desc = "Singleton E5"
+                desc = "Lightburn Swizzle Modulation E5"
             else:
                 if array[1] == 0x00:
                     # RDWorks File Upload
