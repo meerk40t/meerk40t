@@ -363,6 +363,7 @@ class Spoolers(Modifier):
             context(".timer 1 0 spool%s jog\n" % device_name)
             return "spooler", data
 
+        @context.console_option("force", "f", type=bool, action="store_true")
         @context.console_command(
             "jog",
             hidden=True,
@@ -370,7 +371,7 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("executes outstanding jog buffer"),
         )
-        def jog(command, channel, _, data, **kwgs):
+        def jog(command, channel, _, data, force=False, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
@@ -381,14 +382,18 @@ class Spoolers(Modifier):
                 return
             if idx == 0 and idy == 0:
                 return
-            if spooler.job_if_idle(execute_relative_position(idx, idy)):
-                channel(_("Position moved: %d %d") % (idx, idy))
-                spooler._dx -= idx
-                spooler._dy -= idy
+            if force:
+                spooler.job(execute_relative_position(idx, idy))
             else:
-                channel(_("Busy Error"))
+                if spooler.job_if_idle(execute_relative_position(idx, idy)):
+                    channel(_("Position moved: %d %d") % (idx, idy))
+                    spooler._dx -= idx
+                    spooler._dy -= idy
+                else:
+                    channel(_("Busy Error"))
             return "spooler", data
 
+        @context.console_option("force", "f", type=bool, action="store_true")
         @context.console_argument("x", type=Length, help=_("change in x"))
         @context.console_argument("y", type=Length, help=_("change in y"))
         @context.console_command(
@@ -397,16 +402,20 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("move <x> <y>: move to position."),
         )
-        def move(channel, _, x, y, data=None, **kwgs):
+        def move(channel, _, x, y, data=None, force=False, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
             if y is None:
                 raise SyntaxError
-            if not spooler.job_if_idle(execute_absolute_position(x, y)):
-                channel(_("Busy Error"))
+            if force:
+                spooler.job(execute_absolute_position(x, y))
+            else:
+                if not spooler.job_if_idle():
+                    channel(_("Busy Error"))
             return "spooler", data
 
+        @context.console_option("force", "f", type=bool, action="store_true")
         @context.console_argument("dx", type=Length, help=_("change in x"))
         @context.console_argument("dy", type=Length, help=_("change in y"))
         @context.console_command(
@@ -415,14 +424,17 @@ class Spoolers(Modifier):
             output_type="spooler",
             help=_("move_relative <dx> <dy>"),
         )
-        def move_relative(channel, _, dx, dy, data=None, **kwgs):
+        def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:
                 data = self.default_spooler(), self.context.root.active
             spooler, device_name = data
             if dy is None:
                 raise SyntaxError
-            if not spooler.job_if_idle(execute_relative_position(dx, dy)):
-                channel(_("Busy Error"))
+            if force:
+                spooler.job(execute_relative_position(dx, dy))
+            else:
+                if not spooler.job_if_idle(execute_relative_position(dx, dy)):
+                    channel(_("Busy Error"))
             return "spooler", data
 
         @context.console_argument("x", type=Length, help=_("x offset"))
