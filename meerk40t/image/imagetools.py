@@ -1200,14 +1200,15 @@ def actualize(image, matrix, step_level=1, inverted=True, crop=True):
         image = image.convert("L")
 
     box = None
-    try:
-        # Get the bbox cutting off the white edges.
-        if inverted:
-            box = image.getbbox()
-        else:
-            box = image.point(lambda e: 255 - e).getbbox()
-    except ValueError:
-        pass
+    if crop:
+        try:
+            # Get the bbox cutting off the white edges.
+            if inverted:
+                box = image.getbbox()
+            else:
+                box = image.point(lambda e: 255 - e).getbbox()
+        except ValueError:
+            pass
 
     if box is None:
         # If box is entirely white, or bbox caused value error.
