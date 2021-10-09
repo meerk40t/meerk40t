@@ -1180,12 +1180,13 @@ def actualize(image, matrix, step_level=1):
     Pil requires a, c, e, b, d, f accordingly.
     """
     from PIL import Image
-
     try:
-        white = Image.new("L", image.size, color="white")
-        white.paste(image, (0, 0), image.getchannel("A"))
-        image = white
+        # If transparent we paste 0 into the pil_data
+        mask = image.getchannel("A").point(lambda e: 255 - e)
+        image.paste(mask, None, mask)
     except ValueError:
+        pass
+    if image.mode != "L":
         image = image.convert("L")
 
     box = None
@@ -1241,7 +1242,6 @@ def actualize(image, matrix, step_level=1):
     # step level requires the new actualized matrix be scaled up.
     matrix.post_scale(step_level, step_level)
     matrix.post_translate(tx, ty)
-    image.putalpha(image.point(lambda e: 255 - e))
     return image, matrix
 
 
