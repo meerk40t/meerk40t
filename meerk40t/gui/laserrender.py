@@ -266,7 +266,7 @@ class LaserRender:
                     cut.c_width, cut.c_height = image.image.size
                     try:
                         cut.cache = self.make_thumbnail(
-                            image.image, maximum=1000, dewhite=True
+                            image.image, maximum=1000
                         )
                     except (MemoryError, RuntimeError):
                         cut.cache = None
@@ -509,7 +509,7 @@ class LaserRender:
         return image
 
     def make_thumbnail(
-        self, pil_data, maximum=None, width=None, height=None, dewhite=False
+        self, pil_data, maximum=None, width=None, height=None
     ):
         """Resizes the given pil image into wx.Bitmap object that fits the constraints."""
         image_width, image_height = pil_data.size
