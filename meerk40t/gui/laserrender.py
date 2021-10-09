@@ -530,15 +530,15 @@ class LaserRender:
             pil_data = pil_data.resize((width, height))
         else:
             pil_data = pil_data.copy()
-
-        # if dewhite:
-        #     img = pil_data.convert("L")
-        #     black = Image.new("L", img.size, color="black")
-        #     img = img.point(lambda e: 255 - e)
-        #     black.putalpha(img)
-        #     pil_data = black
-
-        if pil_data.mode != "RGBA":
-            pil_data = pil_data.convert("RGBA")
-        pil_bytes = pil_data.tobytes()
+        try:
+            # If transparent we paste 0 into the pil_data
+            mask = pil_data.getchannel("A").point(lambda e: 255 - e)
+            pil_data.paste(mask, None, mask)
+        except ValueError:
+            pass
+        if pil_data.mode != "L":
+            pil_data = pil_data.convert("L")
+        black = Image.new("RGBA", pil_data.size, "black")
+        black.putalpha(pil_data.point(lambda e: 255 - e))
+        pil_bytes = black.tobytes()
         return wx.Bitmap.FromBufferRGBA(width, height, pil_bytes)
