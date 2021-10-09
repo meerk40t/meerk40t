@@ -1180,6 +1180,13 @@ def actualize(image, matrix, step_level=1, inverted=True, crop=True):
     Pil requires a, c, e, b, d, f accordingly.
 
     As of 0.7.2 this converts the image to "L" as part of the process.
+
+    @param image: image to be actualized
+    @param matrix: current applied matrix of the image
+    @param step_level: step level at which the actualization should occur
+    @param inverted: should actualize treat black as empty rather than white
+    @param crop: should actualize crop the empty edge values
+    @return: actualized image, straight matrix
     """
     from PIL import Image
     try:
