@@ -1,6 +1,6 @@
 import os
 from copy import copy
-from math import ceil
+from math import ceil, floor
 from os import path as ospath
 
 from ..core.planner import make_actual, needs_actualization
@@ -1167,7 +1167,7 @@ def dither(image, method="Floyd-Steinberg"):
     return diff
 
 
-def actualize(image, matrix, step_level=1):
+def actualize(image, matrix, step_level=1, inverted=True, crop=True):
     """
     Makes PIL image actual in that it manipulates the pixels to actually exist
     rather than simply apply the transform on the image to give the resulting image.
@@ -1178,24 +1178,35 @@ def actualize(image, matrix, step_level=1):
     [b d f]
 
     Pil requires a, c, e, b, d, f accordingly.
+
+    As of 0.7.2 this converts the image to "L" as part of the process.
     """
     from PIL import Image
     try:
-        # If transparent we paste 0 into the pil_data
+        # If transparency we paste 0 into the image where transparent.
         mask = image.getchannel("A").point(lambda e: 255 - e)
         image.paste(mask, None, mask)
     except ValueError:
         pass
     if image.mode != "L":
+        # All images must be greyscale
         image = image.convert("L")
 
     box = None
     try:
-        box = image.point(lambda e: 255 - e).getbbox()
+        # Get the bbox cutting off the white edges.
+        if inverted:
+            box = image.getbbox()
+        else:
+            box = image.point(lambda e: 255 - e).getbbox()
     except ValueError:
         pass
+
     if box is None:
+        # If box is entirely white, or bbox caused value error.
         box = (0, 0, image.width, image.height)
+
+    # Find the boundary points of the rotated box edges.
     boundary_points = [
         matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
         matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
@@ -1204,11 +1215,14 @@ def actualize(image, matrix, step_level=1):
     ]
     xs = [e[0] for e in boundary_points]
     ys = [e[1] for e in boundary_points]
-    bbox = min(xs), min(ys), max(xs), max(ys)
+
     # bbox here is expanded matrix size of box.
     step_scale = 1 / float(step_level)
-    element_width = int(ceil((bbox[2] - bbox[0]) * step_scale))
-    element_height = int(ceil((bbox[3] - bbox[1]) * step_scale))
+
+    bbox = min(xs), min(ys), max(xs), max(ys)
+
+    element_width = ceil(bbox[2] * step_scale) - floor(bbox[0] * step_scale)
+    element_height = ceil(bbox[3] * step_scale) - floor(bbox[1] * step_scale)
     tx = bbox[0]
     ty = bbox[1]
     matrix.post_translate(-tx, -ty)
@@ -1225,20 +1239,24 @@ def actualize(image, matrix, step_level=1):
         Image.AFFINE,
         (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
         resample=Image.BICUBIC,
-        fillcolor="white",
+        fillcolor="black" if inverted else "white",
     )
     matrix.reset()
     box = None
-    try:
-        box = image.point(lambda e: 255 - e).getbbox()
-    except ValueError:
-        pass
-    if box is not None:
-        width = box[2] - box[0]
-        height = box[3] - box[1]
-        if width != element_width or height != element_height:
-            image = image.crop(box)
-            matrix.post_translate(box[0], box[1])
+    if crop:
+        try:
+            if inverted:
+                box = image.getbbox()
+            else:
+                box = image.point(lambda e: 255 - e).getbbox()
+        except ValueError:
+            pass
+        if box is not None:
+            width = box[2] - box[0]
+            height = box[3] - box[1]
+            if width != element_width or height != element_height:
+                image = image.crop(box)
+                matrix.post_translate(box[0], box[1])
     # step level requires the new actualized matrix be scaled up.
     matrix.post_scale(step_level, step_level)
     matrix.post_translate(tx, ty)
@@ -1568,7 +1586,7 @@ class RasterScripts:
             elif name == "resample":
                 try:
                     if op["enable"]:
-                        image, matrix = actualize(image, matrix, step_level=op["step"])
+                        image, matrix = actualize(image, matrix, step_level=op["step"], crop=False)
                         step = op["step"]
                         empty_mask = None
                 except KeyError:
