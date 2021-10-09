@@ -72,7 +72,7 @@ class UDPServer(Module):
     Any packet the server picks up will be sent to the path/recv channel.
     """
 
-    def __init__(self, context, name, port=23):
+    def __init__(self, context, name, port=23, udp_address=None):
         """
         Laser Server init.
 
@@ -84,7 +84,7 @@ class UDPServer(Module):
         self.port = port
         self.events_channel = self.context.channel("server-udp-%d" % port)
 
-        self.udp_address = None
+        self.udp_address = udp_address
         self.context.channel("%s/send" % name).watch(self.send)
         self.recv = self.context.channel("%s/recv" % name)
 
