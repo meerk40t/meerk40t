@@ -1181,6 +1181,11 @@ def actualize(image, matrix, step_level=1, inverted=True, crop=True):
 
     As of 0.7.2 this converts the image to "L" as part of the process.
 
+    There is a small amount of slop at the edge of converted images sometimes, so it's essential
+    to mark the image as inverted if black should be treated as empty pixels. The scaled down image
+    cannot lose the edge pixels since they could be important, but also dim may not be be a multiple
+    of step level which requires an introduced empty edge pixel to be added.
+
     @param image: image to be actualized
     @param matrix: current applied matrix of the image
     @param step_level: step level at which the actualization should occur
