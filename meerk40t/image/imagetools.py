@@ -1583,6 +1583,13 @@ class RasterScripts:
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
         empty_mask = None
+        # Lookahead check for inversion
+        invert = False
+        for op in operations:
+            if op["name"] == "grayscale" and op["enable"]:
+                invert = op["invert"]
+
+        # Process operations.
         for op in operations:
             name = op["name"]
             if name == "crop":
@@ -1599,7 +1606,7 @@ class RasterScripts:
             elif name == "resample":
                 try:
                     if op["enable"]:
-                        image, matrix = actualize(image, matrix, step_level=op["step"], crop=False)
+                        image, matrix = actualize(image, matrix, step_level=op["step"], inverted=invert)
                         step = op["step"]
                         empty_mask = None
                 except KeyError:
