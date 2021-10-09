@@ -1197,7 +1197,9 @@ def actualize(image, matrix, step_level=1, inverted=False, crop=True):
     try:
         # If transparency we paste 0 into the image where transparent.
         mask = image.getchannel("A").point(lambda e: 255 - e)
-        image.paste(mask, None, mask)
+        image_copy = image.copy()  # Correct knock-on-effect.
+        image_copy.paste(mask, None, mask)
+        image = image_copy
     except ValueError:
         pass
     if image.mode != "L":
