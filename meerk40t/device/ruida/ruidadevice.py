@@ -987,7 +987,7 @@ class RuidaEmulator(Module):
                     desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
                     if self.control:
                         self.context(
-                            "move %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
+                            "move -f %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
                         )
                 elif array[1] == 0x01 or array[1] == 0x51:
                     coord = self.abscoord(array[3:8])
@@ -995,7 +995,7 @@ class RuidaEmulator(Module):
                     desc = "Move %s Y: %f (%f,%f)" % (param, coord, self.x, self.y)
                     if self.control:
                         self.context(
-                            "move %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
+                            "move -f %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
                         )
                 elif array[1] == 0x02 or array[1] == 0x52:
                     coord = self.abscoord(array[3:8])
@@ -1020,7 +1020,7 @@ class RuidaEmulator(Module):
                     if self.control:
                         if "Origin" in param:
                             self.context(
-                                "move %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
+                                "move -f %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
                             )
                         else:
                             self.context("home\n")
