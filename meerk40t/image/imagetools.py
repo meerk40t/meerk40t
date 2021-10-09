@@ -1551,10 +1551,6 @@ class RasterScripts:
         step = None
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
-        try:
-            alpha_mask = image.getchannel("A")
-        except ValueError:
-            alpha_mask = None
         empty_mask = None
         for op in operations:
             name = op["name"]
@@ -1574,9 +1570,6 @@ class RasterScripts:
                     if op["enable"]:
                         image, matrix = actualize(image, matrix, step_level=op["step"])
                         step = op["step"]
-                        if alpha_mask is not None:
-                            alpha_mask = image.getchannel("A")
-                            # Get the resized alpha mask.
                         empty_mask = None
                 except KeyError:
                     pass
@@ -1706,11 +1699,6 @@ class RasterScripts:
                     pass
             elif name == "dither":
                 try:
-                    if alpha_mask is not None:
-                        background = Image.new(image.mode, image.size, "white")
-                        background.paste(image, mask=alpha_mask)
-                        image = background  # Mask exists use it to remove any pixels that were pure reject.
-                        alpha_mask = None
                     if empty_mask is not None:
                         background = Image.new(image.mode, image.size, "white")
                         background.paste(image, mask=empty_mask)
@@ -1742,10 +1730,6 @@ class RasterScripts:
                         )
                 except KeyError:
                     pass
-        if alpha_mask is not None:
-            background = Image.new(image.mode, image.size, "white")
-            background.paste(image, mask=alpha_mask)
-            image = background  # Mask exists use it to remove any pixels that were pure reject.
         if empty_mask is not None:
             background = Image.new(image.mode, image.size, "white")
             background.paste(image, mask=empty_mask)
