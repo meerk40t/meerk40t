@@ -92,7 +92,7 @@ class TestActualize(unittest.TestCase):
                 svg_image.image = Image.new("RGBA", (256, 256), (component, component, component, 0))
                 svg_image.values["raster_step"] = 3
                 draw = ImageDraw.Draw(svg_image.image)
-                draw.rectangle((50, 50, 150, 150), "white")
+                draw.ellipse((50, 50, 150, 150), "white")
                 draw.ellipse((100, 100, 105, 105), "black")
                 node = kernel_root.elements.add_elem(svg_image)
                 node.emphasized = True
@@ -137,7 +137,7 @@ class TestActualize(unittest.TestCase):
                 svg_image.image = Image.new("RGBA", (256, 256), (component, component, component, 0))
                 svg_image.values["raster_step"] = 3
                 draw = ImageDraw.Draw(svg_image.image)
-                draw.rectangle((50, 50, 150, 150), "black")
+                draw.ellipse((50, 50, 150, 150), "black")
                 draw.ellipse((100, 100, 105, 105), "white")
                 node = kernel_root.elements.add_elem(svg_image)
                 node.emphasized = True
@@ -161,6 +161,8 @@ class TestActualize(unittest.TestCase):
                     )
                     self.assertEqual(element.transform.value_trans_x(), 50)
                     self.assertEqual(element.transform.value_trans_y(), 50)
+                    # Test corner for whiteness.
+                    self.assertEqual(element.image.getpixel((-1, -1)), 255)
         finally:
             kernel.shutdown()
 
