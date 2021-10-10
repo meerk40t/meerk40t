@@ -1140,8 +1140,10 @@ class LaserOperation(Node):
                 settings.line_color = path.stroke
                 for subpath in path.as_subpaths():
                     sp = Path(subpath)
+                    if len(sp) == 0:
+                        continue
                     closed = (
-                        isinstance(sp, Close)
+                        isinstance(sp[-1], Close)
                         or abs(sp.z_point - sp.current_point) <= closed_distance
                     )
                     group = CutGroup(None, closed=closed)
