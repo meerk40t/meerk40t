@@ -86,7 +86,7 @@ class TestActualize(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            for component in range(255):
+            for component in range(256):
                 svg_image = SVGImage()
                 # each color is a different shade of gray, all marked fully transparent.
                 svg_image.image = Image.new("RGBA", (256, 256), (component, component, component, 0))
@@ -131,7 +131,7 @@ class TestActualize(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            for component in range(255):
+            for component in range(256):
                 svg_image = SVGImage()
                 # each color is a different shade of gray, all marked fully transparent.
                 svg_image.image = Image.new("RGBA", (256, 256), (component, component, component, 0))
@@ -163,6 +163,22 @@ class TestActualize(unittest.TestCase):
                     self.assertEqual(element.transform.value_trans_y(), 50)
         finally:
             kernel.shutdown()
+
+    def test_actualize_circle_step3_direct_transparent(self):
+        """
+        Test for edge pixel error. White empty.
+
+        :return:
+        """
+        for component in range(256):
+            image = Image.new("RGBA", (256, 256), (component, component, component,0))
+            draw = ImageDraw.Draw(image)
+            draw.ellipse((100, 100, 150, 150), "black")
+
+            for step in range(1, 20):
+                transform = Matrix()
+                actual, transform = actualize(image, transform, step_level=step, crop=False)
+                self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_white(self):
         """
