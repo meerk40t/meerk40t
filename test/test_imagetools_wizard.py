@@ -36,16 +36,16 @@ class TestRasterWizard(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-    def test_actualize_smallcircle_step3(self):
+    def test_rasterwizard_smallcircle_step3(self):
         """
-        Test that a small circle in an image actualizes correctly
+        Test that a small circle in an image wizards correctly
 
         :return:
         """
         kernel = bootstrap.bootstrap()
         try:
             kernel_root = kernel.get_context("/")
-            kernel_root("channel print console\n")
+            # kernel_root("channel print console\n")
             svg_image = SVGImage()
             svg_image.image = Image.new("RGBA", (256, 256), "white")
             svg_image.values["raster_step"] = 3
@@ -72,7 +72,46 @@ class TestRasterWizard(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-    def test_actualize_transparent_colorvalue_wb(self):
+    def test_rasterwizard_image_types(self):
+        """
+        Test that different images modes work without error.
+
+        :return:
+        """
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel_root = kernel.get_context("/")
+            # kernel_root("channel print console\n")
+            for mode in ("RGBA", "RGB", "L", "1", "P", "F"):
+                svg_image = SVGImage()
+                svg_image.image = Image.new("RGBA", (256, 256), "white")
+                draw = ImageDraw.Draw(svg_image.image)
+                draw.ellipse((50, 50, 150, 150), "black")
+                draw.ellipse((75, 75, 125, 125), "blue")
+                draw.ellipse((95, 95, 105, 105), "green")
+                svg_image.image = svg_image.image.convert(mode)
+                node = kernel_root.elements.add_elem(svg_image)
+                node.emphasized = True
+            kernel_root("image wizard Gravy\n")
+            for element in kernel_root.elements.elems():
+                if isinstance(element, SVGImage):
+                    self.assertEqual(
+                        element.image.size, (34, 34)
+                    )  # Gravy is step=3 by default
+                    self.assertEqual(
+                        element.transform.value_scale_x(),
+                        svg_image.values["raster_step"],
+                    )
+                    self.assertEqual(
+                        element.transform.value_scale_y(),
+                        svg_image.values["raster_step"],
+                    )
+                    self.assertEqual(element.transform.value_trans_x(), 50)
+                    self.assertEqual(element.transform.value_trans_y(), 50)
+        finally:
+            kernel.shutdown()
+
+    def test_rasterwizard_transparent_colorvalue_wb(self):
         """
         Tests that black transparent and white transparent and all grays are treated correctly.
         Black transparent is black with alpha=0, white transparent is white with alpha=0. If a process
@@ -115,7 +154,7 @@ class TestRasterWizard(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-    def test_actualize_transparent_colorvalue_bw(self):
+    def test_rasterwizard_transparent_colorvalue_bw(self):
         """
         Tests that black transparent and white transparent and all grays are treated correctly.
         Black transparent is black with alpha=0, white transparent is white with alpha=0. If a process
@@ -160,7 +199,7 @@ class TestRasterWizard(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-    def test_actualize_purewhite(self):
+    def test_rasterwizard_purewhite(self):
         """
         Test that a pure white image does not crash.
 
@@ -188,7 +227,7 @@ class TestRasterWizard(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-    def test_actualize_pureblack(self):
+    def test_rasterwizard_pureblack(self):
         """
         Test that a pure black image does not crash.
 
