@@ -924,12 +924,17 @@ class ResamplePanel(wx.Panel):
     def on_combo_resample_dpi(
         self, event=None
     ):  # wxGlade: ResamplePanel.<event_handler>
-        if (
-            self.combo_resample_dpi.GetSelection()
-            != self.combo_resample_step.GetSelection()
-        ):
+        selected = self.combo_resample_dpi.GetSelection() + 1
+        current = self.op["step"]
+        if selected != current:
             self.combo_resample_step.SetSelection(
                 self.combo_resample_dpi.GetSelection()
+            )
+            self.op["step"] = self.combo_resample_dpi.GetSelection() + 1
+            if current == 0:
+                current = 1
+            self.context.signal(
+                "RasterWizard-Refocus", float(selected) / float(current)
             )
 
 

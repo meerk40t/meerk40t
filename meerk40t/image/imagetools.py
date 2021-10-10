@@ -1,6 +1,6 @@
 import os
 from copy import copy
-from math import ceil
+from math import ceil, floor
 from os import path as ospath
 
 from ..core.planner import make_actual, needs_actualization
@@ -1167,7 +1167,7 @@ def dither(image, method="Floyd-Steinberg"):
     return diff
 
 
-def actualize(image, matrix, step_level=1):
+def actualize(image, matrix, step_level=1, inverted=False, crop=True):
     """
     Makes PIL image actual in that it manipulates the pixels to actually exist
     rather than simply apply the transform on the image to give the resulting image.
@@ -1178,16 +1178,50 @@ def actualize(image, matrix, step_level=1):
     [b d f]
 
     Pil requires a, c, e, b, d, f accordingly.
+
+    As of 0.7.2 this converts the image to "L" as part of the process.
+
+    There is a small amount of slop at the edge of converted images sometimes, so it's essential
+    to mark the image as inverted if black should be treated as empty pixels. The scaled down image
+    cannot lose the edge pixels since they could be important, but also dim may not be be a multiple
+    of step level which requires an introduced empty edge pixel to be added.
+
+    @param image: image to be actualized
+    @param matrix: current applied matrix of the image
+    @param step_level: step level at which the actualization should occur
+    @param inverted: should actualize treat black as empty rather than white
+    @param crop: should actualize crop the empty edge values
+    @return: actualized image, straight matrix
     """
     from PIL import Image
-
-    box = None
     try:
-        box = image.convert("L").point(lambda e: 255 - e).getbbox()
+        # If transparency we paste 0 into the image where transparent.
+        mask = image.getchannel("A").point(lambda e: 255 - e)
+        image_copy = image.copy()  # Correct knock-on-effect.
+        image_copy.paste(mask, None, mask)
+        image = image_copy
     except ValueError:
         pass
+    if image.mode != "L":
+        # All images must be greyscale
+        image = image.convert("L")
+
+    box = None
+    if crop:
+        try:
+            # Get the bbox cutting off the white edges.
+            if inverted:
+                box = image.getbbox()
+            else:
+                box = image.point(lambda e: 255 - e).getbbox()
+        except ValueError:
+            pass
+
     if box is None:
+        # If box is entirely white, or bbox caused value error.
         box = (0, 0, image.width, image.height)
+
+    # Find the boundary points of the rotated box edges.
     boundary_points = [
         matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
         matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
@@ -1196,11 +1230,14 @@ def actualize(image, matrix, step_level=1):
     ]
     xs = [e[0] for e in boundary_points]
     ys = [e[1] for e in boundary_points]
-    bbox = min(xs), min(ys), max(xs), max(ys)
+
     # bbox here is expanded matrix size of box.
     step_scale = 1 / float(step_level)
-    element_width = int(ceil((bbox[2] - bbox[0]) * step_scale))
-    element_height = int(ceil((bbox[3] - bbox[1]) * step_scale))
+
+    bbox = min(xs), min(ys), max(xs), max(ys)
+
+    element_width = ceil(bbox[2] * step_scale) - floor(bbox[0] * step_scale)
+    element_height = ceil(bbox[3] * step_scale) - floor(bbox[1] * step_scale)
     tx = bbox[0]
     ty = bbox[1]
     matrix.post_translate(-tx, -ty)
@@ -1212,30 +1249,29 @@ def actualize(image, matrix, step_level=1):
         matrix.reset()
         matrix.post_translate(-tx, -ty)
         matrix.post_scale(step_scale, step_scale)
-    if (
-        matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0
-    ) and image.mode != "RGBA":
-        # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-        image = image.convert("RGBA")
     image = image.transform(
         (element_width, element_height),
         Image.AFFINE,
         (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
         resample=Image.BICUBIC,
-        fillcolor="white",
+        fillcolor="black" if inverted else "white",
     )
     matrix.reset()
     box = None
-    try:
-        box = image.convert("L").point(lambda e: 255 - e).getbbox()
-    except ValueError:
-        pass
-    if box is not None:
-        width = box[2] - box[0]
-        height = box[3] - box[1]
-        if width != element_width or height != element_height:
-            image = image.crop(box)
-            matrix.post_translate(box[0], box[1])
+    if crop:
+        try:
+            if inverted:
+                box = image.getbbox()
+            else:
+                box = image.point(lambda e: 255 - e).getbbox()
+        except ValueError:
+            pass
+        if box is not None:
+            width = box[2] - box[0]
+            height = box[3] - box[1]
+            if width != element_width or height != element_height:
+                image = image.crop(box)
+                matrix.post_translate(box[0], box[1])
     # step level requires the new actualized matrix be scaled up.
     matrix.post_scale(step_level, step_level)
     matrix.post_translate(tx, ty)
@@ -1548,11 +1584,14 @@ class RasterScripts:
         step = None
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
-        try:
-            alpha_mask = image.getchannel("A")
-        except ValueError:
-            alpha_mask = None
         empty_mask = None
+        # Lookahead check for inversion
+        invert = False
+        for op in operations:
+            if op["name"] == "grayscale" and op["enable"]:
+                invert = op["invert"]
+
+        # Process operations.
         for op in operations:
             name = op["name"]
             if name == "crop":
@@ -1569,11 +1608,8 @@ class RasterScripts:
             elif name == "resample":
                 try:
                     if op["enable"]:
-                        image, matrix = actualize(image, matrix, step_level=op["step"])
+                        image, matrix = actualize(image, matrix, step_level=op["step"], inverted=invert)
                         step = op["step"]
-                        if alpha_mask is not None:
-                            alpha_mask = image.getchannel("A")
-                            # Get the resized alpha mask.
                         empty_mask = None
                 except KeyError:
                     pass
@@ -1621,7 +1657,9 @@ class RasterScripts:
             elif name == "auto_contrast":
                 try:
                     if op["enable"]:
-                        if image.mode == "P":
+                        if image.mode not in ("RGB", "L"):
+                            # Auto-contrast raises NotImplementedError if P
+                            # Auto-contrast raises OSError if not RGB, L.
                             image = image.convert("L")
                         image = ImageOps.autocontrast(image, cutoff=op["cutoff"])
                 except KeyError:
@@ -1703,11 +1741,6 @@ class RasterScripts:
                     pass
             elif name == "dither":
                 try:
-                    if alpha_mask is not None:
-                        background = Image.new(image.mode, image.size, "white")
-                        background.paste(image, mask=alpha_mask)
-                        image = background  # Mask exists use it to remove any pixels that were pure reject.
-                        alpha_mask = None
                     if empty_mask is not None:
                         background = Image.new(image.mode, image.size, "white")
                         background.paste(image, mask=empty_mask)
@@ -1739,10 +1772,6 @@ class RasterScripts:
                         )
                 except KeyError:
                     pass
-        if alpha_mask is not None:
-            background = Image.new(image.mode, image.size, "white")
-            background.paste(image, mask=alpha_mask)
-            image = background  # Mask exists use it to remove any pixels that were pure reject.
         if empty_mask is not None:
             background = Image.new(image.mode, image.size, "white")
             background.paste(image, mask=empty_mask)

@@ -124,6 +124,7 @@ from .laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_BACKGROUND,
     DRAW_MODE_CACHE,
+    DRAW_MODE_ALPHABLACK,
     DRAW_MODE_FILLS,
     DRAW_MODE_FLIPXY,
     DRAW_MODE_GRID,
@@ -267,6 +268,7 @@ ID_MENU_SCREEN_ANIMATE = wx.NewId()
 ID_MENU_SCREEN_INVERT = wx.NewId()
 ID_MENU_SCREEN_FLIPXY = wx.NewId()
 ID_MENU_PREVENT_CACHING = wx.NewId()
+ID_MENU_PREVENT_ALPHABLACK = wx.NewId()
 ID_MENU_HIDE_IMAGE = wx.NewId()
 ID_MENU_HIDE_PATH = wx.NewId()
 ID_MENU_HIDE_TEXT = wx.NewId()
@@ -1756,6 +1758,9 @@ class MeerK40t(MWindow):
             ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK
         )
         self.view_menu.Append(
+            ID_MENU_PREVENT_ALPHABLACK, _("Do Not Alpha/Black Images"), "", wx.ITEM_CHECK
+        )
+        self.view_menu.Append(
             ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK
         )
         self.view_menu.Append(
@@ -1997,6 +2002,11 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
+            self.toggle_draw_mode(DRAW_MODE_ALPHABLACK),
+            id=ID_MENU_PREVENT_ALPHABLACK,
+        )
+        self.Bind(
+            wx.EVT_MENU,
             self.toggle_draw_mode(DRAW_MODE_REFRESH),
             id=ID_MENU_SCREEN_REFRESH,
         )
@@ -2179,6 +2189,8 @@ class MeerK40t(MWindow):
         m.Check(self.context.draw_mode & DRAW_MODE_TREE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_CACHING)
         m.Check(self.context.draw_mode & DRAW_MODE_CACHE != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_ALPHABLACK)
+        m.Check(self.context.draw_mode & DRAW_MODE_ALPHABLACK != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_REFRESH)
         m.Check(self.context.draw_mode & DRAW_MODE_REFRESH != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_ANIMATE)
