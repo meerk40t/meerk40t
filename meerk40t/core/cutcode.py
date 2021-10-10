@@ -556,47 +556,10 @@ class RasterCut(CutObject):
         width, height = image.size
         self.width = width
         self.height = height
-        mode = image.mode
+        assert(image.mode in ("L", "1"))
 
-        if (
-            mode not in ("1", "P", "L", "RGB", "RGBA")
-            or mode == "P"
-            and "transparency" in image.info
-        ):
-            # Any mode without a filter should get converted.
-            image = image.convert("RGBA")
-            mode = image.mode
-        if mode == "1":
-
-            def image_filter(pixel):
-                return (255 - pixel) / 255.0
-
-        elif mode == "P":
-            p = image.getpalette()
-
-            def image_filter(pixel):
-                v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
-                return 1.0 - (v / 765.0)
-
-        elif mode == "L":
-
-            def image_filter(pixel):
-                return (255 - pixel) / 255.0
-
-        elif mode == "RGB":
-
-            def image_filter(pixel):
-                return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
-
-        elif mode == "RGBA":
-
-            def image_filter(pixel):
-                return (
-                    (1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0) * pixel[3] / 255.0
-                )
-
-        else:
-            raise ValueError  # this shouldn't happen.
+        def image_filter(pixel):
+            return (255 - pixel) / 255.0
         m = svgimage.transform
         data = image.load()
 
