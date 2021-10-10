@@ -411,7 +411,7 @@ class Spoolers(Modifier):
             if force:
                 spooler.job(execute_absolute_position(x, y))
             else:
-                if not spooler.job_if_idle():
+                if not spooler.job_if_idle(execute_absolute_position(x, y)):
                     channel(_("Busy Error"))
             return "spooler", data
 
