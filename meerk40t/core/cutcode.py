@@ -522,20 +522,28 @@ class CubicCut(CutObject):
 
 
 class RasterCut(CutObject):
-    def __init__(self, image, settings=None):
+    """
+    Rastercut accepts a image of type "L" or "1", and an offset in the x and y and information as to whether
+    this is a crosshatched cut or not.
+    """
+    def __init__(self, image, tx, ty, settings=None, crosshatch=False):
         CutObject.__init__(self, settings=settings)
         self.image = image
+        self.tx = tx
+        self.ty = ty
+
         step = self.settings.raster_step
         self.step = step
+
         direction = self.settings.raster_direction
         traverse = 0
-        if direction == 0:
+        if direction == 0 or direction == 4 and not crosshatch:
             traverse |= X_AXIS
             traverse |= TOP
         elif direction == 1:
             traverse |= X_AXIS
             traverse |= BOTTOM
-        elif direction == 2:
+        elif direction == 2 or direction == 4 and crosshatch:
             traverse |= Y_AXIS
             traverse |= RIGHT
         elif direction == 3:
