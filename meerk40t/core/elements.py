@@ -14,6 +14,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT,
     COMMAND_WAIT_FINISH,
 )
+from ..image.imagetools import actualize
 from ..kernel import Modifier
 from ..svgelements import (
     SVG_STRUCT_ATTRIB,
@@ -1190,6 +1191,7 @@ class LaserOperation(Node):
                 cross_settings.crosshatch = True
                 for object_image in self.children:
                     object_image = object_image.object
+                    object_image = actualize(object_image)
                     box = object_image.bbox()
                     path = Path(
                         Polygon(
