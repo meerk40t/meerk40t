@@ -1187,11 +1187,10 @@ class LaserOperation(Node):
             direction = settings.raster_direction
             settings.crosshatch = False
             if direction == 4:
-                cross_settings = LaserSettings(settings)
-                cross_settings.crosshatch = True
                 for object_image in self.children:
                     object_image = object_image.object
-                    object_image = actualize(object_image)
+                    matrix = object_image.transform
+                    object_image, matrix = actualize(object_image, matrix)
                     box = object_image.bbox()
                     path = Path(
                         Polygon(
@@ -1205,7 +1204,7 @@ class LaserOperation(Node):
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut
-                    cut = RasterCut(object_image, cross_settings)
+                    cut = RasterCut(object_image, settings, tx=matrix.value_trans_x(), ty=matrix.value_trans_x(), crosshatch=True)
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut

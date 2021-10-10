@@ -528,6 +528,8 @@ class RasterCut(CutObject):
     """
     def __init__(self, image, tx, ty, settings=None, crosshatch=False):
         CutObject.__init__(self, settings=settings)
+        assert(image.mode in ("L", "1"))
+
         self.image = image
         self.tx = tx
         self.ty = ty
@@ -549,27 +551,14 @@ class RasterCut(CutObject):
         elif direction == 3:
             traverse |= Y_AXIS
             traverse |= LEFT
-        elif direction == 4:
-            if hasattr(settings, "crosshatch") and settings.crosshatch:
-                traverse |= Y_AXIS
-                traverse |= RIGHT
-            else:
-                traverse |= X_AXIS
-                traverse |= TOP
         if self.settings.raster_swing:
             traverse |= UNIDIRECTIONAL
-
-        svgimage = self.image
-        image = svgimage.image
         width, height = image.size
         self.width = width
         self.height = height
-        assert(image.mode in ("L", "1"))
 
         def image_filter(pixel):
             return (255 - pixel) / 255.0
-        m = svgimage.transform
-        data = image.load()
 
         overscan = self.settings.overscan
         if overscan is None:
@@ -580,10 +569,8 @@ class RasterCut(CutObject):
             except ValueError:
                 overscan = 20
         self.overscan = overscan
-        tx = m.value_trans_x()
-        ty = m.value_trans_y()
         self.plot = RasterPlotter(
-            data, width, height, traverse, 0, overscan, tx, ty, step, image_filter
+            image.load(), width, height, traverse, 0, overscan, tx, ty, step, image_filter
         )
 
     def reversible(self):
