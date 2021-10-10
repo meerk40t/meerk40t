@@ -191,13 +191,15 @@ class Transform(wx.Panel):
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
+        x = input_driver.current_x if input_driver is not None else 0
+        y = input_driver.current_y if input_driver is not None else 0
         self.context(
             "scale %f %f %f %f\n"
             % (
                 scale,
                 scale,
-                input_driver.current_x,
-                input_driver.current_y,
+                x,
+                y,
             )
         )
         self.matrix_updated()
@@ -207,13 +209,15 @@ class Transform(wx.Panel):
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
+        x = input_driver.current_x if input_driver is not None else 0
+        y = input_driver.current_y if input_driver is not None else 0
         self.context(
             "scale %f %f %f %f\n"
             % (
                 scale,
                 scale,
-                input_driver.current_x,
-                input_driver.current_y,
+                x,
+                y,
             )
         )
         self.matrix_updated()
@@ -250,9 +254,11 @@ class Transform(wx.Panel):
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
+        x = input_driver.current_x if input_driver is not None else 0
+        y = input_driver.current_y if input_driver is not None else 0
         self.context(
             "rotate %fdeg %f %f\n"
-            % (-5, input_driver.current_x, input_driver.current_y)
+            % (-5, x, y)
         )
         self.matrix_updated()
 
@@ -260,8 +266,10 @@ class Transform(wx.Panel):
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
+        x = input_driver.current_x if input_driver is not None else 0
+        y = input_driver.current_y if input_driver is not None else 0
         self.context(
-            "rotate %fdeg %f %f\n" % (5, input_driver.current_x, input_driver.current_y)
+            "rotate %fdeg %f %f\n" % (5, x, y)
         )
         self.matrix_updated()
 
