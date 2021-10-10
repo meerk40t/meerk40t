@@ -82,32 +82,36 @@ class TestRasterWizard(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            for mode in ("RGBA", "RGB", "L", "1", "P", "F"):
-                svg_image = SVGImage()
-                svg_image.image = Image.new("RGBA", (256, 256), "white")
-                draw = ImageDraw.Draw(svg_image.image)
-                draw.ellipse((50, 50, 150, 150), "black")
-                draw.ellipse((75, 75, 125, 125), "blue")
-                draw.ellipse((95, 95, 105, 105), "green")
-                svg_image.image = svg_image.image.convert(mode)
-                node = kernel_root.elements.add_elem(svg_image)
-                node.emphasized = True
-            kernel_root("image wizard Gravy\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
-                    self.assertEqual(
-                        element.image.size, (34, 34)
-                    )  # Gravy is step=3 by default
-                    self.assertEqual(
-                        element.transform.value_scale_x(),
-                        svg_image.values["raster_step"],
-                    )
-                    self.assertEqual(
-                        element.transform.value_scale_y(),
-                        svg_image.values["raster_step"],
-                    )
-                    self.assertEqual(element.transform.value_trans_x(), 50)
-                    self.assertEqual(element.transform.value_trans_y(), 50)
+            for script in kernel.match("raster_script/.*", suffix=True):
+                for mode in ("RGBA", "RGB", "L", "1", "P", "F", "LA", "HSV"):
+                    svg_image = SVGImage()
+                    svg_image.image = Image.new("RGBA", (256, 256), "white")
+                    draw = ImageDraw.Draw(svg_image.image)
+                    draw.ellipse((50, 50, 150, 150), "black")
+                    draw.ellipse((75, 75, 125, 125), "blue")
+                    draw.ellipse((95, 95, 105, 105), "green")
+                    svg_image.image = svg_image.image.convert(mode)
+                    node = kernel_root.elements.add_elem(svg_image)
+                    node.emphasized = True
+                kernel_root("image wizard %s\n" % script)
+                # Solve for step.
+                step = 1
+                for op in kernel_root.registered["raster_script/%s" % script]:
+                    if op["name"] == "resample" and op["enable"]:
+                        step = op["step"]
+                for element in kernel_root.elements.elems():
+                    if isinstance(element, SVGImage):
+                        self.assertEqual(
+                            element.transform.value_scale_x(),
+                            step,
+                        )
+                        self.assertEqual(
+                            element.transform.value_scale_y(),
+                            step,
+                        )
+                        self.assertEqual(element.transform.value_trans_x(), 50)
+                        self.assertEqual(element.transform.value_trans_y(), 50)
+                kernel_root("element* delete\n")
         finally:
             kernel.shutdown()
 
@@ -143,11 +147,11 @@ class TestRasterWizard(unittest.TestCase):
                     )  # Gravy is step=3 by default
                     self.assertEqual(
                         element.transform.value_scale_x(),
-                        svg_image.values["raster_step"],
+                        3,
                     )
                     self.assertEqual(
                         element.transform.value_scale_y(),
-                        svg_image.values["raster_step"],
+                        3,
                     )
                     self.assertEqual(element.transform.value_trans_x(), 100)
                     self.assertEqual(element.transform.value_trans_y(), 100)
