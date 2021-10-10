@@ -74,6 +74,96 @@ class TestActualize(unittest.TestCase):
         finally:
             kernel.shutdown()
 
+    def test_actualize_transparent_colorvalue_wb(self):
+        """
+        Tests that black transparent and white transparent and all grays are treated correctly.
+        Black transparent is black with alpha=0, white transparent is white with alpha=0. If a process
+        strips the alpha rather than composing it correctly can produce wrong results.
+
+        :return:
+        """
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel_root = kernel.get_context("/")
+            # kernel_root("channel print console\n")
+            for component in range(255):
+                svg_image = SVGImage()
+                # each color is a different shade of gray, all marked fully transparent.
+                svg_image.image = Image.new("RGBA", (256, 256), (component, component, component, 0))
+                svg_image.values["raster_step"] = 3
+                draw = ImageDraw.Draw(svg_image.image)
+                draw.rectangle((50, 50, 150, 150), "white")
+                draw.ellipse((100, 100, 105, 105), "black")
+                node = kernel_root.elements.add_elem(svg_image)
+                node.emphasized = True
+            kernel_root("image resample\n")
+            for element in kernel_root.elements.elems():
+                if isinstance(element, SVGImage):
+                    self.assertEqual(
+                        element.image.size,
+                        (
+                            6 / svg_image.values["raster_step"],
+                            6 / svg_image.values["raster_step"],
+                        ),
+                    )
+                    self.assertEqual(
+                        element.transform.value_scale_x(),
+                        svg_image.values["raster_step"],
+                    )
+                    self.assertEqual(
+                        element.transform.value_scale_y(),
+                        svg_image.values["raster_step"],
+                    )
+                    self.assertEqual(element.transform.value_trans_x(), 100)
+                    self.assertEqual(element.transform.value_trans_y(), 100)
+        finally:
+            kernel.shutdown()
+
+    def test_actualize_transparent_colorvalue_bw(self):
+        """
+        Tests that black transparent and white transparent and all grays are treated correctly.
+        Black transparent is black with alpha=0, white transparent is white with alpha=0. If a process
+        strips the alpha rather than composing it correctly can produce wrong results.
+
+        :return:
+        """
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel_root = kernel.get_context("/")
+            # kernel_root("channel print console\n")
+            for component in range(255):
+                svg_image = SVGImage()
+                # each color is a different shade of gray, all marked fully transparent.
+                svg_image.image = Image.new("RGBA", (256, 256), (component, component, component, 0))
+                svg_image.values["raster_step"] = 3
+                draw = ImageDraw.Draw(svg_image.image)
+                draw.rectangle((50, 50, 150, 150), "black")
+                draw.ellipse((100, 100, 105, 105), "white")
+                node = kernel_root.elements.add_elem(svg_image)
+                node.emphasized = True
+            kernel_root("image resample\n")
+            for element in kernel_root.elements.elems():
+                if isinstance(element, SVGImage):
+                    self.assertEqual(
+                        element.image.size,
+                        (
+                            ceil(101 / svg_image.values["raster_step"]),
+                            ceil(101 / svg_image.values["raster_step"]),
+                        ),
+                    )
+                    self.assertEqual(
+                        element.transform.value_scale_x(),
+                        svg_image.values["raster_step"],
+                    )
+                    self.assertEqual(
+                        element.transform.value_scale_y(),
+                        svg_image.values["raster_step"],
+                    )
+                    self.assertEqual(element.transform.value_trans_x(), 50)
+                    self.assertEqual(element.transform.value_trans_y(), 50)
+        finally:
+            kernel.shutdown()
+
     def test_actualize_circle_step3_direct_white(self):
         """
         Test for edge pixel error. White empty.
