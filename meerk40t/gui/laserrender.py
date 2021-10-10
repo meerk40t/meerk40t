@@ -42,6 +42,7 @@ DRAW_MODE_TREE = 0x0080000
 DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
 DRAW_MODE_LINEWIDTH = 0x1000000
+DRAW_MODE_ALPHABLACK = 0x2000000  # Set means do not alphablack images
 
 
 def swizzlecolor(c):
@@ -265,9 +266,7 @@ class LaserRender:
                 if cache is None:
                     cut.c_width, cut.c_height = image.image.size
                     try:
-                        cut.cache = self.make_thumbnail(
-                            image.image, maximum=1000, dewhite=True
-                        )
+                        cut.cache = self.make_thumbnail(image.image, maximum=1000)
                     except (MemoryError, RuntimeError):
                         cut.cache = None
                     cut.cache_id = id(image.image)
@@ -415,11 +414,17 @@ class LaserRender:
                 except AttributeError:
                     max_allowed = 2048
                 node.c_width, node.c_height = image.image.size
-                node.cache = self.make_thumbnail(image.image, maximum=max_allowed)
+                node.cache = self.make_thumbnail(
+                    image.image,
+                    maximum=max_allowed,
+                    alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
+                )
             gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
         else:
             node.c_width, node.c_height = image.image.size
-            cache = self.make_thumbnail(image.image)
+            cache = self.make_thumbnail(
+                image.image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+            )
             gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()
 
@@ -509,7 +514,7 @@ class LaserRender:
         return image
 
     def make_thumbnail(
-        self, pil_data, maximum=None, width=None, height=None, dewhite=False
+        self, pil_data, maximum=None, width=None, height=None, alphablack=True
     ):
         """Resizes the given pil image into wx.Bitmap object that fits the constraints."""
         image_width, image_height = pil_data.size
@@ -530,15 +535,19 @@ class LaserRender:
             pil_data = pil_data.resize((width, height))
         else:
             pil_data = pil_data.copy()
+        if not alphablack:
+            return wx.Bitmap.FromBufferRGBA(
+                width, height, pil_data.convert("RGBA").tobytes()
+            )
 
-        if dewhite:
-            img = pil_data.convert("L")
-            black = Image.new("L", img.size, color="black")
-            img = img.point(lambda e: 255 - e)
-            black.putalpha(img)
-            pil_data = black
-
-        if pil_data.mode != "RGBA":
-            pil_data = pil_data.convert("RGBA")
-        pil_bytes = pil_data.tobytes()
-        return wx.Bitmap.FromBufferRGBA(width, height, pil_bytes)
+        try:
+            # If transparent we paste 0 into the pil_data
+            mask = pil_data.getchannel("A").point(lambda e: 255 - e)
+            pil_data.paste(mask, None, mask)
+        except ValueError:
+            pass
+        if pil_data.mode != "L":
+            pil_data = pil_data.convert("L")
+        black = Image.new("RGBA", pil_data.size, "black")
+        black.putalpha(pil_data.point(lambda e: 255 - e))
+        return wx.Bitmap.FromBufferRGBA(width, height, black.tobytes())

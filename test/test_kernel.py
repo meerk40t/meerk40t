@@ -12,11 +12,12 @@ class TestKernel(unittest.TestCase):
         :return:
         """
         kernel = bootstrap.bootstrap()
-
-        for command in kernel.match("command/.*"):
-            cmd = kernel.registered[command]
-            if "server" in command:
-                continue
-            if not cmd.regex:
-                kernel.console(command.split("/")[-1] + "\n")
-        kernel.shutdown()
+        try:
+            for command in kernel.match("command/.*"):
+                cmd = kernel.registered[command]
+                if "server" in command:
+                    continue
+                if not cmd.regex:
+                    kernel.console(command.split("/")[-1] + "\n")
+        finally:
+            kernel.shutdown()
