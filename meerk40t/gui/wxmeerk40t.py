@@ -936,6 +936,7 @@ class MeerK40t(MWindow):
 
         context.listen("emphasized", self.on_emphasized_elements_changed)
         context.listen("modified", self.on_element_modified)
+        context.listen("altered", self.on_element_modified)
         context.listen("export-image", self.on_export_signal)
         context.listen("background", self.on_background_signal)
         context.listen("rebuild_tree", self.on_rebuild_tree_signal)
@@ -2252,6 +2253,8 @@ class MeerK40t(MWindow):
 
         context.unlisten("emphasized", self.on_emphasized_elements_changed)
         context.unlisten("modified", self.on_element_modified)
+        context.unlisten("altered", self.on_element_modified)
+
         context.unlisten("units", self.space_changed)
 
         context.unlisten("export-image", self.on_export_signal)
@@ -3383,6 +3386,7 @@ class ShadowTree:
         except AttributeError:
             pass
         self.set_icon(node)
+        self.context.signal("altered", node)
 
     def expand(self, node):
         item = node.item
