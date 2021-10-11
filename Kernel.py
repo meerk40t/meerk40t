@@ -1298,11 +1298,8 @@ class Elemental(Module):
             return
         for element in elements:
             was_classified = False
-            image_added = False
             for op in self.ops():
                 if op.operation == "Raster":
-                    if image_added:
-                        continue  # already added to an image operation, is not added here.
                     if element.stroke is not None and op.color == abs(element.stroke):
                         op.append(element)
                         was_classified = True
@@ -1322,7 +1319,7 @@ class Elemental(Module):
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
                     op.append(element)
                     was_classified = True
-                    image_added = True
+                    break
             if not was_classified:
                 if element.stroke is not None and element.stroke.value is not None:
                     op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
