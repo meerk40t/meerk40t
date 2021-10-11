@@ -1222,6 +1222,8 @@ class LaserOperation(Node):
             else:
                 for object_image in self.children:
                     object_image = object_image.object
+                    matrix = object_image.transform
+                    object_image, matrix = actualize(object_image, matrix)
                     box = object_image.bbox()
                     path = Path(
                         Polygon(
@@ -1231,7 +1233,12 @@ class LaserOperation(Node):
                             (box[2], box[1]),
                         )
                     )
-                    cut = RasterCut(object_image, settings)
+                    cut = RasterCut(
+                        object_image,
+                        matrix.value_trans_x(),
+                        matrix.value_trans_y(),
+                        settings,
+                    )
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut
