@@ -1321,8 +1321,47 @@ class Elemental(Module):
                     was_classified = True
                     break
             if not was_classified:
-                if element.stroke is not None and element.stroke.value is not None:
-                    op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
+                # This code definitely classifies more elements, and should classify all, however
+                # it is not guaranteed to classify all elements as this is not explicitly checked.
+                op = None
+                if isinstance(element, SVGImage):
+                    op = LaserOperation(operation="Image",
+                                        output=False,
+                                        color="black",
+                                        speed=140.0,
+                                        power=1000.0,
+                                        raster_step=3
+                                        )
+                elif (
+                    # test for Shape or SVGText instance is probably unnecessary,
+                    # but we should probably not test for stroke without ensuring
+                    # that the object has a stroke attribute.
+                    isinstance(element, (Shape, SVGText))
+                    and element.stroke is not None
+                    and element.stroke.value is not None
+                ):
+                    # Original default operation.
+                    op = LaserOperation(
+                        operation="Engrave", color=element.stroke, speed=35.0
+                    )
+                # This code is separated out to avoid duplication
+                if op is not None:
+                    op.append(element)
+                    self.add_op(op)
+
+                # Separate code for Raster ops because we might add a Raster op
+                # and a vector op for same element.
+                if (
+                    isinstance(element, (Shape, SVGText))
+                    and element.fill is not None
+                    and element.fill.value is not None
+                ):
+
+                    op = LaserOperation(operation="Raster",
+                                        output=False,
+                                        color="black",
+                                        speed=140.0
+                                        )
                     op.append(element)
                     self.add_op(op)
 
