@@ -14,7 +14,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT,
     COMMAND_WAIT_FINISH,
 )
-from ..image.imagetools import actualize
+from ..image.actualize import actualize
 from ..kernel import Modifier
 from ..svgelements import (
     SVG_STRUCT_ATTRIB,
@@ -1245,6 +1245,7 @@ class LaserOperation(Node):
         elif self._operation == "Image":
             for object_image in self.children:
                 object_image = object_image.object
+                matrix = object_image.transform
                 box = object_image.bbox()
                 path = Path(
                     Polygon(
@@ -1260,16 +1261,13 @@ class LaserOperation(Node):
                 except KeyError:
                     settings.raster_step = 1
 
-                cut = RasterCut(object_image, settings)
+                cut = RasterCut(object_image, settings, matrix.value_trans_x(), matrix.value_trans_y())
                 cut.path = path
                 cut.original_op = self._operation
                 yield cut
 
                 if settings.raster_direction == 4:
-                    cross_settings = LaserSettings(settings)
-                    cross_settings.crosshatch = True
-
-                    cut = RasterCut(object_image, cross_settings)
+                    cut = RasterCut(object_image, settings, matrix.value_trans_x(), matrix.value_trans_y(), crosshatch=True)
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut

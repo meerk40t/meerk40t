@@ -3,7 +3,7 @@ from math import floor, ceil
 
 from PIL import Image, ImageDraw
 
-from meerk40t.image.imagetools import actualize
+from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import SVGImage, Matrix
 from test import bootstrap
 
