@@ -4987,7 +4987,7 @@ class Elemental(Modifier):
         @self.tree_operation(_("Actualize pixels"), node_type="elem", help="")
         def image_actualize_pixels(node, **kwgs):
             self.context("image resample\n")
-            node.object.node.modified()
+            node.object.node.altered()
             self.context.signal("element_property_reload", node.object)
             self.context.signal("refresh_scene")
 
