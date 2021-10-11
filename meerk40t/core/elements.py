@@ -1200,11 +1200,22 @@ class LaserOperation(Node):
                             (box[2], box[1]),
                         )
                     )
-                    cut = RasterCut(object_image, settings)
+                    cut = RasterCut(
+                        object_image,
+                        matrix.value_trans_x(),
+                        matrix.value_trans_y(),
+                        settings,
+                    )
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut
-                    cut = RasterCut(object_image, settings, tx=matrix.value_trans_x(), ty=matrix.value_trans_x(), crosshatch=True)
+                    cut = RasterCut(
+                        object_image,
+                        matrix.value_trans_x(),
+                        matrix.value_trans_y(),
+                        settings,
+                        crosshatch=True,
+                    )
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut
@@ -5614,10 +5625,7 @@ class Elemental(Modifier):
                     op.add(element, type="opnode")
                     was_classified = True
                     break  # May only classify in one image operation.
-                elif (
-                    op.operation == "Dots"
-                    and isDot(element)
-                ):
+                elif op.operation == "Dots" and isDot(element):
                     op.add(element, type="opnode")
                     was_classified = True
                     break  # May only classify in Dots.

@@ -1,5 +1,4 @@
 from copy import copy
-from math import ceil
 
 from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..device.lasercommandconstants import (
