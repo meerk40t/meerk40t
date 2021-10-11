@@ -3383,6 +3383,7 @@ class ShadowTree:
         except AttributeError:
             pass
         self.set_icon(node)
+        self.context.signal("altered", node)
 
     def expand(self, node):
         item = node.item

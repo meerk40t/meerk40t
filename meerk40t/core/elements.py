@@ -1451,6 +1451,13 @@ class RootNode(Node):
                 listen.highlighted(node, **kwargs)
 
     def notify_modified(self, node=None, **kwargs):
+        """
+        Notifies any listeners that a value in the tree has been changed such that the matrix or other property
+        values have changed. But that the underlying data object itself remains intact.
+        @param node: node that was modified.
+        @param kwargs:
+        @return:
+        """
         if node is None:
             node = self
         self._bounds = None
@@ -1459,6 +1466,15 @@ class RootNode(Node):
                 listen.modified(node, **kwargs)
 
     def notify_altered(self, node=None, **kwargs):
+        """
+        Notifies any listeners that a value in the tree has had it's underlying data fundamentally changed and while
+        this may not be reflected by the properties any assumptions about the content of this node are no longer
+        valid.
+
+        @param node:
+        @param kwargs:
+        @return:
+        """
         if node is None:
             node = self
         for listen in self.listeners:
