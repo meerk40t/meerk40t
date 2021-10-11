@@ -1298,8 +1298,11 @@ class Elemental(Module):
             return
         for element in elements:
             was_classified = False
+            image_added = False
             for op in self.ops():
                 if op.operation == "Raster":
+                    if image_added:
+                        continue  # already added to an image operation, is not added here.
                     if element.stroke is not None and op.color == abs(element.stroke):
                         op.append(element)
                         was_classified = True
@@ -1320,37 +1323,9 @@ class Elemental(Module):
                     op.append(element)
                     was_classified = True
                     image_added = True
-
             if not was_classified:
-                # This code definitely classifies more elements, and should classify all, however
-                # it is not guaranteed to classify all elements as this is not explicitly checked.
-                op = None
-                if isinstance(element, SVGImage):
-                    op = LaserOperation(operation="Image", output=False)
-                elif (
-                    # test for Shape or SVGText instance is probably unnecessary,
-                    # but we should probably not test for stroke without ensuring
-                    # that the object has a stroke attribute.
-                    isinstance(element, (Shape, SVGText))
-                    and element.stroke is not None
-                    and element.stroke.value is not None
-                ):
-                    op = LaserOperation(
-                        operation="Engrave", color=element.stroke, speed=35.0
-                    )
-                # This code is separated out to avoid duplication
-                if op is not None:
-                    op.append(element)
-                    self.add_op(op)
-
-                # Seperate code for Raster ops because we might add a Raster op
-                # and a vector op for same element.
-                if (
-                    isinstance(element, (Shape, SVGText))
-                    and element.fill is not None
-                    and element.fill.value is not None
-                ):
-                    op = LaserOperation(operation="Raster", color=0, output=False)
+                if element.stroke is not None and element.stroke.value is not None:
+                    op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
                     op.append(element)
                     self.add_op(op)
 
