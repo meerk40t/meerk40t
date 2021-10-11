@@ -5179,6 +5179,10 @@ class Elemental(Modifier):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
 
+    def altered(self, *args):
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
