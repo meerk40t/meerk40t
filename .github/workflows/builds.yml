@@ -42,7 +42,7 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/MeerK40t dist/MeerK40t-linux
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            mv dist/MeerK40t-linux dist/MeerK40t-linux-${GITHUB_SHA}
+            mv dist/MeerK40t-linux dist/MeerK40t-linux-${{ github.sha }}
         fi
         ls -l dist
 
@@ -58,10 +58,10 @@ jobs:
       if: ${{ github.event_name != 'release' }}
       uses: actions/upload-artifact@v2
       with:
-        name: Builds
+        name: Builds-${{ github.sha }}
         if-no-files-found: error
         path: |
-          dist/MeerK40t-linux-${GITHUB_SHA}
+          dist/MeerK40t-linux-${{ github.sha }}
 
 
   build-ubuntu:
@@ -125,7 +125,7 @@ jobs:
 
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v2
