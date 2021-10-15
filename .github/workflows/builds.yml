@@ -9,8 +9,16 @@ on:
 #    types: [published]
   push:
     branches: [main, legacy, 0.7]
+    paths:
+      - 'meerk40t/**.py'
+      - 'locale/**'
+      - '.github/workflows/builds.yml'
   pull_request:
     branches: [main, legacy, 0.7]
+    paths:
+      - 'meerk40t/**.py'
+      - 'locale/**'
+      - '.github/workflows/builds.yml'
 
 concurrency:
   group: builds-${{ github.ref }}
@@ -31,7 +39,7 @@ jobs:
       run: |
         pip3 install --upgrade --upgrade-strategy eager meerk40t-camera opencv-python-headless
 
-    - name: List Python environment
+    - name: List environment
       env:
         GITHUB_CONTEXT: ${{ toJSON(github) }}
         JOB_CONTEXT: ${{ toJSON(job) }}
@@ -99,7 +107,7 @@ jobs:
         pip3 install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
         if [ -f requireoptions.txt ]; then pip3 install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
 
-    - name: List Python environment
+    - name: List environment
       env:
         GITHUB_CONTEXT: ${{ toJSON(github) }}
         JOB_CONTEXT: ${{ toJSON(job) }}
