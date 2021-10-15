@@ -1,6 +1,7 @@
 # Add labels to Pull-Requests based on the types of files modified
 name: "Pull Request Labeler"
 on:
+- pull_request
 - pull_request_target
 
 jobs:
