@@ -50,7 +50,7 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/MeerK40t dist/MeerK40t-linux
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            mv dist/MeerK40t-linux dist/MeerK40t-linux-${{ github.sha }}
+            mv dist/MeerK40t-linux dist/MeerK40t-linux-${{ github.event.after }}
         fi
         ls -l dist
 
@@ -66,10 +66,10 @@ jobs:
       if: ${{ github.event_name != 'release' }}
       uses: actions/upload-artifact@v2
       with:
-        name: Builds-${{ github.sha }}
+        name: Builds-${{ github.event.after }}
         if-no-files-found: error
         path: |
-          dist/MeerK40t-linux-${{ github.sha }}
+          dist/MeerK40t-linux-${{ github.event.after }}
 
 
   build-ubuntu:
@@ -109,7 +109,6 @@ jobs:
         MATRIX_CONTEXT: ${{ toJSON(matrix) }}
       run: |
         pip3 list
-        env
 
     - name: Build meerk40t
       run: |
@@ -118,7 +117,7 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/meerk40t dist/MeerK40t-ubuntu-18.04
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            mv dist/MeerK40t-ubuntu-18.04 dist/MeerK40t-ubuntu-${{ github.sha }}
+            mv dist/MeerK40t-ubuntu-18.04 dist/MeerK40t-ubuntu-${{ github.event.after }}
         fi
         ls -l dist
 
@@ -134,10 +133,10 @@ jobs:
       if: ${{ github.event_name != 'release' }}
       uses: actions/upload-artifact@v2
       with:
-        name: Builds-${{ github.sha }}
+        name: Builds-${{ github.event.after }}
         if-no-files-found: error
         path: |
-          dist/MeerK40t-ubuntu-${{ github.sha }}
+          dist/MeerK40t-ubuntu-${{ github.event.after }}
 
 
   build-windows:
@@ -186,7 +185,7 @@ jobs:
         MATRIX_CONTEXT: ${{ toJSON(matrix) }}
       run: |
         pip3 list
-        env
+
 
     - name: Build MeerK40t (wxPython 4.0.7-post2)
       run: |
@@ -196,7 +195,7 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/meerk40t.exe dist/wx-MeerK40t.exe
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            mv dist/wx-MeerK40t.exe dist/wx-MeerK40t-${{ github.sha }}.exe
+            mv dist/wx-MeerK40t.exe dist/wx-MeerK40t-${{ github.event.after }}.exe
         fi
         ls -l dist
 
@@ -208,7 +207,7 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/meerk40t.exe dist/MeerK40t.exe
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            mv dist/MeerK40t.exe dist/MeerK40t-${{ github.sha }}.exe
+            mv dist/MeerK40t.exe dist/MeerK40t-${{ github.event.after }}.exe
         fi
         ls -l dist
 
@@ -225,8 +224,8 @@ jobs:
       if: ${{ github.event_name != 'release' }}
       uses: actions/upload-artifact@v2
       with:
-        name: Builds-${{ github.sha }}
+        name: Builds-${{ github.event.after }}
         if-no-files-found: error
         path: |
-          dist/MeerK40t-${{ github.sha }}.exe
-          dist/wx-MeerK40t-${{ github.sha }}.exe
+          dist/MeerK40t-${{ github.event.after }}.exe
+          dist/wx-MeerK40t-${{ github.event.after }}.exe
