@@ -118,7 +118,7 @@ jobs:
       if: ${{ github.event_name != 'release' }}
       uses: actions/upload-artifact@v2
       with:
-        name: Builds
+        name: Builds-${{ github.sha }}
         if-no-files-found: error
         path: |
           dist/MeerK40t-ubuntu-${{ github.sha }}
@@ -201,7 +201,7 @@ jobs:
       if: ${{ github.event_name != 'release' }}
       uses: actions/upload-artifact@v2
       with:
-        name: Builds
+        name: Builds-${{ github.sha }}
         if-no-files-found: error
         path: |
           dist/MeerK40t-${{ github.sha }}.exe
