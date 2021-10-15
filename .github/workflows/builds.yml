@@ -59,6 +59,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Builds
+        if-no-files-found: error
         path: |
           dist/MeerK40t-linux-${GITHUB_SHA}
 
@@ -118,6 +119,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Builds
+        if-no-files-found: error
         path: |
           dist/MeerK40t-ubuntu-${{ github.sha }}
 
@@ -200,6 +202,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Builds
+        if-no-files-found: error
         path: |
           dist/MeerK40t-${{ github.sha }}.exe
           dist/wx-MeerK40t-${{ github.sha }}.exe
