@@ -98,7 +98,7 @@ jobs:
         mv meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t mk40t.py
         mv mk40t.py meerk40t.py
-        mv dist/meerk40t dist/MeerK40t-Ubuntu-18.04
+        mv dist/meerk40t dist/MeerK40t-ubuntu-18.04
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
             mv dist/MeerK40t-ubuntu-18.04 dist/MeerK40t-ubuntu-${GITHUB_SHA}
         fi
@@ -163,23 +163,23 @@ jobs:
     - name: Build MeerK40t (wxPython 4.0.7-post2)
       run: |
         pip install wxPython==4.0.7-post2
-        move meerk40t.py mk40t.py
+        mv meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
-        move mk40t.py meerk40t.py
-        move dist/meerk40t.exe dist/wx-MeerK40t.exe
+        mv mk40t.py meerk40t.py
+        mv dist/meerk40t.exe dist/wx-MeerK40t.exe
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            move dist/wx-MeerK40t.exe dist/wx-MeerK40t-${GITHUB_SHA}.exe
+            mv dist/wx-MeerK40t.exe dist/wx-MeerK40t-${GITHUB_SHA}.exe
         fi
 
     - name: Build MeerK40t (wxPython 4.1.1)
       run: |
         pip install wxPython==4.1.1
-        move meerk40t.py mk40t.py
+        mv meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
-        move mk40t.py meerk40t.py
-        move dist/meerk40t.exe dist/MeerK40t.exe
+        mv mk40t.py meerk40t.py
+        mv dist/meerk40t.exe dist/MeerK40t.exe
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            move dist/MeerK40t.exe dist/MeerK40t-${GITHUB_SHA}.exe
+            mv dist/MeerK40t.exe dist/MeerK40t-${GITHUB_SHA}.exe
         fi
 
     - name: Upload built executable
