@@ -32,8 +32,16 @@ jobs:
         pip3 install --upgrade --upgrade-strategy eager meerk40t-camera opencv-python-headless
 
     - name: List Python environment
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
+        JOB_CONTEXT: ${{ toJSON(job) }}
+        STEPS_CONTEXT: ${{ toJSON(steps) }}
+        RUNNER_CONTEXT: ${{ toJSON(runner) }}
+        STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
+        MATRIX_CONTEXT: ${{ toJSON(matrix) }}
       run: |
         pip3 list
+        env
 
     - name: Build Meerk40t
       run: |
@@ -92,8 +100,16 @@ jobs:
         if [ -f requireoptions.txt ]; then pip3 install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
 
     - name: List Python environment
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
+        JOB_CONTEXT: ${{ toJSON(job) }}
+        STEPS_CONTEXT: ${{ toJSON(steps) }}
+        RUNNER_CONTEXT: ${{ toJSON(runner) }}
+        STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
+        MATRIX_CONTEXT: ${{ toJSON(matrix) }}
       run: |
         pip3 list
+        env
 
     - name: Build meerk40t
       run: |
@@ -160,9 +176,17 @@ jobs:
         python3 setup.py install
         cd ..
 
-    - name: List Python environment
+    - name: List environment
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
+        JOB_CONTEXT: ${{ toJSON(job) }}
+        STEPS_CONTEXT: ${{ toJSON(steps) }}
+        RUNNER_CONTEXT: ${{ toJSON(runner) }}
+        STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
+        MATRIX_CONTEXT: ${{ toJSON(matrix) }}
       run: |
         pip3 list
+        env
 
     - name: Build MeerK40t (wxPython 4.0.7-post2)
       run: |
