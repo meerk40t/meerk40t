@@ -3,12 +3,14 @@ name: Unittest
 on:
   push:
     branches: [main, legacy, 0.7]
-#    paths:
-#      - '**.py'
+    paths:
+      - '**.py'
+      - '.github/workflows/unittests.yml'
   pull_request:
     branches: [main, legacy, 0.7]
-#    paths:
-#      - '**.py'
+    paths:
+      - '**.py'
+      - '.github/workflows/unittests.yml'
   schedule:
     - cron: '0 23 * * 5'
 
