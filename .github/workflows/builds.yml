@@ -40,10 +40,11 @@ jobs:
         mv meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/linux/meerk40t.spec
         mv mk40t.py meerk40t.py
-        mv dist/MeerK40t dist/MeerK40t-Linux
+        mv dist/MeerK40t dist/MeerK40t-linux
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
             mv dist/MeerK40t-linux dist/MeerK40t-linux-${GITHUB_SHA}
         fi
+        ls -l dist
 
     - name: Upload built executable
       if: ${{ github.event_name == 'release' }}
@@ -51,7 +52,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          dist/MeerK40t-Linux
+          dist/MeerK40t-linux
 
     - name: Upload artifacts
       if: ${{ github.event_name != 'release' }}
@@ -100,8 +101,9 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/meerk40t dist/MeerK40t-ubuntu-18.04
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            mv dist/MeerK40t-ubuntu-18.04 dist/MeerK40t-ubuntu-${GITHUB_SHA}
+            mv dist/MeerK40t-ubuntu-18.04 dist/MeerK40t-ubuntu-${{ github.sha }}
         fi
+        ls -l dist
 
     - name: Upload built executable
       if: ${{ github.event_name == 'release' }}
@@ -117,7 +119,7 @@ jobs:
       with:
         name: Builds
         path: |
-          dist/MeerK40t-ubuntu-${GITHUB_SHA}
+          dist/MeerK40t-ubuntu-${{ github.sha }}
 
 
   build-windows:
@@ -168,8 +170,9 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/meerk40t.exe dist/wx-MeerK40t.exe
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            mv dist/wx-MeerK40t.exe dist/wx-MeerK40t-${GITHUB_SHA}.exe
+            mv dist/wx-MeerK40t.exe dist/wx-MeerK40t-${{ github.sha }}.exe
         fi
+        ls -l dist
 
     - name: Build MeerK40t (wxPython 4.1.1)
       run: |
@@ -179,8 +182,9 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/meerk40t.exe dist/MeerK40t.exe
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            mv dist/MeerK40t.exe dist/MeerK40t-${GITHUB_SHA}.exe
+            mv dist/MeerK40t.exe dist/MeerK40t-${{ github.sha }}.exe
         fi
+        ls -l dist
 
     - name: Upload built executable
       if: ${{ github.event_name == 'release' }}
@@ -197,5 +201,5 @@ jobs:
       with:
         name: Builds
         path: |
-          dist/MeerK40t-${GITHUB_SHA}.exe
-          dist/wx-MeerK40t-${GITHUB_SHA}.exe
+          dist/MeerK40t-${{ github.sha }}.exe
+          dist/wx-MeerK40t-${{ github.sha }}.exe
