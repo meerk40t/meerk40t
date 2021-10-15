@@ -26,7 +26,7 @@ defaults:
 jobs:
   analyze:
     name: CodeQL
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     steps:
     - name: Checkout ${{ github.ref }}
@@ -54,7 +54,7 @@ jobs:
         if [ "${{ runner.os }}" == "Windows" ]; then
             pip3 install --upgrade --upgrade-strategy eager wxPython
         else
-            pip3 install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
+            pip3 install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
         fi
         if [ -f requireoptions.txt ]; then pip3 install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
 
