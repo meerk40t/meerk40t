@@ -3552,6 +3552,47 @@ class Elemental(Modifier):
             context.signal("refresh_scene")
             return "elements", data
 
+        @context.console_command(
+            "move_to_laser",
+            help=_("translates the selected element to the laser head"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_translate(
+            command, channel, _, data=None, **kwgs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            spooler, input_driver, output = context.registered[
+                "device/%s" % context.root.active
+                ]
+            try:
+                tx = input_driver.current_x
+            except AttributeError:
+                tx = 0
+            try:
+                ty = input_driver.current_y
+            except AttributeError:
+                ty = 0
+            m = Matrix("translate(%f,%f)" % (tx, ty))
+            try:
+                for e in data:
+                    otx = e.transform.value_trans_x()
+                    oty = e.transform.value_trans_y()
+                    ntx = tx - otx
+                    nty = ty - oty
+                    m = Matrix("translate(%f,%f)" % (ntx, nty))
+                    e *= m
+                    if hasattr(e, "node"):
+                        e.node.modified()
+            except ValueError:
+                raise SyntaxError
+            context.signal("refresh_scene")
+            return "elements", data
+
         @context.console_argument(
             "x_pos", type=Length, help=_("x position for top left corner")
         )
