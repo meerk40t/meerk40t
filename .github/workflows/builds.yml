@@ -42,7 +42,7 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/MeerK40t dist/MeerK40t-Linux
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            move dist/MeerK40t-linux dist/MeerK40t-linux-${GITHUB_SHA}
+            mv dist/MeerK40t-linux dist/MeerK40t-linux-${GITHUB_SHA}
         fi
 
     - name: Upload built executable
@@ -100,7 +100,7 @@ jobs:
         mv mk40t.py meerk40t.py
         mv dist/meerk40t dist/MeerK40t-Ubuntu-18.04
         if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-            move dist/MeerK40t-ubuntu-18.04 dist/MeerK40t-ubuntu-${GITHUB_SHA}
+            mv dist/MeerK40t-ubuntu-18.04 dist/MeerK40t-ubuntu-${GITHUB_SHA}
         fi
 
     - name: Upload built executable
@@ -137,6 +137,12 @@ jobs:
 # issue meerk40t/meerk40t#242, once the SetLocale issue is resolved, we can test
 # newer versions again. Python 3.8 is latest possible for Windows 7 support.
 
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade --upgrade-strategy eager pip
+        pip3 install --upgrade --upgrade-strategy eager wheel
+        pip install --upgrade --upgrade-strategy eager meerk40t-camera ezdxf opencv-python-headless
+
 # Compile bootloaders in order to reduce virus totals
 # PYTHONHASHSEED is an attempt to get deterministic builds for VirusTotal
     - name: Build pyinstaller, generate bootloaders
@@ -149,12 +155,6 @@ jobs:
         cd ..
         python3 setup.py install
         cd ..
-
-    - name: Install dependencies
-      run: |
-        python3 -m pip install --upgrade --upgrade-strategy eager pip
-        pip3 install --upgrade --upgrade-strategy eager wheel
-        pip install --upgrade --upgrade-strategy eager meerk40t-camera ezdxf opencv-python-headless
 
     - name: List Python environment
       run: |
