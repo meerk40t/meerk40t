@@ -1,0 +1,32 @@
+# Format at https://github.com/actions/labeler
+
+Config:
+- '*'
+- '.*/**'
+
+Doc:
+- '**.md'
+
+Base:
+- 'meerk40t/*.py'
+
+Core:
+- 'meerk40t/core/**.py'
+
+Devices:
+- 'meerk40t/device/**.py'
+
+GUI:
+- 'meerk40t/gui/**.py'
+
+Misc:
+- 'meerk40t/dxf/**.py'
+- 'meerk40t/extra/**.py'
+- 'meerk40t/image/**.py'
+- 'meerk40t/tools/**.py'
+
+Tests:
+- 'test/**.py'
+
+Translations:
+- 'locale/**'
