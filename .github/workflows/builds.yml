@@ -7,7 +7,6 @@ name: Build executables
 on:
 #  release:
 #    types: [published]
-on:
   push:
     branches: [main, legacy, 0.7]
   pull_request:
