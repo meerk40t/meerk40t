@@ -4,10 +4,10 @@ block_cipher = None
 
 
 a = Analysis(['../../../mk40t.py'],
-             pathex=['D:/a/meerk40t/meerk40t/build/meerk40t-import'],
+             pathex=['../../../build/meerk40t-import'],
              binaries = [
-                ('D:/a/meerk40t/meerk40t/.github/workflows/win/libusb0.dll', '.'),
-                ('D:/a/meerk40t/meerk40t/.github/workflows/win/CH341DLL.DLL', '.'),
+                ('./libusb0.dll', '.'),
+                ('./CH341DLL.DLL', '.'),
              ],
              datas=[],
              hiddenimports=['usb'],
