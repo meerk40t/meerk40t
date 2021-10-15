@@ -3,12 +3,8 @@ name: Unittest
 on:
   push:
     branches: [main, legacy, 0.7]
-#    paths:
-#      - '**.py'
   pull_request:
     branches: [main, legacy, 0.7]
-#    paths:
-#      - '**.py'
   schedule:
     - cron: '0 23 * * 5'
 
@@ -16,27 +12,22 @@ concurrency:
   group: unittests-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    shell: bash
-
 jobs:
-  unittests:
+  test:
 
-    name: ${{ matrix.os }}+py${{ matrix.python-version }}
+    name: Unittest on ${{ matrix.os }} + python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
 #         os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, windows-2016, windows-2019, windows-2022, macos-10.15, macos-11]
-        os: [ubuntu-18.04, windows-2019, macos-10.15, macos-11]
+        os: [ubuntu-18.04]
 #        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, 3.10.0-rc.2]
         python-version: [3.9]
 
     steps:
 
-    - name: Checkout ${{ github.ref }}
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
 #    - name: Install Ubuntu dependencies
 #      run: >
@@ -47,25 +38,21 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Identify precise Python version
+    - name: Get full Python version
       id: full-python-version
       shell: bash
       run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-    - name: Cache Python env for ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}
-      uses: actions/cache@v2
+    - uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requireoptions.txt') }}
+        key: ${{ runner.os }}-python-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requireoptions.txt') }}
 
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade --upgrade-strategy eager pip setuptools wheel babel
-        if [ "${{ runner.os }}" == "Windows" ]; then
-            pip install --upgrade --upgrade-strategy eager wxPython
-        else
-            pip install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
-        fi
+        python -m pip install --upgrade pip setuptools wheel babel
+        pip install --upgrade --upgrade-strategy eager pylint flake8 flake8-deprecated black mypy isort
+        pip install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
         if [ -f requireoptions.txt ]; then pip install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
 
     - name: Run Unittests
