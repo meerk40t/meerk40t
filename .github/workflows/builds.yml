@@ -239,4 +239,3 @@ jobs:
         path: |
           dist/MeerK40t-${{ github.event.after }}.exe
           dist/wx-MeerK40t-${{ github.event.after }}.exe
-
