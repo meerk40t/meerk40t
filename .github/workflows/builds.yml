@@ -82,7 +82,7 @@ jobs:
 
   build-ubuntu:
     # Do not run as we are now using centos for Linux builds
-    #if: ${{ false }}
+    if: ${{ false }}
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout meerk40t
