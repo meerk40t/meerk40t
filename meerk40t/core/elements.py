@@ -2523,15 +2523,20 @@ class Elemental(Modifier):
                 self.classify(elements)
             return "elements", elements_nodes
 
+        # ==========
+        # ALIGN SUBTYPE
+        # Align consist of top level node objects that can be manipulated within the scene. These are the select items
+        # ==========
+
         @context.console_argument("align", type=str, help=_("Alignment position"))
         @context.console_command(
             "align",
             help=_("align selected elements"),
             input_type=("elements", None),
-            output_type=("align")
+            output_type="align",
         )
-        def element_align(command, channel, _, data=None, align=None, **kwgs):
-            if align is None:
+        def subtype_align(command, channel, _, data=None, remainder=None, **kwgs):
+            if not remainder:
                 channel(
                     "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n"
                     "<any valid svg:Preserve Aspect Ratio, eg xminymin>"
@@ -2544,6 +2549,25 @@ class Elemental(Modifier):
                     return
                 for d in data:
                     channel(_("Aligning: %s") % str(d))
+            else:
+                # Element conversion.
+                d = list()
+                for elem in data:
+                    node = elem.node
+                    while node.parent:
+                        node = node.parent
+                    if node not in d:
+                        d.append(node)
+                data = d
+            return "align", data
+
+        @context.console_command(
+            "top",
+            help=_("align elements at top"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, align=None, **kwgs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2553,18 +2577,33 @@ class Elemental(Modifier):
             top_edge = min([e[1] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
-            if align == "top":
+            for node in data:
+                subbox = node.bounds
+                top = subbox[1] - top_edge
+                matrix = "translate(0, %f)" % -top
+                if top != 0:
+                    for q in node.flat(types=("elem", "group", "file")):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+
+            @context.console_command(
+                "bottom",
+                help=_("align elements at bottom"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, align=None, **kwgs):
+                boundary_points = []
                 for node in data:
-                    subbox = node.bounds
-                    top = subbox[1] - top_edge
-                    matrix = "translate(0, %f)" % -top
-                    if top != 0:
-                        for q in node.flat(types=("elem", "group", "file")):
-                            obj = q.object
-                            if obj is not None:
-                                obj *= matrix
-                            q.modified()
-            elif align == "bottom":
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 for node in data:
                     subbox = node.bounds
                     bottom = subbox[3] - bottom_edge
@@ -2575,7 +2614,23 @@ class Elemental(Modifier):
                             if obj is not None:
                                 obj *= matrix
                             q.modified()
-            elif align == "left":
+
+            @context.console_command(
+                "left",
+                help=_("align elements at left"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, align=None, **kwgs):
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 for node in data:
                     subbox = node.bounds
                     left = subbox[0] - left_edge
@@ -2586,7 +2641,23 @@ class Elemental(Modifier):
                             if obj is not None:
                                 obj *= matrix
                             q.modified()
-            elif align == "right":
+
+            @context.console_command(
+                "right",
+                help=_("align elements at right"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, align=None, **kwgs):
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 for node in data:
                     subbox = node.bounds
                     right = subbox[2] - right_edge
@@ -2597,7 +2668,23 @@ class Elemental(Modifier):
                             if obj is not None:
                                 obj *= matrix
                             q.modified()
-            elif align == "center":
+
+            @context.console_command(
+                "center",
+                help=_("align elements at center"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, align=None, **kwgs):
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 for node in data:
                     subbox = node.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
@@ -2608,7 +2695,23 @@ class Elemental(Modifier):
                         if obj is not None:
                             obj *= matrix
                         q.modified()
-            elif align == "centerv":
+
+            @context.console_command(
+                "centerv",
+                help=_("align elements at center vertical"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, align=None, **kwgs):
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 for node in data:
                     subbox = node.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
@@ -2618,7 +2721,23 @@ class Elemental(Modifier):
                         if obj is not None:
                             obj *= matrix
                         q.modified()
-            elif align == "centerh":
+
+            @context.console_command(
+                "centerh",
+                help=_("align elements at center horizontal"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, align=None, **kwgs):
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 for node in data:
                     subbox = node.bounds
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
@@ -2628,7 +2747,23 @@ class Elemental(Modifier):
                         if obj is not None:
                             obj *= matrix
                         q.modified()
-            elif align == "spaceh":
+
+            @context.console_command(
+                "spaceh",
+                help=_("align elements across horizontal space"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, align=None, **kwgs):
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 if len(data) <= 1:
                     channel(_("Cannot spacial align fewer than 2 elements."))
                     return
@@ -2645,7 +2780,23 @@ class Elemental(Modifier):
                             if obj is not None:
                                 obj *= matrix
                             q.modified()
-            elif align == "spacev":
+
+            @context.console_command(
+                "spacev",
+                help=_("align elements down vertical space"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, align=None, **kwgs):
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 distance = bottom_edge - top_edge
                 step = distance / (len(data) - 1)
                 for node in data:
@@ -2659,7 +2810,23 @@ class Elemental(Modifier):
                             if obj is not None:
                                 obj *= matrix
                             q.modified()
-            elif align == "topleft":
+
+            @context.console_command(
+                "topleft",
+                help=_("align elements at top/left"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, **kwgs):
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 for node in data:
                     dx = -left_edge
                     dy = -top_edge
@@ -2670,7 +2837,23 @@ class Elemental(Modifier):
                             obj *= matrix
                         q.modified()
                 self.context.signal("refresh_scene")
-            elif align == "bedcenter":
+
+            @context.console_command(
+                "bedcenter",
+                help=_("align elements to bedcenter"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(command, channel, _, data=None, **kwgs):
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
                 for node in data:
                     bw = bed_dim.bed_width
                     bh = bed_dim.bed_height
@@ -2683,7 +2866,66 @@ class Elemental(Modifier):
                             obj *= matrix
                         q.modified()
                 self.context.signal("refresh_scene")
-            elif align in (
+
+            @context.console_argument(
+                "preserve_aspect_ratio",
+                type=str,
+                default="none",
+                help="preserve aspect ratio value",
+            )
+            @context.console_command(
+                "view",
+                help=_("align elements within viewbox"),
+                input_type="align",
+                output_type="align",
+            )
+            def subtype_align(
+                command, channel, _, data=None, preserve_aspect_ratio="none", **kwgs
+            ):
+                """
+                Align the elements to within the bed according to SVG Viewbox rules. The following aspect ratios
+                are valid. These should define all the valid methods of centering data within the laser bed.
+                "xminymin",
+                "xmidymin",
+                "xmaxymin",
+                "xminymid",
+                "xmidymid",
+                "xmaxymid",
+                "xminymax",
+                "xmidymax",
+                "xmaxymax",
+                "xminymin meet",
+                "xmidymin meet",
+                "xmaxymin meet",
+                "xminymid meet",
+                "xmidymid meet",
+                "xmaxymid meet",
+                "xminymax meet",
+                "xmidymax meet",
+                "xmaxymax meet",
+                "xminymin slice",
+                "xmidymin slice",
+                "xmaxymin slice",
+                "xminymid slice",
+                "xmidymid slice",
+                "xmaxymid slice",
+                "xminymax slice",
+                "xmidymax slice",
+                "xmaxymax slice",
+                "none"
+                """
+
+                boundary_points = []
+                for node in data:
+                    boundary_points.append(node.bounds)
+                if not len(boundary_points):
+                    return
+                left_edge = min([e[0] for e in boundary_points])
+                top_edge = min([e[1] for e in boundary_points])
+                right_edge = max([e[2] for e in boundary_points])
+                bottom_edge = max([e[3] for e in boundary_points])
+
+            if preserve_aspect_ratio in (
                 "xminymin",
                 "xmidymin",
                 "xmaxymin",
@@ -2726,7 +2968,7 @@ class Elemental(Modifier):
                         top_edge,
                         right_edge - left_edge,
                         bottom_edge - top_edge,
-                        align,
+                        preserve_aspect_ratio,
                     )
                     for q in node.flat(types=("elem", "group", "file")):
                         obj = q.object
@@ -3541,9 +3783,7 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_translate(
-            command, channel, _, data=None, **kwgs
-        ):
+        def element_translate(command, channel, _, data=None, **kwgs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
@@ -3551,7 +3791,7 @@ class Elemental(Modifier):
                 return
             spooler, input_driver, output = context.registered[
                 "device/%s" % context.root.active
-                ]
+            ]
             try:
                 tx = input_driver.current_x
             except AttributeError:
@@ -5657,10 +5897,7 @@ class Elemental(Modifier):
                     op.add(element, type="opnode")
                     was_classified = True
                     break  # May only classify in one image operation.
-                elif (
-                    op.operation == "Dots"
-                    and isDot(element)
-                ):
+                elif op.operation == "Dots" and isDot(element):
                     op.add(element, type="opnode")
                     was_classified = True
                     break  # May only classify in Dots.
