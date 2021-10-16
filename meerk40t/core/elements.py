@@ -5428,7 +5428,7 @@ class Elemental(Modifier):
         self.note = None
 
     def remove_elements(self, elements_list):
-        for e in self.elems():
+        for e in list(self.elems()):
             if e in elements_list:
                 e.node.remove_node()
         self.validate_selected_area()
