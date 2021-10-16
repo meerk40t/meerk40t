@@ -2556,7 +2556,7 @@ class Elemental(Modifier):
                 )
                 return
             if data is None:
-                data = list(self.elems_nodes(depth=1, cascade=False))
+                data = list(self.elems_nodes(depth=1, cascade=False, emphasized=True))
                 if len(data) == 0:
                     channel(_("Nothing to align."))
                     return
