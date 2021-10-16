@@ -2579,11 +2579,12 @@ class Elemental(Modifier):
                 top = subbox[1] - top_edge
                 matrix = "translate(0, %f)" % -top
                 if top != 0:
-                    for q in node.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
+            return "align", data
 
         @context.console_command(
             "bottom",
@@ -2603,11 +2604,12 @@ class Elemental(Modifier):
                 bottom = subbox[3] - bottom_edge
                 matrix = "translate(0, %f)" % -bottom
                 if bottom != 0:
-                    for q in node.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
+            return "align", data
 
         @context.console_command(
             "left",
@@ -2627,11 +2629,12 @@ class Elemental(Modifier):
                 left = subbox[0] - left_edge
                 matrix = "translate(%f, 0)" % -left
                 if left != 0:
-                    for q in node.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
+            return "align", data
 
         @context.console_command(
             "right",
@@ -2651,11 +2654,12 @@ class Elemental(Modifier):
                 right = subbox[2] - right_edge
                 matrix = "translate(%f, 0)" % -right
                 if right != 0:
-                    for q in node.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
+            return "align", data
 
         @context.console_command(
             "center",
@@ -2678,11 +2682,12 @@ class Elemental(Modifier):
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
                 matrix = "translate(%f, %f)" % (-dx, -dy)
-                for q in node.flat(types=("elem", "group", "file")):
+                for q in node.flat(types="elem"):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
                     q.modified()
+            return "align", data
 
         @context.console_command(
             "centerv",
@@ -2702,11 +2707,12 @@ class Elemental(Modifier):
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                 matrix = "translate(%f, 0)" % -dx
-                for q in node.flat(types=("elem", "group", "file")):
+                for q in node.flat(types="elem"):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
                     q.modified()
+            return "align", data
 
         @context.console_command(
             "centerh",
@@ -2726,11 +2732,12 @@ class Elemental(Modifier):
                 subbox = node.bounds
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
                 matrix = "translate(0, %f)" % -dy
-                for q in node.flat(types=("elem", "group", "file")):
+                for q in node.flat(types="elem"):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
                     q.modified()
+            return "align", data
 
         @context.console_command(
             "spaceh",
@@ -2757,11 +2764,12 @@ class Elemental(Modifier):
                 left_edge += step
                 matrix = "translate(%f, 0)" % -left
                 if left != 0:
-                    for q in node.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
+            return "align", data
 
         @context.console_command(
             "spacev",
@@ -2785,11 +2793,12 @@ class Elemental(Modifier):
                 top_edge += step
                 matrix = "translate(0, %f)" % -top
                 if top != 0:
-                    for q in node.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
+            return "align", data
 
         @context.console_command(
             "topleft",
@@ -2809,12 +2818,13 @@ class Elemental(Modifier):
                 dx = -left_edge
                 dy = -top_edge
                 matrix = "translate(%f, %f)" % (dx, dy)
-                for q in node.flat(types=("elem", "group", "file")):
+                for q in node.flat(types="elem"):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
                     q.modified()
             self.context.signal("refresh_scene")
+            return "align", data
 
         @context.console_command(
             "bedcenter",
@@ -2838,12 +2848,13 @@ class Elemental(Modifier):
                 dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
                 dy = (bh * MILS_IN_MM - top_edge - bottom_edge) / 2.0
                 matrix = "translate(%f, %f)" % (dx, dy)
-                for q in node.flat(types=("elem", "group", "file")):
+                for q in node.flat(types="elem"):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
                     q.modified()
             self.context.signal("refresh_scene")
+            return "align", data
 
         @context.console_argument(
             "preserve_aspect_ratio",
@@ -2948,13 +2959,13 @@ class Elemental(Modifier):
                         bottom_edge - top_edge,
                         preserve_aspect_ratio,
                     )
-                    for q in node.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
                 self.context.signal("refresh_scene")
-            return "elements", data
+            return "align", data
 
         @context.console_argument("c", type=int, help=_("Number of columns"))
         @context.console_argument("r", type=int, help=_("Number of rows"))
