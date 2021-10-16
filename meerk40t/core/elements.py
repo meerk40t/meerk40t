@@ -2815,32 +2815,6 @@ class Elemental(Modifier):
             return "align", data
 
         @context.console_command(
-            "topleft",
-            help=_("align elements at top/left"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            for node in data:
-                dx = -left_edge
-                dy = -top_edge
-                matrix = "translate(%f, %f)" % (dx, dy)
-                for q in node.flat(types="elem"):
-                    obj = q.object
-                    if obj is not None:
-                        obj *= matrix
-                    q.modified()
-            self.context.signal("refresh_scene")
-            return "align", data
-
-        @context.console_command(
             "bedcenter",
             help=_("align elements to bedcenter"),
             input_type="align",
