@@ -617,11 +617,12 @@ class MeerK40t(MWindow):
 
         register_preferences_tools(context=self.context, gui=self)
 
+        from .panes.toolbaralign import register_align_tools
+
+        register_align_tools(context=self.context, gui=self)
+
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
-            from .panes.toolbaralign import register_align_tools
-
-            register_align_tools(context=self.context, gui=self)
 
             from .panes.toolbarshapes import register_shapes_tools
 
