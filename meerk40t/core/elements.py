@@ -5434,14 +5434,13 @@ class Elemental(Modifier):
         self.validate_selected_area()
 
     def remove_operations(self, operations_list):
-        for op in operations_list:
-            for i, o in enumerate(list(self.ops())):
-                if o is op:
-                    o.remove_node()
-            self.context.signal("operation_removed", op)
+        for o in list(self.ops()):
+            if o in operations_list:
+                o.remove_node()
+        self.context.signal("operation_removed", op)
 
     def remove_elements_from_operations(self, elements_list):
-        for i, op in enumerate(self.ops()):
+        for op in self.ops():
             for e in list(op.children):
                 if e.object in elements_list:
                     e.remove_node()
