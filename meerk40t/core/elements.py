@@ -5429,7 +5429,7 @@ class Elemental(Modifier):
 
     def remove_elements(self, elements_list):
         for elem in elements_list:
-            for i, e in enumerate(self.elems()):
+            for e in self.elems():
                 if elem is e:
                     e.node.remove_node()
         self.validate_selected_area()
