@@ -74,7 +74,7 @@ jobs:
       if: ${{ github.event_name != 'release' }}
       uses: actions/upload-artifact@v2
       with:
-        name: Builds-${{ github.event.after }}
+        name: Linux-${{ github.event.after }}
         if-no-files-found: error
         path: |
           dist/MeerK40t-linux-${{ github.event.after }}
@@ -142,7 +142,7 @@ jobs:
       if: ${{ github.event_name != 'release' }}
       uses: actions/upload-artifact@v2
       with:
-        name: Builds-${{ github.event.after }}
+        name: Ubuntu-${{ github.event.after }}
         if-no-files-found: error
         path: |
           dist/MeerK40t-ubuntu-${{ github.event.after }}
@@ -234,7 +234,7 @@ jobs:
       if: ${{ github.event_name != 'release' }}
       uses: actions/upload-artifact@v2
       with:
-        name: Builds-${{ github.event.after }}
+        name: Windows-${{ github.event.after }}
         if-no-files-found: error
         path: |
           dist/MeerK40t-${{ github.event.after }}.exe
