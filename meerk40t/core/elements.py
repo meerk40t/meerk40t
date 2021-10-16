@@ -2526,8 +2526,9 @@ class Elemental(Modifier):
         @context.console_argument("align", type=str, help=_("Alignment position"))
         @context.console_command(
             "align",
-            help=_("align elements"),
+            help=_("align selected elements"),
             input_type=("elements", None),
+            output_type=("align")
         )
         def element_align(command, channel, _, data=None, align=None, **kwgs):
             if align is None:
@@ -2537,20 +2538,14 @@ class Elemental(Modifier):
                 )
                 return
             if data is None:
-                elem_branch = self.get(type="branch elems")
-                data = list(
-                    elem_branch.flat(
-                        types=("elems", "file", "group"), cascade=False, depth=1
-                    )
-                )
+                data = list(self.elems_nodes(depth=1, cascade=False))
                 if len(data) == 0:
                     channel(_("Nothing to align."))
                     return
                 for d in data:
                     channel(_("Aligning: %s") % str(d))
             boundary_points = []
-            for e in data:
-                node = e.node
+            for node in data:
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
                 return
@@ -2559,8 +2554,7 @@ class Elemental(Modifier):
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
             if align == "top":
-                for e in data:
-                    node = e.node
+                for node in data:
                     subbox = node.bounds
                     top = subbox[1] - top_edge
                     matrix = "translate(0, %f)" % -top
@@ -2571,8 +2565,7 @@ class Elemental(Modifier):
                                 obj *= matrix
                             q.modified()
             elif align == "bottom":
-                for e in data:
-                    node = e.node
+                for node in data:
                     subbox = node.bounds
                     bottom = subbox[3] - bottom_edge
                     matrix = "translate(0, %f)" % -bottom
@@ -2583,8 +2576,7 @@ class Elemental(Modifier):
                                 obj *= matrix
                             q.modified()
             elif align == "left":
-                for e in data:
-                    node = e.node
+                for node in data:
                     subbox = node.bounds
                     left = subbox[0] - left_edge
                     matrix = "translate(%f, 0)" % -left
@@ -2595,8 +2587,7 @@ class Elemental(Modifier):
                                 obj *= matrix
                             q.modified()
             elif align == "right":
-                for e in data:
-                    node = e.node
+                for node in data:
                     subbox = node.bounds
                     right = subbox[2] - right_edge
                     matrix = "translate(%f, 0)" % -right
@@ -2607,8 +2598,7 @@ class Elemental(Modifier):
                                 obj *= matrix
                             q.modified()
             elif align == "center":
-                for e in data:
-                    node = e.node
+                for node in data:
                     subbox = node.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
@@ -2619,8 +2609,7 @@ class Elemental(Modifier):
                             obj *= matrix
                         q.modified()
             elif align == "centerv":
-                for e in data:
-                    node = e.node
+                for node in data:
                     subbox = node.bounds
                     dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                     matrix = "translate(%f, 0)" % -dx
@@ -2630,8 +2619,7 @@ class Elemental(Modifier):
                             obj *= matrix
                         q.modified()
             elif align == "centerh":
-                for e in data:
-                    node = e.node
+                for node in data:
                     subbox = node.bounds
                     dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
                     matrix = "translate(0, %f)" % -dy
@@ -2646,8 +2634,7 @@ class Elemental(Modifier):
                     return
                 distance = right_edge - left_edge
                 step = distance / (len(data) - 1)
-                for e in data:
-                    node = e.node
+                for node in data:
                     subbox = node.bounds
                     left = subbox[0] - left_edge
                     left_edge += step
@@ -2661,8 +2648,7 @@ class Elemental(Modifier):
             elif align == "spacev":
                 distance = bottom_edge - top_edge
                 step = distance / (len(data) - 1)
-                for e in data:
-                    node = e.node
+                for node in data:
                     subbox = node.bounds
                     top = subbox[1] - top_edge
                     top_edge += step
@@ -2674,8 +2660,7 @@ class Elemental(Modifier):
                                 obj *= matrix
                             q.modified()
             elif align == "topleft":
-                for e in data:
-                    node = e.node
+                for node in data:
                     dx = -left_edge
                     dy = -top_edge
                     matrix = "translate(%f, %f)" % (dx, dy)
@@ -2686,8 +2671,7 @@ class Elemental(Modifier):
                         q.modified()
                 self.context.signal("refresh_scene")
             elif align == "bedcenter":
-                for e in data:
-                    node = e.node
+                for node in data:
                     bw = bed_dim.bed_width
                     bh = bed_dim.bed_height
                     dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
@@ -2729,8 +2713,7 @@ class Elemental(Modifier):
                 "xmaxymax slice",
                 "none",
             ):
-                for e in data:
-                    node = e.node
+                for node in data:
                     bw = bed_dim.bed_width
                     bh = bed_dim.bed_height
 
