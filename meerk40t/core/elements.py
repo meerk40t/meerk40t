@@ -2549,9 +2549,10 @@ class Elemental(Modifier):
             else:
                 # Element conversion.
                 d = list()
+                elem_branch = self.elem_branch
                 for elem in data:
                     node = elem.node
-                    while node.parent:
+                    while node.parent and node.parent is not elem_branch:
                         node = node.parent
                     if node not in d:
                         d.append(node)
