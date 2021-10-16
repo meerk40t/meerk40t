@@ -5432,7 +5432,6 @@ class Elemental(Modifier):
             for i, e in enumerate(self.elems()):
                 if elem is e:
                     e.node.remove_node()
-        self.remove_elements_from_operations(elements_list)
         self.validate_selected_area()
 
     def remove_operations(self, operations_list):
