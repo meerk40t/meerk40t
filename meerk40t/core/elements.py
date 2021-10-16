@@ -5651,16 +5651,16 @@ class Elemental(Modifier):
             for op in operations:
                 if op.operation == "Raster" and not op.default:
                     if element.stroke is not None and op.color == abs(element.stroke):
-                        op.add(element, type="opnode")
+                        op.add(element, type="opnode", pos=element_pos)
                         was_classified = True
                     elif isinstance(element, SVGImage):
-                        op.add(element, type="opnode")
+                        op.add(element, type="opnode", pos=element_pos)
                         was_classified = True
                     elif isinstance(element, SVGText):
-                        op.add(element)
+                        op.add(element, type="opnode", pos=element_pos)
                         was_classified = True
                     elif element.fill is not None and element.fill.argb is not None:
-                        op.add(element, type="opnode")
+                        op.add(element, type="opnode", pos=element_pos)
                         was_classified = True
                 elif (
                     op.operation in ("Engrave", "Cut")
@@ -5668,17 +5668,17 @@ class Elemental(Modifier):
                     and op.color == abs(element.stroke)
                     and not op.default
                 ):
-                    op.add(element, type="opnode")
+                    op.add(element, type="opnode", pos=element_pos)
                     was_classified = True
                 elif op.operation == "Image" and isinstance(element, SVGImage):
-                    op.add(element, type="opnode")
+                    op.add(element, type="opnode", pos=element_pos)
                     was_classified = True
                     break  # May only classify in one image operation.
                 elif (
                     op.operation == "Dots"
                     and isDot(element)
                 ):
-                    op.add(element, type="opnode")
+                    op.add(element, type="opnode", pos=element_pos)
                     was_classified = True
                     break  # May only classify in Dots.
 
@@ -5706,7 +5706,7 @@ class Elemental(Modifier):
                 # This code is separated out to avoid duplication
                 if op is not None:
                     add_op_function(op)
-                    op.add(element, type="opnode")
+                    op.add(element, type="opnode", pos=element_pos)
                     operations.append(op)
 
                 # Seperate code for Raster ops because we might add a Raster op
@@ -5719,7 +5719,7 @@ class Elemental(Modifier):
                 ):
                     op = LaserOperation(operation="Raster", color=0, output=False)
                     add_op_function(op)
-                    op.add(element, type="opnode")
+                    op.add(element, type="opnode", pos=element_pos)
                     operations.append(op)
 
     def add_classify_op(self, op):
