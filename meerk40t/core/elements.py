@@ -413,13 +413,28 @@ class Node:
     def focus(self):
         self.notify_focus(self)
 
+    def invalidated_node(self):
+        """
+        Invalidation of the individual node.
+        """
+        self._bounds_dirty = True
+        self._bounds = None
+
+    def invalidated(self):
+        """
+        Invalidation occurs when the underlying data is altered or modified. This propagates up from children to
+        invalidate the entire parental line.
+        """
+        self.invalidated_node()
+        if self._parent is not None:
+            self._parent.invalidated()
+
     def modified(self):
         """
         The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
         data.
         """
-        self._bounds_dirty = True
-        self._bounds = None
+        self.invalidated()
         self.notify_modified(self)
 
     def altered(self):
@@ -437,8 +452,7 @@ class Node:
             pass
         self.cache = None
         self.icon = None
-        self._bounds = None
-        self._bounds_dirty = True
+        self.invalidated()
         self.notify_altered(self)
 
     def unregister_object(self):
@@ -2963,6 +2977,8 @@ class Elemental(Modifier):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
+                        q.modified()
+                    for q in node.flat(types=("file", "group")):
                         q.modified()
                 self.context.signal("refresh_scene")
             return "align", data
