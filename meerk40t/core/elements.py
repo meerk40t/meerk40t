@@ -2765,24 +2765,29 @@ class Elemental(Modifier):
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
                 return
+            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
+                return "align", data
             left_edge = min([e[0] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
-            if len(data) <= 1:
-                channel(_("Cannot spacial align fewer than 2 elements."))
-                return
-            distance = right_edge - left_edge
-            step = distance / (len(data) - 1)
+            dim_total = right_edge - left_edge
+            dim_available = dim_total
+            for node in data:
+                bounds = node.bounds
+                dim_available -= bounds[2] - bounds[0]
+            distributed_distance = dim_available / (len(data) - 1)
+            data.sort(key=lambda n: n.bounds[0])  # sort by left edge
+            dim_pos = left_edge
             for node in data:
                 subbox = node.bounds
-                left = subbox[0] - left_edge
-                left_edge += step
-                matrix = "translate(%f, 0)" % -left
-                if left != 0:
+                delta = subbox[0] - dim_pos
+                matrix = "translate(%f, 0)" % -delta
+                if delta != 0:
                     for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
+                dim_pos += subbox[2] - subbox[0] + distributed_distance
             return "align", data
 
         @context.console_command(
@@ -2797,21 +2802,29 @@ class Elemental(Modifier):
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
                 return
+            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
+                return "align", data
             top_edge = min([e[1] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
-            distance = bottom_edge - top_edge
-            step = distance / (len(data) - 1)
+            dim_total = bottom_edge - top_edge
+            dim_available = dim_total
+            for node in data:
+                bounds = node.bounds
+                dim_available -= bounds[3] - bounds[1]
+            distributed_distance = dim_available / (len(data) - 1)
+            data.sort(key=lambda n: n.bounds[1])  # sort by top edge
+            dim_pos = top_edge
             for node in data:
                 subbox = node.bounds
-                top = subbox[1] - top_edge
-                top_edge += step
-                matrix = "translate(0, %f)" % -top
-                if top != 0:
+                delta = subbox[1] - dim_pos
+                matrix = "translate(0, %f)" % -delta
+                if delta != 0:
                     for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
+                dim_pos += subbox[3] - subbox[1] + distributed_distance
             return "align", data
 
         @context.console_command(
