@@ -5454,7 +5454,8 @@ class Elemental(Modifier):
         return self._emphasized_bounds
 
     def validate_selected_area(self):
-        boundary_points = []
+        boundary_x = []
+        boundary_y = []
         for e in self.elem_branch.flat(
             types="elem",
             emphasized=True,
@@ -5462,23 +5463,19 @@ class Elemental(Modifier):
             if e.bounds is None:
                 continue
             box = e.bounds
-            top_left = [box[0], box[1]]
-            top_right = [box[2], box[1]]
-            bottom_left = [box[0], box[3]]
-            bottom_right = [box[2], box[3]]
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
+            boundary_x.append(box[0])
+            boundary_x.append(box[2])
+            boundary_y.append(box[1])
+            boundary_y.append(box[3])
 
-        if len(boundary_points) == 0:
+        if len(boundary_x) == 0:
             new_bounds = None
         else:
-            xmin = min([e[0] for e in boundary_points])
-            ymin = min([e[1] for e in boundary_points])
-            xmax = max([e[0] for e in boundary_points])
-            ymax = max([e[1] for e in boundary_points])
-            new_bounds = [xmin, ymin, xmax, ymax]
+            xmin = min(boundary_x)
+            ymin = min(boundary_y)
+            xmax = max(boundary_x)
+            ymax = max(boundary_y)
+            new_bounds = (xmin, ymin, xmax, ymax)
         self._emphasized_bounds_dirty = False
         if self._emphasized_bounds != new_bounds:
             self._emphasized_bounds = new_bounds
