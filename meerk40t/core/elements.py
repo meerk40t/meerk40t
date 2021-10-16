@@ -2556,23 +2556,18 @@ class Elemental(Modifier):
                 )
                 return
             if data is None:
-                data = list(self.elems_nodes(depth=1, cascade=False, emphasized=True))
-                if len(data) == 0:
-                    channel(_("Nothing to align."))
-                    return
-            else:
-                # Element conversion.
-                d = list()
-                elem_branch = self.elem_branch
-                for elem in data:
-                    node = elem.node
-                    while node.parent and node.parent is not elem_branch:
-                        node = node.parent
-                    if node not in d:
-                        d.append(node)
-                data = d
-            for d in data:
-                channel(_("Aligning: %s") % str(d))
+                data = list(self.elems(emphasized=True))
+
+            # Element conversion.
+            d = list()
+            elem_branch = self.elem_branch
+            for elem in data:
+                node = elem.node
+                while node.parent and node.parent is not elem_branch:
+                    node = node.parent
+                if node not in d:
+                    d.append(node)
+            data = d
             return "align", data
 
         @context.console_command(
