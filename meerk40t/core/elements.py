@@ -1187,7 +1187,6 @@ class LaserOperation(Node):
             step = settings.raster_step
             assert(step > 0)
             direction = settings.raster_direction
-            settings.crosshatch = False
             for element in self.children:
                 svg_image = element.object
                 if not isinstance(svg_image, SVGImage):
