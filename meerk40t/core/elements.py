@@ -413,13 +413,28 @@ class Node:
     def focus(self):
         self.notify_focus(self)
 
+    def invalidated_node(self):
+        """
+        Invalidation of the individual node.
+        """
+        self._bounds_dirty = True
+        self._bounds = None
+
+    def invalidated(self):
+        """
+        Invalidation occurs when the underlying data is altered or modified. This propagates up from children to
+        invalidate the entire parental line.
+        """
+        self.invalidated_node()
+        if self._parent is not None:
+            self._parent.invalidated()
+
     def modified(self):
         """
         The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
         data.
         """
-        self._bounds_dirty = True
-        self._bounds = None
+        self.invalidated()
         self.notify_modified(self)
 
     def altered(self):
@@ -437,8 +452,7 @@ class Node:
             pass
         self.cache = None
         self.icon = None
-        self._bounds = None
-        self._bounds_dirty = True
+        self.invalidated()
         self.notify_altered(self)
 
     def unregister_object(self):
@@ -2523,34 +2537,148 @@ class Elemental(Modifier):
                 self.classify(elements)
             return "elements", elements_nodes
 
-        @context.console_argument("align", type=str, help=_("Alignment position"))
+        # ==========
+        # ALIGN SUBTYPE
+        # Align consist of top level node objects that can be manipulated within the scene.
+        # ==========
+
         @context.console_command(
             "align",
-            help=_("align elements"),
+            help=_("align selected elements"),
             input_type=("elements", None),
+            output_type="align",
         )
-        def element_align(command, channel, _, data=None, align=None, **kwgs):
-            if align is None:
+        def subtype_align(command, channel, _, data=None, remainder=None, **kwgs):
+            if not remainder:
                 channel(
                     "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n"
                     "<any valid svg:Preserve Aspect Ratio, eg xminymin>"
                 )
                 return
             if data is None:
-                elem_branch = self.get(type="branch elems")
-                data = list(
-                    elem_branch.flat(
-                        types=("elems", "file", "group"), cascade=False, depth=1
-                    )
-                )
-                if len(data) == 0:
-                    channel(_("Nothing to align."))
-                    return
-                for d in data:
-                    channel(_("Aligning: %s") % str(d))
+                data = list(self.elems(emphasized=True))
+
+            # Element conversion.
+            d = list()
+            elem_branch = self.elem_branch
+            for elem in data:
+                node = elem.node
+                while node.parent and node.parent is not elem_branch:
+                    node = node.parent
+                if node not in d:
+                    d.append(node)
+            data = d
+            return "align", data
+
+        @context.console_command(
+            "top",
+            help=_("align elements at top"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
             boundary_points = []
-            for e in data:
-                node = e.node
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            top_edge = min([e[1] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                top = subbox[1] - top_edge
+                matrix = "translate(0, %f)" % -top
+                if top != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+            return "align", data
+
+        @context.console_command(
+            "bottom",
+            help=_("align elements at bottom"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            bottom_edge = max([e[3] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                bottom = subbox[3] - bottom_edge
+                matrix = "translate(0, %f)" % -bottom
+                if bottom != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+            return "align", data
+
+        @context.console_command(
+            "left",
+            help=_("align elements at left"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                left = subbox[0] - left_edge
+                matrix = "translate(%f, 0)" % -left
+                if left != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+            return "align", data
+
+        @context.console_command(
+            "right",
+            help=_("align elements at right"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            right_edge = max([e[2] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                right = subbox[2] - right_edge
+                matrix = "translate(%f, 0)" % -right
+                if right != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+            return "align", data
+
+        @context.console_command(
+            "center",
+            help=_("align elements at center"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
                 return
@@ -2558,148 +2686,231 @@ class Elemental(Modifier):
             top_edge = min([e[1] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
-            if align == "top":
-                for e in data:
-                    node = e.node
-                    subbox = node.bounds
-                    top = subbox[1] - top_edge
-                    matrix = "translate(0, %f)" % -top
-                    if top != 0:
-                        for q in node.flat(types=("elem", "group", "file")):
-                            obj = q.object
-                            if obj is not None:
-                                obj *= matrix
-                            q.modified()
-            elif align == "bottom":
-                for e in data:
-                    node = e.node
-                    subbox = node.bounds
-                    bottom = subbox[3] - bottom_edge
-                    matrix = "translate(0, %f)" % -bottom
-                    if bottom != 0:
-                        for q in node.flat(types=("elem", "group", "file")):
-                            obj = q.object
-                            if obj is not None:
-                                obj *= matrix
-                            q.modified()
-            elif align == "left":
-                for e in data:
-                    node = e.node
-                    subbox = node.bounds
-                    left = subbox[0] - left_edge
-                    matrix = "translate(%f, 0)" % -left
-                    if left != 0:
-                        for q in node.flat(types=("elem", "group", "file")):
-                            obj = q.object
-                            if obj is not None:
-                                obj *= matrix
-                            q.modified()
-            elif align == "right":
-                for e in data:
-                    node = e.node
-                    subbox = node.bounds
-                    right = subbox[2] - right_edge
-                    matrix = "translate(%f, 0)" % -right
-                    if right != 0:
-                        for q in node.flat(types=("elem", "group", "file")):
-                            obj = q.object
-                            if obj is not None:
-                                obj *= matrix
-                            q.modified()
-            elif align == "center":
-                for e in data:
-                    node = e.node
-                    subbox = node.bounds
-                    dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                    dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                    matrix = "translate(%f, %f)" % (-dx, -dy)
-                    for q in node.flat(types=("elem", "group", "file")):
+            for node in data:
+                subbox = node.bounds
+                dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
+                dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
+                matrix = "translate(%f, %f)" % (-dx, -dy)
+                for q in node.flat(types="elem"):
+                    obj = q.object
+                    if obj is not None:
+                        obj *= matrix
+                    q.modified()
+            return "align", data
+
+        @context.console_command(
+            "centerv",
+            help=_("align elements at center vertical"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
+                matrix = "translate(%f, 0)" % -dx
+                for q in node.flat(types="elem"):
+                    obj = q.object
+                    if obj is not None:
+                        obj *= matrix
+                    q.modified()
+            return "align", data
+
+        @context.console_command(
+            "centerh",
+            help=_("align elements at center horizontal"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            top_edge = min([e[1] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
+                matrix = "translate(0, %f)" % -dy
+                for q in node.flat(types="elem"):
+                    obj = q.object
+                    if obj is not None:
+                        obj *= matrix
+                    q.modified()
+            return "align", data
+
+        @context.console_command(
+            "spaceh",
+            help=_("align elements across horizontal space"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
+                return "align", data
+            left_edge = min([e[0] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            dim_total = right_edge - left_edge
+            dim_available = dim_total
+            for node in data:
+                bounds = node.bounds
+                dim_available -= bounds[2] - bounds[0]
+            distributed_distance = dim_available / (len(data) - 1)
+            data.sort(key=lambda n: n.bounds[0])  # sort by left edge
+            dim_pos = left_edge
+            for node in data:
+                subbox = node.bounds
+                delta = subbox[0] - dim_pos
+                matrix = "translate(%f, 0)" % -delta
+                if delta != 0:
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
-            elif align == "centerv":
-                for e in data:
-                    node = e.node
-                    subbox = node.bounds
-                    dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                    matrix = "translate(%f, 0)" % -dx
-                    for q in node.flat(types=("elem", "group", "file")):
+                dim_pos += subbox[2] - subbox[0] + distributed_distance
+            return "align", data
+
+        @context.console_command(
+            "spacev",
+            help=_("align elements down vertical space"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
+                return "align", data
+            top_edge = min([e[1] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            dim_total = bottom_edge - top_edge
+            dim_available = dim_total
+            for node in data:
+                bounds = node.bounds
+                dim_available -= bounds[3] - bounds[1]
+            distributed_distance = dim_available / (len(data) - 1)
+            data.sort(key=lambda n: n.bounds[1])  # sort by top edge
+            dim_pos = top_edge
+            for node in data:
+                subbox = node.bounds
+                delta = subbox[1] - dim_pos
+                matrix = "translate(0, %f)" % -delta
+                if delta != 0:
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
-            elif align == "centerh":
-                for e in data:
-                    node = e.node
-                    subbox = node.bounds
-                    dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                    matrix = "translate(0, %f)" % -dy
-                    for q in node.flat(types=("elem", "group", "file")):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-            elif align == "spaceh":
-                if len(data) <= 1:
-                    channel(_("Cannot spacial align fewer than 2 elements."))
-                    return
-                distance = right_edge - left_edge
-                step = distance / (len(data) - 1)
-                for e in data:
-                    node = e.node
-                    subbox = node.bounds
-                    left = subbox[0] - left_edge
-                    left_edge += step
-                    matrix = "translate(%f, 0)" % -left
-                    if left != 0:
-                        for q in node.flat(types=("elem", "group", "file")):
-                            obj = q.object
-                            if obj is not None:
-                                obj *= matrix
-                            q.modified()
-            elif align == "spacev":
-                distance = bottom_edge - top_edge
-                step = distance / (len(data) - 1)
-                for e in data:
-                    node = e.node
-                    subbox = node.bounds
-                    top = subbox[1] - top_edge
-                    top_edge += step
-                    matrix = "translate(0, %f)" % -top
-                    if top != 0:
-                        for q in node.flat(types=("elem", "group", "file")):
-                            obj = q.object
-                            if obj is not None:
-                                obj *= matrix
-                            q.modified()
-            elif align == "topleft":
-                for e in data:
-                    node = e.node
-                    dx = -left_edge
-                    dy = -top_edge
-                    matrix = "translate(%f, %f)" % (dx, dy)
-                    for q in node.flat(types=("elem", "group", "file")):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-                self.context.signal("refresh_scene")
-            elif align == "bedcenter":
-                for e in data:
-                    node = e.node
-                    bw = bed_dim.bed_width
-                    bh = bed_dim.bed_height
-                    dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
-                    dy = (bh * MILS_IN_MM - top_edge - bottom_edge) / 2.0
-                    matrix = "translate(%f, %f)" % (dx, dy)
-                    for q in node.flat(types=("elem", "group", "file")):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-                self.context.signal("refresh_scene")
-            elif align in (
+                dim_pos += subbox[3] - subbox[1] + distributed_distance
+            return "align", data
+
+        @context.console_command(
+            "bedcenter",
+            help=_("align elements to bedcenter"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            for node in data:
+                bw = bed_dim.bed_width
+                bh = bed_dim.bed_height
+                dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
+                dy = (bh * MILS_IN_MM - top_edge - bottom_edge) / 2.0
+                matrix = "translate(%f, %f)" % (dx, dy)
+                for q in node.flat(types="elem"):
+                    obj = q.object
+                    if obj is not None:
+                        obj *= matrix
+                    q.modified()
+            self.context.signal("refresh_scene")
+            return "align", data
+
+        @context.console_argument(
+            "preserve_aspect_ratio",
+            type=str,
+            default="none",
+            help="preserve aspect ratio value",
+        )
+        @context.console_command(
+            "view",
+            help=_("align elements within viewbox"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(
+            command, channel, _, data=None, preserve_aspect_ratio="none", **kwgs
+        ):
+            """
+            Align the elements to within the bed according to SVG Viewbox rules. The following aspect ratios
+            are valid. These should define all the valid methods of centering data within the laser bed.
+            "xminymin",
+            "xmidymin",
+            "xmaxymin",
+            "xminymid",
+            "xmidymid",
+            "xmaxymid",
+            "xminymax",
+            "xmidymax",
+            "xmaxymax",
+            "xminymin meet",
+            "xmidymin meet",
+            "xmaxymin meet",
+            "xminymid meet",
+            "xmidymid meet",
+            "xmaxymid meet",
+            "xminymax meet",
+            "xmidymax meet",
+            "xmaxymax meet",
+            "xminymin slice",
+            "xmidymin slice",
+            "xmaxymin slice",
+            "xminymid slice",
+            "xmidymid slice",
+            "xmaxymid slice",
+            "xminymax slice",
+            "xmidymax slice",
+            "xmaxymax slice",
+            "none"
+            """
+
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+
+            if preserve_aspect_ratio in (
                 "xminymin",
                 "xmidymin",
                 "xmaxymin",
@@ -2729,8 +2940,7 @@ class Elemental(Modifier):
                 "xmaxymax slice",
                 "none",
             ):
-                for e in data:
-                    node = e.node
+                for node in data:
                     bw = bed_dim.bed_width
                     bh = bed_dim.bed_height
 
@@ -2743,15 +2953,17 @@ class Elemental(Modifier):
                         top_edge,
                         right_edge - left_edge,
                         bottom_edge - top_edge,
-                        align,
+                        preserve_aspect_ratio,
                     )
-                    for q in node.flat(types=("elem", "group", "file")):
+                    for q in node.flat(types="elem"):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
                         q.modified()
+                    for q in node.flat(types=("file", "group")):
+                        q.modified()
                 self.context.signal("refresh_scene")
-            return "elements", data
+            return "align", data
 
         @context.console_argument("c", type=int, help=_("Number of columns"))
         @context.console_argument("r", type=int, help=_("Number of rows"))
@@ -3558,9 +3770,7 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_translate(
-            command, channel, _, data=None, **kwgs
-        ):
+        def element_translate(command, channel, _, data=None, **kwgs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
@@ -3568,7 +3778,7 @@ class Elemental(Modifier):
                 return
             spooler, input_driver, output = context.registered[
                 "device/%s" % context.root.active
-                ]
+            ]
             try:
                 tx = input_driver.current_x
             except AttributeError:
@@ -5674,10 +5884,7 @@ class Elemental(Modifier):
                     op.add(element, type="opnode")
                     was_classified = True
                     break  # May only classify in one image operation.
-                elif (
-                    op.operation == "Dots"
-                    and isDot(element)
-                ):
+                elif op.operation == "Dots" and isDot(element):
                     op.add(element, type="opnode")
                     was_classified = True
                     break  # May only classify in Dots.

@@ -26,20 +26,21 @@ _ = wx.GetTranslation
 def register_align_tools(context, gui):
     toolbar = aui.AuiToolBar()
 
-    toolbar.AddTool(ID_ALIGN_LEFT, _("Align Left"), icons8_align_left_50.GetBitmap())
-    toolbar.AddTool(ID_ALIGN_RIGHT, _("Align Right"), icons8_align_right_50.GetBitmap())
-    toolbar.AddTool(ID_ALIGN_TOP, _("Align Top"), icons8_align_top_50.GetBitmap())
+    toolbar.AddTool(ID_ALIGN_LEFT, _("Align Left"), icons8_align_left_50.GetBitmap(), short_help_string=_("Align Left"))
+    toolbar.AddTool(ID_ALIGN_RIGHT, _("Align Right"), icons8_align_right_50.GetBitmap(), short_help_string=_("Align Right"))
+    toolbar.AddTool(ID_ALIGN_TOP, _("Align Top"), icons8_align_top_50.GetBitmap(), short_help_string=_("Align Top"))
     toolbar.AddTool(
-        ID_ALIGN_BOTTOM, _("Align Bottom"), icons8_align_bottom_50.GetBitmap()
+        ID_ALIGN_BOTTOM, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), short_help_string=_("Align Bottom")
     )
-    toolbar.AddTool(ID_ALIGN_CENTER, _("Align Center"), icons_centerize.GetBitmap())
+    toolbar.AddTool(ID_ALIGN_CENTER, _("Align Center"), icons_centerize.GetBitmap(), short_help_string=_("Align Center"))
     toolbar.AddTool(
-        ID_ALIGN_SPACE_V, _("Space Vertical"), icons_evenspace_vert.GetBitmap()
+        ID_ALIGN_SPACE_V, _("Space Vertical"), icons_evenspace_vert.GetBitmap(), short_help_string=_("Distribute Space Vertically")
     )
     toolbar.AddTool(
         ID_ALIGN_SPACE_H,
         _("Space Horizontal"),
         icons_evenspace_horiz.GetBitmap(),
+        short_help_string=_("Distribute Space Horizontally")
     )
 
     toolbar.Bind(
