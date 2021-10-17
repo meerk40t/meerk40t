@@ -1195,7 +1195,12 @@ class LaserOperation(Node):
                 matrix = svg_image.transform
                 pil_image = svg_image.image
                 pil_image, matrix = actualize(pil_image, matrix, step)
-                box = svg_image.bbox()
+                box = (
+                    matrix.value_trans_x(),
+                    matrix.value_trans_y(),
+                    matrix.value_trans_x() + pil_image.width * step,
+                    matrix.value_trans_y() + pil_image.height * step
+                )
                 path = Path(
                     Polygon(
                         (box[0], box[1]),
@@ -1241,10 +1246,16 @@ class LaserOperation(Node):
                     settings.raster_direction = int(svg_image.values["raster_direction"])
                 except KeyError:
                     pass
+                step = settings.raster_step
                 matrix = svg_image.transform
                 pil_image = svg_image.image
-                pil_image, matrix = actualize(pil_image, matrix, settings.raster_step)
-                box = svg_image.bbox()
+                pil_image, matrix = actualize(pil_image, matrix, step)
+                box = (
+                    matrix.value_trans_x(),
+                    matrix.value_trans_y(),
+                    matrix.value_trans_x() + pil_image.width * step,
+                    matrix.value_trans_y() + pil_image.height * step
+                )
                 path = Path(
                     Polygon(
                         (box[0], box[1]),

@@ -55,7 +55,7 @@ def actualize(image, matrix, step_level, inverted=False, crop=True):
             pass
 
     if box is None:
-        # If box is entirely white, or bbox caused value error.
+        # If box is entirely white, bbox caused value error, or crop not set.
         box = (0, 0, image.width, image.height)
 
     # Find the boundary points of the rotated box edges.
