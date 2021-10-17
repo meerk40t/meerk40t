@@ -336,7 +336,7 @@ supported_languages = (
     ("fr", u"français", wx.LANGUAGE_FRENCH),
     ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
     ("es", u"español", wx.LANGUAGE_SPANISH),
-    ("zh", u"Chinese", wx.LANGUAGE_CHINESE),
+    ("zh", u"中文", wx.LANGUAGE_CHINESE),
 )
 
 
