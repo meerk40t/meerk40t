@@ -1,3 +1,4 @@
+from copy import copy
 from math import ceil, floor
 
 
@@ -37,6 +38,7 @@ def actualize(image, matrix, step_level, inverted=False, crop=True):
         image = image_copy
     except ValueError:
         pass
+    matrix = copy(matrix)  # Prevent Knock-on effect.
     if image.mode != "L":
         # All images must be greyscale
         image = image.convert("L")
