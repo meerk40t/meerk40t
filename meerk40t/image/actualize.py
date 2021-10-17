@@ -28,6 +28,7 @@ def actualize(image, matrix, step_level=1, inverted=False, crop=True):
     @return: actualized image, straight matrix
     """
     from PIL import Image
+    assert(isinstance(image, Image.Image))
     try:
         # If transparency we paste 0 into the image where transparent.
         mask = image.getchannel("A").point(lambda e: 255 - e)
