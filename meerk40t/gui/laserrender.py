@@ -240,7 +240,6 @@ class LaserRender:
             elif isinstance(cut, RasterCut):
                 image = cut.image
                 gc.PushState()
-                image_matrix = image.transform
                 matrix = Matrix()
                 matrix.post_translate(x, y)  # Add cutcode offset.
 
@@ -248,7 +247,7 @@ class LaserRender:
                     cut.step
                 )  # Scale up the image by the step for simulation
                 matrix.post_translate(
-                    image_matrix.value_trans_x(), image_matrix.value_trans_y()
+                    cut.tx, cut.ty
                 )  # Adjust image xy
                 if matrix is not None and not matrix.is_identity():
                     gc.ConcatTransform(
@@ -261,15 +260,15 @@ class LaserRender:
                     cache_id = cut.cache_id
                 except AttributeError:
                     pass
-                if cache_id != id(image.image):
+                if cache_id != id(image):
                     cache = None
                 if cache is None:
-                    cut.c_width, cut.c_height = image.image.size
+                    cut.c_width, cut.c_height = image.size
                     try:
-                        cut.cache = self.make_thumbnail(image.image, maximum=1000)
+                        cut.cache = self.make_thumbnail(image, maximum=1000)
                     except (MemoryError, RuntimeError):
                         cut.cache = None
-                    cut.cache_id = id(image.image)
+                    cut.cache_id = id(image)
                 if cut.cache is not None:
                     gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
                 else:
