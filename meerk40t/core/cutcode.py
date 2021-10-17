@@ -536,6 +536,7 @@ class RasterCut(CutObject):
 
         step = self.settings.raster_step
         self.step = step
+        assert(step > 0)
 
         direction = self.settings.raster_direction
         traverse = 0

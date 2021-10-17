@@ -1,7 +1,8 @@
+from copy import copy
 from math import ceil, floor
 
 
-def actualize(image, matrix, step_level=1, inverted=False, crop=True):
+def actualize(image, matrix, step_level, inverted=False, crop=True):
     """
     Makes PIL image actual in that it manipulates the pixels to actually exist
     rather than simply apply the transform on the image to give the resulting image.
@@ -28,6 +29,7 @@ def actualize(image, matrix, step_level=1, inverted=False, crop=True):
     @return: actualized image, straight matrix
     """
     from PIL import Image
+    assert(isinstance(image, Image.Image))
     try:
         # If transparency we paste 0 into the image where transparent.
         mask = image.getchannel("A").point(lambda e: 255 - e)
@@ -36,6 +38,7 @@ def actualize(image, matrix, step_level=1, inverted=False, crop=True):
         image = image_copy
     except ValueError:
         pass
+    matrix = copy(matrix)  # Prevent Knock-on effect.
     if image.mode != "L":
         # All images must be greyscale
         image = image.convert("L")
@@ -52,7 +55,7 @@ def actualize(image, matrix, step_level=1, inverted=False, crop=True):
             pass
 
     if box is None:
-        # If box is entirely white, or bbox caused value error.
+        # If box is entirely white, bbox caused value error, or crop not set.
         box = (0, 0, image.width, image.height)
 
     # Find the boundary points of the rotated box edges.
