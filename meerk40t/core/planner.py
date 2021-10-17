@@ -1162,6 +1162,8 @@ def short_travel_cutcode(context: CutCode):
                     backwards = True
                     closest = cut
                     closest_length = l
+            if distance <= 1e-5:
+                break  # Distance is zero, we cannot improve.
         if closest is None:
             break
         closest.permitted = False
