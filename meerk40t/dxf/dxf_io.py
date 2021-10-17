@@ -1,6 +1,12 @@
 import os
 
-import ezdxf
+from ..core.exceptions import Mk40tImportAbort
+
+try:
+    import ezdxf
+except ImportError as e:
+    raise Mk40tImportAbort("ezdxf")
+
 from ezdxf import units
 
 try:

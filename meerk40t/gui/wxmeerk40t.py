@@ -42,7 +42,12 @@ except ImportError:
 
     tau = pi * 2
 
-import wx
+from ..core.exceptions import Mk40tImportAbort
+
+try:
+    import wx
+except ImportError as e:
+    raise Mk40tImportAbort("wxpython")
 import wx.aui as aui
 import wx.ribbon as RB
 
