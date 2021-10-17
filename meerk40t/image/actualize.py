@@ -1,7 +1,7 @@
 from math import ceil, floor
 
 
-def actualize(image, matrix, step_level=1, inverted=False, crop=True):
+def actualize(image, matrix, step_level, inverted=False, crop=True):
     """
     Makes PIL image actual in that it manipulates the pixels to actually exist
     rather than simply apply the transform on the image to give the resulting image.
