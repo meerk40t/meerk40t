@@ -1184,7 +1184,8 @@ class LaserOperation(Node):
                             )
                     yield group
         elif self._operation == "Raster":
-            assert(settings.raster_step > 0)
+            step = settings.raster_step
+            assert(step > 0)
             direction = settings.raster_direction
             settings.crosshatch = False
             for element in self.children:
@@ -1194,7 +1195,7 @@ class LaserOperation(Node):
 
                 matrix = svg_image.transform
                 pil_image = svg_image.image
-                pil_image, matrix = actualize(pil_image, matrix)
+                pil_image, matrix = actualize(pil_image, matrix, step)
                 box = svg_image.bbox()
                 path = Path(
                     Polygon(
@@ -1229,8 +1230,17 @@ class LaserOperation(Node):
                 svg_image = svg_image.object
                 if not isinstance(svg_image, SVGImage):
                     continue
+                settings = LaserSettings(self.settings)
+                try:
+                    settings.raster_step = int(svg_image.values["raster_step"])
+                except KeyError:
+                    pass
+                if settings.raster_step <= 0:
+                    settings.raster_step = 1
+
                 matrix = svg_image.transform
                 pil_image = svg_image.image
+                pil_image, matrix = actualize(pil_image, matrix, settings.raster_step)
                 box = svg_image.bbox()
                 path = Path(
                     Polygon(
@@ -1240,14 +1250,6 @@ class LaserOperation(Node):
                         (box[2], box[1]),
                     )
                 )
-                settings = LaserSettings(self.settings)
-                try:
-                    settings.raster_step = int(svg_image.values["raster_step"])
-                except KeyError:
-                    pass
-                if settings.raster_step <= 0:
-                    settings.raster_step = 1
-
                 cut = RasterCut(pil_image, settings, matrix.value_trans_x(), matrix.value_trans_y())
                 cut.path = path
                 cut.original_op = self._operation
