@@ -330,9 +330,9 @@ _ = wx.GetTranslation
 supported_languages = (
     ("en", u"English", wx.LANGUAGE_ENGLISH),
     ("it", u"italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", u"français", wx.LANGUAGE_FRENCH),
+    ("fr", u"franÃ§ais", wx.LANGUAGE_FRENCH),
     ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", u"español", wx.LANGUAGE_SPANISH),
+    ("es", u"espaÃ±ol", wx.LANGUAGE_SPANISH),
     ("zh", u"Chinese", wx.LANGUAGE_CHINESE),
 )
 
@@ -621,12 +621,12 @@ class MeerK40t(MWindow):
 
         register_modify_tools(context=self.context, gui=self)
 
+        from .panes.toolbaralign import register_align_tools
+
+        register_align_tools(context=self.context, gui=self)
 
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
-            from .panes.toolbaralign import register_align_tools
-
-            register_align_tools(context=self.context, gui=self)
 
             from .panes.toolbarshapes import register_shapes_tools
 

@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['../../../mk40t.py'],
-             pathex=['D:/a/meerk40t/meerk40t/build/meerk40t-import'],
+             pathex=['../../../build/meerk40t-import'],
              binaries = [],
              datas=[],
              hiddenimports=['usb'],
