@@ -107,7 +107,7 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut.ty, 100)
         image = rastercut.image
         self.assertTrue(isinstance(image, Image.Image))
-        self.assertIn(image.mode, ('L', '1'))
+        self.assertIn(image.mode, ("L", "1"))
         self.assertEqual(image.size, (3, 3))
 
     def test_cutcode_raster_crosshatch(self):
@@ -143,7 +143,7 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut0.ty, 100)
         image0 = rastercut0.image
         self.assertTrue(isinstance(image0, Image.Image))
-        self.assertIn(image0.mode, ('L', '1'))
+        self.assertIn(image0.mode, ("L", "1"))
         self.assertEqual(image0.size, (3, 3))  # default step value 2, 6/2
 
         rastercut1 = cutcode[1]
@@ -152,7 +152,7 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut1.ty, 100)
         image1 = rastercut1.image
         self.assertTrue(isinstance(image1, Image.Image))
-        self.assertIn(image1.mode, ('L', '1'))
+        self.assertIn(image1.mode, ("L", "1"))
         self.assertEqual(image1.size, (3, 3))  # default step value 2, 6/2
 
         self.assertIs(image0, image1)
@@ -198,7 +198,7 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut.ty, 100)
         image = rastercut.image
         self.assertTrue(isinstance(image, Image.Image))
-        self.assertIn(image.mode, ('L', '1'))
+        self.assertIn(image.mode, ("L", "1"))
         self.assertEqual(image.size, (2, 2))  # step value 2, 6/2
 
         rastercut1 = cutcode[1]
@@ -207,7 +207,7 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut1.ty, 80)
         image1 = rastercut1.image
         self.assertTrue(isinstance(image1, Image.Image))
-        self.assertIn(image1.mode, ('L', '1'))
+        self.assertIn(image1.mode, ("L", "1"))
         self.assertEqual(image1.size, (21, 21))  # default step value 2, 40/2 + 1
 
         rastercut2 = cutcode[2]
@@ -216,7 +216,7 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut2.ty, 80)
         image2 = rastercut2.image
         self.assertTrue(isinstance(image2, Image.Image))
-        self.assertIn(image2.mode, ('L', '1'))
+        self.assertIn(image2.mode, ("L", "1"))
         self.assertEqual(image2.size, (21, 21))  # default step value 2, 40/2 + 1
 
     def test_cutcode_image_crosshatch(self):
@@ -259,7 +259,7 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut1_0.ty, 100)
         image = rastercut1_0.image
         self.assertTrue(isinstance(image, Image.Image))
-        self.assertIn(image.mode, ('L', '1'))
+        self.assertIn(image.mode, ("L", "1"))
         self.assertEqual(image.size, (2, 2))  # step value 2, 6/2
 
         rastercut1_1 = cutcode[1]
@@ -268,7 +268,7 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut1_1.ty, 100)
         image = rastercut1_1.image
         self.assertTrue(isinstance(image, Image.Image))
-        self.assertIn(image.mode, ('L', '1'))
+        self.assertIn(image.mode, ("L", "1"))
         self.assertEqual(image.size, (2, 2))  # step value 2, 6/2
 
         rastercut2_0 = cutcode[2]
@@ -277,7 +277,7 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut2_0.ty, 80)
         image1 = rastercut2_0.image
         self.assertTrue(isinstance(image1, Image.Image))
-        self.assertIn(image1.mode, ('L', '1'))
+        self.assertIn(image1.mode, ("L", "1"))
         self.assertEqual(image1.size, (21, 21))  # default step value 2, 40/2 + 1
 
         rastercut2_1 = cutcode[3]
@@ -286,5 +286,54 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(rastercut2_1.ty, 80)
         image2 = rastercut2_1.image
         self.assertTrue(isinstance(image2, Image.Image))
-        self.assertIn(image2.mode, ('L', '1'))
+        self.assertIn(image2.mode, ("L", "1"))
         self.assertEqual(image2.size, (21, 21))  # default step value 2, 40/2 + 1
+
+    def test_cutcode_image_nostep(self):
+        """
+        Convert CutCode from Image Operation
+        Test default value without step.
+
+        Reuse Checks for Knockon-Effect
+
+        :return:
+        """
+        laserop = LaserOperation(operation="Image")
+
+        # Add Path
+        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
+        path = Path(initial)
+        laserop.add(path, type="opnode")
+
+        # Add SVG Image1
+        svg_image1 = SVGImage()
+        svg_image1.image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+        draw = ImageDraw.Draw(svg_image1.image)
+        draw.ellipse((50, 50, 150, 150), "white")
+        draw.ellipse((100, 100, 105, 105), "black")
+        laserop.add(svg_image1, type="opnode")
+
+        cutcode = CutCode(laserop.as_cutobjects())
+        self.assertEqual(len(cutcode), 1)
+
+        rastercut = cutcode[0]
+        self.assertTrue(isinstance(rastercut, RasterCut))
+        self.assertEqual(rastercut.tx, 100)
+        self.assertEqual(rastercut.ty, 100)
+        image = rastercut.image
+        self.assertTrue(isinstance(image, Image.Image))
+        self.assertIn(image.mode, ("L", "1"))
+        self.assertEqual(image.size, (6, 6))  # step value 1, 6/2
+
+        laserop.settings.raster_step = 2  # Raster_Step should be ignored.
+        cutcode = CutCode(laserop.as_cutobjects())
+        self.assertEqual(len(cutcode), 1)
+
+        rastercut = cutcode[0]
+        self.assertTrue(isinstance(rastercut, RasterCut))
+        self.assertEqual(rastercut.tx, 100)
+        self.assertEqual(rastercut.ty, 100)
+        image = rastercut.image
+        self.assertTrue(isinstance(image, Image.Image))
+        self.assertIn(image.mode, ("L", "1"))
+        self.assertEqual(image.size, (6, 6))  # step value 1, 6/1
