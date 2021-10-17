@@ -1,10 +1,9 @@
 import unittest
-from math import floor, ceil
+from math import floor
 
 from PIL import Image, ImageDraw
 
-from meerk40t.image.imagetools import actualize
-from meerk40t.svgelements import SVGImage, Matrix
+from meerk40t.svgelements import SVGImage
 from test import bootstrap
 
 
