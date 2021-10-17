@@ -1,8 +1,10 @@
 import unittest
 
-from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode, QuadCut
+from PIL import Image, ImageDraw
+
+from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode, QuadCut, RasterCut
 from meerk40t.core.elements import LaserOperation
-from meerk40t.svgelements import Point, Path
+from meerk40t.svgelements import Point, Path, SVGImage
 
 
 class TestCutcode(unittest.TestCase):
@@ -76,9 +78,33 @@ class TestCutcode(unittest.TestCase):
 
         :return:
         """
-        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
-        path = Path(initial)
         laserop = LaserOperation()
         laserop.operation = "Raster"
+
+        # Add Path
+        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
+        path = Path(initial)
         laserop.add(path, type="opnode")
-        # There is no method of turning the path into a raster image without a renderer.
+
+        # Add SVG Image
+        svg_image = SVGImage()
+        svg_image.image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+        svg_image.values["raster_step"] = 3
+        draw = ImageDraw.Draw(svg_image.image)
+        draw.ellipse((50, 50, 150, 150), "white")
+        draw.ellipse((100, 100, 105, 105), "black")
+        laserop.add(svg_image, type="opnode")
+
+        # raster_step is default to 0 and not set.
+        self.assertRaises(AssertionError, CutCode, laserop.as_cutobjects())
+
+        laserop.settings.raster_step = 2
+        cutcode = CutCode(laserop.as_cutobjects())
+        self.assertEqual(len(cutcode), 1)
+        rastercut = cutcode[0]
+        self.assertTrue(isinstance(rastercut, RasterCut))
+        self.assertEqual(rastercut.tx, 100)
+        self.assertEqual(rastercut.ty, 100)
+        image = rastercut.image
+        self.assertTrue(isinstance(image, Image.Image))
+        self.assertIn(image.mode, ('L', '1'))
