@@ -1142,28 +1142,46 @@ def short_travel_cutcode(context: CutCode):
     while True:
         closest = None
         backwards = False
-        closest_length = distance = float("inf")
-        for cut in context.candidate():
-            s = cut.start()
-            s = complex(s[0], s[1])
-            d = abs(s - curr)
-            l = cut.length()
-            if d < distance or (d == distance and (backwards or l < closest_length)):
-                distance = d
-                backwards = False
-                closest = cut
-                closest_length = l
-            if cut.reversible():
-                e = cut.end()
-                e = complex(e[0], e[1])
-                d = abs(e - curr)
-                if d < distance or (d == distance and backwards and l < closest_length):
-                    distance = d
+        closest_length = float("inf")
+        if ordered:
+            last_segment = ordered[-1]
+            if last_segment.normal:
+                # Attempt to initialize value to next segment in subpath
+                cut = last_segment.next
+                if cut and cut.permitted:
+                    closest = cut
+                    closest_length = abs(closest.start() - curr)
+                    backwards = False
+            else:
+                # Attempt to initialize value to previous segment in subpath
+                cut = last_segment.previous
+                if cut and cut.permitted:
+                    closest = cut
+                    closest_length = abs(closest.end() - curr)
                     backwards = True
+        distance = closest_length
+        if distance > 1e-5:
+            for cut in context.candidate():
+                s = cut.start()
+                s = complex(s[0], s[1])
+                d = abs(s - curr)
+                l = cut.length()
+                if d < distance or (d == distance and (backwards or l < closest_length)):
+                    distance = d
+                    backwards = False
                     closest = cut
                     closest_length = l
-            if distance <= 1e-5:
-                break  # Distance is zero, we cannot improve.
+                if cut.reversible():
+                    e = cut.end()
+                    e = complex(e[0], e[1])
+                    d = abs(e - curr)
+                    if d < distance or (d == distance and backwards and l < closest_length):
+                        distance = d
+                        backwards = True
+                        closest = cut
+                        closest_length = l
+                if distance <= 1e-5:
+                    break  # Distance is zero, we cannot improve.
         if closest is None:
             break
         closest.permitted = False
