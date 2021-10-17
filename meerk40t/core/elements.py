@@ -1237,7 +1237,10 @@ class LaserOperation(Node):
                     pass
                 if settings.raster_step <= 0:
                     settings.raster_step = 1
-
+                try:
+                    settings.raster_direction = int(svg_image.values["raster_direction"])
+                except KeyError:
+                    pass
                 matrix = svg_image.transform
                 pil_image = svg_image.image
                 pil_image, matrix = actualize(pil_image, matrix, settings.raster_step)
@@ -1250,13 +1253,13 @@ class LaserOperation(Node):
                         (box[2], box[1]),
                     )
                 )
-                cut = RasterCut(pil_image, settings, matrix.value_trans_x(), matrix.value_trans_y())
+                cut = RasterCut(pil_image, matrix.value_trans_x(), matrix.value_trans_y(), settings)
                 cut.path = path
                 cut.original_op = self._operation
                 yield cut
 
                 if settings.raster_direction == 4:
-                    cut = RasterCut(pil_image, settings, matrix.value_trans_x(), matrix.value_trans_y(), crosshatch=True)
+                    cut = RasterCut(pil_image, matrix.value_trans_x(), matrix.value_trans_y(),  settings, crosshatch=True)
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut
