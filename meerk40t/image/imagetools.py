@@ -1,8 +1,8 @@
 import os
 from copy import copy
-from math import ceil
 from os import path as ospath
 
+from .actualize import actualize
 from ..core.planner import make_actual, needs_actualization
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 
@@ -1166,81 +1166,6 @@ def dither(image, method="Floyd-Steinberg"):
                     pix[xn, yn] += error * diffusion_coefficient
     return diff
 
-
-def actualize(image, matrix, step_level=1):
-    """
-    Makes PIL image actual in that it manipulates the pixels to actually exist
-    rather than simply apply the transform on the image to give the resulting image.
-    Since our goal is to raster the images real pixels this is required.
-
-    SVG matrices are defined as follows.
-    [a c e]
-    [b d f]
-
-    Pil requires a, c, e, b, d, f accordingly.
-    """
-    from PIL import Image
-
-    box = None
-    try:
-        box = image.convert("L").point(lambda e: 255 - e).getbbox()
-    except ValueError:
-        pass
-    if box is None:
-        box = (0, 0, image.width, image.height)
-    boundary_points = [
-        matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
-        matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
-        matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
-        matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
-    ]
-    xs = [e[0] for e in boundary_points]
-    ys = [e[1] for e in boundary_points]
-    bbox = min(xs), min(ys), max(xs), max(ys)
-    # bbox here is expanded matrix size of box.
-    step_scale = 1 / float(step_level)
-    element_width = int(ceil((bbox[2] - bbox[0]) * step_scale))
-    element_height = int(ceil((bbox[3] - bbox[1]) * step_scale))
-    tx = bbox[0]
-    ty = bbox[1]
-    matrix.post_translate(-tx, -ty)
-    matrix.post_scale(step_scale, step_scale)
-    try:
-        matrix.inverse()
-    except ZeroDivisionError:
-        # Rare crash if matrix is malformed and cannot invert.
-        matrix.reset()
-        matrix.post_translate(-tx, -ty)
-        matrix.post_scale(step_scale, step_scale)
-    if (
-        matrix.value_skew_x() != 0.0 or matrix.value_skew_y() != 0.0
-    ) and image.mode != "RGBA":
-        # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-        image = image.convert("RGBA")
-    image = image.transform(
-        (element_width, element_height),
-        Image.AFFINE,
-        (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-        resample=Image.BICUBIC,
-    )
-    matrix.reset()
-    box = None
-    try:
-        box = image.convert("L").point(lambda e: 255 - e).getbbox()
-    except ValueError:
-        pass
-    if box is not None:
-        width = box[2] - box[0]
-        height = box[3] - box[1]
-        if width != element_width or height != element_height:
-            image = image.crop(box)
-            matrix.post_translate(box[0], box[1])
-    # step level requires the new actualized matrix be scaled up.
-    matrix.post_scale(step_level, step_level)
-    matrix.post_translate(tx, ty)
-    return image, matrix
-
-
 class RasterScripts:
     """
     This module serves as the raster scripting routine. It registers raster-scripts and
@@ -1547,11 +1472,14 @@ class RasterScripts:
         step = None
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
-        try:
-            alpha_mask = image.getchannel("A")
-        except ValueError:
-            alpha_mask = None
         empty_mask = None
+        # Lookahead check for inversion
+        invert = False
+        for op in operations:
+            if op["name"] == "grayscale" and op["enable"]:
+                invert = op["invert"]
+
+        # Process operations.
         for op in operations:
             name = op["name"]
             if name == "crop":
@@ -1568,11 +1496,8 @@ class RasterScripts:
             elif name == "resample":
                 try:
                     if op["enable"]:
-                        image, matrix = actualize(image, matrix, step_level=op["step"])
+                        image, matrix = actualize(image, matrix, step_level=op["step"], inverted=invert)
                         step = op["step"]
-                        if alpha_mask is not None:
-                            alpha_mask = image.getchannel("A")
-                            # Get the resized alpha mask.
                         empty_mask = None
                 except KeyError:
                     pass
@@ -1620,7 +1545,9 @@ class RasterScripts:
             elif name == "auto_contrast":
                 try:
                     if op["enable"]:
-                        if image.mode == "P":
+                        if image.mode not in ("RGB", "L"):
+                            # Auto-contrast raises NotImplementedError if P
+                            # Auto-contrast raises OSError if not RGB, L.
                             image = image.convert("L")
                         image = ImageOps.autocontrast(image, cutoff=op["cutoff"])
                 except KeyError:
@@ -1702,11 +1629,6 @@ class RasterScripts:
                     pass
             elif name == "dither":
                 try:
-                    if alpha_mask is not None:
-                        background = Image.new(image.mode, image.size, "white")
-                        background.paste(image, mask=alpha_mask)
-                        image = background  # Mask exists use it to remove any pixels that were pure reject.
-                        alpha_mask = None
                     if empty_mask is not None:
                         background = Image.new(image.mode, image.size, "white")
                         background.paste(image, mask=empty_mask)
@@ -1738,10 +1660,6 @@ class RasterScripts:
                         )
                 except KeyError:
                     pass
-        if alpha_mask is not None:
-            background = Image.new(image.mode, image.size, "white")
-            background.paste(image, mask=alpha_mask)
-            image = background  # Mask exists use it to remove any pixels that were pure reject.
         if empty_mask is not None:
             background = Image.new(image.mode, image.size, "white")
             background.paste(image, mask=empty_mask)

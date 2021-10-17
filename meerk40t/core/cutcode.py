@@ -522,83 +522,44 @@ class CubicCut(CutObject):
 
 
 class RasterCut(CutObject):
-    def __init__(self, image, settings=None):
+    """
+    Rastercut accepts a image of type "L" or "1", and an offset in the x and y and information as to whether
+    this is a crosshatched cut or not.
+    """
+    def __init__(self, image, tx, ty, settings=None, crosshatch=False):
         CutObject.__init__(self, settings=settings)
+        assert(image.mode in ("L", "1"))
+
         self.image = image
+        self.tx = tx
+        self.ty = ty
+
         step = self.settings.raster_step
         self.step = step
+        assert(step > 0)
+
         direction = self.settings.raster_direction
         traverse = 0
-        if direction == 0:
+        if direction == 0 or direction == 4 and not crosshatch:
             traverse |= X_AXIS
             traverse |= TOP
         elif direction == 1:
             traverse |= X_AXIS
             traverse |= BOTTOM
-        elif direction == 2:
+        elif direction == 2 or direction == 4 and crosshatch:
             traverse |= Y_AXIS
             traverse |= RIGHT
         elif direction == 3:
             traverse |= Y_AXIS
             traverse |= LEFT
-        elif direction == 4:
-            if hasattr(settings, "crosshatch") and settings.crosshatch:
-                traverse |= Y_AXIS
-                traverse |= RIGHT
-            else:
-                traverse |= X_AXIS
-                traverse |= TOP
         if self.settings.raster_swing:
             traverse |= UNIDIRECTIONAL
-
-        svgimage = self.image
-        image = svgimage.image
         width, height = image.size
         self.width = width
         self.height = height
-        mode = image.mode
 
-        if (
-            mode not in ("1", "P", "L", "RGB", "RGBA")
-            or mode == "P"
-            and "transparency" in image.info
-        ):
-            # Any mode without a filter should get converted.
-            image = image.convert("RGBA")
-            mode = image.mode
-        if mode == "1":
-
-            def image_filter(pixel):
-                return (255 - pixel) / 255.0
-
-        elif mode == "P":
-            p = image.getpalette()
-
-            def image_filter(pixel):
-                v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
-                return 1.0 - (v / 765.0)
-
-        elif mode == "L":
-
-            def image_filter(pixel):
-                return (255 - pixel) / 255.0
-
-        elif mode == "RGB":
-
-            def image_filter(pixel):
-                return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
-
-        elif mode == "RGBA":
-
-            def image_filter(pixel):
-                return (
-                    (1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0) * pixel[3] / 255.0
-                )
-
-        else:
-            raise ValueError  # this shouldn't happen.
-        m = svgimage.transform
-        data = image.load()
+        def image_filter(pixel):
+            return (255 - pixel) / 255.0
 
         overscan = self.settings.overscan
         if overscan is None:
@@ -609,10 +570,8 @@ class RasterCut(CutObject):
             except ValueError:
                 overscan = 20
         self.overscan = overscan
-        tx = m.value_trans_x()
-        ty = m.value_trans_y()
         self.plot = RasterPlotter(
-            data, width, height, traverse, 0, overscan, tx, ty, step, image_filter
+            image.load(), width, height, traverse, 0, overscan, tx, ty, step, image_filter
         )
 
     def reversible(self):

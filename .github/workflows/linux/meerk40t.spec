@@ -5,10 +5,7 @@ block_cipher = None
 
 a = Analysis(['../../../mk40t.py'],
              pathex=['../../../build/meerk40t-import'],
-             binaries = [
-                ('./libusb0.dll', '.'),
-                ('./CH341DLL.DLL', '.'),
-             ],
+             binaries = [],
              datas=[],
              hiddenimports=['usb'],
              hookspath=[],
@@ -39,4 +36,4 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False , version='file_version.txt', icon='../../../meerk40t.ico')
+          console=False, icon='../../../meerk40t.ico')

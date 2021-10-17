@@ -1,5 +1,4 @@
 from copy import copy
-from math import ceil
 
 from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..device.lasercommandconstants import (
@@ -892,7 +891,7 @@ def make_actual(image_element, step_level=None):
     """
     if not isinstance(image_element, SVGImage):
         return
-    from ..image.imagetools import actualize
+    from ..image.actualize import actualize
 
     if step_level is None:
         # If we are not told the step amount either draw it from the object or set it to default.

@@ -24,3 +24,7 @@ Path Optimize are the older path-based optimizations routines from 0.6.x that wo
 
 Vectrace performs simple black/white image decomposition. Converting an image into a vector elements. This should allow for some tracing of image objects.
 This can be invoked with `vectrace` in console.
+
+## Winsleep
+
+Winsleep is a windows only plugin that prevents Microsoft Windows OSes from entering sleepmode while projects are actively sending a laser project.

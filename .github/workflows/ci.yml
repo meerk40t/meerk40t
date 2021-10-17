@@ -1,17 +1,40 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+# This workflow builds PyInstaller single-file executables
+# of Meerk40t for Windows, (and hopefully) Linux, Mac
 
 name: Meerk40t
 
 on:
-  push:
-    tags:
-      - 'v[0-9]+.*'
-  workflow_dispatch:
+  release:
+    types: [published]
 
 jobs:
-  build-ubuntu:
+  build-centos7:
+    runs-on: centos7
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v2
+    
+    - name: Ensure latest meerk40t-camera
+      run: |
+        pip3 install meerk40t-camera opencv-python-headless
 
+    - name: Build Meerk40t
+      run: |
+        mv meerk40t.py mk40t.py
+        pyinstaller --windowed --onefile --name meerk40t .github/workflows/linux/meerk40t.spec
+        mv mk40t.py meerk40t.py
+        mv dist/MeerK40t dist/MeerK40t-Linux
+
+    - name: Upload Release Assets
+      id: release
+      uses: softprops/action-gh-release@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          dist/MeerK40t-Linux
+
+       
+  build-ubuntu:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
@@ -28,31 +51,24 @@ jobs:
         pip3 install pyinstaller wheel
         pip3 install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
         if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
+
     - name: Build meerk40t
       run: |
         mv meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t mk40t.py
         mv mk40t.py meerk40t.py
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        mv dist/meerk40t dist/MeerK40t-Ubuntu-Latest
+
+# Switched to using softprops/action-gh-release@v1
+# because it supports uploading to existing release based on current tag.
+    - name: Upload Release Assets
+      id: release
+      uses: softprops/action-gh-release@v1
       with:
-          tag_name: release-${{ github.sha }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: true
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/meerk40t
-          asset_name: MeerK40t
-          asset_content_type: application/exe
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          dist/MeerK40t-Ubuntu-Latest
+
 
   build-windows:
     runs-on: windows-latest
@@ -60,27 +76,16 @@ jobs:
     - name: Checkout meerk40t
       uses: actions/checkout@v2
 
-    - name: Set outputs
-      id: prevars
-      run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=tag::$(git tag --points-at)"
-    - name: Fix outputs
-      id: vars
-      if: ${{ steps.prevars.outputs.tag == '' }}
-      run: |
-          echo "::set-output name=sha_short::${{ steps.prevars.outputs.sha_short }}"
-          echo "::set-output name=tag::${{ steps.prevars.outputs.sha_short }}"
-    - name: Check outputs
-      run: |
-          echo ${{ steps.vars.outputs.sha_short }}
-          echo ${{ steps.vars.outputs.tag }}
     - name: Set up Python 3.7
       uses: actions/setup-python@v2
       with:
         python-version: 3.7
         architecture: 'x86'
 # Yikes. ch341dll.dll is not compatible with 64-bit python/pyinstaller/ctypes
+#
+# Python 3.7, wxPython 4.0.7-post2 is specifically chosen to workaround
+# issue meerk40t/meerk40t#242, once the SetLocale issue is resolved, we can test
+# newer versions again. Python 3.8 is latest possible for Windows 7 support.
 
     - name: Install dependencies
       run: |
@@ -88,8 +93,11 @@ jobs:
         pip install wxPython==4.0.7-post2
         pip install meerk40t-camera ezdxf opencv-python-headless
 
-#       Compile bootloaders in order to reduce virus totals
+# Compile bootloaders in order to reduce virus totals
+# PYTHONHASHSEED is an attempt to get deterministic builds for VirusTotal
     - name: Build pyinstaller, generate bootloaders
+      env:
+        PYTHONHASHSEED: 12506
       run: |
         git clone --depth=1 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
@@ -98,34 +106,29 @@ jobs:
         python3 setup.py install
         cd ..
 
-#    - name: Directory structure
-#      run: |
-#        tree D:/ /a /f
-
-    - name: Build MeerK40t
+    - name: Build MeerK40t (wxPython 4.0.7-post2)
       run: |
         move meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
         move mk40t.py meerk40t.py
+        move dist/meerk40t.exe dist/wx-meerk40t.exe
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          tag_name: release-${{ steps.vars.outputs.tag }}
-          release_name: ${{ steps.vars.outputs.tag }}
-          draft: false
-          prerelease: false
+    - name: Build MeerK40t (wxPython 4.1.1)
+      run: |
+        pip install wxPython==4.1.1
+        move meerk40t.py mk40t.py
+        pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
+        move mk40t.py meerk40t.py
+        move dist/meerk40t.exe dist/MeerK40t.exe
 
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# Switched to using softprops/action-gh-release@v1
+# because it supports uploading to existing release based on current tag.
+    - name: Upload Release Assets
+      id: release
+      uses: softprops/action-gh-release@v1
       with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/meerk40t.exe
-          asset_name: MeerK40t.exe
-          asset_content_type: application/exe
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          dist/MeerK40t.exe
+          dist/wx-meerk40t.exe
+

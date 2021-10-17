@@ -2481,7 +2481,7 @@ class Kernel:
                 channel(_("No relevant context found."))
 
         @self.console_command(
-            ("quit", "shutdown"), help=_("quits meerk40t shutting down all processes")
+            ("quit", "shutdown"), help=_("shuts down all processes and exits")
         )
         def shutdown(**kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
