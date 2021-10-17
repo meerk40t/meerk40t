@@ -1233,7 +1233,8 @@ class LaserOperation(Node):
                 try:
                     settings.raster_step = int(svg_image.values["raster_step"])
                 except KeyError:
-                    pass
+                    # This overwrites any step that may have been defined in settings.
+                    settings.raster_step = 1  # If raster_step is not set image defaults to 1.
                 if settings.raster_step <= 0:
                     settings.raster_step = 1
                 try:
