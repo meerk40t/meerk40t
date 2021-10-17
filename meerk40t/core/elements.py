@@ -1119,8 +1119,8 @@ class LaserOperation(Node):
         settings = self.settings
 
         if self._operation in ("Cut", "Engrave"):
-            for object_path in self.children:
-                object_path = object_path.object
+            for element in self.children:
+                object_path = element.object
                 if isinstance(object_path, SVGImage):
                     box = object_path.bbox()
                     path = Path(
@@ -1184,33 +1184,38 @@ class LaserOperation(Node):
                             )
                     yield group
         elif self._operation == "Raster":
+            assert(settings.raster_step > 0)
             direction = settings.raster_direction
             settings.crosshatch = False
-            if direction == 4:
-                for object_image in self.children:
-                    object_image = object_image.object
-                    matrix = object_image.transform
-                    object_image, matrix = actualize(object_image, matrix)
-                    box = object_image.bbox()
-                    path = Path(
-                        Polygon(
-                            (box[0], box[1]),
-                            (box[0], box[3]),
-                            (box[2], box[3]),
-                            (box[2], box[1]),
-                        )
+            for element in self.children:
+                svg_image = element.object
+                if not isinstance(svg_image, SVGImage):
+                    continue
+
+                matrix = svg_image.transform
+                pil_image = svg_image.image
+                pil_image, matrix = actualize(pil_image, matrix)
+                box = svg_image.bbox()
+                path = Path(
+                    Polygon(
+                        (box[0], box[1]),
+                        (box[0], box[3]),
+                        (box[2], box[3]),
+                        (box[2], box[1]),
                     )
+                )
+                cut = RasterCut(
+                    pil_image,
+                    matrix.value_trans_x(),
+                    matrix.value_trans_y(),
+                    settings,
+                )
+                cut.path = path
+                cut.original_op = self._operation
+                yield cut
+                if direction == 4:
                     cut = RasterCut(
-                        object_image,
-                        matrix.value_trans_x(),
-                        matrix.value_trans_y(),
-                        settings,
-                    )
-                    cut.path = path
-                    cut.original_op = self._operation
-                    yield cut
-                    cut = RasterCut(
-                        object_image,
+                        pil_image,
                         matrix.value_trans_x(),
                         matrix.value_trans_y(),
                         settings,
@@ -1219,34 +1224,14 @@ class LaserOperation(Node):
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut
-            else:
-                for object_image in self.children:
-                    object_image = object_image.object
-                    matrix = object_image.transform
-                    object_image, matrix = actualize(object_image, matrix)
-                    box = object_image.bbox()
-                    path = Path(
-                        Polygon(
-                            (box[0], box[1]),
-                            (box[0], box[3]),
-                            (box[2], box[3]),
-                            (box[2], box[1]),
-                        )
-                    )
-                    cut = RasterCut(
-                        object_image,
-                        matrix.value_trans_x(),
-                        matrix.value_trans_y(),
-                        settings,
-                    )
-                    cut.path = path
-                    cut.original_op = self._operation
-                    yield cut
         elif self._operation == "Image":
-            for object_image in self.children:
-                object_image = object_image.object
-                matrix = object_image.transform
-                box = object_image.bbox()
+            for svg_image in self.children:
+                svg_image = svg_image.object
+                if not isinstance(svg_image, SVGImage):
+                    continue
+                matrix = svg_image.transform
+                pil_image = svg_image.image
+                box = svg_image.bbox()
                 path = Path(
                     Polygon(
                         (box[0], box[1]),
@@ -1257,17 +1242,19 @@ class LaserOperation(Node):
                 )
                 settings = LaserSettings(self.settings)
                 try:
-                    settings.raster_step = int(object_image.values["raster_step"])
+                    settings.raster_step = int(svg_image.values["raster_step"])
                 except KeyError:
+                    pass
+                if settings.raster_step <= 0:
                     settings.raster_step = 1
 
-                cut = RasterCut(object_image, settings, matrix.value_trans_x(), matrix.value_trans_y())
+                cut = RasterCut(pil_image, settings, matrix.value_trans_x(), matrix.value_trans_y())
                 cut.path = path
                 cut.original_op = self._operation
                 yield cut
 
                 if settings.raster_direction == 4:
-                    cut = RasterCut(object_image, settings, matrix.value_trans_x(), matrix.value_trans_y(), crosshatch=True)
+                    cut = RasterCut(pil_image, settings, matrix.value_trans_x(), matrix.value_trans_y(), crosshatch=True)
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut
