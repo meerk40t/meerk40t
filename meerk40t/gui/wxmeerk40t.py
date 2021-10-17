@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 import copy
 import os
@@ -332,9 +333,9 @@ _ = wx.GetTranslation
 supported_languages = (
     ("en", u"English", wx.LANGUAGE_ENGLISH),
     ("it", u"italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", u"français", wx.LANGUAGE_FRENCH),
+    ("fr", u"franï¿½ais", wx.LANGUAGE_FRENCH),
     ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", u"español", wx.LANGUAGE_SPANISH),
+    ("es", u"espaï¿½ol", wx.LANGUAGE_SPANISH),
     ("zh", u"Chinese", wx.LANGUAGE_CHINESE),
 )
 
