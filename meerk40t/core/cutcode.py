@@ -142,6 +142,8 @@ class CutObject:
         self._end = end
         self.normal = True  # Normal or Reversed.
         self.parent = parent
+        self.next = None
+        self.previous = None
         self.permitted = True
 
         self.mode = None
