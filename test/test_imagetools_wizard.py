@@ -219,7 +219,6 @@ class TestRasterWizard(unittest.TestCase):
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for element in kernel_root.elements.elems():
-                element.image.save("testw.png")
                 if isinstance(element, SVGImage):
                     self.assertEqual(
                         element.image.size, (floor(256 / 3) + 1, floor(256 / 3) + 1)
@@ -248,7 +247,6 @@ class TestRasterWizard(unittest.TestCase):
             kernel_root("image wizard Gravy\n")
             for element in kernel_root.elements.elems():
                 if isinstance(element, SVGImage):
-                    element.image.save("test.png")
                     self.assertEqual(
                         element.image.size, (floor(256 / 3), floor(256 / 3))
                     )
