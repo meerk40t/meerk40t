@@ -5105,6 +5105,37 @@ class Elemental(Modifier):
             node.replace_object(abs(Path(node.object)))
             node.altered()
 
+        @self.tree_submenu(_("Flip"))
+        @self.tree_separator_before()
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(
+            _("Horizontally"), node_type=("elem", "file", "group"), help=_("Mirror Horizontally")
+        )
+        def mirror_elem(node, **kwgs):
+            child_objects = Group()
+            child_objects.extend(node.objects_of_children(SVGElement))
+            bounds = child_objects.bbox()
+            if bounds is None:
+                return
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            self.context("scale -1 1 %f %f\n" % (center_x, center_y))
+
+        @self.tree_submenu(_("Flip"))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(
+            _("Vertically"), node_type=("elem", "file", "group"), help=_("Flip Vertically")
+        )
+        def flip_elem(node, **kwgs):
+            child_objects = Group()
+            child_objects.extend(node.objects_of_children(SVGElement))
+            bounds = child_objects.bbox()
+            if bounds is None:
+                return
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            self.context("scale 1 -1 %f %f\n" % (center_x, center_y))
+
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Scale"))
