@@ -74,7 +74,7 @@ class TestCutcode(unittest.TestCase):
 
     def test_cutcode_raster(self):
         """
-        Convert and Raster Operation
+        Convert CutCode from Raster Operation
 
         :return:
         """
@@ -89,7 +89,7 @@ class TestCutcode(unittest.TestCase):
         # Add SVG Image
         svg_image = SVGImage()
         svg_image.image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
-        svg_image.values["raster_step"] = 3
+        svg_image.values["raster_step"] = 3  # Raster should ignore this value.
         draw = ImageDraw.Draw(svg_image.image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
@@ -108,3 +108,183 @@ class TestCutcode(unittest.TestCase):
         image = rastercut.image
         self.assertTrue(isinstance(image, Image.Image))
         self.assertIn(image.mode, ('L', '1'))
+        self.assertEqual(image.size, (3, 3))
+
+    def test_cutcode_raster_crosshatch(self):
+        """
+        Convert CutCode from Raster Operation, crosshatched
+
+        :return:
+        """
+        # Initialize with Raster Defaults, +crosshatch
+        laserop = LaserOperation(operation="Raster", raster_direction=4)
+        # Default step 2.
+
+        # Add Path
+        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
+        path = Path(initial)
+        laserop.add(path, type="opnode")
+
+        # Add SVG Image
+        svg_image = SVGImage()
+        svg_image.image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+        svg_image.values["raster_step"] = 3
+        draw = ImageDraw.Draw(svg_image.image)
+        draw.ellipse((50, 50, 150, 150), "white")
+        draw.ellipse((100, 100, 105, 105), "black")
+        laserop.add(svg_image, type="opnode")
+
+        cutcode = CutCode(laserop.as_cutobjects())
+        self.assertEqual(len(cutcode), 2)
+
+        rastercut0 = cutcode[0]
+        self.assertTrue(isinstance(rastercut0, RasterCut))
+        self.assertEqual(rastercut0.tx, 100)
+        self.assertEqual(rastercut0.ty, 100)
+        image0 = rastercut0.image
+        self.assertTrue(isinstance(image0, Image.Image))
+        self.assertIn(image0.mode, ('L', '1'))
+        self.assertEqual(image0.size, (3, 3))  # default step value 2, 6/2
+
+        rastercut1 = cutcode[1]
+        self.assertTrue(isinstance(rastercut1, RasterCut))
+        self.assertEqual(rastercut1.tx, 100)
+        self.assertEqual(rastercut1.ty, 100)
+        image1 = rastercut1.image
+        self.assertTrue(isinstance(image1, Image.Image))
+        self.assertIn(image1.mode, ('L', '1'))
+        self.assertEqual(image1.size, (3, 3))  # default step value 2, 6/2
+
+        self.assertIs(image0, image1)
+
+    def test_cutcode_image(self):
+        """
+        Convert CutCode from Image Operation, also test image-based crosshatched
+
+        :return:
+        """
+        laserop = LaserOperation()
+        laserop.operation = "Image"
+
+        # Add Path
+        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
+        path = Path(initial)
+        laserop.add(path, type="opnode")
+
+        # Add SVG Image1
+        svg_image1 = SVGImage()
+        svg_image1.image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+        svg_image1.values["raster_step"] = 3
+        draw = ImageDraw.Draw(svg_image1.image)
+        draw.ellipse((50, 50, 150, 150), "white")
+        draw.ellipse((100, 100, 105, 105), "black")
+        laserop.add(svg_image1, type="opnode")
+
+        # Add SVG Image2
+        svg_image2 = SVGImage()
+        svg_image2.image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+        svg_image2.values["raster_step"] = 2
+        svg_image2.values["raster_direction"] = 4  # Crosshatch.
+        draw = ImageDraw.Draw(svg_image2.image)
+        draw.ellipse((50, 50, 150, 150), "white")
+        draw.ellipse((80, 80, 120, 120), "black")
+        laserop.add(svg_image2, type="opnode")
+
+        cutcode = CutCode(laserop.as_cutobjects())
+        self.assertEqual(len(cutcode), 3)
+        rastercut = cutcode[0]
+        self.assertTrue(isinstance(rastercut, RasterCut))
+        self.assertEqual(rastercut.tx, 100)
+        self.assertEqual(rastercut.ty, 100)
+        image = rastercut.image
+        self.assertTrue(isinstance(image, Image.Image))
+        self.assertIn(image.mode, ('L', '1'))
+        self.assertEqual(image.size, (2, 2))  # step value 2, 6/2
+
+        rastercut1 = cutcode[1]
+        self.assertTrue(isinstance(rastercut1, RasterCut))
+        self.assertEqual(rastercut1.tx, 80)
+        self.assertEqual(rastercut1.ty, 80)
+        image1 = rastercut1.image
+        self.assertTrue(isinstance(image1, Image.Image))
+        self.assertIn(image1.mode, ('L', '1'))
+        self.assertEqual(image1.size, (21, 21))  # default step value 2, 40/2 + 1
+
+        rastercut2 = cutcode[2]
+        self.assertTrue(isinstance(rastercut2, RasterCut))
+        self.assertEqual(rastercut2.tx, 80)
+        self.assertEqual(rastercut2.ty, 80)
+        image2 = rastercut2.image
+        self.assertTrue(isinstance(image2, Image.Image))
+        self.assertIn(image2.mode, ('L', '1'))
+        self.assertEqual(image2.size, (21, 21))  # default step value 2, 40/2 + 1
+
+    def test_cutcode_image_crosshatch(self):
+        """
+        Convert CutCode from Image Operation. ImageOp Crosshatch
+
+        :return:
+        """
+        laserop = LaserOperation(operation="Image", raster_direction=4)
+
+        # Add Path
+        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
+        path = Path(initial)
+        laserop.add(path, type="opnode")
+
+        # Add SVG Image1
+        svg_image1 = SVGImage()
+        svg_image1.image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+        svg_image1.values["raster_step"] = 3
+        draw = ImageDraw.Draw(svg_image1.image)
+        draw.ellipse((50, 50, 150, 150), "white")
+        draw.ellipse((100, 100, 105, 105), "black")
+        laserop.add(svg_image1, type="opnode")
+
+        # Add SVG Image2
+        svg_image2 = SVGImage()
+        svg_image2.image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+        svg_image2.values["raster_step"] = 2
+        draw = ImageDraw.Draw(svg_image2.image)
+        draw.ellipse((50, 50, 150, 150), "white")
+        draw.ellipse((80, 80, 120, 120), "black")
+        laserop.add(svg_image2, type="opnode")
+
+        cutcode = CutCode(laserop.as_cutobjects())
+        self.assertEqual(len(cutcode), 4)
+
+        rastercut1_0 = cutcode[0]
+        self.assertTrue(isinstance(rastercut1_0, RasterCut))
+        self.assertEqual(rastercut1_0.tx, 100)
+        self.assertEqual(rastercut1_0.ty, 100)
+        image = rastercut1_0.image
+        self.assertTrue(isinstance(image, Image.Image))
+        self.assertIn(image.mode, ('L', '1'))
+        self.assertEqual(image.size, (2, 2))  # step value 2, 6/2
+
+        rastercut1_1 = cutcode[1]
+        self.assertTrue(isinstance(rastercut1_1, RasterCut))
+        self.assertEqual(rastercut1_1.tx, 100)
+        self.assertEqual(rastercut1_1.ty, 100)
+        image = rastercut1_1.image
+        self.assertTrue(isinstance(image, Image.Image))
+        self.assertIn(image.mode, ('L', '1'))
+        self.assertEqual(image.size, (2, 2))  # step value 2, 6/2
+
+        rastercut2_0 = cutcode[2]
+        self.assertTrue(isinstance(rastercut2_0, RasterCut))
+        self.assertEqual(rastercut2_0.tx, 80)
+        self.assertEqual(rastercut2_0.ty, 80)
+        image1 = rastercut2_0.image
+        self.assertTrue(isinstance(image1, Image.Image))
+        self.assertIn(image1.mode, ('L', '1'))
+        self.assertEqual(image1.size, (21, 21))  # default step value 2, 40/2 + 1
+
+        rastercut2_1 = cutcode[3]
+        self.assertTrue(isinstance(rastercut2_1, RasterCut))
+        self.assertEqual(rastercut2_1.tx, 80)
+        self.assertEqual(rastercut2_1.ty, 80)
+        image2 = rastercut2_1.image
+        self.assertTrue(isinstance(image2, Image.Image))
+        self.assertIn(image2.mode, ('L', '1'))
+        self.assertEqual(image2.size, (21, 21))  # default step value 2, 40/2 + 1
