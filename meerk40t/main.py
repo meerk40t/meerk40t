@@ -30,7 +30,8 @@ if not getattr(sys, "frozen", False):
 def pair(value):
     rv = value.split("=")
     if len(rv) != 2:
-        raise argparse.ArgumentError
+        # raise argparse.ArgumentError, do not raise error.
+        pass
     return rv
 
 
@@ -280,9 +281,12 @@ def run():
     if args.set is not None:
         # Set the variables requested here.
         for v in args.set:
-            attr = v[0]
-            value = v[1]
-            kernel_root("set %s %s\n" % (attr, value))
+            try:
+                attr = v[0]
+                value = v[1]
+                kernel_root("set %s %s\n" % (attr, value))
+            except IndexError:
+                break
 
     kernel.bootstrap("ready")
 
