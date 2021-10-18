@@ -1196,6 +1196,12 @@ class LaserOperation(Node):
                                     settings=settings,
                                 )
                             )
+                    for i, cut_obj in enumerate(group):
+                        try:
+                            cut_obj.next = group[i+1]
+                        except IndexError:
+                            cut_obj.next = group[0]
+                        cut_obj.previous = group[i-1]
                     yield group
         elif self._operation == "Raster":
             step = settings.raster_step
