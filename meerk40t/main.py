@@ -23,8 +23,23 @@ for full details.
 
 MEERK40T_VERSION = "0.7.3-beta4"
 
+hide_console = lambda: None
+show_console = lambda: None
+
 if not getattr(sys, "frozen", False):
     MEERK40T_VERSION += " src"
+elif sys.platform.startswith('win'):
+    def hide_console():
+        import ctypes
+        handle = ctypes.windll.kernel32.GetConsoleWindow()
+        if handle != 0:
+            ctypes.windll.user32.ShowWindow(handle, 0)
+
+    def show_console():
+        import ctypes
+        handle = ctypes.windll.kernel32.GetConsoleWindow()
+        if handle != 0:
+            ctypes.windll.user32.ShowWindow(handle, 1)
 
 
 def pair(value):
@@ -196,10 +211,10 @@ def run():
 
     try:
         from camera import camera
-    except ImportError:
-        print("Cannot install external 'camera' plugin - see https://github.com/meerk40t/meerk40t-camera")
     except Mk40tImportAbort as e:
         print("Cannot install meerk40t 'camera' plugin - prerequisite '%s' needs to be installed" % e)
+    except ImportError:
+        print("Cannot install external 'camera' plugin - see https://github.com/meerk40t/meerk40t-camera")
     else:
         kernel.add_plugin(camera.plugin)
 
@@ -347,4 +362,6 @@ def run():
         loop.close()
         kernel_root.channel("console").unwatch(print)
 
+    hide_console()
     kernel.bootstrap("mainloop")  # This is where the GUI loads and runs.
+    show_console()
