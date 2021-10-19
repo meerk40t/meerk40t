@@ -3813,15 +3813,14 @@ class Elemental(Modifier):
                 ty = input_driver.current_y
             except AttributeError:
                 ty = 0
-            m = Matrix("translate(%f,%f)" % (tx, ty))
             try:
+                bounds = Group.union_bbox([abs(e) for e in data])
+                otx = bounds[0]
+                oty = bounds[1]
+                ntx = tx - otx
+                nty = ty - oty
                 for e in data:
-                    otx = e.transform.value_trans_x()
-                    oty = e.transform.value_trans_y()
-                    ntx = tx - otx
-                    nty = ty - oty
-                    m = Matrix("translate(%f,%f)" % (ntx, nty))
-                    e *= m
+                    e.transform.post_translate(ntx, nty)
                     if hasattr(e, "node"):
                         e.node.modified()
             except ValueError:
