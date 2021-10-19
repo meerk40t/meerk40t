@@ -1131,6 +1131,12 @@ def short_travel_cutcode(context: CutCode):
 
     We start at either 0,0 or the value given in cc.start
     """
+    from time import time
+    t = time()
+    short_travel_cutcode_2opt(context)
+    print(time() - t)
+    return context
+
     curr = context.start
     if curr is None:
         curr = 0
@@ -1192,6 +1198,101 @@ def short_travel_cutcode(context: CutCode):
         curr = complex(end[0], end[1])
         ordered.append(c)
     return ordered
+
+
+def short_travel_cutcode_2opt(context: CutCode, passes:int = 50):
+    try:
+        import numpy as np
+    except ImportError:
+        return
+    cut_objects = CutCode(context.flat())
+    print(cut_objects.length_travel())
+
+    current_pass = 1
+    min_value = -1e-10  # Do not swap on rounding error.
+    length = len(cut_objects)
+    endpoints = np.zeros((length, 4), dtype="complex")
+    # start, index, reverse-index, end
+    for i in range(length):
+        endpoints[i] = complex(cut_objects[i].start()), i, ~i, complex(cut_objects[i].end())
+    indexes0 = np.arange(0, length - 1)
+    indexes1 = indexes0 + 1
+
+    def log_progress(pos):
+        starts = endpoints[indexes0, -1]
+        ends = endpoints[indexes1, 0]
+        dists = np.abs(starts - ends)
+        dist_sum = dists.sum()
+        print(
+            f"optimize: pen-up distance is {dist_sum}. {100 * pos / length:.02f}% done "
+            f"with pass {current_pass}/{passes}"
+        )
+
+    improved = True
+    while improved:
+        improved = False
+
+        first = endpoints[0][0]
+        pen_ups = endpoints[indexes0, -1]
+        pen_downs = endpoints[indexes1, 0]
+
+        delta = np.abs(first - pen_downs) - np.abs(pen_ups - pen_downs)
+        index = int(np.argmin(delta))
+        if delta[index] < min_value:
+            endpoints[: index + 1] = np.flip(
+                endpoints[: index + 1], (0, 1)
+            )  # top to bottom, and right to left flips.
+            improved = True
+            log_progress(1)
+        for mid in range(1, length - 1):
+            idxs = np.arange(mid, length - 1)
+
+            mid_source = endpoints[mid - 1, -1]
+            mid_dest = endpoints[mid, 0]
+            pen_ups = endpoints[idxs, -1]
+            pen_downs = endpoints[idxs + 1, 0]
+            delta = (
+                    np.abs(mid_source - pen_ups)
+                    + np.abs(mid_dest - pen_downs)
+                    - np.abs(pen_ups - pen_downs)
+                    - np.abs(mid_source - mid_dest)
+            )
+            index = int(np.argmin(delta))
+            if delta[index] < min_value:
+                endpoints[mid: mid + index + 1] = np.flip(
+                    endpoints[mid: mid + index + 1], (0, 1)
+                )
+                improved = True
+                log_progress(mid)
+
+        last = endpoints[-1, -1]
+        pen_ups = endpoints[indexes0, -1]
+        pen_downs = endpoints[indexes1, 0]
+
+        delta = np.abs(pen_ups - last) - np.abs(pen_ups - pen_downs)
+        index = int(np.argmin(delta))
+        if delta[index] < min_value:
+            endpoints[index + 1:] = np.flip(
+                endpoints[index + 1:], (0, 1)
+            )  # top to bottom, and right to left flips.
+            improved = True
+            log_progress(length)
+        if current_pass >= passes:
+            break
+        current_pass += 1
+
+    # Two-opt complete.
+    order = endpoints[:, 1]
+    reordered = list()
+    for i in range(length):
+        pos = int(order[i].real)
+        if pos < 0:
+            pos = ~pos
+            cut_objects[pos].reverse()
+        reordered.append(cut_objects[pos])
+    context.clear()
+    context.extend(reordered)
+    print(context.length_travel())
 
 
 def inner_selection_cutcode(context: CutCode):
