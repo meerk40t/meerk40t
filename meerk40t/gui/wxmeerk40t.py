@@ -642,7 +642,7 @@ class MeerK40t(MWindow):
         def busy_go_plan(*args):
             with wx.BusyInfo(_("Processing and sending...")):
                 self.context(
-                    "plan clear copy preprocess validate blob preopt optimize spool\n"
+                    "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
                 )
 
         self.Bind(
