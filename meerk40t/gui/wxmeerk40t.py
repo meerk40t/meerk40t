@@ -5,6 +5,15 @@ import os
 import sys
 import traceback
 
+try:
+    import wx
+except ImportError as e:
+    from ..core.exceptions import Mk40tImportAbort
+    raise Mk40tImportAbort("wxpython")
+
+import wx.aui as aui
+import wx.ribbon as RB
+
 from meerk40t.gui.panes.jog import Jog
 from meerk40t.gui.panes.position import PositionPanel
 
@@ -42,15 +51,6 @@ except ImportError:
     from math import pi
 
     tau = pi * 2
-
-from ..core.exceptions import Mk40tImportAbort
-
-try:
-    import wx
-except ImportError as e:
-    raise Mk40tImportAbort("wxpython")
-import wx.aui as aui
-import wx.ribbon as RB
 
 from ..core.elements import LaserOperation, isDot
 from ..device.lasercommandconstants import (
