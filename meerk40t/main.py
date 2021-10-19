@@ -196,10 +196,10 @@ def run():
 
     try:
         from camera import camera
-    except ImportError:
-        print("Cannot install external 'camera' plugin - see https://github.com/meerk40t/meerk40t-camera")
     except Mk40tImportAbort as e:
         print("Cannot install meerk40t 'camera' plugin - prerequisite '%s' needs to be installed" % e)
+    except ImportError:
+        print("Cannot install external 'camera' plugin - see https://github.com/meerk40t/meerk40t-camera")
     else:
         kernel.add_plugin(camera.plugin)
 
