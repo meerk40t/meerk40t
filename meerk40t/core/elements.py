@@ -5711,8 +5711,10 @@ class Elemental(Modifier):
     def remove_elements_from_operations(self, elements_list):
         for i, op in enumerate(self.ops()):
             for e in list(op.children):
-                if e.object in elements_list:
-                    e.remove_node()
+                for q in elements_list:
+                    if q is e.object:
+                        e.remove_node()
+                        break
 
     def selected_area(self):
         if self._emphasized_bounds_dirty:
