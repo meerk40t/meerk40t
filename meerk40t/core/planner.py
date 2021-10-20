@@ -836,7 +836,6 @@ class Planner(Modifier):
                 y_pos += y_distance
             if x_pos != 0 or y_pos != 0:
                 data.plan.append(offset(-x_pos, -y_pos))
-            data.plan.append(home)
             self.context.signal("plan", self._default_plan, None)
             return data_type, data
 
