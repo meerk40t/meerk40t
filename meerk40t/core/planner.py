@@ -1201,7 +1201,9 @@ def short_travel_cutcode(context: CutCode):
                 s = complex(s[0], s[1])
                 d = abs(s - curr)
                 l = cut.length()
-                if d < distance or (d == distance and (backwards or l < closest_length)):
+                if d < distance or (
+                    d == distance and (backwards or l < closest_length)
+                ):
                     distance = d
                     backwards = False
                     closest = cut
@@ -1210,7 +1212,9 @@ def short_travel_cutcode(context: CutCode):
                     e = cut.end()
                     e = complex(e[0], e[1])
                     d = abs(e - curr)
-                    if d < distance or (d == distance and backwards and l < closest_length):
+                    if d < distance or (
+                        d == distance and backwards and l < closest_length
+                    ):
                         distance = d
                         backwards = True
                         closest = cut
@@ -1268,12 +1272,8 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         dists = np.abs(starts - ends)
         dist_sum = dists.sum()
         channel(
-            "optimize: pen-up distance is %f. %.02f%% done with pass %d/%d" % (
-                dist_sum,
-                100 * pos / length,
-                current_pass,
-                passes
-            )
+            "optimize: pen-up distance is %f. %.02f%% done with pass %d/%d"
+            % (dist_sum, 100 * pos / length, current_pass, passes)
         )
 
     improved = True
@@ -1301,15 +1301,15 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
             pen_ups = endpoints[idxs, -1]
             pen_downs = endpoints[idxs + 1, 0]
             delta = (
-                    np.abs(mid_source - pen_ups)
-                    + np.abs(mid_dest - pen_downs)
-                    - np.abs(pen_ups - pen_downs)
-                    - np.abs(mid_source - mid_dest)
+                np.abs(mid_source - pen_ups)
+                + np.abs(mid_dest - pen_downs)
+                - np.abs(pen_ups - pen_downs)
+                - np.abs(mid_source - mid_dest)
             )
             index = int(np.argmin(delta))
             if delta[index] < min_value:
-                endpoints[mid: mid + index + 1] = np.flip(
-                    endpoints[mid: mid + index + 1], (0, 1)
+                endpoints[mid : mid + index + 1] = np.flip(
+                    endpoints[mid : mid + index + 1], (0, 1)
                 )
                 improved = True
                 if channel:
@@ -1322,8 +1322,8 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         delta = np.abs(pen_ups - last) - np.abs(pen_ups - pen_downs)
         index = int(np.argmin(delta))
         if delta[index] < min_value:
-            endpoints[index + 1:] = np.flip(
-                endpoints[index + 1:], (0, 1)
+            endpoints[index + 1 :] = np.flip(
+                endpoints[index + 1 :], (0, 1)
             )  # top to bottom, and right to left flips.
             improved = True
             if channel:
