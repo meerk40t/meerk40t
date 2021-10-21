@@ -1279,6 +1279,11 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         channel("Executing 2-Opt Short-Travel optimization")
         channel("Length at start: %f" % ordered.length_travel())
 
+    curr = context.start
+    if curr is None:
+        curr = 0
+    else:
+        curr = complex(curr[0], curr[1])
     current_pass = 1
     min_value = -1e-10  # Do not swap on rounding error.
     length = len(ordered)
