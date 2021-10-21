@@ -201,28 +201,22 @@ class CutPlan:
         if not has_cutcode:
             return
 
-        try:
-            import numpy as np
+        if context.opt_reduce_travel:
+            self.commands.append(self.optimize_travel)
+            if context.opt_2opt and not context.opt_inner_first:
+                try:
+                    import numpy as np
 
-            numpy_available = True
-        except ImportError:
-            numpy_available = False
-        if (
-            numpy_available
-            and context.opt_2opt
-            and context.opt_reduce_travel
-            and not context.opt_inner_first
-        ):
-            self.commands.append(self.optimize_travel_2opt)
-        else:
-            if context.opt_reduce_travel:
-                self.commands.append(self.optimize_travel)
-            elif context.opt_inner_first:
-                self.commands.append(self.optimize_cuts)
-            if context.opt_reduce_directions:
-                pass
-            if context.opt_remove_overlap:
-                pass
+                    self.commands.append(self.optimize_travel_2opt)
+                except ImportError:
+                    pass
+
+        elif context.opt_inner_first:
+            self.commands.append(self.optimize_cuts)
+        if context.opt_reduce_directions:
+            pass
+        if context.opt_remove_overlap:
+            pass
 
     def optimize_travel_2opt(self):
         for i, c in enumerate(self.plan):
