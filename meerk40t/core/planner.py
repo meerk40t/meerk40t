@@ -1232,6 +1232,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     if abs(e[0]-curr.real) <= distance and abs(e[1]-curr.imag) <= distance:
                         e = complex(e[0], e[1])
                         d = abs(e - curr)
+                        l = cut.length()
                         if d < distance or (
                             d == distance and backwards and l < closest_length
                         ):
