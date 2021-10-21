@@ -769,7 +769,7 @@ class Planner(Modifier):
                 numpy_available
                 and self.context.opt_2opt
                 and self.context.opt_reduce_travel
-                and self.context.opt_inner_first
+                and not self.context.opt_inner_first
             ):
                 data.conditional_jobadd_optimize_travel_two_opt()
             else:
