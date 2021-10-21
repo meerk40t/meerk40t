@@ -411,7 +411,7 @@ class Planner(Modifier):
         self.context.setting(bool, "autobeep", True)
         self.context.setting(bool, "autointerrupt", False)
         self.context.setting(int, "opt_closed_distance", 15)
-        self.context.setting(bool, "opt_2opt", False)
+        self.context.setting(bool, "opt_2opt", True)
         self.context.setting(bool, "opt_merge_passes", False)
         self.context.setting(bool, "opt_merge_ops", False)
         self.context.setting(bool, "opt_reduce_travel", True)
