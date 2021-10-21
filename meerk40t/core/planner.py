@@ -202,7 +202,8 @@ class CutPlan:
             return
 
         if context.opt_reduce_travel:
-            self.commands.append(self.optimize_travel)
+            if context.opt_greedy:
+                self.commands.append(self.optimize_travel)
             if context.opt_2opt and not context.opt_inner_first:
                 try:
                     # Check for numpy before adding additional 2opt
@@ -473,6 +474,7 @@ class Planner(Modifier):
         self.context.setting(bool, "autointerrupt", False)
         self.context.setting(int, "opt_closed_distance", 15)
         self.context.setting(bool, "opt_2opt", True)
+        self.context.setting(bool, "opt_greedy", True)
         self.context.setting(bool, "opt_merge_passes", False)
         self.context.setting(bool, "opt_merge_ops", False)
         self.context.setting(bool, "opt_reduce_travel", True)
