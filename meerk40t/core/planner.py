@@ -141,6 +141,32 @@ class CutPlan:
                 else:
                     self.plan.append(c)
 
+    def preopt(self):
+        context = self.context
+        try:
+            import numpy as np
+
+            numpy_available = True
+        except ImportError:
+            numpy_available = False
+
+        if (
+            numpy_available
+            and context.opt_2opt
+            and context.opt_reduce_travel
+            and not context.opt_inner_first
+        ):
+            self.conditional_jobadd_optimize_travel_two_opt()
+        else:
+            if context.opt_reduce_travel:
+                self.conditional_jobadd_optimize_travel()
+            elif context.opt_inner_first:
+                self.conditional_jobadd_optimize_cuts()
+            if context.opt_reduce_directions:
+                pass
+            if context.opt_remove_overlap:
+                pass
+
     def optimize_travel_2opt(self):
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
