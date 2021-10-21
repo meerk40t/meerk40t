@@ -759,28 +759,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
-            try:
-                import numpy as np
-
-                numpy_available = True
-            except ImportError:
-                numpy_available = False
-            if (
-                numpy_available
-                and self.context.opt_2opt
-                and self.context.opt_reduce_travel
-                and not self.context.opt_inner_first
-            ):
-                data.conditional_jobadd_optimize_travel_two_opt()
-            else:
-                if self.context.opt_reduce_travel:
-                    data.conditional_jobadd_optimize_travel()
-                elif self.context.opt_inner_first:
-                    data.conditional_jobadd_optimize_cuts()
-                if self.context.opt_reduce_directions:
-                    pass
-                if self.context.opt_remove_overlap:
-                    pass
+            data.preopt()
             self.context.signal("plan", self._default_plan, 5)
             return data_type, data
 
