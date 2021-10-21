@@ -223,19 +223,27 @@ class CutPlan:
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_cutcode(c)
-                self.plan[i] = inner_selection_cutcode(c)
+                    self.plan[i] = inner_first_cutcode(
+                        c, channel=self.context.channel("optimize")
+                    )
+                self.plan[i] = inner_selection_cutcode(
+                    c, channel=self.context.channel("optimize")
+                )
 
     def optimize_travel(self):
         last = None
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_cutcode(c)
+                    self.plan[i] = inner_first_cutcode(
+                        c, channel=self.context.channel("optimize")
+                    )
                     c = self.plan[i]
                 if last is not None:
                     self.plan[i].start = last
-                self.plan[i] = short_travel_cutcode(c)
+                self.plan[i] = short_travel_cutcode(
+                    c, channel=self.context.channel("optimize")
+                )
                 last = self.plan[i].end()
 
     def strip_text(self):
@@ -1130,7 +1138,7 @@ def extract_closed_groups(context: CutGroup):
         index -= 1
 
 
-def inner_first_cutcode(context: CutGroup):
+def inner_first_cutcode(context: CutGroup, channel=None):
     """
     Extract all closed groups and place them at the start of the cutcode.
     Place all cuts that are not closed groups after these extracted elements.
@@ -1171,7 +1179,7 @@ def inner_first_cutcode(context: CutGroup):
     return ordered
 
 
-def short_travel_cutcode(context: CutCode):
+def short_travel_cutcode(context: CutCode, channel=None):
     """
     Selects cutcode from candidate cutcode permitted, optimizing with greedy/brute for
     shortest distances optimizations.
@@ -1287,7 +1295,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         dists = np.abs(starts - ends)
         dist_sum = dists.sum()
         channel(
-            "optimize: pen-up distance is %f. %.02f%% done with pass %d/%d"
+            "optimize: laser-off distance is %f. %.02f%% done with pass %d/%d"
             % (dist_sum, 100 * pos / length, current_pass, passes)
         )
 
@@ -1355,7 +1363,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     return ordered
 
 
-def inner_selection_cutcode(context: CutCode):
+def inner_selection_cutcode(context: CutCode, channel=None):
     """
     Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
     finding a valid solution.
