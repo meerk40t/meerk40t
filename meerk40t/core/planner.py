@@ -1251,6 +1251,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
         end = c.end()
         curr = complex(end[0], end[1])
         ordered.append(c)
+    ordered.start = context.start
     if channel:
         channel(
             "Length at end: %f, optimized in %f seconds"
@@ -1288,7 +1289,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     if curr is None:
         curr = 0
     else:
-        curr = complex(curr[0], curr[1])
+        curr = complex(curr)
     current_pass = 1
     min_value = -1e-10  # Do not swap on rounding error.
     length = len(ordered)
