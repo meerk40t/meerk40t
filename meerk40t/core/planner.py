@@ -141,6 +141,11 @@ class CutPlan:
                 else:
                     self.plan.append(c)
 
+    def optimize_travel_2opt(self):
+        for i, c in enumerate(self.plan):
+            if isinstance(c, CutCode):
+                self.plan[i] = short_travel_cutcode_2opt(self.plan[i])
+
     def optimize_cuts(self):
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
@@ -307,8 +312,23 @@ class CutPlan:
                 pass
         return False
 
+    def conditional_jobadd_optimize_travel_two_opt(self):
+        for op in self.plan:
+            try:
+                if op.operation == "CutCode":
+                    self.commands.append(self.optimize_travel_2opt)
+                    return
+            except AttributeError:
+                pass
+
     def conditional_jobadd_optimize_travel(self):
-        self.commands.append(self.optimize_travel)
+        for op in self.plan:
+            try:
+                if op.operation == "CutCode":
+                    self.commands.append(self.optimize_travel)
+                    return
+            except AttributeError:
+                pass
 
     def conditional_jobadd_optimize_cuts(self):
         for op in self.plan:
@@ -391,6 +411,7 @@ class Planner(Modifier):
         self.context.setting(bool, "autobeep", True)
         self.context.setting(bool, "autointerrupt", False)
         self.context.setting(int, "opt_closed_distance", 15)
+        self.context.setting(bool, "opt_2opt", False)
         self.context.setting(bool, "opt_merge_passes", False)
         self.context.setting(bool, "opt_merge_ops", False)
         self.context.setting(bool, "opt_reduce_travel", True)
@@ -738,14 +759,17 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
-            if self.context.opt_reduce_travel:
-                data.conditional_jobadd_optimize_travel()
-            elif self.context.opt_inner_first:
-                data.conditional_jobadd_optimize_cuts()
-            if self.context.opt_reduce_directions:
-                pass
-            if self.context.opt_remove_overlap:
-                pass
+            if self.context.opt_2opt and self.context.opt_reduce_travel and self.context.opt_inner_first:
+                data.conditional_jobadd_optimize_travel_two_opt()
+            else:
+                if self.context.opt_reduce_travel:
+                    data.conditional_jobadd_optimize_travel()
+                elif self.context.opt_inner_first:
+                    data.conditional_jobadd_optimize_cuts()
+                if self.context.opt_reduce_directions:
+                    pass
+                if self.context.opt_remove_overlap:
+                    pass
             self.context.signal("plan", self._default_plan, 5)
             return data_type, data
 
@@ -1131,12 +1155,6 @@ def short_travel_cutcode(context: CutCode):
 
     We start at either 0,0 or the value given in cc.start
     """
-    from time import time
-    t = time()
-    short_travel_cutcode_2opt(context)
-    print(time() - t)
-    return context
-
     curr = context.start
     if curr is None:
         curr = 0
@@ -1200,21 +1218,36 @@ def short_travel_cutcode(context: CutCode):
     return ordered
 
 
-def short_travel_cutcode_2opt(context: CutCode, passes:int = 50):
+def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
+    """
+    This implements 2-opt algorithm using numpy.
+
+    Skipping of the candidate code it does not perform inner first optimizations.
+    Due to the numpy requirement, doesn't work without numpy.
+    --
+    Uses code I wrote for vpype:
+    https://github.com/abey79/vpype/commit/7b1fad6bd0fcfc267473fdb8ba2166821c80d9cd
+
+    @param context:cutcode: cutcode to be optimized
+    @param passes: max passes to perform 2-opt
+    @param channel: Channel to send data about the optimization process.
+    @return:
+    """
     try:
         import numpy as np
     except ImportError:
         return
-    cut_objects = CutCode(context.flat())
-    print(cut_objects.length_travel())
+    ordered = CutCode(context.flat())
+    if channel:
+        channel(ordered.length_travel())
 
     current_pass = 1
     min_value = -1e-10  # Do not swap on rounding error.
-    length = len(cut_objects)
+    length = len(ordered)
     endpoints = np.zeros((length, 4), dtype="complex")
     # start, index, reverse-index, end
     for i in range(length):
-        endpoints[i] = complex(cut_objects[i].start()), i, ~i, complex(cut_objects[i].end())
+        endpoints[i] = complex(ordered[i].start()), i, ~i, complex(ordered[i].end())
     indexes0 = np.arange(0, length - 1)
     indexes1 = indexes0 + 1
 
@@ -1223,9 +1256,13 @@ def short_travel_cutcode_2opt(context: CutCode, passes:int = 50):
         ends = endpoints[indexes1, 0]
         dists = np.abs(starts - ends)
         dist_sum = dists.sum()
-        print(
-            f"optimize: pen-up distance is {dist_sum}. {100 * pos / length:.02f}% done "
-            f"with pass {current_pass}/{passes}"
+        channel(
+            "optimize: pen-up distance is %f. %.02f%% done with pass %d/%d" % (
+                dist_sum,
+                100 * pos / length,
+                current_pass,
+                passes
+            )
         )
 
     improved = True
@@ -1243,7 +1280,8 @@ def short_travel_cutcode_2opt(context: CutCode, passes:int = 50):
                 endpoints[: index + 1], (0, 1)
             )  # top to bottom, and right to left flips.
             improved = True
-            log_progress(1)
+            if channel:
+                log_progress(1)
         for mid in range(1, length - 1):
             idxs = np.arange(mid, length - 1)
 
@@ -1263,7 +1301,8 @@ def short_travel_cutcode_2opt(context: CutCode, passes:int = 50):
                     endpoints[mid: mid + index + 1], (0, 1)
                 )
                 improved = True
-                log_progress(mid)
+                if channel:
+                    log_progress(mid)
 
         last = endpoints[-1, -1]
         pen_ups = endpoints[indexes0, -1]
@@ -1276,23 +1315,18 @@ def short_travel_cutcode_2opt(context: CutCode, passes:int = 50):
                 endpoints[index + 1:], (0, 1)
             )  # top to bottom, and right to left flips.
             improved = True
-            log_progress(length)
+            if channel:
+                log_progress(length)
         if current_pass >= passes:
             break
         current_pass += 1
 
     # Two-opt complete.
-    order = endpoints[:, 1]
-    reordered = list()
-    for i in range(length):
-        pos = int(order[i].real)
-        if pos < 0:
-            pos = ~pos
-            cut_objects[pos].reverse()
-        reordered.append(cut_objects[pos])
-    context.clear()
-    context.extend(reordered)
-    print(context.length_travel())
+    order = endpoints[:, 1].real.astype(int)
+    ordered.reordered(order)
+    if channel:
+        channel(ordered.length_travel())
+    return ordered
 
 
 def inner_selection_cutcode(context: CutCode):
