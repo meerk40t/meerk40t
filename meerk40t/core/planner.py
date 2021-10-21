@@ -1132,6 +1132,7 @@ def inner_first_cutcode(context: CutGroup, channel=None):
     Creates .inside and .contains lists for all cut objects with regard to whether
     they are inside or contain the other object.
     """
+    start_time = time()
     if channel:
         channel("Executing Inner First Preprocess Optimization")
         channel("Length at start: %f" % context.length_travel())
@@ -1165,7 +1166,10 @@ def inner_first_cutcode(context: CutGroup, channel=None):
 
     ordered.constrained = True
     if channel:
-        channel("Length at end: %f, optimized in %f seconds" % (ordered.length_travel(), time() - start_time))
+        channel(
+            "Length at end: %f, optimized in %f seconds"
+            % (ordered.length_travel(), time() - start_time)
+        )
     return ordered
 
 
@@ -1248,7 +1252,10 @@ def short_travel_cutcode(context: CutCode, channel=None):
         curr = complex(end[0], end[1])
         ordered.append(c)
     if channel:
-        channel("Length at end: %f, optimized in %f seconds" % (ordered.length_travel(), time() - start_time))
+        channel(
+            "Length at end: %f, optimized in %f seconds"
+            % (ordered.length_travel(), time() - start_time)
+        )
     return ordered
 
 
@@ -1357,7 +1364,10 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     order = endpoints[:, 1].real.astype(int)
     ordered.reordered(order)
     if channel:
-        channel("Length at end: %f, optimized in %f seconds" % (ordered.length_travel(), time() - start_time))
+        channel(
+            "Length at end: %f, optimized in %f seconds"
+            % (ordered.length_travel(), time() - start_time)
+        )
     return ordered
 
 
@@ -1381,5 +1391,8 @@ def inner_selection_cutcode(context: CutCode, channel=None):
         for o in ordered.flat():
             o.permitted = False
     if channel:
-        channel("Length at end: %f, optimized in %f seconds" % (ordered.length_travel(), time() - start_time))
+        channel(
+            "Length at end: %f, optimized in %f seconds"
+            % (ordered.length_travel(), time() - start_time)
+        )
     return ordered
