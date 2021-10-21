@@ -205,6 +205,7 @@ class CutPlan:
             self.commands.append(self.optimize_travel)
             if context.opt_2opt and not context.opt_inner_first:
                 try:
+                    # Check for numpy before adding additional 2opt
                     import numpy as np
 
                     self.commands.append(self.optimize_travel_2opt)
