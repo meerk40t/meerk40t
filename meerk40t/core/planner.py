@@ -759,7 +759,18 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
-            if self.context.opt_2opt and self.context.opt_reduce_travel and self.context.opt_inner_first:
+            try:
+                import numpy as np
+
+                numpy_available = True
+            except ImportError:
+                numpy_available = False
+            if (
+                numpy_available
+                and self.context.opt_2opt
+                and self.context.opt_reduce_travel
+                and self.context.opt_inner_first
+            ):
                 data.conditional_jobadd_optimize_travel_two_opt()
             else:
                 if self.context.opt_reduce_travel:
