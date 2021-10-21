@@ -170,7 +170,9 @@ class CutPlan:
     def optimize_travel_2opt(self):
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
-                self.plan[i] = short_travel_cutcode_2opt(self.plan[i])
+                self.plan[i] = short_travel_cutcode_2opt(
+                    self.plan[i], channel=self.context.channel("optimize")
+                )
 
     def optimize_cuts(self):
         for i, c in enumerate(self.plan):
