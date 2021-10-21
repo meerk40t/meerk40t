@@ -363,12 +363,16 @@ class CutCode(CutGroup):
             yield COMMAND_PLOT, cutobject
         yield COMMAND_PLOT_START
 
-    def length_travel(self):
+    def length_travel(self, include_start=False):
         cutcode = list(self.flat())
-        if self.start is not None:
-            distance = abs(complex(self.start) - complex(cutcode[0].start()))
-        else:
-            distance = 0
+        if len(cutcode) == 0:
+            return 0
+        distance = 0
+        if include_start:
+            if self.start is not None:
+                distance += abs(complex(self.start) - complex(cutcode[0].start()))
+            else:
+                distance += abs(0 - complex(cutcode[0].start()))
         for i in range(1, len(cutcode)):
             prev = cutcode[i - 1]
             curr = cutcode[i]
