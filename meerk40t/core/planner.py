@@ -69,6 +69,51 @@ class CutPlan:
         for cmd in cmds:
             cmd()
 
+    def preprocess(self):
+        context = self.context
+        _ = context._
+        rotary_context = context.get_context("rotary/1")
+        if context.prephysicalhome:
+            if not rotary_context.rotary:
+                self.plan.insert(0, context.registered["plan/physicalhome"])
+            else:
+                self.plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
+        if context.prehome:
+            if not rotary_context.rotary:
+                self.plan.insert(0, context.registered["plan/home"])
+            else:
+                self.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
+        # ==========
+        # BEFORE/AFTER
+        # ==========
+        if context.autohome:
+            if not rotary_context.rotary:
+                self.plan.append(context.registered["plan/home"])
+            else:
+                self.plan.append(_("Home After: Disabled (Rotary On)"))
+        if context.autophysicalhome:
+            if not rotary_context.rotary:
+                self.plan.append(context.registered["plan/physicalhome"])
+            else:
+                self.plan.append(_("Physical Home After: Disabled (Rotary On)"))
+        if context.autoorigin:
+            self.plan.append(context.registered["plan/origin"])
+        if context.postunlock:
+            self.plan.append(context.registered["plan/unlock"])
+        if context.autobeep:
+            self.plan.append(context.registered["plan/beep"])
+        if context.autointerrupt:
+            self.plan.append(context.registered["plan/interrupt"])
+
+        # ==========
+        # Conditional Ops
+        # ==========
+        self.conditional_jobadd_strip_text()
+        if rotary_context.rotary:
+            self.conditional_jobadd_scale_rotary()
+        self.conditional_jobadd_actualize_image()
+        self.conditional_jobadd_make_raster()
+
     def blob(self):
         context = self.context
         blob_plan = list()
@@ -714,47 +759,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_preprocess(command, channel, _, data_type=None, data=None, **kwgs):
-            rotary_context = self.context.get_context("rotary/1")
-            if self.context.prephysicalhome:
-                if not rotary_context.rotary:
-                    data.plan.insert(0, self.context.registered["plan/physicalhome"])
-                else:
-                    data.plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
-            if self.context.prehome:
-                if not rotary_context.rotary:
-                    data.plan.insert(0, self.context.registered["plan/home"])
-                else:
-                    data.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
-            # ==========
-            # BEFORE/AFTER
-            # ==========
-            if self.context.autohome:
-                if not rotary_context.rotary:
-                    data.plan.append(self.context.registered["plan/home"])
-                else:
-                    data.plan.append(_("Home After: Disabled (Rotary On)"))
-            if self.context.autophysicalhome:
-                if not rotary_context.rotary:
-                    data.plan.append(self.context.registered["plan/physicalhome"])
-                else:
-                    data.plan.append(_("Physical Home After: Disabled (Rotary On)"))
-            if self.context.autoorigin:
-                data.plan.append(self.context.registered["plan/origin"])
-            if self.context.postunlock:
-                data.plan.append(self.context.registered["plan/unlock"])
-            if self.context.autobeep:
-                data.plan.append(self.context.registered["plan/beep"])
-            if self.context.autointerrupt:
-                data.plan.append(self.context.registered["plan/interrupt"])
-
-            # ==========
-            # Conditional Ops
-            # ==========
-            data.conditional_jobadd_strip_text()
-            if rotary_context.rotary:
-                data.conditional_jobadd_scale_rotary()
-            data.conditional_jobadd_actualize_image()
-            data.conditional_jobadd_make_raster()
+            data.preprocess()
             self.context.signal("plan", self._default_plan, 2)
             return data_type, data
 
