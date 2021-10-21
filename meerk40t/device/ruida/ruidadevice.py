@@ -2122,6 +2122,7 @@ class RDLoader:
         with open(pathname, "rb") as f:
             ruidaemulator = kernel.root.open_as("emulator/ruida", basename)
             ruidaemulator.elements = elements_modifier
+            ruidaemulator.design = True
             ruidaemulator.write(BytesIO(ruidaemulator.unswizzle(f.read())))
             kernel.root.close(basename)
             return True
