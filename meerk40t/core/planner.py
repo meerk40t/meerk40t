@@ -1216,27 +1216,29 @@ def short_travel_cutcode(context: CutCode, channel=None):
         if distance > 1e-5:
             for cut in context.candidate():
                 s = cut.start()
-                s = complex(s[0], s[1])
-                d = abs(s - curr)
-                l = cut.length()
-                if d < distance or (
-                    d == distance and (backwards or l < closest_length)
-                ):
-                    distance = d
-                    backwards = False
-                    closest = cut
-                    closest_length = l
-                if cut.reversible():
-                    e = cut.end()
-                    e = complex(e[0], e[1])
-                    d = abs(e - curr)
+                if abs(s[0]-curr.real) <= distance and abs(s[1]-curr.imag) <= distance:
+                    s = complex(s[0], s[1])
+                    d = abs(s - curr)
+                    l = cut.length()
                     if d < distance or (
-                        d == distance and backwards and l < closest_length
+                        d == distance and (backwards or l < closest_length)
                     ):
                         distance = d
-                        backwards = True
+                        backwards = False
                         closest = cut
                         closest_length = l
+                if cut.reversible():
+                    e = cut.end()
+                    if abs(e[0]-curr.real) <= distance and abs(e[1]-curr.imag) <= distance:
+                        e = complex(e[0], e[1])
+                        d = abs(e - curr)
+                        if d < distance or (
+                            d == distance and backwards and l < closest_length
+                        ):
+                            distance = d
+                            backwards = True
+                            closest = cut
+                            closest_length = l
                 if distance <= 1e-5:
                     break  # Distance is zero, we cannot improve.
         if closest is None:
