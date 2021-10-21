@@ -617,6 +617,9 @@ class Planner(Modifier):
         )
         def plan_copy_selected(command, channel, _, data_type=None, data=None, **kwgs):
             for c in elements.ops(emphasized=True):
+                if c.type in ("cutcode", "blob"):
+                    # CutNodes and BlobNodes are denuded into normal objects.
+                    c = c.object
                 copy_c = copy(c)
                 try:
                     copy_c.deep_copy_children(c)
