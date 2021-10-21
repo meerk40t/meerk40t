@@ -446,6 +446,28 @@ class CutCode(CutGroup):
                 y = ny
         return cutcode
 
+    def reordered(self, order):
+        """
+        Reorder the cutcode based on the given order.
+
+        Negative numbers are taken to mean these are inverted with ~ and reversed.
+
+        @param order: order indexed of new positions
+        @return:
+        """
+        reordered = list()
+        for pos in order:
+            # pos = int(order[i])
+            if pos < 0:
+                pos = ~pos
+                self[pos].reverse()
+            try:
+                reordered.append(self[pos])
+            except IndexError:
+                pass
+        self.clear()
+        self.extend(reordered)
+
 
 class LineCut(CutObject):
     def __init__(self, start_point, end_point, settings=None):
