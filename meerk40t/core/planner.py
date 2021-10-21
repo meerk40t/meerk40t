@@ -1261,7 +1261,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         return
     ordered = CutCode(context.flat())
     if channel:
-        channel(ordered.length_travel())
+        channel("Length at start: %f" % ordered.length_travel())
 
     current_pass = 1
     min_value = -1e-10  # Do not swap on rounding error.
@@ -1343,7 +1343,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     order = endpoints[:, 1].real.astype(int)
     ordered.reordered(order)
     if channel:
-        channel(ordered.length_travel())
+        channel("Length at end: %f" % ordered.length_travel())
     return ordered
 
 
