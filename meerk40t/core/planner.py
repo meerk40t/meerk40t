@@ -190,25 +190,35 @@ class CutPlan:
 
     def preopt(self):
         context = self.context
+        has_cutcode = False
+        for op in self.plan:
+            try:
+                if op.operation == "CutCode":
+                    has_cutcode = True
+                    break
+            except AttributeError:
+                pass
+        if not has_cutcode:
+            return
+
         try:
             import numpy as np
 
             numpy_available = True
         except ImportError:
             numpy_available = False
-
         if (
             numpy_available
             and context.opt_2opt
             and context.opt_reduce_travel
             and not context.opt_inner_first
         ):
-            self.conditional_jobadd_optimize_travel_two_opt()
+            self.commands.append(self.optimize_travel_2opt)
         else:
             if context.opt_reduce_travel:
-                self.conditional_jobadd_optimize_travel()
+                self.commands.append(self.optimize_travel)
             elif context.opt_inner_first:
-                self.conditional_jobadd_optimize_cuts()
+                self.commands.append(self.optimize_cuts)
             if context.opt_reduce_directions:
                 pass
             if context.opt_remove_overlap:
@@ -394,33 +404,6 @@ class CutPlan:
             except AttributeError:
                 pass
         return False
-
-    def conditional_jobadd_optimize_travel_two_opt(self):
-        for op in self.plan:
-            try:
-                if op.operation == "CutCode":
-                    self.commands.append(self.optimize_travel_2opt)
-                    return
-            except AttributeError:
-                pass
-
-    def conditional_jobadd_optimize_travel(self):
-        for op in self.plan:
-            try:
-                if op.operation == "CutCode":
-                    self.commands.append(self.optimize_travel)
-                    return
-            except AttributeError:
-                pass
-
-    def conditional_jobadd_optimize_cuts(self):
-        for op in self.plan:
-            try:
-                if op.operation == "CutCode":
-                    self.commands.append(self.optimize_cuts)
-                    return
-            except AttributeError:
-                pass
 
     def conditional_jobadd_actualize_image(self):
         for op in self.plan:
