@@ -234,6 +234,7 @@ class CutPlan:
                     self.plan[i] = inner_first_cutcode(
                         c, channel=self.context.channel("optimize")
                     )
+                    c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
                     c, channel=self.context.channel("optimize")
                 )
