@@ -18,7 +18,10 @@ class PyEmbeddedImage(py_embedded_image):
 
         image = py_embedded_image.GetImage(self)
         if resize is not None:
-            image = image.Scale(*resize)
+            if isinstance(resize, int):
+                image = image.Scale(resize,resize)
+            else:
+                image = image.Scale(*resize)
 
         if color is not None:
             image.Replace(0, 0, 0, color.red, color.green, color.blue)
