@@ -1207,14 +1207,14 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 cut = last_segment.next
                 if cut and cut.permitted:
                     closest = cut
-                    closest_length = abs(closest.start() - curr)
+                    closest_length = abs(complex(closest.start()) - curr)
                     backwards = False
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
                 if cut and cut.permitted:
                     closest = cut
-                    closest_length = abs(closest.end() - curr)
+                    closest_length = abs(complex(closest.end()) - curr)
                     backwards = True
         if closest_length > 1e-5:
             distance = closest_length
