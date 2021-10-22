@@ -40,9 +40,9 @@ def register_panel(window: MeerK40t, context):
     notebook.AddPage(panel2, "GRBL")
     notebook.AddPage(panel3, "M2-Networked")
 
-    notebook.SetPageSize((500,750))
-    notebook.Split(1, wx.BOTTOM)
-    notebook.SetSelection(1)
+    # notebook.SetPageSize((500,750))
+    # notebook.Split(1, wx.BOTTOM)
+    # notebook.SetSelection(1)
     window.on_pane_add(pane)
     window.context.register("pane/laser", pane)
 
