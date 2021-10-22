@@ -1130,15 +1130,15 @@ def inner_first_cutcode(context: CutGroup, channel=None):
     they are inside or contain the other object.
     """
     start_time = time()
-    if channel:
-        channel("Executing Inner First Preprocess Optimization")
-        channel("Length at start: %f" % context.length_travel())
     ordered = CutCode()
     closed_groups = list(extract_closed_groups(context))
     if len(closed_groups):
         ordered.contains = closed_groups
         ordered.extend(closed_groups)
     ordered.extend(context.flat())
+    if channel:
+        channel("Executing Inner First Preprocess Optimization")
+        channel("Length at start: %f" % ordered.length_travel(True))
     context.clear()
     for oj in ordered:
         for ok in ordered:
@@ -1165,7 +1165,7 @@ def inner_first_cutcode(context: CutGroup, channel=None):
     if channel:
         channel(
             "Length at end: %f, optimized in %f seconds"
-            % (ordered.length_travel(), time() - start_time)
+            % (ordered.length_travel(True), time() - start_time)
         )
     return ordered
 
@@ -1188,7 +1188,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
         curr = complex(curr[0], curr[1])
     if channel:
         channel("Executing Greedy Short-Travel optimization")
-        channel("Length at start: %f" % context.length_travel())
+        channel("Length at start: %f" % context.length_travel(True))
     for c in context.flat():
         c.permitted = True
     ordered = CutCode()
@@ -1255,7 +1255,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
     if channel:
         channel(
             "Length at end: %f, optimized in %f seconds"
-            % (ordered.length_travel(), time() - start_time)
+            % (ordered.length_travel(True), time() - start_time)
         )
     return ordered
 
@@ -1283,7 +1283,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     start_time = time()
     if channel:
         channel("Executing 2-Opt Short-Travel optimization")
-        channel("Length at start: %f" % ordered.length_travel())
+        channel("Length at start: %f" % ordered.length_travel(True))
 
     curr = context.start
     if curr is None:
@@ -1372,7 +1372,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     if channel:
         channel(
             "Length at end: %f, optimized in %f seconds"
-            % (ordered.length_travel(), time() - start_time)
+            % (ordered.length_travel(True), time() - start_time)
         )
     return ordered
 
@@ -1385,7 +1385,7 @@ def inner_selection_cutcode(context: CutCode, channel=None):
     start_time = time()
     if channel:
         channel("Executing Inner Selection-Only optimization")
-        channel("Length at start: %f" % context.length_travel())
+        channel("Length at start: %f" % context.length_travel(True))
     for c in context.flat():
         c.permitted = True
     ordered = CutCode()
@@ -1399,6 +1399,6 @@ def inner_selection_cutcode(context: CutCode, channel=None):
     if channel:
         channel(
             "Length at end: %f, optimized in %f seconds"
-            % (ordered.length_travel(), time() - start_time)
+            % (ordered.length_travel(True), time() - start_time)
         )
     return ordered
