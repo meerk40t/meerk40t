@@ -10,6 +10,11 @@ _ = wx.GetTranslation
 
 def register_panel(window, context):
     panel = LaserPanel(window, wx.ID_ANY, context=context)
+    panel2 = LaserPanel(window, wx.ID_ANY, context=context)
+    panel3 = wx.Button(window, wx.ID_ANY, "Hello")
+    panel4 = wx.Button(window, wx.ID_ANY, "Hello")
+    panel5 = wx.Button(window, wx.ID_ANY, "Hello")
+    notebook = wx.aui.AuiNotebook(window, -1, size=(200, 150), style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE | wx.aui.AUI_NB_SCROLL_BUTTONS  | wx.aui.AUI_NB_BOTTOM)
     pane = (
         aui.AuiPaneInfo()
             .Right()
@@ -21,9 +26,13 @@ def register_panel(window, context):
             .CaptionVisible(not context.pane_lock)
             .Name("laser")
     )
+    pane.control = notebook
     pane.dock_proportion = 400
-    pane.control = panel
-
+    notebook.AddPage(panel, "M2Nano")
+    notebook.AddPage(panel2, "GRBL")
+    notebook.AddPage(panel3, "M2-Networked")
+    notebook.AddPage(panel4, "Second Laser")
+    notebook.AddPage(panel5, "Example")
     window.on_pane_add(pane)
     window.context.register("pane/laser", pane)
 
