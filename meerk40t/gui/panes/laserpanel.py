@@ -2,18 +2,17 @@ import wx
 from wx import aui
 
 from meerk40t.gui.icons import *
+from meerk40t.gui.wxmeerk40t import MeerK40t
 
 MILS_IN_MM = 39.3701
 
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel(window: MeerK40t, context):
     panel = LaserPanel(window, wx.ID_ANY, context=context)
     panel2 = LaserPanel(window, wx.ID_ANY, context=context)
     panel3 = wx.Button(window, wx.ID_ANY, "Hello")
-    panel4 = wx.Button(window, wx.ID_ANY, "Hello")
-    panel5 = wx.Button(window, wx.ID_ANY, "Hello")
     notebook = wx.aui.AuiNotebook(
         window,
         -1,
@@ -40,8 +39,10 @@ def register_panel(window, context):
     notebook.AddPage(panel, "M2Nano")
     notebook.AddPage(panel2, "GRBL")
     notebook.AddPage(panel3, "M2-Networked")
-    notebook.AddPage(panel4, "Second Laser")
-    notebook.AddPage(panel5, "Example")
+
+    notebook.SetPageSize((500,750))
+    notebook.Split(1, wx.BOTTOM)
+    notebook.SetSelection(1)
     window.on_pane_add(pane)
     window.context.register("pane/laser", pane)
 
