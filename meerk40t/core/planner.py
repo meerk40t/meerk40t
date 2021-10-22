@@ -1213,8 +1213,8 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     closest = cut
                     closest_length = abs(closest.end() - curr)
                     backwards = True
-        distance = closest_length
-        if distance > 1e-5:
+        if closest_length > 1e-5:
+            distance = closest_length
             for cut in context.candidate():
                 s = cut.start()
                 if abs(s[0]-curr.real) <= distance and abs(s[1]-curr.imag) <= distance:
