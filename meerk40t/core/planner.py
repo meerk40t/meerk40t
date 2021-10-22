@@ -1176,10 +1176,13 @@ def short_travel_cutcode(context: CutCode, channel=None):
     Selects cutcode from candidate cutcode permitted, optimizing with greedy/brute for
     shortest distances optimizations.
 
-    For paths starting at exactly the same point forward paths are prefered over reverse paths
-    and within this shorter paths are prefered over longer ones.
+    For paths starting at exactly the same point forward paths are preferred over reverse paths
+    and within this shorter paths are preferred over longer ones.
 
-    We start at either 0,0 or the value given in cc.start
+    We start at either 0,0 or the value given in context.start
+
+    This is time-intense hyper-optimized code, so it contains several seemingly redundant
+    checks.
     """
     start_time = time()
     curr = context.start
@@ -1218,10 +1221,10 @@ def short_travel_cutcode(context: CutCode, channel=None):
             for cut in context.candidate():
                 s = cut.start()
                 if (
-                    abs(s[0] - curr.real) <= distance
-                    and abs(s[1] - curr.imag) <= distance
+                    abs(s.x - curr.real) <= distance
+                    and abs(s.y - curr.imag) <= distance
                 ):
-                    s = complex(s[0], s[1])
+                    s = complex(s)
                     d = abs(s - curr)
                     if d <= distance:
                         l = cut.length()
@@ -1239,10 +1242,10 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     continue
                 e = cut.end()
                 if (
-                    abs(e[0] - curr.real) <= distance
-                    and abs(e[1] - curr.imag) <= distance
+                    abs(e.x - curr.real) <= distance
+                    and abs(e.y - curr.imag) <= distance
                 ):
-                    e = complex(e[0], e[1])
+                    e = complex(e)
                     d = abs(e - curr)
                     if d <= distance:
                         l = cut.length()
@@ -1263,7 +1266,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
         if backwards:
             c.reverse()
         end = c.end()
-        curr = complex(end[0], end[1])
+        curr = complex(end)
         ordered.append(c)
 
     ordered.start = context.start
