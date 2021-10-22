@@ -1223,16 +1223,17 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 ):
                     s = complex(s[0], s[1])
                     d = abs(s - curr)
-                    l = cut.length()
-                    if d < distance or (
-                        d == distance and (backwards or l < closest_length)
-                    ):
-                        distance = d
-                        backwards = False
-                        closest = cut
-                        closest_length = l
-                        if distance <= 1e-5:
-                            break  # Distance is zero, we cannot improve.
+                    if d <= distance:
+                        l = cut.length()
+                        if d < distance or (
+                            d == distance and (backwards or l < closest_length)
+                        ):
+                            distance = d
+                            backwards = False
+                            closest = cut
+                            closest_length = l
+                            if distance <= 1e-5:
+                                break  # Distance is zero, we cannot improve.
 
                 if not cut.reversible():
                     continue
@@ -1243,16 +1244,17 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 ):
                     e = complex(e[0], e[1])
                     d = abs(e - curr)
-                    l = cut.length()
-                    if d < distance or (
-                        d == distance and backwards and l < closest_length
-                    ):
-                        distance = d
-                        backwards = True
-                        closest = cut
-                        closest_length = l
-                        if distance <= 1e-5:
-                            break  # Distance is zero, we cannot improve.
+                    if d <= distance:
+                        l = cut.length()
+                        if d < distance or (
+                            d == distance and backwards and l < closest_length
+                        ):
+                            distance = d
+                            backwards = True
+                            closest = cut
+                            closest_length = l
+                            if distance <= 1e-5:
+                                break  # Distance is zero, we cannot improve.
 
         if closest is None:
             break
