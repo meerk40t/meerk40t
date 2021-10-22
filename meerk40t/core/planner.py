@@ -1304,7 +1304,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         starts = endpoints[indexes0, -1]
         ends = endpoints[indexes1, 0]
         dists = np.abs(starts - ends)
-        dist_sum = dists.sum()
+        dist_sum = dists.sum() + abs(curr - endpoints[0][0])
         channel(
             "optimize: laser-off distance is %f. %.02f%% done with pass %d/%d"
             % (dist_sum, 100 * pos / length, current_pass, passes)
