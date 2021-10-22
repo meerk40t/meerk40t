@@ -1315,10 +1315,16 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         improved = False
 
         first = endpoints[0][0]
-        pen_ups = endpoints[indexes0, -1]
-        pen_downs = endpoints[indexes1, 0]
+        cut_ends = endpoints[indexes0, -1]
+        cut_starts = endpoints[indexes1, 0]
 
-        delta = np.abs(first - pen_downs) - np.abs(pen_ups - pen_downs)
+        # delta = np.abs(curr - first) + np.abs(first - cut_starts) - np.abs(cut_ends - cut_starts)
+        delta = (
+                np.abs(curr - cut_ends)
+                + np.abs(first - cut_starts)
+                - np.abs(cut_ends - cut_starts)
+                - np.abs(curr - first)
+        )
         index = int(np.argmin(delta))
         if delta[index] < min_value:
             endpoints[: index + 1] = np.flip(
@@ -1332,12 +1338,12 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
 
             mid_source = endpoints[mid - 1, -1]
             mid_dest = endpoints[mid, 0]
-            pen_ups = endpoints[idxs, -1]
-            pen_downs = endpoints[idxs + 1, 0]
+            cut_ends = endpoints[idxs, -1]
+            cut_starts = endpoints[idxs + 1, 0]
             delta = (
-                np.abs(mid_source - pen_ups)
-                + np.abs(mid_dest - pen_downs)
-                - np.abs(pen_ups - pen_downs)
+                np.abs(mid_source - cut_ends)
+                + np.abs(mid_dest - cut_starts)
+                - np.abs(cut_ends - cut_starts)
                 - np.abs(mid_source - mid_dest)
             )
             index = int(np.argmin(delta))
@@ -1350,10 +1356,10 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
                     log_progress(mid)
 
         last = endpoints[-1, -1]
-        pen_ups = endpoints[indexes0, -1]
-        pen_downs = endpoints[indexes1, 0]
+        cut_ends = endpoints[indexes0, -1]
+        cut_starts = endpoints[indexes1, 0]
 
-        delta = np.abs(pen_ups - last) - np.abs(pen_ups - pen_downs)
+        delta = np.abs(cut_ends - last) - np.abs(cut_ends - cut_starts)
         index = int(np.argmin(delta))
         if delta[index] < min_value:
             endpoints[index + 1 :] = np.flip(
