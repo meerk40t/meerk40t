@@ -1231,6 +1231,8 @@ def short_travel_cutcode(context: CutCode, channel=None):
                         backwards = False
                         closest = cut
                         closest_length = l
+                        if distance <= 1e-5:
+                            break  # Distance is zero, we cannot improve.
                 if cut.reversible():
                     e = cut.end()
                     if (
@@ -1247,8 +1249,9 @@ def short_travel_cutcode(context: CutCode, channel=None):
                             backwards = True
                             closest = cut
                             closest_length = l
-                if distance <= 1e-5:
-                    break  # Distance is zero, we cannot improve.
+                            if distance <= 1e-5:
+                                break  # Distance is zero, we cannot improve.
+
         if closest is None:
             break
         closest.permitted = False
