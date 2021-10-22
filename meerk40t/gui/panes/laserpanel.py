@@ -26,14 +26,14 @@ def register_panel(window, context):
     )
     pane = (
         aui.AuiPaneInfo()
-            .Right()
-            .Layer(1)
-            .MinSize(350, 350)
-            .FloatingSize(400, 400)
-            .MaxSize(500, 500)
-            .Caption(_("Laser"))
-            .CaptionVisible(not context.pane_lock)
-            .Name("laser")
+        .Right()
+        .Layer(1)
+        .MinSize(350, 350)
+        .FloatingSize(400, 400)
+        .MaxSize(500, 500)
+        .Caption(_("Laser"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("laser")
     )
     pane.control = notebook
     pane.dock_proportion = 400
@@ -58,12 +58,16 @@ class LaserPanel(wx.Panel):
         sizer_status = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_status, 0, wx.EXPAND, 0)
 
-        self.text_status = wx.TextCtrl(self, wx.ID_ANY, "Disconnected", style=wx.TE_READONLY)
+        self.text_status = wx.TextCtrl(
+            self, wx.ID_ANY, "Disconnected", style=wx.TE_READONLY
+        )
         self.text_status.SetToolTip("Status of selected device")
         sizer_status.Add(self.text_status, 1, 0, 0)
 
         self.button_initialize_laser = wx.Button(self, wx.ID_ANY, "Initialize Laser")
-        self.button_initialize_laser.SetBitmap(icons8_center_of_gravity_50.GetBitmap(resize=20))
+        self.button_initialize_laser.SetBitmap(
+            icons8_center_of_gravity_50.GetBitmap(resize=20)
+        )
         sizer_status.Add(self.button_initialize_laser, 0, 0, 0)
 
         sizer_control = wx.BoxSizer(wx.HORIZONTAL)
@@ -105,26 +109,42 @@ class LaserPanel(wx.Panel):
         sizer_start = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_start, 0, wx.EXPAND, 0)
 
-        sizer_source = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Source"), wx.HORIZONTAL)
+        sizer_source = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Source"), wx.HORIZONTAL
+        )
         sizer_start.Add(sizer_source, 1, wx.EXPAND, 0)
 
-        self.combo_source = wx.ComboBox(self, wx.ID_ANY, choices=["Operations", "Planner", "File"], style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_source = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=["Operations", "Planner", "File"],
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
         self.combo_source.SetToolTip("Select the source for the sending data")
         self.combo_source.SetSelection(0)
         sizer_source.Add(self.combo_source, 0, 0, 0)
 
-        sizer_position = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Start Position:"), wx.HORIZONTAL)
+        sizer_position = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Start Position:"), wx.HORIZONTAL
+        )
         sizer_start.Add(sizer_position, 1, wx.EXPAND, 0)
 
         label_1 = wx.StaticText(self, wx.ID_ANY, "")
         sizer_position.Add(label_1, 0, 0, 0)
 
-        self.combo_start = wx.ComboBox(self, wx.ID_ANY, choices=["Absolute Home", "Current Position", "User Origin"], style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_start = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=["Absolute Home", "Current Position", "User Origin"],
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
         self.combo_start.SetToolTip("Set the start position for the job")
         self.combo_start.SetSelection(0)
         sizer_position.Add(self.combo_start, 0, 0, 0)
 
-        sizer_optimize = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Optimize"), wx.HORIZONTAL)
+        sizer_optimize = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Optimize"), wx.HORIZONTAL
+        )
         sizer_main.Add(sizer_optimize, 0, wx.EXPAND, 0)
 
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, "Optimize")
@@ -132,27 +152,39 @@ class LaserPanel(wx.Panel):
         self.checkbox_optimize.SetValue(1)
         sizer_optimize.Add(self.checkbox_optimize, 1, 0, 0)
 
-        self.button_optimize_settings = wx.Button(self, wx.ID_ANY, "Optimization Settings")
-        self.button_optimize_settings.SetToolTip("View and change optimization settings")
+        self.button_optimize_settings = wx.Button(
+            self, wx.ID_ANY, "Optimization Settings"
+        )
+        self.button_optimize_settings.SetToolTip(
+            "View and change optimization settings"
+        )
         sizer_optimize.Add(self.button_optimize_settings, 3, 0, 0)
 
         self.button_simulate = wx.Button(self, wx.ID_ANY, "Simulate")
         self.button_simulate.SetToolTip("Simulate the Design")
         sizer_optimize.Add(self.button_simulate, 3, 0, 0)
 
-        sizer_devices = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Device"), wx.HORIZONTAL)
+        sizer_devices = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Device"), wx.HORIZONTAL
+        )
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
         self.button_devices = wx.Button(self, wx.ID_ANY, "Settings")
         self.button_devices.SetToolTip("Set and Define Devices")
-        self.button_devices.SetBitmap(icons8_administrative_tools_50.GetBitmap(resize=20))
+        self.button_devices.SetBitmap(
+            icons8_administrative_tools_50.GetBitmap(resize=20)
+        )
         sizer_devices.Add(self.button_devices, 0, 0, 0)
 
-        self.combo_devices = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_devices = wx.ComboBox(
+            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
         self.combo_devices.SetToolTip("Select device from list of configured devices")
         sizer_devices.Add(self.combo_devices, 1, 0, 0)
 
-        sizer_windows = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Associated Windows"), wx.HORIZONTAL)
+        sizer_windows = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Associated Windows"), wx.HORIZONTAL
+        )
         sizer_main.Add(sizer_windows, 0, wx.EXPAND, 0)
 
         self.button_controller = wx.Button(self, wx.ID_ANY, "Controller")
@@ -169,7 +201,9 @@ class LaserPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_initialize_laser, self.button_initialize_laser)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_initialize_laser, self.button_initialize_laser
+        )
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
@@ -183,14 +217,20 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_combo_start, self.combo_start)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_start, self.combo_start)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_optimize, self.checkbox_optimize)
-        self.Bind(wx.EVT_BUTTON, self.on_button_optimize_settings, self.button_optimize_settings)
+        self.Bind(
+            wx.EVT_BUTTON,
+            self.on_button_optimize_settings,
+            self.button_optimize_settings,
+        )
         self.Bind(wx.EVT_BUTTON, self.on_button_simulate, self.button_simulate)
         self.Bind(wx.EVT_BUTTON, self.on_button_devices, self.button_devices)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_TEXT, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_BUTTON, self.on_button_controller, self.button_controller)
-        self.Bind(wx.EVT_BUTTON, self.on_button_configuration, self.button_configuration)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_configuration, self.button_configuration
+        )
         # end wxGlade
 
     def on_button_initialize_laser(self, event):  # wxGlade: LaserPanel.<event_handler>
