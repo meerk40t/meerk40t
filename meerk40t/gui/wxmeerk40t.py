@@ -1837,7 +1837,7 @@ class MeerK40t(MWindow):
                 toggle_pane(pane_name),
                 id=id_new,
             )
-            pane = self._mgr.GetPane(pane.name)
+            pane = self._mgr.GetPane(pane_name)
             try:
                 menu_item.Check(pane.IsShown())
                 pane.window.check = menu_item.Check
