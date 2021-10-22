@@ -1217,7 +1217,10 @@ def short_travel_cutcode(context: CutCode, channel=None):
             distance = closest_length
             for cut in context.candidate():
                 s = cut.start()
-                if abs(s[0]-curr.real) <= distance and abs(s[1]-curr.imag) <= distance:
+                if (
+                    abs(s[0] - curr.real) <= distance
+                    and abs(s[1] - curr.imag) <= distance
+                ):
                     s = complex(s[0], s[1])
                     d = abs(s - curr)
                     l = cut.length()
@@ -1230,7 +1233,10 @@ def short_travel_cutcode(context: CutCode, channel=None):
                         closest_length = l
                 if cut.reversible():
                     e = cut.end()
-                    if abs(e[0]-curr.real) <= distance and abs(e[1]-curr.imag) <= distance:
+                    if (
+                        abs(e[0] - curr.real) <= distance
+                        and abs(e[1] - curr.imag) <= distance
+                    ):
                         e = complex(e[0], e[1])
                         d = abs(e - curr)
                         l = cut.length()
@@ -1252,6 +1258,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
         end = c.end()
         curr = complex(end[0], end[1])
         ordered.append(c)
+
     ordered.start = context.start
     if channel:
         channel(
@@ -1321,10 +1328,10 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
 
         # delta = np.abs(curr - first) + np.abs(first - cut_starts) - np.abs(cut_ends - cut_starts)
         delta = (
-                np.abs(curr - cut_ends)
-                + np.abs(first - cut_starts)
-                - np.abs(cut_ends - cut_starts)
-                - np.abs(curr - first)
+            np.abs(curr - cut_ends)
+            + np.abs(first - cut_starts)
+            - np.abs(cut_ends - cut_starts)
+            - np.abs(curr - first)
         )
         index = int(np.argmin(delta))
         if delta[index] < min_value:
