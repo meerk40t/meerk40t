@@ -1233,24 +1233,26 @@ def short_travel_cutcode(context: CutCode, channel=None):
                         closest_length = l
                         if distance <= 1e-5:
                             break  # Distance is zero, we cannot improve.
-                if cut.reversible():
-                    e = cut.end()
-                    if (
-                        abs(e[0] - curr.real) <= distance
-                        and abs(e[1] - curr.imag) <= distance
+
+                if not cut.reversible():
+                    continue
+                e = cut.end()
+                if (
+                    abs(e[0] - curr.real) <= distance
+                    and abs(e[1] - curr.imag) <= distance
+                ):
+                    e = complex(e[0], e[1])
+                    d = abs(e - curr)
+                    l = cut.length()
+                    if d < distance or (
+                        d == distance and backwards and l < closest_length
                     ):
-                        e = complex(e[0], e[1])
-                        d = abs(e - curr)
-                        l = cut.length()
-                        if d < distance or (
-                            d == distance and backwards and l < closest_length
-                        ):
-                            distance = d
-                            backwards = True
-                            closest = cut
-                            closest_length = l
-                            if distance <= 1e-5:
-                                break  # Distance is zero, we cannot improve.
+                        distance = d
+                        backwards = True
+                        closest = cut
+                        closest_length = l
+                        if distance <= 1e-5:
+                            break  # Distance is zero, we cannot improve.
 
         if closest is None:
             break
