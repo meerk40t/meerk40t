@@ -14,7 +14,16 @@ def register_panel(window, context):
     panel3 = wx.Button(window, wx.ID_ANY, "Hello")
     panel4 = wx.Button(window, wx.ID_ANY, "Hello")
     panel5 = wx.Button(window, wx.ID_ANY, "Hello")
-    notebook = wx.aui.AuiNotebook(window, -1, size=(200, 150), style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE | wx.aui.AUI_NB_SCROLL_BUTTONS  | wx.aui.AUI_NB_BOTTOM)
+    notebook = wx.aui.AuiNotebook(
+        window,
+        -1,
+        size=(200, 150),
+        style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+        | wx.aui.AUI_NB_SCROLL_BUTTONS
+        | wx.aui.AUI_NB_TAB_SPLIT
+        | wx.aui.AUI_NB_TAB_MOVE
+        | wx.aui.AUI_NB_BOTTOM,
+    )
     pane = (
         aui.AuiPaneInfo()
             .Right()
