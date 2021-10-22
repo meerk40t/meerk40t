@@ -1200,7 +1200,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
         closest = None
         backwards = False
         closest_length = float("inf")
-        if ordered:
+        try:
             last_segment = ordered[-1]
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
@@ -1216,6 +1216,8 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     closest = cut
                     closest_length = abs(complex(closest.end()) - curr)
                     backwards = True
+        except IndexError:
+            pass
         if closest_length > 1e-5:
             distance = closest_length
             for cut in context.candidate():
