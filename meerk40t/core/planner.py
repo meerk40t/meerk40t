@@ -405,6 +405,15 @@ class Planner(Modifier):
 
         self.context.registered['choices/optimize'] = [
             {
+                "attr": "opt_reduce_travel",
+                "object": self.context,
+                "default": False,
+                "label": _("Reduce Travel Time"),
+                "tip": _(
+                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+                ),
+            },
+            {
                 "attr": "opt_merge_passes",
                 "object": self.context,
                 "default": False,
@@ -419,15 +428,6 @@ class Planner(Modifier):
                 "tip": _("Combine operations into the same optimization"),
             },
             {
-                "attr": "opt_reduce_travel",
-                "object": self.context,
-                "default": False,
-                "label": _("Reduce Travel Time"),
-                "tip": _(
-                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
-                ),
-            },
-            {
                 "attr": "opt_inner_first",
                 "object": self.context,
                 "default": False,
@@ -435,6 +435,14 @@ class Planner(Modifier):
                 "tip": _(
                     "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
                 ),
+            },
+            {
+                "attr": "opt_closed_distance",
+                "object": self.context,
+                "default": 15,
+                "type": int,
+                "label": _("Closed Distance"),
+                "tip": _("How close (mils) do endpoints need to be to count as closed?"),
             },
         ]
 
