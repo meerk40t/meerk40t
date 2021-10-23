@@ -27,15 +27,17 @@ class Simulation(MWindow, Job):
         if len(args) >= 4:
             plan_name = args[3]
         else:
-            plan_name = 0
+            plan_name = None
         Job.__init__(self)
         self.job_name = "simulate"
         self.run_main = True
         self.process = self.animate_sim
         self.interval = 0.1
-
-        self.plan_name = plan_name
-        cutplan = self.context.root.default_plan()
+        if plan_name:
+            cutplan = self.context.root.planner.get_or_make_plan(plan_name)
+        else:
+            cutplan = self.context.root.default_plan()
+        self.plan_name = cutplan.name
         self.operations = cutplan.plan
         self.cutcode = CutCode()
 
