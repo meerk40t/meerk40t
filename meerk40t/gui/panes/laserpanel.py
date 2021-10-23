@@ -183,21 +183,6 @@ class LaserPanel(wx.Panel):
         self.combo_devices.SetToolTip("Select device from list of configured devices")
         sizer_devices.Add(self.combo_devices, 1, 0, 0)
 
-        sizer_windows = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Associated Windows"), wx.HORIZONTAL
-        )
-        sizer_main.Add(sizer_windows, 0, wx.EXPAND, 0)
-
-        self.button_controller = wx.Button(self, wx.ID_ANY, "Controller")
-        self.button_controller.SetToolTip("Start the Controller for this device")
-        self.button_controller.SetBitmap(icons8_connected_50.GetBitmap(resize=20))
-        sizer_windows.Add(self.button_controller, 1, 0, 0)
-
-        self.button_configuration = wx.Button(self, wx.ID_ANY, "Configuration")
-        self.button_configuration.SetToolTip("Start the Configuration for this device")
-        self.button_configuration.SetBitmap(icons8_system_task_20.GetBitmap(resize=20))
-        sizer_windows.Add(self.button_configuration, 1, 0, 0)
-
         self.SetSizer(sizer_main)
 
         self.Layout()
