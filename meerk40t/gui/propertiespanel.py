@@ -1,6 +1,8 @@
 import wx
 
+from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.kernel import Context
+from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -30,18 +32,18 @@ class PropertiesPanel(wx.Panel):
                 # If c is tuple
                 dict_c = dict()
                 try:
-                    dict_c['object'] = c[0]
-                    dict_c['attr'] = c[1]
-                    dict_c['default'] = c[2]
-                    dict_c['label'] = c[3]
-                    dict_c['tip'] = c[4]
-                    dict_c['type'] = c[5]
+                    dict_c["object"] = c[0]
+                    dict_c["attr"] = c[1]
+                    dict_c["default"] = c[2]
+                    dict_c["label"] = c[3]
+                    dict_c["tip"] = c[4]
+                    dict_c["type"] = c[5]
                 except IndexError:
                     pass
                 c = dict_c
             try:
-                attr = c['attr']
-                obj = c['object']
+                attr = c["attr"]
+                obj = c["object"]
             except KeyError:
                 continue
 
@@ -51,20 +53,20 @@ class PropertiesPanel(wx.Panel):
             else:
                 # if obj can lack attr, default must have been assigned.
                 try:
-                    data = c['default']
+                    data = c["default"]
                 except KeyError:
                     continue
 
             data_type = type(data)
             try:
                 # if type is explicitly given, use that to define data_type.
-                data_type = c['type']
+                data_type = c["type"]
             except KeyError:
                 pass
 
             try:
                 # Get label
-                label = c['label']
+                label = c["label"]
             except KeyError:
                 # Undefined label is the attr
                 label = attr
@@ -91,7 +93,7 @@ class PropertiesPanel(wx.Panel):
                 control_sizer.Add(control)
 
                 def on_textbox_text(param, ctrl):
-                    def check(event=None):
+                    def text(event=None):
                         v = ctrl.GetValue()
                         try:
                             setattr(obj, param, data_type(v))
@@ -99,16 +101,51 @@ class PropertiesPanel(wx.Panel):
                             # If cannot cast to data_type, pass
                             pass
 
-                    return check
+                    return text
 
                 control.Bind(wx.EVT_TEXT, on_textbox_text(attr, control))
+                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+            elif data_type == Color:
+                control_sizer = wx.StaticBoxSizer(
+                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                )
+                control = wx.Button(self, -1)
+
+                def set_color(color: Color):
+                    control.SetLabel(str(color.hex))
+                    control.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+                    control.color = color
+
+                def on_button_color(param, ctrl):
+                    def click(event=None):
+                        color_data = wx.ColourData()
+                        color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
+                        dlg = wx.ColourDialog(self, color_data)
+                        if dlg.ShowModal() == wx.ID_OK:
+                            color_data = dlg.GetColourData()
+                            data = Color(
+                                swizzlecolor(color_data.GetColour().GetRGB()), 1.0
+                            )
+                            set_color(data)
+                            try:
+                                setattr(obj, param, data_type(data))
+                            except ValueError:
+                                # If cannot cast to data_type, pass
+                                pass
+
+                    return click
+
+                set_color(data)
+                control_sizer.Add(control)
+
+                control.Bind(wx.EVT_BUTTON, on_button_color(attr, control))
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             else:
                 # Requires a registered data_type
                 continue
             try:
                 # Set the tool tip if 'tip' is available
-                control.SetToolTip(c['tip'])
+                control.SetToolTip(c["tip"])
             except KeyError:
                 pass
 
