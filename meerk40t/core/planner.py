@@ -1193,33 +1193,41 @@ def short_travel_cutcode(context: CutCode, channel=None):
     if channel:
         channel("Executing Greedy Short-Travel optimization")
         channel("Length at start: %f" % context.length_travel(True))
+
     for c in context.flat():
         c.permitted = True
+
     ordered = CutCode()
     while True:
         closest = None
         backwards = False
-        closest_length = float("inf")
+        distance = float("inf")
+
         try:
             last_segment = ordered[-1]
+        except IndexError:
+            pass
+        else:
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
                 cut = last_segment.next
                 if cut and cut.permitted:
                     closest = cut
-                    closest_length = abs(complex(closest.start()) - curr)
+                    distance = abs(complex(closest.start()) - curr)
                     backwards = False
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
                 if cut and cut.permitted:
                     closest = cut
-                    closest_length = abs(complex(closest.end()) - curr)
+                    distance = abs(complex(closest.end()) - curr)
                     backwards = True
-        except IndexError:
-            pass
-        if closest_length > 1e-5:
-            distance = closest_length
+
+        if distance > 1e-5:
+            if closest:
+                closest_length = closest.length()
+            else:
+                closest_length = float("inf")
             for cut in context.candidate():
                 s = cut.start()
                 if (
@@ -1232,12 +1240,12 @@ def short_travel_cutcode(context: CutCode, channel=None):
                         if d < distance or (
                             d == distance and (backwards or l < closest_length)
                         ):
-                            distance = d
-                            backwards = False
                             closest = cut
-                            closest_length = l
+                            backwards = False
                             if distance <= 1e-5:
                                 break  # Distance is zero, we cannot improve.
+                            distance = d
+                            closest_length = l
 
                 if not cut.reversible():
                     continue
@@ -1252,12 +1260,16 @@ def short_travel_cutcode(context: CutCode, channel=None):
                         if d < distance or (
                             d == distance and backwards and l < closest_length
                         ):
-                            distance = d
-                            backwards = True
                             closest = cut
-                            closest_length = l
+                            backwards = True
                             if distance <= 1e-5:
+                                # Need to swap to next segment forward if it is coincident and permitted
+                                if cut.next and cut.next.start == cut.end:
+                                    closest = cut.next
+                                    backwards = False
                                 break  # Distance is zero, we cannot improve.
+                            distance = d
+                            closest_length = l
 
         if closest is None:
             break
