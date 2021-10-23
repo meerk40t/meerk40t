@@ -894,7 +894,7 @@ class Kernel:
             context = self.contexts[context_name]
             context.boot()
 
-    def shutdown(self, channel: "Channel" = None):
+    def shutdown(self):
         """
         Starts full shutdown procedure.
 
@@ -910,6 +910,7 @@ class Kernel:
         :param channel:
         :return:
         """
+        channel = self.channel("shutdown")
         self.state = STATE_END  # Terminates the Scheduler.
 
         self.bootstrap("shutdown")
