@@ -1472,12 +1472,15 @@ class RasterScripts:
         step = None
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
-        empty_mask = None
         # Lookahead check for inversion
         invert = False
         for op in operations:
             if op["name"] == "grayscale" and op["enable"]:
                 invert = op["invert"]
+        if invert:
+            empty_mask = image.convert("L").point(lambda e: 0 if e == 0 else 255)
+        else:
+            empty_mask = image.convert("L").point(lambda e: 0 if e == 255 else 255)
 
         # Process operations.
         for op in operations:
@@ -1496,9 +1499,12 @@ class RasterScripts:
             elif name == "resample":
                 try:
                     if op["enable"]:
-                        image, matrix = actualize(image, matrix, step_level=op["step"], inverted=invert)
                         step = op["step"]
-                        empty_mask = None
+                        image, matrix = actualize(image, matrix, step_level=step, inverted=invert)
+                        if invert:
+                            empty_mask = image.convert("L").point(lambda e: 0 if e == 0 else 255)
+                        else:
+                            empty_mask = image.convert("L").point(lambda e: 0 if e == 255 else 255)
                 except KeyError:
                     pass
             elif name == "grayscale":
@@ -1523,12 +1529,7 @@ class RasterScripts:
                             if op["invert"]:
                                 if image.mode == "F":
                                     image = image.convert("L")
-                                empty_mask = image.point(lambda e: 0 if e == 0 else 255)
                                 image = ImageOps.invert(image)
-                            else:
-                                empty_mask = image.point(
-                                    lambda e: 0 if e == 255 else 255
-                                )
                         except (KeyError, OSError):
                             pass
 

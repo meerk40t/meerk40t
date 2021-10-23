@@ -3813,15 +3813,14 @@ class Elemental(Modifier):
                 ty = input_driver.current_y
             except AttributeError:
                 ty = 0
-            m = Matrix("translate(%f,%f)" % (tx, ty))
             try:
+                bounds = Group.union_bbox([abs(e) for e in data])
+                otx = bounds[0]
+                oty = bounds[1]
+                ntx = tx - otx
+                nty = ty - oty
                 for e in data:
-                    otx = e.transform.value_trans_x()
-                    oty = e.transform.value_trans_y()
-                    ntx = tx - otx
-                    nty = ty - oty
-                    m = Matrix("translate(%f,%f)" % (ntx, nty))
-                    e *= m
+                    e.transform.post_translate(ntx, nty)
                     if hasattr(e, "node"):
                         e.node.modified()
             except ValueError:
@@ -5712,8 +5711,10 @@ class Elemental(Modifier):
     def remove_elements_from_operations(self, elements_list):
         for i, op in enumerate(self.ops()):
             for e in list(op.children):
-                if e.object in elements_list:
-                    e.remove_node()
+                for q in elements_list:
+                    if q is e.object:
+                        e.remove_node()
+                        break
 
     def selected_area(self):
         if self._emphasized_bounds_dirty:
