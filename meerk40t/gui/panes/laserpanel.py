@@ -3,19 +3,14 @@ from wx import aui
 from wx import aui
 
 from meerk40t.gui.icons import (
-    icons8_center_of_gravity_50,
     icons8_gas_industry_50,
     icons8_pause_50,
     icons8_emergency_stop_button_50,
     icons8_pentagon_50,
     icons8_save_50,
     icons8_opened_folder_50,
-    icons8_manager_50,
 )
 from meerk40t.gui.propertiespanel import PropertiesPanel
-from meerk40t.gui.wxmeerk40t import MeerK40t
-
-MILS_IN_MM = 39.3701
 
 _ = wx.GetTranslation
 
@@ -64,20 +59,44 @@ class LaserPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_status = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_main.Add(sizer_status, 0, wx.EXPAND, 0)
+        sizer_devices = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Device"), wx.HORIZONTAL)
+        sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
-        self.text_status = wx.TextCtrl(
-            self, wx.ID_ANY, "Disconnected", style=wx.TE_READONLY
+        # Devices Initialize.
+        self.available_devices = [
+            self.context.registered[i] for i in self.context.match("device")
+        ]
+        selected_spooler = self.context.root.active
+        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        try:
+            index = spools.index(selected_spooler)
+        except ValueError:
+            index = 0
+        self.connected_name = spools[index]
+        self.connected_spooler, self.connected_driver, self.connected_output = (
+            None,
+            None,
+            None,
         )
-        self.text_status.SetToolTip("Status of selected device")
-        sizer_status.Add(self.text_status, 1, 0, 0)
+        try:
+            (
+                self.connected_spooler,
+                self.connected_driver,
+                self.connected_output,
+            ) = self.available_devices[index]
+        except IndexError:
+            for m in self.Children:
+                if isinstance(m, wx.Window):
+                    m.Disable()
+        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
 
-        self.button_initialize_laser = wx.Button(self, wx.ID_ANY, "Initialize Laser")
-        self.button_initialize_laser.SetBitmap(
-            icons8_center_of_gravity_50.GetBitmap(resize=20)
+        self.combo_devices = wx.ComboBox(
+            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        sizer_status.Add(self.button_initialize_laser, 0, 0, 0)
+        self.combo_devices.SetToolTip("Select device from list of configured devices")
+        self.combo_devices.SetSelection(index)
+
+        sizer_devices.Add(self.combo_devices, 1, 0, 0)
 
         sizer_control = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control, 0, wx.EXPAND, 0)
@@ -118,164 +137,119 @@ class LaserPanel(wx.Panel):
         self.button_load.SetBitmap(icons8_opened_folder_50.GetBitmap())
         sizer_control_misc.Add(self.button_load, 1, 0, 0)
 
-        sizer_start = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_main.Add(sizer_start, 0, wx.EXPAND, 0)
+        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main.Add(sizer_1, 0, wx.EXPAND, 0)
 
-        sizer_source = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Source"), wx.HORIZONTAL
-        )
-        sizer_start.Add(sizer_source, 1, wx.EXPAND, 0)
+        self.button_clear = wx.Button(self, wx.ID_ANY, "Clear")
+        self.button_clear.SetToolTip("Clear locally defined plan")
+        sizer_1.Add(self.button_clear, 1, 0, 0)
 
-        self.combo_source = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=["Operations", "Planner", "File"],
-            style=wx.CB_DROPDOWN | wx.CB_READONLY,
-        )
-        self.combo_source.SetToolTip("Select the source for the sending data")
-        self.combo_source.SetSelection(0)
-        sizer_source.Add(self.combo_source, 0, 0, 0)
+        self.button_update = wx.Button(self, wx.ID_ANY, "Update")
+        self.button_update.SetToolTip("Update the Plan")
+        sizer_1.Add(self.button_update, 1, 0, 0)
 
-        sizer_position = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Start Position:"), wx.HORIZONTAL
-        )
-        sizer_start.Add(sizer_position, 1, wx.EXPAND, 0)
+        self.button_simulate = wx.Button(self, wx.ID_ANY, "Simulate")
+        self.button_simulate.SetToolTip("Simulate the Design")
+        sizer_1.Add(self.button_simulate, 1, 0, 0)
 
-        label_1 = wx.StaticText(self, wx.ID_ANY, "")
-        sizer_position.Add(label_1, 0, 0, 0)
+        sizer_source = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
 
-        self.combo_start = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=["Absolute Home", "Current Position", "User Origin"],
-            style=wx.CB_DROPDOWN | wx.CB_READONLY,
-        )
-        self.combo_start.SetToolTip("Set the start position for the job")
-        self.combo_start.SetSelection(0)
-        sizer_position.Add(self.combo_start, 0, 0, 0)
-
-        sizer_optimize = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Optimize"), wx.HORIZONTAL
-        )
-        sizer_main.Add(sizer_optimize, 0, wx.EXPAND, 0)
+        self.text_plan = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        sizer_source.Add(self.text_plan, 3, 0, 0)
 
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, "Optimize")
         self.checkbox_optimize.SetToolTip("Enable/Disable Optimize")
         self.checkbox_optimize.SetValue(1)
-        sizer_optimize.Add(self.checkbox_optimize, 1, 0, 0)
-
-        self.button_optimize_settings = wx.Button(
-            self, wx.ID_ANY, "Optimization Settings"
-        )
-        self.button_optimize_settings.SetToolTip(
-            "View and change optimization settings"
-        )
-        sizer_optimize.Add(self.button_optimize_settings, 3, 0, 0)
-
-        self.button_simulate = wx.Button(self, wx.ID_ANY, "Simulate")
-        self.button_simulate.SetToolTip("Simulate the Design")
-        sizer_optimize.Add(self.button_simulate, 3, 0, 0)
-
-        sizer_devices = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Device"), wx.HORIZONTAL
-        )
-        sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
-
-        self.button_devices = wx.Button(self, wx.ID_ANY, "Settings")
-        self.button_devices.SetToolTip("Set and Define Devices")
-        self.button_devices.SetBitmap(icons8_manager_50.GetBitmap(resize=20))
-        sizer_devices.Add(self.button_devices, 0, 0, 0)
-
-        self.combo_devices = wx.ComboBox(
-            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
-        )
-        self.combo_devices.SetToolTip("Select device from list of configured devices")
-        sizer_devices.Add(self.combo_devices, 1, 0, 0)
+        sizer_source.Add(self.checkbox_optimize, 1, 0, 0)
 
         self.SetSizer(sizer_main)
-
         self.Layout()
 
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_initialize_laser, self.button_initialize_laser
-        )
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
         self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
         self.Bind(wx.EVT_BUTTON, self.on_button_load, self.button_load)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_source, self.combo_source)
-        self.Bind(wx.EVT_TEXT, self.on_combo_source, self.combo_source)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_source, self.combo_source)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_start, self.combo_start)
-        self.Bind(wx.EVT_TEXT, self.on_combo_start, self.combo_start)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_start, self.combo_start)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_optimize, self.checkbox_optimize)
-        self.Bind(
-            wx.EVT_BUTTON,
-            self.on_button_optimize_settings,
-            self.button_optimize_settings,
-        )
+        self.Bind(wx.EVT_BUTTON, self.on_button_clear, self.button_clear)
+        self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
         self.Bind(wx.EVT_BUTTON, self.on_button_simulate, self.button_simulate)
-        self.Bind(wx.EVT_BUTTON, self.on_button_devices, self.button_devices)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_TEXT, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_devices, self.combo_devices)
         # end wxGlade
+        self.context.listen("plan", self.plan_update)
+
+    def plan_update(self, origin, *message):
+        plan_name, stage = message[0], message[1]
+        if plan_name == "z":
+            plan = self.context.planner.get_or_make_plan("z")
+            self.text_plan.SetLabel("%s: %s" % (str(stage), str(plan)))
 
     def on_button_initialize_laser(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_initialize_laser' not implemented!")
-        event.Skip()
+        self.context("start\n")
 
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_start' not implemented!")
-        event.Skip()
+        plan = self.context.planner.get_or_make_plan("z")
+        if plan.plan:
+            self.context("planz spool\n")
+        else:
+            if self.checkbox_optimize.GetValue():
+                self.context("planz copy preprocess validate blob preopt optimize spool\n")
+            else:
+                self.context("planz copy preprocess validate blob spool\n")
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_pause' not implemented!")
-        event.Skip()
+        self.context("pause\n")
 
     def on_button_stop(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_stop' not implemented!")
-        event.Skip()
+        self.context("estop\n")
 
     def on_button_outline(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_outline' not implemented!")
-        event.Skip()
+        self.context("trace_hull\n")
 
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_save' not implemented!")
-        event.Skip()
+        pass
 
     def on_button_load(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_load' not implemented!")
-        event.Skip()
+        pass
 
-    def on_combo_source(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_combo_source' not implemented!")
-        event.Skip()
+    def on_button_clear(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.context("planz clear\n")
 
-    def on_combo_start(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_combo_start' not implemented!")
-        event.Skip()
-
-    def on_check_optimize(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_check_optimize' not implemented!")
-        event.Skip()
-
-    def on_button_optimize_settings(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_optimize_settings' not implemented!")
-        event.Skip()
+    def on_button_update(self, event):  # wxGlade: LaserPanel.<event_handler>
+        with wx.BusyInfo(_("Updating Plan...")):
+            plan = self.context.planner.get_or_make_plan("z")
+            if not plan.plan:
+                if self.checkbox_optimize.GetValue():
+                    self.context("planz clear copy preprocess validate blob preopt optimize\n")
+                else:
+                    self.context("planz clear copy preprocess validate blob\n")
 
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_simulate' not implemented!")
-        event.Skip()
+        with wx.BusyInfo(_("Preparing simulation...")):
+            plan = self.context.planner.get_or_make_plan("z")
+            if not plan.plan:
+                if self.checkbox_optimize.GetValue():
+                    self.context("planz copy preprocess validate blob preopt optimize\n")
+                else:
+                    self.context("planz copy preprocess validate blob\n")
+
+            self.context(
+                "window toggle Simulation z 0\n"
+            ),
 
     def on_button_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_devices' not implemented!")
-        event.Skip()
+        self.context("window toggle DeviceManager\n")
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_combo_devices' not implemented!")
-        event.Skip()
+        self.available_devices = [
+            self.context.registered[i] for i in self.context.match("device")
+        ]
+        index = self.combo_devices.GetSelection()
+        (
+            self.connected_spooler,
+            self.connected_driver,
+            self.connected_output,
+        ) = self.available_devices[index]
