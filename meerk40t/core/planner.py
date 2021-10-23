@@ -444,6 +444,23 @@ class Planner(Modifier):
                 "label": _("Closed Distance"),
                 "tip": _("How close (mils) do endpoints need to be to count as closed?"),
             },
+            {
+                "attr": "opt_rapid_between",
+                "object": self.context,
+                "default": False,
+                "label":  _("Rapid Moves Between Objects"),
+                "tip": _(
+                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+                ),
+            },
+            {
+                "attr": "opt_jog_minimum",
+                "object": self.context,
+                "default": 256,
+                "type": int,
+                "label": _("Minimum Jog Distance"),
+                "tip": _("Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."),
+            },
         ]
 
         @self.context.console_argument(
