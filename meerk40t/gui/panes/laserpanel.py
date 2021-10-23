@@ -213,10 +213,6 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_TEXT, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_devices, self.combo_devices)
-        self.Bind(wx.EVT_BUTTON, self.on_button_controller, self.button_controller)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_configuration, self.button_configuration
-        )
         # end wxGlade
 
     def on_button_initialize_laser(self, event):  # wxGlade: LaserPanel.<event_handler>
