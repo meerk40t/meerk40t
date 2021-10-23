@@ -1,7 +1,9 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import *
+from meerk40t.gui.icons import icons8_center_of_gravity_50, icons8_gas_industry_50, icons8_pause_50, \
+    icons8_emergency_stop_button_50, icons8_pentagon_50, icons8_save_50, icons8_opened_folder_50, icons8_manager_50
+from meerk40t.gui.propertiespanel import PropertiesPanel
 from meerk40t.gui.wxmeerk40t import MeerK40t
 
 MILS_IN_MM = 39.3701
@@ -10,9 +12,8 @@ _ = wx.GetTranslation
 
 
 def register_panel(window: MeerK40t, context):
-    panel = LaserPanel(window, wx.ID_ANY, context=context)
-    panel2 = LaserPanel(window, wx.ID_ANY, context=context)
-    panel3 = wx.Button(window, wx.ID_ANY, "Hello")
+    laser_panel = LaserPanel(window, wx.ID_ANY, context=context)
+    optimize_panel = PropertiesPanel(window, wx.ID_ANY, context=context, choices="optimize")
     notebook = wx.aui.AuiNotebook(
         window,
         -1,
@@ -36,13 +37,9 @@ def register_panel(window: MeerK40t, context):
     )
     pane.control = notebook
     pane.dock_proportion = 400
-    notebook.AddPage(panel, "M2Nano")
-    notebook.AddPage(panel2, "GRBL")
-    notebook.AddPage(panel3, "M2-Networked")
+    notebook.AddPage(laser_panel, _("Laser"))
+    notebook.AddPage(optimize_panel, _("Optimize"))
 
-    # notebook.SetPageSize((500,750))
-    # notebook.Split(1, wx.BOTTOM)
-    # notebook.SetSelection(1)
     window.on_pane_add(pane)
     window.context.register("pane/laser", pane)
 
@@ -173,7 +170,7 @@ class LaserPanel(wx.Panel):
         self.button_devices = wx.Button(self, wx.ID_ANY, "Settings")
         self.button_devices.SetToolTip("Set and Define Devices")
         self.button_devices.SetBitmap(
-            icons8_administrative_tools_50.GetBitmap(resize=20)
+            icons8_manager_50.GetBitmap(resize=20)
         )
         sizer_devices.Add(self.button_devices, 0, 0, 0)
 
@@ -271,10 +268,3 @@ class LaserPanel(wx.Panel):
         print("Event handler 'on_combo_devices' not implemented!")
         event.Skip()
 
-    def on_button_controller(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_controller' not implemented!")
-        event.Skip()
-
-    def on_button_configuration(self, event):  # wxGlade: LaserPanel.<event_handler>
-        print("Event handler 'on_button_configuration' not implemented!")
-        event.Skip()
