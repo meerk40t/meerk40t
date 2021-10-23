@@ -8,6 +8,8 @@ _ = wx.GetTranslation
 class PropertiesPanel(wx.Panel):
     """
     PropertiesPanel is a generic panel that simply presents a simple list of properties to be viewed and edited.
+    In most cases it can be initialized by passing a choices value which will read the registered choice values
+    and display the given properties, automatically generating an appropriate changer for that property.
     """
 
     def __init__(self, *args, context: Context = None, choices=None, **kwds):
@@ -33,6 +35,7 @@ class PropertiesPanel(wx.Panel):
                     dict_c['default'] = c[2]
                     dict_c['label'] = c[3]
                     dict_c['tip'] = c[4]
+                    dict_c['type'] = c[5]
                 except IndexError:
                     pass
                 c = dict_c
