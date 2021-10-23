@@ -581,10 +581,6 @@ class MeerK40t(MWindow):
         from .panes.laserpanel import register_panel
         register_panel(self, self.context)
 
-        # Define Optimize.
-        from .panes.optimizepanel import register_panel
-        register_panel(self, self.context)
-
         pane = (
             aui.AuiPaneInfo()
             .Left()
