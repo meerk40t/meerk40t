@@ -22,7 +22,7 @@ class PropertiesPanel(wx.Panel):
             except KeyError:
                 return
         self.choices = choices
-        pos_y = 10
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
         for i, c in enumerate(self.choices):
             if isinstance(c, tuple):
                 # If c is tuple
@@ -66,9 +66,8 @@ class PropertiesPanel(wx.Panel):
                 # Undefined label is the attr
                 label = attr
 
-            control = None
             if data_type == bool:
-                control = wx.CheckBox(self, label=label, pos=(10, pos_y))
+                control = wx.CheckBox(self, label=label)
                 control.SetValue(data)
 
                 def on_checkbox_check(param, ctrl):
@@ -79,9 +78,14 @@ class PropertiesPanel(wx.Panel):
                     return check
 
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control))
+                sizer_main.Add(control, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
+                control_sizer = wx.StaticBoxSizer(
+                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                )
                 control = wx.TextCtrl(self, -1)
-                control.SetValue(data)
+                control.SetValue(str(data))
+                control_sizer.Add(control)
 
                 def on_textbox_text(param, ctrl):
                     def check(event=None):
@@ -95,13 +99,15 @@ class PropertiesPanel(wx.Panel):
                     return check
 
                 control.Bind(wx.EVT_TEXT, on_textbox_text(attr, control))
+                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             else:
                 # Requires a registered data_type
                 continue
-
             try:
                 # Set the tool tip if 'tip' is available
                 control.SetToolTip(c['tip'])
             except KeyError:
                 pass
-            pos_y += 20
+
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
