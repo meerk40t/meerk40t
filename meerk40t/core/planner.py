@@ -62,6 +62,15 @@ class CutPlan:
         self.original = list()
         self.commands = list()
 
+    def __str__(self):
+        parts = list()
+        parts.append(self.name)
+        if len(self.plan):
+            parts.append("#%d" % len(self.plan))
+        else:
+            parts.append("-- Empty --")
+        return " ".join(parts)
+
     def execute(self):
         # Using copy of commands, so commands can add ops.
         cmds = self.commands[:]
