@@ -1,4 +1,5 @@
 import wx
+from wx import aui
 
 from meerk40t.gui.icons import (
     icon_corner1,
@@ -16,6 +17,27 @@ from meerk40t.gui.icons import (
 )
 
 _ = wx.GetTranslation
+
+
+def register_panel(window, context):
+    panel = Drag(window, wx.ID_ANY, context=context)
+    pane = (
+        aui.AuiPaneInfo()
+        .Right()
+        .MinSize(174, 230)
+        .FloatingSize(174, 230)
+        .MaxSize(300, 300)
+        .Caption(_("Drag"))
+        .Name("drag")
+        .CaptionVisible(not context.pane_lock)
+        .Hide()
+    )
+    pane.dock_proportion = 230
+    pane.control = panel
+    pane.submenu = _("Navigation")
+
+    window.on_pane_add(pane)
+    context.register("pane/drag", pane)
 
 
 class Drag(wx.Panel):

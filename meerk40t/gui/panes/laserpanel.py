@@ -1,8 +1,17 @@
 import wx
 from wx import aui
+from wx import aui
 
-from meerk40t.gui.icons import icons8_center_of_gravity_50, icons8_gas_industry_50, icons8_pause_50, \
-    icons8_emergency_stop_button_50, icons8_pentagon_50, icons8_save_50, icons8_opened_folder_50, icons8_manager_50
+from meerk40t.gui.icons import (
+    icons8_center_of_gravity_50,
+    icons8_gas_industry_50,
+    icons8_pause_50,
+    icons8_emergency_stop_button_50,
+    icons8_pentagon_50,
+    icons8_save_50,
+    icons8_opened_folder_50,
+    icons8_manager_50,
+)
 from meerk40t.gui.propertiespanel import PropertiesPanel
 from meerk40t.gui.wxmeerk40t import MeerK40t
 
@@ -11,9 +20,11 @@ MILS_IN_MM = 39.3701
 _ = wx.GetTranslation
 
 
-def register_panel(window: MeerK40t, context):
+def register_panel(window, context):
     laser_panel = LaserPanel(window, wx.ID_ANY, context=context)
-    optimize_panel = PropertiesPanel(window, wx.ID_ANY, context=context, choices="optimize")
+    optimize_panel = PropertiesPanel(
+        window, wx.ID_ANY, context=context, choices="optimize"
+    )
     notebook = wx.aui.AuiNotebook(
         window,
         -1,
@@ -74,16 +85,19 @@ class LaserPanel(wx.Panel):
         self.button_start = wx.Button(self, wx.ID_ANY, "Start")
         self.button_start.SetToolTip("Execute the Job")
         self.button_start.SetBitmap(icons8_gas_industry_50.GetBitmap())
+        self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
         sizer_control.Add(self.button_start, 1, 0, 0)
 
         self.button_pause = wx.Button(self, wx.ID_ANY, "Pause")
         self.button_pause.SetToolTip("Pause/Resume the laser")
         self.button_pause.SetBitmap(icons8_pause_50.GetBitmap())
+        self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         sizer_control.Add(self.button_pause, 1, 0, 0)
 
         self.button_stop = wx.Button(self, wx.ID_ANY, "Stop")
         self.button_stop.SetToolTip("Stop the laser")
         self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap())
+        self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         sizer_control.Add(self.button_stop, 1, 0, 0)
 
         sizer_control_misc = wx.BoxSizer(wx.HORIZONTAL)
@@ -169,9 +183,7 @@ class LaserPanel(wx.Panel):
 
         self.button_devices = wx.Button(self, wx.ID_ANY, "Settings")
         self.button_devices.SetToolTip("Set and Define Devices")
-        self.button_devices.SetBitmap(
-            icons8_manager_50.GetBitmap(resize=20)
-        )
+        self.button_devices.SetBitmap(icons8_manager_50.GetBitmap(resize=20))
         sizer_devices.Add(self.button_devices, 0, 0, 0)
 
         self.combo_devices = wx.ComboBox(
@@ -267,4 +279,3 @@ class LaserPanel(wx.Panel):
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         print("Event handler 'on_combo_devices' not implemented!")
         event.Skip()
-

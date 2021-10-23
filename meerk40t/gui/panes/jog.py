@@ -1,4 +1,5 @@
 import wx
+from wx import aui
 
 from meerk40t.gui.icons import (
     icons8_down_50,
@@ -17,6 +18,26 @@ from meerk40t.gui.icons import (
 _ = wx.GetTranslation
 
 MILS_IN_MM = 39.3701
+
+
+def register_panel(window, context):
+    panel = Jog(window, wx.ID_ANY, context=context)
+    pane = (
+        aui.AuiPaneInfo()
+        .Right()
+        .MinSize(174, 230)
+        .FloatingSize(174, 230)
+        .MaxSize(300, 300)
+        .Caption(_("Jog"))
+        .Name("jog")
+        .CaptionVisible(not context.pane_lock)
+    )
+    pane.dock_proportion = 230
+    pane.control = panel
+    pane.submenu = _("Navigation")
+
+    window.on_pane_add(pane)
+    context.register("pane/jog", pane)
 
 
 class Jog(wx.Panel):

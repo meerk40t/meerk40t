@@ -9,6 +9,7 @@ try:
     import wx
 except ImportError as e:
     from ..core.exceptions import Mk40tImportAbort
+
     raise Mk40tImportAbort("wxpython")
 
 import wx.aui as aui
@@ -342,7 +343,7 @@ supported_languages = (
 
 
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
+    """Get absolute path to resource, works for dev and for PyInstaller"""
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
@@ -444,122 +445,37 @@ class MeerK40t(MWindow):
         # self.notebook.AddPage(self.scene, "scene")
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
-        # Define Jog.
-        panel = Jog(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(174, 230)
-            .FloatingSize(174, 230)
-            .MaxSize(300, 300)
-            .Caption(_("Jog"))
-            .Name("jog")
-            .CaptionVisible(not self.context.pane_lock)
-        )
-        pane.dock_proportion = 230
-        pane.control = panel
-        pane.submenu = _("Navigation")
+        # Define Jog
+        from .panes.jog import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/jog", pane)
+        register_panel(self, self.context)
 
         # Define Drag.
-        panel = Drag(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(174, 230)
-            .FloatingSize(174, 230)
-            .MaxSize(300, 300)
-            .Caption(_("Drag"))
-            .Name("drag")
-            .CaptionVisible(not self.context.pane_lock)
-            .Hide()
-        )
-        pane.dock_proportion = 230
-        pane.control = panel
-        pane.submenu = _("Navigation")
+        from .panes.dragpanel import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/drag", pane)
+        register_panel(self, self.context)
 
         # Define Transform.
-        panel = Transform(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(174, 220)
-            .FloatingSize(174, 220)
-            .MaxSize(300, 300)
-            .Caption(_("Transform"))
-            .Name("transform")
-            .CaptionVisible(not self.context.pane_lock)
-            .Hide()
-        )
-        pane.dock_proportion = 220
-        pane.control = panel
-        pane.submenu = _("Navigation")
+        from .panes.transformpanel import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/transform", pane)
+        register_panel(self, self.context)
 
         # Define Jog Distance.
-        panel = JogDistancePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Float()
-            .MinSize(190, 110)
-            .FloatingSize(190, 110)
-            .Hide()
-            .Caption(_("Distances"))
-            .CaptionVisible(not self.context.pane_lock)
-            .Name("jogdist")
-        )
-        pane.dock_proportion = 110
-        pane.control = panel
-        pane.submenu = _("Navigation")
+        from .panes.jogdistancepanel import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/jogdist", pane)
+        register_panel(self, self.context)
 
         # Define Pulse.
-        panel = PulsePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(75, 50)
-            .FloatingSize(150, 75)
-            .Hide()
-            .Caption(_("Pulse"))
-            .CaptionVisible(not self.context.pane_lock)
-            .Name("pulse")
-        )
-        pane.dock_proportion = 150
-        pane.control = panel
-        pane.submenu = _("Navigation")
+        from .panes.pulsepanel import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/pulse", pane)
+        register_panel(self, self.context)
 
         # Define Move.
-        panel = MovePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Right()
-            .MinSize(150, 75)
-            .FloatingSize(150, 75)
-            .MaxSize(200, 100)
-            .Caption(_("Move"))
-            .CaptionVisible(not self.context.pane_lock)
-            .Name("move")
-        )
-        pane.dock_proportion = 150
-        pane.control = panel
-        pane.submenu = _("Navigation")
+        from .panes.movepanel import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/move", pane)
+        register_panel(self, self.context)
 
+        # Define Tree
         pane = (
             aui.AuiPaneInfo()
             .Name("tree")
@@ -579,22 +495,13 @@ class MeerK40t(MWindow):
 
         # Define Laser.
         from .panes.laserpanel import register_panel
+
         register_panel(self, self.context)
 
-        pane = (
-            aui.AuiPaneInfo()
-            .Left()
-            .MinSize(225, 110)
-            .FloatingSize(225, 110)
-            .Caption(_("Position"))
-            .CaptionVisible(not self.context.pane_lock)
-            .Name("position")
-        )
-        pane.dock_proportion = 225
-        pane.control = PositionPanel(self, wx.ID_ANY, context=self.context)
+        # Define Position
+        from .panes.position import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/position", pane)
+        register_panel(self, self.context)
 
         pane = (
             aui.AuiPaneInfo()
@@ -757,102 +664,30 @@ class MeerK40t(MWindow):
         self.context.register("pane/home", pane)
 
         # Define Notes.
-        panel = NotePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Float()
-            .MinSize(100, 100)
-            .FloatingSize(170, 230)
-            .MaxSize(500, 500)
-            .Caption(_("Notes"))
-            .CaptionVisible(not self.context.pane_lock)
-            .Name("notes")
-            .Hide()
-        )
-        pane.dock_proportion = 100
-        pane.control = panel
+        from .panes.notespanel import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/notes", pane)
+        register_panel(self, self.context)
 
         # Define Spooler.
-        panel = SpoolerPanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .Layer(1)
-            .MinSize(600, 100)
-            .FloatingSize(600, 230)
-            .Caption(_("Spooler"))
-            .Name("spooler")
-            .CaptionVisible(not self.context.pane_lock)
-            .Hide()
-        )
-        pane.dock_proportion = 600
-        pane.control = panel
+        from .panes.spoolerpanel import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/spooler", pane)
+        register_panel(self, self.context)
 
         # Define Console.
-        panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .Layer(2)
-            .MinSize(600, 100)
-            .FloatingSize(600, 230)
-            .Caption(_("Console"))
-            .Name("console")
-            .CaptionVisible(not self.context.pane_lock)
-            .Hide()
-        )
-        pane.dock_proportion = 600
-        pane.control = panel
+        from .panes.consolepanel import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/console", pane)
+        register_panel(self, self.context)
 
         # Define Devices.
-        panel = DevicesPanel(self, wx.ID_ANY, context=self.context)
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .Layer(2)
-            .MinSize(600, 100)
-            .FloatingSize(600, 230)
-            .Caption(_("Devices"))
-            .Name("devices")
-            .CaptionVisible(not self.context.pane_lock)
-            .Hide()
-        )
-        pane.dock_proportion = 600
-        pane.control = panel
+        from .panes.devicespanel import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/devices", pane)
+        register_panel(self, self.context)
 
         # Define Camera
         if self.context.has_feature("modifier/Camera"):
-            for index in range(5):
-                panel = CameraPanel(
-                    self, wx.ID_ANY, context=self.context, gui=self, index=index
-                )
-                pane = (
-                    aui.AuiPaneInfo()
-                    .Left()
-                    .MinSize(200, 150)
-                    .FloatingSize(640, 480)
-                    .Caption(_("Camera %d" % index))
-                    .Name("camera%d" % index)
-                    .CaptionVisible(not self.context.pane_lock)
-                    .Hide()
-                )
-                pane.dock_proportion = 200
-                pane.control = panel
-                pane.submenu = _("Camera")
-                self.on_pane_add(pane)
-                self.context.register("pane/camera%d" % index, pane)
+            from .panes.camerapanel import register_panel
+
+            register_panel(self, self.context)
 
         # AUI Manager Update.
         self._mgr.Update()
@@ -1772,7 +1607,10 @@ class MeerK40t(MWindow):
             ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK
         )
         self.view_menu.Append(
-            ID_MENU_PREVENT_ALPHABLACK, _("Do Not Alpha/Black Images"), "", wx.ITEM_CHECK
+            ID_MENU_PREVENT_ALPHABLACK,
+            _("Do Not Alpha/Black Images"),
+            "",
+            wx.ITEM_CHECK,
         )
         self.view_menu.Append(
             ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK
@@ -4441,7 +4279,7 @@ class wxMeerK40t(wx.App, Module):
             del self.locale
         self.locale = wx.Locale(language_index)
         # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
-        if self.locale.IsOk() or 'linux' in sys.platform:
+        if self.locale.IsOk() or "linux" in sys.platform:
             self.locale.AddCatalog("meerk40t")
         else:
             self.locale = None

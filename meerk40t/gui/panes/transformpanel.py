@@ -1,4 +1,5 @@
 import wx
+from wx import aui
 
 _ = wx.GetTranslation
 
@@ -14,6 +15,27 @@ from meerk40t.gui.icons import (
     icons8_rotate_right_50,
     icons8_up_50,
 )
+
+
+def register_panel(window, context):
+    panel = Transform(window, wx.ID_ANY, context=context)
+    pane = (
+        aui.AuiPaneInfo()
+        .Right()
+        .MinSize(174, 220)
+        .FloatingSize(174, 220)
+        .MaxSize(300, 300)
+        .Caption(_("Transform"))
+        .Name("transform")
+        .CaptionVisible(not context.pane_lock)
+        .Hide()
+    )
+    pane.dock_proportion = 220
+    pane.control = panel
+    pane.submenu = _("Navigation")
+
+    window.on_pane_add(pane)
+    context.register("pane/transform", pane)
 
 
 class Transform(wx.Panel):
@@ -256,10 +278,7 @@ class Transform(wx.Panel):
         ]
         x = input_driver.current_x if input_driver is not None else 0
         y = input_driver.current_y if input_driver is not None else 0
-        self.context(
-            "rotate %fdeg %f %f\n"
-            % (-5, x, y)
-        )
+        self.context("rotate %fdeg %f %f\n" % (-5, x, y))
         self.matrix_updated()
 
     def on_rotate_cw(self, event=None):  # wxGlade: Navigation.<event_handler>
@@ -268,9 +287,7 @@ class Transform(wx.Panel):
         ]
         x = input_driver.current_x if input_driver is not None else 0
         y = input_driver.current_y if input_driver is not None else 0
-        self.context(
-            "rotate %fdeg %f %f\n" % (5, x, y)
-        )
+        self.context("rotate %fdeg %f %f\n" % (5, x, y))
         self.matrix_updated()
 
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>

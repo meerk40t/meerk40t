@@ -1,4 +1,5 @@
 import wx
+from wx import aui
 
 from meerk40t.gui.icons import icons8_center_of_gravity_50
 from meerk40t.svgelements import Length
@@ -6,6 +7,26 @@ from meerk40t.svgelements import Length
 MILS_IN_MM = 39.3701
 
 _ = wx.GetTranslation
+
+
+def register_panel(window, context):
+    panel = MovePanel(window, wx.ID_ANY, context=context)
+    pane = (
+        aui.AuiPaneInfo()
+        .Right()
+        .MinSize(150, 75)
+        .FloatingSize(150, 75)
+        .MaxSize(200, 100)
+        .Caption(_("Move"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("move")
+    )
+    pane.dock_proportion = 150
+    pane.control = panel
+    pane.submenu = _("Navigation")
+
+    window.on_pane_add(pane)
+    context.register("pane/move", pane)
 
 
 class MovePanel(wx.Panel):

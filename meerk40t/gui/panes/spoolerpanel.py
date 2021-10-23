@@ -1,6 +1,27 @@
 import wx
+from wx import aui
 
 _ = wx.GetTranslation
+
+
+def register_panel(window, context):
+    panel = SpoolerPanel(window, wx.ID_ANY, context=context)
+    pane = (
+        aui.AuiPaneInfo()
+        .Bottom()
+        .Layer(1)
+        .MinSize(600, 100)
+        .FloatingSize(600, 230)
+        .Caption(_("Spooler"))
+        .Name("spooler")
+        .CaptionVisible(not context.pane_lock)
+        .Hide()
+    )
+    pane.dock_proportion = 600
+    pane.control = panel
+
+    window.on_pane_add(pane)
+    context.register("pane/spooler", pane)
 
 
 class SpoolerPanel(wx.Panel):

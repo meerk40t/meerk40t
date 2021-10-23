@@ -1,6 +1,27 @@
 import wx
+from wx import aui
 
 _ = wx.GetTranslation
+
+
+def register_panel(window, context):
+    panel = NotePanel(window, wx.ID_ANY, context=context)
+    pane = (
+        aui.AuiPaneInfo()
+        .Float()
+        .MinSize(100, 100)
+        .FloatingSize(170, 230)
+        .MaxSize(500, 500)
+        .Caption(_("Notes"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("notes")
+        .Hide()
+    )
+    pane.dock_proportion = 100
+    pane.control = panel
+
+    window.on_pane_add(pane)
+    context.register("pane/notes", pane)
 
 
 class NotePanel(wx.Panel):
