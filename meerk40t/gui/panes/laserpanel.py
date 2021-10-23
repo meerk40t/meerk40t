@@ -187,18 +187,16 @@ class LaserPanel(wx.Panel):
             plan = self.context.planner.get_or_make_plan("z")
             self.text_plan.SetLabel("%s: %s" % (str(stage), str(plan)))
 
-    def on_button_initialize_laser(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("start\n")
-
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
+        s = self.connected_spooler.name
         if plan.plan:
-            self.context("planz spool\n")
+            self.context("planz spool%s\n" % s)
         else:
             if self.checkbox_optimize.GetValue():
-                self.context("planz copy preprocess validate blob preopt optimize spool\n")
+                self.context("planz copy preprocess validate blob preopt optimize spool%s\n" % s)
             else:
-                self.context("planz copy preprocess validate blob spool\n")
+                self.context("planz copy preprocess validate blob spool%s\n % s")
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
