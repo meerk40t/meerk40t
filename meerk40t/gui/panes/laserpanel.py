@@ -1,14 +1,14 @@
 import wx
 from wx import aui
-from wx import aui
 
 from meerk40t.gui.icons import (
     icons8_gas_industry_50,
     icons8_pause_50,
     icons8_emergency_stop_button_50,
     icons8_pentagon_50,
-    icons8_save_50,
-    icons8_opened_folder_50,
+    icons8_delete_50,
+    icons8_goal_50,
+    icons8_laser_beam_hazard2_50,
 )
 from meerk40t.gui.propertiespanel import PropertiesPanel
 
@@ -57,7 +57,9 @@ class LaserPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_devices = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Device"), wx.HORIZONTAL)
+        sizer_devices = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Device"), wx.HORIZONTAL
+        )
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
         # Devices Initialize.
@@ -91,7 +93,9 @@ class LaserPanel(wx.Panel):
         self.combo_devices = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.combo_devices.SetToolTip(_("Select device from list of configured devices"))
+        self.combo_devices.SetToolTip(
+            _("Select device from list of configured devices")
+        )
         self.combo_devices.SetSelection(index)
 
         sizer_devices.Add(self.combo_devices, 1, 0, 0)
@@ -101,19 +105,19 @@ class LaserPanel(wx.Panel):
 
         self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
         self.button_start.SetToolTip(_("Execute the Job"))
-        self.button_start.SetBitmap(icons8_gas_industry_50.GetBitmap())
+        self.button_start.SetBitmap(icons8_gas_industry_50.GetBitmap(resize=25))
         self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
         sizer_control.Add(self.button_start, 1, 0, 0)
 
         self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap())
+        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25))
         self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         sizer_control.Add(self.button_pause, 1, 0, 0)
 
         self.button_stop = wx.Button(self, wx.ID_ANY, _("Stop"))
         self.button_stop.SetToolTip(_("Stop the laser"))
-        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap())
+        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         sizer_control.Add(self.button_stop, 1, 0, 0)
 
@@ -122,40 +126,47 @@ class LaserPanel(wx.Panel):
 
         self.button_outline = wx.Button(self, wx.ID_ANY, _("Outline"))
         self.button_outline.SetToolTip(_("Trace the outline the job"))
-        self.button_outline.SetBitmap(icons8_pentagon_50.GetBitmap())
+        self.button_outline.SetBitmap(icons8_pentagon_50.GetBitmap(resize=25))
         sizer_control_misc.Add(self.button_outline, 1, 0, 0)
 
-        self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
-        self.button_save_file.SetToolTip(_("Save the job"))
-        self.button_save_file.SetBitmap(icons8_save_50.GetBitmap())
-        self.button_save_file.Enable(False)
-        sizer_control_misc.Add(self.button_save_file, 1, 0, 0)
+        self.button_simulate = wx.Button(self, wx.ID_ANY, _("Simulate"))
+        self.button_simulate.SetToolTip(_("Simulate the Design"))
+        self.button_simulate.SetBitmap(
+            icons8_laser_beam_hazard2_50.GetBitmap(resize=25)
+        )
+        sizer_control_misc.Add(self.button_simulate, 1, 0, 0)
 
-        self.button_load = wx.Button(self, wx.ID_ANY, _("Load"))
-        self.button_load.SetToolTip(_("Load job"))
-        self.button_load.SetBitmap(icons8_opened_folder_50.GetBitmap())
-        self.button_load.Enable(False)
-        sizer_control_misc.Add(self.button_load, 1, 0, 0)
+        # self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
+        # self.button_save_file.SetToolTip(_("Save the job"))
+        # self.button_save_file.SetBitmap(icons8_save_50.GetBitmap())
+        # self.button_save_file.Enable(False)
+        # sizer_control_misc.Add(self.button_save_file, 1, 0, 0)
+
+        # self.button_load = wx.Button(self, wx.ID_ANY, _("Load"))
+        # self.button_load.SetToolTip(_("Load job"))
+        # self.button_load.SetBitmap(icons8_opened_folder_50.GetBitmap())
+        # self.button_load.Enable(False)
+        # sizer_control_misc.Add(self.button_load, 1, 0, 0)
 
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_1, 0, wx.EXPAND, 0)
 
         self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Clear locally defined plan"))
+        self.button_clear.SetBitmap(icons8_delete_50.GetBitmap(resize=25))
         sizer_1.Add(self.button_clear, 1, 0, 0)
 
         self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
         self.button_update.SetToolTip(_("Update the Plan"))
+        self.button_update.SetBitmap(icons8_goal_50.GetBitmap(resize=25))
         sizer_1.Add(self.button_update, 1, 0, 0)
-
-        self.button_simulate = wx.Button(self, wx.ID_ANY, _("Simulate"))
-        self.button_simulate.SetToolTip(_("Simulate the Design"))
-        sizer_1.Add(self.button_simulate, 1, 0, 0)
 
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
 
-        self.text_plan = wx.TextCtrl(self, wx.ID_ANY, _(_("--- Empty ---")), style=wx.TE_READONLY)
+        self.text_plan = wx.TextCtrl(
+            self, wx.ID_ANY, _(_("--- Empty ---")), style=wx.TE_READONLY
+        )
         sizer_source.Add(self.text_plan, 3, 0, 0)
 
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
@@ -170,8 +181,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
-        self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
-        self.Bind(wx.EVT_BUTTON, self.on_button_load, self.button_load)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_load, self.button_load)
         self.Bind(wx.EVT_BUTTON, self.on_button_clear, self.button_clear)
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
         self.Bind(wx.EVT_BUTTON, self.on_button_simulate, self.button_simulate)
@@ -197,7 +208,9 @@ class LaserPanel(wx.Panel):
             self.context("planz spool%s\n" % s)
         else:
             if self.checkbox_optimize.GetValue():
-                self.context("planz copy preprocess validate blob preopt optimize spool%s\n" % s)
+                self.context(
+                    "planz copy preprocess validate blob preopt optimize spool%s\n" % s
+                )
             else:
                 self.context("planz copy preprocess validate blob spool%s\n % s")
 
@@ -222,7 +235,9 @@ class LaserPanel(wx.Panel):
     def on_button_update(self, event):  # wxGlade: LaserPanel.<event_handler>
         with wx.BusyInfo(_("Updating Plan...")):
             if self.checkbox_optimize.GetValue():
-                self.context("planz clear copy preprocess validate blob preopt optimize\n")
+                self.context(
+                    "planz clear copy preprocess validate blob preopt optimize\n"
+                )
             else:
                 self.context("planz clear copy preprocess validate blob\n")
 
@@ -231,13 +246,13 @@ class LaserPanel(wx.Panel):
             plan = self.context.planner.get_or_make_plan("z")
             if not plan.plan:
                 if self.checkbox_optimize.GetValue():
-                    self.context("planz copy preprocess validate blob preopt optimize\n")
+                    self.context(
+                        "planz copy preprocess validate blob preopt optimize\n"
+                    )
                 else:
                     self.context("planz copy preprocess validate blob\n")
 
-            self.context(
-                "window toggle Simulation z 0\n"
-            ),
+            self.context("window toggle Simulation z 0\n"),
 
     def on_button_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("window toggle DeviceManager\n")
