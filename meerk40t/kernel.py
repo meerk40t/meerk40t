@@ -916,7 +916,10 @@ class Kernel:
         self.bootstrap("shutdown")
         _ = self.translation
 
-        self.process_queue()  # Notify listeners of state.
+        try:
+            self.process_queue()  # Notify listeners of state.
+        except RuntimeError:
+            pass  # Runtime error for gui objects in the process of being killed.
         # Suspend Signals
 
         def signal(code, path, *message):
