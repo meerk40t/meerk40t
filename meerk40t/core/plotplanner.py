@@ -149,7 +149,7 @@ class PlotPlanner:
             if cut_set is not cur_set:
                 yield None, None, PLOT_SETTING
 
-            if jog:
+            if jog or cut_set.raster_step != 0:
                 # set the directions. Post Jog, Post Settings.
                 yield cut.major_axis(), None, PLOT_AXIS
                 yield cut.x_dir(), cut.y_dir(), PLOT_DIRECTION
