@@ -312,7 +312,9 @@ class CutPlan:
             return None
         xmin, ymin, xmax, ymax = bounds
         step = op.settings.raster_step
-        image = make_raster(subitems, bounds, step=step)
+        image = make_raster(
+            subitems, bounds, step=step
+        )
         image_element = SVGImage(image=image)
         image_element.transform.post_scale(step, step)
         image_element.transform.post_translate(xmin, ymin)

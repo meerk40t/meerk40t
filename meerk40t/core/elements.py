@@ -3076,8 +3076,6 @@ class Elemental(Modifier):
             image = make_raster(
                 [n.node for n in data],
                 bounds,
-                width=(xmax - xmin),
-                height=(ymax - ymin),
                 step=step,
             )
             image_element = SVGImage(image=image)
@@ -5093,8 +5091,6 @@ class Elemental(Modifier):
             image = make_raster(
                 subitems,
                 bounds,
-                width=(xmax - xmin),
-                height=(ymax - ymin),
                 step=step,
             )
             image_element = SVGImage(image=image)
