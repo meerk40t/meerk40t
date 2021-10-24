@@ -207,7 +207,7 @@ class LaserPanel(wx.Panel):
         self.context("estop\n")
 
     def on_button_outline(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("trace_hull\n")
+        self.context("element* trace_hull\n")
 
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
         pass
