@@ -205,7 +205,7 @@ class CutObject:
             return -1
 
     def reverse(self):
-        if self.reversible():
+        if not self.reversible():
             raise ValueError(
                 "Attempting to reverse a cutsegment that does not permit that."
             )
