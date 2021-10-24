@@ -312,6 +312,8 @@ class CutPlan:
             return None
         xmin, ymin, xmax, ymax = bounds
         step = op.settings.raster_step
+        if step == 0:
+            step = 1
         image = make_raster(
             subitems, bounds, step=step
         )

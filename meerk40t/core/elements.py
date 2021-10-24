@@ -3070,7 +3070,7 @@ class Elemental(Modifier):
             if bounds is None:
                 return
             if step <= 0:
-                step = 1.0
+                step = 1
             xmin, ymin, xmax, ymax = bounds
 
             image = make_raster(
@@ -5085,7 +5085,7 @@ class Elemental(Modifier):
                 return
             step = float(node.settings.raster_step)
             if step == 0:
-                step = 1.0
+                step = 1
             xmin, ymin, xmax, ymax = bounds
 
             image = make_raster(
