@@ -2118,9 +2118,12 @@ class LhystudiosController:
             # self.connection was closed by something.
             raise ConnectionError
         if self.context is not None:
-            self.context.signal(
-                "pipe;status", self._status, get_code_string_from_code(self._status[1])
-            )
+            try:
+                self.context.signal(
+                    "pipe;status", self._status, get_code_string_from_code(self._status[1])
+                )
+            except IndexError:
+                pass
             if self.recv_channel:
                 self.recv_channel(str(self._status))
 

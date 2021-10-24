@@ -1078,11 +1078,14 @@ class MoshiController:
             raise ConnectionError
         self._status = self.connection.get_status()
         if self.context is not None:
-            self.context.signal(
-                "pipe;status",
-                self._status,
-                get_code_string_from_moshicode(self._status[1]),
-            )
+            try:
+                self.context.signal(
+                    "pipe;status",
+                    self._status,
+                    get_code_string_from_moshicode(self._status[1]),
+                )
+            except IndexError:
+                pass
             self.recv_channel(str(self._status))
 
     def wait_until_accepting_packets(self):
