@@ -923,10 +923,7 @@ class Navigation(MWindow):
         ]
         x = input_driver.current_x if input_driver is not None else 0
         y = input_driver.current_y if input_driver is not None else 0
-        self.context(
-            "rotate %fdeg %f %f\n"
-            % (-5, x, y)
-        )
+        self.context("rotate %fdeg %f %f\n" % (-5, x, y))
         self.matrix_updated()
 
     def on_rotate_cw(self, event=None):  # wxGlade: Navigation.<event_handler>
@@ -935,9 +932,7 @@ class Navigation(MWindow):
         ]
         x = input_driver.current_x if input_driver is not None else 0
         y = input_driver.current_y if input_driver is not None else 0
-        self.context(
-            "rotate %fdeg %f %f\n" % (5, x, y)
-        )
+        self.context("rotate %fdeg %f %f\n" % (5, x, y))
         self.matrix_updated()
 
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>

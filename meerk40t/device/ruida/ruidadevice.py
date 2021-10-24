@@ -472,9 +472,9 @@ class RuidaEmulator(Module):
             desc = "Move Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
         elif array[0] == 0x97:
             desc = "Lightburn Swizzle Modulation 97"
-        elif array[0] == 0x9b:
+        elif array[0] == 0x9B:
             desc = "Lightburn Swizzle Modulation 9b"
-        elif array[0] == 0x9e:
+        elif array[0] == 0x9E:
             desc = "Lightburn Swizzle Modulation 9e"
         elif array[0] == 0xA0:
             value = self.abscoord(array[2:7])
@@ -987,7 +987,8 @@ class RuidaEmulator(Module):
                     desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
                     if self.control:
                         self.context(
-                            "move -f %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
+                            "move -f %f %f\n"
+                            % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
                         )
                 elif array[1] == 0x01 or array[1] == 0x51:
                     coord = self.abscoord(array[3:8])
@@ -995,7 +996,8 @@ class RuidaEmulator(Module):
                     desc = "Move %s Y: %f (%f,%f)" % (param, coord, self.x, self.y)
                     if self.control:
                         self.context(
-                            "move -f %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
+                            "move -f %f %f\n"
+                            % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
                         )
                 elif array[1] == 0x02 or array[1] == 0x52:
                     coord = self.abscoord(array[3:8])
@@ -1020,7 +1022,8 @@ class RuidaEmulator(Module):
                     if self.control:
                         if "Origin" in param:
                             self.context(
-                                "move -f %f %f\n" % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
+                                "move -f %f %f\n"
+                                % (self.x / UM_PER_MIL, self.y / UM_PER_MIL)
                             )
                         else:
                             self.context("home\n")

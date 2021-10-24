@@ -1198,14 +1198,14 @@ class LaserOperation(Node):
                             )
                     for i, cut_obj in enumerate(group):
                         try:
-                            cut_obj.next = group[i+1]
+                            cut_obj.next = group[i + 1]
                         except IndexError:
                             cut_obj.next = group[0]
-                        cut_obj.previous = group[i-1]
+                        cut_obj.previous = group[i - 1]
                     yield group
         elif self._operation == "Raster":
             step = settings.raster_step
-            assert(step > 0)
+            assert step > 0
             direction = settings.raster_direction
             for element in self.children:
                 svg_image = element.object
@@ -1219,7 +1219,7 @@ class LaserOperation(Node):
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
                     matrix.value_trans_x() + pil_image.width * step,
-                    matrix.value_trans_y() + pil_image.height * step
+                    matrix.value_trans_y() + pil_image.height * step,
                 )
                 path = Path(
                     Polygon(
@@ -1259,11 +1259,15 @@ class LaserOperation(Node):
                     settings.raster_step = int(svg_image.values["raster_step"])
                 except KeyError:
                     # This overwrites any step that may have been defined in settings.
-                    settings.raster_step = 1  # If raster_step is not set image defaults to 1.
+                    settings.raster_step = (
+                        1  # If raster_step is not set image defaults to 1.
+                    )
                 if settings.raster_step <= 0:
                     settings.raster_step = 1
                 try:
-                    settings.raster_direction = int(svg_image.values["raster_direction"])
+                    settings.raster_direction = int(
+                        svg_image.values["raster_direction"]
+                    )
                 except KeyError:
                     pass
                 step = settings.raster_step
@@ -1274,7 +1278,7 @@ class LaserOperation(Node):
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
                     matrix.value_trans_x() + pil_image.width * step,
-                    matrix.value_trans_y() + pil_image.height * step
+                    matrix.value_trans_y() + pil_image.height * step,
                 )
                 path = Path(
                     Polygon(
@@ -1284,13 +1288,21 @@ class LaserOperation(Node):
                         (box[2], box[1]),
                     )
                 )
-                cut = RasterCut(pil_image, matrix.value_trans_x(), matrix.value_trans_y(), settings)
+                cut = RasterCut(
+                    pil_image, matrix.value_trans_x(), matrix.value_trans_y(), settings
+                )
                 cut.path = path
                 cut.original_op = self._operation
                 yield cut
 
                 if settings.raster_direction == 4:
-                    cut = RasterCut(pil_image, matrix.value_trans_x(), matrix.value_trans_y(),  settings, crosshatch=True)
+                    cut = RasterCut(
+                        pil_image,
+                        matrix.value_trans_x(),
+                        matrix.value_trans_y(),
+                        settings,
+                        crosshatch=True,
+                    )
                     cut.path = path
                     cut.original_op = self._operation
                     yield cut
@@ -5138,7 +5150,9 @@ class Elemental(Modifier):
         @self.tree_separator_before()
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Horizontally"), node_type=("elem", "file", "group"), help=_("Mirror Horizontally")
+            _("Horizontally"),
+            node_type=("elem", "file", "group"),
+            help=_("Mirror Horizontally"),
         )
         def mirror_elem(node, **kwgs):
             child_objects = Group()
@@ -5153,7 +5167,9 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Flip"))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Vertically"), node_type=("elem", "file", "group"), help=_("Flip Vertically")
+            _("Vertically"),
+            node_type=("elem", "file", "group"),
+            help=_("Flip Vertically"),
         )
         def flip_elem(node, **kwgs):
             child_objects = Group()

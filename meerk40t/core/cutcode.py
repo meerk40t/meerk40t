@@ -557,9 +557,10 @@ class RasterCut(CutObject):
     Rastercut accepts a image of type "L" or "1", and an offset in the x and y and information as to whether
     this is a crosshatched cut or not.
     """
+
     def __init__(self, image, tx, ty, settings=None, crosshatch=False):
         CutObject.__init__(self, settings=settings)
-        assert(image.mode in ("L", "1"))
+        assert image.mode in ("L", "1")
 
         self.image = image
         self.tx = tx
@@ -567,7 +568,7 @@ class RasterCut(CutObject):
 
         step = self.settings.raster_step
         self.step = step
-        assert(step > 0)
+        assert step > 0
 
         direction = self.settings.raster_direction
         traverse = 0
@@ -602,7 +603,16 @@ class RasterCut(CutObject):
                 overscan = 20
         self.overscan = overscan
         self.plot = RasterPlotter(
-            image.load(), width, height, traverse, 0, overscan, tx, ty, step, image_filter
+            image.load(),
+            width,
+            height,
+            traverse,
+            0,
+            overscan,
+            tx,
+            ty,
+            step,
+            image_filter,
         )
 
     def reversible(self):

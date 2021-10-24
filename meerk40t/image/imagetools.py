@@ -2,9 +2,9 @@ import os
 from copy import copy
 from os import path as ospath
 
-from .actualize import actualize
 from ..core.planner import make_actual, needs_actualization
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
+from .actualize import actualize
 
 MILS_IN_MM = 39.3701
 
@@ -1166,6 +1166,7 @@ def dither(image, method="Floyd-Steinberg"):
                     pix[xn, yn] += error * diffusion_coefficient
     return diff
 
+
 class RasterScripts:
     """
     This module serves as the raster scripting routine. It registers raster-scripts and
@@ -1500,11 +1501,17 @@ class RasterScripts:
                 try:
                     if op["enable"]:
                         step = op["step"]
-                        image, matrix = actualize(image, matrix, step_level=step, inverted=invert)
+                        image, matrix = actualize(
+                            image, matrix, step_level=step, inverted=invert
+                        )
                         if invert:
-                            empty_mask = image.convert("L").point(lambda e: 0 if e == 0 else 255)
+                            empty_mask = image.convert("L").point(
+                                lambda e: 0 if e == 0 else 255
+                            )
                         else:
-                            empty_mask = image.convert("L").point(lambda e: 0 if e == 255 else 255)
+                            empty_mask = image.convert("L").point(
+                                lambda e: 0 if e == 255 else 255
+                            )
                 except KeyError:
                     pass
             elif name == "grayscale":

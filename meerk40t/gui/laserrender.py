@@ -246,9 +246,7 @@ class LaserRender:
                 matrix.post_scale(
                     cut.step
                 )  # Scale up the image by the step for simulation
-                matrix.post_translate(
-                    cut.tx, cut.ty
-                )  # Adjust image xy
+                matrix.post_translate(cut.tx, cut.ty)  # Adjust image xy
                 if matrix is not None and not matrix.is_identity():
                     gc.ConcatTransform(
                         wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))

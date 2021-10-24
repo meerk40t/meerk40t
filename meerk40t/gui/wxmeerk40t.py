@@ -125,10 +125,10 @@ from .imageproperty import ImageProperty
 from .jobspooler import JobSpooler
 from .keymap import Keymap
 from .laserrender import (
+    DRAW_MODE_ALPHABLACK,
     DRAW_MODE_ANIMATE,
     DRAW_MODE_BACKGROUND,
     DRAW_MODE_CACHE,
-    DRAW_MODE_ALPHABLACK,
     DRAW_MODE_FILLS,
     DRAW_MODE_FLIPXY,
     DRAW_MODE_GRID,

@@ -1,6 +1,5 @@
-from time import time
 from copy import copy
-
+from time import time
 
 from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..device.lasercommandconstants import (
@@ -505,7 +504,7 @@ class Planner(Modifier):
         self.context.setting(int, "opt_jog_minimum", 256)
         self.context.setting(int, "opt_jog_mode", 0)
 
-        self.context.registered['choices/optimize'] = [
+        self.context.registered["choices/optimize"] = [
             {
                 "attr": "opt_reduce_travel",
                 "object": self.context,
@@ -544,13 +543,15 @@ class Planner(Modifier):
                 "default": 15,
                 "type": int,
                 "label": _("Closed Distance"),
-                "tip": _("How close (mils) do endpoints need to be to count as closed?"),
+                "tip": _(
+                    "How close (mils) do endpoints need to be to count as closed?"
+                ),
             },
             {
                 "attr": "opt_rapid_between",
                 "object": self.context,
                 "default": False,
-                "label":  _("Rapid Moves Between Objects"),
+                "label": _("Rapid Moves Between Objects"),
                 "tip": _(
                     "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
                 ),
@@ -561,7 +562,9 @@ class Planner(Modifier):
                 "default": 256,
                 "type": int,
                 "label": _("Minimum Jog Distance"),
-                "tip": _("Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."),
+                "tip": _(
+                    "Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."
+                ),
             },
         ]
 

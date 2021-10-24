@@ -1,7 +1,6 @@
 import wx
 from wx import aui
 
-
 _ = wx.GetTranslation
 
 

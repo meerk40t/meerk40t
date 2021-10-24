@@ -2,8 +2,8 @@ import argparse
 import asyncio
 import sys
 
-from .kernel import Kernel
 from .core.exceptions import Mk40tImportAbort
+from .kernel import Kernel
 
 try:
     from math import tau
@@ -97,6 +97,7 @@ parser.add_argument(
     help="Do not load meerk40t.plugins entrypoints",
 )
 
+
 def run():
     argv = sys.argv[1:]
     args = parser.parse_args(argv)
@@ -123,69 +124,90 @@ def run():
     hardcoded addons and plugins permitted by MeerK40t in a compiled bundle.
     """
     from . import kernelserver
+
     kernel.add_plugin(kernelserver.plugin)
 
     from .device.ch341 import ch341
+
     kernel.add_plugin(ch341.plugin)
 
     from .device import basedevice
+
     kernel.add_plugin(basedevice.plugin)
 
     from .core import spoolers
+
     kernel.add_plugin(spoolers.plugin)
 
     from .core import drivers
+
     kernel.add_plugin(drivers.plugin)
 
     from .core import output
+
     kernel.add_plugin(output.plugin)
 
     from .core import inputs
+
     kernel.add_plugin(inputs.plugin)
 
     from .core import elements
+
     kernel.add_plugin(elements.plugin)
 
     from .core import bindalias
+
     kernel.add_plugin(bindalias.plugin)
 
     from .core import webhelp
+
     kernel.add_plugin(webhelp.plugin)
 
     from .core import planner
+
     kernel.add_plugin(planner.plugin)
 
     from .image import imagetools
+
     kernel.add_plugin(imagetools.plugin)
 
     from .device.lhystudios import lhystudiosdevice
+
     kernel.add_plugin(lhystudiosdevice.plugin)
 
     from .device.moshi import moshidevice
+
     kernel.add_plugin(moshidevice.plugin)
 
     from .device.grbl import grbldevice
+
     kernel.add_plugin(grbldevice.plugin)
 
     from .device.ruida import ruidadevice
+
     kernel.add_plugin(ruidadevice.plugin)
 
     from .core import svg_io
+
     kernel.add_plugin(svg_io.plugin)
 
     from .extra import vectrace
+
     kernel.add_plugin(vectrace.plugin)
 
     from .extra import inkscape
+
     kernel.add_plugin(inkscape.plugin)
 
     from .extra import embroider
+
     kernel.add_plugin(embroider.plugin)
 
     from .extra import pathoptimize
+
     kernel.add_plugin(pathoptimize.plugin)
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         # Windows only plugin.
         try:
             from .extra import winsleep
@@ -197,16 +219,24 @@ def run():
     try:
         from camera import camera
     except Mk40tImportAbort as e:
-        print("Cannot install meerk40t 'camera' plugin - prerequisite '%s' needs to be installed" % e)
+        print(
+            "Cannot install meerk40t 'camera' plugin - prerequisite '%s' needs to be installed"
+            % e
+        )
     except ImportError:
-        print("Cannot install external 'camera' plugin - see https://github.com/meerk40t/meerk40t-camera")
+        print(
+            "Cannot install external 'camera' plugin - see https://github.com/meerk40t/meerk40t-camera"
+        )
     else:
         kernel.add_plugin(camera.plugin)
 
     try:
         from .dxf import dxf_io
     except Mk40tImportAbort as e:
-        print("Cannot install meerk40t 'dxf' plugin - prerequisite '%s' needs to be installed" % e)
+        print(
+            "Cannot install meerk40t 'dxf' plugin - prerequisite '%s' needs to be installed"
+            % e
+        )
     else:
         kernel.add_plugin(dxf_io.plugin)
 
@@ -216,7 +246,10 @@ def run():
             from .gui.scene import scene
         except Mk40tImportAbort as e:
             args.no_gui = True
-            print("Cannot install meerk40t gui - prerequisite '%s' needs to be installed" % e)
+            print(
+                "Cannot install meerk40t gui - prerequisite '%s' needs to be installed"
+                % e
+            )
         else:
             kernel.add_plugin(wxmeerk40t.plugin)
             kernel.add_plugin(scene.plugin)

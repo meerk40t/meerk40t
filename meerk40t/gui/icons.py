@@ -19,7 +19,7 @@ class PyEmbeddedImage(py_embedded_image):
         image = py_embedded_image.GetImage(self)
         if resize is not None:
             if isinstance(resize, int):
-                image = image.Scale(resize,resize)
+                image = image.Scale(resize, resize)
             else:
                 image = image.Scale(*resize)
 

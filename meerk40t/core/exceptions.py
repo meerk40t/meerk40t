@@ -4,6 +4,7 @@
 class Mk40tError(Exception):
     pass
 
+
 class Mk40tImportAbort(ImportError, Mk40tError):
     """
     MkImportAbort should be used as follows in plugins that import an optional prerequisite Pypi package:

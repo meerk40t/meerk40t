@@ -1518,7 +1518,7 @@ class Color(object):
 
     @staticmethod
     def parse_color_rgb(values):
-        """Parse SVG Color, RGB value declarations """
+        """Parse SVG Color, RGB value declarations"""
         r = int(values[0])
         g = int(values[1])
         b = int(values[2])
@@ -4160,7 +4160,7 @@ class Linear(PathSegment):
             return 0
 
     def closest_segment_point(self, p, respect_bounds=True):
-        """ Gives the point on the line closest to the given point. """
+        """Gives the point on the line closest to the given point."""
         a = self.start
         b = self.end
         v_ap_x = p[0] - a.x
