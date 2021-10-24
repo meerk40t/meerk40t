@@ -1,4 +1,6 @@
+from time import time
 from copy import copy
+
 
 from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..device.lasercommandconstants import (
@@ -86,6 +88,51 @@ class CutPlan:
         for cmd in cmds:
             cmd()
 
+    def preprocess(self):
+        context = self.context
+        _ = context._
+        rotary_context = context.get_context("rotary/1")
+        if context.prephysicalhome:
+            if not rotary_context.rotary:
+                self.plan.insert(0, context.registered["plan/physicalhome"])
+            else:
+                self.plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
+        if context.prehome:
+            if not rotary_context.rotary:
+                self.plan.insert(0, context.registered["plan/home"])
+            else:
+                self.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
+        # ==========
+        # BEFORE/AFTER
+        # ==========
+        if context.autohome:
+            if not rotary_context.rotary:
+                self.plan.append(context.registered["plan/home"])
+            else:
+                self.plan.append(_("Home After: Disabled (Rotary On)"))
+        if context.autophysicalhome:
+            if not rotary_context.rotary:
+                self.plan.append(context.registered["plan/physicalhome"])
+            else:
+                self.plan.append(_("Physical Home After: Disabled (Rotary On)"))
+        if context.autoorigin:
+            self.plan.append(context.registered["plan/origin"])
+        if context.postunlock:
+            self.plan.append(context.registered["plan/unlock"])
+        if context.autobeep:
+            self.plan.append(context.registered["plan/beep"])
+        if context.autointerrupt:
+            self.plan.append(context.registered["plan/interrupt"])
+
+        # ==========
+        # Conditional Ops
+        # ==========
+        self.conditional_jobadd_strip_text()
+        if rotary_context.rotary:
+            self.conditional_jobadd_scale_rotary()
+        self.conditional_jobadd_actualize_image()
+        self.conditional_jobadd_make_raster()
+
     def blob(self):
         context = self.context
         blob_plan = list()
@@ -158,23 +205,71 @@ class CutPlan:
                 else:
                     self.plan.append(c)
 
+    def preopt(self):
+        context = self.context
+        has_cutcode = False
+        for op in self.plan:
+            try:
+                if op.operation == "CutCode":
+                    has_cutcode = True
+                    break
+            except AttributeError:
+                pass
+        if not has_cutcode:
+            return
+
+        if context.opt_reduce_travel:
+            if context.opt_nearest_neighbor:
+                self.commands.append(self.optimize_travel)
+            if context.opt_2opt and not context.opt_inner_first:
+                try:
+                    # Check for numpy before adding additional 2opt
+                    import numpy as np
+
+                    self.commands.append(self.optimize_travel_2opt)
+                except ImportError:
+                    pass
+
+        elif context.opt_inner_first:
+            self.commands.append(self.optimize_cuts)
+        if context.opt_reduce_directions:
+            pass
+        if context.opt_remove_overlap:
+            pass
+
+    def optimize_travel_2opt(self):
+        for i, c in enumerate(self.plan):
+            if isinstance(c, CutCode):
+                self.plan[i] = short_travel_cutcode_2opt(
+                    self.plan[i], channel=self.context.channel("optimize")
+                )
+
     def optimize_cuts(self):
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_cutcode(c)
-                self.plan[i] = inner_selection_cutcode(c)
+                    self.plan[i] = inner_first_cutcode(
+                        c, channel=self.context.channel("optimize")
+                    )
+                    c = self.plan[i]
+                self.plan[i] = inner_selection_cutcode(
+                    c, channel=self.context.channel("optimize")
+                )
 
     def optimize_travel(self):
         last = None
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_cutcode(c)
+                    self.plan[i] = inner_first_cutcode(
+                        c, channel=self.context.channel("optimize")
+                    )
                     c = self.plan[i]
                 if last is not None:
                     self.plan[i].start = last
-                self.plan[i] = short_travel_cutcode(c)
+                self.plan[i] = short_travel_cutcode(
+                    c, channel=self.context.channel("optimize")
+                )
                 last = self.plan[i].end()
 
     def strip_text(self):
@@ -324,18 +419,6 @@ class CutPlan:
                 pass
         return False
 
-    def conditional_jobadd_optimize_travel(self):
-        self.commands.append(self.optimize_travel)
-
-    def conditional_jobadd_optimize_cuts(self):
-        for op in self.plan:
-            try:
-                if op.operation == "CutCode":
-                    self.commands.append(self.optimize_cuts)
-                    return
-            except AttributeError:
-                pass
-
     def conditional_jobadd_actualize_image(self):
         for op in self.plan:
             try:
@@ -408,6 +491,8 @@ class Planner(Modifier):
         self.context.setting(bool, "autobeep", True)
         self.context.setting(bool, "autointerrupt", False)
         self.context.setting(int, "opt_closed_distance", 15)
+        self.context.setting(bool, "opt_2opt", False)
+        self.context.setting(bool, "opt_nearest_neighbor", True)
         self.context.setting(bool, "opt_merge_passes", False)
         self.context.setting(bool, "opt_merge_ops", False)
         self.context.setting(bool, "opt_reduce_travel", True)
@@ -600,6 +685,9 @@ class Planner(Modifier):
         )
         def plan_copy_selected(command, channel, _, data_type=None, data=None, **kwgs):
             for c in elements.ops(emphasized=True):
+                if c.type in ("cutcode", "blob"):
+                    # CutNodes and BlobNodes are denuded into normal objects.
+                    c = c.object
                 copy_c = copy(c)
                 try:
                     copy_c.deep_copy_children(c)
@@ -742,47 +830,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_preprocess(command, channel, _, data_type=None, data=None, **kwgs):
-            rotary_context = self.context.get_context("rotary/1")
-            if self.context.prephysicalhome:
-                if not rotary_context.rotary:
-                    data.plan.insert(0, self.context.registered["plan/physicalhome"])
-                else:
-                    data.plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
-            if self.context.prehome:
-                if not rotary_context.rotary:
-                    data.plan.insert(0, self.context.registered["plan/home"])
-                else:
-                    data.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
-            # ==========
-            # BEFORE/AFTER
-            # ==========
-            if self.context.autohome:
-                if not rotary_context.rotary:
-                    data.plan.append(self.context.registered["plan/home"])
-                else:
-                    data.plan.append(_("Home After: Disabled (Rotary On)"))
-            if self.context.autophysicalhome:
-                if not rotary_context.rotary:
-                    data.plan.append(self.context.registered["plan/physicalhome"])
-                else:
-                    data.plan.append(_("Physical Home After: Disabled (Rotary On)"))
-            if self.context.autoorigin:
-                data.plan.append(self.context.registered["plan/origin"])
-            if self.context.postunlock:
-                data.plan.append(self.context.registered["plan/unlock"])
-            if self.context.autobeep:
-                data.plan.append(self.context.registered["plan/beep"])
-            if self.context.autointerrupt:
-                data.plan.append(self.context.registered["plan/interrupt"])
-
-            # ==========
-            # Conditional Ops
-            # ==========
-            data.conditional_jobadd_strip_text()
-            if rotary_context.rotary:
-                data.conditional_jobadd_scale_rotary()
-            data.conditional_jobadd_actualize_image()
-            data.conditional_jobadd_make_raster()
+            data.preprocess()
             self.context.signal("plan", self._default_plan, 2)
             return data_type, data
 
@@ -815,14 +863,7 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
-            if self.context.opt_reduce_travel:
-                data.conditional_jobadd_optimize_travel()
-            elif self.context.opt_inner_first:
-                data.conditional_jobadd_optimize_cuts()
-            if self.context.opt_reduce_directions:
-                pass
-            if self.context.opt_remove_overlap:
-                pass
+            data.preopt()
             self.context.signal("plan", self._default_plan, 5)
             return data_type, data
 
@@ -1157,7 +1198,7 @@ def extract_closed_groups(context: CutGroup):
         index -= 1
 
 
-def inner_first_cutcode(context: CutGroup):
+def inner_first_cutcode(context: CutGroup, channel=None):
     """
     Extract all closed groups and place them at the start of the cutcode.
     Place all cuts that are not closed groups after these extracted elements.
@@ -1166,12 +1207,16 @@ def inner_first_cutcode(context: CutGroup):
     Creates .inside and .contains lists for all cut objects with regard to whether
     they are inside or contain the other object.
     """
+    start_time = time()
     ordered = CutCode()
     closed_groups = list(extract_closed_groups(context))
     if len(closed_groups):
         ordered.contains = closed_groups
         ordered.extend(closed_groups)
     ordered.extend(context.flat())
+    if channel:
+        channel("Executing Inner First Preprocess Optimization")
+        channel("Length at start: %f" % ordered.length_travel(True))
     context.clear()
     for oj in ordered:
         for ok in ordered:
@@ -1195,70 +1240,114 @@ def inner_first_cutcode(context: CutGroup):
     #             assert q is not c
 
     ordered.constrained = True
+    if channel:
+        channel(
+            "Length at end: %f, optimized in %f seconds"
+            % (ordered.length_travel(True), time() - start_time)
+        )
     return ordered
 
 
-def short_travel_cutcode(context: CutCode):
+def short_travel_cutcode(context: CutCode, channel=None):
     """
     Selects cutcode from candidate cutcode permitted, optimizing with greedy/brute for
     shortest distances optimizations.
 
-    For paths starting at exactly the same point forward paths are prefered over reverse paths
-    and within this shorter paths are prefered over longer ones.
+    For paths starting at exactly the same point forward paths are preferred over reverse paths
+    and within this shorter paths are preferred over longer ones.
 
-    We start at either 0,0 or the value given in cc.start
+    We start at either 0,0 or the value given in context.start
+
+    This is time-intense hyper-optimized code, so it contains several seemingly redundant
+    checks.
     """
+    start_time = time()
     curr = context.start
     if curr is None:
         curr = 0
     else:
         curr = complex(curr[0], curr[1])
+    if channel:
+        channel("Executing Greedy Short-Travel optimization")
+        channel("Length at start: %f" % context.length_travel(True))
+
     for c in context.flat():
         c.permitted = True
+
     ordered = CutCode()
     while True:
         closest = None
         backwards = False
-        closest_length = float("inf")
-        if ordered:
+        distance = float("inf")
+
+        try:
             last_segment = ordered[-1]
+        except IndexError:
+            pass
+        else:
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
                 cut = last_segment.next
                 if cut and cut.permitted:
                     closest = cut
-                    closest_length = abs(closest.start() - curr)
+                    distance = abs(complex(closest.start()) - curr)
                     backwards = False
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
                 if cut and cut.permitted:
                     closest = cut
-                    closest_length = abs(closest.end() - curr)
+                    distance = abs(complex(closest.end()) - curr)
                     backwards = True
-        distance = closest_length
+
         if distance > 1e-5:
+            if closest:
+                closest_length = closest.length()
+            else:
+                closest_length = float("inf")
             for cut in context.candidate():
                 s = cut.start()
-                s = complex(s[0], s[1])
-                d = abs(s - curr)
-                l = cut.length()
-                if d < distance or (d == distance and (backwards or l < closest_length)):
-                    distance = d
-                    backwards = False
-                    closest = cut
-                    closest_length = l
-                if cut.reversible():
-                    e = cut.end()
-                    e = complex(e[0], e[1])
-                    d = abs(e - curr)
-                    if d < distance or (d == distance and backwards and l < closest_length):
-                        distance = d
-                        backwards = True
-                        closest = cut
-                        closest_length = l
-                if distance <= 1e-5:
-                    break  # Distance is zero, we cannot improve.
+                if (
+                    abs(s.x - curr.real) <= distance
+                    and abs(s.y - curr.imag) <= distance
+                ):
+                    d = abs(complex(s) - curr)
+                    if d <= distance:
+                        l = cut.length()
+                        if d < distance or (
+                            d == distance and (backwards or l < closest_length)
+                        ):
+                            closest = cut
+                            backwards = False
+                            if distance <= 1e-5:
+                                break  # Distance is zero, we cannot improve.
+                            distance = d
+                            closest_length = l
+
+                if not cut.reversible():
+                    continue
+                e = cut.end()
+                if (
+                    abs(e.x - curr.real) <= distance
+                    and abs(e.y - curr.imag) <= distance
+                ):
+                    d = abs(complex(e) - curr)
+                    if d <= distance:
+                        l = cut.length()
+                        if d < distance or (
+                            d == distance and backwards and l < closest_length
+                        ):
+                            closest = cut
+                            backwards = True
+                            if distance <= 1e-5:
+                                # Need to swap to next segment forward if it is coincident and permitted
+                                if cut.next and cut.next.start == cut.end:
+                                    closest = cut.next
+                                    backwards = False
+                                break  # Distance is zero, we cannot improve.
+                            distance = d
+                            closest_length = l
+
         if closest is None:
             break
         closest.permitted = False
@@ -1266,16 +1355,150 @@ def short_travel_cutcode(context: CutCode):
         if backwards:
             c.reverse()
         end = c.end()
-        curr = complex(end[0], end[1])
+        curr = complex(end)
         ordered.append(c)
+
+    ordered.start = context.start
+    if channel:
+        channel(
+            "Length at end: %f, optimized in %f seconds"
+            % (ordered.length_travel(True), time() - start_time)
+        )
     return ordered
 
 
-def inner_selection_cutcode(context: CutCode):
+def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
+    """
+    This implements 2-opt algorithm using numpy.
+
+    Skipping of the candidate code it does not perform inner first optimizations.
+    Due to the numpy requirement, doesn't work without numpy.
+    --
+    Uses code I wrote for vpype:
+    https://github.com/abey79/vpype/commit/7b1fad6bd0fcfc267473fdb8ba2166821c80d9cd
+
+    @param context:cutcode: cutcode to be optimized
+    @param passes: max passes to perform 2-opt
+    @param channel: Channel to send data about the optimization process.
+    @return:
+    """
+    try:
+        import numpy as np
+    except ImportError:
+        return
+    ordered = CutCode(context.flat())
+    start_time = time()
+    if channel:
+        channel("Executing 2-Opt Short-Travel optimization")
+        channel("Length at start: %f" % ordered.length_travel(True))
+
+    curr = context.start
+    if curr is None:
+        curr = 0
+    else:
+        curr = complex(curr)
+    current_pass = 1
+    min_value = -1e-10  # Do not swap on rounding error.
+    length = len(ordered)
+    endpoints = np.zeros((length, 4), dtype="complex")
+    # start, index, reverse-index, end
+    for i in range(length):
+        endpoints[i] = complex(ordered[i].start()), i, ~i, complex(ordered[i].end())
+    indexes0 = np.arange(0, length - 1)
+    indexes1 = indexes0 + 1
+
+    def log_progress(pos):
+        starts = endpoints[indexes0, -1]
+        ends = endpoints[indexes1, 0]
+        dists = np.abs(starts - ends)
+        dist_sum = dists.sum() + abs(curr - endpoints[0][0])
+        channel(
+            "optimize: laser-off distance is %f. %.02f%% done with pass %d/%d"
+            % (dist_sum, 100 * pos / length, current_pass, passes)
+        )
+
+    improved = True
+    while improved:
+        improved = False
+
+        first = endpoints[0][0]
+        cut_ends = endpoints[indexes0, -1]
+        cut_starts = endpoints[indexes1, 0]
+
+        # delta = np.abs(curr - first) + np.abs(first - cut_starts) - np.abs(cut_ends - cut_starts)
+        delta = (
+            np.abs(curr - cut_ends)
+            + np.abs(first - cut_starts)
+            - np.abs(cut_ends - cut_starts)
+            - np.abs(curr - first)
+        )
+        index = int(np.argmin(delta))
+        if delta[index] < min_value:
+            endpoints[: index + 1] = np.flip(
+                endpoints[: index + 1], (0, 1)
+            )  # top to bottom, and right to left flips.
+            improved = True
+            if channel:
+                log_progress(1)
+        for mid in range(1, length - 1):
+            idxs = np.arange(mid, length - 1)
+
+            mid_source = endpoints[mid - 1, -1]
+            mid_dest = endpoints[mid, 0]
+            cut_ends = endpoints[idxs, -1]
+            cut_starts = endpoints[idxs + 1, 0]
+            delta = (
+                np.abs(mid_source - cut_ends)
+                + np.abs(mid_dest - cut_starts)
+                - np.abs(cut_ends - cut_starts)
+                - np.abs(mid_source - mid_dest)
+            )
+            index = int(np.argmin(delta))
+            if delta[index] < min_value:
+                endpoints[mid : mid + index + 1] = np.flip(
+                    endpoints[mid : mid + index + 1], (0, 1)
+                )
+                improved = True
+                if channel:
+                    log_progress(mid)
+
+        last = endpoints[-1, -1]
+        cut_ends = endpoints[indexes0, -1]
+        cut_starts = endpoints[indexes1, 0]
+
+        delta = np.abs(cut_ends - last) - np.abs(cut_ends - cut_starts)
+        index = int(np.argmin(delta))
+        if delta[index] < min_value:
+            endpoints[index + 1 :] = np.flip(
+                endpoints[index + 1 :], (0, 1)
+            )  # top to bottom, and right to left flips.
+            improved = True
+            if channel:
+                log_progress(length)
+        if current_pass >= passes:
+            break
+        current_pass += 1
+
+    # Two-opt complete.
+    order = endpoints[:, 1].real.astype(int)
+    ordered.reordered(order)
+    if channel:
+        channel(
+            "Length at end: %f, optimized in %f seconds"
+            % (ordered.length_travel(True), time() - start_time)
+        )
+    return ordered
+
+
+def inner_selection_cutcode(context: CutCode, channel=None):
     """
     Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
     finding a valid solution.
     """
+    start_time = time()
+    if channel:
+        channel("Executing Inner Selection-Only optimization")
+        channel("Length at start: %f" % context.length_travel(True))
     for c in context.flat():
         c.permitted = True
     ordered = CutCode()
@@ -1286,4 +1509,9 @@ def inner_selection_cutcode(context: CutCode):
         ordered.extend(c)
         for o in ordered.flat():
             o.permitted = False
+    if channel:
+        channel(
+            "Length at end: %f, optimized in %f seconds"
+            % (ordered.length_travel(True), time() - start_time)
+        )
     return ordered

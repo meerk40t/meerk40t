@@ -363,9 +363,16 @@ class CutCode(CutGroup):
             yield COMMAND_PLOT, cutobject
         yield COMMAND_PLOT_START
 
-    def length_travel(self):
+    def length_travel(self, include_start=False):
         cutcode = list(self.flat())
+        if len(cutcode) == 0:
+            return 0
         distance = 0
+        if include_start:
+            if self.start is not None:
+                distance += abs(complex(self.start) - complex(cutcode[0].start()))
+            else:
+                distance += abs(0 - complex(cutcode[0].start()))
         for i in range(1, len(cutcode)):
             prev = cutcode[i - 1]
             curr = cutcode[i]
@@ -445,6 +452,28 @@ class CutCode(CutGroup):
                 x = nx
                 y = ny
         return cutcode
+
+    def reordered(self, order):
+        """
+        Reorder the cutcode based on the given order.
+
+        Negative numbers are taken to mean these are inverted with ~ and reversed.
+
+        @param order: order indexed of new positions
+        @return:
+        """
+        reordered = list()
+        for pos in order:
+            # pos = int(order[i])
+            if pos < 0:
+                pos = ~pos
+                self[pos].reverse()
+            try:
+                reordered.append(self[pos])
+            except IndexError:
+                pass
+        self.clear()
+        self.extend(reordered)
 
 
 class LineCut(CutObject):
