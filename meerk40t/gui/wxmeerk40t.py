@@ -3403,6 +3403,8 @@ class ShadowTree:
 
     def set_color(self, node, color=None):
         item = node.item
+        if item is None:
+            return
         tree = self.wxtree
         if color is None:
             tree.SetItemTextColour(item, None)
