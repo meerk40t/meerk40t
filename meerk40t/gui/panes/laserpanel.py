@@ -212,7 +212,7 @@ class LaserPanel(wx.Panel):
                     "planz copy preprocess validate blob preopt optimize spool%s\n" % s
                 )
             else:
-                self.context("planz copy preprocess validate blob spool%s\n % s")
+                self.context("planz copy preprocess validate blob spool%s\n" % s)
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
