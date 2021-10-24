@@ -220,12 +220,10 @@ class LaserPanel(wx.Panel):
 
     def on_button_update(self, event):  # wxGlade: LaserPanel.<event_handler>
         with wx.BusyInfo(_("Updating Plan...")):
-            plan = self.context.planner.get_or_make_plan("z")
-            if not plan.plan:
-                if self.checkbox_optimize.GetValue():
-                    self.context("planz clear copy preprocess validate blob preopt optimize\n")
-                else:
-                    self.context("planz clear copy preprocess validate blob\n")
+            if self.checkbox_optimize.GetValue():
+                self.context("planz clear copy preprocess validate blob preopt optimize\n")
+            else:
+                self.context("planz clear copy preprocess validate blob\n")
 
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         with wx.BusyInfo(_("Preparing simulation...")):
