@@ -254,3 +254,4 @@ class LaserPanel(wx.Panel):
             self.connected_driver,
             self.connected_output,
         ) = self.available_devices[index]
+        self.context("device activate %s\n" % str(index))
