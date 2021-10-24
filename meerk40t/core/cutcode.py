@@ -205,6 +205,8 @@ class CutObject:
             return -1
 
     def reverse(self):
+        if self.reversible():
+            raise ValueError("Attempting to reverse a cutsegment that does not permit that.")
         self.normal = not self.normal
 
     def generator(self):
@@ -252,6 +254,9 @@ class CutGroup(list, CutObject, ABC):
 
     def reversible(self):
         return False
+
+    def reverse(self):
+        pass
 
     def start(self):
         if len(self) == 0:
@@ -464,10 +469,12 @@ class CutCode(CutGroup):
         """
         reordered = list()
         for pos in order:
-            # pos = int(order[i])
-            if pos < 0:
-                pos = ~pos
-                self[pos].reverse()
+            try:
+                if pos < 0:
+                    pos = ~pos
+                    self[pos].reverse()
+            except ValueError:
+                pass  # May not reverse a segment that does not permit reversal.
             try:
                 reordered.append(self[pos])
             except IndexError:
@@ -618,6 +625,9 @@ class RasterCut(CutObject):
     def reversible(self):
         return False
 
+    def reverse(self):
+        pass
+
     def start(self):
         return Point(self.plot.initial_position_in_scene())
 
@@ -685,8 +695,8 @@ class RawCut(CutObject):
         except IndexError:
             pass
 
-    def reversible(self):
-        return False
+    def reverse(self):
+        self.plot = list(reversed(self.plot))
 
     def start(self):
         try:
