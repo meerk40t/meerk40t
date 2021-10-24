@@ -1,8 +1,29 @@
 import wx
+from wx import aui
 
 from meerk40t.gui.panes.jog import MILS_IN_MM
 
 _ = wx.GetTranslation
+
+
+def register_panel(window, context):
+    panel = JogDistancePanel(window, wx.ID_ANY, context=context)
+    pane = (
+        aui.AuiPaneInfo()
+        .Float()
+        .MinSize(190, 110)
+        .FloatingSize(190, 110)
+        .Hide()
+        .Caption(_("Distances"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("jogdist")
+    )
+    pane.dock_proportion = 110
+    pane.control = panel
+    pane.submenu = _("Navigation")
+
+    window.on_pane_add(pane)
+    context.register("pane/jogdist", pane)
 
 
 class JogDistancePanel(wx.Panel):

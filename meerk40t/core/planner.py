@@ -62,6 +62,23 @@ class CutPlan:
         self.original = list()
         self.commands = list()
 
+    def __str__(self):
+        parts = list()
+        parts.append(self.name)
+        if len(self.plan):
+            parts.append("#%d" % len(self.plan))
+            for p in self.plan:
+                try:
+                    parts.append(p.operation)
+                except AttributeError:
+                    try:
+                        parts.append(p.__name__)
+                    except AttributeError:
+                        parts.append(p.__class__.__name__)
+        else:
+            parts.append("-- Empty --")
+        return " ".join(parts)
+
     def execute(self):
         # Using copy of commands, so commands can add ops.
         cmds = self.commands[:]
@@ -402,6 +419,66 @@ class Planner(Modifier):
         self.context.setting(bool, "opt_rapid_between", False)
         self.context.setting(int, "opt_jog_minimum", 256)
         self.context.setting(int, "opt_jog_mode", 0)
+
+        self.context.registered['choices/optimize'] = [
+            {
+                "attr": "opt_reduce_travel",
+                "object": self.context,
+                "default": False,
+                "label": _("Reduce Travel Time"),
+                "tip": _(
+                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+                ),
+            },
+            {
+                "attr": "opt_merge_passes",
+                "object": self.context,
+                "default": False,
+                "label": _("Merge Passes"),
+                "tip": _("Combine passes into the same optimization"),
+            },
+            {
+                "attr": "opt_merge_ops",
+                "object": self.context,
+                "default": False,
+                "label": _("Merge Operations"),
+                "tip": _("Combine operations into the same optimization"),
+            },
+            {
+                "attr": "opt_inner_first",
+                "object": self.context,
+                "default": False,
+                "label": _("Cut Inner First"),
+                "tip": _(
+                    "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
+                ),
+            },
+            {
+                "attr": "opt_closed_distance",
+                "object": self.context,
+                "default": 15,
+                "type": int,
+                "label": _("Closed Distance"),
+                "tip": _("How close (mils) do endpoints need to be to count as closed?"),
+            },
+            {
+                "attr": "opt_rapid_between",
+                "object": self.context,
+                "default": False,
+                "label":  _("Rapid Moves Between Objects"),
+                "tip": _(
+                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+                ),
+            },
+            {
+                "attr": "opt_jog_minimum",
+                "object": self.context,
+                "default": 256,
+                "type": int,
+                "label": _("Minimum Jog Distance"),
+                "tip": _("Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."),
+            },
+        ]
 
         @self.context.console_argument(
             "alias", type=str, help=_("plan command name to alias")

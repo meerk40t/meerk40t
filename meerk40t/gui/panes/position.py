@@ -1,4 +1,5 @@
 import wx
+from wx import aui
 
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 from meerk40t.svgelements import Length
@@ -6,6 +7,24 @@ from meerk40t.svgelements import Length
 _ = wx.GetTranslation
 
 MILS_IN_MM = 39.3701
+
+
+def register_panel(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Left()
+        .MinSize(225, 110)
+        .FloatingSize(225, 110)
+        .Caption(_("Position"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("position")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = PositionPanel(window, wx.ID_ANY, context=context)
+
+    window.on_pane_add(pane)
+    context.register("pane/position", pane)
 
 
 class PositionPanel(wx.Panel):

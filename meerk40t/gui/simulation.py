@@ -24,18 +24,24 @@ MILS_IN_MM = 39.3701
 class Simulation(MWindow, Job):
     def __init__(self, *args, **kwds):
         super().__init__(706, 755, *args, **kwds)
-        if len(args) >= 4:
+        if len(args) > 3:
             plan_name = args[3]
         else:
-            plan_name = 0
+            plan_name = None
+        if len(args) > 4:
+            self.auto_clear = bool(int(args[4]))
+        else:
+            self.auto_clear = True
         Job.__init__(self)
         self.job_name = "simulate"
         self.run_main = True
         self.process = self.animate_sim
         self.interval = 0.1
-
-        self.plan_name = plan_name
-        cutplan = self.context.root.default_plan()
+        if plan_name:
+            cutplan = self.context.root.planner.get_or_make_plan(plan_name)
+        else:
+            cutplan = self.context.root.default_plan()
+        self.plan_name = cutplan.name
         self.operations = cutplan.plan
         self.cutcode = CutCode()
 
@@ -284,7 +290,8 @@ class Simulation(MWindow, Job):
 
     def window_close(self):
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
-        self.context("plan%s clear\n" % self.plan_name)
+        if self.auto_clear:
+            self.context("plan%s clear\n" % self.plan_name)
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False

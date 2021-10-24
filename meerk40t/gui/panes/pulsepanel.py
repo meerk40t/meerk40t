@@ -1,10 +1,31 @@
 import wx
+from wx import aui
 
 from meerk40t.gui.icons import icons8_laser_beam_52
 
 MILS_IN_MM = 39.3701
 
 _ = wx.GetTranslation
+
+
+def register_panel(window, context):
+    panel = PulsePanel(window, wx.ID_ANY, context=context)
+    pane = (
+        aui.AuiPaneInfo()
+        .Right()
+        .MinSize(75, 50)
+        .FloatingSize(150, 75)
+        .Hide()
+        .Caption(_("Pulse"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("pulse")
+    )
+    pane.dock_proportion = 150
+    pane.control = panel
+    pane.submenu = _("Navigation")
+
+    window.on_pane_add(pane)
+    context.register("pane/pulse", pane)
 
 
 class PulsePanel(wx.Panel):

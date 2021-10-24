@@ -1,4 +1,5 @@
 import wx
+from wx import aui
 
 from ...kernel import Job
 from ...svgelements import Color
@@ -14,6 +15,26 @@ from ..scene.scene import (
 _ = wx.GetTranslation
 
 CORNER_SIZE = 25
+
+
+def register_panel(window, context):
+    for index in range(5):
+        panel = CameraPanel(window, wx.ID_ANY, context=context, gui=window, index=index)
+        pane = (
+            aui.AuiPaneInfo()
+            .Left()
+            .MinSize(200, 150)
+            .FloatingSize(640, 480)
+            .Caption(_("Camera %d" % index))
+            .Name("camera%d" % index)
+            .CaptionVisible(not context.pane_lock)
+            .Hide()
+        )
+        pane.dock_proportion = 200
+        pane.control = panel
+        pane.submenu = _("Camera")
+        window.on_pane_add(pane)
+        context.register("pane/camera%d" % index, pane)
 
 
 class CameraPanel(wx.Panel, Job):

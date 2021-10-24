@@ -4441,9 +4441,11 @@ class Elemental(Modifier):
         # TRACE OPERATIONS
         # ==========
         @context.console_command(
-            "trace_hull", help=_("trace the convex hull of current elements")
+            "trace_hull",
+            help=_("trace the convex hull of current elements"),
+            input_type=(None, "elements"),
         )
-        def trace_trace_hull(command, channel, _, **kwgs):
+        def trace_trace_hull(command, channel, _, data=None, **kwgs):
             active = self.context.active
             try:
                 spooler, input_device, output = self.context.registered[
@@ -4452,8 +4454,10 @@ class Elemental(Modifier):
             except KeyError:
                 channel(_("No active device found."))
                 return
+            if data is None:
+                data = list(self.elems(emphasized=True))
             pts = []
-            for obj in self.elems(emphasized=True):
+            for obj in data:
                 if isinstance(obj, Path):
                     epath = abs(obj)
                     pts += [q for q in epath.as_points()]
