@@ -67,6 +67,14 @@ class CutPlan:
         parts.append(self.name)
         if len(self.plan):
             parts.append("#%d" % len(self.plan))
+            for p in self.plan:
+                try:
+                    parts.append(p.operation)
+                except AttributeError:
+                    try:
+                        parts.append(p.__name__)
+                    except AttributeError:
+                        parts.append(p.__class__.__name__)
         else:
             parts.append("-- Empty --")
         return " ".join(parts)
