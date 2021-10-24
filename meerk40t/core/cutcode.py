@@ -206,7 +206,9 @@ class CutObject:
 
     def reverse(self):
         if self.reversible():
-            raise ValueError("Attempting to reverse a cutsegment that does not permit that.")
+            raise ValueError(
+                "Attempting to reverse a cutsegment that does not permit that."
+            )
         self.normal = not self.normal
 
     def generator(self):
