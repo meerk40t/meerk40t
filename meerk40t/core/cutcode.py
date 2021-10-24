@@ -629,10 +629,14 @@ class RasterCut(CutObject):
         pass
 
     def start(self):
-        return Point(self.plot.initial_position_in_scene())
+        if self._start is None:
+            self._start = Point(self.plot.initial_position_in_scene())
+        return self._start
 
     def end(self):
-        return Point(self.plot.final_position_in_scene())
+        if self._end is None:
+            self._end = Point(self.plot.final_position_in_scene())
+        return self._end
 
     def lower(self):
         return self.plot.offset_x + self.height
