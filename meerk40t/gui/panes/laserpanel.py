@@ -121,7 +121,7 @@ class LaserPanel(wx.Panel):
         sizer_main.Add(sizer_control_misc, 0, wx.EXPAND, 0)
 
         self.button_outline = wx.Button(self, wx.ID_ANY, "Outline")
-        self.button_outline.SetToolTip("Outline the job")
+        self.button_outline.SetToolTip("Trace the outline the job")
         self.button_outline.SetBitmap(icons8_pentagon_50.GetBitmap())
         sizer_control_misc.Add(self.button_outline, 1, 0, 0)
 
