@@ -1394,7 +1394,10 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     if channel:
         channel("Executing 2-Opt Short-Travel optimization")
         channel("Length at start: %f" % ordered.length_travel(True))
-
+    if len(ordered) <= 1:
+        if channel:
+            channel("2-Opt: Not enough elements to optimize.")
+        return
     curr = context.start
     if curr is None:
         curr = 0
