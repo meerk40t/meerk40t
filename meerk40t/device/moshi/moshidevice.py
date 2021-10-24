@@ -1065,6 +1065,8 @@ class MoshiController:
         """
         Send packet to the CH341 connection.
         """
+        if self.connection is None:
+            raise ConnectionError
         self.connection.write(packet)
         self.update_packet(packet)
 
