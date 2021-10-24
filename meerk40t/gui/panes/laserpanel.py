@@ -32,7 +32,7 @@ def register_panel(window, context):
     )
     pane = (
         aui.AuiPaneInfo()
-        .Right()
+        .Left()
         .Layer(1)
         .MinSize(350, 350)
         .FloatingSize(400, 400)
@@ -157,7 +157,7 @@ class LaserPanel(wx.Panel):
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
 
-        self.text_plan = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_plan = wx.TextCtrl(self, wx.ID_ANY, _("--- Empty ---"), style=wx.TE_READONLY)
         sizer_source.Add(self.text_plan, 3, 0, 0)
 
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, "Optimize")
@@ -187,7 +187,10 @@ class LaserPanel(wx.Panel):
         plan_name, stage = message[0], message[1]
         if plan_name == "z":
             plan = self.context.planner.get_or_make_plan("z")
-            self.text_plan.SetLabel("%s: %s" % (str(stage), str(plan)))
+            if not len(plan.plan):
+                self.text_plan.SetLabel(_("--- Empty ---"))
+            else:
+                self.text_plan.SetLabel("%s: %s" % (str(stage), str(plan)))
 
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
