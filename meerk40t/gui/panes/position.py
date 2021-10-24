@@ -18,6 +18,7 @@ def register_panel(window, context):
         .Caption(_("Position"))
         .CaptionVisible(not context.pane_lock)
         .Name("position")
+        .Hide()
     )
     pane.dock_proportion = 225
     pane.control = PositionPanel(window, wx.ID_ANY, context=context)

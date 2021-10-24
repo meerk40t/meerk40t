@@ -23,7 +23,6 @@ def register_panel(window, context):
     notebook = wx.aui.AuiNotebook(
         window,
         -1,
-        size=(200, 150),
         style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
         | wx.aui.AUI_NB_SCROLL_BUTTONS
         | wx.aui.AUI_NB_TAB_SPLIT
@@ -33,16 +32,15 @@ def register_panel(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Left()
-        .Layer(1)
-        .MinSize(350, 350)
-        .FloatingSize(400, 400)
-        .MaxSize(500, 500)
+        .MinSize(325, 235)
+        .FloatingSize(400, 300)
+        .MaxSize(500, 400)
         .Caption(_("Laser"))
         .CaptionVisible(not context.pane_lock)
         .Name("laser")
     )
     pane.control = notebook
-    pane.dock_proportion = 400
+    pane.dock_proportion = 235
     notebook.AddPage(laser_panel, _("Laser"))
     notebook.AddPage(optimize_panel, _("Optimize"))
 
