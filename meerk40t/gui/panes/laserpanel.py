@@ -130,11 +130,13 @@ class LaserPanel(wx.Panel):
         self.button_save_file = wx.Button(self, wx.ID_ANY, "Save")
         self.button_save_file.SetToolTip("Save the job")
         self.button_save_file.SetBitmap(icons8_save_50.GetBitmap())
+        self.button_save_file.Enable(False)
         sizer_control_misc.Add(self.button_save_file, 1, 0, 0)
 
         self.button_load = wx.Button(self, wx.ID_ANY, "Load")
         self.button_load.SetToolTip("Load job")
         self.button_load.SetBitmap(icons8_opened_folder_50.GetBitmap())
+        self.button_load.Enable(False)
         sizer_control_misc.Add(self.button_load, 1, 0, 0)
 
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
