@@ -311,9 +311,16 @@ class CutPlan:
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds
-        image = make_raster(subitems, bounds, step=op.settings.raster_step)
+        step = op.settings.raster_step
+        if step == 0:
+            step = 1
+        image = make_raster(
+            subitems, bounds, step=step
+        )
         image_element = SVGImage(image=image)
+        image_element.transform.post_scale(step, step)
         image_element.transform.post_translate(xmin, ymin)
+        image_element.values["raster_step"] = step
         return image_element
 
     def make_image(self):
@@ -1388,13 +1395,16 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     try:
         import numpy as np
     except ImportError:
-        return
-    ordered = CutCode(context.flat())
+        return context
     start_time = time()
+    ordered = CutCode(context.flat())
     if channel:
         channel("Executing 2-Opt Short-Travel optimization")
         channel("Length at start: %f" % ordered.length_travel(True))
-
+    if len(ordered) <= 1:
+        if channel:
+            channel("2-Opt: Not enough elements to optimize.")
+        return ordered
     curr = context.start
     if curr is None:
         curr = 0

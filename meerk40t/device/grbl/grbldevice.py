@@ -174,7 +174,8 @@ class GRBLDriver(Driver):
         line.append("X%f" % (x / self.scale))
         line.append("Y%f" % (y / self.scale))
         if self.power_updated:
-            line.append("S%f" % self.settings.power)
+            if self.settings.power is not None:
+                line.append("S%f" % self.settings.power)
             self.power_updated = False
         if self.speed_updated:
             line.append("F%d" % int(self.feed_convert(self.settings.speed)))

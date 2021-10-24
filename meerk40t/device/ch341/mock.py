@@ -170,6 +170,6 @@ class Handler(CH341Handler):
                     )
                 )
                 connection.close()
-                return -1
+                return
         # No methods to match bus or address
         return connection

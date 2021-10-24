@@ -916,14 +916,24 @@ class Kernel:
         self.bootstrap("shutdown")
         _ = self.translation
 
-        self.process_queue()  # Notify listeners of state.
+        try:
+            self.process_queue()  # Notify listeners of state.
+        except RuntimeError:
+            pass  # Runtime error for gui objects in the process of being killed.
         # Suspend Signals
 
         def signal(code, path, *message):
             if channel:
                 channel(_("Suspended Signal: %s for %s" % (code, message)))
-
         self.signal = signal  # redefine signal function.
+
+        def console(code):
+            if channel:
+                for c in code.split("\n"):
+                    if c:
+                        channel(_("Suspended Command: %s" % c))
+        self.console = console  # redefine console signal
+
         self.process_queue()  # Process last events.
 
         # Close Modules

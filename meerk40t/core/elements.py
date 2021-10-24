@@ -3070,14 +3070,12 @@ class Elemental(Modifier):
             if bounds is None:
                 return
             if step <= 0:
-                step = 1.0
+                step = 1
             xmin, ymin, xmax, ymax = bounds
 
             image = make_raster(
                 [n.node for n in data],
                 bounds,
-                width=(xmax - xmin),
-                height=(ymax - ymin),
                 step=step,
             )
             image_element = SVGImage(image=image)
@@ -5087,14 +5085,12 @@ class Elemental(Modifier):
                 return
             step = float(node.settings.raster_step)
             if step == 0:
-                step = 1.0
+                step = 1
             xmin, ymin, xmax, ymax = bounds
 
             image = make_raster(
                 subitems,
                 bounds,
-                width=(xmax - xmin),
-                height=(ymax - ymin),
                 step=step,
             )
             image_element = SVGImage(image=image)
