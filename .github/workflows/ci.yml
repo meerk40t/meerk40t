@@ -91,7 +91,8 @@ jobs:
       run: |
         pip install wheel
         pip install wxPython==4.0.7-post2
-        pip install meerk40t-camera ezdxf opencv-python-headless
+        pip install meerk40t-camera ezdxf opencv-python-headless==4.5.3.56
+# 10/25/2021 0.7.3-beta4 ok, but 0.7.3 release lacked camera. Fixing opencv @4.5.3.56 until it's fixed
 
 # Compile bootloaders in order to reduce virus totals
 # PYTHONHASHSEED is an attempt to get deterministic builds for VirusTotal
