@@ -35,11 +35,11 @@ class Modifier:
     """
     A modifier alters the kernel and all contexts with additional functionality.
 
-    These are booted and shutdown as part of the kernel's lifecycle. The modifications to the kernel are not expected
-    to be undone. A modifiers can only be called once. They apply to all contexts.
+    These are attached prior to boot. These are booted and shutdown as part of the kernel's lifecycle.
+    The modifications to the kernel exist throughout the kernel's lifecycle. They apply to all contexts.
 
-    This usually is intended to be .<modifier> value for each context, eg. .device as a modifier
-    will
+    This usually is intended to be .<modifier> value for each context, eg. .device as a modifier will
+    give the current .device value.
     """
 
     def __init__(self, context: "Context", name: str = None, channel: "Channel" = None):
