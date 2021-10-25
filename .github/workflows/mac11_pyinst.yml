@@ -4,6 +4,8 @@ name: Build macOS 11 PyInstaller
 ##macos-11
 ##
 on:
+  release:
+    types: [published]
   workflow_dispatch:
   
 jobs:
@@ -59,6 +61,7 @@ jobs:
         python3.8 -m pip uninstall -y meerk40t[gui]
 
     - name: Build meerk40t
+      id: build
       run: |
         ##git clone https://github.com/meerk40t/meerk40t.git
         ##cd meerk40t
@@ -80,7 +83,10 @@ jobs:
         VERSION=$(python3.8 meerk40t.py -V)
         MKVERSION=$(echo $VERSION | cut -d" " -f 2)
         sed -i "" "s|0.0.0|$MKVERSION|g" setup_mac.py
-            
+
+        ## Export env variable to github actions scope to use in tag_name of upload release
+        echo "::set-output name=mkversion::$(echo $MKVERSION)"
+
         ## python3.8 setup_mac.py py2app --dylib-excludes /usr/local/lib/libssl.1.1.dylib,/usr/local/lib/libcrypto.1.1.dylib,/Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/site-packages/PIL/.dylibs/libfreetype.6.dylib,/Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/site-packages/PIL/.dylibs/liblzma.5.dylib --frameworks libusb-1.0.dylib
         mv meerk40t.py mk40t.py
         python3.8 -m PyInstaller --hidden-import meerk40t --windowed --noconfirm -i meerk40t.icns --add-data 'locale/:locale/' --name MeerK40t mk40t.py
@@ -130,6 +136,9 @@ jobs:
             ##Binary bundle CLI function check
         ##dist/MeerK40t.app/Contents/MacOS/MeerK40t -V
             ##I don't do this part; mv dist/meerk40t dist/MeerK40t-Ubuntu-Latest
+
+    - name: Directory contents
+      run: |
         cd ..
         ls
         cd ..
@@ -142,6 +151,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        tag_name: 0.7.3
+        tag_name: ${{ steps.build.outputs.mkversion }}
         files: |
           MeerK40t_PyInst_11.dmg
