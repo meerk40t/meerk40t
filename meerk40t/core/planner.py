@@ -1329,7 +1329,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
                         ):
                             closest = cut
                             backwards = False
-                            if distance <= 1e-5:
+                            if d <= 1e-5:
                                 break  # Distance is zero, we cannot improve.
                             distance = d
                             closest_length = l
@@ -1349,7 +1349,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
                         ):
                             closest = cut
                             backwards = True
-                            if distance <= 1e-5:
+                            if d <= 1e-5:
                                 # Need to swap to next segment forward if it is coincident and permitted
                                 if cut.next and cut.next.start == cut.end:
                                     closest = cut.next
