@@ -33,12 +33,13 @@ _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
 
 class Modifier:
     """
-    A modifier alters a context with additional functionality set during attachment and detachment.
+    A modifier alters the kernel and all contexts with additional functionality.
 
-    These are also booted and shutdown with the kernel's lifecycle. The modifications to the kernel are not expected
-    to be undone. Rather the detach should kill any secondary processes the modifier may possess.
+    These are booted and shutdown as part of the kernel's lifecycle. The modifications to the kernel are not expected
+    to be undone. A modifiers can only be called once. They apply to all contexts.
 
-    A modifiers can only be called once at any particular context.
+    This usually is intended to be .<modifier> value for each context, eg. .device as a modifier
+    will
     """
 
     def __init__(self, context: "Context", name: str = None, channel: "Channel" = None):
