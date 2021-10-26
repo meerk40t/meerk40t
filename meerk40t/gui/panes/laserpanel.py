@@ -63,35 +63,22 @@ class LaserPanel(wx.Panel):
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
         # Devices Initialize.
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
-        selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
-        try:
-            index = spools.index(selected_spooler)
-        except ValueError:
+        devices = self.context.devices
+        self.available_devices = devices.available_devices()
+        selected_device = self.context.devices.active
+        index = devices.aspects.index(selected_device)
+        device_names = [str(i) for i in self.context.devices.derivable()]
+        if index == -1:
             index = 0
-        self.connected_name = spools[index]
-        self.connected_spooler, self.connected_driver, self.connected_output = (
-            None,
-            None,
-            None,
-        )
-        try:
-            (
-                self.connected_spooler,
-                self.connected_driver,
-                self.connected_output,
-            ) = self.available_devices[index]
-        except IndexError:
+        self.connected_name = device_names[index]
+
+        if len(self.available_devices) == 0:
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
 
         self.combo_devices = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN | wx.CB_READONLY
+            self, wx.ID_ANY, choices=device_names, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_devices.SetToolTip(
             _("Select device from list of configured devices")
@@ -258,13 +245,8 @@ class LaserPanel(wx.Panel):
         self.context("window toggle DeviceManager\n")
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
+        devices = self.context.devices
         index = self.combo_devices.GetSelection()
-        (
-            self.connected_spooler,
-            self.connected_driver,
-            self.connected_output,
-        ) = self.available_devices[index]
-        self.context("device activate %s\n" % str(index))
+        device_names = devices.device_names()
+        selected_device = device_names[index]
+        self.context("device%s activate\n" % str(selected_device))

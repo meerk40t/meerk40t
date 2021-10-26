@@ -30,34 +30,22 @@ class SpoolerPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
-        selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
-        try:
-            index = spools.index(selected_spooler)
-        except ValueError:
+        devices = self.context.devices
+        self.available_devices = devices.available_devices()
+        selected_device = self.context.devices.active
+        index = devices.aspects.index(selected_device)
+        device_names = [str(i) for i in self.context.devices.derivable()]
+        if index == -1:
             index = 0
-        self.connected_name = spools[index]
-        self.connected_spooler, self.connected_driver, self.connected_output = (
-            None,
-            None,
-            None,
-        )
-        try:
-            (
-                self.connected_spooler,
-                self.connected_driver,
-                self.connected_output,
-            ) = self.available_devices[index]
-        except IndexError:
+        self.connected_name = device_names[index]
+
+        if len(self.available_devices) == 0:
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=device_names, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(index)
 

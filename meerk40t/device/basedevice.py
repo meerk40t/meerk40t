@@ -39,7 +39,7 @@ class Devices(Modifier):
             "device",
             regex=True,
             help=_("device"),
-            input_type=(None, "plan", "device"),
+            input_type=None,
             output_type="device",
         )
         def device_base(command, channel, _, data, remainder=None, **kwargs):
@@ -52,8 +52,8 @@ class Devices(Modifier):
                 except AttributeError:
                     channel(_("Active device not valid and no device specified"))
                     return
-            self.get_or_make_device(device_name)
-            return "device",
+            dev = self.get_or_make_device(device_name)
+            return "device", dev
 
         @kernel.console_command(
             "activate",
@@ -61,9 +61,9 @@ class Devices(Modifier):
             input_type="device",
             output_type="device",
         )
-        def device(channel, _, index, data, **kwargs):
+        def device(channel, _, data, **kwargs):
             self.set_active(data)
-            channel(_("Activated device %s at index %d." % (data.name, index)))
+            channel(_("Activated device %s." % data.name))
             return "device", data
 
         @kernel.console_command(
@@ -96,18 +96,27 @@ class Devices(Modifier):
         @kernel.console_command(
             "spool",
             help=_("spool <command>"),
-            input_type="device",
+            regex=True,
+            input_type=("device", "plan"),
             output_type="spooler",
         )
         def spool(
-                command, channel, _, data=None, remainder=None, **kwgs
+                command, channel, _, data=None, data_type=None, remainder=None, **kwgs
         ):
-            spooler = data.spooler
-            if data is not None:
+            if len(command) > 5:
+                device_name = command[5:]
+                self.set_active_by_name(device_name)
+            if data is not None and data_type == "plan":
+                plan = data
                 # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                    data[0].jobs(plan.plan)
+                    channel(_("Spooled Plan."))
+                    self.signal("plan", plan.name, 6)
+            else:
+                # device type
+                spooler = data.spooler
 
             if remainder is None:
                 channel(_("----------"))
@@ -419,13 +428,20 @@ class Devices(Modifier):
     def get_or_make_device(self, device_name):
         make = self.abs_path(device_name) in self.contexts
         device = self.derive(device_name)
-        driver_type = device.setting(str, "type", None)
+        device.name = device_name
+        driver_type = device.setting(str, "type", "lhystudios")
         autoboot = device.setting(bool, "boot", True)
 
         if make:
             device.spooler = Spooler(device, device_name)
             if driver_type is not None and autoboot:
-                driver_class = self.registered["driver/%f" % driver_type]
+                driver_class = self.registered["driver/%s" % driver_type]
                 driver = driver_class(self, device, driver_type)
                 self.add_aspect(driver)
         return device
+
+    def available_devices(self):
+        return list(self.derivable())
+
+    def device_names(self):
+        return [str(i) for i in self.derivable()]

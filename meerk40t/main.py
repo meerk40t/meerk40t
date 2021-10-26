@@ -276,10 +276,10 @@ def run():
     devices = kernel_root.devices
     if not devices.delegated:
         if args.device == "Moshi":
-            devices("device0 init moshi\n")
+            devices("device0\n") # TODO: INIT MOSHI
         else:
             # default device
-            devices("device0 init lhystudios\n")
+            devices("device0\n") # TODO: INIT LHY
 
     if args.verbose:
         kernel._start_debugging()
