@@ -31,48 +31,6 @@ _cmd_parse = [
 _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
 
 
-class Modifier:
-    """
-    A modifier alters the kernel and all contexts with additional functionality.
-
-    These are attached prior to boot. These are booted and shutdown as part of the kernel's lifecycle.
-    The modifications to the kernel exist throughout the kernel's lifecycle. They apply to all contexts.
-
-    This usually is intended to be .<modifier> value for each context, eg. .device as a modifier will
-    give the current .device value.
-    """
-
-    def __init__(self, context: "Context", name: str = None, channel: "Channel" = None):
-        self.context = context
-        self.name = name
-        self.state = STATE_INITIALIZE
-
-    def boot(self, *args, **kwargs):
-        """
-        Called when the context the modifier attached to is booted. This is typical for devices.
-        """
-        pass
-
-    def attach(self, *args, **kwargs):
-        """
-        Called by activate to attach module to device.
-
-        This should be overloaded when making a specific module type for reuse, where using init would require specific
-        subclassing, or for modules that are intended to expand the functionality of a device rather than compliment
-        that functionality.
-        """
-        pass
-
-    def detach(self, *args, **kwargs):
-        """
-        Called by deactivate to detach the module from device.
-
-        Devices are not expected to undo all changes they made. This would typically only happen on the closing of a
-        particular context.
-        """
-        pass
-
-
 class Module:
     """
     Modules are a generic lifecycle object. These are registered in the kernel as modules and when open() is called for
@@ -111,7 +69,7 @@ class Context:
     """
     Contexts serve as path-relevant snapshots of the kernel. These are are the primary interaction between the modules
     and the kernel. They permit getting other contexts of the kernel as well. This should serve as the primary interface
-    code between the kernel and the modules. And the location where modifiers are applied and modules are opened.
+    code between the kernel and the modules. And the location modules are opened, and to which modifiers are applied.
 
     Context store the persistent settings and settings from these locations are saved and loaded.
 
@@ -127,24 +85,12 @@ class Context:
         self._path = path
         self._state = STATE_UNKNOWN
         self.opened = {}
-        self.attached = {}
 
     def __str__(self):
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
         return self._kernel.console(data)
-
-    def boot(self, channel: "Channel" = None):
-        """
-        Boot calls all attached modifiers with the boot command.
-
-        :param channel:
-        :return:
-        """
-        for attached_name in self.attached:
-            attached = self.attached[attached_name]
-            attached.boot(channel=channel)
 
     # ==========
     # PATH INFORMATION
@@ -549,56 +495,6 @@ class Context:
         instance.finalize(*args, **kwargs)
 
     # ==========
-    # MODIFIERS
-    # ==========
-
-    def activate(self, registered_path: str, *args, **kwargs) -> "Modifier":
-        """
-        Activates a modifier at this context. activate() calls and attaches a modifier located at the given path
-        to be attached to this context.
-
-        The modifier is opened and attached at the current context. Unlike modules there is no instance_path and the
-        registered_path should be a singleton. It is expected that attached modifiers will modify the context.
-
-        :param registered_path: registered_path location of the modifier.
-        :param args: arguments to call the modifier
-        :param kwargs: kwargs to call the modifier
-        :return: Modifier object.
-        """
-        try:
-            find = self.attached[registered_path]
-            try:
-                find.restore(*args, **kwargs)
-            except AttributeError:
-                pass
-            return find
-        except KeyError:
-            pass
-        try:
-            open_object = self._kernel.registered[registered_path]
-        except KeyError:
-            raise ValueError("Modifier not found.")
-
-        instance = open_object(self, registered_path, *args, **kwargs)
-        self.attached[registered_path] = instance
-        instance.attach(self, *args, **kwargs)
-        return instance
-
-    def deactivate(self, instance_path: str, *args, **kwargs) -> None:
-        """
-        Deactivate a modifier attached to this context.
-        The detach() is called on the modifier and modifier is deleted from the list of attached. This should be called
-        during the shutdown of the Kernel. There is no expectation that modifiers actually remove their functions during
-        this call.
-
-        :param instance_path: Attached path location.
-        :return:
-        """
-        instance = self.attached[instance_path]
-        instance.detach(self, *args, **kwargs)
-        del self.attached[instance_path]
-
-    # ==========
     # DELEGATES via PATH.
     # ==========
 
@@ -660,6 +556,50 @@ class Context:
         return ConsoleFunction(self, data)
 
 
+class Modifier(Context):
+    """
+    A modifier alters the kernel and all contexts with additional functionality.
+    For settings purposes they are always located at '/<modifier>' path in the kernel.
+
+    These are attached prior to boot. These are booted and shutdown as part of the kernel's lifecycle.
+    The modifications to the kernel exist throughout the kernel's lifecycle. They apply to all contexts.
+
+    This usually is intended to be .<modifier> value for each context, eg. .device as a modifier will
+    point to the active value, for the registered entries. Any modifier with a non-None .active directly
+    modifiers the registered library of paths within the kernel.
+    """
+
+    def __init__(self, kernel: "Kernel", path: str):
+        super().__init__(kernel, path)
+
+        # All registered aspects of the modifier
+        self.active = None
+        self.aspects = []
+
+    def register(self, path: str, obj: Any) -> None:
+        """
+        Register an element at a given subpath, on the active profile.
+
+        :param path:
+        :param obj:
+        :return:
+        """
+        if self.active is not None:
+            if isinstance(self.active, dict):
+                self.active[path] = obj
+            else:
+                self.active.registered[path] = obj
+
+    def shutdown(self, *args, **kwargs):
+        """
+        Called by kernel during shutdown process for all modifiers.
+        @param args:
+        @param kwargs:
+        @return:
+        """
+        pass
+
+
 class Kernel:
     """
     The Kernel serves as the central hub of communication between different objects within the system. These are mapped
@@ -685,8 +625,8 @@ class Kernel:
         Version: The version number of the application.
         Profile: The name to save our data under (this is often the same as name except if we want unused setting).
         Path: The subpath all data should be saved under. This is a prefix of data to silently add to all data.
-        Config: This is the persistence object used to save. While official agnostic, it's actually strikingly identical
-                    to a wx.Config object.
+        Config: This is the persistence object used to save. While officially agnostic, it's actually strikingly
+        identical to a wx.Config object.
         """
         self.name = name
         self.profile = profile
@@ -696,6 +636,9 @@ class Kernel:
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
         self._plugins = []
+
+        # All established modifiers
+        self._modifiers = []
 
         # All established contexts.
         self.contexts = {}
@@ -747,6 +690,7 @@ class Kernel:
             self.set_config(config)
         else:
             self._config = None
+        self._booted = False
 
     def __str__(self):
         return "Kernel()"
@@ -855,6 +799,17 @@ class Kernel:
         if plugin not in self._plugins:
             self._plugins.append(plugin)
 
+    def add_modifier(self, modifier: Modifier):
+        """
+        Adds a reference to a modifier. This is initialized at kernel.boot.
+        @param modifier:
+        @return:
+        """
+        if self._booted:
+            raise RuntimeError("Attempting to add modifier after kernel boot")
+        if modifier not in self._modifiers:
+            self._modifiers.append(modifier)
+
     # ==========
     # LIFECYCLE PROCESSES
     # ==========
@@ -881,6 +836,8 @@ class Kernel:
         """
 
         self.command_boot()
+        for i, mod in enumerate(self._modifiers):
+            self._modifiers[i] = mod(self)
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
@@ -894,6 +851,7 @@ class Kernel:
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
             context.boot()
+        self._booted = True
 
     def shutdown(self):
         """
@@ -937,6 +895,25 @@ class Kernel:
 
         self.process_queue()  # Process last events.
 
+        # Shutdown Modifiers
+        for mod in self._modifiers:
+            try:
+                if channel:
+                    channel(
+                        _("Shutting down modifier: %s")
+                        % (str(mod))
+                    )
+                mod.shutdown()
+                for a in mod.aspects:
+                    if channel:
+                        channel(
+                            _("Shutting down modified aspect: %s")
+                            % (str(a))
+                        )
+                    a.shutdown()
+            except AttributeError:
+                pass
+
         # Close Modules
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
@@ -950,22 +927,6 @@ class Kernel:
                         % (str(context), opened_name, str(obj))
                     )
                 context.close(opened_name, channel=channel)
-
-        # Detach Modifiers
-        for context_name in list(self.contexts):
-            try:
-                context = self.contexts[context_name]
-            except KeyError:
-                # Context was deleted by the deactivation of another context.
-                continue
-            for attached_name in list(context.attached):
-                obj = context.attached[attached_name]
-                if channel:
-                    channel(
-                        _("%s: Detaching %s: %s")
-                        % (str(context), attached_name, str(obj))
-                    )
-                context.deactivate(attached_name, channel=channel)
 
         # Context Flush and Shutdown
         for context_name in list(self.contexts):
