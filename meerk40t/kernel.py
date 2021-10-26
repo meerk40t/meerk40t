@@ -843,9 +843,6 @@ class Kernel:
             conditional=lambda: not self._is_queue_processing,
         )
         self.bootstrap("boot")
-        for context_name in list(self.contexts):
-            context = self.contexts[context_name]
-            context.boot()
         self._booted = True
 
     def shutdown(self):
