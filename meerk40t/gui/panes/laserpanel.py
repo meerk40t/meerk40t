@@ -190,7 +190,7 @@ class LaserPanel(wx.Panel):
 
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
-        s = self.connected_spooler.name
+        s = self.connected_name
         if plan.plan:
             self.context("planz spool%s\n" % s)
         else:
@@ -245,8 +245,7 @@ class LaserPanel(wx.Panel):
         self.context("window toggle DeviceManager\n")
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
-        devices = self.context.devices
         index = self.combo_devices.GetSelection()
-        device_names = devices.device_names()
-        selected_device = device_names[index]
-        self.context("device%s activate\n" % str(selected_device))
+        device_names = self.context.devices.device_names()
+        self.connected_name = device_names[index]
+        self.context("device%s activate\n" % self.connected_name)

@@ -42,10 +42,10 @@ class Devices(Modifier):
             input_type=None,
             output_type="device",
         )
-        def device_base(command, channel, _, data, remainder=None, **kwargs):
+        def device_base(command, channel, _, remainder=None, **kwargs):
             if len(command) > 6:
                 device_name = command[6:]
-                self.set_active_by_name(device_name)
+                self.active = device_name
             else:
                 try:
                     device_name = self.active.name
@@ -62,7 +62,7 @@ class Devices(Modifier):
             output_type="device",
         )
         def device(channel, _, data, **kwargs):
-            self.set_active(data)
+            self.active = data
             channel(_("Activated device %s." % data.name))
             return "device", data
 
@@ -89,8 +89,7 @@ class Devices(Modifier):
             input_type="device",
         )
         def delete(channel, _, data, **kwargs):
-            if data.instance:
-                data.instance.shutdown()
+            self.shutdown_device(data)
             kernel.clear_persistent(data.path)
 
         @kernel.console_command(
@@ -105,7 +104,7 @@ class Devices(Modifier):
         ):
             if len(command) > 5:
                 device_name = command[5:]
-                self.set_active_by_name(device_name)
+                self.active = device_name
             if data is not None and data_type == "plan":
                 plan = data
                 # If plan data is in data, then we copy that and move on to next step.
@@ -114,9 +113,8 @@ class Devices(Modifier):
                     data[0].jobs(plan.plan)
                     channel(_("Spooled Plan."))
                     self.signal("plan", plan.name, 6)
-            else:
-                # device type
-                spooler = data.spooler
+                data = self.active
+            spooler = data.spooler
 
             if remainder is None:
                 channel(_("----------"))
@@ -426,19 +424,30 @@ class Devices(Modifier):
             self.get_or_make_device(str(i))
 
     def get_or_make_device(self, device_name):
-        make = self.abs_path(device_name) in self.contexts
         device = self.derive(device_name)
         device.name = device_name
         driver_type = device.setting(str, "type", "lhystudios")
         autoboot = device.setting(bool, "boot", True)
-
-        if make:
+        if not hasattr(device, "spooler"):
             device.spooler = Spooler(device, device_name)
-            if driver_type is not None and autoboot:
-                driver_class = self.registered["driver/%s" % driver_type]
-                driver = driver_class(self, device, driver_type)
-                self.add_aspect(driver)
+        if not hasattr(device, "instance"):
+            if driver_type is not None:
+                device.driver_class = self.registered["driver/%s" % driver_type]
+            else:
+                device.driver_class = None
+
+            if device.driver_class is not None and autoboot:
+                device.instance = device.driver_class(self, device, driver_type)
+            else:
+                device.instance = None
+        if device not in self.aspects:
+            self.add_aspect(device)
         return device
+
+    def shutdown_device(self, device):
+        device.shutdown()
+        device.instance.shutdown()
+        self.aspects.remove(self.aspects.index(device))
 
     def available_devices(self):
         return list(self.derivable())
