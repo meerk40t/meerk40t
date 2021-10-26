@@ -8,7 +8,7 @@ _ = wx.GetTranslation
 
 class About(MWindow):
     def __init__(self, *args, **kwargs):
-        super().__init__(603, 500, *args, **kwargs)
+        super().__init__(480, 360, *args, **kwargs)
 
         self.bitmap_button_1 = wx.BitmapButton(
             self, wx.ID_ANY, icon_meerk40t.GetBitmap()

@@ -13,7 +13,7 @@ _ = wx.GetTranslation
 
 class Settings(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(490, 331, *args, **kwds)
+        super().__init__(565, 327, *args, **kwds)
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
