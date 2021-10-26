@@ -8,11 +8,9 @@ from ..kernel import Modifier
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         _ = kernel.translation
-        kernel.register("modifier/Outputs", Outputs)
+        kernel.add_modifier(Outputs)
         kernel.register("output/file", FileOutput)
         kernel.register("output/tcp", TCPOutput)
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Outputs")
 
         @kernel.console_argument(
             "port", type=int, help=_("Port of TCPOutput to change.")
@@ -152,22 +150,151 @@ class TCPOutput:
 
 
 class Outputs(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+    def __init__(self, kernel, *args, **kwargs):
+        Modifier.__init__(self, kernel, "outputs")
+
+        _ = kernel._
+
+        @kernel.console_option("new", "n", type=str, help=_("new output type"))
+        @kernel.console_command(
+            "output",
+            help=_("output<?> <command>"),
+            regex=True,
+            input_type=(None, "input", "driver"),
+            output_type="output",
+        )
+        def output_base(
+            command, channel, _, data=None, new=None, remainder=None, **kwgs
+        ):
+            input_driver = None
+            if data is None:
+                if len(command) > 6:
+                    device_name = command[6:]
+                    self.active = device_name
+                else:
+                    device_name = self.active
+            else:
+                input_driver, device_name = data
+
+            output = self.get_or_make_output(device_name, new)
+
+            if output is None:
+                raise SyntaxError("No Output")
+
+            self.signal("output", device_name, 1)
+
+            if input_driver is not None:
+                input_driver.next = output
+                output.prev = input_driver
+
+                input_driver.output = output
+                output.input = input_driver
+            elif remainder is None:
+                pass
+
+            return "output", (output, device_name)
+
+        @kernel.console_argument("filename")
+        @kernel.console_command(
+            "outfile",
+            help=_("outfile filename"),
+            input_type=(None, "input", "driver"),
+            output_type="output",
+        )
+        def output_outfile(command, channel, _, data=None, filename=None, **kwgs):
+            if filename is None:
+                raise SyntaxError("No file specified.")
+            input_driver = None
+            if data is None:
+                if len(command) > 6:
+                    device_name = command[6:]
+                else:
+                    device_name = self.active
+            else:
+                input_driver, device_name = data
+
+            output = FileOutput(filename)
+            self.put_output(device_name, output)
+
+            if input_driver is not None:
+                input_driver.next = output
+                output.prev = input_driver
+
+                input_driver.output = output
+                output.input = input_driver
+            return "output", (output, device_name)
+
+        @kernel.console_argument("address", type=str, help=_("tcp address"))
+        @kernel.console_argument("port", type=int, help=_("tcp/ip port"))
+        @kernel.console_command(
+            "tcp",
+            help=_("network <address> <port>"),
+            input_type=(None, "input", "driver"),
+            output_type="output",
+        )
+        def output_tcp(command, channel, _, data=None, address=None, port=None, **kwgs):
+            if port is None:
+                raise SyntaxError(_("No address/port specified"))
+            input_driver = None
+            if data is None:
+                if len(command) > 3:
+                    device_name = command[3:]
+                else:
+                    device_name = self.active
+            else:
+                input_driver, device_name = data
+
+            output = TCPOutput(kernel, address, port)
+            self.put_output(device_name, output)
+
+            if input_driver is not None:
+                input_driver.next = output
+                output.prev = input_driver
+
+                input_driver.output = output
+                output.input = input_driver
+            return "output", (output, device_name)
+
+        @kernel.console_command(
+            "list",
+            help=_("output<?> list, list current outputs"),
+            input_type="output",
+            output_type="output",
+        )
+        def output_list(command, channel, _, data_type=None, data=None, **kwgs):
+            output, output_name = data
+            channel(_("----------"))
+            channel(_("Output:"))
+            for i, pname in enumerate(self._outputs):
+                channel("%d: %s" % (i, pname))
+            channel(_("----------"))
+            channel(_("Output %s: %s" % (output_name, str(output))))
+            channel(_("----------"))
+            return data_type, data
+
+        @kernel.console_command(
+            "type", help=_("list output types"), input_type="output"
+        )
+        def output_types(channel, _, **kwgs):
+            channel(_("----------"))
+            channel(_("Output types:"))
+            for i, name in enumerate(self.match("output/", suffix=True)):
+                channel("%d: %s" % (i + 1, name))
+            channel(_("----------"))
 
     def get_or_make_output(self, device_name, output_type=None, **kwargs):
         dev = "device/%s" % device_name
         try:
-            device = self.context.registered[dev]
+            device = self.registered[dev]
         except KeyError:
             device = [None, None, None]
-            self.context.registered[dev] = device
+            self.registered[dev] = device
         if device[2] is not None and output_type is None:
             return device[2]
         try:
-            for itype in self.context.match("output/%s" % output_type):
-                output_class = self.context.registered[itype]
-                output = output_class(self.context, device_name, **kwargs)
+            for itype in self.match("output/%s" % output_type):
+                output_class = self.registered[itype]
+                output = output_class(self, device_name, **kwargs)
                 device[2] = output
                 return output
         except (KeyError, IndexError):
@@ -187,137 +314,4 @@ class Outputs(Modifier):
             pass
 
     def default_output(self):
-        return self.get_or_make_output(self.context.root.active)
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.outputs = self
-
-        _ = self.context._
-
-        @context.console_option("new", "n", type=str, help=_("new output type"))
-        @context.console_command(
-            "output",
-            help=_("output<?> <command>"),
-            regex=True,
-            input_type=(None, "input", "driver"),
-            output_type="output",
-        )
-        def output_base(
-            command, channel, _, data=None, new=None, remainder=None, **kwgs
-        ):
-            input_driver = None
-            if data is None:
-                if len(command) > 6:
-                    device_name = command[6:]
-                    self.context.active = device_name
-                else:
-                    device_name = self.context.active
-            else:
-                input_driver, device_name = data
-
-            output = self.get_or_make_output(device_name, new)
-
-            if output is None:
-                raise SyntaxError("No Output")
-
-            self.context.signal("output", device_name, 1)
-
-            if input_driver is not None:
-                input_driver.next = output
-                output.prev = input_driver
-
-                input_driver.output = output
-                output.input = input_driver
-            elif remainder is None:
-                pass
-
-            return "output", (output, device_name)
-
-        @context.console_argument("filename")
-        @context.console_command(
-            "outfile",
-            help=_("outfile filename"),
-            input_type=(None, "input", "driver"),
-            output_type="output",
-        )
-        def output_outfile(command, channel, _, data=None, filename=None, **kwgs):
-            if filename is None:
-                raise SyntaxError("No file specified.")
-            input_driver = None
-            if data is None:
-                if len(command) > 6:
-                    device_name = command[6:]
-                else:
-                    device_name = self.context.active
-            else:
-                input_driver, device_name = data
-
-            output = FileOutput(filename)
-            self.put_output(device_name, output)
-
-            if input_driver is not None:
-                input_driver.next = output
-                output.prev = input_driver
-
-                input_driver.output = output
-                output.input = input_driver
-            return "output", (output, device_name)
-
-        @context.console_argument("address", type=str, help=_("tcp address"))
-        @context.console_argument("port", type=int, help=_("tcp/ip port"))
-        @context.console_command(
-            "tcp",
-            help=_("network <address> <port>"),
-            input_type=(None, "input", "driver"),
-            output_type="output",
-        )
-        def output_tcp(command, channel, _, data=None, address=None, port=None, **kwgs):
-            if port is None:
-                raise SyntaxError(_("No address/port specified"))
-            input_driver = None
-            if data is None:
-                if len(command) > 3:
-                    device_name = command[3:]
-                else:
-                    device_name = self.context.active
-            else:
-                input_driver, device_name = data
-
-            output = TCPOutput(context, address, port)
-            self.put_output(device_name, output)
-
-            if input_driver is not None:
-                input_driver.next = output
-                output.prev = input_driver
-
-                input_driver.output = output
-                output.input = input_driver
-            return "output", (output, device_name)
-
-        @self.context.console_command(
-            "list",
-            help=_("output<?> list, list current outputs"),
-            input_type="output",
-            output_type="output",
-        )
-        def output_list(command, channel, _, data_type=None, data=None, **kwgs):
-            output, output_name = data
-            channel(_("----------"))
-            channel(_("Output:"))
-            for i, pname in enumerate(self._outputs):
-                channel("%d: %s" % (i, pname))
-            channel(_("----------"))
-            channel(_("Output %s: %s" % (output_name, str(output))))
-            channel(_("----------"))
-            return data_type, data
-
-        @context.console_command(
-            "type", help=_("list output types"), input_type="output"
-        )
-        def output_types(channel, _, **kwgs):
-            channel(_("----------"))
-            channel(_("Output types:"))
-            for i, name in enumerate(context.match("output/", suffix=True)):
-                channel("%d: %s" % (i + 1, name))
-            channel(_("----------"))
+        return self.get_or_make_output(self.active.name)
