@@ -277,22 +277,6 @@ class Context:
             if not hasattr(self, k):
                 setattr(self, k, None)
 
-    # ==========
-    # CONTROL: Deprecated.
-    # ==========
-
-    def execute(self, control: str) -> None:
-        """
-        Execute the given control code relative to the path of this context.
-
-        :param control: Function to execute relative to the current position.
-        :return:
-        """
-        try:
-            funct = self._kernel.registered[self.abs_path("control/%s" % control)]
-        except KeyError:
-            return
-        funct()
 
     # ==========
     # DELEGATES
@@ -847,7 +831,6 @@ class Kernel:
             conditional=lambda: not self._is_queue_processing,
         )
         self.bootstrap("boot")
-        self.register("control/Debug Device", self._start_debugging)
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
             context.boot()
@@ -1977,6 +1960,10 @@ class Kernel:
                 else:
                     channel(command_name.split("/")[-1])
 
+        @self.console_command("kernel_debug_mode", hidden=True)
+        def debug_mode(**kwargs):
+            self._start_debugging()
+
         @self.console_command("loop", help=_("loop <command>"))
         def loop(args=tuple(), **kwargs):
             self._tick_command(" ".join(args))
@@ -2157,24 +2144,6 @@ class Kernel:
                 except AttributeError:
                     channel(_("Attempt failed. Produced an attribute error."))
             return
-
-        @self.console_option(
-            "path", "p", type=str, default="/", help=_("Path of variables to set.")
-        )
-        @self.console_command("control", help=_("control [<executive>]"))
-        def control(channel, _, path=None, remainder=None, **kwargs):
-            if remainder is None:
-                for control_name in self.root.match("[0-9]+/control", suffix=True):
-                    channel(control_name)
-                return
-
-            control_name = remainder
-            controls = list(self.match("%s/control/.*" % path, suffix=True))
-            if control_name in controls:
-                self.get_context(path).execute(control_name)
-                channel(_("Executed '%s'") % control_name)
-            else:
-                channel(_("Control '%s' not found.") % control_name)
 
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
