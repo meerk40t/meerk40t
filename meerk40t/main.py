@@ -135,10 +135,6 @@ def run():
 
     kernel.add_plugin(basedevice.plugin)
 
-    from .core import spoolers
-
-    kernel.add_plugin(spoolers.plugin)
-
     from .core import drivers
 
     kernel.add_plugin(drivers.plugin)

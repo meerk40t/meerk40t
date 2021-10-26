@@ -1,16 +1,5 @@
 from threading import Lock
 
-from meerk40t.svgelements import Length
-
-from ..device.lasercommandconstants import *
-from ..kernel import Modifier
-from .elements import MILS_IN_MM
-
-
-def plugin(kernel, lifecycle=None):
-    if lifecycle == "register":
-        pass
-
 
 class Spooler:
     """
