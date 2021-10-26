@@ -560,6 +560,10 @@ class Modifier(Context):
         self.active = None
         self.aspects = []
 
+    def add_aspect(self, aspect):
+        self.aspects.append(aspect)
+        self.active = aspect
+
     def register(self, path: str, obj: Any) -> None:
         """
         Register an element at a given subpath, on the active profile.

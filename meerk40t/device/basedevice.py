@@ -26,108 +26,44 @@ class Devices(Modifier):
     def __init__(self, kernel, *args, **kwargs):
         Modifier.__init__(self, kernel, "devices")
 
-        index = 0
-        for d in self.kernel.keylist(self.path):
-            suffix = d.split("/")[-1]
-            if not suffix.startswith("device_"):
+        for d in kernel.keylist(self.path, suffix=True):
+            if not d.startswith("dev_"):
                 continue
-            line = self.setting(str, suffix, None)
-            if line is not None and len(line):
-                self(line + "\n")
-                self.setting(str, "device_%d" % index, None)
-            index += 1
-        self._devices = index
-        kernel.root.setting(str, "active", "0")
+            line = self.setting(str, d, None)
+            if line is not None:
+                driver_class = kernel.registered["driver/%f" % line]
+                driver = driver_class(self)
+                self.add_aspect(driver)
 
         _ = kernel.translation
-        def device():
-            try:
-                return self.registered["device/%s" % self.active]
-            except (KeyError, AttributeError):
-                return None, None, None
 
-        @kernel.console_option(
-            "out",
-            "o",
-            action="store_true",
-            help=_("match on output rather than driver"),
-        )
         @kernel.console_command(
-            "dev",
-            help=_("delegate commands to currently selected device by input/driver"),
-            output_type="dev",
-            hidden=True,
+            "device",
+            regex=True,
+            help=_("device"),
+            output_type="device",
         )
-        def dev(channel, _, remainder=None, out=False, **kwargs):
-            try:
-                spooler, input_driver, output = self.registered[
-                    "device/%s" % self.active
-                ]
-            except (KeyError, ValueError):
-                return
+        def device(command, channel, _, remainder=None, **kwargs):
+            if len(command) > 6:
+                device_name = command[6:]
+            else:
+                try:
+                    device_name = self.active.name
+                except AttributeError:
+                    channel(_("Active device no valid."))
+                    return
+
+            device_context = self
             if remainder is None:
-                channel(
-                    _(
-                        "Device %s, %s, %s"
-                        % (str(spooler), str(input_driver), str(output))
-                    )
-                )
-            if out:
-                if output is not None:
-                    try:
-                        t = output.type + "out"
-                        return t, (spooler, input_driver, output)
-                    except AttributeError:
-                        pass
-            elif input_driver is not None:
-                try:
-                    t = input_driver.type
-                    return t, (spooler, input_driver, output)
-                except AttributeError:
-                    pass
-
-            return "dev", (spooler, input_driver, output)
-
-        @kernel.console_command(".+", regex=True, hidden=True)
-        def virtual_dev(command, remainder=None, **kwargs):
-            try:
-                spooler, input_driver, output = self.registered[
-                    "device/%s" % self.active
-                ]
-            except (KeyError, ValueError, AttributeError):
-                raise CommandMatchRejected(_("No device selected."))
-
-            if input_driver is not None:
-                try:
-                    t = input_driver.type
-                    match = "command/%s/%s$" % (str(t), command)
-                    match = "".join([i for i in match if i not in "(){}[]"])
-                    for command_name in self.match(match):
-                        command_funct = self.registered[command_name]
-                        if command_funct is not None:
-                            if remainder is not None:
-                                self(".dev %s %s\n" % (command, remainder))
-                            else:
-                                self(".dev %s\n" % command)
-                            return
-                except AttributeError:
-                    pass
-            if output is not None:
-                try:
-                    t = output.type + "out"
-                    match = "command/%s/%s" % (str(t), command)
-                    match = "".join([i for i in match if i not in "(){}[]"])
-                    for command_name in self.match(match):
-                        command_funct = self.registered[command_name]
-                        if command_funct is not None:
-                            if remainder is not None:
-                                self(".dev -o %s %s\n" % (command, remainder))
-                            else:
-                                self(".dev -o %s\n" % command)
-                            return
-                except AttributeError:
-                    pass
-            raise CommandMatchRejected(_("No matching command."))
+                channel(_("----------"))
+                channel(_("Devices:"))
+                index = 0
+                while hasattr(device_context, "device_%d" % index):
+                    line = getattr(device_context, "device_%d" % index)
+                    channel("%d: %s" % (index, line))
+                    index += 1
+                channel("----------")
+            return "device", (None, self.active)
 
         @kernel.console_argument(
             "index", type=int, help=_("Index of device being activated")
@@ -144,24 +80,6 @@ class Devices(Modifier):
             self.signal("active", index)
             channel(_("Activated device %s at index %d." % (self.active, index)))
             return "device", (None, str(index))
-
-        @kernel.console_command(
-            "device",
-            help=_("device"),
-            output_type="device",
-        )
-        def device(channel, _, remainder=None, **kwargs):
-            device_context = kernel.get_context("devices")
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Devices:"))
-                index = 0
-                while hasattr(device_context, "device_%d" % index):
-                    line = getattr(device_context, "device_%d" % index)
-                    channel("%d: %s" % (index, line))
-                    index += 1
-                channel("----------")
-            return "device", (None, self.active)
 
         @kernel.console_command(
             "list",
