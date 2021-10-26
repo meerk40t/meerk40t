@@ -3,57 +3,46 @@ from ..kernel import CommandMatchRejected, Modifier
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/BindAlias", BindAlias)
-    elif lifecycle == "boot":
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/BindAlias")
+        kernel.add_modifier(Bind)
+        kernel.add_modifier(Alias)
 
 
-class BindAlias(Modifier):
+class Bind(Modifier):
     """
-    Functionality to add BindAlias commands.
+    Functionality to add Bind commands.
     """
 
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+    def __init__(self, kernel, *args, **kwargs):
+        Modifier.__init__(self, kernel, "keymap")
         # Keymap/alias values
         self.keymap = {}
-        self.alias = {}
+        _ = self._
 
-    def attach(self, *a, **kwargs):
-        _ = self.context._
-        self.context.keymap = self.keymap
-        self.context.alias = self.alias
-        self.context.default_keymap = self.default_keymap
-        self.context.default_alias = self.default_alias
-
-        @self.context.console_command("bind", help=_("bind <key> <console command>"))
+        @kernel.console_command("bind", help=_("bind <key> <console command>"))
         def bind(command, channel, _, args=tuple(), **kwgs):
             """
             Binds a key to a given keyboard keystroke.
             """
-            context = self.context
-            _ = self.context._
             if len(args) == 0:
                 channel(_("----------"))
                 channel(_("Binds:"))
-                for i, key in enumerate(context.keymap):
-                    value = context.keymap[key]
+                for i, key in enumerate(self.keymap):
+                    value = self.keymap[key]
                     channel(_("%d: key %s %s") % (i, key.ljust(15), value))
                 channel(_("----------"))
             else:
                 key = args[0].lower()
                 if key == "default":
-                    context.keymap = dict()
-                    context.default_keymap()
+                    self.keymap = dict()
+                    self.default_keymap()
                     channel(_("Set default keymap."))
                     return
                 command_line = " ".join(args[1:])
                 f = command_line.find("bind")
                 if f == -1:  # If bind value has a bind, do not evaluate.
-                    spooler, input_driver, output = context.registered[
-                        "device/%s" % context.root.active
-                    ]
+                    spooler, input_driver, output = self.registered[
+                        "device/%s" % self.active
+                        ]
                     if "$x" in command_line:
                         try:
                             x = input_driver.current_x
@@ -67,93 +56,27 @@ class BindAlias(Modifier):
                             y = 0
                         command_line = command_line.replace("$y", str(y))
                 if len(command_line) != 0:
-                    context.keymap[key] = command_line
+                    self.keymap[key] = command_line
                 else:
                     try:
-                        del context.keymap[key]
+                        del self.keymap[key]
                         channel(_("Unbound %s") % key)
                     except KeyError:
                         pass
             return
 
-        @self.context.console_command(
-            "alias", help=_("alias <alias> <console commands[;console command]*>")
-        )
-        def alias(command, channel, _, args=tuple(), **kwgs):
-            context = self.context
-            _ = self.context._
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Aliases:"))
-                for i, key in enumerate(context.alias):
-                    value = context.alias[key]
-                    channel("%d: %s %s" % (i, key.ljust(15), value))
-                channel(_("----------"))
-            else:
-                key = args[0].lower()
-                if key == "default":
-                    context.alias = dict()
-                    context.default_alias()
-                    channel(_("Set default aliases."))
-                    return
-                value = " ".join(args[1:])
-                if value == "":
-                    del context.alias[args[0]]
-                else:
-                    context.alias[args[0]] = value
+        self.keymap.clear()
+        kernel.load_persistent_string_dict(self.path, self.keymap, suffix=True)
+        if not len(self.keymap):
+            self.default_keymap()
 
-        @self.context.console_command(".*", regex=True, hidden=True)
-        def alias_execute(command, **kwgs):
-            """
-            Alias execution code. Checks values for matching alias and utilizes that.
-
-            Aliases with ; delimit multipart commands
-            """
-            context = self.context
-            if command in self.alias:
-                aliased_command = self.alias[command]
-                for cmd in aliased_command.split(";"):
-                    context("%s\n" % cmd)
-            else:
-                raise CommandMatchRejected(_("This is not an alias."))
-
-    def boot(self, *args, **kwargs):
-        self.boot_keymap()
-        self.boot_alias()
-
-    def detach(self, *args, **kwargs):
-        self.save_keymap_alias()
-
-    def save_keymap_alias(self):
-        keys = self.context.derive("keymap")
-        alias = self.context.derive("alias")
-
-        keys.clear_persistent()
-        alias.clear_persistent()
+    def shutdown(self, *args, **kwargs):
+        self.clear_persistent()
 
         for key in self.keymap:
             if key is None or len(key) == 0:
                 continue
-            keys.write_persistent(key, self.keymap[key])
-
-        for key in self.alias:
-            if key is None or len(key) == 0:
-                continue
-            alias.write_persistent(key, self.alias[key])
-
-    def boot_keymap(self):
-        self.keymap.clear()
-        prefs = self.context.derive("keymap")
-        prefs.kernel.load_persistent_string_dict(prefs.path, self.keymap, suffix=True)
-        if not len(self.keymap):
-            self.default_keymap()
-
-    def boot_alias(self):
-        self.alias.clear()
-        prefs = self.context.derive("alias")
-        prefs.kernel.load_persistent_string_dict(prefs.path, self.alias, suffix=True)
-        if not len(self.alias):
-            self.default_alias()
+            self.write_persistent(key, self.keymap[key])
 
     def default_keymap(self):
         self.keymap["escape"] = "pause"
@@ -212,6 +135,69 @@ class BindAlias(Modifier):
         self.keymap["home"] = "home"
         self.keymap["control+z"] = "reset"
         self.keymap["control+alt+shift+escape"] = "reset_bind_alias"
+
+
+class Alias(Modifier):
+    """
+    Functionality to add Alias commands.
+    """
+
+    def __init__(self, kernel, *args, **kwargs):
+        Modifier.__init__(self, kernel, "alias")
+        # Keymap/alias values
+        self.alias = {}
+        _ = self._
+
+        @kernel.console_command(
+            "alias", help=_("alias <alias> <console commands[;console command]*>")
+        )
+        def alias(command, channel, _, args=tuple(), **kwgs):
+            if len(args) == 0:
+                channel(_("----------"))
+                channel(_("Aliases:"))
+                for i, key in enumerate(self.alias):
+                    value = self.alias[key]
+                    channel("%d: %s %s" % (i, key.ljust(15), value))
+                channel(_("----------"))
+            else:
+                key = args[0].lower()
+                if key == "default":
+                    self.alias = dict()
+                    self.default_alias()
+                    channel(_("Set default aliases."))
+                    return
+                value = " ".join(args[1:])
+                if value == "":
+                    del self.alias[args[0]]
+                else:
+                    self.alias[args[0]] = value
+
+        @kernel.console_command(".*", regex=True, hidden=True)
+        def alias_execute(command, **kwgs):
+            """
+            Alias execution code. Checks values for matching alias and utilizes that.
+
+            Aliases with ; delimit multipart commands
+            """
+            if command in self.alias:
+                aliased_command = self.alias[command]
+                for cmd in aliased_command.split(";"):
+                    self("%s\n" % cmd)
+            else:
+                raise CommandMatchRejected(_("This is not an alias."))
+
+        self.alias.clear()
+        kernel.load_persistent_string_dict(self.path, self.alias, suffix=True)
+        if not len(self.alias):
+            self.default_alias()
+
+    def shutdown(self, *args, **kwargs):
+        self.clear_persistent()
+
+        for key in self.alias:
+            if key is None or len(key) == 0:
+                continue
+            self.write_persistent(key, self.alias[key])
 
     def default_alias(self):
         self.alias["+scale_up"] = "loop scale 1.02"
