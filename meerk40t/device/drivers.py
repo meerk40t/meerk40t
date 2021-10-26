@@ -1,10 +1,9 @@
 import os
 import time
 
-from ..core.cutcode import LaserSettings
-from ..device.lasercommandconstants import *
-from ..kernel import Modifier
-from .plotplanner import PlotPlanner
+from meerk40t.core.cutcode import LaserSettings
+from meerk40t.device.lasercommandconstants import *
+from meerk40t.core.plotplanner import PlotPlanner
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
@@ -19,10 +18,6 @@ PLOT_SETTING = 128
 PLOT_AXIS = 64
 PLOT_DIRECTION = 32
 
-
-def plugin(kernel, lifecycle=None):
-    if lifecycle == "register":
-        kernel.add_modifier(Drivers)
 
 
 class Driver:
@@ -523,121 +518,3 @@ class Driver:
         else:
             self.set_prop(mask)
 
-
-class Drivers(Modifier):
-    def __init__(self, kernel, *args, **kwargs):
-        Modifier.__init__(self, kernel, "drivers")
-
-        _ = self._
-
-        @kernel.console_option("new", "n", type=str, help=_("new driver type"))
-        @kernel.console_command(
-            "driver",
-            help=_("driver<?> <command>"),
-            regex=True,
-            input_type=(None, "spooler"),
-            output_type="driver",
-        )
-        def driver_base(
-                command, channel, _, data=None, new=None, remainder=None, **kwgs
-        ):
-            spooler = None
-            if data is None:
-                if len(command) > 6:
-                    device_name = command[6:]
-                    self.active = device_name
-                else:
-                    device_name = self.active.name
-            else:
-                spooler, device_name = data
-
-            driver = self.get_or_make_driver(device_name, new)
-            if driver is None:
-                raise SyntaxError("No Driver.")
-
-            if spooler is not None:
-                try:
-                    driver.spooler = spooler
-                    spooler.next = driver
-                    driver.prev = spooler
-                except AttributeError:
-                    pass
-            elif remainder is None:
-                channel(_("----------"))
-                channel(_("Driver:"))
-                for i, drv in enumerate(self.match("device", suffix=True)):
-                    channel("%d: %s" % (i, drv))
-                channel(_("----------"))
-                channel(_("Driver %s:" % device_name))
-                channel(str(driver))
-                channel(_("----------"))
-            return "driver", (driver, device_name)
-
-        @kernel.console_command(
-            "list",
-            help=_("driver<?> list"),
-            input_type="driver",
-            output_type="driver",
-        )
-        def driver_list(command, channel, _, data_type=None, data=None, **kwgs):
-            driver_obj, name = data
-            channel(_("----------"))
-            channel(_("Driver:"))
-            for i, drv in enumerate(self.match("device", suffix=True)):
-                channel("%d: %s" % (i, drv))
-            channel(_("----------"))
-            channel(_("Driver %s:" % name))
-            channel(str(driver_obj))
-            channel(_("----------"))
-            return data_type, data
-
-        @kernel.console_command(
-            "type",
-            help=_("list driver types"),
-            input_type="driver",
-        )
-        def list_type(channel, _, **kwgs):
-            channel(_("----------"))
-            channel(_("Drivers permitted:"))
-            for i, name in enumerate(self.match("driver/", suffix=True)):
-                channel("%d: %s" % (i + 1, name))
-            channel(_("----------"))
-
-        @kernel.console_command(
-            "reset",
-            help=_("driver<?> reset"),
-            input_type="driver",
-            output_type="driver",
-        )
-        def driver_reset(data_type=None, data=None, **kwargs):
-            driver_obj, name = data
-            driver_obj.reset()
-            return data_type, data
-
-    def get_driver(self, driver_name, **kwargs):
-        dev = "device/%s" % driver_name
-        try:
-            return self.registered[dev][1]
-        except (KeyError, IndexError):
-            return None
-
-    def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
-        dev = "device/%s" % device_name
-        try:
-            device = self.registered[dev]
-        except KeyError:
-            device = [None, None, None]
-            self.registered[dev] = device
-        if device[1] is not None and driver_type is None:
-            return device[1]
-        try:
-            for itype in self.match("driver/%s" % driver_type):
-                driver_class = self.registered[itype]
-                driver = driver_class(self, device_name, **kwargs)
-                device[1] = driver
-                return driver
-        except (KeyError, IndexError):
-            return None
-
-    def default_driver(self):
-        return self.get_driver(self.active.name)

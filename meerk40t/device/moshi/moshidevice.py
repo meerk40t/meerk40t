@@ -1,7 +1,7 @@
 import threading
 import time
 
-from ...core.drivers import Driver
+from meerk40t.device.drivers import Driver
 from ...core.plotplanner import PlotPlanner
 from ...kernel import (
     STATE_ACTIVE,
@@ -20,13 +20,10 @@ from ..basedevice import (
     DRIVER_STATE_PROGRAM,
     DRIVER_STATE_RAPID,
     DRIVER_STATE_RASTER,
-    PLOT_AXIS,
-    PLOT_DIRECTION,
     PLOT_FINISH,
     PLOT_JOG,
     PLOT_LEFT_UPPER,
     PLOT_RAPID,
-    PLOT_RIGHT_LOWER,
     PLOT_SETTING,
     PLOT_START,
 )

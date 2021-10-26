@@ -3,7 +3,7 @@ import time
 
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ...core.drivers import Driver
+from meerk40t.device.drivers import Driver
 from ...kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -26,11 +26,8 @@ from ..basedevice import (
     PLOT_DIRECTION,
     PLOT_FINISH,
     PLOT_JOG,
-    PLOT_LEFT_UPPER,
     PLOT_RAPID,
-    PLOT_RIGHT_LOWER,
     PLOT_SETTING,
-    PLOT_START,
 )
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
