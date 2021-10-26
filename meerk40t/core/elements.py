@@ -6461,7 +6461,7 @@ class Elemental(Modifier):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
                     try:
-                        results = loader.load(self.context, self, pathname, **kwargs)
+                        results = loader.load(self, self, pathname, **kwargs)
                     except FileNotFoundError:
                         return False
                     except OSError:

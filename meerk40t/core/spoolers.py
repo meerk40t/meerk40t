@@ -137,6 +137,7 @@ class Spoolers(Modifier):
     def __init__(self, kernel):
         Modifier.__init__(self, kernel, "spoolers")
         _ = kernel.translation
+        self.default_spooler()
 
         @kernel.console_command(
             "spool",
@@ -228,10 +229,10 @@ class Spoolers(Modifier):
 
         def execute_absolute_position(position_x, position_y):
             x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=self.device.bed_width
+                ppi=1000.0, relative_length=self.root.bed_width
             )
             y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=self.device.bed_height
+                ppi=1000.0, relative_length=self.root.bed_height
             )
 
             def move():
@@ -243,10 +244,10 @@ class Spoolers(Modifier):
 
         def execute_relative_position(position_x, position_y):
             x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.root.bed_width * MILS_IN_MM
             )
             y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
+                ppi=1000.0, relative_length=self.root.bed_height * MILS_IN_MM
             )
 
             def move():
@@ -300,8 +301,8 @@ class Spoolers(Modifier):
             spooler, device_name = data
             if amount is None:
                 amount = Length("1mm")
-            max_bed_height = self.device.bed_height
-            max_bed_width = self.device.bed_width
+            max_bed_height = self.root.bed_height
+            max_bed_width = self.root.bed_width
             if not hasattr(spooler, "_dx"):
                 spooler._dx = 0
             if not hasattr(spooler, "_dy"):
@@ -404,8 +405,8 @@ class Spoolers(Modifier):
                 data = self.default_spooler(), self.active
             spooler, device_name = data
             if x is not None and y is not None:
-                x = x.value(ppi=1000.0, relative_length=self.device.bed_width)
-                y = y.value(ppi=1000.0, relative_length=self.device.bed_height)
+                x = x.value(ppi=1000.0, relative_length=self.root.bed_width)
+                y = y.value(ppi=1000.0, relative_length=self.root.bed_height)
                 spooler.job(COMMAND_HOME, int(x), int(y))
                 return "spooler", data
             spooler.job(COMMAND_HOME)

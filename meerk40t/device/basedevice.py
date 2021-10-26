@@ -1,4 +1,4 @@
-from meerk40t.kernel import CommandMatchRejected
+from meerk40t.kernel import CommandMatchRejected, Modifier
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
@@ -18,31 +18,33 @@ PLOT_RIGHT_LOWER = 1024
 
 
 def plugin(kernel, lifecycle=None):
-    if lifecycle == "boot":
-        device_context = kernel.get_context("devices")
+    if lifecycle == "register":
+        kernel.add_modifier(Devices)
+
+
+class Devices(Modifier):
+    def __init__(self, kernel, *args, **kwargs):
+        Modifier.__init__(self, kernel, "devices")
+
         index = 0
-        for d in device_context.kernel.keylist(device_context.path):
+        for d in self.kernel.keylist(self.path):
             suffix = d.split("/")[-1]
             if not suffix.startswith("device_"):
                 continue
-            line = device_context.setting(str, suffix, None)
+            line = self.setting(str, suffix, None)
             if line is not None and len(line):
-                device_context(line + "\n")
-                device_context.setting(str, "device_%d" % index, None)
+                self(line + "\n")
+                self.setting(str, "device_%d" % index, None)
             index += 1
-        device_context._devices = index
+        self._devices = index
         kernel.root.setting(str, "active", "0")
-    elif lifecycle == "register":
-        _ = kernel.translation
-        root = kernel.root
 
+        _ = kernel.translation
         def device():
             try:
-                return root.registered["device/%s" % root.active]
+                return self.registered["device/%s" % self.active]
             except (KeyError, AttributeError):
                 return None, None, None
-
-        root.device = device
 
         @kernel.console_option(
             "out",
@@ -58,8 +60,8 @@ def plugin(kernel, lifecycle=None):
         )
         def dev(channel, _, remainder=None, out=False, **kwargs):
             try:
-                spooler, input_driver, output = root.registered[
-                    "device/%s" % root.active
+                spooler, input_driver, output = self.registered[
+                    "device/%s" % self.active
                 ]
             except (KeyError, ValueError):
                 return
@@ -89,8 +91,8 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(".+", regex=True, hidden=True)
         def virtual_dev(command, remainder=None, **kwargs):
             try:
-                spooler, input_driver, output = root.registered[
-                    "device/%s" % root.active
+                spooler, input_driver, output = self.registered[
+                    "device/%s" % self.active
                 ]
             except (KeyError, ValueError, AttributeError):
                 raise CommandMatchRejected(_("No device selected."))
@@ -100,13 +102,13 @@ def plugin(kernel, lifecycle=None):
                     t = input_driver.type
                     match = "command/%s/%s$" % (str(t), command)
                     match = "".join([i for i in match if i not in "(){}[]"])
-                    for command_name in root.match(match):
-                        command_funct = root.registered[command_name]
+                    for command_name in self.match(match):
+                        command_funct = self.registered[command_name]
                         if command_funct is not None:
                             if remainder is not None:
-                                root(".dev %s %s\n" % (command, remainder))
+                                self(".dev %s %s\n" % (command, remainder))
                             else:
-                                root(".dev %s\n" % command)
+                                self(".dev %s\n" % command)
                             return
                 except AttributeError:
                     pass
@@ -115,13 +117,13 @@ def plugin(kernel, lifecycle=None):
                     t = output.type + "out"
                     match = "command/%s/%s" % (str(t), command)
                     match = "".join([i for i in match if i not in "(){}[]"])
-                    for command_name in root.match(match):
-                        command_funct = root.registered[command_name]
+                    for command_name in self.match(match):
+                        command_funct = self.registered[command_name]
                         if command_funct is not None:
                             if remainder is not None:
-                                root(".dev -o %s %s\n" % (command, remainder))
+                                self(".dev -o %s %s\n" % (command, remainder))
                             else:
-                                root(".dev -o %s\n" % command)
+                                self(".dev -o %s\n" % command)
                             return
                 except AttributeError:
                     pass
@@ -138,9 +140,9 @@ def plugin(kernel, lifecycle=None):
         )
         def device(channel, _, index, **kwargs):
             spools = [str(i) for i in kernel.root.match("device", suffix=True)]
-            root.active = spools[index]
-            root.signal("active", index)
-            channel(_("Activated device %s at index %d." % (root.active, index)))
+            self.active = spools[index]
+            self.signal("active", index)
+            channel(_("Activated device %s at index %d." % (self.active, index)))
             return "device", (None, str(index))
 
         @kernel.console_command(
@@ -159,7 +161,7 @@ def plugin(kernel, lifecycle=None):
                     channel("%d: %s" % (index, line))
                     index += 1
                 channel("----------")
-            return "device", (None, root.active)
+            return "device", (None, self.active)
 
         @kernel.console_command(
             "list",
@@ -192,7 +194,7 @@ def plugin(kernel, lifecycle=None):
             device_context = kernel.get_context("devices")
             try:
                 setattr(device_context, "device_%s" % device_name, "")
-                device = root.registered["device/%s" % device_name]
+                device = self.registered["device/%s" % device_name]
                 if device is not None:
                     spooler, driver, output = device
                     if driver is not None:
@@ -205,6 +207,6 @@ def plugin(kernel, lifecycle=None):
                             output.finalize()
                         except AttributeError:
                             pass
-                root.registered["device/%s" % device_name] = [None, None, None]
+                self.registered["device/%s" % device_name] = [None, None, None]
             except (KeyError, ValueError):
                 raise SyntaxError(_("Invalid device-string index."))

@@ -613,7 +613,7 @@ class ExecuteJob(MWindow):
         node_index = self.list_operations.GetSelection()
         if node_index == -1:
             return
-        cutplan = self.context.default_plan()
+        cutplan = self.context.planner.default_plan()
         obj = cutplan.plan[node_index]
         if isinstance(obj, LaserOperation):
             self.context.open("window/OperationProperty", self, node=obj)
@@ -629,13 +629,13 @@ class ExecuteJob(MWindow):
         if self.stage == 0:
             with wx.BusyInfo(_("Preprocessing...")):
                 self.context("plan%s copy preprocess\n" % self.plan_name)
-                cutplan = self.context.default_plan()
+                cutplan = self.context.planner.default_plan()
                 if len(cutplan.commands) == 0:
                     self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 1:
             with wx.BusyInfo(_("Determining validity of operations...")):
                 self.context("plan%s preprocess\n" % self.plan_name)
-                cutplan = self.context.default_plan()
+                cutplan = self.context.planner.default_plan()
                 if len(cutplan.commands) == 0:
                     self.context("plan%s validate\n" % self.plan_name)
         elif self.stage == 2:
@@ -708,7 +708,7 @@ class ExecuteJob(MWindow):
         # self.check_reduce_direction_changes.SetValue(self.context.opt_reduce_directions)
         # self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
 
-        cutplan = self.context.default_plan()
+        cutplan = self.context.planner.default_plan()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
             self.context("plan%s copy preprocess\n" % self.plan_name)
 
@@ -741,7 +741,7 @@ class ExecuteJob(MWindow):
 
         self.list_operations.Clear()
         self.list_command.Clear()
-        cutplan = self.context.default_plan()
+        cutplan = self.context.planner.default_plan()
         if cutplan.plan is not None and len(cutplan.plan) != 0:
             self.list_operations.InsertItems([name_str(e) for e in cutplan.plan], 0)
         if cutplan.commands is not None and len(cutplan.commands) != 0:

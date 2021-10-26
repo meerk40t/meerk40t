@@ -2333,7 +2333,7 @@ class MeerK40t(MWindow):
         """
         Loads an open dialog at given filename to load data.
         """
-        files = self.context.load_types()
+        files = self.context.elements.load_types()
         default_file = os.path.basename(filename)
         default_dir = os.path.dirname(filename)
 
@@ -2458,7 +2458,7 @@ class MeerK40t(MWindow):
         with wx.BusyInfo(_("Loading File...")):
             n = self.context.elements.note
             try:
-                results = self.context.load(
+                results = self.context.elements.load(
                     pathname,
                     channel=self.context.channel("load"),
                     svg_ppi=self.context.svg_ppi,
@@ -2747,7 +2747,7 @@ class MeerK40t(MWindow):
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
-        files = self.context.load_types()
+        files = self.context.elements.load_types()
         with wx.FileDialog(
             self, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
         ) as fileDialog:
@@ -2767,10 +2767,10 @@ class MeerK40t(MWindow):
             self.on_click_save_as(event)
         else:
             self.save_recent(self.working_file)
-            self.context.save(self.working_file)
+            self.context.elements.save(self.working_file)
 
     def on_click_save_as(self, event=None):
-        files = self.context.save_types()
+        files = self.context.elements.save_types()
         with wx.FileDialog(
             self,
             _("Save Project"),
@@ -2782,7 +2782,7 @@ class MeerK40t(MWindow):
             pathname = fileDialog.GetPath()
             if not pathname.lower().endswith(".svg"):
                 pathname += ".svg"
-            self.context.save(pathname)
+            self.context.elements.save(pathname)
             self.working_file = pathname
             self.save_recent(self.working_file)
 
@@ -3972,7 +3972,7 @@ class wxMeerK40t(wx.App, Module):
     def MacOpenFile(self, filename):
         try:
             if self.context is not None:
-                self.context.load(os.path.realpath(filename))
+                self.context.elements.load(os.path.realpath(filename))
         except AttributeError:
             pass
 
@@ -3980,7 +3980,7 @@ class wxMeerK40t(wx.App, Module):
         try:
             if self.context is not None:
                 for filename in filenames:
-                    self.context.load(os.path.realpath(filename))
+                    self.context.elements.load(os.path.realpath(filename))
         except AttributeError:
             pass
 
