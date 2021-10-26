@@ -10,35 +10,24 @@ class JobSpooler(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(673, 456, *args, **kwds)
 
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
+        devices = self.context.devices
+        self.available_devices = devices.available_devices()
+        selected_spooler = devices.active.name
 
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
-        selected_spooler = self.context.root.active
         if len(args) >= 4 and args[3]:
             selected_spooler = args[3]
+
+        spools = devices.device_names()
         try:
             index = spools.index(selected_spooler)
         except ValueError:
             index = 0
         self.connected_name = spools[index]
-        self.connected_spooler, self.connected_driver, self.connected_output = (
-            None,
-            None,
-            None,
-        )
-        try:
-            (
-                self.connected_spooler,
-                self.connected_driver,
-                self.connected_output,
-            ) = self.available_devices[index]
-        except IndexError:
+        if len(self.available_devices) == 0:
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
@@ -135,15 +124,8 @@ class JobSpooler(MWindow):
         # end wxGlade
 
     def on_combo_device(self, event=None):  # wxGlade: Spooler.<event_handler>
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
         index = self.combo_device.GetSelection()
-        (
-            self.connected_spooler,
-            self.connected_driver,
-            self.connected_output,
-        ) = self.available_devices[index]
+        self.context.devices.active = index
         self.update_spooler = True
         self.refresh_spooler_list()
 
@@ -152,7 +134,7 @@ class JobSpooler(MWindow):
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         index = event.Index
-        spooler = self.connected_spooler
+        spooler = self.context.devices.active.spooler
         try:
             element = spooler.queue[index]
         except IndexError:
@@ -193,7 +175,7 @@ class JobSpooler(MWindow):
         except RuntimeError:
             return
 
-        spooler = self.connected_spooler
+        spooler = self.context.devices.active.spooler
         if len(spooler.queue) > 0:
             # This should actually process and update the queue items.
             for i, e in enumerate(spooler.queue):
@@ -229,7 +211,7 @@ class JobSpooler(MWindow):
 
     def on_tree_popup_clear(self, element=None):
         def delete(event=None):
-            spooler = self.connected_spooler
+            spooler = self.context.devices.active.spooler
             spooler.clear_queue()
             self.refresh_spooler_list()
 
@@ -237,7 +219,7 @@ class JobSpooler(MWindow):
 
     def on_tree_popup_delete(self, element, index=None):
         def delete(event=None):
-            spooler = self.connected_spooler
+            spooler = self.context.devices.active.spooler
             spooler.remove(element, index)
             self.refresh_spooler_list()
 

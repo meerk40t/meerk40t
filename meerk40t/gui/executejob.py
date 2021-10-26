@@ -203,34 +203,19 @@ class ExecuteJob(MWindow):
         # ==========
         # MENUBAR END
         # ==========
-
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
-        selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        devices = self.context.devices
+        self.available_devices = devices.available_devices()
+        selected_spooler = devices.active.name
+        spools = devices.device_names()
         try:
             index = spools.index(selected_spooler)
         except ValueError:
             index = 0
         self.connected_name = spools[index]
-        self.connected_spooler, self.connected_driver, self.connected_output = (
-            None,
-            None,
-            None,
-        )
-        try:
-            (
-                self.connected_spooler,
-                self.connected_driver,
-                self.connected_output,
-            ) = self.available_devices[index]
-        except IndexError:
+        if len(self.available_devices) == 0:
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
-
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
@@ -593,18 +578,8 @@ class ExecuteJob(MWindow):
         self.update_gui()
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
         index = self.combo_device.GetSelection()
-        (
-            self.connected_spooler,
-            self.connected_driver,
-            self.connected_output,
-        ) = self.available_devices[index]
-        self.connected_name = [
-            str(i) for i in self.context.match("device", suffix=True)
-        ][index]
+        self.context.devices.active = index
 
     def on_listbox_operation_click(self, event):  # wxGlade: JobInfo.<event_handler>
         event.Skip()
