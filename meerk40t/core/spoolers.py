@@ -9,9 +9,7 @@ from .elements import MILS_IN_MM
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/Spoolers", Spoolers)
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Spoolers")
+        kernel.add_modifier(Spoolers)
 
 
 class Spooler:
@@ -136,40 +134,11 @@ class Spooler:
 
 
 class Spoolers(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
-
-    def get_or_make_spooler(self, device_name):
-        dev = "device/%s" % device_name
-        try:
-            device = self.context.registered[dev]
-        except KeyError:
-            device = [None, None, None]
-            self.context.registered[dev] = device
-        if device[0] is None:
-            device[0] = Spooler(self.context, device_name)
-        return device[0]
-
-    def default_spooler(self):
-        return self.get_or_make_spooler(self.context.root.active)
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.spoolers = self
-        bed_dim = context.root
-        self.context.root.setting(str, "active", "0")
-
-        kernel = self.context._kernel
+    def __init__(self, kernel):
+        Modifier.__init__(self, kernel, "spoolers")
         _ = kernel.translation
 
-        @context.console_option(
-            "register",
-            "r",
-            type=bool,
-            action="store_true",
-            help=_("Register this device"),
-        )
-        @context.console_command(
+        @kernel.console_command(
             "spool",
             help=_("spool<?> <command>"),
             regex=True,
@@ -177,39 +146,24 @@ class Spoolers(Modifier):
             output_type="spooler",
         )
         def spool(
-            command, channel, _, data=None, register=False, remainder=None, **kwgs
+                command, channel, _, data=None, remainder=None, **kwgs
         ):
-            root = self.context.root
             if len(command) > 5:
                 device_name = command[5:]
             else:
-                if register:
-                    device_context = kernel.get_context("devices")
-                    index = 0
-                    while hasattr(device_context, "device_%d" % index):
-                        index += 1
-                    device_name = str(index)
-                else:
-                    device_name = root.active
-            if register:
-                device_context = kernel.get_context("devices")
-                setattr(
-                    device_context,
-                    "device_%s" % device_name,
-                    ("spool%s -r " % device_name) + remainder + "\n",
-                )
+                device_name = self.active.name
 
             spooler = self.get_or_make_spooler(device_name)
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
                 spooler.jobs(data.plan)
                 channel(_("Spooled Plan."))
-                self.context.signal("plan", data.name, 6)
+                self.signal("plan", data.name, 6)
 
             if remainder is None:
                 channel(_("----------"))
                 channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.context.match("device", True)):
+                for d, d_name in enumerate(self.match("device", True)):
                     channel("%d: %s" % (d, d_name))
                 channel(_("----------"))
                 channel(_("Spooler %s:" % device_name))
@@ -219,7 +173,7 @@ class Spoolers(Modifier):
 
             return "spooler", (spooler, device_name)
 
-        @context.console_command(
+        @kernel.console_command(
             "list",
             help=_("spool<?> list"),
             input_type="spooler",
@@ -229,7 +183,7 @@ class Spoolers(Modifier):
             spooler, device_name = data
             channel(_("----------"))
             channel(_("Spoolers:"))
-            for d, d_name in enumerate(self.context.match("device", True)):
+            for d, d_name in enumerate(self.match("device", True)):
                 channel("%d: %s" % (d, d_name))
             channel(_("----------"))
             channel(_("Spooler %s:" % device_name))
@@ -238,22 +192,22 @@ class Spoolers(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
-        @context.console_command(
+        @kernel.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
+        @kernel.console_command(
             "send",
             help=_("send a plan-command to the spooler"),
             input_type="spooler",
             output_type="spooler",
         )
         def spooler_send(
-            command, channel, _, data_type=None, op=None, data=None, **kwgs
+                command, channel, _, data_type=None, op=None, data=None, **kwgs
         ):
             spooler, device_name = data
             if op is None:
                 raise SyntaxError
             try:
-                for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
+                for command_name in self.match("plan/%s" % op):
+                    plan_command = self.registered[command_name]
                     spooler.job(plan_command)
                     return data_type, data
             except (KeyError, IndexError):
@@ -261,7 +215,7 @@ class Spoolers(Modifier):
             channel(_("No plan command found."))
             return data_type, data
 
-        @context.console_command(
+        @kernel.console_command(
             "clear",
             help=_("spooler<?> clear"),
             input_type="spooler",
@@ -274,10 +228,10 @@ class Spoolers(Modifier):
 
         def execute_absolute_position(position_x, position_y):
             x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.device.bed_width
             )
             y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                ppi=1000.0, relative_length=self.device.bed_height
             )
 
             def move():
@@ -289,10 +243,10 @@ class Spoolers(Modifier):
 
         def execute_relative_position(position_x, position_y):
             x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
             )
             y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
             )
 
             def move():
@@ -303,7 +257,7 @@ class Spoolers(Modifier):
 
             return move
 
-        @context.console_command(
+        @kernel.console_command(
             "+laser",
             hidden=True,
             input_type=("spooler", None),
@@ -312,12 +266,12 @@ class Spoolers(Modifier):
         )
         def plus_laser(data, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.context.root.active
+                data = self.default_spooler(), self.active
             spooler, device_name = data
             spooler.job(COMMAND_LASER_ON)
             return "spooler", data
 
-        @context.console_command(
+        @kernel.console_command(
             "-laser",
             hidden=True,
             input_type=("spooler", None),
@@ -326,15 +280,15 @@ class Spoolers(Modifier):
         )
         def minus_laser(data, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.context.root.active
+                data = self.default_spooler(), self.active
             spooler, device_name = data
             spooler.job(COMMAND_LASER_OFF)
             return "spooler", data
 
-        @context.console_argument(
+        @kernel.console_argument(
             "amount", type=Length, help=_("amount to move in the set direction.")
         )
-        @context.console_command(
+        @kernel.console_command(
             ("left", "right", "up", "down"),
             input_type=("spooler", None),
             output_type="spooler",
@@ -342,12 +296,12 @@ class Spoolers(Modifier):
         )
         def direction(command, channel, _, data=None, amount=None, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.context.root.active
+                data = self.default_spooler(), self.active
             spooler, device_name = data
             if amount is None:
                 amount = Length("1mm")
-            max_bed_height = bed_dim.bed_height * MILS_IN_MM
-            max_bed_width = bed_dim.bed_width * MILS_IN_MM
+            max_bed_height = self.device.bed_height
+            max_bed_width = self.device.bed_width
             if not hasattr(spooler, "_dx"):
                 spooler._dx = 0
             if not hasattr(spooler, "_dy"):
@@ -360,11 +314,11 @@ class Spoolers(Modifier):
                 spooler._dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
             elif command.endswith("down"):
                 spooler._dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
-            context(".timer 1 0 spool%s jog\n" % device_name)
+            kernel.console(".timer 1 0 spool%s jog\n" % device_name)
             return "spooler", data
 
-        @context.console_option("force", "f", type=bool, action="store_true")
-        @context.console_command(
+        @kernel.console_option("force", "f", type=bool, action="store_true")
+        @kernel.console_command(
             "jog",
             hidden=True,
             input_type="spooler",
@@ -373,7 +327,7 @@ class Spoolers(Modifier):
         )
         def jog(command, channel, _, data, force=False, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.context.root.active
+                data = self.default_spooler(), self.active
             spooler, device_name = data
             try:
                 idx = int(spooler._dx)
@@ -393,10 +347,10 @@ class Spoolers(Modifier):
                     channel(_("Busy Error"))
             return "spooler", data
 
-        @context.console_option("force", "f", type=bool, action="store_true")
-        @context.console_argument("x", type=Length, help=_("change in x"))
-        @context.console_argument("y", type=Length, help=_("change in y"))
-        @context.console_command(
+        @kernel.console_option("force", "f", type=bool, action="store_true")
+        @kernel.console_argument("x", type=Length, help=_("change in x"))
+        @kernel.console_argument("y", type=Length, help=_("change in y"))
+        @kernel.console_command(
             ("move", "move_absolute"),
             input_type=("spooler", None),
             output_type="spooler",
@@ -404,7 +358,7 @@ class Spoolers(Modifier):
         )
         def move(channel, _, x, y, data=None, force=False, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.context.root.active
+                data = self.default_spooler(), self.active
             spooler, device_name = data
             if y is None:
                 raise SyntaxError
@@ -415,10 +369,10 @@ class Spoolers(Modifier):
                     channel(_("Busy Error"))
             return "spooler", data
 
-        @context.console_option("force", "f", type=bool, action="store_true")
-        @context.console_argument("dx", type=Length, help=_("change in x"))
-        @context.console_argument("dy", type=Length, help=_("change in y"))
-        @context.console_command(
+        @kernel.console_option("force", "f", type=bool, action="store_true")
+        @kernel.console_argument("dx", type=Length, help=_("change in x"))
+        @kernel.console_argument("dy", type=Length, help=_("change in y"))
+        @kernel.console_command(
             "move_relative",
             input_type=("spooler", None),
             output_type="spooler",
@@ -426,7 +380,7 @@ class Spoolers(Modifier):
         )
         def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.context.root.active
+                data = self.default_spooler(), self.active
             spooler, device_name = data
             if dy is None:
                 raise SyntaxError
@@ -437,9 +391,9 @@ class Spoolers(Modifier):
                     channel(_("Busy Error"))
             return "spooler", data
 
-        @context.console_argument("x", type=Length, help=_("x offset"))
-        @context.console_argument("y", type=Length, help=_("y offset"))
-        @context.console_command(
+        @kernel.console_argument("x", type=Length, help=_("x offset"))
+        @kernel.console_argument("y", type=Length, help=_("y offset"))
+        @kernel.console_command(
             "home",
             input_type=("spooler", None),
             output_type="spooler",
@@ -447,17 +401,17 @@ class Spoolers(Modifier):
         )
         def home(x=None, y=None, data=None, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.context.root.active
+                data = self.default_spooler(), self.active
             spooler, device_name = data
             if x is not None and y is not None:
-                x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
-                y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
+                x = x.value(ppi=1000.0, relative_length=self.device.bed_width)
+                y = y.value(ppi=1000.0, relative_length=self.device.bed_height)
                 spooler.job(COMMAND_HOME, int(x), int(y))
                 return "spooler", data
             spooler.job(COMMAND_HOME)
             return "spooler", data
 
-        @context.console_command(
+        @kernel.console_command(
             "unlock",
             input_type=("spooler", None),
             output_type="spooler",
@@ -465,12 +419,12 @@ class Spoolers(Modifier):
         )
         def unlock(data=None, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.context.root.active
+                data = self.default_spooler(), self.active
             spooler, device_name = data
             spooler.job(COMMAND_UNLOCK)
             return "spooler", data
 
-        @context.console_command(
+        @kernel.console_command(
             "lock",
             input_type=("spooler", None),
             output_type="spooler",
@@ -478,10 +432,24 @@ class Spoolers(Modifier):
         )
         def lock(data, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.context.root.active
+                data = self.default_spooler(), self.active
             spooler, device_name = data
             spooler.job(COMMAND_LOCK)
             return "spooler", data
 
         for i in range(5):
             self.get_or_make_spooler(str(i))
+
+    def get_or_make_spooler(self, device_name):
+        dev = "device/%s" % device_name
+        try:
+            device = self.registered[dev]
+        except KeyError:
+            device = [None, None, None]
+            self.registered[dev] = device
+        if device[0] is None:
+            device[0] = Spooler(self, device_name)
+        return device[0]
+
+    def default_spooler(self):
+        return self.get_or_make_spooler(self.active)

@@ -553,9 +553,8 @@ class Modifier(Context):
     modifiers the registered library of paths within the kernel.
     """
 
-    def __init__(self, kernel: "Kernel", path: str):
-        super().__init__(kernel, path)
-
+    def __init__(self, kernel: "Kernel", name: str):
+        super().__init__(kernel, name)
         # All registered aspects of the modifier
         self.active = None
         self.aspects = []
@@ -1098,7 +1097,7 @@ class Kernel:
         regex: bool = False,
         hidden: bool = False,
         help: str = None,
-        input_type: Union[str, Tuple[str, ...]] = None,
+        input_type: Union[str, Tuple[str, None, ...]] = None,
         output_type: str = None,
     ):
         def decorator(func: Callable):
