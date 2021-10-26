@@ -557,8 +557,22 @@ class Modifier(Context):
         super().__init__(kernel, name)
         self.name = name
         # All registered aspects of the modifier
-        self.active = None
+        self.active = self
         self.aspects = []
+
+    def set_active_by_name(self, name):
+        for a in self.aspects:
+            if a.name == name:
+                self.set_active(a)
+                return
+
+    @property
+    def delegated(self):
+        return self.active is not self
+
+    def set_active(self, aspect):
+        self.active = aspect
+        self.kernel.root.signal(str(self.name) + ";active", self.active)
 
     def add_aspect(self, aspect):
         self.aspects.append(aspect)

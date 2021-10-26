@@ -43,6 +43,7 @@ class Bind(Modifier):
                     spooler, input_driver, output = self.registered[
                         "device/%s" % self.active
                         ]
+                    dev = self.devices.active
                     if "$x" in command_line:
                         try:
                             x = input_driver.current_x

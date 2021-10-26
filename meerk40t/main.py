@@ -285,13 +285,13 @@ def run():
     kernel.bootstrap("configure")
     kernel.boot()
 
-    device_context = kernel.get_context("devices")
-    if not hasattr(device_context, "_devices") or device_context._devices == 0:
+    devices = kernel_root.devices
+    if not devices.delegated:
         if args.device == "Moshi":
-            dev = "spool0 -r driver -n moshi output -n moshi\n"
+            devices("device0 init moshi\n")
         else:
-            dev = "spool0 -r driver -n lhystudios output -n lhystudios\n"
-        kernel_root(dev)
+            # default device
+            devices("device0 init lhystudios\n")
 
     if args.verbose:
         kernel._start_debugging()
