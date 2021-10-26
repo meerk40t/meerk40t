@@ -24,8 +24,7 @@ MILS_IN_MM = 39.3701
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel_root = kernel.root
-        kernel.register("modifier/Planner", Planner)
+        kernel.add_modifier(Planner)
 
         kernel.register("plan/physicalhome", physicalhome)
         kernel.register("plan/home", home)
@@ -36,6 +35,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("function/interrupt", interrupt_text)
         kernel.register("plan/interrupt", interrupt)
 
+        kernel_root = kernel.root
         def shutdown():
             yield COMMAND_WAIT_FINISH
 
@@ -45,10 +45,6 @@ def plugin(kernel, lifecycle=None):
             yield COMMAND_FUNCTION, shutdown_program
 
         kernel.register("plan/shutdown", shutdown)
-
-    elif lifecycle == "boot":
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Planner")
 
 
 class CutPlan:
@@ -455,66 +451,47 @@ class Planner(Modifier):
     should be permitted to control the job creation process.
     """
 
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+    def __init__(self, kernel, *args, **kwargs):
+        Modifier.__init__(self, kernel, "planner")
         self._plan = dict()
         self._default_plan = "0"
 
-    def get_or_make_plan(self, plan_name):
-        """
-        Plans are a tuple of 3 lists and the name. Plan, Original, Commands, and Plan-Name
-        """
-        try:
-            return self._plan[plan_name]
-        except KeyError:
-            self._plan[plan_name] = CutPlan(plan_name, self.context)
-            return self._plan[plan_name]
-
-    def default_plan(self):
-        return self.get_or_make_plan(self._default_plan)
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.planner = self
-        context.default_plan = self.default_plan
-
-        _ = self.context._
-        elements = context.elements
-        rotary_context = self.context.get_context("rotary/1")
-        bed_dim = context.root
+        _ = self._
+        rotary_context = self.get_context("rotary/1")
+        bed_dim = self.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
 
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)
-        self.context.setting(bool, "prehome", False)
-        self.context.setting(bool, "prephysicalhome", False)
-        self.context.setting(bool, "postunlock", False)
-        self.context.setting(bool, "autohome", False)
-        self.context.setting(bool, "autophysicalhome", False)
-        self.context.setting(bool, "autoorigin", False)
-        self.context.setting(bool, "autobeep", True)
-        self.context.setting(bool, "autointerrupt", False)
-        self.context.setting(int, "opt_closed_distance", 15)
-        self.context.setting(bool, "opt_2opt", False)
-        self.context.setting(bool, "opt_nearest_neighbor", True)
-        self.context.setting(bool, "opt_merge_passes", False)
-        self.context.setting(bool, "opt_merge_ops", False)
-        self.context.setting(bool, "opt_reduce_travel", True)
-        self.context.setting(bool, "opt_inner_first", True)
-        self.context.setting(bool, "opt_reduce_directions", False)
-        self.context.setting(bool, "opt_remove_overlap", False)
-        self.context.setting(bool, "opt_reduce_directions", False)
-        self.context.setting(bool, "opt_start_from_position", False)
-        self.context.setting(bool, "opt_rapid_between", False)
-        self.context.setting(int, "opt_jog_minimum", 256)
-        self.context.setting(int, "opt_jog_mode", 0)
+        self.setting(bool, "prehome", False)
+        self.setting(bool, "prephysicalhome", False)
+        self.setting(bool, "postunlock", False)
+        self.setting(bool, "autohome", False)
+        self.setting(bool, "autophysicalhome", False)
+        self.setting(bool, "autoorigin", False)
+        self.setting(bool, "autobeep", True)
+        self.setting(bool, "autointerrupt", False)
+        self.setting(int, "opt_closed_distance", 15)
+        self.setting(bool, "opt_2opt", False)
+        self.setting(bool, "opt_nearest_neighbor", True)
+        self.setting(bool, "opt_merge_passes", False)
+        self.setting(bool, "opt_merge_ops", False)
+        self.setting(bool, "opt_reduce_travel", True)
+        self.setting(bool, "opt_inner_first", True)
+        self.setting(bool, "opt_reduce_directions", False)
+        self.setting(bool, "opt_remove_overlap", False)
+        self.setting(bool, "opt_reduce_directions", False)
+        self.setting(bool, "opt_start_from_position", False)
+        self.setting(bool, "opt_rapid_between", False)
+        self.setting(int, "opt_jog_minimum", 256)
+        self.setting(int, "opt_jog_mode", 0)
 
-        self.context.registered["choices/optimize"] = [
+        self.registered["choices/optimize"] = [
             {
                 "attr": "opt_reduce_travel",
-                "object": self.context,
+                "object": self,
                 "default": False,
                 "label": _("Reduce Travel Time"),
                 "tip": _(
@@ -523,21 +500,21 @@ class Planner(Modifier):
             },
             {
                 "attr": "opt_merge_passes",
-                "object": self.context,
+                "object": self,
                 "default": False,
                 "label": _("Merge Passes"),
                 "tip": _("Combine passes into the same optimization"),
             },
             {
                 "attr": "opt_merge_ops",
-                "object": self.context,
+                "object": self,
                 "default": False,
                 "label": _("Merge Operations"),
                 "tip": _("Combine operations into the same optimization"),
             },
             {
                 "attr": "opt_inner_first",
-                "object": self.context,
+                "object": self,
                 "default": False,
                 "label": _("Cut Inner First"),
                 "tip": _(
@@ -546,7 +523,7 @@ class Planner(Modifier):
             },
             {
                 "attr": "opt_closed_distance",
-                "object": self.context,
+                "object": self,
                 "default": 15,
                 "type": int,
                 "label": _("Closed Distance"),
@@ -556,7 +533,7 @@ class Planner(Modifier):
             },
             {
                 "attr": "opt_rapid_between",
-                "object": self.context,
+                "object": self,
                 "default": False,
                 "label": _("Rapid Moves Between Objects"),
                 "tip": _(
@@ -565,7 +542,7 @@ class Planner(Modifier):
             },
             {
                 "attr": "opt_jog_minimum",
-                "object": self.context,
+                "object": self,
                 "default": 256,
                 "type": int,
                 "label": _("Minimum Jog Distance"),
@@ -575,10 +552,10 @@ class Planner(Modifier):
             },
         ]
 
-        @self.context.console_argument(
+        @kernel.console_argument(
             "alias", type=str, help=_("plan command name to alias")
         )
-        @self.context.console_command(
+        @kernel.console_command(
             "plan-alias",
             help=_("Define a spoolable console command"),
             input_type=None,
@@ -597,17 +574,17 @@ class Planner(Modifier):
             if alias is None:
                 raise SyntaxError
             plan_command = "plan/%s" % alias
-            if plan_command in self.context.registered:
+            if plan_command in self.registered:
                 raise SyntaxError(_("You may not overwrite an already used alias."))
 
             def user_defined_alias():
                 for s in remainder.split(";"):
-                    self.context(s + "\n")
+                    self(s + "\n")
 
             user_defined_alias.__name__ = remainder
-            self.context.registered[plan_command] = user_defined_alias
+            self.registered[plan_command] = user_defined_alias
 
-        @self.context.console_command(
+        @kernel.console_command(
             "plan",
             help=_("plan<?> <command>"),
             regex=True,
@@ -617,7 +594,7 @@ class Planner(Modifier):
         def plan_base(command, channel, _, data=None, remainder=None, **kwgs):
             if len(command) > 4:
                 self._default_plan = command[4:]
-                self.context.signal("plan", self._default_plan, None)
+                self.signal("plan", self._default_plan, None)
 
             cutplan = self.get_or_make_plan(self._default_plan)
             if data is not None:
@@ -636,7 +613,7 @@ class Planner(Modifier):
                     except AttributeError:
                         pass
                     cutplan.plan.append(copy_c)
-                self.context.signal("plan", self._default_plan, 1)
+                self.signal("plan", self._default_plan, 1)
                 return "plan", cutplan
             if remainder is None:
                 channel(_("----------"))
@@ -654,7 +631,7 @@ class Planner(Modifier):
 
             return "plan", cutplan
 
-        @self.context.console_command(
+        @kernel.console_command(
             "list",
             help=_("plan<?> list"),
             input_type="plan",
@@ -675,26 +652,26 @@ class Planner(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "classify",
             help=_("plan<?> classify"),
             input_type="plan",
             output_type="plan",
         )
         def plan_classify(command, channel, _, data_type=None, data=None, **kwgs):
-            elements.classify(
-                list(elements.elems(emphasized=True)), data.plan, data.plan.append
+            self.elements.classify(
+                list(self.elements.elems(emphasized=True)), data.plan, data.plan.append
             )
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "copy-selected",
             help=_("plan<?> copy-selected"),
             input_type="plan",
             output_type="plan",
         )
         def plan_copy_selected(command, channel, _, data_type=None, data=None, **kwgs):
-            for c in elements.ops(emphasized=True):
+            for c in self.elements.ops(emphasized=True):
                 if c.type in ("cutcode", "blob"):
                     # CutNodes and BlobNodes are denuded into normal objects.
                     c = c.object
@@ -711,19 +688,19 @@ class Planner(Modifier):
                 data.plan.append(copy_c)
 
             channel(_("Copied Operations."))
-            self.context.signal("plan", self._default_plan, 1)
+            self.signal("plan", self._default_plan, 1)
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "copy",
             help=_("plan<?> copy"),
             input_type="plan",
             output_type="plan",
         )
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
-            operations = elements.get(type="branch ops")
+            operations = self.elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "lasercode", "blob"), depth=1
+                    types=("op", "cutcode", "cmdop", "lasercode", "blob"), depth=1
             ):
                 try:
                     if not c.output:
@@ -745,32 +722,32 @@ class Planner(Modifier):
                     pass
                 data.plan.append(copy_c)
             channel(_("Copied Operations."))
-            self.context.signal("plan", self._default_plan, 1)
+            self.signal("plan", self._default_plan, 1)
             return data_type, data
 
-        @self.context.console_option(
+        @kernel.console_option(
             "index", "i", type=int, help=_("index of location to insert command")
         )
-        @self.context.console_option(
+        @kernel.console_option(
             "op", "o", type=str, help=_("unlock, origin, home, etc.")
         )
-        @self.context.console_command(
+        @kernel.console_command(
             "command",
             help=_("plan<?> command"),
             input_type="plan",
             output_type="plan",
         )
         def plan_command(
-            command, channel, _, data_type=None, op=None, index=None, data=None, **kwgs
+                command, channel, _, data_type=None, op=None, index=None, data=None, **kwgs
         ):
             if op is None:
                 channel(_("Plan Commands:"))
-                for command_name in self.context.match("plan/.*", suffix=True):
+                for command_name in self.match("plan/.*", suffix=True):
                     channel(command_name)
                 return
             try:
-                for command_name in self.context.match("plan/%s" % op):
-                    cmd = self.context.registered[command_name]
+                for command_name in self.match("plan/%s" % op):
+                    cmd = self.registered[command_name]
                     if index is None:
                         data.plan.append(cmd)
                     else:
@@ -779,61 +756,61 @@ class Planner(Modifier):
                         except ValueError:
                             channel(_("Invalid index for command insert."))
                     break
-                self.context.signal("plan", self._default_plan, None)
+                self.signal("plan", self._default_plan, None)
             except (KeyError, IndexError):
                 channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_argument(
+        @kernel.console_argument(
             "op", type=str, help=_("unlock, origin, home, etc")
         )
-        @self.context.console_command(
+        @kernel.console_command(
             "append",
             help=_("plan<?> append <op>"),
             input_type="plan",
             output_type="plan",
         )
         def plan_append(
-            command, channel, _, data_type=None, op=None, data=None, **kwgs
+                command, channel, _, data_type=None, op=None, data=None, **kwgs
         ):
             if op is None:
                 raise SyntaxError
             try:
-                for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
+                for command_name in self.match("plan/%s" % op):
+                    plan_command = self.registered[command_name]
                     data.plan.append(plan_command)
-                    self.context.signal("plan", self._default_plan, None)
+                    self.signal("plan", self._default_plan, None)
                     return data_type, data
             except (KeyError, IndexError):
                 pass
             channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_argument(
+        @kernel.console_argument(
             "op", type=str, help=_("unlock, origin, home, etc")
         )
-        @self.context.console_command(
+        @kernel.console_command(
             "prepend",
             help=_("plan<?> prepend <op>"),
             input_type="plan",
             output_type="plan",
         )
         def plan_prepend(
-            command, channel, _, data_type=None, op=None, data=None, **kwgs
+                command, channel, _, data_type=None, op=None, data=None, **kwgs
         ):
             if op is None:
                 raise SyntaxError
             try:
-                for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
+                for command_name in self.match("plan/%s" % op):
+                    plan_command = self.registered[command_name]
                     data.plan.insert(0, plan_command)
                     break
-                self.context.signal("plan", self._default_plan, None)
+                self.signal("plan", self._default_plan, None)
             except (KeyError, IndexError):
                 channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "preprocess",
             help=_("plan<?> preprocess"),
             input_type="plan",
@@ -841,10 +818,10 @@ class Planner(Modifier):
         )
         def plan_preprocess(command, channel, _, data_type=None, data=None, **kwgs):
             data.preprocess()
-            self.context.signal("plan", self._default_plan, 2)
+            self.signal("plan", self._default_plan, 2)
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "validate",
             help=_("plan<?> validate"),
             input_type="plan",
@@ -852,10 +829,10 @@ class Planner(Modifier):
         )
         def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
             data.execute()
-            self.context.signal("plan", self._default_plan, 3)
+            self.signal("plan", self._default_plan, 3)
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "blob",
             help=_("plan<?> blob"),
             input_type="plan",
@@ -863,10 +840,10 @@ class Planner(Modifier):
         )
         def plan_blob(data_type=None, data=None, **kwgs):
             data.blob()
-            self.context.signal("plan", self._default_plan, 4)
+            self.signal("plan", self._default_plan, 4)
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "preopt",
             help=_("plan<?> preopt"),
             input_type="plan",
@@ -874,10 +851,10 @@ class Planner(Modifier):
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
             data.preopt()
-            self.context.signal("plan", self._default_plan, 5)
+            self.signal("plan", self._default_plan, 5)
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "optimize",
             help=_("plan<?> optimize"),
             input_type="plan",
@@ -885,10 +862,10 @@ class Planner(Modifier):
         )
         def plan_optimize(data_type=None, data=None, **kwgs):
             data.execute()
-            self.context.signal("plan", self._default_plan, 6)
+            self.signal("plan", self._default_plan, 6)
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "clear",
             help=_("plan<?> clear"),
             input_type="plan",
@@ -896,34 +873,34 @@ class Planner(Modifier):
         )
         def plan_clear(data_type=None, data=None, **kwgs):
             data.clear()
-            self.context.signal("plan", self._default_plan, 0)
+            self.signal("plan", self._default_plan, 0)
             return data_type, data
 
-        @self.context.console_argument("cols", type=int, help=_("columns for the grid"))
-        @self.context.console_argument("rows", type=int, help=_("rows for the grid"))
-        @self.context.console_argument(
+        @kernel.console_argument("cols", type=int, help=_("columns for the grid"))
+        @kernel.console_argument("rows", type=int, help=_("rows for the grid"))
+        @kernel.console_argument(
             "x_distance", type=Length, help=_("x_distance each column step")
         )
-        @self.context.console_argument(
+        @kernel.console_argument(
             "y_distance", type=Length, help=_("y_distance each row step")
         )
-        @self.context.console_command(
+        @kernel.console_command(
             "step_repeat",
             help=_("plan<?> step_repeat"),
             input_type="plan",
             output_type="plan",
         )
         def plan_step_repeat(
-            command,
-            channel,
-            _,
-            cols=0,
-            rows=0,
-            x_distance=None,
-            y_distance=None,
-            data_type=None,
-            data=None,
-            **kwgs
+                command,
+                channel,
+                _,
+                cols=0,
+                rows=0,
+                x_distance=None,
+                y_distance=None,
+                data_type=None,
+                data=None,
+                **kwgs
         ):
             if y_distance is None:
                 raise SyntaxError
@@ -964,17 +941,17 @@ class Planner(Modifier):
                 y_pos += y_distance
             if x_pos != 0 or y_pos != 0:
                 data.plan.append(offset(-x_pos, -y_pos))
-            self.context.signal("plan", self._default_plan, None)
+            self.signal("plan", self._default_plan, None)
             return data_type, data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "return",
             help=_("plan<?> return"),
             input_type="plan",
             output_type="plan",
         )
         def plan_return(command, channel, _, data_type=None, data=None, **kwgs):
-            operations = elements.get(type="branch ops")
+            operations = self.elements.get(type="branch ops")
             operations.remove_all_children()
 
             for c in data.plan:
@@ -984,8 +961,21 @@ class Planner(Modifier):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")
             channel(_("Returned Operations."))
-            self.context.signal("plan", self._default_plan, None)
+            self.signal("plan", self._default_plan, None)
             return data_type, data
+
+    def get_or_make_plan(self, plan_name):
+        """
+        Plans are a tuple of 3 lists and the name. Plan, Original, Commands, and Plan-Name
+        """
+        try:
+            return self._plan[plan_name]
+        except KeyError:
+            self._plan[plan_name] = CutPlan(plan_name, self)
+            return self._plan[plan_name]
+
+    def default_plan(self):
+        return self.get_or_make_plan(self._default_plan)
 
     def plan(self, **kwargs):
         for item in self._plan:
