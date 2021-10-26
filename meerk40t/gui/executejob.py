@@ -25,115 +25,16 @@ class ExecuteJob(MWindow):
         # MENU BAR
         # ==========
         self.preview_menu = wx.MenuBar()
-        wx_menu = wx.Menu()
-        wxglade_tmp_menu_sub = wx.Menu()
 
-        # ==========
-        # AUTO/BEFORE MENU
-        # ==========
-        self.preview_menu.menu_prehome = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY,
-            _("Home"),
-            _("Automatically add a home command before all jobs"),
-            wx.ITEM_CHECK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_check_home_before,
-            id=self.preview_menu.menu_prehome.GetId(),
-        )
-        self.preview_menu.menu_prephysicalhome = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY,
-            _("Physical Home"),
-            _("Automatically add a physical home command before all jobs"),
-            wx.ITEM_CHECK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_check_physicalhome_before,
-            id=self.preview_menu.menu_prephysicalhome.GetId(),
-        )
+        from .wxutils import create_menu_for_choices
+        wx_menu = create_menu_for_choices(self, self.context.registered["choices/planner"])
 
-        wx_menu.Append(wx.ID_ANY, _("Before"), wxglade_tmp_menu_sub, "")
-        wxglade_tmp_menu_sub = wx.Menu()
-
-        # ==========
-        # AUTO/AFTER MENU
-        # ==========
-        self.preview_menu.menu_autohome = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY,
-            _("Home"),
-            _("Automatically add a home command after all jobs"),
-            wx.ITEM_CHECK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_check_home_after,
-            id=self.preview_menu.menu_autohome.GetId(),
-        )
-        self.preview_menu.menu_autophysicalhome = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY,
-            _("Physical Home"),
-            _("Automatically add a physical home command after all jobs"),
-            wx.ITEM_CHECK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_check_physicalhome_after,
-            id=self.preview_menu.menu_autophysicalhome.GetId(),
-        )
-        self.preview_menu.menu_autoorigin = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY,
-            _("Return to Origin"),
-            _("Automatically return to origin after a job"),
-            wx.ITEM_CHECK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_check_origin_after,
-            id=self.preview_menu.menu_autoorigin.GetId(),
-        )
-        self.preview_menu.menu_autounlock = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY,
-            _("Unlock"),
-            _("Automatically unlock the rail after all jobs"),
-            wx.ITEM_CHECK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_check_unlock_after,
-            id=self.preview_menu.menu_autounlock.GetId(),
-        )
-        self.preview_menu.menu_autobeep = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY,
-            _("Beep"),
-            _("Automatically add a beep after all jobs"),
-            wx.ITEM_CHECK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_check_beep_after,
-            id=self.preview_menu.menu_autobeep.GetId(),
-        )
-        self.preview_menu.menu_autointerrupt = wxglade_tmp_menu_sub.Append(
-            wx.ID_ANY,
-            _("Interrupt"),
-            _("Automatically add an interrupt after all jobs"),
-            wx.ITEM_CHECK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_check_interrupt_after,
-            id=self.preview_menu.menu_autointerrupt.GetId(),
-        )
-
-        wx_menu.Append(wx.ID_ANY, _("After"), wxglade_tmp_menu_sub, "")
         self.preview_menu.Append(wx_menu, _("Automatic"))
-        wx_menu = wx.Menu()
 
         # ==========
         # ADD MENU
         # ==========
+        wx_menu = wx.Menu()
         self.preview_menu.menu_jobadd_home = wx_menu.Append(
             wx.ID_ANY, _("Home"), _("Add a home")
         )
@@ -663,15 +564,6 @@ class ExecuteJob(MWindow):
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)
-        self.context.setting(bool, "auto_spooler", True)
-        self.context.setting(bool, "prehome", False)
-        self.context.setting(bool, "autohome", False)
-        self.context.setting(bool, "prephysicalhome", False)
-        self.context.setting(bool, "autophysicalhome", False)
-        self.context.setting(bool, "autoorigin", False)
-        self.context.setting(bool, "autobeep", True)
-        self.context.setting(bool, "autointerrupt", False)
-        self.context.setting(bool, "postunlock", False)
         self.context.setting(int, "opt_closed_distance", 15)
         self.context.setting(bool, "opt_merge_passes", False)
         self.context.setting(bool, "opt_merge_ops", False)
@@ -685,18 +577,6 @@ class ExecuteJob(MWindow):
 
         self.context.listen("element_property_reload", self.on_element_property_update)
         self.context.listen("plan", self.plan_update)
-
-        self.preview_menu.menu_prehome.Check(bool(self.context.prehome))
-        self.preview_menu.menu_autohome.Check(bool(self.context.autohome))
-        self.preview_menu.menu_prephysicalhome.Check(bool(self.context.prephysicalhome))
-        self.preview_menu.menu_autophysicalhome.Check(
-            bool(self.context.autophysicalhome)
-        )
-
-        self.preview_menu.menu_autoorigin.Check(bool(self.context.autoorigin))
-        self.preview_menu.menu_autobeep.Check(bool(self.context.autobeep))
-        self.preview_menu.menu_autointerrupt.Check(bool(self.context.autointerrupt))
-        self.preview_menu.menu_autounlock.Check(bool(self.context.postunlock))
 
         self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
         self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)

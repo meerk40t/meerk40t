@@ -1914,6 +1914,13 @@ class Kernel:
                 return None
         return data
 
+    def register_choices(self, sheet, choices):
+        self.register("choices/%s" % sheet, choices)
+        for c in choices:
+            obj = c['object']
+            if isinstance(obj, Context):
+                obj.setting(c['type'], c['attr'], c['default'])
+
     # ==========
     # KERNEL CONSOLE COMMANDS
     # ==========

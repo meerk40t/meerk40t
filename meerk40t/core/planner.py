@@ -50,6 +50,161 @@ def plugin(kernel, lifecycle=None):
         kernel_root = kernel.root
         kernel_root.activate("modifier/Planner")
 
+        context = kernel.root
+        _ = context._
+        choices = [
+            {
+                "attr": "auto_spooler",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Launch Spooler on Job Start"),
+                "tip": _("Open the Spooler window automatically when you Execute a Job"),
+            },
+            {
+                "attr": "prehome",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "submenu": _("Before"),
+                "label": _("Home"),
+                "tip": _("Automatically add a home command before all jobs"),
+            },
+            {
+                "attr": "prephysicalhome",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "submenu": _("Before"),
+                "label": _("Physical Home"),
+                "tip": _("Automatically add a physical home command before all jobs"),
+            },
+            {
+                "attr": "autohome",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "submenu": _("After"),
+                "label": _("Home"),
+                "tip": _("Automatically add a home command after all jobs"),
+            },
+            {
+                "attr": "autophysicalhome",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "submenu": _("After"),
+                "label": _("Physical Home"),
+                "tip": _("Automatically add a physical home command before all jobs"),
+            },
+            {
+                "attr": "autoorigin",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "submenu": _("After"),
+                "label": _("Return to Origin"),
+                "tip": _("Automatically return to origin after a job"),
+            },
+            {
+                "attr": "postunlock",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "submenu": _("After"),
+                "label": _("Unlock"),
+                "tip": _("Automatically unlock the rail after all jobs"),
+            },
+            {
+                "attr": "autobeep",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "submenu": _("After"),
+                "label": _("Beep"),
+                "tip": _("Automatically add a beep after all jobs"),
+            },
+            {
+                "attr": "autointerrupt",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "submenu": _("After"),
+                "label": _("Interrupt"),
+                "tip": _("Automatically add an interrupt after all jobs"),
+            },
+        ]
+        kernel.register_choices("planner", choices)
+        choices = [
+            {
+                "attr": "opt_reduce_travel",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Reduce Travel Time"),
+                "tip": _(
+                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+                ),
+            },
+            {
+                "attr": "opt_merge_passes",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Merge Passes"),
+                "tip": _("Combine passes into the same optimization"),
+            },
+            {
+                "attr": "opt_merge_ops",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Merge Operations"),
+                "tip": _("Combine operations into the same optimization"),
+            },
+            {
+                "attr": "opt_inner_first",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Cut Inner First"),
+                "tip": _(
+                    "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
+                ),
+            },
+            {
+                "attr": "opt_closed_distance",
+                "object": context,
+                "default": 15,
+                "type": int,
+                "label": _("Closed Distance"),
+                "tip": _(
+                    "How close (mils) do endpoints need to be to count as closed?"
+                ),
+            },
+            {
+                "attr": "opt_rapid_between",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Rapid Moves Between Objects"),
+                "tip": _(
+                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+                ),
+            },
+            {
+                "attr": "opt_jog_minimum",
+                "object": context,
+                "default": 256,
+                "type": int,
+                "label": _("Minimum Jog Distance"),
+                "tip": _(
+                    "Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."
+                ),
+            },
+        ]
+        kernel.register_choices("optimize", choices)
+
 
 class CutPlan:
     """
@@ -488,92 +643,15 @@ class Planner(Modifier):
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)
-        self.context.setting(bool, "prehome", False)
-        self.context.setting(bool, "prephysicalhome", False)
-        self.context.setting(bool, "postunlock", False)
-        self.context.setting(bool, "autohome", False)
-        self.context.setting(bool, "autophysicalhome", False)
-        self.context.setting(bool, "autoorigin", False)
-        self.context.setting(bool, "autobeep", True)
-        self.context.setting(bool, "autointerrupt", False)
-        self.context.setting(int, "opt_closed_distance", 15)
+
         self.context.setting(bool, "opt_2opt", False)
         self.context.setting(bool, "opt_nearest_neighbor", True)
-        self.context.setting(bool, "opt_merge_passes", False)
-        self.context.setting(bool, "opt_merge_ops", False)
-        self.context.setting(bool, "opt_reduce_travel", True)
-        self.context.setting(bool, "opt_inner_first", True)
+
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_remove_overlap", False)
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_start_from_position", False)
-        self.context.setting(bool, "opt_rapid_between", False)
-        self.context.setting(int, "opt_jog_minimum", 256)
         self.context.setting(int, "opt_jog_mode", 0)
-
-        self.context.registered["choices/optimize"] = [
-            {
-                "attr": "opt_reduce_travel",
-                "object": self.context,
-                "default": False,
-                "label": _("Reduce Travel Time"),
-                "tip": _(
-                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
-                ),
-            },
-            {
-                "attr": "opt_merge_passes",
-                "object": self.context,
-                "default": False,
-                "label": _("Merge Passes"),
-                "tip": _("Combine passes into the same optimization"),
-            },
-            {
-                "attr": "opt_merge_ops",
-                "object": self.context,
-                "default": False,
-                "label": _("Merge Operations"),
-                "tip": _("Combine operations into the same optimization"),
-            },
-            {
-                "attr": "opt_inner_first",
-                "object": self.context,
-                "default": False,
-                "label": _("Cut Inner First"),
-                "tip": _(
-                    "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
-                ),
-            },
-            {
-                "attr": "opt_closed_distance",
-                "object": self.context,
-                "default": 15,
-                "type": int,
-                "label": _("Closed Distance"),
-                "tip": _(
-                    "How close (mils) do endpoints need to be to count as closed?"
-                ),
-            },
-            {
-                "attr": "opt_rapid_between",
-                "object": self.context,
-                "default": False,
-                "label": _("Rapid Moves Between Objects"),
-                "tip": _(
-                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
-                ),
-            },
-            {
-                "attr": "opt_jog_minimum",
-                "object": self.context,
-                "default": 256,
-                "type": int,
-                "label": _("Minimum Jog Distance"),
-                "tip": _(
-                    "Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."
-                ),
-            },
-        ]
 
         @self.context.console_argument(
             "alias", type=str, help=_("plan command name to alias")
