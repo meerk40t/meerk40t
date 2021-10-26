@@ -24,9 +24,11 @@ class ExecuteJob(MWindow):
         # ==========
         # MENU BAR
         # ==========
-        self.preview_menu = wx.MenuBar()
-        self.create_menu(self.preview_menu.Append)
-        self.SetMenuBar(self.preview_menu)
+        from sys import platform as _platform
+        if _platform != "darwin":
+            self.preview_menu = wx.MenuBar()
+            self.create_menu(self.preview_menu.Append)
+            self.SetMenuBar(self.preview_menu)
         # ==========
         # MENUBAR END
         # ==========

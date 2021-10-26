@@ -15,8 +15,21 @@ class BufferView(MWindow):
             self, wx.ID_ANY, "", style=wx.TE_CHARWRAP | wx.TE_MULTILINE
         )
 
-        # Menu Bar
-        self.BufferView_menubar = wx.MenuBar()
+        # ==========
+        # MENU BAR
+        # ==========
+        from sys import platform as _platform
+        if _platform != "darwin":
+            self.BufferView_menubar = wx.MenuBar()
+            self.create_menu(self.BufferView_menubar.Append)
+            self.SetMenuBar(self.BufferView_menubar)
+        # ==========
+        # MENUBAR END
+        # ==========
+        self.__set_properties()
+        self.__do_layout()
+
+    def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(
             wx.ID_ANY, _("Export EGV"), _("Export Engrave Data")
@@ -26,12 +39,7 @@ class BufferView(MWindow):
             wx.ID_ANY, _("Import EGV"), _("Import Engrave Data")
         )
         self.Bind(wx.EVT_MENU, self.on_menu_import, id=item.GetId())
-        self.BufferView_menubar.Append(wxglade_tmp_menu, _("File"))
-        self.SetMenuBar(self.BufferView_menubar)
-        # Menu Bar end
-
-        self.__set_properties()
-        self.__do_layout()
+        append(wxglade_tmp_menu, _("File"))
 
     def window_open(self):
         active = self.context.root.active

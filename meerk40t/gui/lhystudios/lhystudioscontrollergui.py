@@ -36,32 +36,17 @@ class LhystudiosControllerGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(_advanced_width, _default_height, *args, **kwds)
 
-        # Menu Bar
-        self.LhystudiosController_menubar = wx.MenuBar()
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("Reset USB"), _("Reset USB connection")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("Release USB"), _("Release USB resources")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_usb_release, id=item.GetId())
-        self.LhystudiosController_menubar.Append(wxglade_tmp_menu, _("Tools"))
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Pause"), "")
-        self.Bind(wx.EVT_MENU, self.on_menu_pause, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Stop"), "")
-        self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
-        self.LhystudiosController_menubar.Append(wxglade_tmp_menu, _("Commands"))
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("BufferView"), _("Views the Controller Buffer")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
-        self.LhystudiosController_menubar.Append(wxglade_tmp_menu, _("Views"))
-        self.SetMenuBar(self.LhystudiosController_menubar)
-        # Menu Bar end
+        # ==========
+        # MENU BAR
+        # ==========
+        from sys import platform as _platform
+        if _platform != "darwin":
+            self.LhystudiosController_menubar = wx.MenuBar()
+            self.create_menu(self.LhystudiosController_menubar.Append)
+            self.SetMenuBar(self.LhystudiosController_menubar)
+        # ==========
+        # MENUBAR END
+        # ==========
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.text_connection_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
@@ -134,7 +119,7 @@ class LhystudiosControllerGui(MWindow):
             wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log
         )
         # end wxGlade
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
+        # self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
         self.last_control_state = None
         self.retries = 0
         self.set_widgets()
@@ -340,6 +325,30 @@ class LhystudiosControllerGui(MWindow):
         self.Layout()
         # end wxGlade
 
+    def create_menu(self, append):
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Reset USB"), _("Reset USB connection")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Release USB"), _("Release USB resources")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_usb_release, id=item.GetId())
+        append(wxglade_tmp_menu, _("Tools"))
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Pause"), "")
+        self.Bind(wx.EVT_MENU, self.on_menu_pause, id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Stop"), "")
+        self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
+        append(wxglade_tmp_menu, _("Commands"))
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("BufferView"), _("Views the Controller Buffer")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
+        append(wxglade_tmp_menu, _("Views"))
+
     def window_open(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
@@ -417,22 +426,22 @@ class LhystudiosControllerGui(MWindow):
 
         return menu_element
 
-    def on_controller_menu(self, event=None):
-        gui = self
-        menu = wx.Menu()
-        path_scale_sub_menu = wx.Menu()
-        for control_name in self.context.match("control"):
-            gui.Bind(
-                wx.EVT_MENU,
-                self.context.execute(control_name),
-                path_scale_sub_menu.Append(
-                    wx.ID_ANY, list(control_name.split("/"))[-1], "", wx.ITEM_NORMAL
-                ),
-            )
-        menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
-        if menu.MenuItemCount != 0:
-            gui.PopupMenu(menu)
-            menu.Destroy()
+    # def on_controller_menu(self, event=None):
+    #     gui = self
+    #     menu = wx.Menu()
+    #     path_scale_sub_menu = wx.Menu()
+    #     for control_name in self.context.match("control"):
+    #         gui.Bind(
+    #             wx.EVT_MENU,
+    #             self.context.execute(control_name),
+    #             path_scale_sub_menu.Append(
+    #                 wx.ID_ANY, list(control_name.split("/"))[-1], "", wx.ITEM_NORMAL
+    #             ),
+    #         )
+    #     menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
+    #     if menu.MenuItemCount != 0:
+    #         gui.PopupMenu(menu)
+    #         menu.Destroy()
 
     def on_update_pipe_index(self, origin, value):
         if origin != self.context.path:
