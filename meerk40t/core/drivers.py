@@ -22,11 +22,7 @@ PLOT_DIRECTION = 32
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/Drivers", Drivers)
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Drivers")
-    elif lifecycle == "boot":
-        pass
+        kernel.add_modifier(Drivers)
 
 
 class Driver:
@@ -529,45 +525,13 @@ class Driver:
 
 
 class Drivers(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+    def __init__(self, kernel, *args, **kwargs):
+        Modifier.__init__(self, kernel, "drivers")
 
-    def get_driver(self, driver_name, **kwargs):
-        dev = "device/%s" % driver_name
-        try:
-            return self.context.registered[dev][1]
-        except (KeyError, IndexError):
-            return None
+        _ = kernel._
 
-    def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
-        dev = "device/%s" % device_name
-        try:
-            device = self.context.registered[dev]
-        except KeyError:
-            device = [None, None, None]
-            self.context.registered[dev] = device
-        if device[1] is not None and driver_type is None:
-            return device[1]
-        try:
-            for itype in self.context.match("driver/%s" % driver_type):
-                driver_class = self.context.registered[itype]
-                driver = driver_class(self.context, device_name, **kwargs)
-                device[1] = driver
-                return driver
-        except (KeyError, IndexError):
-            return None
-
-    def default_driver(self):
-        return self.get_driver(self.context.root.active)
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.drivers = self
-
-        _ = self.context._
-
-        @context.console_option("new", "n", type=str, help=_("new driver type"))
-        @self.context.console_command(
+        @kernel.console_option("new", "n", type=str, help=_("new driver type"))
+        @kernel.console_command(
             "driver",
             help=_("driver<?> <command>"),
             regex=True,
@@ -575,15 +539,15 @@ class Drivers(Modifier):
             output_type="driver",
         )
         def driver_base(
-            command, channel, _, data=None, new=None, remainder=None, **kwgs
+                command, channel, _, data=None, new=None, remainder=None, **kwgs
         ):
             spooler = None
             if data is None:
                 if len(command) > 6:
                     device_name = command[6:]
-                    self.context.active = device_name
+                    self.active = device_name
                 else:
-                    device_name = self.context.active
+                    device_name = self.active.name
             else:
                 spooler, device_name = data
 
@@ -601,7 +565,7 @@ class Drivers(Modifier):
             elif remainder is None:
                 channel(_("----------"))
                 channel(_("Driver:"))
-                for i, drv in enumerate(self.context.root.match("device", suffix=True)):
+                for i, drv in enumerate(self.match("device", suffix=True)):
                     channel("%d: %s" % (i, drv))
                 channel(_("----------"))
                 channel(_("Driver %s:" % device_name))
@@ -609,7 +573,7 @@ class Drivers(Modifier):
                 channel(_("----------"))
             return "driver", (driver, device_name)
 
-        @self.context.console_command(
+        @kernel.console_command(
             "list",
             help=_("driver<?> list"),
             input_type="driver",
@@ -619,7 +583,7 @@ class Drivers(Modifier):
             driver_obj, name = data
             channel(_("----------"))
             channel(_("Driver:"))
-            for i, drv in enumerate(self.context.root.match("device", suffix=True)):
+            for i, drv in enumerate(self.match("device", suffix=True)):
                 channel("%d: %s" % (i, drv))
             channel(_("----------"))
             channel(_("Driver %s:" % name))
@@ -627,7 +591,7 @@ class Drivers(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_command(
+        @kernel.console_command(
             "type",
             help=_("list driver types"),
             input_type="driver",
@@ -635,11 +599,11 @@ class Drivers(Modifier):
         def list_type(channel, _, **kwgs):
             channel(_("----------"))
             channel(_("Drivers permitted:"))
-            for i, name in enumerate(context.match("driver/", suffix=True)):
+            for i, name in enumerate(self.match("driver/", suffix=True)):
                 channel("%d: %s" % (i + 1, name))
             channel(_("----------"))
 
-        @self.context.console_command(
+        @kernel.console_command(
             "reset",
             help=_("driver<?> reset"),
             input_type="driver",
@@ -649,3 +613,31 @@ class Drivers(Modifier):
             driver_obj, name = data
             driver_obj.reset()
             return data_type, data
+
+    def get_driver(self, driver_name, **kwargs):
+        dev = "device/%s" % driver_name
+        try:
+            return self.registered[dev][1]
+        except (KeyError, IndexError):
+            return None
+
+    def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
+        dev = "device/%s" % device_name
+        try:
+            device = self.registered[dev]
+        except KeyError:
+            device = [None, None, None]
+            self.registered[dev] = device
+        if device[1] is not None and driver_type is None:
+            return device[1]
+        try:
+            for itype in self.match("driver/%s" % driver_type):
+                driver_class = self.registered[itype]
+                driver = driver_class(self, device_name, **kwargs)
+                device[1] = driver
+                return driver
+        except (KeyError, IndexError):
+            return None
+
+    def default_driver(self):
+        return self.get_driver(self.active.name)

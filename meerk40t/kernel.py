@@ -1097,7 +1097,7 @@ class Kernel:
         regex: bool = False,
         hidden: bool = False,
         help: str = None,
-        input_type: Union[str, Tuple[str, None, ...]] = None,
+        input_type: Union[str, Tuple[str, ...]] = None,
         output_type: str = None,
     ):
         def decorator(func: Callable):
