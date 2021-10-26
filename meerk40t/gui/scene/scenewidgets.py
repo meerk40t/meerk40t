@@ -1,4 +1,5 @@
 from meerk40t.gui.scene.scene import Widget
+from meerk40t.gui.wxutils import create_menu
 
 try:
     from math import tau
@@ -51,10 +52,9 @@ class ElementsWidget(Widget):
     server to process leftclick in order to emphasize the given object.
     """
 
-    def __init__(self, scene, root, renderer):
+    def __init__(self, scene, renderer):
         Widget.__init__(self, scene, all=True)
         self.renderer = renderer
-        self.root = root
 
     def hit(self):
         return HITCHAIN_HIT
@@ -75,7 +75,7 @@ class ElementsWidget(Widget):
         if event_type == "leftclick":
             elements = self.scene.context.elements
             elements.set_emphasized_by_position(space_pos)
-            self.root.select_in_tree_by_emphasis()
+            self.scene.context.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME
         return RESPONSE_DROP
 
@@ -86,9 +86,8 @@ class SelectionWidget(Widget):
     dealing with moving, resizing and altering the selected object.
     """
 
-    def __init__(self, scene, root):
+    def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
-        self.root = root
         self.elements = scene.context.elements
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
@@ -218,13 +217,13 @@ class SelectionWidget(Widget):
             elements.set_emphasized_by_position(space_pos)
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
-            self.root.create_menu(
-                self.scene.context.gui, elements.top_element(emphasized=True)
+            create_menu(
+                self.scene.context.gui, elements.top_element(emphasized=True), elements
             )
             return RESPONSE_CONSUME
         if event_type == "doubleclick":
             elements.set_emphasized_by_position(space_pos)
-            self.root.activate_selected_node()
+            self.scene.context.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
         if event_type == "leftdown":
             self.save_width = self.width
