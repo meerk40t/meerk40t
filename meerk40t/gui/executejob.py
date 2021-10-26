@@ -25,81 +25,7 @@ class ExecuteJob(MWindow):
         # MENU BAR
         # ==========
         self.preview_menu = wx.MenuBar()
-
-        from .wxutils import create_menu_for_choices
-        wx_menu = create_menu_for_choices(self, self.context.registered["choices/planner"])
-
-        self.preview_menu.Append(wx_menu, _("Automatic"))
-
-        # ==========
-        # ADD MENU
-        # ==========
-        wx_menu = wx.Menu()
-        self.preview_menu.menu_jobadd_home = wx_menu.Append(
-            wx.ID_ANY, _("Home"), _("Add a home")
-        )
-        self.Bind(
-            wx.EVT_MENU, self.jobadd_home, id=self.preview_menu.menu_jobadd_home.GetId()
-        )
-        self.preview_menu.menu_jobadd_autophysicalhome = wx_menu.Append(
-            wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.jobadd_physicalhome,
-            id=self.preview_menu.menu_jobadd_autophysicalhome.GetId(),
-        )
-        self.preview_menu.menu_jobadd_wait = wx_menu.Append(
-            wx.ID_ANY, _("Wait"), _("Add a wait")
-        )
-        self.Bind(
-            wx.EVT_MENU, self.jobadd_wait, id=self.preview_menu.menu_jobadd_wait.GetId()
-        )
-        self.preview_menu.menu_jobadd_beep = wx_menu.Append(
-            wx.ID_ANY, _("Beep"), _("Add a beep")
-        )
-        self.Bind(
-            wx.EVT_MENU, self.jobadd_beep, id=self.preview_menu.menu_jobadd_beep.GetId()
-        )
-        self.preview_menu.menu_jobadd_interrupt = wx_menu.Append(
-            wx.ID_ANY, _("Interrupt"), _("Add an interrupt")
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.jobadd_interrupt,
-            id=self.preview_menu.menu_jobadd_interrupt.GetId(),
-        )
-
-        self.preview_menu.Append(wx_menu, _("Add"))
-
-        # ==========
-        # Tools Menu
-        # ==========
-        wx_menu = wx.Menu()
-        self.preview_menu.Append(wx_menu, _("Tools"))
-
-        self.context.setting(bool, "developer_mode", False)
-        if self.context.developer_mode:
-            self.preview_menu.menu_send_back = wx_menu.Append(
-                wx.ID_ANY,
-                _("Return to Operations"),
-                _("Return the current Plan to Operations"),
-            )
-            self.Bind(
-                wx.EVT_MENU,
-                self.jobchange_return_to_operations,
-                id=self.preview_menu.menu_send_back.GetId(),
-            )
-
-        self.preview_menu.menu_step_repeat = wx_menu.Append(
-            wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.jobchange_step_repeat,
-            id=self.preview_menu.menu_step_repeat.GetId(),
-        )
-
+        self.create_menu(self.preview_menu.Append)
         self.SetMenuBar(self.preview_menu)
         # ==========
         # MENUBAR END
@@ -196,7 +122,8 @@ class ExecuteJob(MWindow):
         # )
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
-        # end wxGlade
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
+
         self.stage = 0
 
     def __set_properties(self):
@@ -307,37 +234,81 @@ class ExecuteJob(MWindow):
         self.Layout()
         # end wxGlade
 
-    def on_check_home_before(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.context.prehome = self.preview_menu.menu_prehome.IsChecked()
+    def on_menu_request(self, event):
+        menu = wx.Menu()
+        self.create_menu(menu.AppendSubMenu)
 
-    def on_check_home_after(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.context.autohome = self.preview_menu.menu_autohome.IsChecked()
+        if menu.MenuItemCount != 0:
+            self.PopupMenu(menu)
+            menu.Destroy()
 
-    def on_check_physicalhome_before(
-        self, event=None
-    ):  # wxGlade: JobInfo.<event_handler>
-        self.context.prephysicalhome = (
-            self.preview_menu.menu_prephysicalhome.IsChecked()
+    def create_menu(self, append):
+        from .wxutils import create_menu_for_choices
+        wx_menu = create_menu_for_choices(self, self.context.registered["choices/planner"])
+        append(wx_menu, _("Automatic"))
+
+        # ==========
+        # ADD MENU
+        # ==========
+        wx_menu = wx.Menu()
+        append(wx_menu, _("Add"))
+
+        self.Bind(
+            wx.EVT_MENU, self.jobadd_home, wx_menu.Append(
+            wx.ID_ANY, _("Home"), _("Add a home")
+        )
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.jobadd_physicalhome,
+            wx_menu.Append(
+                wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")
+            )
+        )
+        self.Bind(
+            wx.EVT_MENU, self.jobadd_wait, wx_menu.Append(
+            wx.ID_ANY, _("Wait"), _("Add a wait")
+        )
+        )
+        self.Bind(
+            wx.EVT_MENU, self.jobadd_beep, wx_menu.Append(
+            wx.ID_ANY, _("Beep"), _("Add a beep")
+        )
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.jobadd_interrupt,
+            wx_menu.Append(
+                wx.ID_ANY, _("Interrupt"), _("Add an interrupt")
+            )
         )
 
-    def on_check_physicalhome_after(
-        self, event=None
-    ):  # wxGlade: JobInfo.<event_handler>
-        self.context.autophysicalhome = (
-            self.preview_menu.menu_autophysicalhome.IsChecked()
+
+        # ==========
+        # Tools Menu
+        # ==========
+        wx_menu = wx.Menu()
+        append(wx_menu, _("Tools"))
+
+        self.context.setting(bool, "developer_mode", False)
+        if self.context.developer_mode:
+            self.Bind(
+                wx.EVT_MENU,
+                self.jobchange_return_to_operations,
+                wx_menu.Append(
+                    wx.ID_ANY,
+                    _("Return to Operations"),
+                    _("Return the current Plan to Operations"),
+                )
+            )
+
+        self.Bind(
+            wx.EVT_MENU,
+            self.jobchange_step_repeat,
+            wx_menu.Append(
+                wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
+            )
         )
-
-    def on_check_origin_after(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.context.autoorigin = self.preview_menu.menu_autoorigin.IsChecked()
-
-    def on_check_beep_after(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.context.autobeep = self.preview_menu.menu_autobeep.IsChecked()
-
-    def on_check_interrupt_after(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context.autointerrupt = self.preview_menu.menu_autointerrupt.IsChecked()
-
-    def on_check_unlock_after(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context.postunlock = self.preview_menu.menu_autounlock.IsChecked()
 
     def on_check_reduce_travel(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_reduce_travel = self.check_reduce_travel_time.IsChecked()
