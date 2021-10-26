@@ -153,7 +153,7 @@ class Outputs(Modifier):
     def __init__(self, kernel, *args, **kwargs):
         Modifier.__init__(self, kernel, "outputs")
 
-        _ = kernel._
+        _ = self._
 
         @kernel.console_option("new", "n", type=str, help=_("new output type"))
         @kernel.console_command(
@@ -303,10 +303,10 @@ class Outputs(Modifier):
     def put_output(self, device_name, output):
         dev = "device/%s" % device_name
         try:
-            device = self.context.registered[dev]
+            device = self.registered[dev]
         except KeyError:
             device = [None, None, None]
-            self.context.registered[dev] = device
+            self.registered[dev] = device
 
         try:
             device[2] = output

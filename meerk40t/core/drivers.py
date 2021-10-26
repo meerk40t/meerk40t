@@ -528,7 +528,7 @@ class Drivers(Modifier):
     def __init__(self, kernel, *args, **kwargs):
         Modifier.__init__(self, kernel, "drivers")
 
-        _ = kernel._
+        _ = self._
 
         @kernel.console_option("new", "n", type=str, help=_("new driver type"))
         @kernel.console_command(

@@ -3,13 +3,9 @@ from ..kernel import Modifier
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/Inputs", Inputs)
+        kernel.add_modifier(Inputs)
         kernel.register("input/file", FileInput)
         kernel.register("input/tcp", TcpInput)
-
-    elif lifecycle == "boot":
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Inputs")
 
 
 class Input:
@@ -31,45 +27,14 @@ class TcpInput(Input):
 
 
 class Inputs(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+    def __init__(self, kernel, name=None, *args, **kwargs):
+        Modifier.__init__(self, kernel, "inputs")
         self._inputs = dict()
-        self._default_input = "0"
 
-    def get_input(self, input_name, **kwargs):
-        try:
-            return self._inputs[input_name]
-        except KeyError:
-            pass
-        return None
-
-    def make_input(self, input_name, input_type, **kwargs):
-        try:
-            return self._inputs[input_name]
-        except KeyError:
-            try:
-                for pname in self.context.match("input/%s" % input_type):
-                    input_class = self.context.registered[pname]
-                    input_obj = input_class(self.context, input_name, **kwargs)
-                    self._inputs[input_name] = input_obj, input_name
-                    return input_obj, input_name
-            except (KeyError, IndexError):
-                pass
-        return None
-
-    def default_input(self):
-        return self.get_input(self._default_input)
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.inputs = self
-        context.default_input = self.default_input
-
-        kernel = self.context._kernel
         _ = kernel.translation
 
-        @context.console_option("new", "n", type=str, help=_("new input type"))
-        @context.console_command(
+        @kernel.console_option("new", "n", type=str, help=_("new input type"))
+        @kernel.console_command(
             "input",
             help=_("input<?> <command>"),
             regex=True,
@@ -88,7 +53,7 @@ class Inputs(Modifier):
         ):
             if len(command) > 6:
                 self._default_input = command[6:]
-                self.context.signal("input", self._default_input, None)
+                self.signal("input", self._default_input, None)
             if new is not None and self._default_input in self._inputs:
                 for i in range(1000):
                     if str(i) in self._inputs:
@@ -105,7 +70,7 @@ class Inputs(Modifier):
                 raise SyntaxError("No input")
 
             input_obj, input_name = input_data
-            self.context.signal("input", input_name, 1)
+            self.signal("input", input_name, 1)
 
             if data is not None:
                 if data_type == "driver":
@@ -127,7 +92,7 @@ class Inputs(Modifier):
 
             return "input", input_data
 
-        @self.context.console_command(
+        @kernel.console_command(
             "list",
             help=_("input<?> list, list current inputs"),
             input_type="input",
@@ -144,10 +109,34 @@ class Inputs(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @context.console_command("type", help=_("list input types"), input_type="input")
+        @kernel.console_command("type", help=_("list input types"), input_type="input")
         def list_type(channel, _, **kwgs):
             channel(_("----------"))
             channel(_("Input types:"))
-            for i, name in enumerate(context.match("input/", suffix=True)):
+            for i, name in enumerate(self.match("input/", suffix=True)):
                 channel("%d: %s" % (i + 1, name))
             channel(_("----------"))
+
+    def get_input(self, input_name, **kwargs):
+        try:
+            return self._inputs[input_name]
+        except KeyError:
+            pass
+        return None
+
+    def make_input(self, input_name, input_type, **kwargs):
+        try:
+            return self._inputs[input_name]
+        except KeyError:
+            try:
+                for pname in self.match("input/%s" % input_type):
+                    input_class = self.registered[pname]
+                    input_obj = input_class(self, input_name, **kwargs)
+                    self._inputs[input_name] = input_obj, input_name
+                    return input_obj, input_name
+            except (KeyError, IndexError):
+                pass
+        return None
+
+    def default_input(self):
+        return self.get_input(self.active.name)
