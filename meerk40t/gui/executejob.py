@@ -120,10 +120,7 @@ class ExecuteJob(MWindow):
         #     self.on_check_remove_overlap,
         #     self.check_remove_overlap_cuts,
         # )
-
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
-
         self.stage = 0
 
     def __set_properties(self):
@@ -234,13 +231,6 @@ class ExecuteJob(MWindow):
         self.Layout()
         # end wxGlade
 
-    def on_menu_request(self, event):
-        menu = wx.Menu()
-        self.create_menu(menu.AppendSubMenu)
-
-        if menu.MenuItemCount != 0:
-            self.PopupMenu(menu)
-            menu.Destroy()
 
     def create_menu(self, append):
         from .wxutils import create_menu_for_choices
