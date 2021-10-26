@@ -1,4 +1,8 @@
+from meerk40t.device.lasercommandconstants import COMMAND_LASER_OFF, COMMAND_SET_ABSOLUTE, COMMAND_MODE_RAPID, \
+    COMMAND_MOVE, COMMAND_SET_INCREMENTAL, COMMAND_LASER_ON, COMMAND_HOME, COMMAND_UNLOCK, COMMAND_LOCK
+from meerk40t.device.spooler import Spooler
 from meerk40t.kernel import CommandMatchRejected, Modifier
+from meerk40t.svgelements import Length
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
@@ -27,13 +31,7 @@ class Devices(Modifier):
         Modifier.__init__(self, kernel, "devices")
 
         for d in kernel.derivable(self.path):
-            dev = kernel.get_context(d)
-            driver_type = dev.setting(str, "type", None)
-            autoboot = dev.setting(bool, "boot", True)
-            if driver_type is not None and autoboot:
-                driver_class = kernel.registered["driver/%f" % driver_type]
-                driver = driver_class(self, dev, d)
-                self.add_aspect(driver)
+            self.get_or_make_device(d)
 
         _ = self._
 
@@ -41,9 +39,10 @@ class Devices(Modifier):
             "device",
             regex=True,
             help=_("device"),
+            input_type=(None, "plan", "device"),
             output_type="device",
         )
-        def device(command, channel, _, remainder=None, **kwargs):
+        def device_base(command, channel, _, data, remainder=None, **kwargs):
             if len(command) > 6:
                 device_name = command[6:]
                 self.set_active_by_name(device_name)
@@ -53,23 +52,9 @@ class Devices(Modifier):
                 except AttributeError:
                     channel(_("Active device not valid and no device specified"))
                     return
-            device = self.get_or_make_device(device_name)
+            self.get_or_make_device(device_name)
+            return "device",
 
-            device_context = self
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Devices:"))
-                index = 0
-                while hasattr(device_context, "device_%d" % index):
-                    line = getattr(device_context, "device_%d" % index)
-                    channel("%d: %s" % (index, line))
-                    index += 1
-                channel("----------")
-            return "device", device
-
-        @kernel.console_argument(
-            "index", type=int, help=_("Index of device being activated")
-        )
         @kernel.console_command(
             "activate",
             help=_("delegate commands to currently selected device"),
@@ -98,10 +83,9 @@ class Devices(Modifier):
             channel("----------")
             return "device", data
 
-        @kernel.console_argument("index", type=int, help=_("Index of device deleted"))
         @kernel.console_command(
             "delete",
-            help=_("delete <index>"),
+            help=_("delete"),
             input_type="device",
         )
         def delete(channel, _, data, **kwargs):
@@ -109,23 +93,16 @@ class Devices(Modifier):
                 data.instance.shutdown()
             kernel.clear_persistent(data.path)
 
-
         @kernel.console_command(
             "spool",
-            help=_("spool<?> <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
+            help=_("spool <command>"),
+            input_type="device",
             output_type="spooler",
         )
         def spool(
                 command, channel, _, data=None, remainder=None, **kwgs
         ):
-            if len(command) > 5:
-                device_name = command[5:]
-            else:
-                device_name = self.active.name
-
-            spooler = self.get_or_make_spooler(device_name)
+            spooler = data.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
                 spooler.jobs(data.plan)
@@ -138,12 +115,12 @@ class Devices(Modifier):
                 for d, d_name in enumerate(self.match("device", True)):
                     channel("%d: %s" % (d, d_name))
                 channel(_("----------"))
-                channel(_("Spooler %s:" % device_name))
+                channel(_("Spooler %s:" % data.name))
                 for s, op_name in enumerate(spooler.queue):
                     channel("%d: %s" % (s, op_name))
                 channel(_("----------"))
 
-            return "spooler", (spooler, device_name)
+            return "spooler", (spooler, data.name)
 
         @kernel.console_command(
             "list",
@@ -189,7 +166,7 @@ class Devices(Modifier):
 
         @kernel.console_command(
             "clear",
-            help=_("spooler<?> clear"),
+            help=_("Clear the spooler"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -215,10 +192,10 @@ class Devices(Modifier):
 
         def execute_relative_position(position_x, position_y):
             x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=self.root.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.root.bed_width
             )
             y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=self.root.bed_height * MILS_IN_MM
+                ppi=1000.0, relative_length=self.root.bed_height
             )
 
             def move():
@@ -238,7 +215,10 @@ class Devices(Modifier):
         )
         def plus_laser(data, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                else:
+                    return
             spooler, device_name = data
             spooler.job(COMMAND_LASER_ON)
             return "spooler", data
@@ -252,7 +232,10 @@ class Devices(Modifier):
         )
         def minus_laser(data, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                else:
+                    return
             spooler, device_name = data
             spooler.job(COMMAND_LASER_OFF)
             return "spooler", data
@@ -268,7 +251,10 @@ class Devices(Modifier):
         )
         def direction(command, channel, _, data=None, amount=None, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                else:
+                    return
             spooler, device_name = data
             if amount is None:
                 amount = Length("1mm")
@@ -299,7 +285,10 @@ class Devices(Modifier):
         )
         def jog(command, channel, _, data, force=False, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                else:
+                    return
             spooler, device_name = data
             try:
                 idx = int(spooler._dx)
@@ -330,7 +319,10 @@ class Devices(Modifier):
         )
         def move(channel, _, x, y, data=None, force=False, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                else:
+                    return
             spooler, device_name = data
             if y is None:
                 raise SyntaxError
@@ -352,7 +344,10 @@ class Devices(Modifier):
         )
         def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                else:
+                    return
             spooler, device_name = data
             if dy is None:
                 raise SyntaxError
@@ -373,7 +368,10 @@ class Devices(Modifier):
         )
         def home(x=None, y=None, data=None, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                else:
+                    return
             spooler, device_name = data
             if x is not None and y is not None:
                 x = x.value(ppi=1000.0, relative_length=self.root.bed_width)
@@ -391,7 +389,10 @@ class Devices(Modifier):
         )
         def unlock(data=None, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                else:
+                    return
             spooler, device_name = data
             spooler.job(COMMAND_UNLOCK)
             return "spooler", data
@@ -404,7 +405,10 @@ class Devices(Modifier):
         )
         def lock(data, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                if self.active is None:
+                    data = self.active.spooler, self.active.name
+                else:
+                    return
             spooler, device_name = data
             spooler.job(COMMAND_LOCK)
             return "spooler", data
@@ -413,6 +417,15 @@ class Devices(Modifier):
             self.get_or_make_device(str(i))
 
     def get_or_make_device(self, device_name):
+        make = self.abs_path(device_name) in self.contexts
         device = self.derive(device_name)
-        device.setting(str, "type", None)
-        device.setting(bool, "boot", False)
+        driver_type = device.setting(str, "type", None)
+        autoboot = device.setting(bool, "boot", True)
+
+        if make:
+            device.spooler = Spooler(device, device_name)
+            if driver_type is not None and autoboot:
+                driver_class = self.registered["driver/%f" % driver_type]
+                driver = driver_class(self, device, driver_type)
+                self.add_aspect(driver)
+        return device
