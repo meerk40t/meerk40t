@@ -55,10 +55,7 @@ from .cutcode import (
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/Elemental", Elemental)
-    elif lifecycle == "boot":
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Elemental")
+        kernel.add_modifier(Elemental)
     elif lifecycle == "ready":
         context = kernel.root
         context.signal("rebuild_tree")
@@ -1417,7 +1414,6 @@ class RootNode(Node):
         self.context = context
         self.listeners = []
 
-        self.elements = context.elements
         self.bootstrap = {
             "op": LaserOperation,
             "cmdop": CommandOperation,
@@ -1579,8 +1575,8 @@ class Elemental(Modifier):
     that information out to inform other interested modules.
     """
 
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+    def __init__(self, kernel, name=None, *args, **kwargs):
+        Modifier.__init__(self, kernel, "elements")
 
         self._clipboard = {}
         self._clipboard_default = "0"
@@ -1590,9 +1586,3672 @@ class Elemental(Modifier):
         self._emphasized_bounds_dirty = True
         self._tree = None
 
+        _ = self._
+        self._tree = RootNode(self)
+        bed_dim = self.root
+        bed_dim.setting(int, "bed_width", 310)
+        bed_dim.setting(int, "bed_height", 210)
+        
+        self.setting(bool, "classify_reverse", False)
+        self.setting(bool, "legacy_classification", False)
+
+        # ==========
+        # OPERATION BASE
+        # ==========
+        @kernel.console_command(
+            "operations", help=_("Show information about operations")
+        )
+        def element(**kwgs):
+            kernel.console(".operation* list\n")
+
+        @kernel.console_command(
+            "operation.*", help=_("operation.*: selected operations"), output_type="ops"
+        )
+        def operation(**kwgs):
+            return "ops", list(self.ops(emphasized=True))
+
+        @kernel.console_command(
+            "operation*", help=_("operation*: all operations"), output_type="ops"
+        )
+        def operation(**kwgs):
+            return "ops", list(self.ops())
+
+        @kernel.console_command(
+            "operation~",
+            help=_("operation~: non selected operations."),
+            output_type="ops",
+        )
+        def operation(**kwgs):
+            return "ops", list(self.ops(emphasized=False))
+
+        @kernel.console_command(
+            "operation", help=_("operation: selected operations."), output_type="ops"
+        )
+        def operation(**kwgs):
+            return "ops", list(self.ops(emphasized=True))
+
+        @kernel.console_command(
+            r"operation([0-9]+,?)+",
+            help=_("operation0,2: operation #0 and #2"),
+            regex=True,
+            output_type="ops",
+        )
+        def operation(command, channel, _, **kwgs):
+            arg = command[9:]
+            op_values = []
+            for value in arg.split(","):
+                try:
+                    value = int(value)
+                except ValueError:
+                    continue
+                try:
+                    op = self.get_op(value)
+                    op_values.append(op)
+                except IndexError:
+                    channel(_("index %d out of range") % value)
+            return "ops", op_values
+
+        # ==========
+        # OPERATION SUBCOMMANDS
+        # ==========
+
+        @kernel.console_argument("name", help=_("Name to save the operation under"))
+        @kernel.console_command(
+            "save",
+            help=_("Save current operations to persistent settings"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def save_operations(command, channel, _, data=None, name=None, **kwgs):
+            if name is None:
+                raise SyntaxError
+            if "/" in name:
+                raise SyntaxError
+            self.save_persistent_operations(name)
+            return "ops", list(self.ops())
+
+        @kernel.console_argument("name", help=_("Name to load the operation from"))
+        @kernel.console_command(
+            "load",
+            help=_("Load operations from persistent settings"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def load_operations(name=None, **kwgs):
+            if name is None:
+                raise SyntaxError
+            if "/" in name:
+                raise SyntaxError
+            self.load_persistent_operations(name)
+            return "ops", list(self.ops())
+
+        @kernel.console_command(
+            "select",
+            help=_("Set these values as the selection."),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_select(data=None, **kwgs):
+            self.set_emphasis(data)
+            return "ops", data
+
+        @kernel.console_command(
+            "select+",
+            help=_("Add the input to the selection"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_select_plus(data=None, **kwgs):
+            ops = list(self.ops(emphasized=True))
+            ops.extend(data)
+            self.set_emphasis(ops)
+            return "ops", ops
+
+        @kernel.console_command(
+            "select-",
+            help=_("Remove the input data from the selection"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_select_minus(data=None, **kwgs):
+            ops = list(self.ops(emphasized=True))
+            for e in data:
+                try:
+                    ops.remove(e)
+                except ValueError:
+                    pass
+            self.set_emphasis(ops)
+            return "ops", ops
+
+        @kernel.console_command(
+            "select^",
+            help=_("Toggle the input data in the selection"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_select_xor(data=None, **kwgs):
+            ops = list(self.ops(emphasized=True))
+            for e in data:
+                try:
+                    ops.remove(e)
+                except ValueError:
+                    ops.append(e)
+            self.set_emphasis(ops)
+            return "ops", ops
+
+        @kernel.console_argument("start", type=int, help=_("operation start"))
+        @kernel.console_argument("end", type=int, help=_("operation end"))
+        @kernel.console_argument("step", type=int, help=_("operation step"))
+        @kernel.console_command(
+            "range",
+            help=_("Subset existing selection by begin and end indices and step"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_select_range(data=None, start=None, end=None, step=1, **kwgs):
+            subops = list()
+            for e in range(start, end, step):
+                try:
+                    subops.append(data[e])
+                except IndexError:
+                    pass
+            self.set_emphasis(subops)
+            return "ops", subops
+
+        @kernel.console_argument("filter", type=str, help=_("Filter to apply"))
+        @kernel.console_command(
+            "filter",
+            help=_("Filter data by given value"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_filter(channel=None, data=None, filter=None, **kwgs):
+            """
+                    Apply a filter string to a filter particular operations from the current data.
+                    Operations are evaluated in an infix prioritized stack format without spaces.
+                    Qualified values are speed, power, step, acceleration, passes, color, op, overscan, len
+                    Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
+                    eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
+                    eg. filter engrave=op&speed=35|cut=op&speed=10
+                    eg. filter len=0
+                    """
+            subops = list()
+            _filter_parse = [
+                ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
+                ("OP20", r"(\*|/)"),
+                ("OP15", r"(\+|-)"),
+                ("OP11", r"(<=|>=|==|!=)"),
+                ("OP10", r"(<|>|=)"),
+                ("OP5", r"(&&)"),
+                ("OP4", r"(&)"),
+                ("OP3", r"(\|\|)"),
+                ("OP2", r"(\|)"),
+                ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
+                (
+                    "COLOR",
+                    r"(#[0123456789abcdefABCDEF]{6}|#[0123456789abcdefABCDEF]{3})",
+                ),
+                (
+                    "TYPE",
+                    r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)",
+                ),
+                (
+                    "VAL",
+                    r"(speed|power|step|acceleration|passes|color|op|overscan|len)",
+                ),
+            ]
+            filter_re = re.compile(
+                "|".join("(?P<%s>%s)" % pair for pair in _filter_parse)
+            )
+            operator = list()
+            operand = list()
+
+            def filter_parser(text: str):
+                pos = 0
+                limit = len(text)
+                while pos < limit:
+                    match = filter_re.match(text, pos)
+                    if match is None:
+                        break  # No more matches.
+                    kind = match.lastgroup
+                    start = pos
+                    pos = match.end()
+                    if kind == "SKIP":
+                        continue
+                    value = match.group()
+                    yield kind, value, start, pos
+
+            def solve_to(order: int):
+                try:
+                    while len(operator) and operator[0][0] >= order:
+                        _p, op = operator.pop()
+                        v2 = operand.pop()
+                        v1 = operand.pop()
+                        try:
+                            if op == "==" or op == "=":
+                                operand.append(v1 == v2)
+                            elif op == "!=":
+                                operand.append(v1 != v2)
+                            elif op == ">":
+                                operand.append(v1 > v2)
+                            elif op == "<":
+                                operand.append(v1 < v2)
+                            elif op == "<=":
+                                operand.append(v1 <= v2)
+                            elif op == ">=":
+                                operand.append(v1 >= v2)
+                            elif op == "&&" or op == "&":
+                                operand.append(v1 and v2)
+                            elif op == "||" or op == "|":
+                                operand.append(v1 or v2)
+                            elif op == "*":
+                                operand.append(v1 * v2)
+                            elif op == "/":
+                                operand.append(v1 / v2)
+                            elif op == "+":
+                                operand.append(v1 + v2)
+                            elif op == "-":
+                                operand.append(v1 - v2)
+                        except TypeError:
+                            raise SyntaxError("Cannot evaluate expression")
+                        except ZeroDivisionError:
+                            operand.append(float("inf"))
+                except IndexError:
+                    pass
+
+            for e in data:
+                for kind, value, start, pos in filter_parser(filter):
+                    if kind == "COLOR":
+                        operand.append(Color(value))
+                    elif kind == "VAL":
+                        if value == "step":
+                            operand.append(e.settings.raster_step)
+                        elif value == "color":
+                            operand.append(e.color)
+                        elif value == "op":
+                            operand.append(e.operation.lower())
+                        elif value == "len":
+                            operand.append(len(e.children))
+                        else:
+                            operand.append(getattr(e.settings, value))
+
+                    elif kind == "NUM":
+                        operand.append(float(value))
+                    elif kind == "TYPE":
+                        operand.append(value)
+                    elif kind.startswith("OP"):
+                        prec = int(kind[2:])
+                        solve_to(prec)
+                        operator.append((prec, value))
+                solve_to(0)
+                if len(operand) == 1:
+                    if operand.pop():
+                        subops.append(e)
+                else:
+                    raise SyntaxError(_("Filter parse failed"))
+
+            self.set_emphasis(subops)
+            return "ops", subops
+
+        @kernel.console_command(
+            "list",
+            help=_("Show information about the chained data"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def operation_list(channel, _, data=None, **kwgs):
+            channel("----------")
+            channel(_("Operations:"))
+            index_ops = list(self.ops())
+            for op_obj in data:
+                i = index_ops.index(op_obj)
+                selected = op_obj.emphasized
+                select_piece = " *" if selected else "  "
+                color = (
+                    Color(op_obj.color).hex
+                    if hasattr(op_obj, "color") and op_obj.color is not None
+                    else "None"
+                )
+                name = "%d: %s %s - %s" % (i, str(op_obj), select_piece, color)
+                channel(name)
+                if isinstance(op_obj, list):
+                    for q, oe in enumerate(op_obj):
+                        stroke_piece = (
+                            "None"
+                            if (not hasattr(oe, "stroke") or oe.stroke) is None
+                            else oe.stroke.hex
+                        )
+                        fill_piece = (
+                            "None"
+                            if (not hasattr(oe, "stroke") or oe.fill) is None
+                            else oe.fill.hex
+                        )
+                        ident_piece = str(oe.id)
+                        name = "%s%d: %s-%s s:%s f:%s" % (
+                            "".ljust(5),
+                            q,
+                            str(type(oe).__name__),
+                            ident_piece,
+                            stroke_piece,
+                            fill_piece,
+                        )
+                        channel(name)
+            channel("----------")
+
+        @kernel.console_option("color", "c", type=Color)
+        @kernel.console_option("default", "d", type=bool)
+        @kernel.console_option("speed", "s", type=float)
+        @kernel.console_option("power", "p", type=float)
+        @kernel.console_option("step", "S", type=int)
+        @kernel.console_option("overscan", "o", type=Length)
+        @kernel.console_option("passes", "x", type=int)
+        @kernel.console_command(
+            ("cut", "engrave", "raster", "imageop", "dots"),
+            help=_(
+                "<cut/engrave/raster/imageop/dots> - group the elements into this operation"
+            ),
+            input_type=(None, "elements"),
+            output_type="ops",
+        )
+        def makeop(
+                command,
+                data=None,
+                color=None,
+                default=None,
+                speed=None,
+                power=None,
+                step=None,
+                overscan=None,
+                passes=None,
+                **kwgs
+        ):
+            op = LaserOperation()
+            if color is not None:
+                op.color = color
+            if default is not None:
+                op.default = default
+            if speed is not None:
+                op.settings.speed = speed
+            if power is not None:
+                op.settings.power = power
+            if passes is not None:
+                op.settings.passes_custom = True
+                op.settings.passes = passes
+            if step is not None:
+                op.settings.raster_step = step
+            if overscan is not None:
+                op.settings.overscan = int(
+                    overscan.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    )
+                )
+            if command == "cut":
+                op.operation = "Cut"
+            elif command == "engrave":
+                op.operation = "Engrave"
+            elif command == "raster":
+                op.operation = "Raster"
+            elif command == "imageop":
+                op.operation = "Image"
+            elif command == "dots":
+                op.operation = "Dots"
+            self.add_op(op)
+            if data is not None:
+                for item in data:
+                    op.add(item, type="opnode")
+            return "ops", [op]
+
+        @kernel.console_argument("step_size", type=int, help=_("raster step size"))
+        @kernel.console_command(
+            "step", help=_("step <raster-step-size>"), input_type="ops"
+        )
+        def op_step(command, channel, _, data, step_size=None, **kwrgs):
+            if step_size is None:
+                found = False
+                for op in data:
+                    if op.operation in ("Raster", "Image"):
+                        step = op.settings.raster_step
+                        channel(_("Step for %s is currently: %d") % (str(op), step))
+                        found = True
+                if not found:
+                    channel(_("No raster operations selected."))
+                return
+            for op in data:
+                if op.operation in ("Raster", "Image"):
+                    op.settings.raster_step = step_size
+                    op.notify_update()
+            return "ops", data
+
+        @kernel.console_argument(
+            "speed", type=float, help=_("operation speed in mm/s")
+        )
+        @kernel.console_command(
+            "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
+        )
+        def op_speed(command, channel, _, speed=None, data=None, **kwrgs):
+            if speed is None:
+                for op in data:
+                    old_speed = op.settings.speed
+                    channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
+                return
+            for op in data:
+                old_speed = op.settings.speed
+                op.settings.speed = speed
+                channel(
+                    _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, speed)
+                )
+                op.notify_update()
+            return "ops", data
+
+        @kernel.console_argument(
+            "power", type=int, help=_("power in pulses per inch (ppi, 1000=max)")
+        )
+        @kernel.console_command(
+            "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
+        )
+        def op_power(command, channel, _, power=None, data=None, **kwrgs):
+            if power is None:
+                for op in data:
+                    old_ppi = op.settings.power
+                    channel(_("Power for '%s' is currently: %d") % (str(op), old_ppi))
+                return
+            for op in data:
+                old_ppi = op.settings.power
+                op.settings.power = power
+                channel(
+                    _("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power)
+                )
+                op.notify_update()
+            return "ops", data
+
+        @kernel.console_argument("passes", type=int, help=_("Set operation passes"))
+        @kernel.console_command(
+            "passes", help=_("passes <passes>"), input_type="ops", output_type="ops"
+        )
+        def op_passes(command, channel, _, passes=None, data=None, **kwrgs):
+            if passes is None:
+                for op in data:
+                    old_passes = op.settings.passes
+                    channel(
+                        _("Passes for '%s' is currently: %d") % (str(op), old_passes)
+                    )
+                return
+            for op in data:
+                old_passes = op.settings.passes
+                op.settings.passes = passes
+                if passes >= 1:
+                    op.settings.passes_custom = True
+                channel(
+                    _("Passes for '%s' updated %d -> %d")
+                    % (str(op), old_passes, passes)
+                )
+                op.notify_update()
+            return "ops", data
+
+        @kernel.console_command(
+            "disable",
+            help=_("Disable the given operations"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def op_disable(command, channel, _, data=None, **kwrgs):
+            for op in data:
+                op.output = False
+                channel(_("Operation '%s' disabled.") % str(op))
+                op.notify_update()
+            return "ops", data
+
+        @kernel.console_command(
+            "enable",
+            help=_("Enable the given operations"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def op_enable(command, channel, _, data=None, **kwrgs):
+            for op in data:
+                op.output = True
+                channel(_("Operation '%s' enabled.") % str(op))
+                op.notify_update()
+            return "ops", data
+
+        # ==========
+        # ELEMENT/OPERATION SUBCOMMANDS
+        # ==========
+        @kernel.console_command(
+            "copy",
+            help=_("Duplicate elements"),
+            input_type=("elements", "ops"),
+            output_type=("elements", "ops"),
+        )
+        def e_copy(data=None, data_type=None, **kwgs):
+            add_elem = list(map(copy, data))
+            if data_type == "ops":
+                self.add_ops(add_elem)
+            else:
+                self.add_elems(add_elem)
+            return data_type, add_elem
+
+        @kernel.console_command(
+            "delete", help=_("Delete elements"), input_type=("elements", "ops")
+        )
+        def e_delete(command, channel, _, data=None, data_type=None, **kwgs):
+            channel(_("Deleting…"))
+            if data_type == "elements":
+                self.remove_elements(data)
+            else:
+                self.remove_operations(data)
+            self.signal("refresh_scene", 0)
+
+        # ==========
+        # ELEMENT BASE
+        # ==========
+
+        @kernel.console_command(
+            "elements",
+            help=_("Show information about elements"),
+        )
+        def element(**kwgs):
+            kernel.console(".element* list\n")
+
+        @kernel.console_command(
+            "element*",
+            help=_("element*, all elements"),
+            output_type="elements",
+        )
+        def element_star(**kwgs):
+            return "elements", list(self.elems())
+
+        @kernel.console_command(
+            "element~",
+            help=_("element~, all non-selected elements"),
+            output_type="elements",
+        )
+        def element_not(**kwgs):
+            return "elements", list(self.elems(emphasized=False))
+
+        @kernel.console_command(
+            "element",
+            help=_("element, selected elements"),
+            output_type="elements",
+        )
+        def element_base(**kwargs):
+            return "elements", list(self.elems(emphasized=True))
+
+        @kernel.console_command(
+            r"element([0-9]+,?)+",
+            help=_("element0,3,4,5: chain a list of specific elements"),
+            regex=True,
+            output_type="elements",
+        )
+        def element_chain(command, channel, _, **kwgs):
+            arg = command[7:]
+            elements_list = []
+            for value in arg.split(","):
+                try:
+                    value = int(value)
+                except ValueError:
+                    continue
+                try:
+                    e = self.get_elem(value)
+                    elements_list.append(e)
+                except IndexError:
+                    channel(_("index %d out of range") % value)
+            return "elements", elements_list
+
+        # ==========
+        # ELEMENT SUBCOMMANDS
+        # ==========
+
+        @kernel.console_argument("step_size", type=int, help=_("element step size"))
+        @kernel.console_command(
+            "step",
+            help=_("step <element step-size>"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def step_command(command, channel, _, data, step_size=None, **kwrgs):
+            if step_size is None:
+                found = False
+                for element in data:
+                    if isinstance(element, SVGImage):
+                        try:
+                            step = element.values["raster_step"]
+                        except KeyError:
+                            step = 1
+                        channel(
+                            _("Image step for %s is currently: %s")
+                            % (str(element), step)
+                        )
+                        found = True
+                if not found:
+                    channel(_("No image element selected."))
+                return
+            for element in data:
+                element.values["raster_step"] = str(step_size)
+                m = element.transform
+                tx = m.e
+                ty = m.f
+                element.transform = Matrix.scale(float(step_size), float(step_size))
+                element.transform.post_translate(tx, ty)
+                if hasattr(element, "node"):
+                    element.node.modified()
+                self.signal("element_property_reload", element)
+                self.signal("refresh_scene")
+            return ("elements",)
+
+        @kernel.console_command(
+            "select",
+            help=_("Set these values as the selection."),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_select_base(data=None, **kwgs):
+            self.set_emphasis(data)
+            return "elements", data
+
+        @kernel.console_command(
+            "select+",
+            help=_("Add the input to the selection"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_select_plus(data=None, **kwgs):
+            elems = list(self.elems(emphasized=True))
+            elems.extend(data)
+            self.set_emphasis(elems)
+            return "elements", elems
+
+        @kernel.console_command(
+            "select-",
+            help=_("Remove the input data from the selection"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_select_minus(data=None, **kwgs):
+            elems = list(self.elems(emphasized=True))
+            for e in data:
+                try:
+                    elems.remove(e)
+                except ValueError:
+                    pass
+            self.set_emphasis(elems)
+            return "elements", elems
+
+        @kernel.console_command(
+            "select^",
+            help=_("Toggle the input data in the selection"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_select_xor(data=None, **kwgs):
+            elems = list(self.elems(emphasized=True))
+            for e in data:
+                try:
+                    elems.remove(e)
+                except ValueError:
+                    elems.append(e)
+            self.set_emphasis(elems)
+            return "elements", elems
+
+        @kernel.console_command(
+            "list",
+            help=_("Show information about the chained data"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_list(command, channel, _, data=None, **kwgs):
+            channel("----------")
+            channel(_("Graphical Elements:"))
+            index_list = list(self.elems())
+            for e in data:
+                i = index_list.index(e)
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "…"
+                if e.node.emphasized:
+                    channel("%d: * %s" % (i, name))
+                else:
+                    channel("%d: %s" % (i, name))
+            channel("----------")
+            return "elements", data
+
+        @kernel.console_argument("start", type=int, help=_("elements start"))
+        @kernel.console_argument("end", type=int, help=_("elements end"))
+        @kernel.console_argument("step", type=int, help=_("elements step"))
+        @kernel.console_command(
+            "range",
+            help=_("Subset selection by begin & end indices and step"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_select_range(data=None, start=None, end=None, step=1, **kwgs):
+            subelem = list()
+            for e in range(start, end, step):
+                try:
+                    subelem.append(data[e])
+                except IndexError:
+                    pass
+            self.set_emphasis(subelem)
+            return "elements", subelem
+
+        @kernel.console_command(
+            "merge",
+            help=_("merge elements"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_merge(data=None, **kwgs):
+            super_element = Path()
+            for e in data:
+                if not isinstance(e, Shape):
+                    continue
+                if super_element.stroke is None:
+                    super_element.stroke = e.stroke
+                if super_element.fill is None:
+                    super_element.fill = e.fill
+                super_element += abs(e)
+            self.remove_elements(data)
+            self.add_elem(super_element).emphasized = True
+            self.classify([super_element])
+            return "elements", [super_element]
+
+        @kernel.console_command(
+            "subpath",
+            help=_("break elements"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_subpath(data=None, **kwgs):
+            if not isinstance(data, list):
+                data = list(data)
+            elements_nodes = []
+            elements = []
+            for e in data:
+                node = e.node
+                group_node = node.replace_node(type="group", label=node.label)
+                if isinstance(e, Shape) and not isinstance(e, Path):
+                    e = Path(e)
+                elif isinstance(e, SVGText):
+                    continue
+                p = abs(e)
+                for subpath in p.as_subpaths():
+                    subelement = Path(subpath)
+                    elements.append(subelement)
+                    group_node.add(subelement, type="elem")
+                elements_nodes.append(group_node)
+                self.classify(elements)
+            return "elements", elements_nodes
+
+        # ==========
+        # ALIGN SUBTYPE
+        # Align consist of top level node objects that can be manipulated within the scene.
+        # ==========
+
+        @kernel.console_command(
+            "align",
+            help=_("align selected elements"),
+            input_type=("elements", None),
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, remainder=None, **kwgs):
+            if not remainder:
+                channel(
+                    "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n"
+                    "<any valid svg:Preserve Aspect Ratio, eg xminymin>"
+                )
+                return
+            if data is None:
+                data = list(self.elems(emphasized=True))
+
+            # Element conversion.
+            d = list()
+            elem_branch = self.elem_branch
+            for elem in data:
+                node = elem.node
+                while node.parent and node.parent is not elem_branch:
+                    node = node.parent
+                if node not in d:
+                    d.append(node)
+            data = d
+            return "align", data
+
+        @kernel.console_command(
+            "top",
+            help=_("align elements at top"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            top_edge = min([e[1] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                top = subbox[1] - top_edge
+                matrix = "translate(0, %f)" % -top
+                if top != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+            return "align", data
+
+        @kernel.console_command(
+            "bottom",
+            help=_("align elements at bottom"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            bottom_edge = max([e[3] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                bottom = subbox[3] - bottom_edge
+                matrix = "translate(0, %f)" % -bottom
+                if bottom != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+            return "align", data
+
+        @kernel.console_command(
+            "left",
+            help=_("align elements at left"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                left = subbox[0] - left_edge
+                matrix = "translate(%f, 0)" % -left
+                if left != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+            return "align", data
+
+        @kernel.console_command(
+            "right",
+            help=_("align elements at right"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            right_edge = max([e[2] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                right = subbox[2] - right_edge
+                matrix = "translate(%f, 0)" % -right
+                if right != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+            return "align", data
+
+        @kernel.console_command(
+            "center",
+            help=_("align elements at center"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
+                dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
+                matrix = "translate(%f, %f)" % (-dx, -dy)
+                for q in node.flat(types="elem"):
+                    obj = q.object
+                    if obj is not None:
+                        obj *= matrix
+                    q.modified()
+            return "align", data
+
+        @kernel.console_command(
+            "centerv",
+            help=_("align elements at center vertical"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
+                matrix = "translate(%f, 0)" % -dx
+                for q in node.flat(types="elem"):
+                    obj = q.object
+                    if obj is not None:
+                        obj *= matrix
+                    q.modified()
+            return "align", data
+
+        @kernel.console_command(
+            "centerh",
+            help=_("align elements at center horizontal"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            top_edge = min([e[1] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            for node in data:
+                subbox = node.bounds
+                dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
+                matrix = "translate(0, %f)" % -dy
+                for q in node.flat(types="elem"):
+                    obj = q.object
+                    if obj is not None:
+                        obj *= matrix
+                    q.modified()
+            return "align", data
+
+        @kernel.console_command(
+            "spaceh",
+            help=_("align elements across horizontal space"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
+                return "align", data
+            left_edge = min([e[0] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            dim_total = right_edge - left_edge
+            dim_available = dim_total
+            for node in data:
+                bounds = node.bounds
+                dim_available -= bounds[2] - bounds[0]
+            distributed_distance = dim_available / (len(data) - 1)
+            data.sort(key=lambda n: n.bounds[0])  # sort by left edge
+            dim_pos = left_edge
+            for node in data:
+                subbox = node.bounds
+                delta = subbox[0] - dim_pos
+                matrix = "translate(%f, 0)" % -delta
+                if delta != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+                dim_pos += subbox[2] - subbox[0] + distributed_distance
+            return "align", data
+
+        @kernel.console_command(
+            "spacev",
+            help=_("align elements down vertical space"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
+                return "align", data
+            top_edge = min([e[1] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            dim_total = bottom_edge - top_edge
+            dim_available = dim_total
+            for node in data:
+                bounds = node.bounds
+                dim_available -= bounds[3] - bounds[1]
+            distributed_distance = dim_available / (len(data) - 1)
+            data.sort(key=lambda n: n.bounds[1])  # sort by top edge
+            dim_pos = top_edge
+            for node in data:
+                subbox = node.bounds
+                delta = subbox[1] - dim_pos
+                matrix = "translate(0, %f)" % -delta
+                if delta != 0:
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+                dim_pos += subbox[3] - subbox[1] + distributed_distance
+            return "align", data
+
+        @kernel.console_command(
+            "bedcenter",
+            help=_("align elements to bedcenter"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwgs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            for node in data:
+                bw = bed_dim.bed_width
+                bh = bed_dim.bed_height
+                dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
+                dy = (bh * MILS_IN_MM - top_edge - bottom_edge) / 2.0
+                matrix = "translate(%f, %f)" % (dx, dy)
+                for q in node.flat(types="elem"):
+                    obj = q.object
+                    if obj is not None:
+                        obj *= matrix
+                    q.modified()
+            self.signal("refresh_scene")
+            return "align", data
+
+        @kernel.console_argument(
+            "preserve_aspect_ratio",
+            type=str,
+            default="none",
+            help="preserve aspect ratio value",
+        )
+        @kernel.console_command(
+            "view",
+            help=_("align elements within viewbox"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(
+                command, channel, _, data=None, preserve_aspect_ratio="none", **kwgs
+        ):
+            """
+                    Align the elements to within the bed according to SVG Viewbox rules. The following aspect ratios
+                    are valid. These should define all the valid methods of centering data within the laser bed.
+                    "xminymin",
+                    "xmidymin",
+                    "xmaxymin",
+                    "xminymid",
+                    "xmidymid",
+                    "xmaxymid",
+                    "xminymax",
+                    "xmidymax",
+                    "xmaxymax",
+                    "xminymin meet",
+                    "xmidymin meet",
+                    "xmaxymin meet",
+                    "xminymid meet",
+                    "xmidymid meet",
+                    "xmaxymid meet",
+                    "xminymax meet",
+                    "xmidymax meet",
+                    "xmaxymax meet",
+                    "xminymin slice",
+                    "xmidymin slice",
+                    "xmaxymin slice",
+                    "xminymid slice",
+                    "xmidymid slice",
+                    "xmaxymid slice",
+                    "xminymax slice",
+                    "xmidymax slice",
+                    "xmaxymax slice",
+                    "none"
+                    """
+
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+
+            if preserve_aspect_ratio in (
+                    "xminymin",
+                    "xmidymin",
+                    "xmaxymin",
+                    "xminymid",
+                    "xmidymid",
+                    "xmaxymid",
+                    "xminymax",
+                    "xmidymax",
+                    "xmaxymax",
+                    "xminymin meet",
+                    "xmidymin meet",
+                    "xmaxymin meet",
+                    "xminymid meet",
+                    "xmidymid meet",
+                    "xmaxymid meet",
+                    "xminymax meet",
+                    "xmidymax meet",
+                    "xmaxymax meet",
+                    "xminymin slice",
+                    "xmidymin slice",
+                    "xmaxymin slice",
+                    "xminymid slice",
+                    "xmidymid slice",
+                    "xmaxymid slice",
+                    "xminymax slice",
+                    "xmidymax slice",
+                    "xmaxymax slice",
+                    "none",
+            ):
+                for node in data:
+                    bw = bed_dim.bed_width
+                    bh = bed_dim.bed_height
+
+                    matrix = Viewbox.viewbox_transform(
+                        0,
+                        0,
+                        bw * MILS_IN_MM,
+                        bh * MILS_IN_MM,
+                        left_edge,
+                        top_edge,
+                        right_edge - left_edge,
+                        bottom_edge - top_edge,
+                        preserve_aspect_ratio,
+                        )
+                    for q in node.flat(types="elem"):
+                        obj = q.object
+                        if obj is not None:
+                            obj *= matrix
+                        q.modified()
+                    for q in node.flat(types=("file", "group")):
+                        q.modified()
+                self.signal("refresh_scene")
+            return "align", data
+
+        @kernel.console_argument("c", type=int, help=_("Number of columns"))
+        @kernel.console_argument("r", type=int, help=_("Number of rows"))
+        @kernel.console_argument("x", type=Length, help=_("x distance"))
+        @kernel.console_argument("y", type=Length, help=_("y distance"))
+        @kernel.console_command(
+            "grid",
+            help=_("grid <columns> <rows> <x_distance> <y_distance>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_grid(
+                command, channel, _, c: int, r: int, x: Length, y: Length, data=None, **kwgs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0 and self._emphasized_bounds is None:
+                channel(_("No item selected."))
+                return
+            if r is None:
+                raise SyntaxError
+            if x is None:
+                x = Length("100%")
+            if y is None:
+                y = Length("100%")
+            try:
+                bounds = self._emphasized_bounds
+                width = bounds[2] - bounds[0]
+                height = bounds[3] - bounds[1]
+            except Exception:
+                raise SyntaxError
+            x = x.value(ppi=1000, relative_length=width)
+            y = y.value(ppi=1000, relative_length=height)
+            if isinstance(x, Length) or isinstance(y, Length):
+                raise SyntaxError
+            y_pos = 0
+            data_out = list(data)
+            for j in range(r):
+                x_pos = 0
+                for k in range(c):
+                    if j != 0 or k != 0:
+                        add_elem = list(map(copy, data))
+                        for e in add_elem:
+                            e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        self.add_elems(add_elem)
+                        data_out.extend(add_elem)
+                    x_pos += x
+                y_pos += y
+            return "elements", data_out
+
+        @kernel.console_option("step", "s", default=2.0, type=float)
+        @kernel.console_command(
+            "render",
+            help=_("Convert given elements to a raster image"),
+            input_type=(None, "elements"),
+            output_type="image",
+        )
+        def make_raster_image(command, channel, _, step=2.0, data=None, **kwgs):
+            context = self.context
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            elements = context.elements
+            make_raster = self.registered.get("render-op/make_raster")
+
+            bounds = Group.union_bbox(data)
+            if bounds is None:
+                return
+            if step <= 0:
+                step = 1
+            xmin, ymin, xmax, ymax = bounds
+
+            image = make_raster(
+                [n.node for n in data],
+                bounds,
+                step=step,
+            )
+            image_element = SVGImage(image=image)
+            image_element.transform.post_scale(step, step)
+            image_element.transform.post_translate(xmin, ymin)
+            image_element.values["raster_step"] = step
+            elements.add_elem(image_element)
+            return "image", [image_element]
+
+        # ==========
+        # ELEMENT/SHAPE COMMANDS
+        # ==========
+        @kernel.console_argument("x_pos", type=Length)
+        @kernel.console_argument("y_pos", type=Length)
+        @kernel.console_argument("r_pos", type=Length)
+        @kernel.console_command(
+            "circle",
+            help=_("circle <x> <y> <r> or circle <r>"),
+            input_type=("elements", None),
+            output_type="elements",
+        )
+        def element_circle(x_pos, y_pos, r_pos, data=None, **kwgs):
+            if x_pos is None:
+                raise SyntaxError
+            else:
+                if r_pos is None:
+                    r_pos = x_pos
+                    x_pos = 0
+                    y_pos = 0
+            circ = Circle(cx=x_pos, cy=y_pos, r=r_pos)
+            circ.render(
+                ppi=1000.0,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
+            )
+            self.add_element(circ)
+            if data is None:
+                return "elements", [circ]
+            else:
+                data.append(circ)
+                return "elements", data
+
+        @kernel.console_argument("x_pos", type=Length)
+        @kernel.console_argument("y_pos", type=Length)
+        @kernel.console_argument("rx_pos", type=Length)
+        @kernel.console_argument("ry_pos", type=Length)
+        @kernel.console_command(
+            "ellipse",
+            help=_("ellipse <cx> <cy> <rx> <ry>"),
+            input_type=("elements", None),
+            output_type="elements",
+        )
+        def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwgs):
+            if ry_pos is None:
+                raise SyntaxError
+            ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
+            ellip.render(
+                ppi=1000.0,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
+            )
+            self.add_element(ellip)
+            if data is None:
+                return "elements", [ellip]
+            else:
+                data.append(ellip)
+                return "elements", data
+
+        @kernel.console_argument(
+            "x_pos", type=Length, help=_("x position for top left corner of rectangle.")
+        )
+        @kernel.console_argument(
+            "y_pos", type=Length, help=_("y position for top left corner of rectangle.")
+        )
+        @kernel.console_argument(
+            "width", type=Length, help=_("width of the rectangle.")
+        )
+        @kernel.console_argument(
+            "height", type=Length, help=_("height of the rectangle.")
+        )
+        @kernel.console_option(
+            "rx", "x", type=Length, help=_("rounded rx corner value.")
+        )
+        @kernel.console_option(
+            "ry", "y", type=Length, help=_("rounded ry corner value.")
+        )
+        @kernel.console_command(
+            "rect",
+            help=_("adds rectangle to scene"),
+            input_type=("elements", None),
+            output_type="elements",
+        )
+        def element_rect(
+                x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwgs
+        ):
+            """
+                    Draws an svg rectangle with optional rounded corners.
+                    """
+            if x_pos is None:
+                raise SyntaxError
+            rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
+            rect.render(
+                ppi=1000.0,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
+            )
+            # rect = Path(rect)
+            self.add_element(rect)
+            if data is None:
+                return "elements", [rect]
+            else:
+                data.append(rect)
+                return "elements", data
+
+        @kernel.console_argument("x0", type=Length, help=_("start x position"))
+        @kernel.console_argument("y0", type=Length, help=_("start y position"))
+        @kernel.console_argument("x1", type=Length, help=_("end x position"))
+        @kernel.console_argument("y1", type=Length, help=_("end y position"))
+        @kernel.console_command(
+            "line",
+            help=_("adds line to scene"),
+            input_type=("elements", None),
+            output_type="elements",
+        )
+        def element_line(command, x0, y0, x1, y1, data=None, **kwgs):
+            """
+                    Draws an svg line in the scene.
+                    """
+            if y1 is None:
+                raise SyntaxError
+            simple_line = SimpleLine(x0, y0, x1, y1)
+            simple_line.render(
+                ppi=1000.0,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
+            )
+            self.add_element(simple_line)
+            if data is None:
+                return "elements", [simple_line]
+            else:
+                data.append(simple_line)
+                return "elements", data
+
+        @kernel.console_argument("text", type=str, help=_("quoted string of text"))
+        @kernel.console_command(
+            "text",
+            help=_("text <text>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_text(command, channel, _, data=None, text=None, **kwgs):
+            if text is None:
+                channel(_("No text specified"))
+                return
+            svg_text = SVGText(text)
+            self.add_element(svg_text)
+            if data is None:
+                return "elements", [svg_text]
+            else:
+                data.append(svg_text)
+                return "elements", data
+
+        @kernel.console_command(
+            "polygon", help=_("polygon (float float)*"), input_type=("elements", None)
+        )
+        def element_polygon(args=tuple(), **kwgs):
+            try:
+                element = Polygon(list(map(float, args)))
+            except ValueError:
+                raise SyntaxError(
+                    _(
+                        "Must be a list of spaced delimited floating point numbers values."
+                    )
+                )
+            self.add_element(element)
+
+        @kernel.console_command(
+            "polyline",
+            help=_("polyline (float float)*"),
+            input_type=("elements", None),
+        )
+        def element_polyline(command, channel, _, args=tuple(), **kwgs):
+            try:
+                element = Polyline(list(map(float, args)))
+            except ValueError:
+                raise SyntaxError(
+                    _(
+                        "Must be a list of spaced delimited floating point numbers values."
+                    )
+                )
+            self.add_element(element)
+
+        @kernel.console_command(
+            "path", help=_("Convert any shapes to paths"), input_type="elements"
+        )
+        def element_path_convert(data, **kwgs):
+            for e in data:
+                try:
+                    node = e.node
+                    node.replace_object(abs(Path(node.object)))
+                    node.altered()
+                except AttributeError:
+                    pass
+
+        @kernel.console_argument(
+            "path_d", type=str, help=_("svg path syntax command (quoted).")
+        )
+        @kernel.console_command(
+            "path",
+            help=_("path <svg path>"),
+            output_type="elements",
+        )
+        def element_path(path_d, data, **kwgs):
+            try:
+                path = Path(path_d)
+            except ValueError:
+                raise SyntaxError(_("Not a valid path_d string (try quotes)"))
+
+            self.add_element(path)
+            if data is None:
+                return "elements", [path]
+            else:
+                data.append(path)
+                return "elements", data
+
+        @kernel.console_argument(
+            "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
+        )
+        @kernel.console_command(
+            "stroke-width",
+            help=_("stroke-width <length>"),
+            input_type=(
+                    None,
+                    "elements",
+            ),
+            output_type="elements",
+        )
+        def element_stroke_width(command, channel, _, stroke_width, data=None, **kwgs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if stroke_width is None:
+                channel("----------")
+                channel(_("Stroke-Width Values:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    if e.stroke is None or e.stroke == "none":
+                        channel(_("%d: stroke = none - %s") % (i, name))
+                    else:
+                        channel(_("%d: stroke = %s - %s") % (i, e.stroke_width, name))
+                    i += 1
+                channel("----------")
+                return
+
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            stroke_width = stroke_width.value(
+                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            if isinstance(stroke_width, Length):
+                raise SyntaxError
+            for e in data:
+                e.stroke_width = stroke_width
+                if hasattr(e, "node"):
+                    e.node.altered()
+            self.signal("refresh_scene")
+            return "elements", data
+
+        @kernel.console_option("filter", "f", type=str, help="Filter indexes")
+        @kernel.console_argument(
+            "color", type=Color, help=_("Color to color the given stroke")
+        )
+        @kernel.console_command(
+            "stroke",
+            help=_("stroke <svg color>"),
+            input_type=(
+                    None,
+                    "elements",
+            ),
+            output_type="elements",
+        )
+        def element_stroke(
+                command, channel, _, color, data=None, filter=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
+            if color is None:
+                channel("----------")
+                channel(_("Stroke Values:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    if e.stroke is None or e.stroke == "none":
+                        channel(_("%d: stroke = none - %s") % (i, name))
+                    else:
+                        channel(_("%d: stroke = %s - %s") % (i, e.stroke.hex, name))
+                    i += 1
+                channel("----------")
+                return
+            elif color == "none":
+                for e in apply:
+                    e.stroke = None
+                    if hasattr(e, "node"):
+                        e.node.altered()
+            else:
+                for e in apply:
+                    e.stroke = Color(color)
+                    if hasattr(e, "node"):
+                        e.node.altered()
+            self.signal("refresh_scene")
+            return "elements", data
+
+        @kernel.console_option("filter", "f", type=str, help="Filter indexes")
+        @kernel.console_argument(
+            "color", type=Color, help=_("Color to set the fill to")
+        )
+        @kernel.console_command(
+            "fill",
+            help=_("fill <svg color>"),
+            input_type=(
+                    None,
+                    "elements",
+            ),
+            output_type="elements",
+        )
+        def element_fill(command, channel, _, color, data=None, filter=None, **kwgs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
+            if color is None:
+                channel("----------")
+                channel(_("Fill Values:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    if e.fill is None or e.fill == "none":
+                        channel(_("%d: fill = none - %s") % (i, name))
+                    else:
+                        channel(_("%d: fill = %s - %s") % (i, e.fill.hex, name))
+                    i += 1
+                channel("----------")
+                return "elements", data
+            elif color == "none":
+                for e in apply:
+                    e.fill = None
+                    if hasattr(e, "node"):
+                        e.node.altered()
+            else:
+                for e in apply:
+                    e.fill = Color(color)
+                    if hasattr(e, "node"):
+                        e.node.altered()
+            self.signal("refresh_scene")
+            return "elements", data
+
+        @kernel.console_argument("x_offset", type=Length, help=_("x offset."))
+        @kernel.console_argument("y_offset", type=Length, help=_("y offset"))
+        @kernel.console_command(
+            "outline",
+            help=_("outline the current selected elements"),
+            input_type=(
+                    None,
+                    "elements",
+            ),
+            output_type="elements",
+        )
+        def element_outline(
+                command,
+                channel,
+                _,
+                x_offset=None,
+                y_offset=None,
+                data=None,
+                args=tuple(),
+                **kwgs
+        ):
+            """
+                    Draws an outline of the current shape.
+                    """
+            if x_offset is None:
+                raise SyntaxError
+            bounds = self.selected_area()
+            if bounds is None:
+                channel(_("Nothing Selected"))
+                return
+            x_pos = bounds[0]
+            y_pos = bounds[1]
+            width = bounds[2] - bounds[0]
+            height = bounds[3] - bounds[1]
+            offset_x = (
+                y_offset.value(ppi=1000.0, relative_length=width)
+                if len(args) >= 1
+                else 0
+            )
+            offset_y = (
+                x_offset.value(ppi=1000.0, relative_length=height)
+                if len(args) >= 2
+                else offset_x
+            )
+
+            x_pos -= offset_x
+            y_pos -= offset_y
+            width += offset_x * 2
+            height += offset_y * 2
+            element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
+            self.add_element(element, "red")
+            self.classify([element])
+            if data is None:
+                return "elements", [element]
+            else:
+                data.append(element)
+                return "elements", data
+
+        @kernel.console_argument(
+            "angle", type=Angle.parse, help=_("angle to rotate by")
+        )
+        @kernel.console_option("cx", "x", type=Length, help=_("center x"))
+        @kernel.console_option("cy", "y", type=Length, help=_("center y"))
+        @kernel.console_option(
+            "absolute",
+            "a",
+            type=bool,
+            action="store_true",
+            help=_("angle_to absolute angle"),
+        )
+        @kernel.console_command(
+            "rotate",
+            help=_("rotate <angle>"),
+            input_type=(
+                    None,
+                    "elements",
+            ),
+            output_type="elements",
+        )
+        def element_rotate(
+                command,
+                channel,
+                _,
+                angle,
+                cx=None,
+                cy=None,
+                absolute=False,
+                data=None,
+                **kwgs
+        ):
+            if angle is None:
+                channel("----------")
+                channel(_("Rotate Values:"))
+                i = 0
+                for element in self.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    channel(
+                        _("%d: rotate(%fturn) - %s")
+                        % (i, element.rotation.as_turns, name)
+                    )
+                    i += 1
+                channel("----------")
+                return
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            self.validate_selected_area()
+            bounds = self.selected_area()
+            rot = angle.as_degrees
+
+            if cx is not None:
+                cx = cx.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+            else:
+                cx = (bounds[2] + bounds[0]) / 2.0
+            if cy is not None:
+                cy = cy.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                )
+            else:
+                cy = (bounds[3] + bounds[1]) / 2.0
+            matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
+            try:
+                if not absolute:
+                    for element in data:
+                        try:
+                            if element.lock:
+                                continue
+                        except AttributeError:
+                            pass
+
+                        element *= matrix
+                        if hasattr(element, "node"):
+                            element.node.modified()
+                else:
+                    for element in data:
+                        start_angle = element.rotation
+                        amount = rot - start_angle
+                        matrix = Matrix(
+                            "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
+                        )
+                        element *= matrix
+                        if hasattr(element, "node"):
+                            element.node.modified()
+            except ValueError:
+                raise SyntaxError
+            self.signal("refresh_scene")
+            return "elements", data
+
+        @kernel.console_argument("scale_x", type=float, help=_("scale_x value"))
+        @kernel.console_argument("scale_y", type=float, help=_("scale_y value"))
+        @kernel.console_option("px", "x", type=Length, help=_("scale x origin point"))
+        @kernel.console_option("py", "y", type=Length, help=_("scale y origin point"))
+        @kernel.console_option(
+            "absolute",
+            "a",
+            type=bool,
+            action="store_true",
+            help=_("scale to absolute size"),
+        )
+        @kernel.console_command(
+            "scale",
+            help=_("scale <scale> [<scale-y>]?"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_scale(
+                command,
+                channel,
+                _,
+                scale_x=None,
+                scale_y=None,
+                px=None,
+                py=None,
+                absolute=False,
+                data=None,
+                **kwgs
+        ):
+            if scale_x is None:
+                channel("----------")
+                channel(_("Scale Values:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    channel(
+                        "%d: scale(%f, %f) - %s"
+                        % (
+                            i,
+                            e.transform.value_scale_x(),
+                            e.transform.value_scale_x(),
+                            name,
+                        )
+                    )
+                    i += 1
+                channel("----------")
+                return
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            bounds = Group.union_bbox(data)
+            if scale_y is None:
+                scale_y = scale_x
+            if px is not None:
+                center_x = px.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+            else:
+                center_x = (bounds[2] + bounds[0]) / 2.0
+            if py is not None:
+                center_y = py.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                )
+            else:
+                center_y = (bounds[3] + bounds[1]) / 2.0
+            if scale_x == 0 or scale_y == 0:
+                channel(_("Scaling by Zero Error"))
+                return
+            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, center_x, center_y))
+            try:
+                if not absolute:
+                    for e in data:
+                        try:
+                            if e.lock:
+                                continue
+                        except AttributeError:
+                            pass
+
+                        e *= m
+                        if hasattr(e, "node"):
+                            e.node.modified()
+                else:
+                    for e in data:
+                        try:
+                            if e.lock:
+                                continue
+                        except AttributeError:
+                            pass
+
+                        osx = e.transform.value_scale_x()
+                        osy = e.transform.value_scale_y()
+                        nsx = scale_x / osx
+                        nsy = scale_y / osy
+                        m = Matrix(
+                            "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_y)
+                        )
+                        e *= m
+                        if hasattr(e, "node"):
+                            e.node.modified()
+            except ValueError:
+                raise SyntaxError
+            self.signal("refresh_scene")
+            return "elements", data
+
+        @kernel.console_argument("tx", type=Length, help=_("translate x value"))
+        @kernel.console_argument("ty", type=Length, help=_("translate y value"))
+        @kernel.console_option(
+            "absolute",
+            "a",
+            type=bool,
+            action="store_true",
+            help=_("translate to absolute position"),
+        )
+        @kernel.console_command(
+            "translate",
+            help=_("translate <tx> <ty>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_translate(
+                command, channel, _, tx, ty, absolute=False, data=None, **kwgs
+        ):
+            if tx is None:
+                channel("----------")
+                channel(_("Translate Values:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    channel(
+                        _("%d: translate(%f, %f) - %s")
+                        % (
+                            i,
+                            e.transform.value_trans_x(),
+                            e.transform.value_trans_y(),
+                            name,
+                        )
+                    )
+                    i += 1
+                channel("----------")
+                return
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            if tx is not None:
+                tx = tx.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+            else:
+                tx = 0
+            if ty is not None:
+                ty = ty.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                )
+            else:
+                ty = 0
+            m = Matrix("translate(%f,%f)" % (tx, ty))
+            try:
+                if not absolute:
+                    for e in data:
+                        e *= m
+                        if hasattr(e, "node"):
+                            e.node.modified()
+                else:
+                    for e in data:
+                        otx = e.transform.value_trans_x()
+                        oty = e.transform.value_trans_y()
+                        ntx = tx - otx
+                        nty = ty - oty
+                        m = Matrix("translate(%f,%f)" % (ntx, nty))
+                        e *= m
+                        if hasattr(e, "node"):
+                            e.node.modified()
+            except ValueError:
+                raise SyntaxError
+            self.signal("refresh_scene")
+            return "elements", data
+
+        @kernel.console_command(
+            "move_to_laser",
+            help=_("translates the selected element to the laser head"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_translate(command, channel, _, data=None, **kwgs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            spooler, input_driver, output = self.registered[
+                "device/%s" % self.active.name
+                ]
+            try:
+                tx = input_driver.current_x
+            except AttributeError:
+                tx = 0
+            try:
+                ty = input_driver.current_y
+            except AttributeError:
+                ty = 0
+            try:
+                bounds = Group.union_bbox([abs(e) for e in data])
+                otx = bounds[0]
+                oty = bounds[1]
+                ntx = tx - otx
+                nty = ty - oty
+                for e in data:
+                    e.transform.post_translate(ntx, nty)
+                    if hasattr(e, "node"):
+                        e.node.modified()
+            except ValueError:
+                raise SyntaxError
+            self.signal("refresh_scene")
+            return "elements", data
+
+        @kernel.console_argument(
+            "x_pos", type=Length, help=_("x position for top left corner")
+        )
+        @kernel.console_argument(
+            "y_pos", type=Length, help=_("y position for top left corner")
+        )
+        @kernel.console_argument("width", type=Length, help=_("new width of selected"))
+        @kernel.console_argument(
+            "height", type=Length, help=_("new height of selected")
+        )
+        @kernel.console_command(
+            "resize",
+            help=_("resize <x-pos> <y-pos> <width> <height>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_resize(command, x_pos, y_pos, width, height, data=None, **kwgs):
+            if height is None:
+                raise SyntaxError
+            try:
+                x_pos = x_pos.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                y_pos = y_pos.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                )
+                width = width.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                height = height.value(
+                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                )
+                area = self.selected_area()
+                if area is None:
+                    return
+                x, y, x1, y1 = area
+                w, h = x1 - x, y1 - y
+                sx = width / w
+                sy = height / h
+                if abs(sx - 1.0) < 1e-1:
+                    sx = 1.0
+                if abs(sy - 1.0) < 1e-1:
+                    sy = 1.0
+
+                m = Matrix(
+                    "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
+                    % (x_pos, y_pos, sx, sy, -x, -y)
+                )
+                if data is None:
+                    data = list(self.elems(emphasized=True))
+                for e in data:
+                    try:
+                        if e.lock and (not sx == 1.0 or not sy == 1.0):
+                            continue
+                    except AttributeError:
+                        pass
+                    e *= m
+                    if hasattr(e, "node"):
+                        e.node.modified()
+                self.signal("refresh_scene")
+                return "elements", data
+            except (ValueError, ZeroDivisionError, TypeError):
+                raise SyntaxError
+
+        @kernel.console_argument("sx", type=float, help=_("scale_x value"))
+        @kernel.console_argument("kx", type=float, help=_("skew_x value"))
+        @kernel.console_argument("sy", type=float, help=_("scale_y value"))
+        @kernel.console_argument("ky", type=float, help=_("skew_y value"))
+        @kernel.console_argument("tx", type=Length, help=_("translate_x value"))
+        @kernel.console_argument("ty", type=Length, help=_("translate_y value"))
+        @kernel.console_command(
+            "matrix",
+            help=_("matrix <sx> <kx> <sy> <ky> <tx> <ty>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_matrix(
+                command, channel, _, sx, kx, sy, ky, tx, ty, data=None, **kwgs
+        ):
+            if tx is None:
+                channel("----------")
+                channel(_("Matrix Values:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    channel("%d: %s - %s" % (i, str(e.transform), name))
+                    i += 1
+                channel("----------")
+                return
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            if ty:
+                raise SyntaxError
+            try:
+                m = Matrix(
+                    sx,
+                    kx,
+                    sy,
+                    ky,
+                    tx.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    ),
+                    ty.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                    ),
+                )
+                for e in data:
+                    try:
+                        if e.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
+                    e.transform = Matrix(m)
+                    if hasattr(e, "node"):
+                        e.node.modified()
+            except ValueError:
+                raise SyntaxError
+            self.signal("refresh_scene")
+            return
+
+        @kernel.console_command(
+            "reset",
+            help=_("reset affine transformations"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def reset(command, channel, _, data=None, **kwgs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                try:
+                    if e.lock:
+                        continue
+                except AttributeError:
+                    pass
+
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "…"
+                channel(_("reset - %s") % name)
+                e.transform.reset()
+                if hasattr(e, "node"):
+                    e.node.modified()
+            self.signal("refresh_scene")
+            return "elements", data
+
+        @kernel.console_command(
+            "reify",
+            help=_("reify affine transformations"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_reify(command, channel, _, data=None, **kwgs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                try:
+                    if e.lock:
+                        continue
+                except AttributeError:
+                    pass
+
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "…"
+                channel(_("reified - %s") % name)
+                e.reify()
+                if hasattr(e, "node"):
+                    e.node.altered()
+            self.signal("refresh_scene")
+            return "elements", data
+
+        @kernel.console_command(
+            "classify",
+            help=_("classify elements into operations"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_classify(command, channel, _, data=None, **kwgs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            self.classify(data)
+            return "elements", data
+
+        @kernel.console_command(
+            "declassify",
+            help=_("declassify selected elements"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def declassify(command, channel, _, data=None, **kwgs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            self.remove_elements_from_operations(data)
+            return "elements", data
+
+        # ==========
+        # TREE BASE
+        # ==========
+        @kernel.console_command(
+            "tree", help=_("access and alter tree elements"), output_type="tree"
+        )
+        def tree(**kwgs):
+            return "tree", [self._tree]
+
+        @kernel.console_command(
+            "bounds", help=_("view tree bounds"), input_type="tree", output_type="tree"
+        )
+        def tree_bounds(command, channel, _, data=None, **kwgs):
+            if data is None:
+                data = [self._tree]
+
+            def b_list(path, node):
+                for i, n in enumerate(node.children):
+                    p = list(path)
+                    p.append(str(i))
+                    channel(
+                        "%s: %s - %s %s - %s"
+                        % (
+                            ".".join(p).ljust(10),
+                            str(n._bounds),
+                            str(n._bounds_dirty),
+                            str(n.type),
+                            str(n.label[:16]),
+                        )
+                    )
+                    b_list(p, n)
+
+            for d in data:
+                channel("----------")
+                if d.type == "root":
+                    channel(_("Tree:"))
+                else:
+                    channel("%s:" % d.label)
+                b_list([], d)
+                channel("----------")
+
+            return "tree", data
+
+        @kernel.console_command(
+            "list", help=_("view tree"), input_type="tree", output_type="tree"
+        )
+        def tree_list(command, channel, _, data=None, **kwgs):
+            if data is None:
+                data = [self._tree]
+
+            def t_list(path, node):
+                for i, n in enumerate(node.children):
+                    p = list(path)
+                    p.append(str(i))
+                    if n.targeted:
+                        j = "+"
+                    elif n.emphasized:
+                        j = "~"
+                    elif n.highlighted:
+                        j = "-"
+                    else:
+                        j = ":"
+                    channel(
+                        "%s%s %s - %s"
+                        % (".".join(p).ljust(10), j, str(n.type), str(n.label))
+                    )
+                    t_list(p, n)
+
+            for d in data:
+                channel("----------")
+                if d.type == "root":
+                    channel(_("Tree:"))
+                else:
+                    channel("%s:" % d.label)
+                t_list([], d)
+                channel("----------")
+
+            return "tree", data
+
+        @kernel.console_argument("drag", help="Drag node address")
+        @kernel.console_argument("drop", help="Drop node address")
+        @kernel.console_command(
+            "dnd", help=_("Drag and Drop Node"), input_type="tree", output_type="tree"
+        )
+        def tree_dnd(command, channel, _, data=None, drag=None, drop=None, **kwgs):
+            """
+                    Drag and Drop command performs a console based drag and drop operation
+                    Eg. "tree dnd 0.1 0.2" will drag node 0.1 into node 0.2
+                    """
+            if data is None:
+                data = [self._tree]
+            if drop is None:
+                raise SyntaxError
+            try:
+                drag_node = self._tree
+                for n in drag.split("."):
+                    drag_node = drag_node.children[int(n)]
+                drop_node = self._tree
+                for n in drop.split("."):
+                    drop_node = drop_node.children[int(n)]
+                drop_node.drop(drag_node)
+            except (IndexError, AttributeError, ValueError):
+                raise SyntaxError
+            return "tree", data
+
+        @kernel.console_argument("node", help="Node address for menu")
+        @kernel.console_argument("execute", help="Command to execute")
+        @kernel.console_command(
+            "menu",
+            help=_("Load menu for given node"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def tree_menu(command, channel, _, data=None, node=None, execute=None, **kwgs):
+            """
+                    Create menu for a particular node.
+                    Processes submenus, references, radio_state as needed.
+                    """
+            try:
+                menu_node = self._tree
+                for n in node.split("."):
+                    menu_node = menu_node.children[int(n)]
+            except (IndexError, AttributeError, ValueError):
+                raise SyntaxError
+
+            menu = []
+            submenus = {}
+
+            def menu_functions(f, cmd_node):
+                func_dict = dict(f.func_dict)
+
+                def specific(event=None):
+                    f(cmd_node, **func_dict)
+
+                return specific
+
+            for func in self.tree_operations_for_node(menu_node):
+                submenu_name = func.submenu
+                submenu = None
+                if submenu_name in submenus:
+                    submenu = submenus[submenu_name]
+                elif submenu_name is not None:
+                    submenu = list()
+                    menu.append((submenu_name, submenu))
+                    submenus[submenu_name] = submenu
+
+                menu_context = submenu if submenu is not None else menu
+                if func.reference is not None:
+                    pass
+                if func.radio_state is not None:
+                    if func.separate_before:
+                        menu_context.append(("------", None))
+                    n = func.real_name
+                    if func.radio_state:
+                        n = "✓" + n
+                    menu_context.append((n, menu_functions(func, menu_node)))
+                else:
+                    if func.separate_before:
+                        menu_context.append(("------", None))
+                    menu_context.append(
+                        (func.real_name, menu_functions(func, menu_node))
+                    )
+                if func.separate_after:
+                    menu_context.append(("------", None))
+            if execute is not None:
+                try:
+                    execute_command = ("menu", menu)
+                    for n in execute.split("."):
+                        name, cmd = execute_command
+                        execute_command = cmd[int(n)]
+                    name, cmd = execute_command
+                    channel("Executing %s: %s" % (name, str(cmd)))
+                    cmd()
+                except (IndexError, AttributeError, ValueError, TypeError):
+                    raise SyntaxError
+            else:
+
+                def m_list(path, menu):
+                    for i, n in enumerate(menu):
+                        p = list(path)
+                        p.append(str(i))
+                        name, submenu = n
+                        channel("%s: %s" % (".".join(p).ljust(10), str(name)))
+                        if isinstance(submenu, list):
+                            m_list(p, submenu)
+
+                m_list([], menu)
+
+            return "tree", data
+
+        @kernel.console_command(
+            "selected",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def emphasized(channel, _, **kwargs):
+            """
+                    Set tree list to selected node
+                    """
+            return "tree", list(self.flat(emphasized=True))
+
+        @kernel.console_command(
+            "highlighted",
+            help=_("delegate commands to sub-focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def highlighted(channel, _, **kwargs):
+            """
+                    Set tree list to highlighted nodes
+                    """
+            return "tree", list(self.flat(highlighted=True))
+
+        @kernel.console_command(
+            "targeted",
+            help=_("delegate commands to sub-focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def targeted(channel, _, **kwargs):
+            """
+                    Set tree list to highlighted nodes
+                    """
+            return "tree", list(self.flat(targeted=True))
+
+        @kernel.console_command(
+            "delete",
+            help=_("delete the given nodes"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def delete(channel, _, data=None, **kwargs):
+            """
+                    Delete node. Due to nodes within nodes, only the first node is deleted.
+                    Structural nodes such as root, elements, and operations are not able to be deleted
+                    """
+            for n in data:
+                if n.type not in ("root", "branch elems", "branch ops"):
+                    # Cannot delete structure nodes.
+                    n.remove_node()
+                    break
+            return "tree", [self._tree]
+
+        @kernel.console_command(
+            "delegate",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type=("op", "elements"),
+        )
+        def delegate(channel, _, **kwargs):
+            """
+                    Delegate to either ops or elements depending on the current node emphasis
+                    """
+            for item in self.flat(
+                    types=("op", "elem", "file", "group"), emphasized=True
+            ):
+                if item.type == "op":
+                    return "ops", list(self.ops(emphasized=True))
+                if item.type in ("elem", "file", "group"):
+                    return "elements", list(self.elems(emphasized=True))
+
+        # ==========
+        # CLIPBOARD COMMANDS
+        # ==========
+        @kernel.console_option("name", "n", type=str)
+        @kernel.console_command(
+            "clipboard",
+            help=_("clipboard"),
+            input_type=(None, "elements"),
+            output_type="clipboard",
+        )
+        def clipboard_base(data=None, name=None, **kwgs):
+            """
+                    Clipboard commands. Applies to current selected elements to
+                    make a copy of those elements. Paste a copy of those elements
+                    or cut those elements. Clear clears the clipboard.
+
+                    The list command will list them but this is only for debug.
+                    """
+            if name is not None:
+                self._clipboard_default = name
+            if data is None:
+                return "clipboard", list(self.elems(emphasized=True))
+            else:
+                return "clipboard", data
+
+        @kernel.console_command(
+            "copy",
+            help=_("clipboard copy"),
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_copy(data=None, **kwgs):
+            destination = self._clipboard_default
+            self._clipboard[destination] = [copy(e) for e in data]
+            return "elements", self._clipboard[destination]
+
+        @kernel.console_option("dx", "x", help=_("paste offset x"), type=Length)
+        @kernel.console_option("dy", "y", help=_("paste offset y"), type=Length)
+        @kernel.console_command(
+            "paste",
+            help=_("clipboard paste"),
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_paste(command, channel, _, data=None, dx=None, dy=None, **kwgs):
+            destination = self._clipboard_default
+            try:
+                pasted = [copy(e) for e in self._clipboard[destination]]
+            except KeyError:
+                channel(_("Error: Clipboard Empty"))
+                return
+            if dx is not None or dy is not None:
+                if dx is None:
+                    dx = 0
+                else:
+                    dx = dx.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    )
+                if dy is None:
+                    dy = 0
+                else:
+                    dy = dy.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                    )
+                m = Matrix("translate(%s, %s)" % (dx, dy))
+                for e in pasted:
+                    e *= m
+            group = self.elem_branch.add(type="group", label="Group")
+            for p in pasted:
+                group.add(p, type="elem")
+            self.set_emphasis([group])
+            return "elements", pasted
+
+        @kernel.console_command(
+            "cut",
+            help=_("clipboard cut"),
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_cut(data=None, **kwgs):
+            destination = self._clipboard_default
+            self._clipboard[destination] = [copy(e) for e in data]
+            self.remove_elements(data)
+            return "elements", self._clipboard[destination]
+
+        @kernel.console_command(
+            "clear",
+            help=_("clipboard clear"),
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_clear(data=None, **kwgs):
+            destination = self._clipboard_default
+            old = self._clipboard[destination]
+            self._clipboard[destination] = None
+            return "elements", old
+
+        @kernel.console_command(
+            "contents",
+            help=_("clipboard contents"),
+            input_type="clipboard",
+            output_type="elements",
+        )
+        def clipboard_contents(**kwgs):
+            destination = self._clipboard_default
+            return "elements", self._clipboard[destination]
+
+        @kernel.console_command(
+            "list",
+            help=_("clipboard list"),
+            input_type="clipboard",
+        )
+        def clipboard_list(command, channel, _, **kwgs):
+            for v in self._clipboard:
+                k = self._clipboard[v]
+                channel("%s: %s" % (str(v).ljust(5), str(k)))
+
+        # ==========
+        # NOTES COMMANDS
+        # ==========
+        @kernel.console_option(
+            "append", "a", type=bool, action="store_true", default=False
+        )
+        @kernel.console_command("note", help=_("note <note>"))
+        def note(command, channel, _, append=False, remainder=None, **kwgs):
+            note = remainder
+            if note is None:
+                if self.note is None:
+                    channel(_("No Note."))
+                else:
+                    channel(str(self.note))
+            else:
+                if append:
+                    self.note += "\n" + note
+                else:
+                    self.note = note
+                channel(_("Note Set."))
+                channel(str(self.note))
+
+        # ==========
+        # TRACE OPERATIONS
+        # ==========
+        @kernel.console_command(
+            "trace_hull",
+            help=_("trace the convex hull of current elements"),
+            input_type=(None, "elements"),
+        )
+        def trace_trace_hull(command, channel, _, data=None, **kwgs):
+            active = self.active
+            try:
+                spooler, input_device, output = self.registered[
+                    "device/%s" % active
+                    ]
+            except KeyError:
+                channel(_("No active device found."))
+                return
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            pts = []
+            for obj in data:
+                if isinstance(obj, Path):
+                    epath = abs(obj)
+                    pts += [q for q in epath.as_points()]
+                elif isinstance(obj, SVGImage):
+                    bounds = obj.bbox()
+                    pts += [
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ]
+            hull = [p for p in Point.convex_hull(pts)]
+            if len(hull) == 0:
+                channel(_("No elements bounds to trace."))
+                return
+            hull.append(hull[0])  # loop
+
+            def trace_hull():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_MODE_RAPID
+                for p in hull:
+                    yield COMMAND_MOVE, p[0], p[1]
+
+            spooler.job(trace_hull)
+
+        @kernel.console_command(
+            "trace_quick", help=_("quick trace the bounding box of current elements")
+        )
+        def trace_trace_quick(command, channel, _, **kwgs):
+            active = self.active
+            try:
+                spooler, input_device, output = self.registered[
+                    "device/%s" % active
+                    ]
+            except KeyError:
+                channel(_("No active device found."))
+                return
+            bbox = self.selected_area()
+            if bbox is None:
+                channel(_("No elements bounds to trace."))
+                return
+
+            def trace_quick():
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_MOVE, bbox[0], bbox[1]
+                yield COMMAND_MOVE, bbox[2], bbox[1]
+                yield COMMAND_MOVE, bbox[2], bbox[3]
+                yield COMMAND_MOVE, bbox[0], bbox[3]
+                yield COMMAND_MOVE, bbox[0], bbox[1]
+
+            spooler.job(trace_quick)
+
+        # --------------------------- END COMMANDS ------------------------------
+
+        # --------------------------- TREE OPERATIONS ---------------------------
+
+        _ = self._
+
+        non_structural_nodes = (
+            "op",
+            "opnode",
+            "cmdop",
+            "lasercode",
+            "cutcode",
+            "blob",
+            "elem",
+            "file",
+            "group",
+        )
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
+        @self.tree_operation(_("Operation properties"), node_type="op", help="")
+        def operation_property(node, **kwgs):
+            self.open("window/OperationProperty", self.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: isinstance(node.object, Shape))
+        @self.tree_operation(_("Element properties"), node_type="elem", help="")
+        def path_property(node, **kwgs):
+            self.open("window/PathProperty", self.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: isinstance(node.object, Group))
+        @self.tree_operation(_("Group properties"), node_type="group", help="")
+        def group_property(node, **kwgs):
+            self.open("window/GroupProperty", self.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGText))
+        @self.tree_operation(_("Text properties"), node_type="elem", help="")
+        def text_property(node, **kwgs):
+            self.open("window/TextProperty", self.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_operation(_("Image properties"), node_type="elem", help="")
+        def image_property(node, **kwgs):
+            self.open("window/ImageProperty", self.gui, node=node)
+
+        @self.tree_operation(
+            _("Ungroup elements"), node_type=("group", "file"), help=""
+        )
+        def ungroup_elements(node, **kwgs):
+            for n in list(node.children):
+                node.insert_sibling(n)
+            node.remove_node()  # Removing group/file node.
+
+        @self.tree_operation(_("Group elements"), node_type="elem", help="")
+        def group_elements(node, **kwgs):
+            # group_node = node.parent.add_sibling(node, type="group", name="Group")
+            group_node = node.parent.add(type="group", label="Group")
+            for e in list(self.elems(emphasized=True)):
+                node = e.node
+                group_node.append_child(node)
+
+        @self.tree_operation(_("Enable/Disable ops"), node_type="op", help="")
+        def toggle_n_operations(node, **kwgs):
+            for n in self.ops(emphasized=True):
+                n.output = not n.output
+                n.notify_update()
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Image"), node_type="op", help="")
+        def convert_operation_image(node, **kwgs):
+            for n in self.ops(emphasized=True):
+                n.operation = "Image"
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Raster"), node_type="op", help="")
+        def convert_operation_raster(node, **kwgs):
+            for n in self.ops(emphasized=True):
+                n.operation = "Raster"
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Engrave"), node_type="op", help="")
+        def convert_operation_engrave(node, **kwgs):
+            for n in self.ops(emphasized=True):
+                n.operation = "Engrave"
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Cut"), node_type="op", help="")
+        def convert_operation_cut(node, **kwgs):
+            for n in self.ops(emphasized=True):
+                n.operation = "Cut"
+
+        def radio_match(node, speed=0, **kwgs):
+            return node.settings.speed == float(speed)
+
+        @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
+        @self.tree_submenu(_("Speed"))
+        @self.tree_radio(radio_match)
+        @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
+        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
+        def set_speed_raster(node, speed=150, **kwgs):
+            node.settings.speed = float(speed)
+            self.signal("element_property_reload", node)
+
+        @self.tree_conditional(lambda node: node.operation in ("Cut", "Engrave"))
+        @self.tree_submenu(_("Speed"))
+        @self.tree_radio(radio_match)
+        @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
+        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
+        def set_speed_vector(node, speed=35, **kwgs):
+            node.settings.speed = float(speed)
+            self.signal("element_property_reload", node)
+
+        def radio_match(node, i=1, **kwgs):
+            return node.settings.raster_step == i
+
+        @self.tree_conditional(lambda node: node.operation == "Raster")
+        @self.tree_submenu(_("Step"))
+        @self.tree_radio(radio_match)
+        @self.tree_iterate("i", 1, 10)
+        @self.tree_operation(
+            _("Step %s") % "{i}",
+            node_type="op",
+            help=_("Change raster step values of operation"),
+            )
+        def set_step_n(node, i=1, **kwgs):
+            settings = node.settings
+            settings.raster_step = i
+            self.signal("element_property_reload", node)
+
+        def radio_match(node, passvalue=1, **kwgs):
+            return (
+                           node.settings.passes_custom and passvalue == node.settings.passes
+                   ) or (not node.settings.passes_custom and passvalue == 1)
+
+        @self.tree_submenu(_("Set operation passes"))
+        @self.tree_radio(radio_match)
+        @self.tree_iterate("passvalue", 1, 10)
+        @self.tree_operation(_("Passes %s") % "{passvalue}", node_type="op", help="")
+        def set_n_passes(node, passvalue=1, **kwgs):
+            node.settings.passes = passvalue
+            node.settings.passes_custom = passvalue != 1
+            self.signal("element_property_reload", node)
+
+        @self.tree_separator_after()
+        @self.tree_operation(
+            _("Execute operation(s)"),
+            node_type="op",
+            help=_("Execute Job for the selected operation(s)."),
+        )
+        def execute_job(node, **kwgs):
+            node.emphasized = True
+            kernel.console("plan0 clear copy-selected\n")
+            kernel.console("window open ExecuteJob 0\n")
+
+        @self.tree_separator_after()
+        @self.tree_operation(
+            _("Simulate operation(s)"),
+            node_type="op",
+            help=_("Run simulation for the selected operation(s)"),
+        )
+        def compile_and_simulate(node, **kwgs):
+            node.emphasized = True
+            kernel.console(
+                "plan0 copy-selected preprocess validate blob preopt optimize\n"
+            )
+            kernel.console("window open Simulation 0\n")
+
+        @self.tree_operation(_("Clear all"), node_type="branch ops", help="")
+        def clear_all(node, **kwgs):
+            kernel.console("operation* delete\n")
+
+        @self.tree_operation(_("Clear all"), node_type="branch elems", help="")
+        def clear_all_ops(node, **kwgs):
+            kernel.console("element* delete\n")
+            self.elem_branch.remove_all_children()
+
+        # ==========
+        # REMOVE MULTI (Tree Selected)
+        # ==========
+        @self.tree_conditional(
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                )
+            )
+                         > 1
+        )
+        @self.tree_calc(
+            "ecount",
+            lambda i: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                )
+            ),
+        )
+        @self.tree_operation(
+            _("Remove %s selected items") % "{ecount}",
+            node_type=non_structural_nodes,
+            help="",
+            )
+        def remove_multi_nodes(node, **kwgs):
+            nodes = list(
+                self.flat(selected=True, cascade=False, types=non_structural_nodes)
+            )
+            for node in nodes:
+                if node.parent is not None:  # May have already removed.
+                    node.remove_node()
+            self.set_emphasis(None)
+
+        # ==========
+        # REMOVE SINGLE (Tree Selected)
+        # ==========
+        @self.tree_conditional(
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                )
+            )
+                         == 1
+        )
+        @self.tree_operation(
+            _("Remove '%s'") % "{name}",
+            node_type=non_structural_nodes,
+            help="",
+            )
+        def remove_type_op(node, **kwgs):
+            node.remove_node()
+            self.set_emphasis(None)
+
+        # ==========
+        # Remove Operations (If No Tree Selected)
+        # Note: This code would rarely match anything since the tree selected will almost always be true if we have
+        # match this conditional. The tree-selected delete functions are superior.
+        # ==========
+        @self.tree_conditional(
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                )
+            )
+                         == 0
+        )
+        @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
+        @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
+        @self.tree_operation(
+            _("Remove %s operations") % "{ecount}",
+            node_type=("op", "cmdop", "lasercode", "cutcode", "blob"),
+            help="",
+            )
+        def remove_n_ops(node, **kwgs):
+            kernel.console("operation delete\n")
+
+        # ==========
+        # REMOVE ELEMENTS
+        # ==========
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
+        @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
+        @self.tree_operation(
+            _("Remove %s elements") % "{ecount}",
+            node_type=(
+                    "elem",
+                    "file",
+                    "group",
+            ),
+            help="",
+            )
+        def remove_n_elements(node, **kwgs):
+            kernel.console("element delete\n")
+
+        # ==========
+        # CONVERT TREE OPERATIONS
+        # ==========
+        @self.tree_operation(
+            _("Convert to Cutcode"),
+            node_type="lasercode",
+            help="",
+        )
+        def lasercode2cut(node, **kwgs):
+            node.replace_node(CutCode.from_lasercode(node.object), type="cutcode")
+
+        @self.tree_conditional_try(lambda node: hasattr(node.object, "as_cutobjects"))
+        @self.tree_operation(
+            _("Convert to Cutcode"),
+            node_type="blob",
+            help="",
+        )
+        def blob2cut(node, **kwgs):
+            node.replace_node(node.object.as_cutobjects(), type="cutcode")
+
+        @self.tree_operation(
+            _("Convert to Path"),
+            node_type="cutcode",
+            help="",
+        )
+        def cutcode2pathcut(node, **kwgs):
+            cutcode = node.object
+            elements = list(cutcode.as_elements())
+            n = None
+            for element in elements:
+                n = self.elem_branch.add(element, type="elem")
+            node.remove_node()
+            if n is not None:
+                n.focus()
+
+        @self.tree_submenu(_("Clone reference"))
+        @self.tree_operation(_("Make 1 copy"), node_type="opnode", help="")
+        def clone_single_element_op(node, **kwgs):
+            clone_element_op(node, copies=1, **kwgs)
+
+        @self.tree_submenu(_("Clone reference"))
+        @self.tree_iterate("copies", 2, 10)
+        @self.tree_operation(
+            _("Make %s copies") % "{copies}", node_type="opnode", help=""
+        )
+        def clone_element_op(node, copies=1, **kwgs):
+            index = node.parent.children.index(node)
+            for i in range(copies):
+                node.parent.add(node.object, type="opnode", pos=index)
+            node.modified()
+            self.signal("rebuild_tree", 0)
+
+        @self.tree_conditional(lambda node: node.count_children() > 1)
+        @self.tree_operation(
+            _("Reverse subitems order"),
+            node_type=("op", "group", "branch elems", "file", "branch ops"),
+            help=_("Reverse the items within this subitem"),
+        )
+        def reverse_layer_order(node, **kwgs):
+            node.reverse()
+            self.signal("rebuild_tree", 0)
+
+        @self.tree_separator_after()
+        @self.tree_operation(
+            _("Refresh classification"), node_type="branch ops", help=""
+        )
+        def refresh_clasifications(node, **kwgs):
+            context = self.context
+            elements = context.elements
+            elements.remove_elements_from_operations(list(elements.elems()))
+            elements.classify(list(elements.elems()))
+            self.signal("rebuild_tree", 0)
+
+        materials = [
+            _("Wood"),
+            _("Acrylic"),
+            _("Foam"),
+            _("Leather"),
+            _("Cardboard"),
+            _("Cork"),
+            _("Textiles"),
+            _("Paper"),
+            _("Save-1"),
+            _("Save-2"),
+            _("Save-3"),
+        ]
+
+        def union_materials_saved():
+            union = [
+                d
+                for d in self.get_context("operations").derivable()
+                if d not in materials and d != "previous"
+            ]
+            union.extend(materials)
+            return union
+
+        @self.tree_submenu(_("Use"))
+        @self.tree_values(
+            "opname", values=self.get_context("operations").derivable
+        )
+        @self.tree_operation(
+            _("Load: %s") % "{opname}", node_type="branch ops", help=""
+        )
+        def load_ops(node, opname, **kwgs):
+            kernel.console("operation load %s\n" % opname)
+
+        @self.tree_submenu(_("Use"))
+        @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
+        def default_classifications(node, **kwgs):
+            self.load_default()
+
+        @self.tree_submenu(_("Use"))
+        @self.tree_operation(_("Basic"), node_type="branch ops", help="")
+        def basic_classifications(node, **kwgs):
+            self.load_default2()
+
+        @self.tree_submenu(_("Save"))
+        @self.tree_values("opname", values=union_materials_saved)
+        @self.tree_operation("{opname}", node_type="branch ops", help="")
+        def save_ops(node, opname="saved", **kwgs):
+            kernel.console("operation save %s\n" % opname)
+
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Add operation"))
+        @self.tree_operation(_("Add Image"), node_type="branch ops", help="")
+        def add_operation_image(node, **kwgs):
+            self.add_op(LaserOperation(operation="Image"))
+
+        @self.tree_submenu(_("Add operation"))
+        @self.tree_operation(_("Add Raster"), node_type="branch ops", help="")
+        def add_operation_raster(node, **kwgs):
+            self.add_op(LaserOperation(operation="Raster"))
+
+        @self.tree_submenu(_("Add operation"))
+        @self.tree_operation(_("Add Engrave"), node_type="branch ops", help="")
+        def add_operation_engrave(node, **kwgs):
+            self.add_op(LaserOperation(operation="Engrave"))
+
+        @self.tree_submenu(_("Add operation"))
+        @self.tree_operation(_("Add Cut"), node_type="branch ops", help="")
+        def add_operation_cut(node, **kwgs):
+            self.add_op(LaserOperation(operation="Cut"))
+
+        @self.tree_submenu(_("Special operations"))
+        @self.tree_operation(_("Add Home"), node_type="branch ops", help="")
+        def add_operation_home(node, **kwgs):
+            self.op_branch.add(
+                CommandOperation("Home", COMMAND_HOME), type="cmdop"
+            )
+
+        @self.tree_submenu(_("Special operations"))
+        @self.tree_operation(_("Add Beep"), node_type="branch ops", help="")
+        def add_operation_beep(node, **kwgs):
+            self.op_branch.add(
+                CommandOperation("Beep", COMMAND_BEEP), type="cmdop"
+            )
+
+        @self.tree_submenu(_("Special operations"))
+        @self.tree_operation(_("Add Move Origin"), node_type="branch ops", help="")
+        def add_operation_origin(node, **kwgs):
+            self.op_branch.add(
+                CommandOperation("Origin", COMMAND_MOVE, 0, 0), type="cmdop"
+            )
+
+        @self.tree_submenu(_("Special operations"))
+        @self.tree_operation(_("Add Interrupt"), node_type="branch ops", help="")
+        def add_operation_interrupt(node, **kwgs):
+            self.op_branch.add(
+                CommandOperation(
+                    "Interrupt",
+                    COMMAND_FUNCTION,
+                    self.registered["function/interrupt"],
+                ),
+                type="cmdop",
+            )
+
+        @self.tree_submenu(_("Special operations"))
+        @self.tree_operation(_("Add Shutdown"), node_type="branch ops", help="")
+        def add_operation_shutdown(node, **kwgs):
+            self.op_branch.add(
+                CommandOperation(
+                    "Shutdown",
+                    COMMAND_FUNCTION,
+                    self.console_function("quit\n"),
+                ),
+                type="cmdop",
+            )
+
+        @self.tree_operation(
+            _("Reclassify operations"), node_type="branch elems", help=""
+        )
+        def reclassify_operations(node, **kwgs):
+            elems = list(self.elems())
+            self.remove_elements_from_operations(elems)
+            self.classify(list(self.elems()))
+            self.signal("rebuild_tree", 0)
+
+        @self.tree_operation(
+            _("Duplicate operation(s)"),
+            node_type="op",
+            help=_("duplicate operation element nodes"),
+        )
+        def duplicate_operation(node, **kwgs):
+            operations = self._tree.get(type="branch ops").children
+            for op in self.ops(emphasized=True):
+                try:
+                    pos = operations.index(op) + 1
+                except ValueError:
+                    pos = None
+                copy_op = LaserOperation(op)
+                self.add_op(copy_op, pos=pos)
+                for child in op.children:
+                    try:
+                        copy_op.add(child.object, type="opnode")
+                    except AttributeError:
+                        pass
+
+        @self.tree_conditional(lambda node: node.count_children() > 1)
+        @self.tree_conditional(
+            lambda node: node.operation in ("Image", "Engrave", "Cut")
+        )
+        @self.tree_submenu(_("Passes"))
+        @self.tree_operation(_("Add 1 pass"), node_type="op", help="")
+        def add_1_pass(node, **kwgs):
+            add_n_passes(node, copies=1, **kwgs)
+
+        @self.tree_conditional(lambda node: node.count_children() > 1)
+        @self.tree_conditional(
+            lambda node: node.operation in ("Image", "Engrave", "Cut")
+        )
+        @self.tree_submenu(_("Passes"))
+        @self.tree_iterate("copies", 2, 10)
+        @self.tree_operation(_("Add %s passes") % "{copies}", node_type="op", help="")
+        def add_n_passes(node, copies=1, **kwgs):
+            add_elements = [
+                child.object for child in node.children if child.object is not None
+            ]
+            removed = False
+            for i in range(0, len(add_elements)):
+                for q in range(0, i):
+                    if add_elements[q] is add_elements[i]:
+                        add_elements[i] = None
+                        removed = True
+            if removed:
+                add_elements = [c for c in add_elements if c is not None]
+            add_elements *= copies
+            node.add_all(add_elements, type="opnode")
+            self.signal("rebuild_tree", 0)
+
+        @self.tree_conditional(lambda node: node.count_children() > 1)
+        @self.tree_conditional(
+            lambda node: node.operation in ("Image", "Engrave", "Cut")
+        )
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_operation(_("Duplicate elements 1 time"), node_type="op", help="")
+        def dup_1_copy(node, **kwgs):
+            dup_n_copies(node, copies=1, **kwgs)
+
+        @self.tree_conditional(lambda node: node.count_children() > 1)
+        @self.tree_conditional(
+            lambda node: node.operation in ("Image", "Engrave", "Cut")
+        )
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_iterate("copies", 2, 10)
+        @self.tree_operation(
+            _("Duplicate elements %s times") % "{copies}", node_type="op", help=""
+        )
+        def dup_n_copies(node, copies=1, **kwgs):
+            add_elements = [
+                child.object for child in node.children if child.object is not None
+            ]
+            add_elements *= copies
+            node.add_all(add_elements, type="opnode")
+            self.signal("rebuild_tree", 0)
+
+        @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
+        @self.tree_operation(
+            _("Make raster image"),
+            node_type="op",
+            help=_("Convert a vector element into a raster element."),
+        )
+        def make_raster_image(node, **kwgs):
+            subitems = list(node.flat(types=("elem", "opnode")))
+            make_raster = self.registered.get("render-op/make_raster")
+            bounds = Group.union_bbox([s.object for s in subitems])
+            if bounds is None:
+                return
+            step = float(node.settings.raster_step)
+            if step == 0:
+                step = 1
+            xmin, ymin, xmax, ymax = bounds
+
+            image = make_raster(
+                subitems,
+                bounds,
+                step=step,
+            )
+            image_element = SVGImage(image=image)
+            image_element.transform.post_scale(step, step)
+            image_element.transform.post_translate(xmin, ymin)
+            image_element.values["raster_step"] = step
+            self.add_elem(image_element)
+
+        @self.tree_operation(_("Reload '%s'") % "{name}", node_type="file", help="")
+        def reload_file(node, **kwgs):
+            filepath = node.filepath
+            node.remove_node()
+            self.load(filepath)
+
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
+        def duplicate_element_1(node, **kwgs):
+            duplicate_element_n(node, copies=1, **kwgs)
+
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_iterate("copies", 2, 10)
+        @self.tree_operation(
+            _("Make %s copies") % "{copies}", node_type="elem", help=""
+        )
+        def duplicate_element_n(node, copies, **kwgs):
+            context = self.context
+            elements = context.elements
+            adding_elements = [
+                copy(e) for e in list(self.elems(emphasized=True)) * copies
+            ]
+            elements.add_elems(adding_elements)
+            elements.classify(adding_elements)
+            elements.set_emphasis(None)
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(
+            _("Reset user changes"), node_type=("branch elem", "elem"), help=""
+        )
+        def reset_user_changes(node, copies=1, **kwgs):
+            kernel.console("reset\n")
+
+        @self.tree_conditional(
+            lambda node: isinstance(node.object, Shape)
+                         and not isinstance(node.object, Path)
+        )
+        @self.tree_operation(_("Convert to path"), node_type=("elem",), help="")
+        def convert_to_path(node, copies=1, **kwgs):
+            node.replace_object(abs(Path(node.object)))
+            node.altered()
+
+        @self.tree_submenu(_("Flip"))
+        @self.tree_separator_before()
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(
+            _("Horizontally"),
+            node_type=("elem", "file", "group"),
+            help=_("Mirror Horizontally"),
+        )
+        def mirror_elem(node, **kwgs):
+            child_objects = Group()
+            child_objects.extend(node.objects_of_children(SVGElement))
+            bounds = child_objects.bbox()
+            if bounds is None:
+                return
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            kernel.console("scale -1 1 %f %f\n" % (center_x, center_y))
+
+        @self.tree_submenu(_("Flip"))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(
+            _("Vertically"),
+            node_type=("elem", "file", "group"),
+            help=_("Flip Vertically"),
+        )
+        def flip_elem(node, **kwgs):
+            child_objects = Group()
+            child_objects.extend(node.objects_of_children(SVGElement))
+            bounds = child_objects.bbox()
+            if bounds is None:
+                return
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            kernel.console("scale 1 -1 %f %f\n" % (center_x, center_y))
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_submenu(_("Scale"))
+        @self.tree_iterate("scale", 25, 1, -1)
+        @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
+        @self.tree_operation(
+            _("Scale %s%%") % "{scale_percent}", node_type="elem", help="Scale Element"
+        )
+        def scale_elem_amount(node, scale, **kwgs):
+            scale = 6.0 / float(scale)
+            child_objects = Group()
+            child_objects.extend(node.objects_of_children(SVGElement))
+            bounds = child_objects.bbox()
+            if bounds is None:
+                return
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            kernel.console("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_submenu(_("Rotate"))
+        @self.tree_values(
+            "angle",
+            (
+                    180,
+                    150,
+                    135,
+                    120,
+                    90,
+                    60,
+                    45,
+                    30,
+                    20,
+                    15,
+                    10,
+                    9,
+                    8,
+                    7,
+                    6,
+                    5,
+                    4,
+                    3,
+                    2,
+                    1,
+                    -1,
+                    -2,
+                    -3,
+                    -4,
+                    -5,
+                    -6,
+                    -7,
+                    -8,
+                    -9,
+                    -10,
+                    -15,
+                    -20,
+                    -30,
+                    -45,
+                    -60,
+                    -90,
+                    -120,
+                    -135,
+                    -150,
+            ),
+        )
+        @self.tree_operation(_(u"Rotate %s°") % ("{angle}"), node_type="elem", help="")
+        def rotate_elem_amount(node, angle, **kwgs):
+            turns = float(angle) / 360.0
+            child_objects = Group()
+            child_objects.extend(node.objects_of_children(SVGElement))
+            bounds = child_objects.bbox()
+            if bounds is None:
+                return
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            kernel.console("rotate %fturn %f %f\n" % (turns, center_x, center_y))
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(_("Reify User Changes"), node_type="elem", help="")
+        def reify_elem_changes(node, **kwgs):
+            kernel.console("reify\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, Path))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
+        def break_subpath_elem(node, **kwgs):
+            kernel.console("element subpath\n")
+
+        @self.tree_operation(
+            _("Merge items"),
+            node_type="group",
+            help=_("Merge this node's children into 1 path."),
+        )
+        def merge_elements(node, **kwgs):
+            kernel.console("element merge\n")
+
+        def radio_match(node, i=0, **kwgs):
+            if "raster_step" in node.object.values:
+                step = float(node.object.values["raster_step"])
+            else:
+                step = 1.0
+            if i == step:
+                m = node.object.transform
+                if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
+                    return True
+            return False
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Step"))
+        @self.tree_radio(radio_match)
+        @self.tree_iterate("i", 1, 10)
+        @self.tree_operation(_("Step %s") % "{i}", node_type="elem", help="")
+        def set_step_n_elem(node, i=1, **kwgs):
+            step_value = i
+            element = node.object
+            element.values["raster_step"] = str(step_value)
+            m = element.transform
+            tx = m.e
+            ty = m.f
+            element.transform = Matrix.scale(float(step_value), float(step_value))
+            element.transform.post_translate(tx, ty)
+            if hasattr(element, "node"):
+                element.node.modified()
+            self.signal("element_property_reload", node.object)
+            self.signal("refresh_scene")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(_("Actualize pixels"), node_type="elem", help="")
+        def image_actualize_pixels(node, **kwgs):
+            kernel.console("image resample\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Z-depth divide"))
+        @self.tree_iterate("divide", 2, 10)
+        @self.tree_operation(
+            _("Divide into %s images") % "{divide}", node_type="elem", help=""
+        )
+        def image_zdepth(node, divide=1, **kwgs):
+            element = node.object
+            if not isinstance(element, SVGImage):
+                return
+            if element.image.mode != "RGBA":
+                element.image = element.image.convert("RGBA")
+            band = 255 / divide
+            for i in range(0, divide):
+                threshold_min = i * band
+                threshold_max = threshold_min + band
+                kernel.console("image threshold %f %f\n" % (threshold_min, threshold_max))
+
+        def is_locked(node):
+            try:
+                obj = node.object
+                return obj.lock
+            except AttributeError:
+                return False
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_conditional(is_locked)
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Unlock manipulations"), node_type="elem", help="")
+        def image_unlock_manipulations(node, **kwgs):
+            kernel.console("image unlock\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Dither to 1 bit"), node_type="elem", help="")
+        def image_dither(node, **kwgs):
+            kernel.console("image dither\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Invert image"), node_type="elem", help="")
+        def image_invert(node, **kwgs):
+            kernel.console("image invert\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Mirror horizontal"), node_type="elem", help="")
+        def image_mirror(node, **kwgs):
+            kernel.console("image mirror\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Flip vertical"), node_type="elem", help="")
+        def image_flip(node, **kwgs):
+            kernel.console("image flip\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Rotate 90° CW"), node_type="elem", help="")
+        def image_cw(node, **kwgs):
+            kernel.console("image cw\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Rotate 90° CCW"), node_type="elem", help="")
+        def image_ccw(node, **kwgs):
+            kernel.console("image ccw\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Save output.png"), node_type="elem", help="")
+        def image_save(node, **kwgs):
+            kernel.console("image save output.png\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("RasterWizard"))
+        @self.tree_values(
+            "script", values=list(self.match("raster_script", suffix=True))
+        )
+        @self.tree_operation(
+            _("RasterWizard: %s") % "{script}", node_type="elem", help=""
+        )
+        def image_rasterwizard_open(node, script=None, **kwgs):
+            kernel.console("window open RasterWizard %s\n" % script)
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_submenu(_("Apply raster script"))
+        @self.tree_values(
+            "script", values=list(self.match("raster_script", suffix=True))
+        )
+        @self.tree_operation(_("Apply: %s") % "{script}", node_type="elem", help="")
+        def image_rasterwizard_apply(node, script=None, **kwgs):
+            kernel.console("image wizard %s\n" % script)
+
+        @self.tree_conditional_try(lambda node: hasattr(node.object, "as_elements"))
+        @self.tree_operation(_("Convert to SVG"), node_type="elem", help="")
+        def cutcode_convert_svg(node, **kwgs):
+            self.elements.add_elems(list(node.object.as_elements()))
+
+        @self.tree_conditional_try(lambda node: hasattr(node.object, "generate"))
+        @self.tree_operation(_("Process as Operation"), node_type="elem", help="")
+        def cutcode_operation(node, **kwgs):
+            self.elements.add_op(node.object)
+
+        @self.tree_conditional(lambda node: len(node.children) > 0)
+        @self.tree_separator_before()
+        @self.tree_operation(
+            _("Expand all children"),
+            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
+            help="Expand all children of this given node.",
+        )
+        def expand_all_children(node, **kwgs):
+            node.notify_expand()
+
+        @self.tree_conditional(lambda node: len(node.children) > 0)
+        @self.tree_operation(
+            _("Collapse all children"),
+            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
+            help="Collapse all children of this given node.",
+        )
+        def collapse_all_children(node, **kwgs):
+            node.notify_collapse()
+
+        @self.tree_reference(lambda node: node.object.node)
+        @self.tree_operation(_("Element"), node_type="opnode", help="")
+        def reference_opnode(node, **kwgs):
+            pass
+
+        self.listen(self)
+        self.setting(bool, "operation_default_empty", True)
+        self.load_persistent_operations("previous")
+        ops = list(self.ops())
+        if not len(ops) and self.operation_default_empty:
+            self.load_default()
+
     def tree_operations_for_node(self, node):
-        for m in self.context.match("tree/%s/.*" % node.type):
-            func = self.context.registered[m]
+        for m in self.match("tree/%s/.*" % node.type):
+            func = self.registered[m]
             reject = False
             for cond in func.conditionals:
                 if not cond(node):
@@ -1739,7 +5398,7 @@ class Elemental(Modifier):
                 returned = func(node, **ik, **kwargs)
                 return returned
 
-            kernel = self.context.kernel
+            kernel = self.kernel
             if isinstance(node_type, tuple):
                 ins = node_type
             else:
@@ -1771,3687 +5430,9 @@ class Elemental(Modifier):
 
         return decorator
 
-    def attach(self, *a, **kwargs):
-        context = self.context
-        _ = context._
-        context.elements = self
-        context.classify = self.classify
-        context.save = self.save
-        context.save_types = self.save_types
-        context.load = self.load
-        context.load_types = self.load_types
-        context = self.context
-        self._tree = RootNode(context)
-        bed_dim = context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
-        context.root.setting(bool, "classify_reverse", False)
-        context.root.setting(bool, "legacy_classification", False)
-
-        # ==========
-        # OPERATION BASE
-        # ==========
-        @context.console_command(
-            "operations", help=_("Show information about operations")
-        )
-        def element(**kwgs):
-            context(".operation* list\n")
-
-        @context.console_command(
-            "operation.*", help=_("operation.*: selected operations"), output_type="ops"
-        )
-        def operation(**kwgs):
-            return "ops", list(self.ops(emphasized=True))
-
-        @context.console_command(
-            "operation*", help=_("operation*: all operations"), output_type="ops"
-        )
-        def operation(**kwgs):
-            return "ops", list(self.ops())
-
-        @context.console_command(
-            "operation~",
-            help=_("operation~: non selected operations."),
-            output_type="ops",
-        )
-        def operation(**kwgs):
-            return "ops", list(self.ops(emphasized=False))
-
-        @context.console_command(
-            "operation", help=_("operation: selected operations."), output_type="ops"
-        )
-        def operation(**kwgs):
-            return "ops", list(self.ops(emphasized=True))
-
-        @context.console_command(
-            r"operation([0-9]+,?)+",
-            help=_("operation0,2: operation #0 and #2"),
-            regex=True,
-            output_type="ops",
-        )
-        def operation(command, channel, _, **kwgs):
-            arg = command[9:]
-            op_values = []
-            for value in arg.split(","):
-                try:
-                    value = int(value)
-                except ValueError:
-                    continue
-                try:
-                    op = self.get_op(value)
-                    op_values.append(op)
-                except IndexError:
-                    channel(_("index %d out of range") % value)
-            return "ops", op_values
-
-        # ==========
-        # OPERATION SUBCOMMANDS
-        # ==========
-
-        @context.console_argument("name", help=_("Name to save the operation under"))
-        @context.console_command(
-            "save",
-            help=_("Save current operations to persistent settings"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def save_operations(command, channel, _, data=None, name=None, **kwgs):
-            if name is None:
-                raise SyntaxError
-            if "/" in name:
-                raise SyntaxError
-            self.save_persistent_operations(name)
-            return "ops", list(self.ops())
-
-        @context.console_argument("name", help=_("Name to load the operation from"))
-        @context.console_command(
-            "load",
-            help=_("Load operations from persistent settings"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def load_operations(name=None, **kwgs):
-            if name is None:
-                raise SyntaxError
-            if "/" in name:
-                raise SyntaxError
-            self.load_persistent_operations(name)
-            return "ops", list(self.ops())
-
-        @context.console_command(
-            "select",
-            help=_("Set these values as the selection."),
-            input_type="ops",
-            output_type="ops",
-        )
-        def operation_select(data=None, **kwgs):
-            self.set_emphasis(data)
-            return "ops", data
-
-        @context.console_command(
-            "select+",
-            help=_("Add the input to the selection"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def operation_select_plus(data=None, **kwgs):
-            ops = list(self.ops(emphasized=True))
-            ops.extend(data)
-            self.set_emphasis(ops)
-            return "ops", ops
-
-        @context.console_command(
-            "select-",
-            help=_("Remove the input data from the selection"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def operation_select_minus(data=None, **kwgs):
-            ops = list(self.ops(emphasized=True))
-            for e in data:
-                try:
-                    ops.remove(e)
-                except ValueError:
-                    pass
-            self.set_emphasis(ops)
-            return "ops", ops
-
-        @context.console_command(
-            "select^",
-            help=_("Toggle the input data in the selection"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def operation_select_xor(data=None, **kwgs):
-            ops = list(self.ops(emphasized=True))
-            for e in data:
-                try:
-                    ops.remove(e)
-                except ValueError:
-                    ops.append(e)
-            self.set_emphasis(ops)
-            return "ops", ops
-
-        @context.console_argument("start", type=int, help=_("operation start"))
-        @context.console_argument("end", type=int, help=_("operation end"))
-        @context.console_argument("step", type=int, help=_("operation step"))
-        @context.console_command(
-            "range",
-            help=_("Subset existing selection by begin and end indices and step"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def operation_select_range(data=None, start=None, end=None, step=1, **kwgs):
-            subops = list()
-            for e in range(start, end, step):
-                try:
-                    subops.append(data[e])
-                except IndexError:
-                    pass
-            self.set_emphasis(subops)
-            return "ops", subops
-
-        @context.console_argument("filter", type=str, help=_("Filter to apply"))
-        @context.console_command(
-            "filter",
-            help=_("Filter data by given value"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def operation_filter(channel=None, data=None, filter=None, **kwgs):
-            """
-            Apply a filter string to a filter particular operations from the current data.
-            Operations are evaluated in an infix prioritized stack format without spaces.
-            Qualified values are speed, power, step, acceleration, passes, color, op, overscan, len
-            Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
-            eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
-            eg. filter engrave=op&speed=35|cut=op&speed=10
-            eg. filter len=0
-            """
-            subops = list()
-            _filter_parse = [
-                ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
-                ("OP20", r"(\*|/)"),
-                ("OP15", r"(\+|-)"),
-                ("OP11", r"(<=|>=|==|!=)"),
-                ("OP10", r"(<|>|=)"),
-                ("OP5", r"(&&)"),
-                ("OP4", r"(&)"),
-                ("OP3", r"(\|\|)"),
-                ("OP2", r"(\|)"),
-                ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
-                (
-                    "COLOR",
-                    r"(#[0123456789abcdefABCDEF]{6}|#[0123456789abcdefABCDEF]{3})",
-                ),
-                (
-                    "TYPE",
-                    r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)",
-                ),
-                (
-                    "VAL",
-                    r"(speed|power|step|acceleration|passes|color|op|overscan|len)",
-                ),
-            ]
-            filter_re = re.compile(
-                "|".join("(?P<%s>%s)" % pair for pair in _filter_parse)
-            )
-            operator = list()
-            operand = list()
-
-            def filter_parser(text: str):
-                pos = 0
-                limit = len(text)
-                while pos < limit:
-                    match = filter_re.match(text, pos)
-                    if match is None:
-                        break  # No more matches.
-                    kind = match.lastgroup
-                    start = pos
-                    pos = match.end()
-                    if kind == "SKIP":
-                        continue
-                    value = match.group()
-                    yield kind, value, start, pos
-
-            def solve_to(order: int):
-                try:
-                    while len(operator) and operator[0][0] >= order:
-                        _p, op = operator.pop()
-                        v2 = operand.pop()
-                        v1 = operand.pop()
-                        try:
-                            if op == "==" or op == "=":
-                                operand.append(v1 == v2)
-                            elif op == "!=":
-                                operand.append(v1 != v2)
-                            elif op == ">":
-                                operand.append(v1 > v2)
-                            elif op == "<":
-                                operand.append(v1 < v2)
-                            elif op == "<=":
-                                operand.append(v1 <= v2)
-                            elif op == ">=":
-                                operand.append(v1 >= v2)
-                            elif op == "&&" or op == "&":
-                                operand.append(v1 and v2)
-                            elif op == "||" or op == "|":
-                                operand.append(v1 or v2)
-                            elif op == "*":
-                                operand.append(v1 * v2)
-                            elif op == "/":
-                                operand.append(v1 / v2)
-                            elif op == "+":
-                                operand.append(v1 + v2)
-                            elif op == "-":
-                                operand.append(v1 - v2)
-                        except TypeError:
-                            raise SyntaxError("Cannot evaluate expression")
-                        except ZeroDivisionError:
-                            operand.append(float("inf"))
-                except IndexError:
-                    pass
-
-            for e in data:
-                for kind, value, start, pos in filter_parser(filter):
-                    if kind == "COLOR":
-                        operand.append(Color(value))
-                    elif kind == "VAL":
-                        if value == "step":
-                            operand.append(e.settings.raster_step)
-                        elif value == "color":
-                            operand.append(e.color)
-                        elif value == "op":
-                            operand.append(e.operation.lower())
-                        elif value == "len":
-                            operand.append(len(e.children))
-                        else:
-                            operand.append(getattr(e.settings, value))
-
-                    elif kind == "NUM":
-                        operand.append(float(value))
-                    elif kind == "TYPE":
-                        operand.append(value)
-                    elif kind.startswith("OP"):
-                        prec = int(kind[2:])
-                        solve_to(prec)
-                        operator.append((prec, value))
-                solve_to(0)
-                if len(operand) == 1:
-                    if operand.pop():
-                        subops.append(e)
-                else:
-                    raise SyntaxError(_("Filter parse failed"))
-
-            self.set_emphasis(subops)
-            return "ops", subops
-
-        @context.console_command(
-            "list",
-            help=_("Show information about the chained data"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def operation_list(channel, _, data=None, **kwgs):
-            channel("----------")
-            channel(_("Operations:"))
-            index_ops = list(self.ops())
-            for op_obj in data:
-                i = index_ops.index(op_obj)
-                selected = op_obj.emphasized
-                select_piece = " *" if selected else "  "
-                color = (
-                    Color(op_obj.color).hex
-                    if hasattr(op_obj, "color") and op_obj.color is not None
-                    else "None"
-                )
-                name = "%d: %s %s - %s" % (i, str(op_obj), select_piece, color)
-                channel(name)
-                if isinstance(op_obj, list):
-                    for q, oe in enumerate(op_obj):
-                        stroke_piece = (
-                            "None"
-                            if (not hasattr(oe, "stroke") or oe.stroke) is None
-                            else oe.stroke.hex
-                        )
-                        fill_piece = (
-                            "None"
-                            if (not hasattr(oe, "stroke") or oe.fill) is None
-                            else oe.fill.hex
-                        )
-                        ident_piece = str(oe.id)
-                        name = "%s%d: %s-%s s:%s f:%s" % (
-                            "".ljust(5),
-                            q,
-                            str(type(oe).__name__),
-                            ident_piece,
-                            stroke_piece,
-                            fill_piece,
-                        )
-                        channel(name)
-            channel("----------")
-
-        @context.console_option("color", "c", type=Color)
-        @context.console_option("default", "d", type=bool)
-        @context.console_option("speed", "s", type=float)
-        @context.console_option("power", "p", type=float)
-        @context.console_option("step", "S", type=int)
-        @context.console_option("overscan", "o", type=Length)
-        @context.console_option("passes", "x", type=int)
-        @context.console_command(
-            ("cut", "engrave", "raster", "imageop", "dots"),
-            help=_(
-                "<cut/engrave/raster/imageop/dots> - group the elements into this operation"
-            ),
-            input_type=(None, "elements"),
-            output_type="ops",
-        )
-        def makeop(
-            command,
-            data=None,
-            color=None,
-            default=None,
-            speed=None,
-            power=None,
-            step=None,
-            overscan=None,
-            passes=None,
-            **kwgs
-        ):
-            op = LaserOperation()
-            if color is not None:
-                op.color = color
-            if default is not None:
-                op.default = default
-            if speed is not None:
-                op.settings.speed = speed
-            if power is not None:
-                op.settings.power = power
-            if passes is not None:
-                op.settings.passes_custom = True
-                op.settings.passes = passes
-            if step is not None:
-                op.settings.raster_step = step
-            if overscan is not None:
-                op.settings.overscan = int(
-                    overscan.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    )
-                )
-            if command == "cut":
-                op.operation = "Cut"
-            elif command == "engrave":
-                op.operation = "Engrave"
-            elif command == "raster":
-                op.operation = "Raster"
-            elif command == "imageop":
-                op.operation = "Image"
-            elif command == "dots":
-                op.operation = "Dots"
-            self.add_op(op)
-            if data is not None:
-                for item in data:
-                    op.add(item, type="opnode")
-            return "ops", [op]
-
-        @context.console_argument("step_size", type=int, help=_("raster step size"))
-        @context.console_command(
-            "step", help=_("step <raster-step-size>"), input_type="ops"
-        )
-        def op_step(command, channel, _, data, step_size=None, **kwrgs):
-            if step_size is None:
-                found = False
-                for op in data:
-                    if op.operation in ("Raster", "Image"):
-                        step = op.settings.raster_step
-                        channel(_("Step for %s is currently: %d") % (str(op), step))
-                        found = True
-                if not found:
-                    channel(_("No raster operations selected."))
-                return
-            for op in data:
-                if op.operation in ("Raster", "Image"):
-                    op.settings.raster_step = step_size
-                    op.notify_update()
-            return "ops", data
-
-        @context.console_argument(
-            "speed", type=float, help=_("operation speed in mm/s")
-        )
-        @context.console_command(
-            "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
-        )
-        def op_speed(command, channel, _, speed=None, data=None, **kwrgs):
-            if speed is None:
-                for op in data:
-                    old_speed = op.settings.speed
-                    channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
-                return
-            for op in data:
-                old_speed = op.settings.speed
-                op.settings.speed = speed
-                channel(
-                    _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, speed)
-                )
-                op.notify_update()
-            return "ops", data
-
-        @context.console_argument(
-            "power", type=int, help=_("power in pulses per inch (ppi, 1000=max)")
-        )
-        @context.console_command(
-            "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
-        )
-        def op_power(command, channel, _, power=None, data=None, **kwrgs):
-            if power is None:
-                for op in data:
-                    old_ppi = op.settings.power
-                    channel(_("Power for '%s' is currently: %d") % (str(op), old_ppi))
-                return
-            for op in data:
-                old_ppi = op.settings.power
-                op.settings.power = power
-                channel(
-                    _("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power)
-                )
-                op.notify_update()
-            return "ops", data
-
-        @context.console_argument("passes", type=int, help=_("Set operation passes"))
-        @context.console_command(
-            "passes", help=_("passes <passes>"), input_type="ops", output_type="ops"
-        )
-        def op_passes(command, channel, _, passes=None, data=None, **kwrgs):
-            if passes is None:
-                for op in data:
-                    old_passes = op.settings.passes
-                    channel(
-                        _("Passes for '%s' is currently: %d") % (str(op), old_passes)
-                    )
-                return
-            for op in data:
-                old_passes = op.settings.passes
-                op.settings.passes = passes
-                if passes >= 1:
-                    op.settings.passes_custom = True
-                channel(
-                    _("Passes for '%s' updated %d -> %d")
-                    % (str(op), old_passes, passes)
-                )
-                op.notify_update()
-            return "ops", data
-
-        @context.console_command(
-            "disable",
-            help=_("Disable the given operations"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def op_disable(command, channel, _, data=None, **kwrgs):
-            for op in data:
-                op.output = False
-                channel(_("Operation '%s' disabled.") % str(op))
-                op.notify_update()
-            return "ops", data
-
-        @context.console_command(
-            "enable",
-            help=_("Enable the given operations"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def op_enable(command, channel, _, data=None, **kwrgs):
-            for op in data:
-                op.output = True
-                channel(_("Operation '%s' enabled.") % str(op))
-                op.notify_update()
-            return "ops", data
-
-        # ==========
-        # ELEMENT/OPERATION SUBCOMMANDS
-        # ==========
-        @context.console_command(
-            "copy",
-            help=_("Duplicate elements"),
-            input_type=("elements", "ops"),
-            output_type=("elements", "ops"),
-        )
-        def e_copy(data=None, data_type=None, **kwgs):
-            add_elem = list(map(copy, data))
-            if data_type == "ops":
-                self.add_ops(add_elem)
-            else:
-                self.add_elems(add_elem)
-            return data_type, add_elem
-
-        @context.console_command(
-            "delete", help=_("Delete elements"), input_type=("elements", "ops")
-        )
-        def e_delete(command, channel, _, data=None, data_type=None, **kwgs):
-            channel(_("Deleting…"))
-            if data_type == "elements":
-                self.remove_elements(data)
-            else:
-                self.remove_operations(data)
-            self.context.signal("refresh_scene", 0)
-
-        # ==========
-        # ELEMENT BASE
-        # ==========
-
-        @context.console_command(
-            "elements",
-            help=_("Show information about elements"),
-        )
-        def element(**kwgs):
-            context(".element* list\n")
-
-        @context.console_command(
-            "element*",
-            help=_("element*, all elements"),
-            output_type="elements",
-        )
-        def element_star(**kwgs):
-            return "elements", list(self.elems())
-
-        @context.console_command(
-            "element~",
-            help=_("element~, all non-selected elements"),
-            output_type="elements",
-        )
-        def element_not(**kwgs):
-            return "elements", list(self.elems(emphasized=False))
-
-        @context.console_command(
-            "element",
-            help=_("element, selected elements"),
-            output_type="elements",
-        )
-        def element_base(**kwargs):
-            return "elements", list(self.elems(emphasized=True))
-
-        @context.console_command(
-            r"element([0-9]+,?)+",
-            help=_("element0,3,4,5: chain a list of specific elements"),
-            regex=True,
-            output_type="elements",
-        )
-        def element_chain(command, channel, _, **kwgs):
-            arg = command[7:]
-            elements_list = []
-            for value in arg.split(","):
-                try:
-                    value = int(value)
-                except ValueError:
-                    continue
-                try:
-                    e = self.get_elem(value)
-                    elements_list.append(e)
-                except IndexError:
-                    channel(_("index %d out of range") % value)
-            return "elements", elements_list
-
-        # ==========
-        # ELEMENT SUBCOMMANDS
-        # ==========
-
-        @context.console_argument("step_size", type=int, help=_("element step size"))
-        @context.console_command(
-            "step",
-            help=_("step <element step-size>"),
-            input_type="elements",
-            output_type="elements",
-        )
-        def step_command(command, channel, _, data, step_size=None, **kwrgs):
-            if step_size is None:
-                found = False
-                for element in data:
-                    if isinstance(element, SVGImage):
-                        try:
-                            step = element.values["raster_step"]
-                        except KeyError:
-                            step = 1
-                        channel(
-                            _("Image step for %s is currently: %s")
-                            % (str(element), step)
-                        )
-                        found = True
-                if not found:
-                    channel(_("No image element selected."))
-                return
-            for element in data:
-                element.values["raster_step"] = str(step_size)
-                m = element.transform
-                tx = m.e
-                ty = m.f
-                element.transform = Matrix.scale(float(step_size), float(step_size))
-                element.transform.post_translate(tx, ty)
-                if hasattr(element, "node"):
-                    element.node.modified()
-                self.context.signal("element_property_reload", element)
-                self.context.signal("refresh_scene")
-            return ("elements",)
-
-        @context.console_command(
-            "select",
-            help=_("Set these values as the selection."),
-            input_type="elements",
-            output_type="elements",
-        )
-        def element_select_base(data=None, **kwgs):
-            self.set_emphasis(data)
-            return "elements", data
-
-        @context.console_command(
-            "select+",
-            help=_("Add the input to the selection"),
-            input_type="elements",
-            output_type="elements",
-        )
-        def element_select_plus(data=None, **kwgs):
-            elems = list(self.elems(emphasized=True))
-            elems.extend(data)
-            self.set_emphasis(elems)
-            return "elements", elems
-
-        @context.console_command(
-            "select-",
-            help=_("Remove the input data from the selection"),
-            input_type="elements",
-            output_type="elements",
-        )
-        def element_select_minus(data=None, **kwgs):
-            elems = list(self.elems(emphasized=True))
-            for e in data:
-                try:
-                    elems.remove(e)
-                except ValueError:
-                    pass
-            self.set_emphasis(elems)
-            return "elements", elems
-
-        @context.console_command(
-            "select^",
-            help=_("Toggle the input data in the selection"),
-            input_type="elements",
-            output_type="elements",
-        )
-        def element_select_xor(data=None, **kwgs):
-            elems = list(self.elems(emphasized=True))
-            for e in data:
-                try:
-                    elems.remove(e)
-                except ValueError:
-                    elems.append(e)
-            self.set_emphasis(elems)
-            return "elements", elems
-
-        @context.console_command(
-            "list",
-            help=_("Show information about the chained data"),
-            input_type="elements",
-            output_type="elements",
-        )
-        def element_list(command, channel, _, data=None, **kwgs):
-            channel("----------")
-            channel(_("Graphical Elements:"))
-            index_list = list(self.elems())
-            for e in data:
-                i = index_list.index(e)
-                name = str(e)
-                if len(name) > 50:
-                    name = name[:50] + "…"
-                if e.node.emphasized:
-                    channel("%d: * %s" % (i, name))
-                else:
-                    channel("%d: %s" % (i, name))
-            channel("----------")
-            return "elements", data
-
-        @context.console_argument("start", type=int, help=_("elements start"))
-        @context.console_argument("end", type=int, help=_("elements end"))
-        @context.console_argument("step", type=int, help=_("elements step"))
-        @context.console_command(
-            "range",
-            help=_("Subset selection by begin & end indices and step"),
-            input_type="elements",
-            output_type="elements",
-        )
-        def element_select_range(data=None, start=None, end=None, step=1, **kwgs):
-            subelem = list()
-            for e in range(start, end, step):
-                try:
-                    subelem.append(data[e])
-                except IndexError:
-                    pass
-            self.set_emphasis(subelem)
-            return "elements", subelem
-
-        @context.console_command(
-            "merge",
-            help=_("merge elements"),
-            input_type="elements",
-            output_type="elements",
-        )
-        def element_merge(data=None, **kwgs):
-            super_element = Path()
-            for e in data:
-                if not isinstance(e, Shape):
-                    continue
-                if super_element.stroke is None:
-                    super_element.stroke = e.stroke
-                if super_element.fill is None:
-                    super_element.fill = e.fill
-                super_element += abs(e)
-            self.remove_elements(data)
-            self.add_elem(super_element).emphasized = True
-            self.classify([super_element])
-            return "elements", [super_element]
-
-        @context.console_command(
-            "subpath",
-            help=_("break elements"),
-            input_type="elements",
-            output_type="elements",
-        )
-        def element_subpath(data=None, **kwgs):
-            if not isinstance(data, list):
-                data = list(data)
-            elements_nodes = []
-            elements = []
-            for e in data:
-                node = e.node
-                group_node = node.replace_node(type="group", label=node.label)
-                if isinstance(e, Shape) and not isinstance(e, Path):
-                    e = Path(e)
-                elif isinstance(e, SVGText):
-                    continue
-                p = abs(e)
-                for subpath in p.as_subpaths():
-                    subelement = Path(subpath)
-                    elements.append(subelement)
-                    group_node.add(subelement, type="elem")
-                elements_nodes.append(group_node)
-                self.classify(elements)
-            return "elements", elements_nodes
-
-        # ==========
-        # ALIGN SUBTYPE
-        # Align consist of top level node objects that can be manipulated within the scene.
-        # ==========
-
-        @context.console_command(
-            "align",
-            help=_("align selected elements"),
-            input_type=("elements", None),
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, remainder=None, **kwgs):
-            if not remainder:
-                channel(
-                    "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n"
-                    "<any valid svg:Preserve Aspect Ratio, eg xminymin>"
-                )
-                return
-            if data is None:
-                data = list(self.elems(emphasized=True))
-
-            # Element conversion.
-            d = list()
-            elem_branch = self.elem_branch
-            for elem in data:
-                node = elem.node
-                while node.parent and node.parent is not elem_branch:
-                    node = node.parent
-                if node not in d:
-                    d.append(node)
-            data = d
-            return "align", data
-
-        @context.console_command(
-            "top",
-            help=_("align elements at top"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            top_edge = min([e[1] for e in boundary_points])
-            for node in data:
-                subbox = node.bounds
-                top = subbox[1] - top_edge
-                matrix = "translate(0, %f)" % -top
-                if top != 0:
-                    for q in node.flat(types="elem"):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-            return "align", data
-
-        @context.console_command(
-            "bottom",
-            help=_("align elements at bottom"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            bottom_edge = max([e[3] for e in boundary_points])
-            for node in data:
-                subbox = node.bounds
-                bottom = subbox[3] - bottom_edge
-                matrix = "translate(0, %f)" % -bottom
-                if bottom != 0:
-                    for q in node.flat(types="elem"):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-            return "align", data
-
-        @context.console_command(
-            "left",
-            help=_("align elements at left"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            for node in data:
-                subbox = node.bounds
-                left = subbox[0] - left_edge
-                matrix = "translate(%f, 0)" % -left
-                if left != 0:
-                    for q in node.flat(types="elem"):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-            return "align", data
-
-        @context.console_command(
-            "right",
-            help=_("align elements at right"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            right_edge = max([e[2] for e in boundary_points])
-            for node in data:
-                subbox = node.bounds
-                right = subbox[2] - right_edge
-                matrix = "translate(%f, 0)" % -right
-                if right != 0:
-                    for q in node.flat(types="elem"):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-            return "align", data
-
-        @context.console_command(
-            "center",
-            help=_("align elements at center"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
-            for node in data:
-                subbox = node.bounds
-                dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                matrix = "translate(%f, %f)" % (-dx, -dy)
-                for q in node.flat(types="elem"):
-                    obj = q.object
-                    if obj is not None:
-                        obj *= matrix
-                    q.modified()
-            return "align", data
-
-        @context.console_command(
-            "centerv",
-            help=_("align elements at center vertical"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            for node in data:
-                subbox = node.bounds
-                dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                matrix = "translate(%f, 0)" % -dx
-                for q in node.flat(types="elem"):
-                    obj = q.object
-                    if obj is not None:
-                        obj *= matrix
-                    q.modified()
-            return "align", data
-
-        @context.console_command(
-            "centerh",
-            help=_("align elements at center horizontal"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            top_edge = min([e[1] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
-            for node in data:
-                subbox = node.bounds
-                dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                matrix = "translate(0, %f)" % -dy
-                for q in node.flat(types="elem"):
-                    obj = q.object
-                    if obj is not None:
-                        obj *= matrix
-                    q.modified()
-            return "align", data
-
-        @context.console_command(
-            "spaceh",
-            help=_("align elements across horizontal space"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
-                return "align", data
-            left_edge = min([e[0] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            dim_total = right_edge - left_edge
-            dim_available = dim_total
-            for node in data:
-                bounds = node.bounds
-                dim_available -= bounds[2] - bounds[0]
-            distributed_distance = dim_available / (len(data) - 1)
-            data.sort(key=lambda n: n.bounds[0])  # sort by left edge
-            dim_pos = left_edge
-            for node in data:
-                subbox = node.bounds
-                delta = subbox[0] - dim_pos
-                matrix = "translate(%f, 0)" % -delta
-                if delta != 0:
-                    for q in node.flat(types="elem"):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-                dim_pos += subbox[2] - subbox[0] + distributed_distance
-            return "align", data
-
-        @context.console_command(
-            "spacev",
-            help=_("align elements down vertical space"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
-                return "align", data
-            top_edge = min([e[1] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
-            dim_total = bottom_edge - top_edge
-            dim_available = dim_total
-            for node in data:
-                bounds = node.bounds
-                dim_available -= bounds[3] - bounds[1]
-            distributed_distance = dim_available / (len(data) - 1)
-            data.sort(key=lambda n: n.bounds[1])  # sort by top edge
-            dim_pos = top_edge
-            for node in data:
-                subbox = node.bounds
-                delta = subbox[1] - dim_pos
-                matrix = "translate(0, %f)" % -delta
-                if delta != 0:
-                    for q in node.flat(types="elem"):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-                dim_pos += subbox[3] - subbox[1] + distributed_distance
-            return "align", data
-
-        @context.console_command(
-            "bedcenter",
-            help=_("align elements to bedcenter"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwgs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
-            for node in data:
-                bw = bed_dim.bed_width
-                bh = bed_dim.bed_height
-                dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
-                dy = (bh * MILS_IN_MM - top_edge - bottom_edge) / 2.0
-                matrix = "translate(%f, %f)" % (dx, dy)
-                for q in node.flat(types="elem"):
-                    obj = q.object
-                    if obj is not None:
-                        obj *= matrix
-                    q.modified()
-            self.context.signal("refresh_scene")
-            return "align", data
-
-        @context.console_argument(
-            "preserve_aspect_ratio",
-            type=str,
-            default="none",
-            help="preserve aspect ratio value",
-        )
-        @context.console_command(
-            "view",
-            help=_("align elements within viewbox"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(
-            command, channel, _, data=None, preserve_aspect_ratio="none", **kwgs
-        ):
-            """
-            Align the elements to within the bed according to SVG Viewbox rules. The following aspect ratios
-            are valid. These should define all the valid methods of centering data within the laser bed.
-            "xminymin",
-            "xmidymin",
-            "xmaxymin",
-            "xminymid",
-            "xmidymid",
-            "xmaxymid",
-            "xminymax",
-            "xmidymax",
-            "xmaxymax",
-            "xminymin meet",
-            "xmidymin meet",
-            "xmaxymin meet",
-            "xminymid meet",
-            "xmidymid meet",
-            "xmaxymid meet",
-            "xminymax meet",
-            "xmidymax meet",
-            "xmaxymax meet",
-            "xminymin slice",
-            "xmidymin slice",
-            "xmaxymin slice",
-            "xminymid slice",
-            "xmidymid slice",
-            "xmaxymid slice",
-            "xminymax slice",
-            "xmidymax slice",
-            "xmaxymax slice",
-            "none"
-            """
-
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
-
-            if preserve_aspect_ratio in (
-                "xminymin",
-                "xmidymin",
-                "xmaxymin",
-                "xminymid",
-                "xmidymid",
-                "xmaxymid",
-                "xminymax",
-                "xmidymax",
-                "xmaxymax",
-                "xminymin meet",
-                "xmidymin meet",
-                "xmaxymin meet",
-                "xminymid meet",
-                "xmidymid meet",
-                "xmaxymid meet",
-                "xminymax meet",
-                "xmidymax meet",
-                "xmaxymax meet",
-                "xminymin slice",
-                "xmidymin slice",
-                "xmaxymin slice",
-                "xminymid slice",
-                "xmidymid slice",
-                "xmaxymid slice",
-                "xminymax slice",
-                "xmidymax slice",
-                "xmaxymax slice",
-                "none",
-            ):
-                for node in data:
-                    bw = bed_dim.bed_width
-                    bh = bed_dim.bed_height
-
-                    matrix = Viewbox.viewbox_transform(
-                        0,
-                        0,
-                        bw * MILS_IN_MM,
-                        bh * MILS_IN_MM,
-                        left_edge,
-                        top_edge,
-                        right_edge - left_edge,
-                        bottom_edge - top_edge,
-                        preserve_aspect_ratio,
-                    )
-                    for q in node.flat(types="elem"):
-                        obj = q.object
-                        if obj is not None:
-                            obj *= matrix
-                        q.modified()
-                    for q in node.flat(types=("file", "group")):
-                        q.modified()
-                self.context.signal("refresh_scene")
-            return "align", data
-
-        @context.console_argument("c", type=int, help=_("Number of columns"))
-        @context.console_argument("r", type=int, help=_("Number of rows"))
-        @context.console_argument("x", type=Length, help=_("x distance"))
-        @context.console_argument("y", type=Length, help=_("y distance"))
-        @context.console_command(
-            "grid",
-            help=_("grid <columns> <rows> <x_distance> <y_distance>"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def element_grid(
-            command, channel, _, c: int, r: int, x: Length, y: Length, data=None, **kwgs
-        ):
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            if len(data) == 0 and self._emphasized_bounds is None:
-                channel(_("No item selected."))
-                return
-            if r is None:
-                raise SyntaxError
-            if x is None:
-                x = Length("100%")
-            if y is None:
-                y = Length("100%")
-            try:
-                bounds = self._emphasized_bounds
-                width = bounds[2] - bounds[0]
-                height = bounds[3] - bounds[1]
-            except Exception:
-                raise SyntaxError
-            x = x.value(ppi=1000, relative_length=width)
-            y = y.value(ppi=1000, relative_length=height)
-            if isinstance(x, Length) or isinstance(y, Length):
-                raise SyntaxError
-            y_pos = 0
-            data_out = list(data)
-            for j in range(r):
-                x_pos = 0
-                for k in range(c):
-                    if j != 0 or k != 0:
-                        add_elem = list(map(copy, data))
-                        for e in add_elem:
-                            e *= "translate(%f, %f)" % (x_pos, y_pos)
-                        self.add_elems(add_elem)
-                        data_out.extend(add_elem)
-                    x_pos += x
-                y_pos += y
-            return "elements", data_out
-
-        @context.console_option("step", "s", default=2.0, type=float)
-        @context.console_command(
-            "render",
-            help=_("Convert given elements to a raster image"),
-            input_type=(None, "elements"),
-            output_type="image",
-        )
-        def make_raster_image(command, channel, _, step=2.0, data=None, **kwgs):
-            context = self.context
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            elements = context.elements
-            make_raster = self.context.registered.get("render-op/make_raster")
-
-            bounds = Group.union_bbox(data)
-            if bounds is None:
-                return
-            if step <= 0:
-                step = 1
-            xmin, ymin, xmax, ymax = bounds
-
-            image = make_raster(
-                [n.node for n in data],
-                bounds,
-                step=step,
-            )
-            image_element = SVGImage(image=image)
-            image_element.transform.post_scale(step, step)
-            image_element.transform.post_translate(xmin, ymin)
-            image_element.values["raster_step"] = step
-            elements.add_elem(image_element)
-            return "image", [image_element]
-
-        # ==========
-        # ELEMENT/SHAPE COMMANDS
-        # ==========
-        @context.console_argument("x_pos", type=Length)
-        @context.console_argument("y_pos", type=Length)
-        @context.console_argument("r_pos", type=Length)
-        @context.console_command(
-            "circle",
-            help=_("circle <x> <y> <r> or circle <r>"),
-            input_type=("elements", None),
-            output_type="elements",
-        )
-        def element_circle(x_pos, y_pos, r_pos, data=None, **kwgs):
-            if x_pos is None:
-                raise SyntaxError
-            else:
-                if r_pos is None:
-                    r_pos = x_pos
-                    x_pos = 0
-                    y_pos = 0
-            circ = Circle(cx=x_pos, cy=y_pos, r=r_pos)
-            circ.render(
-                ppi=1000.0,
-                width="%fmm" % bed_dim.bed_width,
-                height="%fmm" % bed_dim.bed_height,
-            )
-            self.add_element(circ)
-            if data is None:
-                return "elements", [circ]
-            else:
-                data.append(circ)
-                return "elements", data
-
-        @context.console_argument("x_pos", type=Length)
-        @context.console_argument("y_pos", type=Length)
-        @context.console_argument("rx_pos", type=Length)
-        @context.console_argument("ry_pos", type=Length)
-        @context.console_command(
-            "ellipse",
-            help=_("ellipse <cx> <cy> <rx> <ry>"),
-            input_type=("elements", None),
-            output_type="elements",
-        )
-        def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwgs):
-            if ry_pos is None:
-                raise SyntaxError
-            ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
-            ellip.render(
-                ppi=1000.0,
-                width="%fmm" % bed_dim.bed_width,
-                height="%fmm" % bed_dim.bed_height,
-            )
-            self.add_element(ellip)
-            if data is None:
-                return "elements", [ellip]
-            else:
-                data.append(ellip)
-                return "elements", data
-
-        @context.console_argument(
-            "x_pos", type=Length, help=_("x position for top left corner of rectangle.")
-        )
-        @context.console_argument(
-            "y_pos", type=Length, help=_("y position for top left corner of rectangle.")
-        )
-        @context.console_argument(
-            "width", type=Length, help=_("width of the rectangle.")
-        )
-        @context.console_argument(
-            "height", type=Length, help=_("height of the rectangle.")
-        )
-        @context.console_option(
-            "rx", "x", type=Length, help=_("rounded rx corner value.")
-        )
-        @context.console_option(
-            "ry", "y", type=Length, help=_("rounded ry corner value.")
-        )
-        @context.console_command(
-            "rect",
-            help=_("adds rectangle to scene"),
-            input_type=("elements", None),
-            output_type="elements",
-        )
-        def element_rect(
-            x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwgs
-        ):
-            """
-            Draws an svg rectangle with optional rounded corners.
-            """
-            if x_pos is None:
-                raise SyntaxError
-            rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
-            rect.render(
-                ppi=1000.0,
-                width="%fmm" % bed_dim.bed_width,
-                height="%fmm" % bed_dim.bed_height,
-            )
-            # rect = Path(rect)
-            self.add_element(rect)
-            if data is None:
-                return "elements", [rect]
-            else:
-                data.append(rect)
-                return "elements", data
-
-        @context.console_argument("x0", type=Length, help=_("start x position"))
-        @context.console_argument("y0", type=Length, help=_("start y position"))
-        @context.console_argument("x1", type=Length, help=_("end x position"))
-        @context.console_argument("y1", type=Length, help=_("end y position"))
-        @context.console_command(
-            "line",
-            help=_("adds line to scene"),
-            input_type=("elements", None),
-            output_type="elements",
-        )
-        def element_line(command, x0, y0, x1, y1, data=None, **kwgs):
-            """
-            Draws an svg line in the scene.
-            """
-            if y1 is None:
-                raise SyntaxError
-            simple_line = SimpleLine(x0, y0, x1, y1)
-            simple_line.render(
-                ppi=1000.0,
-                width="%fmm" % bed_dim.bed_width,
-                height="%fmm" % bed_dim.bed_height,
-            )
-            self.add_element(simple_line)
-            if data is None:
-                return "elements", [simple_line]
-            else:
-                data.append(simple_line)
-                return "elements", data
-
-        @context.console_argument("text", type=str, help=_("quoted string of text"))
-        @context.console_command(
-            "text",
-            help=_("text <text>"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def element_text(command, channel, _, data=None, text=None, **kwgs):
-            if text is None:
-                channel(_("No text specified"))
-                return
-            svg_text = SVGText(text)
-            self.add_element(svg_text)
-            if data is None:
-                return "elements", [svg_text]
-            else:
-                data.append(svg_text)
-                return "elements", data
-
-        @context.console_command(
-            "polygon", help=_("polygon (float float)*"), input_type=("elements", None)
-        )
-        def element_polygon(args=tuple(), **kwgs):
-            try:
-                element = Polygon(list(map(float, args)))
-            except ValueError:
-                raise SyntaxError(
-                    _(
-                        "Must be a list of spaced delimited floating point numbers values."
-                    )
-                )
-            self.add_element(element)
-
-        @context.console_command(
-            "polyline",
-            help=_("polyline (float float)*"),
-            input_type=("elements", None),
-        )
-        def element_polyline(command, channel, _, args=tuple(), **kwgs):
-            try:
-                element = Polyline(list(map(float, args)))
-            except ValueError:
-                raise SyntaxError(
-                    _(
-                        "Must be a list of spaced delimited floating point numbers values."
-                    )
-                )
-            self.add_element(element)
-
-        @context.console_command(
-            "path", help=_("Convert any shapes to paths"), input_type="elements"
-        )
-        def element_path_convert(data, **kwgs):
-            for e in data:
-                try:
-                    node = e.node
-                    node.replace_object(abs(Path(node.object)))
-                    node.altered()
-                except AttributeError:
-                    pass
-
-        @context.console_argument(
-            "path_d", type=str, help=_("svg path syntax command (quoted).")
-        )
-        @context.console_command(
-            "path",
-            help=_("path <svg path>"),
-            output_type="elements",
-        )
-        def element_path(path_d, data, **kwgs):
-            try:
-                path = Path(path_d)
-            except ValueError:
-                raise SyntaxError(_("Not a valid path_d string (try quotes)"))
-
-            self.add_element(path)
-            if data is None:
-                return "elements", [path]
-            else:
-                data.append(path)
-                return "elements", data
-
-        @context.console_argument(
-            "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
-        )
-        @context.console_command(
-            "stroke-width",
-            help=_("stroke-width <length>"),
-            input_type=(
-                None,
-                "elements",
-            ),
-            output_type="elements",
-        )
-        def element_stroke_width(command, channel, _, stroke_width, data=None, **kwgs):
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            if stroke_width is None:
-                channel("----------")
-                channel(_("Stroke-Width Values:"))
-                i = 0
-                for e in self.elems():
-                    name = str(e)
-                    if len(name) > 50:
-                        name = name[:50] + "…"
-                    if e.stroke is None or e.stroke == "none":
-                        channel(_("%d: stroke = none - %s") % (i, name))
-                    else:
-                        channel(_("%d: stroke = %s - %s") % (i, e.stroke_width, name))
-                    i += 1
-                channel("----------")
-                return
-
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-            stroke_width = stroke_width.value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            if isinstance(stroke_width, Length):
-                raise SyntaxError
-            for e in data:
-                e.stroke_width = stroke_width
-                if hasattr(e, "node"):
-                    e.node.altered()
-            context.signal("refresh_scene")
-            return "elements", data
-
-        @context.console_option("filter", "f", type=str, help="Filter indexes")
-        @context.console_argument(
-            "color", type=Color, help=_("Color to color the given stroke")
-        )
-        @context.console_command(
-            "stroke",
-            help=_("stroke <svg color>"),
-            input_type=(
-                None,
-                "elements",
-            ),
-            output_type="elements",
-        )
-        def element_stroke(
-            command, channel, _, color, data=None, filter=None, **kwargs
-        ):
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            apply = data
-            if filter is not None:
-                apply = list()
-                for value in filter.split(","):
-                    try:
-                        value = int(value)
-                    except ValueError:
-                        continue
-                    try:
-                        apply.append(data[value])
-                    except IndexError:
-                        channel(_("index %d out of range") % value)
-            if color is None:
-                channel("----------")
-                channel(_("Stroke Values:"))
-                i = 0
-                for e in self.elems():
-                    name = str(e)
-                    if len(name) > 50:
-                        name = name[:50] + "…"
-                    if e.stroke is None or e.stroke == "none":
-                        channel(_("%d: stroke = none - %s") % (i, name))
-                    else:
-                        channel(_("%d: stroke = %s - %s") % (i, e.stroke.hex, name))
-                    i += 1
-                channel("----------")
-                return
-            elif color == "none":
-                for e in apply:
-                    e.stroke = None
-                    if hasattr(e, "node"):
-                        e.node.altered()
-            else:
-                for e in apply:
-                    e.stroke = Color(color)
-                    if hasattr(e, "node"):
-                        e.node.altered()
-            context.signal("refresh_scene")
-            return "elements", data
-
-        @context.console_option("filter", "f", type=str, help="Filter indexes")
-        @context.console_argument(
-            "color", type=Color, help=_("Color to set the fill to")
-        )
-        @context.console_command(
-            "fill",
-            help=_("fill <svg color>"),
-            input_type=(
-                None,
-                "elements",
-            ),
-            output_type="elements",
-        )
-        def element_fill(command, channel, _, color, data=None, filter=None, **kwgs):
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            apply = data
-            if filter is not None:
-                apply = list()
-                for value in filter.split(","):
-                    try:
-                        value = int(value)
-                    except ValueError:
-                        continue
-                    try:
-                        apply.append(data[value])
-                    except IndexError:
-                        channel(_("index %d out of range") % value)
-            if color is None:
-                channel("----------")
-                channel(_("Fill Values:"))
-                i = 0
-                for e in self.elems():
-                    name = str(e)
-                    if len(name) > 50:
-                        name = name[:50] + "…"
-                    if e.fill is None or e.fill == "none":
-                        channel(_("%d: fill = none - %s") % (i, name))
-                    else:
-                        channel(_("%d: fill = %s - %s") % (i, e.fill.hex, name))
-                    i += 1
-                channel("----------")
-                return "elements", data
-            elif color == "none":
-                for e in apply:
-                    e.fill = None
-                    if hasattr(e, "node"):
-                        e.node.altered()
-            else:
-                for e in apply:
-                    e.fill = Color(color)
-                    if hasattr(e, "node"):
-                        e.node.altered()
-            context.signal("refresh_scene")
-            return "elements", data
-
-        @context.console_argument("x_offset", type=Length, help=_("x offset."))
-        @context.console_argument("y_offset", type=Length, help=_("y offset"))
-        @context.console_command(
-            "outline",
-            help=_("outline the current selected elements"),
-            input_type=(
-                None,
-                "elements",
-            ),
-            output_type="elements",
-        )
-        def element_outline(
-            command,
-            channel,
-            _,
-            x_offset=None,
-            y_offset=None,
-            data=None,
-            args=tuple(),
-            **kwgs
-        ):
-            """
-            Draws an outline of the current shape.
-            """
-            if x_offset is None:
-                raise SyntaxError
-            bounds = self.selected_area()
-            if bounds is None:
-                channel(_("Nothing Selected"))
-                return
-            x_pos = bounds[0]
-            y_pos = bounds[1]
-            width = bounds[2] - bounds[0]
-            height = bounds[3] - bounds[1]
-            offset_x = (
-                y_offset.value(ppi=1000.0, relative_length=width)
-                if len(args) >= 1
-                else 0
-            )
-            offset_y = (
-                x_offset.value(ppi=1000.0, relative_length=height)
-                if len(args) >= 2
-                else offset_x
-            )
-
-            x_pos -= offset_x
-            y_pos -= offset_y
-            width += offset_x * 2
-            height += offset_y * 2
-            element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
-            self.add_element(element, "red")
-            self.classify([element])
-            if data is None:
-                return "elements", [element]
-            else:
-                data.append(element)
-                return "elements", data
-
-        @context.console_argument(
-            "angle", type=Angle.parse, help=_("angle to rotate by")
-        )
-        @context.console_option("cx", "x", type=Length, help=_("center x"))
-        @context.console_option("cy", "y", type=Length, help=_("center y"))
-        @context.console_option(
-            "absolute",
-            "a",
-            type=bool,
-            action="store_true",
-            help=_("angle_to absolute angle"),
-        )
-        @context.console_command(
-            "rotate",
-            help=_("rotate <angle>"),
-            input_type=(
-                None,
-                "elements",
-            ),
-            output_type="elements",
-        )
-        def element_rotate(
-            command,
-            channel,
-            _,
-            angle,
-            cx=None,
-            cy=None,
-            absolute=False,
-            data=None,
-            **kwgs
-        ):
-            if angle is None:
-                channel("----------")
-                channel(_("Rotate Values:"))
-                i = 0
-                for element in self.elems():
-                    name = str(element)
-                    if len(name) > 50:
-                        name = name[:50] + "…"
-                    channel(
-                        _("%d: rotate(%fturn) - %s")
-                        % (i, element.rotation.as_turns, name)
-                    )
-                    i += 1
-                channel("----------")
-                return
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-            self.validate_selected_area()
-            bounds = self.selected_area()
-            rot = angle.as_degrees
-
-            if cx is not None:
-                cx = cx.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-            else:
-                cx = (bounds[2] + bounds[0]) / 2.0
-            if cy is not None:
-                cy = cy.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
-            else:
-                cy = (bounds[3] + bounds[1]) / 2.0
-            matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
-            try:
-                if not absolute:
-                    for element in data:
-                        try:
-                            if element.lock:
-                                continue
-                        except AttributeError:
-                            pass
-
-                        element *= matrix
-                        if hasattr(element, "node"):
-                            element.node.modified()
-                else:
-                    for element in data:
-                        start_angle = element.rotation
-                        amount = rot - start_angle
-                        matrix = Matrix(
-                            "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
-                        )
-                        element *= matrix
-                        if hasattr(element, "node"):
-                            element.node.modified()
-            except ValueError:
-                raise SyntaxError
-            context.signal("refresh_scene")
-            return "elements", data
-
-        @context.console_argument("scale_x", type=float, help=_("scale_x value"))
-        @context.console_argument("scale_y", type=float, help=_("scale_y value"))
-        @context.console_option("px", "x", type=Length, help=_("scale x origin point"))
-        @context.console_option("py", "y", type=Length, help=_("scale y origin point"))
-        @context.console_option(
-            "absolute",
-            "a",
-            type=bool,
-            action="store_true",
-            help=_("scale to absolute size"),
-        )
-        @context.console_command(
-            "scale",
-            help=_("scale <scale> [<scale-y>]?"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def element_scale(
-            command,
-            channel,
-            _,
-            scale_x=None,
-            scale_y=None,
-            px=None,
-            py=None,
-            absolute=False,
-            data=None,
-            **kwgs
-        ):
-            if scale_x is None:
-                channel("----------")
-                channel(_("Scale Values:"))
-                i = 0
-                for e in self.elems():
-                    name = str(e)
-                    if len(name) > 50:
-                        name = name[:50] + "…"
-                    channel(
-                        "%d: scale(%f, %f) - %s"
-                        % (
-                            i,
-                            e.transform.value_scale_x(),
-                            e.transform.value_scale_x(),
-                            name,
-                        )
-                    )
-                    i += 1
-                channel("----------")
-                return
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-            bounds = Group.union_bbox(data)
-            if scale_y is None:
-                scale_y = scale_x
-            if px is not None:
-                center_x = px.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-            else:
-                center_x = (bounds[2] + bounds[0]) / 2.0
-            if py is not None:
-                center_y = py.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
-            else:
-                center_y = (bounds[3] + bounds[1]) / 2.0
-            if scale_x == 0 or scale_y == 0:
-                channel(_("Scaling by Zero Error"))
-                return
-            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, center_x, center_y))
-            try:
-                if not absolute:
-                    for e in data:
-                        try:
-                            if e.lock:
-                                continue
-                        except AttributeError:
-                            pass
-
-                        e *= m
-                        if hasattr(e, "node"):
-                            e.node.modified()
-                else:
-                    for e in data:
-                        try:
-                            if e.lock:
-                                continue
-                        except AttributeError:
-                            pass
-
-                        osx = e.transform.value_scale_x()
-                        osy = e.transform.value_scale_y()
-                        nsx = scale_x / osx
-                        nsy = scale_y / osy
-                        m = Matrix(
-                            "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_y)
-                        )
-                        e *= m
-                        if hasattr(e, "node"):
-                            e.node.modified()
-            except ValueError:
-                raise SyntaxError
-            context.signal("refresh_scene")
-            return "elements", data
-
-        @context.console_argument("tx", type=Length, help=_("translate x value"))
-        @context.console_argument("ty", type=Length, help=_("translate y value"))
-        @context.console_option(
-            "absolute",
-            "a",
-            type=bool,
-            action="store_true",
-            help=_("translate to absolute position"),
-        )
-        @context.console_command(
-            "translate",
-            help=_("translate <tx> <ty>"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def element_translate(
-            command, channel, _, tx, ty, absolute=False, data=None, **kwgs
-        ):
-            if tx is None:
-                channel("----------")
-                channel(_("Translate Values:"))
-                i = 0
-                for e in self.elems():
-                    name = str(e)
-                    if len(name) > 50:
-                        name = name[:50] + "…"
-                    channel(
-                        _("%d: translate(%f, %f) - %s")
-                        % (
-                            i,
-                            e.transform.value_trans_x(),
-                            e.transform.value_trans_y(),
-                            name,
-                        )
-                    )
-                    i += 1
-                channel("----------")
-                return
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-            if tx is not None:
-                tx = tx.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-            else:
-                tx = 0
-            if ty is not None:
-                ty = ty.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
-            else:
-                ty = 0
-            m = Matrix("translate(%f,%f)" % (tx, ty))
-            try:
-                if not absolute:
-                    for e in data:
-                        e *= m
-                        if hasattr(e, "node"):
-                            e.node.modified()
-                else:
-                    for e in data:
-                        otx = e.transform.value_trans_x()
-                        oty = e.transform.value_trans_y()
-                        ntx = tx - otx
-                        nty = ty - oty
-                        m = Matrix("translate(%f,%f)" % (ntx, nty))
-                        e *= m
-                        if hasattr(e, "node"):
-                            e.node.modified()
-            except ValueError:
-                raise SyntaxError
-            context.signal("refresh_scene")
-            return "elements", data
-
-        @context.console_command(
-            "move_to_laser",
-            help=_("translates the selected element to the laser head"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def element_translate(command, channel, _, data=None, **kwgs):
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-            spooler, input_driver, output = context.registered[
-                "device/%s" % context.root.active
-            ]
-            try:
-                tx = input_driver.current_x
-            except AttributeError:
-                tx = 0
-            try:
-                ty = input_driver.current_y
-            except AttributeError:
-                ty = 0
-            try:
-                bounds = Group.union_bbox([abs(e) for e in data])
-                otx = bounds[0]
-                oty = bounds[1]
-                ntx = tx - otx
-                nty = ty - oty
-                for e in data:
-                    e.transform.post_translate(ntx, nty)
-                    if hasattr(e, "node"):
-                        e.node.modified()
-            except ValueError:
-                raise SyntaxError
-            context.signal("refresh_scene")
-            return "elements", data
-
-        @context.console_argument(
-            "x_pos", type=Length, help=_("x position for top left corner")
-        )
-        @context.console_argument(
-            "y_pos", type=Length, help=_("y position for top left corner")
-        )
-        @context.console_argument("width", type=Length, help=_("new width of selected"))
-        @context.console_argument(
-            "height", type=Length, help=_("new height of selected")
-        )
-        @context.console_command(
-            "resize",
-            help=_("resize <x-pos> <y-pos> <width> <height>"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def element_resize(command, x_pos, y_pos, width, height, data=None, **kwgs):
-            if height is None:
-                raise SyntaxError
-            try:
-                x_pos = x_pos.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-                y_pos = y_pos.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
-                width = width.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-                height = height.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
-                area = self.selected_area()
-                if area is None:
-                    return
-                x, y, x1, y1 = area
-                w, h = x1 - x, y1 - y
-                sx = width / w
-                sy = height / h
-                if abs(sx - 1.0) < 1e-1:
-                    sx = 1.0
-                if abs(sy - 1.0) < 1e-1:
-                    sy = 1.0
-
-                m = Matrix(
-                    "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
-                    % (x_pos, y_pos, sx, sy, -x, -y)
-                )
-                if data is None:
-                    data = list(self.elems(emphasized=True))
-                for e in data:
-                    try:
-                        if e.lock and (not sx == 1.0 or not sy == 1.0):
-                            continue
-                    except AttributeError:
-                        pass
-                    e *= m
-                    if hasattr(e, "node"):
-                        e.node.modified()
-                context.signal("refresh_scene")
-                return "elements", data
-            except (ValueError, ZeroDivisionError, TypeError):
-                raise SyntaxError
-
-        @context.console_argument("sx", type=float, help=_("scale_x value"))
-        @context.console_argument("kx", type=float, help=_("skew_x value"))
-        @context.console_argument("sy", type=float, help=_("scale_y value"))
-        @context.console_argument("ky", type=float, help=_("skew_y value"))
-        @context.console_argument("tx", type=Length, help=_("translate_x value"))
-        @context.console_argument("ty", type=Length, help=_("translate_y value"))
-        @context.console_command(
-            "matrix",
-            help=_("matrix <sx> <kx> <sy> <ky> <tx> <ty>"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def element_matrix(
-            command, channel, _, sx, kx, sy, ky, tx, ty, data=None, **kwgs
-        ):
-            if tx is None:
-                channel("----------")
-                channel(_("Matrix Values:"))
-                i = 0
-                for e in self.elems():
-                    name = str(e)
-                    if len(name) > 50:
-                        name = name[:50] + "…"
-                    channel("%d: %s - %s" % (i, str(e.transform), name))
-                    i += 1
-                channel("----------")
-                return
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-            if ty:
-                raise SyntaxError
-            try:
-                m = Matrix(
-                    sx,
-                    kx,
-                    sy,
-                    ky,
-                    tx.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    ),
-                    ty.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                    ),
-                )
-                for e in data:
-                    try:
-                        if e.lock:
-                            continue
-                    except AttributeError:
-                        pass
-
-                    e.transform = Matrix(m)
-                    if hasattr(e, "node"):
-                        e.node.modified()
-            except ValueError:
-                raise SyntaxError
-            context.signal("refresh_scene")
-            return
-
-        @context.console_command(
-            "reset",
-            help=_("reset affine transformations"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def reset(command, channel, _, data=None, **kwgs):
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            for e in data:
-                try:
-                    if e.lock:
-                        continue
-                except AttributeError:
-                    pass
-
-                name = str(e)
-                if len(name) > 50:
-                    name = name[:50] + "…"
-                channel(_("reset - %s") % name)
-                e.transform.reset()
-                if hasattr(e, "node"):
-                    e.node.modified()
-            context.signal("refresh_scene")
-            return "elements", data
-
-        @context.console_command(
-            "reify",
-            help=_("reify affine transformations"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def element_reify(command, channel, _, data=None, **kwgs):
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            for e in data:
-                try:
-                    if e.lock:
-                        continue
-                except AttributeError:
-                    pass
-
-                name = str(e)
-                if len(name) > 50:
-                    name = name[:50] + "…"
-                channel(_("reified - %s") % name)
-                e.reify()
-                if hasattr(e, "node"):
-                    e.node.altered()
-            context.signal("refresh_scene")
-            return "elements", data
-
-        @context.console_command(
-            "classify",
-            help=_("classify elements into operations"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def element_classify(command, channel, _, data=None, **kwgs):
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-            self.classify(data)
-            return "elements", data
-
-        @context.console_command(
-            "declassify",
-            help=_("declassify selected elements"),
-            input_type=(None, "elements"),
-            output_type="elements",
-        )
-        def declassify(command, channel, _, data=None, **kwgs):
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            if len(data) == 0:
-                channel(_("No selected elements."))
-                return
-            self.remove_elements_from_operations(data)
-            return "elements", data
-
-        # ==========
-        # TREE BASE
-        # ==========
-        @context.console_command(
-            "tree", help=_("access and alter tree elements"), output_type="tree"
-        )
-        def tree(**kwgs):
-            return "tree", [self._tree]
-
-        @context.console_command(
-            "bounds", help=_("view tree bounds"), input_type="tree", output_type="tree"
-        )
-        def tree_bounds(command, channel, _, data=None, **kwgs):
-            if data is None:
-                data = [self._tree]
-
-            def b_list(path, node):
-                for i, n in enumerate(node.children):
-                    p = list(path)
-                    p.append(str(i))
-                    channel(
-                        "%s: %s - %s %s - %s"
-                        % (
-                            ".".join(p).ljust(10),
-                            str(n._bounds),
-                            str(n._bounds_dirty),
-                            str(n.type),
-                            str(n.label[:16]),
-                        )
-                    )
-                    b_list(p, n)
-
-            for d in data:
-                channel("----------")
-                if d.type == "root":
-                    channel(_("Tree:"))
-                else:
-                    channel("%s:" % d.label)
-                b_list([], d)
-                channel("----------")
-
-            return "tree", data
-
-        @context.console_command(
-            "list", help=_("view tree"), input_type="tree", output_type="tree"
-        )
-        def tree_list(command, channel, _, data=None, **kwgs):
-            if data is None:
-                data = [self._tree]
-
-            def t_list(path, node):
-                for i, n in enumerate(node.children):
-                    p = list(path)
-                    p.append(str(i))
-                    if n.targeted:
-                        j = "+"
-                    elif n.emphasized:
-                        j = "~"
-                    elif n.highlighted:
-                        j = "-"
-                    else:
-                        j = ":"
-                    channel(
-                        "%s%s %s - %s"
-                        % (".".join(p).ljust(10), j, str(n.type), str(n.label))
-                    )
-                    t_list(p, n)
-
-            for d in data:
-                channel("----------")
-                if d.type == "root":
-                    channel(_("Tree:"))
-                else:
-                    channel("%s:" % d.label)
-                t_list([], d)
-                channel("----------")
-
-            return "tree", data
-
-        @context.console_argument("drag", help="Drag node address")
-        @context.console_argument("drop", help="Drop node address")
-        @context.console_command(
-            "dnd", help=_("Drag and Drop Node"), input_type="tree", output_type="tree"
-        )
-        def tree_dnd(command, channel, _, data=None, drag=None, drop=None, **kwgs):
-            """
-            Drag and Drop command performs a console based drag and drop operation
-            Eg. "tree dnd 0.1 0.2" will drag node 0.1 into node 0.2
-            """
-            if data is None:
-                data = [self._tree]
-            if drop is None:
-                raise SyntaxError
-            try:
-                drag_node = self._tree
-                for n in drag.split("."):
-                    drag_node = drag_node.children[int(n)]
-                drop_node = self._tree
-                for n in drop.split("."):
-                    drop_node = drop_node.children[int(n)]
-                drop_node.drop(drag_node)
-            except (IndexError, AttributeError, ValueError):
-                raise SyntaxError
-            return "tree", data
-
-        @context.console_argument("node", help="Node address for menu")
-        @context.console_argument("execute", help="Command to execute")
-        @context.console_command(
-            "menu",
-            help=_("Load menu for given node"),
-            input_type="tree",
-            output_type="tree",
-        )
-        def tree_menu(command, channel, _, data=None, node=None, execute=None, **kwgs):
-            """
-            Create menu for a particular node.
-            Processes submenus, references, radio_state as needed.
-            """
-            try:
-                menu_node = self._tree
-                for n in node.split("."):
-                    menu_node = menu_node.children[int(n)]
-            except (IndexError, AttributeError, ValueError):
-                raise SyntaxError
-
-            menu = []
-            submenus = {}
-
-            def menu_functions(f, cmd_node):
-                func_dict = dict(f.func_dict)
-
-                def specific(event=None):
-                    f(cmd_node, **func_dict)
-
-                return specific
-
-            for func in self.tree_operations_for_node(menu_node):
-                submenu_name = func.submenu
-                submenu = None
-                if submenu_name in submenus:
-                    submenu = submenus[submenu_name]
-                elif submenu_name is not None:
-                    submenu = list()
-                    menu.append((submenu_name, submenu))
-                    submenus[submenu_name] = submenu
-
-                menu_context = submenu if submenu is not None else menu
-                if func.reference is not None:
-                    pass
-                if func.radio_state is not None:
-                    if func.separate_before:
-                        menu_context.append(("------", None))
-                    n = func.real_name
-                    if func.radio_state:
-                        n = "✓" + n
-                    menu_context.append((n, menu_functions(func, menu_node)))
-                else:
-                    if func.separate_before:
-                        menu_context.append(("------", None))
-                    menu_context.append(
-                        (func.real_name, menu_functions(func, menu_node))
-                    )
-                if func.separate_after:
-                    menu_context.append(("------", None))
-            if execute is not None:
-                try:
-                    execute_command = ("menu", menu)
-                    for n in execute.split("."):
-                        name, cmd = execute_command
-                        execute_command = cmd[int(n)]
-                    name, cmd = execute_command
-                    channel("Executing %s: %s" % (name, str(cmd)))
-                    cmd()
-                except (IndexError, AttributeError, ValueError, TypeError):
-                    raise SyntaxError
-            else:
-
-                def m_list(path, menu):
-                    for i, n in enumerate(menu):
-                        p = list(path)
-                        p.append(str(i))
-                        name, submenu = n
-                        channel("%s: %s" % (".".join(p).ljust(10), str(name)))
-                        if isinstance(submenu, list):
-                            m_list(p, submenu)
-
-                m_list([], menu)
-
-            return "tree", data
-
-        @context.console_command(
-            "selected",
-            help=_("delegate commands to focused value"),
-            input_type="tree",
-            output_type="tree",
-        )
-        def emphasized(channel, _, **kwargs):
-            """
-            Set tree list to selected node
-            """
-            return "tree", list(self.flat(emphasized=True))
-
-        @context.console_command(
-            "highlighted",
-            help=_("delegate commands to sub-focused value"),
-            input_type="tree",
-            output_type="tree",
-        )
-        def highlighted(channel, _, **kwargs):
-            """
-            Set tree list to highlighted nodes
-            """
-            return "tree", list(self.flat(highlighted=True))
-
-        @context.console_command(
-            "targeted",
-            help=_("delegate commands to sub-focused value"),
-            input_type="tree",
-            output_type="tree",
-        )
-        def targeted(channel, _, **kwargs):
-            """
-            Set tree list to highlighted nodes
-            """
-            return "tree", list(self.flat(targeted=True))
-
-        @context.console_command(
-            "delete",
-            help=_("delete the given nodes"),
-            input_type="tree",
-            output_type="tree",
-        )
-        def delete(channel, _, data=None, **kwargs):
-            """
-            Delete node. Due to nodes within nodes, only the first node is deleted.
-            Structural nodes such as root, elements, and operations are not able to be deleted
-            """
-            for n in data:
-                if n.type not in ("root", "branch elems", "branch ops"):
-                    # Cannot delete structure nodes.
-                    n.remove_node()
-                    break
-            return "tree", [self._tree]
-
-        @context.console_command(
-            "delegate",
-            help=_("delegate commands to focused value"),
-            input_type="tree",
-            output_type=("op", "elements"),
-        )
-        def delegate(channel, _, **kwargs):
-            """
-            Delegate to either ops or elements depending on the current node emphasis
-            """
-            for item in self.flat(
-                types=("op", "elem", "file", "group"), emphasized=True
-            ):
-                if item.type == "op":
-                    return "ops", list(self.ops(emphasized=True))
-                if item.type in ("elem", "file", "group"):
-                    return "elements", list(self.elems(emphasized=True))
-
-        # ==========
-        # CLIPBOARD COMMANDS
-        # ==========
-        @context.console_option("name", "n", type=str)
-        @context.console_command(
-            "clipboard",
-            help=_("clipboard"),
-            input_type=(None, "elements"),
-            output_type="clipboard",
-        )
-        def clipboard_base(data=None, name=None, **kwgs):
-            """
-            Clipboard commands. Applies to current selected elements to
-            make a copy of those elements. Paste a copy of those elements
-            or cut those elements. Clear clears the clipboard.
-
-            The list command will list them but this is only for debug.
-            """
-            if name is not None:
-                self._clipboard_default = name
-            if data is None:
-                return "clipboard", list(self.elems(emphasized=True))
-            else:
-                return "clipboard", data
-
-        @context.console_command(
-            "copy",
-            help=_("clipboard copy"),
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_copy(data=None, **kwgs):
-            destination = self._clipboard_default
-            self._clipboard[destination] = [copy(e) for e in data]
-            return "elements", self._clipboard[destination]
-
-        @context.console_option("dx", "x", help=_("paste offset x"), type=Length)
-        @context.console_option("dy", "y", help=_("paste offset y"), type=Length)
-        @context.console_command(
-            "paste",
-            help=_("clipboard paste"),
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_paste(command, channel, _, data=None, dx=None, dy=None, **kwgs):
-            destination = self._clipboard_default
-            try:
-                pasted = [copy(e) for e in self._clipboard[destination]]
-            except KeyError:
-                channel(_("Error: Clipboard Empty"))
-                return
-            if dx is not None or dy is not None:
-                if dx is None:
-                    dx = 0
-                else:
-                    dx = dx.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    )
-                if dy is None:
-                    dy = 0
-                else:
-                    dy = dy.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                    )
-                m = Matrix("translate(%s, %s)" % (dx, dy))
-                for e in pasted:
-                    e *= m
-            group = self.elem_branch.add(type="group", label="Group")
-            for p in pasted:
-                group.add(p, type="elem")
-            self.set_emphasis([group])
-            return "elements", pasted
-
-        @context.console_command(
-            "cut",
-            help=_("clipboard cut"),
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_cut(data=None, **kwgs):
-            destination = self._clipboard_default
-            self._clipboard[destination] = [copy(e) for e in data]
-            self.remove_elements(data)
-            return "elements", self._clipboard[destination]
-
-        @context.console_command(
-            "clear",
-            help=_("clipboard clear"),
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_clear(data=None, **kwgs):
-            destination = self._clipboard_default
-            old = self._clipboard[destination]
-            self._clipboard[destination] = None
-            return "elements", old
-
-        @context.console_command(
-            "contents",
-            help=_("clipboard contents"),
-            input_type="clipboard",
-            output_type="elements",
-        )
-        def clipboard_contents(**kwgs):
-            destination = self._clipboard_default
-            return "elements", self._clipboard[destination]
-
-        @context.console_command(
-            "list",
-            help=_("clipboard list"),
-            input_type="clipboard",
-        )
-        def clipboard_list(command, channel, _, **kwgs):
-            for v in self._clipboard:
-                k = self._clipboard[v]
-                channel("%s: %s" % (str(v).ljust(5), str(k)))
-
-        # ==========
-        # NOTES COMMANDS
-        # ==========
-        @context.console_option(
-            "append", "a", type=bool, action="store_true", default=False
-        )
-        @context.console_command("note", help=_("note <note>"))
-        def note(command, channel, _, append=False, remainder=None, **kwgs):
-            note = remainder
-            if note is None:
-                if self.note is None:
-                    channel(_("No Note."))
-                else:
-                    channel(str(self.note))
-            else:
-                if append:
-                    self.note += "\n" + note
-                else:
-                    self.note = note
-                channel(_("Note Set."))
-                channel(str(self.note))
-
-        # ==========
-        # TRACE OPERATIONS
-        # ==========
-        @context.console_command(
-            "trace_hull",
-            help=_("trace the convex hull of current elements"),
-            input_type=(None, "elements"),
-        )
-        def trace_trace_hull(command, channel, _, data=None, **kwgs):
-            active = self.context.active
-            try:
-                spooler, input_device, output = self.context.registered[
-                    "device/%s" % active
-                ]
-            except KeyError:
-                channel(_("No active device found."))
-                return
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            pts = []
-            for obj in data:
-                if isinstance(obj, Path):
-                    epath = abs(obj)
-                    pts += [q for q in epath.as_points()]
-                elif isinstance(obj, SVGImage):
-                    bounds = obj.bbox()
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
-            hull = [p for p in Point.convex_hull(pts)]
-            if len(hull) == 0:
-                channel(_("No elements bounds to trace."))
-                return
-            hull.append(hull[0])  # loop
-
-            def trace_hull():
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_MODE_RAPID
-                for p in hull:
-                    yield COMMAND_MOVE, p[0], p[1]
-
-            spooler.job(trace_hull)
-
-        @context.console_command(
-            "trace_quick", help=_("quick trace the bounding box of current elements")
-        )
-        def trace_trace_quick(command, channel, _, **kwgs):
-            active = self.context.active
-            try:
-                spooler, input_device, output = self.context.registered[
-                    "device/%s" % active
-                ]
-            except KeyError:
-                channel(_("No active device found."))
-                return
-            bbox = self.selected_area()
-            if bbox is None:
-                channel(_("No elements bounds to trace."))
-                return
-
-            def trace_quick():
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, bbox[0], bbox[1]
-                yield COMMAND_MOVE, bbox[2], bbox[1]
-                yield COMMAND_MOVE, bbox[2], bbox[3]
-                yield COMMAND_MOVE, bbox[0], bbox[3]
-                yield COMMAND_MOVE, bbox[0], bbox[1]
-
-            spooler.job(trace_quick)
-
-        # --------------------------- END COMMANDS ------------------------------
-
-        # --------------------------- TREE OPERATIONS ---------------------------
-
-        _ = self.context._
-
-        non_structural_nodes = (
-            "op",
-            "opnode",
-            "cmdop",
-            "lasercode",
-            "cutcode",
-            "blob",
-            "elem",
-            "file",
-            "group",
-        )
-
-        @self.tree_separator_after()
-        @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
-        @self.tree_operation(_("Operation properties"), node_type="op", help="")
-        def operation_property(node, **kwgs):
-            self.context.open("window/OperationProperty", self.context.gui, node=node)
-
-        @self.tree_separator_after()
-        @self.tree_conditional(lambda node: isinstance(node.object, Shape))
-        @self.tree_operation(_("Element properties"), node_type="elem", help="")
-        def path_property(node, **kwgs):
-            self.context.open("window/PathProperty", self.context.gui, node=node)
-
-        @self.tree_separator_after()
-        @self.tree_conditional(lambda node: isinstance(node.object, Group))
-        @self.tree_operation(_("Group properties"), node_type="group", help="")
-        def group_property(node, **kwgs):
-            self.context.open("window/GroupProperty", self.context.gui, node=node)
-
-        @self.tree_separator_after()
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGText))
-        @self.tree_operation(_("Text properties"), node_type="elem", help="")
-        def text_property(node, **kwgs):
-            self.context.open("window/TextProperty", self.context.gui, node=node)
-
-        @self.tree_separator_after()
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_operation(_("Image properties"), node_type="elem", help="")
-        def image_property(node, **kwgs):
-            self.context.open("window/ImageProperty", self.context.gui, node=node)
-
-        @self.tree_operation(
-            _("Ungroup elements"), node_type=("group", "file"), help=""
-        )
-        def ungroup_elements(node, **kwgs):
-            for n in list(node.children):
-                node.insert_sibling(n)
-            node.remove_node()  # Removing group/file node.
-
-        @self.tree_operation(_("Group elements"), node_type="elem", help="")
-        def group_elements(node, **kwgs):
-            # group_node = node.parent.add_sibling(node, type="group", name="Group")
-            group_node = node.parent.add(type="group", label="Group")
-            for e in list(self.elems(emphasized=True)):
-                node = e.node
-                group_node.append_child(node)
-
-        @self.tree_operation(_("Enable/Disable ops"), node_type="op", help="")
-        def toggle_n_operations(node, **kwgs):
-            for n in self.ops(emphasized=True):
-                n.output = not n.output
-                n.notify_update()
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Image"), node_type="op", help="")
-        def convert_operation_image(node, **kwgs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Image"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Raster"), node_type="op", help="")
-        def convert_operation_raster(node, **kwgs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Raster"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Engrave"), node_type="op", help="")
-        def convert_operation_engrave(node, **kwgs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Engrave"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Cut"), node_type="op", help="")
-        def convert_operation_cut(node, **kwgs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Cut"
-
-        def radio_match(node, speed=0, **kwgs):
-            return node.settings.speed == float(speed)
-
-        @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
-        @self.tree_submenu(_("Speed"))
-        @self.tree_radio(radio_match)
-        @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
-        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
-        def set_speed_raster(node, speed=150, **kwgs):
-            node.settings.speed = float(speed)
-            self.context.signal("element_property_reload", node)
-
-        @self.tree_conditional(lambda node: node.operation in ("Cut", "Engrave"))
-        @self.tree_submenu(_("Speed"))
-        @self.tree_radio(radio_match)
-        @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
-        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
-        def set_speed_vector(node, speed=35, **kwgs):
-            node.settings.speed = float(speed)
-            self.context.signal("element_property_reload", node)
-
-        def radio_match(node, i=1, **kwgs):
-            return node.settings.raster_step == i
-
-        @self.tree_conditional(lambda node: node.operation == "Raster")
-        @self.tree_submenu(_("Step"))
-        @self.tree_radio(radio_match)
-        @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(
-            _("Step %s") % "{i}",
-            node_type="op",
-            help=_("Change raster step values of operation"),
-        )
-        def set_step_n(node, i=1, **kwgs):
-            settings = node.settings
-            settings.raster_step = i
-            self.context.signal("element_property_reload", node)
-
-        def radio_match(node, passvalue=1, **kwgs):
-            return (
-                node.settings.passes_custom and passvalue == node.settings.passes
-            ) or (not node.settings.passes_custom and passvalue == 1)
-
-        @self.tree_submenu(_("Set operation passes"))
-        @self.tree_radio(radio_match)
-        @self.tree_iterate("passvalue", 1, 10)
-        @self.tree_operation(_("Passes %s") % "{passvalue}", node_type="op", help="")
-        def set_n_passes(node, passvalue=1, **kwgs):
-            node.settings.passes = passvalue
-            node.settings.passes_custom = passvalue != 1
-            self.context.signal("element_property_reload", node)
-
-        @self.tree_separator_after()
-        @self.tree_operation(
-            _("Execute operation(s)"),
-            node_type="op",
-            help=_("Execute Job for the selected operation(s)."),
-        )
-        def execute_job(node, **kwgs):
-            node.emphasized = True
-            self.context("plan0 clear copy-selected\n")
-            self.context("window open ExecuteJob 0\n")
-
-        @self.tree_separator_after()
-        @self.tree_operation(
-            _("Simulate operation(s)"),
-            node_type="op",
-            help=_("Run simulation for the selected operation(s)"),
-        )
-        def compile_and_simulate(node, **kwgs):
-            node.emphasized = True
-            self.context(
-                "plan0 copy-selected preprocess validate blob preopt optimize\n"
-            )
-            self.context("window open Simulation 0\n")
-
-        @self.tree_operation(_("Clear all"), node_type="branch ops", help="")
-        def clear_all(node, **kwgs):
-            self.context("operation* delete\n")
-
-        @self.tree_operation(_("Clear all"), node_type="branch elems", help="")
-        def clear_all_ops(node, **kwgs):
-            self.context("element* delete\n")
-            self.elem_branch.remove_all_children()
-
-        # ==========
-        # REMOVE MULTI (Tree Selected)
-        # ==========
-        @self.tree_conditional(
-            lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
-                )
-            )
-            > 1
-        )
-        @self.tree_calc(
-            "ecount",
-            lambda i: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
-                )
-            ),
-        )
-        @self.tree_operation(
-            _("Remove %s selected items") % "{ecount}",
-            node_type=non_structural_nodes,
-            help="",
-        )
-        def remove_multi_nodes(node, **kwgs):
-            nodes = list(
-                self.flat(selected=True, cascade=False, types=non_structural_nodes)
-            )
-            for node in nodes:
-                if node.parent is not None:  # May have already removed.
-                    node.remove_node()
-            self.set_emphasis(None)
-
-        # ==========
-        # REMOVE SINGLE (Tree Selected)
-        # ==========
-        @self.tree_conditional(
-            lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
-                )
-            )
-            == 1
-        )
-        @self.tree_operation(
-            _("Remove '%s'") % "{name}",
-            node_type=non_structural_nodes,
-            help="",
-        )
-        def remove_type_op(node, **kwgs):
-            node.remove_node()
-            self.set_emphasis(None)
-
-        # ==========
-        # Remove Operations (If No Tree Selected)
-        # Note: This code would rarely match anything since the tree selected will almost always be true if we have
-        # match this conditional. The tree-selected delete functions are superior.
-        # ==========
-        @self.tree_conditional(
-            lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
-                )
-            )
-            == 0
-        )
-        @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
-        @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
-        @self.tree_operation(
-            _("Remove %s operations") % "{ecount}",
-            node_type=("op", "cmdop", "lasercode", "cutcode", "blob"),
-            help="",
-        )
-        def remove_n_ops(node, **kwgs):
-            self.context("operation delete\n")
-
-        # ==========
-        # REMOVE ELEMENTS
-        # ==========
-        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
-        @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
-        @self.tree_operation(
-            _("Remove %s elements") % "{ecount}",
-            node_type=(
-                "elem",
-                "file",
-                "group",
-            ),
-            help="",
-        )
-        def remove_n_elements(node, **kwgs):
-            self.context("element delete\n")
-
-        # ==========
-        # CONVERT TREE OPERATIONS
-        # ==========
-        @self.tree_operation(
-            _("Convert to Cutcode"),
-            node_type="lasercode",
-            help="",
-        )
-        def lasercode2cut(node, **kwgs):
-            node.replace_node(CutCode.from_lasercode(node.object), type="cutcode")
-
-        @self.tree_conditional_try(lambda node: hasattr(node.object, "as_cutobjects"))
-        @self.tree_operation(
-            _("Convert to Cutcode"),
-            node_type="blob",
-            help="",
-        )
-        def blob2cut(node, **kwgs):
-            node.replace_node(node.object.as_cutobjects(), type="cutcode")
-
-        @self.tree_operation(
-            _("Convert to Path"),
-            node_type="cutcode",
-            help="",
-        )
-        def cutcode2pathcut(node, **kwgs):
-            cutcode = node.object
-            elements = list(cutcode.as_elements())
-            n = None
-            for element in elements:
-                n = self.elem_branch.add(element, type="elem")
-            node.remove_node()
-            if n is not None:
-                n.focus()
-
-        @self.tree_submenu(_("Clone reference"))
-        @self.tree_operation(_("Make 1 copy"), node_type="opnode", help="")
-        def clone_single_element_op(node, **kwgs):
-            clone_element_op(node, copies=1, **kwgs)
-
-        @self.tree_submenu(_("Clone reference"))
-        @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="opnode", help=""
-        )
-        def clone_element_op(node, copies=1, **kwgs):
-            index = node.parent.children.index(node)
-            for i in range(copies):
-                node.parent.add(node.object, type="opnode", pos=index)
-            node.modified()
-            self.context.signal("rebuild_tree", 0)
-
-        @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_operation(
-            _("Reverse subitems order"),
-            node_type=("op", "group", "branch elems", "file", "branch ops"),
-            help=_("Reverse the items within this subitem"),
-        )
-        def reverse_layer_order(node, **kwgs):
-            node.reverse()
-            self.context.signal("rebuild_tree", 0)
-
-        @self.tree_separator_after()
-        @self.tree_operation(
-            _("Refresh classification"), node_type="branch ops", help=""
-        )
-        def refresh_clasifications(node, **kwgs):
-            context = self.context
-            elements = context.elements
-            elements.remove_elements_from_operations(list(elements.elems()))
-            elements.classify(list(elements.elems()))
-            self.context.signal("rebuild_tree", 0)
-
-        materials = [
-            _("Wood"),
-            _("Acrylic"),
-            _("Foam"),
-            _("Leather"),
-            _("Cardboard"),
-            _("Cork"),
-            _("Textiles"),
-            _("Paper"),
-            _("Save-1"),
-            _("Save-2"),
-            _("Save-3"),
-        ]
-
-        def union_materials_saved():
-            union = [
-                d
-                for d in self.context.get_context("operations").derivable()
-                if d not in materials and d != "previous"
-            ]
-            union.extend(materials)
-            return union
-
-        @self.tree_submenu(_("Use"))
-        @self.tree_values(
-            "opname", values=self.context.get_context("operations").derivable
-        )
-        @self.tree_operation(
-            _("Load: %s") % "{opname}", node_type="branch ops", help=""
-        )
-        def load_ops(node, opname, **kwgs):
-            self.context("operation load %s\n" % opname)
-
-        @self.tree_submenu(_("Use"))
-        @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
-        def default_classifications(node, **kwgs):
-            self.context.elements.load_default()
-
-        @self.tree_submenu(_("Use"))
-        @self.tree_operation(_("Basic"), node_type="branch ops", help="")
-        def basic_classifications(node, **kwgs):
-            self.context.elements.load_default2()
-
-        @self.tree_submenu(_("Save"))
-        @self.tree_values("opname", values=union_materials_saved)
-        @self.tree_operation("{opname}", node_type="branch ops", help="")
-        def save_ops(node, opname="saved", **kwgs):
-            self.context("operation save %s\n" % opname)
-
-        @self.tree_separator_before()
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Image"), node_type="branch ops", help="")
-        def add_operation_image(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Image"))
-
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Raster"), node_type="branch ops", help="")
-        def add_operation_raster(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Raster"))
-
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Engrave"), node_type="branch ops", help="")
-        def add_operation_engrave(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Engrave"))
-
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Cut"), node_type="branch ops", help="")
-        def add_operation_cut(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Cut"))
-
-        @self.tree_submenu(_("Special operations"))
-        @self.tree_operation(_("Add Home"), node_type="branch ops", help="")
-        def add_operation_home(node, **kwgs):
-            self.context.elements.op_branch.add(
-                CommandOperation("Home", COMMAND_HOME), type="cmdop"
-            )
-
-        @self.tree_submenu(_("Special operations"))
-        @self.tree_operation(_("Add Beep"), node_type="branch ops", help="")
-        def add_operation_beep(node, **kwgs):
-            self.context.elements.op_branch.add(
-                CommandOperation("Beep", COMMAND_BEEP), type="cmdop"
-            )
-
-        @self.tree_submenu(_("Special operations"))
-        @self.tree_operation(_("Add Move Origin"), node_type="branch ops", help="")
-        def add_operation_origin(node, **kwgs):
-            self.context.elements.op_branch.add(
-                CommandOperation("Origin", COMMAND_MOVE, 0, 0), type="cmdop"
-            )
-
-        @self.tree_submenu(_("Special operations"))
-        @self.tree_operation(_("Add Interrupt"), node_type="branch ops", help="")
-        def add_operation_interrupt(node, **kwgs):
-            self.context.elements.op_branch.add(
-                CommandOperation(
-                    "Interrupt",
-                    COMMAND_FUNCTION,
-                    self.context.registered["function/interrupt"],
-                ),
-                type="cmdop",
-            )
-
-        @self.tree_submenu(_("Special operations"))
-        @self.tree_operation(_("Add Shutdown"), node_type="branch ops", help="")
-        def add_operation_shutdown(node, **kwgs):
-            self.context.elements.op_branch.add(
-                CommandOperation(
-                    "Shutdown",
-                    COMMAND_FUNCTION,
-                    self.context.console_function("quit\n"),
-                ),
-                type="cmdop",
-            )
-
-        @self.tree_operation(
-            _("Reclassify operations"), node_type="branch elems", help=""
-        )
-        def reclassify_operations(node, **kwgs):
-            context = self.context
-            elements = context.elements
-            elems = list(elements.elems())
-            elements.remove_elements_from_operations(elems)
-            elements.classify(list(elements.elems()))
-            self.context.signal("rebuild_tree", 0)
-
-        @self.tree_operation(
-            _("Duplicate operation(s)"),
-            node_type="op",
-            help=_("duplicate operation element nodes"),
-        )
-        def duplicate_operation(node, **kwgs):
-            operations = self._tree.get(type="branch ops").children
-            for op in self.ops(emphasized=True):
-                try:
-                    pos = operations.index(op) + 1
-                except ValueError:
-                    pos = None
-                copy_op = LaserOperation(op)
-                self.add_op(copy_op, pos=pos)
-                for child in op.children:
-                    try:
-                        copy_op.add(child.object, type="opnode")
-                    except AttributeError:
-                        pass
-
-        @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
-        @self.tree_submenu(_("Passes"))
-        @self.tree_operation(_("Add 1 pass"), node_type="op", help="")
-        def add_1_pass(node, **kwgs):
-            add_n_passes(node, copies=1, **kwgs)
-
-        @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
-        @self.tree_submenu(_("Passes"))
-        @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(_("Add %s passes") % "{copies}", node_type="op", help="")
-        def add_n_passes(node, copies=1, **kwgs):
-            add_elements = [
-                child.object for child in node.children if child.object is not None
-            ]
-            removed = False
-            for i in range(0, len(add_elements)):
-                for q in range(0, i):
-                    if add_elements[q] is add_elements[i]:
-                        add_elements[i] = None
-                        removed = True
-            if removed:
-                add_elements = [c for c in add_elements if c is not None]
-            add_elements *= copies
-            node.add_all(add_elements, type="opnode")
-            self.context.signal("rebuild_tree", 0)
-
-        @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(_("Duplicate elements 1 time"), node_type="op", help="")
-        def dup_1_copy(node, **kwgs):
-            dup_n_copies(node, copies=1, **kwgs)
-
-        @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(
-            _("Duplicate elements %s times") % "{copies}", node_type="op", help=""
-        )
-        def dup_n_copies(node, copies=1, **kwgs):
-            add_elements = [
-                child.object for child in node.children if child.object is not None
-            ]
-            add_elements *= copies
-            node.add_all(add_elements, type="opnode")
-            self.context.signal("rebuild_tree", 0)
-
-        @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
-        @self.tree_operation(
-            _("Make raster image"),
-            node_type="op",
-            help=_("Convert a vector element into a raster element."),
-        )
-        def make_raster_image(node, **kwgs):
-            context = self.context
-            elements = context.elements
-            subitems = list(node.flat(types=("elem", "opnode")))
-            make_raster = self.context.registered.get("render-op/make_raster")
-            bounds = Group.union_bbox([s.object for s in subitems])
-            if bounds is None:
-                return
-            step = float(node.settings.raster_step)
-            if step == 0:
-                step = 1
-            xmin, ymin, xmax, ymax = bounds
-
-            image = make_raster(
-                subitems,
-                bounds,
-                step=step,
-            )
-            image_element = SVGImage(image=image)
-            image_element.transform.post_scale(step, step)
-            image_element.transform.post_translate(xmin, ymin)
-            image_element.values["raster_step"] = step
-            elements.add_elem(image_element)
-
-        @self.tree_operation(_("Reload '%s'") % "{name}", node_type="file", help="")
-        def reload_file(node, **kwgs):
-            filepath = node.filepath
-            node.remove_node()
-            self.load(filepath)
-
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
-        def duplicate_element_1(node, **kwgs):
-            duplicate_element_n(node, copies=1, **kwgs)
-
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="elem", help=""
-        )
-        def duplicate_element_n(node, copies, **kwgs):
-            context = self.context
-            elements = context.elements
-            adding_elements = [
-                copy(e) for e in list(self.elems(emphasized=True)) * copies
-            ]
-            elements.add_elems(adding_elements)
-            elements.classify(adding_elements)
-            elements.set_emphasis(None)
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(
-            _("Reset user changes"), node_type=("branch elem", "elem"), help=""
-        )
-        def reset_user_changes(node, copies=1, **kwgs):
-            self.context("reset\n")
-
-        @self.tree_conditional(
-            lambda node: isinstance(node.object, Shape)
-            and not isinstance(node.object, Path)
-        )
-        @self.tree_operation(_("Convert to path"), node_type=("elem",), help="")
-        def convert_to_path(node, copies=1, **kwgs):
-            node.replace_object(abs(Path(node.object)))
-            node.altered()
-
-        @self.tree_submenu(_("Flip"))
-        @self.tree_separator_before()
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(
-            _("Horizontally"),
-            node_type=("elem", "file", "group"),
-            help=_("Mirror Horizontally"),
-        )
-        def mirror_elem(node, **kwgs):
-            child_objects = Group()
-            child_objects.extend(node.objects_of_children(SVGElement))
-            bounds = child_objects.bbox()
-            if bounds is None:
-                return
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("scale -1 1 %f %f\n" % (center_x, center_y))
-
-        @self.tree_submenu(_("Flip"))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(
-            _("Vertically"),
-            node_type=("elem", "file", "group"),
-            help=_("Flip Vertically"),
-        )
-        def flip_elem(node, **kwgs):
-            child_objects = Group()
-            child_objects.extend(node.objects_of_children(SVGElement))
-            bounds = child_objects.bbox()
-            if bounds is None:
-                return
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("scale 1 -1 %f %f\n" % (center_x, center_y))
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_submenu(_("Scale"))
-        @self.tree_iterate("scale", 25, 1, -1)
-        @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
-        @self.tree_operation(
-            _("Scale %s%%") % "{scale_percent}", node_type="elem", help="Scale Element"
-        )
-        def scale_elem_amount(node, scale, **kwgs):
-            scale = 6.0 / float(scale)
-            child_objects = Group()
-            child_objects.extend(node.objects_of_children(SVGElement))
-            bounds = child_objects.bbox()
-            if bounds is None:
-                return
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_submenu(_("Rotate"))
-        @self.tree_values(
-            "angle",
-            (
-                180,
-                150,
-                135,
-                120,
-                90,
-                60,
-                45,
-                30,
-                20,
-                15,
-                10,
-                9,
-                8,
-                7,
-                6,
-                5,
-                4,
-                3,
-                2,
-                1,
-                -1,
-                -2,
-                -3,
-                -4,
-                -5,
-                -6,
-                -7,
-                -8,
-                -9,
-                -10,
-                -15,
-                -20,
-                -30,
-                -45,
-                -60,
-                -90,
-                -120,
-                -135,
-                -150,
-            ),
-        )
-        @self.tree_operation(_(u"Rotate %s°") % ("{angle}"), node_type="elem", help="")
-        def rotate_elem_amount(node, angle, **kwgs):
-            turns = float(angle) / 360.0
-            child_objects = Group()
-            child_objects.extend(node.objects_of_children(SVGElement))
-            bounds = child_objects.bbox()
-            if bounds is None:
-                return
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("rotate %fturn %f %f\n" % (turns, center_x, center_y))
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(_("Reify User Changes"), node_type="elem", help="")
-        def reify_elem_changes(node, **kwgs):
-            self.context("reify\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, Path))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
-        def break_subpath_elem(node, **kwgs):
-            self.context("element subpath\n")
-
-        @self.tree_operation(
-            _("Merge items"),
-            node_type="group",
-            help=_("Merge this node's children into 1 path."),
-        )
-        def merge_elements(node, **kwgs):
-            self.context("element merge\n")
-
-        def radio_match(node, i=0, **kwgs):
-            if "raster_step" in node.object.values:
-                step = float(node.object.values["raster_step"])
-            else:
-                step = 1.0
-            if i == step:
-                m = node.object.transform
-                if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
-                    return True
-            return False
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Step"))
-        @self.tree_radio(radio_match)
-        @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(_("Step %s") % "{i}", node_type="elem", help="")
-        def set_step_n_elem(node, i=1, **kwgs):
-            step_value = i
-            element = node.object
-            element.values["raster_step"] = str(step_value)
-            m = element.transform
-            tx = m.e
-            ty = m.f
-            element.transform = Matrix.scale(float(step_value), float(step_value))
-            element.transform.post_translate(tx, ty)
-            if hasattr(element, "node"):
-                element.node.modified()
-            self.context.signal("element_property_reload", node.object)
-            self.context.signal("refresh_scene")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(_("Actualize pixels"), node_type="elem", help="")
-        def image_actualize_pixels(node, **kwgs):
-            self.context("image resample\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Z-depth divide"))
-        @self.tree_iterate("divide", 2, 10)
-        @self.tree_operation(
-            _("Divide into %s images") % "{divide}", node_type="elem", help=""
-        )
-        def image_zdepth(node, divide=1, **kwgs):
-            element = node.object
-            if not isinstance(element, SVGImage):
-                return
-            if element.image.mode != "RGBA":
-                element.image = element.image.convert("RGBA")
-            band = 255 / divide
-            for i in range(0, divide):
-                threshold_min = i * band
-                threshold_max = threshold_min + band
-                self.context("image threshold %f %f\n" % (threshold_min, threshold_max))
-
-        def is_locked(node):
-            try:
-                obj = node.object
-                return obj.lock
-            except AttributeError:
-                return False
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_conditional(is_locked)
-        @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Unlock manipulations"), node_type="elem", help="")
-        def image_unlock_manipulations(node, **kwgs):
-            self.context("image unlock\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Dither to 1 bit"), node_type="elem", help="")
-        def image_dither(node, **kwgs):
-            self.context("image dither\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Invert image"), node_type="elem", help="")
-        def image_invert(node, **kwgs):
-            self.context("image invert\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Mirror horizontal"), node_type="elem", help="")
-        def image_mirror(node, **kwgs):
-            context("image mirror\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Flip vertical"), node_type="elem", help="")
-        def image_flip(node, **kwgs):
-            self.context("image flip\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Rotate 90° CW"), node_type="elem", help="")
-        def image_cw(node, **kwgs):
-            self.context("image cw\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Rotate 90° CCW"), node_type="elem", help="")
-        def image_ccw(node, **kwgs):
-            self.context("image ccw\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Save output.png"), node_type="elem", help="")
-        def image_save(node, **kwgs):
-            self.context("image save output.png\n")
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("RasterWizard"))
-        @self.tree_values(
-            "script", values=list(self.context.match("raster_script", suffix=True))
-        )
-        @self.tree_operation(
-            _("RasterWizard: %s") % "{script}", node_type="elem", help=""
-        )
-        def image_rasterwizard_open(node, script=None, **kwgs):
-            self.context("window open RasterWizard %s\n" % script)
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_submenu(_("Apply raster script"))
-        @self.tree_values(
-            "script", values=list(self.context.match("raster_script", suffix=True))
-        )
-        @self.tree_operation(_("Apply: %s") % "{script}", node_type="elem", help="")
-        def image_rasterwizard_apply(node, script=None, **kwgs):
-            self.context("image wizard %s\n" % script)
-
-        @self.tree_conditional_try(lambda node: hasattr(node.object, "as_elements"))
-        @self.tree_operation(_("Convert to SVG"), node_type="elem", help="")
-        def cutcode_convert_svg(node, **kwgs):
-            self.context.elements.add_elems(list(node.object.as_elements()))
-
-        @self.tree_conditional_try(lambda node: hasattr(node.object, "generate"))
-        @self.tree_operation(_("Process as Operation"), node_type="elem", help="")
-        def cutcode_operation(node, **kwgs):
-            self.context.elements.add_op(node.object)
-
-        @self.tree_conditional(lambda node: len(node.children) > 0)
-        @self.tree_separator_before()
-        @self.tree_operation(
-            _("Expand all children"),
-            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
-            help="Expand all children of this given node.",
-        )
-        def expand_all_children(node, **kwgs):
-            node.notify_expand()
-
-        @self.tree_conditional(lambda node: len(node.children) > 0)
-        @self.tree_operation(
-            _("Collapse all children"),
-            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
-            help="Collapse all children of this given node.",
-        )
-        def collapse_all_children(node, **kwgs):
-            node.notify_collapse()
-
-        @self.tree_reference(lambda node: node.object.node)
-        @self.tree_operation(_("Element"), node_type="opnode", help="")
-        def reference_opnode(node, **kwgs):
-            pass
-
-        self.listen(self)
-
     def detach(self, *a, **kwargs):
         self.save_persistent_operations("previous")
         self.unlisten(self)
-
-    def boot(self, *a, **kwargs):
-        self.context.setting(bool, "operation_default_empty", True)
-        self.load_persistent_operations("previous")
-        ops = list(self.ops())
-        if not len(ops) and self.context.operation_default_empty:
-            self.load_default()
-            return
 
     def save_persistent_operations(self, name):
         context = self.context
@@ -5479,7 +5460,7 @@ class Elemental(Modifier):
 
     def load_persistent_operations(self, name):
         self.clear_operations()
-        settings = self.context.get_context("operations/" + name)
+        settings = self.get_context("operations/" + name)
         subitems = list(settings.derivable())
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
@@ -5520,7 +5501,7 @@ class Elemental(Modifier):
             and len(element) == 0
         ):
             return  # No empty elements.
-        context_root = self.context.root
+        context_root = self.root
         if hasattr(element, "stroke") and element.stroke is None:
             element.stroke = Color(stroke)
         node = context_root.elements.add_elem(element)
@@ -5671,7 +5652,7 @@ class Elemental(Modifier):
         """
         element_branch = self._tree.get(type="branch elems")
         node = element_branch.add(element, type="elem")
-        self.context.signal("element_added", element)
+        self.signal("element_added", element)
         if classify:
             self.classify([element])
         return node
@@ -5681,7 +5662,7 @@ class Elemental(Modifier):
         items = []
         for element in adding_elements:
             items.append(element_branch.add(element, type="elem"))
-        self.context.signal("element_added", adding_elements)
+        self.signal("element_added", adding_elements)
         return items
 
     def clear_operations(self):
@@ -5722,7 +5703,7 @@ class Elemental(Modifier):
             for i, o in enumerate(list(self.ops())):
                 if o is op:
                     o.remove_node()
-            self.context.signal("operation_removed", op)
+            self.signal("operation_removed", op)
 
     def remove_elements_from_operations(self, elements_list):
         for i, op in enumerate(self.ops()):
@@ -5766,7 +5747,7 @@ class Elemental(Modifier):
         self._emphasized_bounds_dirty = False
         if self._emphasized_bounds != new_bounds:
             self._emphasized_bounds = new_bounds
-            self.context.signal("selected_bounds", self._emphasized_bounds)
+            self.signal("selected_bounds", self._emphasized_bounds)
 
     def highlight_children(self, node_context):
         """
@@ -5858,11 +5839,11 @@ class Elemental(Modifier):
             max(b[0], b[2]),
             max(b[1], b[3]),
         ]
-        self.context.signal("selected_bounds", self._emphasized_bounds)
+        self.signal("selected_bounds", self._emphasized_bounds)
 
     def update_bounds(self, b):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
-        self.context.signal("selected_bounds", self._emphasized_bounds)
+        self.signal("selected_bounds", self._emphasized_bounds)
 
     def move_emphasized(self, dx, dy):
         for obj in self.elems(emphasized=True):
@@ -5915,7 +5896,7 @@ class Elemental(Modifier):
         # Use of Classify in reverse is new functionality in 0.7.1
         # So using it is incompatible, but not using it would be inconsistent
         # Perhaps classify_reverse should be cleared and disabled if classify_legacy is set.
-        reverse = self.context.classify_reverse
+        reverse = self.classify_reverse
         if reverse:
             elements = reversed(elements)
         if operations is None:
@@ -6131,7 +6112,7 @@ class Elemental(Modifier):
         :param add_op_function: function to add a new operation, because of a lack of classification options.
         :return:
         """
-        if self.context.legacy_classification:
+        if self.legacy_classification:
             self.classify_legacy(elements, operations, add_op_function)
             return
 
@@ -6142,7 +6123,7 @@ class Elemental(Modifier):
         if add_op_function is None:
             add_op_function = self.add_classify_op
 
-        reverse = self.context.classify_reverse
+        reverse = self.classify_reverse
         # If reverse then we insert all elements into operations at the beginning rather than appending at the end
         # EXCEPT for Rasters which have to be in the correct sequence.
         element_pos = 0 if reverse else None
@@ -6474,7 +6455,7 @@ class Elemental(Modifier):
         return element_color
 
     def load(self, pathname, **kwargs):
-        kernel = self.context.kernel
+        kernel = self.kernel
         for loader_name in kernel.match("load"):
             loader = kernel.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
@@ -6490,7 +6471,7 @@ class Elemental(Modifier):
         return False
 
     def load_types(self, all=True):
-        kernel = self.context.kernel
+        kernel = self.kernel
         _ = kernel.translation
         filetypes = []
         if all:
@@ -6513,7 +6494,7 @@ class Elemental(Modifier):
         return "|".join(filetypes)
 
     def save(self, pathname):
-        kernel = self.context.kernel
+        kernel = self.kernel
         for save_name in kernel.match("save"):
             saver = kernel.registered[save_name]
             for description, extension, mimetype in saver.save_types():
@@ -6523,7 +6504,7 @@ class Elemental(Modifier):
         return False
 
     def save_types(self):
-        kernel = self.context.kernel
+        kernel = self.kernel
         filetypes = []
         for save_name in kernel.match("save"):
             saver = kernel.registered[save_name]

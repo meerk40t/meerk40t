@@ -555,6 +555,7 @@ class Modifier(Context):
 
     def __init__(self, kernel: "Kernel", name: str):
         super().__init__(kernel, name)
+        self.name = name
         # All registered aspects of the modifier
         self.active = None
         self.aspects = []
@@ -820,7 +821,19 @@ class Kernel:
 
         self.command_boot()
         for i, mod in enumerate(self._modifiers):
-            self._modifiers[i] = mod(self)
+            # Replace all modifiers with initialized versions.
+            m = mod(self)
+            self._modifiers[i] = m
+            for context_name in self.contexts:
+                context = self.contexts[context_name]
+                setattr(context, m.name, m)
+            # Modifiers are also contexts and need to be treated as such.
+            self.contexts[m.name] = m
+        for mod in self._modifiers:
+            # Register all modifiers in self same modifiers.
+            for context_name in self.contexts:
+                context = self.contexts[context_name]
+                setattr(context, mod.name, mod)
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
@@ -1250,6 +1263,10 @@ class Kernel:
         except KeyError:
             pass
         derive = Context(self, path=path)
+        if self._booted:
+            # If context get after boot,apply all modifiers.
+            for mod in self._modifiers:
+                setattr(derive, mod.name, mod)
         self.contexts[path] = derive
         return derive
 
