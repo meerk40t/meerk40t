@@ -1068,12 +1068,6 @@ class OperationPropertyPanel(wx.Panel):
             return
         self.context.signal("element_property_reload", self.operation)
 
-    def on_key_press(self, event):
-        keycode = event.GetKeyCode()
-        if keycode == wx.WXK_ESCAPE:
-            self.Close()
-        event.Skip()
-
 
 class OperationProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
@@ -1096,3 +1090,4 @@ class OperationProperty(MWindow):
 
     def window_close(self):
         self.panel.finalize()
+

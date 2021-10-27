@@ -494,7 +494,10 @@ class RasterWizardPanel(wx.Panel):
                 self.svg_image.node.altered()
             except AttributeError:
                 pass
-        self.Close()
+        try:
+            self.GetParent().Close()
+        except (TypeError, AttributeError):
+            pass
 
 
 # end of class RasterWizard

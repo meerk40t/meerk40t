@@ -435,7 +435,10 @@ class PlannerPanel(wx.Panel):
                 self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
                 if self.context.auto_spooler:
                     self.context("window open JobSpooler\n")
-                self.Close()
+                try:
+                    self.GetParent().Close()
+                except (TypeError, AttributeError):
+                    pass
         self.update_gui()
 
     def initialize(self):

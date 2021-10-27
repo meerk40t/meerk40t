@@ -57,7 +57,10 @@ class PreferencesDefaultPanel(wx.Panel):
     def on_active_change(self, origin, active):
         if origin == self.context.path:
             return
-        self.Close()
+        try:
+            self.GetParent().Close()
+        except (TypeError, AttributeError):
+            pass
 
 
 class Preferences(MWindow):
