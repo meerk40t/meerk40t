@@ -54,7 +54,7 @@ class SimulationPanel(wx.Panel, Job):
         self.bed_dim.setting(int, "bed_height", 210)
 
         self.view_pane = ScenePanel(
-            self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.WANTS_CHARS
+            self.context, self, scene_name="SimScene", style=wx.TAB_TRAVERSAL
         )
         self.widget_scene = self.view_pane.scene
 
