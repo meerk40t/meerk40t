@@ -523,6 +523,8 @@ class CutPlan:
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
+        if input_driver is None:
+            return
         scale_str = "scale(%f,%f,%f,%f)" % (
             r.scale_x,
             r.scale_y,
