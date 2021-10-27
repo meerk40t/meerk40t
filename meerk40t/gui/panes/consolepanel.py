@@ -148,7 +148,7 @@ class ConsolePanel(wx.Panel):
 class Console(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(581, 410, *args, **kwds)
-        self.panel_executejob = ConsolePanel(self, wx.ID_ANY, context=self.context)
+        self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
         self.SetIcon(_icon)
@@ -156,7 +156,7 @@ class Console(MWindow):
         self.Layout()
 
     def window_open(self):
-        self.panel_executejob.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.panel_executejob.finalize()
+        self.panel.finalize()

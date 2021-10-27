@@ -24,6 +24,7 @@ from .panes.consolepanel import Console
 from .panes.devicespanel import DeviceManager
 from .panes.spoolerpanel import JobSpooler
 from .panes.navigationpanels import Navigation
+from .panes.camerapanel import CameraInterface
 from .scene.scene import ScenePanel
 from .scene.scenewidgets import (
     ElementsWidget,
@@ -77,7 +78,6 @@ from ..svgelements import (
 )
 from .about import About
 from .bufferview import BufferView
-from .camerainteface import CameraInterface
 from .controller import Controller
 from .executejob import ExecuteJob
 from .icons import (
