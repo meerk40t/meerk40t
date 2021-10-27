@@ -10,9 +10,11 @@ _ = wx.GetTranslation
 MILS_IN_MM = 39.3701
 
 
-class LhystudiosDriverGui(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(337, 317, *args, **kwds)
+class LhystudiosConfigurationPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
@@ -101,10 +103,6 @@ class LhystudiosDriverGui(MWindow):
         self.set_widgets()
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Lhystudios-Prefererences"))
         self.combobox_board.SetToolTip(
             _("Select the board to use. This has an effects the speedcodes used.")
         )
@@ -257,11 +255,11 @@ class LhystudiosDriverGui(MWindow):
         self.Layout()
         # end wxGlade
 
-    def window_open(self):
+    def initialize(self):
         self.context.listen("pipe;buffer", self.on_buffer_update)
         self.context.listen("active", self.on_active_change)
 
-    def window_close(self):
+    def finalize(self):
         self.context.unlisten("pipe;buffer", self.on_buffer_update)
         self.context.unlisten("active", self.on_active_change)
 
@@ -392,3 +390,20 @@ class LhystudiosDriverGui(MWindow):
 
     def on_buffer_update(self, origin, value, *args):
         self.text_buffer_length.SetValue(str(value))
+
+
+class LhystudiosDriverGui(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(337, 317, *args, **kwds)
+
+        self.panel = LhystudiosConfigurationPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Lhystudios-Configuration"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
