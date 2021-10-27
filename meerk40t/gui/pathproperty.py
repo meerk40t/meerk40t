@@ -8,9 +8,11 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class PathProperty(MWindow):
-    def __init__(self, *args, node=None, **kwds):
-        super().__init__(288, 303, *args, **kwds)
+class PathPropertyPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         self.element = node.object
         self.element_node = node
@@ -77,11 +79,6 @@ class PathProperty(MWindow):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
 
-    def restore(self, *args, node=None, **kwds):
-        self.element = node.object
-        self.element_node = node
-        self.set_widgets()
-
     def set_widgets(self):
         try:
             if self.element.stroke is not None and self.element.stroke != "none":
@@ -92,11 +89,6 @@ class PathProperty(MWindow):
         self.Refresh()
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: PathProperty.__set_properties
-        self.SetTitle(_("Path Properties"))
         self.button_stroke_none.SetToolTip(_('"none" defined value'))
         self.button_stroke_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
         self.button_stroke_F00.SetToolTip(_("#FF0000 defined values."))
@@ -208,3 +200,20 @@ class PathProperty(MWindow):
         self.context("declassify\nclassify\n")
         self.context.signal("element_property_update", self.element)
         self.context.signal("refresh_scene", 0)
+
+
+class PathProperty(MWindow):
+    def __init__(self, *args, node=None, **kwds):
+        super().__init__(288, 303, *args, **kwds)
+
+        self.panel = PathPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
+        self.SetIcon(_icon)
+        # begin wxGlade: PathProperty.__set_properties
+        self.SetTitle(_("Path Properties"))
+
+    def restore(self, *args, node=None, **kwds):
+        self.panel.element = node.object
+        self.panel.element_node = node
+        self.panel.set_widgets()
