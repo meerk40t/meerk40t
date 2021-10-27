@@ -6,9 +6,11 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class Keymap(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(500, 530, *args, **kwds)
+class KeymapPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         self.list_keymap = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
@@ -28,18 +30,13 @@ class Keymap(MWindow):
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated, self.list_keymap)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
 
-    def window_open(self):
+    def initialize(self):
         self.reload_keymap()
 
-    def window_close(self):
+    def finalize(self):
         pass
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_keyboard_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: Keymap.__set_properties
-        self.SetTitle(_("Keymap Settings"))
         self.list_keymap.SetToolTip(_("What keys are bound to which actions?"))
         self.list_keymap.AppendColumn(_("Key"), format=wx.LIST_FORMAT_LEFT, width=114)
         self.list_keymap.AppendColumn(
@@ -154,3 +151,21 @@ class Keymap(MWindow):
                     self.text_command_name.SetValue(self.context.keymap[key])
                 else:
                     self.list_keymap.Select(i, False)
+
+
+class Keymap(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(500, 530, *args, **kwds)
+
+        self.panel = KeymapPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_keyboard_50.GetBitmap())
+        self.SetIcon(_icon)
+        # begin wxGlade: Keymap.__set_properties
+        self.SetTitle(_("Keymap Settings"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
