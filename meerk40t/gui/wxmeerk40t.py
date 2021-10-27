@@ -144,7 +144,7 @@ from .moshi.moshidrivergui import MoshiDriverGui
 from .notes import Notes
 from .operationproperty import OperationProperty
 from .pathproperty import PathProperty
-from .preferences import Preferences
+from .configuration import Configuration
 from .rasterwizard import RasterWizard
 from .rotarysettings import RotarySettings
 from .settings import Settings
@@ -3970,7 +3970,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Simulation", Simulation)
 
         kernel.register("window/default/Controller", Controller)
-        kernel.register("window/default/Preferences", Preferences)
+        kernel.register("window/default/Preferences", Configuration)
         kernel.register("window/tcp/Controller", TCPController)
         kernel.register("window/file/Controller", FileOutput)
         kernel.register("window/lhystudios/Preferences", LhystudiosDriverGui)

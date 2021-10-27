@@ -8,7 +8,7 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class PreferencesDefaultPanel(wx.Panel):
+class ConfigurationDefaultPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -63,13 +63,13 @@ class PreferencesDefaultPanel(wx.Panel):
             pass
 
 
-class Preferences(MWindow):
+class Configuration(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(423, 110, *args, **kwds)
 
-        self.panel = PreferencesDefaultPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = ConfigurationDefaultPanel(self, wx.ID_ANY, context=self.context)
         # begin wxGlade: Properties.__set_properties
-        self.SetTitle(_("Properties"))
+        self.SetTitle(_("Configuration"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
