@@ -32,21 +32,12 @@ _advanced_width = 952
 _default_height = 584
 
 
-class LhystudiosControllerGui(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(_advanced_width, _default_height, *args, **kwds)
+class LhystudiosControllerPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
-        # ==========
-        # MENU BAR
-        # ==========
-        from sys import platform as _platform
-        if _platform != "darwin":
-            self.LhystudiosController_menubar = wx.MenuBar()
-            self.create_menu(self.LhystudiosController_menubar.Append)
-            self.SetMenuBar(self.LhystudiosController_menubar)
-        # ==========
-        # MENUBAR END
-        # ==========
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.text_connection_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
@@ -125,10 +116,6 @@ class LhystudiosControllerGui(MWindow):
         self.set_widgets()
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Lhystudios-Controller"))
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
@@ -325,31 +312,8 @@ class LhystudiosControllerGui(MWindow):
         self.Layout()
         # end wxGlade
 
-    def create_menu(self, append):
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("Reset USB"), _("Reset USB connection")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("Release USB"), _("Release USB resources")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_usb_release, id=item.GetId())
-        append(wxglade_tmp_menu, _("Tools"))
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Pause"), "")
-        self.Bind(wx.EVT_MENU, self.on_menu_pause, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Stop"), "")
-        self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
-        append(wxglade_tmp_menu, _("Commands"))
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("BufferView"), _("Views the Controller Buffer")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
-        append(wxglade_tmp_menu, _("Views"))
 
-    def window_open(self):
+    def initialize(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 
@@ -366,7 +330,7 @@ class LhystudiosControllerGui(MWindow):
         self.context.listen("pipe;failing", self.on_usb_failing)
         self.context.listen("active", self.on_active_change)
 
-    def window_close(self):
+    def finalize(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
 
@@ -399,9 +363,6 @@ class LhystudiosControllerGui(MWindow):
                 self.text_usb_log.AppendText(text)
         except RuntimeError:
             pass
-
-    def restore(self, *args, **kwargs):
-        self.set_widgets()
 
     def set_widgets(self):
         self.context.setting(bool, "show_usb_log", False)
@@ -696,15 +657,75 @@ class LhystudiosControllerGui(MWindow):
         else:
             self.SetSize((_simple_width, _default_height))
 
+
+class LhystudiosControllerGui(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(_advanced_width, _default_height, *args, **kwds)
+
+        # ==========
+        # MENU BAR
+        # ==========
+        from sys import platform as _platform
+        if _platform != "darwin":
+            self.LhystudiosController_menubar = wx.MenuBar()
+            self.create_menu(self.LhystudiosController_menubar.Append)
+            self.SetMenuBar(self.LhystudiosController_menubar)
+        # ==========
+        # MENUBAR END
+        # ==========
+
+        self.panel = LhystudiosControllerPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Lhystudios-Controller"))
+
+    def create_menu(self, append):
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Reset USB"), _("Reset USB connection")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Release USB"), _("Release USB resources")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_usb_release, id=item.GetId())
+        append(wxglade_tmp_menu, _("Tools"))
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Pause"), "")
+        self.Bind(wx.EVT_MENU, self.on_menu_pause, id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Stop"), "")
+        self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
+        append(wxglade_tmp_menu, _("Commands"))
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("BufferView"), _("Views the Controller Buffer")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
+        append(wxglade_tmp_menu, _("Views"))
+
+    def restore(self, *args, **kwargs):
+        self.panel.set_widgets()
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
+
     def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
-        print("Event handler 'on_menu_usb_reset' not implemented!")
-        event.Skip()
+        try:
+            self.context("dev usb_reset\n")
+        except AttributeError:
+            pass
 
     def on_menu_usb_release(
         self, event
     ):  # wxGlade: LhystudiosController.<event_handler>
-        print("Event handler 'on_menu_usb_release' not implemented!")
-        event.Skip()
+        try:
+            self.context("dev usb_release\n")
+        except AttributeError:
+            pass
 
     def on_menu_pause(
         self, event=None
