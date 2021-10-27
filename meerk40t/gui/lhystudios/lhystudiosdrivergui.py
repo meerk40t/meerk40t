@@ -13,7 +13,7 @@ MILS_IN_MM = 39.3701
 class LhystudiosConfigurationPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, size=(337, 317), **kwds)
+        wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
         self.bed_dim = self.context.root
@@ -394,7 +394,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
 
 class LhystudiosDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(337, 317, *args, **kwds)
+        super().__init__(337, 357, *args, **kwds)
 
         self.panel = LhystudiosConfigurationPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
