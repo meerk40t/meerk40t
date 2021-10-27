@@ -12,26 +12,14 @@ _ = wx.GetTranslation
 MILS_PER_MM = 39.3701
 
 
-class ExecuteJob(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(496, 573, *args, **kwds)
-        if len(args) >= 4:
-            plan_name = args[3]
-        else:
-            plan_name = 0
-        self.plan_name = plan_name
+class PlannerPanel(wx.Panel):
+    def __init__(self, *args, context=None, plan_name=None, **kwargs):
+        # begin wxGlade: ConsolePanel.__init__
+        kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwargs)
+        self.context = context
 
-        # ==========
-        # MENU BAR
-        # ==========
-        from sys import platform as _platform
-        if _platform != "darwin":
-            self.preview_menu = wx.MenuBar()
-            self.create_menu(self.preview_menu.Append)
-            self.SetMenuBar(self.preview_menu)
-        # ==========
-        # MENUBAR END
-        # ==========
+        self.plan_name = plan_name
 
         self.available_devices = [
             self.context.registered[i] for i in self.context.match("device")
@@ -127,10 +115,7 @@ class ExecuteJob(MWindow):
 
     def __set_properties(self):
         # begin wxGlade: Preview.__set_properties
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Execute Job"))
+
         self.combo_device.SetToolTip(
             _("Select the device to which to send the current job")
         )
@@ -232,75 +217,6 @@ class ExecuteJob(MWindow):
         self.SetSizer(sizer_frame)
         self.Layout()
         # end wxGlade
-
-
-    def create_menu(self, append):
-        from .wxutils import create_menu_for_choices
-        wx_menu = create_menu_for_choices(self, self.context.registered["choices/planner"])
-        append(wx_menu, _("Automatic"))
-
-        # ==========
-        # ADD MENU
-        # ==========
-        wx_menu = wx.Menu()
-        append(wx_menu, _("Add"))
-
-        self.Bind(
-            wx.EVT_MENU, self.jobadd_home, wx_menu.Append(
-            wx.ID_ANY, _("Home"), _("Add a home")
-        )
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.jobadd_physicalhome,
-            wx_menu.Append(
-                wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")
-            )
-        )
-        self.Bind(
-            wx.EVT_MENU, self.jobadd_wait, wx_menu.Append(
-            wx.ID_ANY, _("Wait"), _("Add a wait")
-        )
-        )
-        self.Bind(
-            wx.EVT_MENU, self.jobadd_beep, wx_menu.Append(
-            wx.ID_ANY, _("Beep"), _("Add a beep")
-        )
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.jobadd_interrupt,
-            wx_menu.Append(
-                wx.ID_ANY, _("Interrupt"), _("Add an interrupt")
-            )
-        )
-
-
-        # ==========
-        # Tools Menu
-        # ==========
-        wx_menu = wx.Menu()
-        append(wx_menu, _("Tools"))
-
-        self.context.setting(bool, "developer_mode", False)
-        if self.context.developer_mode:
-            self.Bind(
-                wx.EVT_MENU,
-                self.jobchange_return_to_operations,
-                wx_menu.Append(
-                    wx.ID_ANY,
-                    _("Return to Operations"),
-                    _("Return the current Plan to Operations"),
-                )
-            )
-
-        self.Bind(
-            wx.EVT_MENU,
-            self.jobchange_step_repeat,
-            wx_menu.Append(
-                wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
-            )
-        )
 
     def on_check_reduce_travel(self, event=None):  # wxGlade: Preview.<event_handler>
         self.context.opt_reduce_travel = self.check_reduce_travel_time.IsChecked()
@@ -522,7 +438,7 @@ class ExecuteJob(MWindow):
                 self.Close()
         self.update_gui()
 
-    def window_open(self):
+    def initialize(self):
         rotary_context = self.context.get_context("rotary/1")
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
@@ -557,7 +473,7 @@ class ExecuteJob(MWindow):
 
         self.update_gui()
 
-    def window_close(self):
+    def finalize(self):
         self.context("plan%s clear\n" % self.plan_name)
 
         self.context.unlisten(
@@ -624,3 +540,104 @@ class ExecuteJob(MWindow):
             self.button_start.SetBackgroundColour(wx.Colour(255, 255, 255))
             self.button_start.SetToolTip(_("Send this data to the spooler"))
         self.Refresh()
+
+
+class ExecuteJob(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(496, 573, *args, **kwds)
+
+        if len(args) >= 4:
+            plan_name = args[3]
+        else:
+            plan_name = 0
+        self.panel = PlannerPanel(self, wx.ID_ANY, context=self.context, plan_name=plan_name)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Execute Job"))
+
+        # ==========
+        # MENU BAR
+        # ==========
+        from sys import platform as _platform
+        if _platform != "darwin":
+            self.preview_menu = wx.MenuBar()
+            self.create_menu(self.preview_menu.Append)
+            self.SetMenuBar(self.preview_menu)
+        # ==========
+        # MENUBAR END
+        # ==========
+
+    def create_menu(self, append):
+        from .wxutils import create_menu_for_choices
+        wx_menu = create_menu_for_choices(self, self.context.registered["choices/planner"])
+        append(wx_menu, _("Automatic"))
+
+        # ==========
+        # ADD MENU
+        # ==========
+        wx_menu = wx.Menu()
+        append(wx_menu, _("Add"))
+
+        self.Bind(
+            wx.EVT_MENU, self.panel.jobadd_home, wx_menu.Append(
+            wx.ID_ANY, _("Home"), _("Add a home")
+        )
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.panel.jobadd_physicalhome,
+            wx_menu.Append(
+                wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")
+            )
+        )
+        self.Bind(
+            wx.EVT_MENU, self.panel.jobadd_wait, wx_menu.Append(
+            wx.ID_ANY, _("Wait"), _("Add a wait")
+        )
+        )
+        self.Bind(
+            wx.EVT_MENU, self.panel.jobadd_beep, wx_menu.Append(
+            wx.ID_ANY, _("Beep"), _("Add a beep")
+        )
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.panel.jobadd_interrupt,
+            wx_menu.Append(
+                wx.ID_ANY, _("Interrupt"), _("Add an interrupt")
+            )
+        )
+
+
+        # ==========
+        # Tools Menu
+        # ==========
+        wx_menu = wx.Menu()
+        append(wx_menu, _("Tools"))
+
+        self.context.setting(bool, "developer_mode", False)
+        if self.context.developer_mode:
+            self.Bind(
+                wx.EVT_MENU,
+                self.panel.jobchange_return_to_operations,
+                wx_menu.Append(
+                    wx.ID_ANY,
+                    _("Return to Operations"),
+                    _("Return the current Plan to Operations"),
+                )
+            )
+
+        self.Bind(
+            wx.EVT_MENU,
+            self.panel.jobchange_step_repeat,
+            wx_menu.Append(
+                wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
+            )
+        )
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
