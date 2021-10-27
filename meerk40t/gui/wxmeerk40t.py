@@ -24,7 +24,7 @@ from .file.fileoutput import FileOutput
 from .groupproperties import GroupProperty
 from .mwindow import MWindow
 from .panes.camerapanel import CameraPanel
-from .panes.consolepanel import ConsolePanel
+from .panes.consolepanel import ConsolePanel, Console
 from .panes.devicespanel import DevicesPanel
 from .panes.dragpanel import Drag
 from .panes.jogdistancepanel import JogDistancePanel
@@ -87,7 +87,6 @@ from ..svgelements import (
 from .about import About
 from .bufferview import BufferView
 from .camerainteface import CameraInterface
-from .console import Console
 from .controller import Controller
 from .devicemanager import DeviceManager
 from .executejob import ExecuteJob
