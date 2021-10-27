@@ -8,9 +8,12 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class MoshiDriverGui(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(335, 170, *args, **kwds)
+class MoshiConfigurationPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
         self.spin_home_x = wx.SpinCtrlDouble(
@@ -38,10 +41,6 @@ class MoshiDriverGui(MWindow):
         # end wxGlade
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Moshiboard-Prefererences"))
         self.checkbox_home_right.SetToolTip(
             _("Indicates the device Home is on the right")
         )
@@ -98,11 +97,11 @@ class MoshiDriverGui(MWindow):
         self.Layout()
         # end wxGlade
 
-    def window_open(self):
+    def initialize(self):
         # self.context.listen("pipe;buffer", self.on_buffer_update)
         self.context.listen("active", self.on_active_change)
 
-    def window_close(self):
+    def finalize(self):
         # self.context.unlisten("pipe;buffer", self.on_buffer_update)
         self.context.unlisten("active", self.on_active_change)
 
@@ -135,3 +134,20 @@ class MoshiDriverGui(MWindow):
     def on_check_random_ppi(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
         print("Event handler 'on_check_random_ppi' not implemented!")
         event.Skip()
+
+
+class MoshiDriverGui(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(335, 170, *args, **kwds)
+
+        self.panel = MoshiConfigurationPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Moshiboard-Configuration"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
