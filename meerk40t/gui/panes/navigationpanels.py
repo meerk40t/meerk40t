@@ -1033,13 +1033,13 @@ class JogDistancePanel(wx.Panel):
         self.spin_jog_mils = wx.SpinCtrlDouble(
             self, wx.ID_ANY, "100.0", min=0.0, max=10000.0
         )
+        self.spin_jog_inch = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "0.394", min=0.0, max=10.0
+        )
         self.spin_jog_mm = wx.SpinCtrlDouble(
             self, wx.ID_ANY, "10.0", min=0.0, max=254.0
         )
         self.spin_jog_cm = wx.SpinCtrlDouble(self, wx.ID_ANY, "1.0", min=0.0, max=25.4)
-        self.spin_jog_inch = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "0.394", min=0.0, max=10.0
-        )
 
         # begin wxGlade: JogDistancePanel.__set_properties
         self.spin_jog_mils.SetMinSize((80, 23))
@@ -1117,15 +1117,11 @@ class JogDistancePanel(wx.Panel):
         self.set_jog_distances(int(self.context.navigate_jog))
 
 
-class Navigation(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(598, 429, *args, **kwds)
-
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: Navigation.__set_properties
-        self.SetTitle(_("Navigation"))
+class NavigationPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         pulse_and_move_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1157,16 +1153,35 @@ class Navigation(MWindow):
         self.panels = [jogdistancepanel, navigationpanel,alignpanel, transformpanel, short_pulse, move_panel]
         # end wxGlade
 
-    def window_open(self):
+    def initialize(self):
         for p in self.panels:
             try:
                 p.initialize()
             except AttributeError:
                 pass
 
-    def window_close(self):
+    def finalize(self):
         for p in self.panels:
             try:
                 p.finalize()
             except AttributeError:
                 pass
+
+
+class Navigation(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(598, 429, *args, **kwds)
+
+        self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
+
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
+        self.SetIcon(_icon)
+        # begin wxGlade: Navigation.__set_properties
+        self.SetTitle(_("Navigation"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
