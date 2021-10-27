@@ -48,6 +48,7 @@ class MWindow(wx.Frame, Module):
         else:
             self.SetSize(width, height)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
         self.accelerator_table(self)
 
     def accelerator_table(self, window):
@@ -61,6 +62,17 @@ class MWindow(wx.Frame, Module):
         accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord("W"), keyid)])
         window.Bind(wx.EVT_MENU, close_window, id=keyid)
         window.SetAcceleratorTable(accel_tbl)
+
+    def on_menu_request(self, event):
+        menu = wx.Menu()
+        self.create_menu(menu.AppendSubMenu)
+
+        if menu.MenuItemCount != 0:
+            self.PopupMenu(menu)
+            menu.Destroy()
+
+    def create_menu(self, append):
+        pass
 
     def on_close(self, event):
         if self.state == 5:
