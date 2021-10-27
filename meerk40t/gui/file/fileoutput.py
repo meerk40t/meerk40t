@@ -6,9 +6,12 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class FileOutput(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(312, 155, *args, **kwds)
+class FileOutputPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+
         self.spooler, self.input_driver, self.output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
@@ -35,10 +38,6 @@ class FileOutput(MWindow):
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
-        self.SetTitle(_("FileOutput"))
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_file_50.GetBitmap())
-        self.SetIcon(_icon)
         self.text_filename.SetToolTip(_("Output filename"))
         self.radio_file.SetSelection(0)
         # end wxGlade
@@ -63,11 +62,11 @@ class FileOutput(MWindow):
         self.Layout()
         # end wxGlade
 
-    def window_open(self):
+    def initialize(self):
         self.text_filename.SetValue(str(self.output.filename))
         self.context.listen("active", self.on_active_change)
 
-    def window_close(self):
+    def finalize(self):
         self.context.unlisten("active", self.on_active_change)
 
     def on_active_change(self, origin, active):
@@ -79,3 +78,19 @@ class FileOutput(MWindow):
 
     def on_radiobox_file(self, event=None):  # wxGlade: Controller.<event_handler>
         pass
+
+
+class FileOutput(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(312, 155, *args, **kwds)
+        self.panel = FileOutputPanel(self, wx.ID_ANY, context=self.context)
+        self.SetTitle(_("FileOutput"))
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_file_50.GetBitmap())
+        self.SetIcon(_icon)
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
