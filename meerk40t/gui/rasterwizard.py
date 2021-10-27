@@ -21,9 +21,12 @@ _ = wx.GetTranslation
 MILS_IN_MM = 39.3701
 
 
-class RasterWizard(MWindow):
-    def __init__(self, *args, script=None, **kwds):
-        super().__init__(605, 636, *args, **kwds)
+class RasterWizardPanel(wx.Panel):
+    def __init__(self, *args, context=None, script=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+
         if script is None:
             script = "Gravy"
 
@@ -103,12 +106,7 @@ class RasterWizard(MWindow):
         self.Refresh()
         self.on_size()
 
-    def restore(self, *args, script=None, **kwargs):
-        if script is not None:
-            self.script = script
-            self.set_wizard_script(script)
-
-    def window_open(self):
+    def initialize(self):
         if self.script is not None:
             self.set_wizard_script(self.script)
 
@@ -125,7 +123,7 @@ class RasterWizard(MWindow):
         if self.list_operation.GetCount() > 0:
             self.list_operation.SetSelection(0)
 
-    def window_close(self):
+    def finalize(self):
         context_root = self.context.root
         context_root.unlisten("emphasized", self.on_emphasis_change)
         self.context.unlisten(
@@ -137,11 +135,6 @@ class RasterWizard(MWindow):
         )
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_fantasy_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: RasterWizard.__set_properties
-        self.SetTitle(_("Raster Wizard"))
         self.panel_preview.SetToolTip(_("Processed image preview"))
         self.list_operation.SetToolTip(
             _("Image operations applied in order to generate a raster image.")
@@ -1941,3 +1934,26 @@ class HalftonePanel(wx.Panel):
 
 
 # end of class HalftonePanel
+
+
+class RasterWizard(MWindow):
+    def __init__(self, *args, script=None, **kwds):
+        super().__init__(605, 636, *args, **kwds)
+
+        self.panel = RasterWizardPanel(self, wx.ID_ANY, context=self.context, script=script)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_fantasy_50.GetBitmap())
+        self.SetIcon(_icon)
+        # begin wxGlade: RasterWizard.__set_properties
+        self.SetTitle(_("Raster Wizard"))
+
+    def restore(self, *args, script=None, **kwargs):
+        if script is not None:
+            self.panel.script = script
+            self.panel.set_wizard_script(script)
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
