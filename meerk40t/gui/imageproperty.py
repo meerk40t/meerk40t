@@ -7,9 +7,12 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class ImageProperty(MWindow):
-    def __init__(self, *args, node=None, **kwds):
-        super().__init__(276, 218, *args, **kwds)
+class ImagePropertyPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwargs):
+        # begin wxGlade: ConsolePanel.__init__
+        kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwargs)
+        self.context = context
         self.element_node = node
         self.element = node.object
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
@@ -50,12 +53,6 @@ class ImageProperty(MWindow):
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
 
-    def restore(self, *args, node=None, **kwds):
-        self.element_node = node
-        self.element = node.object
-        self.set_widgets()
-
-    def window_open(self):
         self.set_widgets()
 
     def set_widgets(self):
@@ -79,11 +76,6 @@ class ImageProperty(MWindow):
             pass
 
     def __set_properties(self):
-        # begin wxGlade: ImageProperty.__set_properties
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_image_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Image Properties"))
         self.spin_step_size.SetMinSize((100, 23))
         self.spin_step_size.SetToolTip(_("Scan gap / step size image native value."))
         self.combo_dpi.SetSelection(0)
@@ -193,3 +185,20 @@ class ImageProperty(MWindow):
 
     def on_text_height(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()
+
+
+class ImageProperty(MWindow):
+    def __init__(self, *args, node=None, **kwds):
+        super().__init__(276, 218, *args, **kwds)
+
+        self.panel = ImagePropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        # begin wxGlade: ImageProperty.__set_properties
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_image_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Image Properties"))
+
+    def restore(self, *args, node=None, **kwds):
+        self.panel.element_node = node
+        self.panel.element = node.object
+        self.panel.set_widgets()
