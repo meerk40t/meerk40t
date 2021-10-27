@@ -25,7 +25,7 @@ from .groupproperties import GroupProperty
 from .mwindow import MWindow
 from .panes.camerapanel import CameraPanel
 from .panes.consolepanel import ConsolePanel, Console
-from .panes.devicespanel import DevicesPanel
+from .panes.devicespanel import DevicesPanel, DeviceManager
 from .panes.dragpanel import Drag
 from .panes.jogdistancepanel import JogDistancePanel
 from .panes.movepanel import MovePanel
@@ -88,7 +88,6 @@ from .about import About
 from .bufferview import BufferView
 from .camerainteface import CameraInterface
 from .controller import Controller
-from .devicemanager import DeviceManager
 from .executejob import ExecuteJob
 from .icons import (
     icon_meerk40t,

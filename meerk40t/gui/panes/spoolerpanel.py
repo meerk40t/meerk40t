@@ -242,6 +242,7 @@ class JobSpooler(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
         self.SetIcon(_icon)
+        self.SetTitle(_("Job Spooler"))
         self.Layout()
 
     def window_open(self):

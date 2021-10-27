@@ -152,6 +152,7 @@ class Console(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
         self.SetIcon(_icon)
+        self.SetTitle(_("Console"))
         self.Layout()
 
     def window_open(self):
