@@ -437,13 +437,13 @@ class Navigation(MWindow):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_16 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_12 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Move To:")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Move To")), wx.HORIZONTAL
         )
         sizer_13 = wx.BoxSizer(wx.VERTICAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_5 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Short Pulse:")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Short Pulse")), wx.HORIZONTAL
         )
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         matrix_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -455,7 +455,7 @@ class Navigation(MWindow):
         align_sizer = wx.FlexGridSizer(4, 3, 0, 0)
         navigation_sizer = wx.FlexGridSizer(4, 3, 0, 0)
         sizer_6 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Jog Distance:")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Jog Distance")), wx.HORIZONTAL
         )
         sizer_10 = wx.BoxSizer(wx.VERTICAL)
         sizer_9 = wx.BoxSizer(wx.VERTICAL)
