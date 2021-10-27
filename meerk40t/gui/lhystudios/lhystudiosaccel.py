@@ -8,9 +8,11 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class LhystudiosAccelerationChart(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(551, 234, *args, **kwds)
+class LhystudiosAccelerationChartPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
         self.checkbox_vector_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
         self.text_vector_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
         self.text_vector_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
@@ -97,10 +99,6 @@ class LhystudiosAccelerationChart(MWindow):
         self.set_widgets()
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Acceleration Chart"))
         self.checkbox_vector_accel_enable.SetToolTip(
             _("Enable defined acceleration chart for vectors")
         )
@@ -264,11 +262,11 @@ class LhystudiosAccelerationChart(MWindow):
         self.checkbox_raster_accel_enable.SetValue(context.raster_accel_table)
         self.checkbox_vector_accel_enable.SetValue(context.vector_accel_table)
 
-    def window_open(self):
+    def initialize(self):
         # self.context.listen("pipe;buffer", self.on_buffer_update)
         self.context.listen("active", self.on_active_change)
 
-    def window_close(self):
+    def finalize(self):
         # self.context.unlisten("pipe;buffer", self.on_buffer_update)
         self.context.unlisten("active", self.on_active_change)
 
@@ -300,3 +298,20 @@ class LhystudiosAccelerationChart(MWindow):
 
     def on_text_vraster_accel(self, event):  # wxGlade: AccelBuild.<event_handler>
         pass
+
+
+class LhystudiosAccelerationChart(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(551, 234, *args, **kwds)
+
+        self.panel = LhystudiosAccelerationChartPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Acceleration Chart"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()

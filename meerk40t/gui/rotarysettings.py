@@ -12,9 +12,11 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class RotarySettings(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(222, 347, *args, **kwds)
+class RotarySettingsPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Rotary"))
         self.text_rotary_scaley = wx.TextCtrl(self, wx.ID_ANY, "1.0")
@@ -47,7 +49,7 @@ class RotarySettings(MWindow):
             self.text_rotary_object_circumference,
         )
 
-    def window_open(self):
+    def initialize(self):
         self.context.setting(bool, "rotary", False)
         self.context.setting(float, "scale_x", 1.0)
         self.context.setting(float, "scale_y", 1.0)
@@ -56,15 +58,10 @@ class RotarySettings(MWindow):
         self.checkbox_rotary.SetValue(self.context.rotary)
         self.on_check_rotary(None)
 
-    def window_close(self):
+    def finalize(self):
         pass
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: RotarySettings.__set_properties
-        self.SetTitle(_("RotarySettings"))
         self.checkbox_rotary.SetFont(
             wx.Font(
                 12,
@@ -196,4 +193,20 @@ class RotarySettings(MWindow):
         event.Skip()
 
 
-# end of class RotarySettings
+class RotarySettings(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(222, 347, *args, **kwds)
+
+        self.panel = RotarySettingsPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
+        self.SetIcon(_icon)
+        # begin wxGlade: RotarySettings.__set_properties
+        self.SetTitle(_("RotarySettings"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
+

@@ -25,8 +25,7 @@ def register_panel(window, context):
 
 
 class NotePanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: NotePanel.__init__
+    def __init__(self, *args, context=None, pane=False, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context

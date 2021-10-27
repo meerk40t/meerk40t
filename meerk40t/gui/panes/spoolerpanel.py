@@ -1,6 +1,9 @@
 import wx
 from wx import aui
 
+from meerk40t.gui.icons import icons8_route_50
+from meerk40t.gui.mwindow import MWindow
+
 _ = wx.GetTranslation
 
 
@@ -25,7 +28,7 @@ def register_panel(window, context):
 
 
 class SpoolerPanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, selected_spooler=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -33,7 +36,8 @@ class SpoolerPanel(wx.Panel):
         self.available_devices = [
             self.context.registered[i] for i in self.context.match("device")
         ]
-        selected_spooler = self.context.root.active
+        if selected_spooler is None:
+            selected_spooler = self.context.root.active
         spools = [str(i) for i in self.context.match("device", suffix=True)]
         try:
             index = spools.index(selected_spooler)
@@ -226,3 +230,23 @@ class SpoolerPanel(wx.Panel):
     def on_spooler_update(self, origin, value, *args, **kwargs):
         self.update_spooler = True
         self.refresh_spooler_list()
+
+
+class JobSpooler(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(673, 456, *args, **kwds)
+        selected_spooler = None
+        if len(args) >= 4 and args[3]:
+            selected_spooler = args[3]
+        self.panel_executejob = SpoolerPanel(self, wx.ID_ANY, context=self.context, selected_spooler=selected_spooler)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Job Spooler"))
+        self.Layout()
+
+    def window_open(self):
+        self.panel_executejob.initialize()
+
+    def window_close(self):
+        self.panel_executejob.finalize()

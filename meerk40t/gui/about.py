@@ -6,9 +6,12 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class About(MWindow):
-    def __init__(self, *args, **kwargs):
-        super().__init__(603, 500, *args, **kwargs)
+class AboutPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: MovePanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         self.bitmap_button_1 = wx.BitmapButton(
             self, wx.ID_ANY, icon_meerk40t.GetBitmap()
@@ -19,15 +22,9 @@ class About(MWindow):
 
         name = self.context.device_name
         version = self.context.device_version
-        self.SetTitle(_("About %s v%s" % (name, version)))
         self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: About.__set_properties
-        self.SetTitle(_("About"))
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
         self.meerk40t_about_version_text = wx.StaticText(self, wx.ID_ANY, "MeerK40t")
         # end wxGlade
@@ -129,3 +126,17 @@ class About(MWindow):
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
+
+
+class About(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(653, 332, *args, **kwds)
+        self.panel = AboutPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("About"))
+
+        name = self.context.device_name
+        version = self.context.device_version
+        self.SetTitle(_("About %s v%s" % (name, version)))

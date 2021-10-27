@@ -7,9 +7,11 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class GroupProperty(MWindow):
-    def __init__(self, *args, node=None, **kwds):
-        super().__init__(372, 141, *args, **kwds)
+class GroupPropertiesPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         self.element = node.object
         self.element_node = node
@@ -39,12 +41,7 @@ class GroupProperty(MWindow):
         # end wxGlade
 
     def __set_properties(self):
-        # begin wxGlade: GroupProperty.__set_properties
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Group Properties"))
-        # end wxGlade
+        pass
 
     def __do_layout(self):
         # begin wxGlade: GroupProperty.__do_layout
@@ -86,4 +83,13 @@ class GroupProperty(MWindow):
         self.context.signal("element_property_update", self.element)
 
 
-# end of class GroupProperty
+class GroupProperty(MWindow):
+    def __init__(self, *args, node=None, **kwds):
+        super().__init__(372, 141, *args, **kwds)
+
+        self.panel = GroupPropertiesPanel(self, wx.ID_ANY, context=self.context, node=node)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Group Properties"))
+

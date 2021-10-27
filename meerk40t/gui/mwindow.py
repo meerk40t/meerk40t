@@ -100,8 +100,8 @@ class MWindow(wx.Frame, Module):
             self.window_context.setting(int, "x", x)
             self.window_context.setting(int, "y", y)
             self.SetPosition((self.window_context.x, self.window_context.y))
-        self.window_open()
         self.Show()
+        self.window_open()
 
     def finalize(self, *args, **kwargs):
         self.window_close()

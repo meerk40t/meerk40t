@@ -11,9 +11,11 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class Settings(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(490, 331, *args, **kwds)
+class PreferencesPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
         self.bed_dim = self.context.root
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
@@ -215,7 +217,7 @@ class Settings(MWindow):
         self.Bind(wx.EVT_TEXT, self.on_text_y_scale, self.text_scale_y)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_scale, self.text_scale_y)
 
-    def window_open(self):
+    def initialize(self):
         context_root = self.context.root
 
         context_root.setting(float, "svg_ppi", 96.0)
@@ -232,14 +234,10 @@ class Settings(MWindow):
         self.text_scale_x.SetValue("%.3f" % self.bed_dim.scale_x)
         self.text_scale_y.SetValue("%.3f" % self.bed_dim.scale_y)
 
-    def window_close(self):
+    def finalize(self):
         pass
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Settings"))
         self.radio_units.SetToolTip(_("Set default units for guides"))
         self.radio_units.SetSelection(0)
         self.combo_language.SetToolTip(_("Select the desired language to use."))
@@ -450,3 +448,20 @@ class Settings(MWindow):
             )
         except ValueError:
             pass
+
+
+class Settings(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(490, 331, *args, **kwds)
+
+        self.panel = PreferencesPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Settings"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()

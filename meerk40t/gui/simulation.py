@@ -21,17 +21,14 @@ _ = wx.GetTranslation
 MILS_IN_MM = 39.3701
 
 
-class Simulation(MWindow, Job):
-    def __init__(self, *args, **kwds):
-        super().__init__(706, 755, *args, **kwds)
-        if len(args) > 3:
-            plan_name = args[3]
-        else:
-            plan_name = None
-        if len(args) > 4:
-            self.auto_clear = bool(int(args[4]))
-        else:
-            self.auto_clear = True
+class SimulationPanel(wx.Panel, Job):
+    def __init__(self, *args, context=None, plan_name=None, auto_clear=True, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.plan_name = plan_name
+        self.auto_clear = auto_clear
+
         Job.__init__(self)
         self.job_name = "simulate"
         self.run_main = True
@@ -56,24 +53,8 @@ class Simulation(MWindow, Job):
         self.bed_dim.setting(int, "bed_width", 310)
         self.bed_dim.setting(int, "bed_height", 210)
 
-        # Menu Bar
-        # self.Simulation_menubar = wx.MenuBar()
-        # wxglade_tmp_menu = wx.Menu()
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, "Travel Moves", "", wx.ITEM_CHECK)
-        # self.Bind(wx.EVT_MENU, self.on_view_travel, id=item.GetId())
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, "Background", "", wx.ITEM_CHECK)
-        # self.Bind(wx.EVT_MENU, self.on_view_background, id=item.GetId())
-        # self.Simulation_menubar.Append(wxglade_tmp_menu, "View")
-        # wxglade_tmp_menu = wx.Menu()
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, "Optimize Travel (Greedy)", "")
-        # self.Bind(wx.EVT_MENU, self.on_optimize_travel_greedy, id=item.GetId())
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, "Optimize Travel (Two-Opt)", "")
-        # self.Bind(wx.EVT_MENU, self.on_optimize_travel_twoop, id=item.GetId())
-        # self.Simulation_menubar.Append(wxglade_tmp_menu, "Optimize")
-        # self.SetMenuBar(self.Simulation_menubar)
-        # # Menu Bar end
         self.view_pane = ScenePanel(
-            self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.WANTS_CHARS
+            self.context, self, scene_name="SimScene", style=wx.TAB_TRAVERSAL
         )
         self.widget_scene = self.view_pane.scene
 
@@ -155,10 +136,6 @@ class Simulation(MWindow, Job):
         self.running = False
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Simulation"))
         self.text_distance_laser.SetToolTip(_("Time Estimate: Lasering Time"))
         self.text_distance_travel.SetToolTip(_("Time Estimate: Traveling Time"))
         self.text_distance_total.SetToolTip(_("Time Estimate: Total Time"))
@@ -241,7 +218,7 @@ class Simulation(MWindow, Job):
         self.Layout()
         # end wxGlade
 
-    def window_open(self):
+    def initialize(self):
         self.context.setting(int, "language", 0)
         self.context.setting(str, "units_name", "mm")
         self.context.setting(int, "units_marks", 10)
@@ -288,7 +265,7 @@ class Simulation(MWindow, Job):
         except ZeroDivisionError:
             pass
 
-    def window_close(self):
+    def finalize(self):
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
         if self.auto_clear:
             self.context("plan%s clear\n" % self.plan_name)
@@ -484,3 +461,28 @@ class SimReticleWidget(Widget):
             gc.DrawEllipse(x - 20, y - 20, 40, 40)
         except AttributeError:
             pass
+
+
+class Simulation(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(706, 755, *args, **kwds)
+        if len(args) > 3:
+            plan_name = args[3]
+        else:
+            plan_name = None
+        if len(args) > 4:
+            auto_clear = bool(int(args[4]))
+        else:
+            auto_clear = True
+
+        self.panel = SimulationPanel(self, wx.ID_ANY, context=self.context, plan_name=plan_name, auto_clear=auto_clear)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Simulation"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()

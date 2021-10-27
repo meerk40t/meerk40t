@@ -11,10 +11,11 @@ _simple_width = 350
 _advanced_width = 612
 
 
-class OperationProperty(MWindow):
-    def __init__(self, *args, node=None, **kwds):
-        super().__init__(_simple_width, 500, *args, **kwds)
-        # self.set_alt_size(_advanced_width, 500)
+class OperationPropertyPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
         # self.button_add_layer = wx.BitmapButton(
@@ -136,15 +137,10 @@ class OperationProperty(MWindow):
             self.toggle_sliders = True
             self._toggle_sliders()
 
-    def restore(self, *args, node=None, **kwds):
-        self.operation = node
-        self.set_widgets()
-        self.on_size()
-
-    def window_close(self):
+    def finalize(self):
         pass
 
-    def window_open(self):
+    def initialize(self):
         self.set_widgets()
         # self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
         # self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
@@ -276,11 +272,6 @@ class OperationProperty(MWindow):
         self.on_combo_operation()
 
     def __set_properties(self):
-        # begin wxGlade: OperationProperty.__set_properties
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Operation Properties"))
         # self.button_add_layer.SetSize(self.button_add_layer.GetBestSize())
         # self.listbox_layer.SetMinSize((40, -1))
         # self.button_remove_layer.SetSize(self.button_remove_layer.GetBestSize())
@@ -1077,8 +1068,26 @@ class OperationProperty(MWindow):
             return
         self.context.signal("element_property_reload", self.operation)
 
-    def on_key_press(self, event):
-        keycode = event.GetKeyCode()
-        if keycode == wx.WXK_ESCAPE:
-            self.Close()
-        event.Skip()
+
+class OperationProperty(MWindow):
+    def __init__(self, *args, node=None, **kwds):
+        super().__init__(_simple_width, 500, *args, **kwds)
+
+        self.panel = OperationPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        # begin wxGlade: OperationProperty.__set_properties
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Operation Properties"))
+
+    def restore(self, *args, node=None, **kwds):
+        self.panel.operation = node
+        self.panel.set_widgets()
+        self.panel.on_size()
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
+
