@@ -717,9 +717,11 @@ class CameraInterface(MWindow):
             kernel.console("window open CameraInterface %d\n" % index)
 
 
-class CameraURI(MWindow):
-    def __init__(self, *args, index=None, **kwds):
-        super().__init__(437, 530, *args, **kwds)
+class CameraURIPanel(wx.Panel):
+    def __init__(self, *args, context=None, index=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
         if index is None:
             index = 0
         self.index = index
@@ -745,11 +747,6 @@ class CameraURI(MWindow):
         self.changed = False
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: CameraURI.__set_properties
-        self.SetTitle(_("Camera URI"))
         self.list_uri.SetToolTip(_("Displays a list of registered camera URIs"))
         self.list_uri.AppendColumn(_("Index"), format=wx.LIST_FORMAT_LEFT, width=69)
         self.list_uri.AppendColumn(_("URI"), format=wx.LIST_FORMAT_LEFT, width=348)
@@ -768,7 +765,7 @@ class CameraURI(MWindow):
         self.Layout()
         # end wxGlade
 
-    def window_open(self):
+    def initialize(self):
         self.camera_setting = self.context.get_context("camera")
         keylist = self.camera_setting.kernel.load_persistent_string_dict(
             self.camera_setting.path, suffix=True
@@ -779,7 +776,7 @@ class CameraURI(MWindow):
             self.uri_list = [keylist[k] for k in keys]
             self.on_list_refresh()
 
-    def window_close(self):
+    def finalize(self):
         self.commit()
 
     def commit(self):
@@ -809,7 +806,10 @@ class CameraURI(MWindow):
         index = event.GetIndex()
         new_uri = self.uri_list[index]
         self.context.console("camera%d --uri %s stop start\n" % (self.index, new_uri))
-        self.Close()
+        try:
+            self.GetParent().Close()
+        except (TypeError, AttributeError):
+            pass
 
     def on_list_right_clicked(self, event):  # wxGlade: CameraURI.<event_handler>
         index = event.GetIndex()
@@ -882,3 +882,21 @@ class CameraURI(MWindow):
 
     def on_text_uri(self, event):  # wxGlade: CameraURI.<event_handler>
         pass
+
+
+class CameraURI(MWindow):
+    def __init__(self, *args, index=None, **kwds):
+        super().__init__(437, 530, *args, **kwds)
+
+        self.panel = CameraURIPanel(self, wx.ID_ANY, context=self.context, index=index)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
+        self.SetIcon(_icon)
+        # begin wxGlade: CameraURI.__set_properties
+        self.SetTitle(_("Camera URI"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
