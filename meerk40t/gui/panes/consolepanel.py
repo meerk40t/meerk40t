@@ -1,6 +1,9 @@
 import wx
 from wx import aui
 
+from meerk40t.gui.icons import icons8_console_50
+from meerk40t.gui.mwindow import MWindow
+
 _ = wx.GetTranslation
 
 
@@ -140,3 +143,20 @@ class ConsolePanel(wx.Panel):
         self.command_log.append(command)
         self.command_position = 0
         event.Skip(False)
+
+
+class Console(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(581, 410, *args, **kwds)
+        self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Console"))
+        self.Layout()
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()

@@ -15,24 +15,16 @@ except ImportError as e:
 import wx.aui as aui
 import wx.ribbon as RB
 
-from meerk40t.gui.panes.jog import Jog
-from meerk40t.gui.panes.position import PositionPanel
-
 from ..core.cutcode import CutCode
 from ..main import MEERK40T_VERSION
 from .file.fileoutput import FileOutput
 from .groupproperties import GroupProperty
 from .mwindow import MWindow
-from .panes.camerapanel import CameraPanel
-from .panes.consolepanel import ConsolePanel
-from .panes.devicespanel import DevicesPanel
-from .panes.dragpanel import Drag
-from .panes.jogdistancepanel import JogDistancePanel
-from .panes.movepanel import MovePanel
-from .panes.notespanel import NotePanel
-from .panes.pulsepanel import PulsePanel
-from .panes.spoolerpanel import SpoolerPanel
-from .panes.transformpanel import Transform
+from .panes.consolepanel import Console
+from .panes.devicespanel import DeviceManager
+from .panes.spoolerpanel import JobSpooler
+from .panes.navigationpanels import Navigation
+from .panes.camerapanel import CameraInterface
 from .scene.scene import ScenePanel
 from .scene.scenewidgets import (
     ElementsWidget,
@@ -86,10 +78,7 @@ from ..svgelements import (
 )
 from .about import About
 from .bufferview import BufferView
-from .camerainteface import CameraInterface
-from .console import Console
 from .controller import Controller
-from .devicemanager import DeviceManager
 from .executejob import ExecuteJob
 from .icons import (
     icon_meerk40t,
@@ -122,7 +111,6 @@ from .icons import (
     icons8_vector_20,
 )
 from .imageproperty import ImageProperty
-from .jobspooler import JobSpooler
 from .keymap import Keymap
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -153,7 +141,6 @@ from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
 from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
 from .moshi.moshicontrollergui import MoshiControllerGui
 from .moshi.moshidrivergui import MoshiDriverGui
-from .navigation import Navigation
 from .notes import Notes
 from .operationproperty import OperationProperty
 from .pathproperty import PathProperty
@@ -445,34 +432,7 @@ class MeerK40t(MWindow):
         # self.notebook.AddPage(self.scene, "scene")
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
-        # Define Jog
-        from .panes.jog import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Drag.
-        from .panes.dragpanel import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Transform.
-        from .panes.transformpanel import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Jog Distance.
-        from .panes.jogdistancepanel import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Pulse.
-        from .panes.pulsepanel import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Move.
-        from .panes.movepanel import register_panel
-
+        from .panes.navigationpanels import register_panel
         register_panel(self, self.context)
 
         # Define Tree
