@@ -31,7 +31,7 @@ from .panes.jogdistancepanel import JogDistancePanel
 from .panes.movepanel import MovePanel
 from .panes.notespanel import NotePanel
 from .panes.pulsepanel import PulsePanel
-from .panes.spoolerpanel import SpoolerPanel
+from .panes.spoolerpanel import SpoolerPanel, JobSpooler
 from .panes.transformpanel import Transform
 from .scene.scene import ScenePanel
 from .scene.scenewidgets import (
@@ -122,7 +122,6 @@ from .icons import (
     icons8_vector_20,
 )
 from .imageproperty import ImageProperty
-from .jobspooler import JobSpooler
 from .keymap import Keymap
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
