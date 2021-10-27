@@ -6,9 +6,11 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class UsbConnect(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(915, 424, *args, **kwds)
+class UsbConnectPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         self.text_main = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY
@@ -25,12 +27,12 @@ class UsbConnect(MWindow):
         self.pipe = None
         self._active_when_loaded = None
 
-    def window_open(self):
+    def initialize(self):
         active = self.context.root.active
         self._active_when_loaded = active
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 
-    def window_close(self):
+    def finalize(self):
         active = self._active_when_loaded
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
 
@@ -47,11 +49,6 @@ class UsbConnect(MWindow):
             pass
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: Terminal.__set_properties
-        self.SetTitle(_("UsbConnect"))
         self.text_entry.SetFocus()
         # end wxGlade
 
@@ -69,3 +66,21 @@ class UsbConnect(MWindow):
             self.pipe.write(self.text_entry.GetValue() + "\n")
             self.text_entry.SetValue("")
         event.Skip()
+
+
+class UsbConnect(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(915, 424, *args, **kwds)
+
+        self.panel = UsbConnectPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
+        self.SetIcon(_icon)
+        # begin wxGlade: Terminal.__set_properties
+        self.SetTitle(_("UsbConnect"))
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
