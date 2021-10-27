@@ -13,7 +13,7 @@ MILS_IN_MM = 39.3701
 class LhystudiosConfigurationPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        wx.Panel.__init__(self, *args, size=(337, 317), **kwds)
         self.context = context
 
         self.bed_dim = self.context.root
