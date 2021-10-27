@@ -77,6 +77,18 @@ class BufferView(MWindow):
         # MENUBAR END
         # ==========
 
+    def create_menu(self, append):
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Export EGV"), _("Export Engrave Data")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_export, id=item.GetId())
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Import EGV"), _("Import Engrave Data")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_import, id=item.GetId())
+        append(wxglade_tmp_menu, _("File"))
+
     def on_menu_export(self, event=None):  # wxGlade: BufferView.<event_handler>
         self.context.root("dev egv_export\n")
 
