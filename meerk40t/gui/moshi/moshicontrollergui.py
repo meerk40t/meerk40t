@@ -15,20 +15,12 @@ _advanced_width = 855
 _default_height = 389
 
 
-class MoshiControllerGui(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(_advanced_width, _default_height, *args, **kwds)
-        # ==========
-        # MENU BAR
-        # ==========
-        from sys import platform as _platform
-        if _platform != "darwin":
-            self.MoshiController_menubar = wx.MenuBar()
-            self.create_menu(self.MoshiController_menubar.Append)
-            self.SetMenuBar(self.MoshiController_menubar)
-        # ==========
-        # MENUBAR END
-        # ==========
+class MoshiControllerPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.text_connection_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
@@ -88,10 +80,6 @@ class MoshiControllerGui(MWindow):
         self.set_widgets()
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Moshiboard-Controller"))
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
@@ -244,34 +232,7 @@ class MoshiControllerGui(MWindow):
         self.Layout()
         # end wxGlade
 
-    def create_menu(self, append):
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("Reset USB"), _("Reset USB connection")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("Release USB"), _("Release USB resources")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_usb_release, id=item.GetId())
-        append(wxglade_tmp_menu, _("Tools"))
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Stop"), _("Sends Stop command"))
-        self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("Free Motor"), _("Sends Free Motor (Unlock Rail) command")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_freemotor, id=item.GetId())
-        append(wxglade_tmp_menu, _("Commands"))
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("BufferView"), _("Views the Controller Buffer")
-        )
-        self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
-        append(wxglade_tmp_menu, _("Views"))
-        self.SetMenuBar(self.MoshiController_menubar)
-
-    def window_open(self):
+    def initialize(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
         self.context.listen("pipe;status", self.update_status)
@@ -279,7 +240,7 @@ class MoshiControllerGui(MWindow):
         self.context.listen("pipe;state", self.on_connection_state_change)
         self.context.listen("active", self.on_active_change)
 
-    def window_close(self):
+    def finalize(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
         self.context.unlisten("pipe;status", self.update_status)
@@ -304,9 +265,6 @@ class MoshiControllerGui(MWindow):
         except RuntimeError:
             pass
 
-    def restore(self, *args, **kwargs):
-        self.set_widgets()
-
     def set_widgets(self):
         self.context.setting(bool, "show_usb_log", False)
         self.context.setting(int, "usb_index", -1)
@@ -329,7 +287,6 @@ class MoshiControllerGui(MWindow):
             self.context.execute(control_name)
 
         return menu_element
-
 
     def update_status(self, origin, status_data, code_string):
         if status_data is not None:
@@ -449,17 +406,78 @@ class MoshiControllerGui(MWindow):
         else:
             self.SetSize((_simple_width, _default_height))
 
-    def on_menu_usb_reset(
-        self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
-        print("Event handler 'on_menu_usb_reset' not implemented!")
-        event.Skip()
+
+class MoshiControllerGui(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(_advanced_width, _default_height, *args, **kwds)
+
+        # ==========
+        # MENU BAR
+        # ==========
+        from sys import platform as _platform
+        if _platform != "darwin":
+            self.MoshiController_menubar = wx.MenuBar()
+            self.create_menu(self.MoshiController_menubar.Append)
+            self.SetMenuBar(self.MoshiController_menubar)
+        # ==========
+        # MENUBAR END
+        # ==========
+
+        self.panel = MoshiControllerPanel(self, wx.ID_ANY, context=self.context)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Moshiboard-Controller"))
+
+    def create_menu(self, append):
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Reset USB"), _("Reset USB connection")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_usb_reset, id=item.GetId())
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Release USB"), _("Release USB resources")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_usb_release, id=item.GetId())
+        append(wxglade_tmp_menu, _("Tools"))
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Stop"), _("Sends Stop command"))
+        self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("Free Motor"), _("Sends Free Motor (Unlock Rail) command")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_freemotor, id=item.GetId())
+        append(wxglade_tmp_menu, _("Commands"))
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(
+            wx.ID_ANY, _("BufferView"), _("Views the Controller Buffer")
+        )
+        self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
+        append(wxglade_tmp_menu, _("Views"))
+        self.SetMenuBar(self.MoshiController_menubar)
+
+    def restore(self, *args, **kwargs):
+        self.set_widgets()
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
+
+    def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
+        try:
+            self.context("dev usb_reset\n")
+        except AttributeError:
+            pass
 
     def on_menu_usb_release(
-        self, event=None
+        self, event
     ):  # wxGlade: LhystudiosController.<event_handler>
-        print("Event handler 'on_menu_usb_release' not implemented!")
-        event.Skip()
+        try:
+            self.context("dev usb_release\n")
+        except AttributeError:
+            pass
 
     def on_menu_pause(
         self, event=None
