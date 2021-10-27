@@ -8,9 +8,11 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class TextProperty(MWindow):
-    def __init__(self, *args, node=None, **kwds):
-        super().__init__(317, 360, *args, **kwds)
+class TextPropertyPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.element = node.object
@@ -86,15 +88,10 @@ class TextProperty(MWindow):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
 
-    def restore(self, *args, node=None, **kwds):
-        self.element_node = node
-        self.element = node.object
+    def initialize(self):
         self.set_widgets()
 
-    def window_open(self):
-        self.set_widgets()
-
-    def window_close(self):
+    def finalize(self):
         pass
 
     def set_widgets(self):
@@ -111,11 +108,7 @@ class TextProperty(MWindow):
             pass
 
     def __set_properties(self):
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: TextProperty.__set_properties
-        self.SetTitle(_("Text Properties"))
+
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
         self.button_stroke_none.SetToolTip(_('"none" defined value'))
         self.button_stroke_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
@@ -265,3 +258,26 @@ class TextProperty(MWindow):
         self.update_label()
         self.refresh()
         event.Skip()
+
+
+class TextProperty(MWindow):
+    def __init__(self, *args, node=None, **kwds):
+        super().__init__(317, 360, *args, **kwds)
+
+        self.panel = TextPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
+        self.SetIcon(_icon)
+        # begin wxGlade: TextProperty.__set_properties
+        self.SetTitle(_("Text Properties"))
+
+    def restore(self, *args, node=None, **kwds):
+        self.panel.element_node = node
+        self.panel.element = node.object
+        self.panel.set_widgets()
+
+    def window_open(self):
+        self.panel.initialize()
+
+    def window_close(self):
+        self.panel.finalize()
