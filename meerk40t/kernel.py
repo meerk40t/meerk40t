@@ -2203,20 +2203,17 @@ class Kernel:
                     channel(_("Attempt failed. Produced an attribute error."))
             return
 
-        @self.console_option(
-            "path", "p", type=str, default="/", help=_("Path of variables to set.")
-        )
         @self.console_command("control", help=_("control [<executive>]"))
-        def control(channel, _, path=None, remainder=None, **kwargs):
+        def control(channel, _, remainder=None, **kwargs):
             if remainder is None:
                 for control_name in self.root.match("[0-9]+/control", suffix=True):
                     channel(control_name)
                 return
 
             control_name = remainder
-            controls = list(self.match("%s/control/.*" % path, suffix=True))
+            controls = list(self.match("control/.*", suffix=True))
             if control_name in controls:
-                self.get_context(path).execute(control_name)
+                self.root.execute(control_name)
                 channel(_("Executed '%s'") % control_name)
             else:
                 channel(_("Control '%s' not found.") % control_name)

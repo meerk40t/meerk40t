@@ -349,6 +349,7 @@ class MeerK40t(MWindow):
         self._mgr.SetManagedWindow(self)
 
         self.__set_panes()
+        self.__set_dialogs()
 
         # Menu Bar
         self.main_menubar = wx.MenuBar()
@@ -2387,6 +2388,18 @@ class wxMeerK40t(wx.App, Module):
             context.signal("refresh_scene")
             context.signal("rebuild_tree")
             channel(_("Refreshed."))
+
+        @kernel.console_command("tooltips_enable", hidden=True)
+        def tooltip_enable(command, channel, _, **kwargs):
+            context.setting(bool, "disable_tool_tips", False)
+            context.disable_tool_tips = False
+            wx.ToolTip.Enable(not context.disable_tool_tips)
+
+        @kernel.console_command("tooltips_disable", hidden=True)
+        def tooltip_disable(command, channel, _, **kwargs):
+            context.setting(bool, "disable_tool_tips", False)
+            context.disable_tool_tips = True
+            wx.ToolTip.Enable(not context.disable_tool_tips)
 
     def initialize(self, *args, **kwargs):
         context = self.context
