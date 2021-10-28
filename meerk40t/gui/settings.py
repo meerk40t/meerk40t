@@ -227,6 +227,7 @@ class PreferencesPanel(wx.Panel):
         self.context.setting(str, "units_name", "mm")
         self.context.setting(int, "units_marks", 10)
         self.context.setting(int, "units_index", 0)
+        self.context.setting(float, "units_convert", 39.3701)
         self.radio_units.SetSelection(self.context.units_index)
         self.combo_language.SetSelection(self.context.language)
         self.spin_bedwidth.SetValue(self.bed_dim.bed_width)
