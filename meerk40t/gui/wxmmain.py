@@ -135,6 +135,7 @@ class MeerK40t(MWindow):
         except AttributeError:
             # Not WX 4.1
             pass
+        self.context.gui = self
         self.usb_running = False
         context = self.context
         self.context.setting(bool, "disable_tool_tips", False)
@@ -185,7 +186,8 @@ class MeerK40t(MWindow):
         self.scene.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
         self.__set_titlebar()
-        self.__kernel_initialize(context)
+        self.__kernel_initialize()
+        self.__scene_initialize()
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
@@ -704,8 +706,8 @@ class MeerK40t(MWindow):
     def is_dark(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
 
-    def __kernel_initialize(self, context):
-        context.gui = self
+    def __kernel_initialize(self):
+        context = self.context
         context.setting(int, "draw_mode", 0)
         context.setting(float, "units_convert", MILS_IN_MM)
         context.setting(str, "units_name", "mm")
@@ -736,19 +738,6 @@ class MeerK40t(MWindow):
         bed_dim.setting(int, "bed_height", 210)  # Default Value
 
         context.listen("active", self.on_active_change)
-
-        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
-        self.tool_container = ToolContainer(self.widget_scene)
-        self.widget_scene.add_scenewidget(self.tool_container)
-        self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
-        self.laserpath_widget = LaserPathWidget(self.widget_scene)
-        self.widget_scene.add_scenewidget(self.laserpath_widget)
-        self.widget_scene.add_scenewidget(
-            ElementsWidget(self.widget_scene, self.renderer)
-        )
-        self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
-        self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
-        self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
         @context.console_command("laserpath_clear", hidden=True)
         def clear_laser_path(**kwargs):
@@ -811,6 +800,20 @@ class MeerK40t(MWindow):
         # Registers the render-op make_raster. This is used to do cut planning.
         context.register("render-op/make_raster", self.renderer.make_raster)
         # After main window is launched run_later actually works.
+
+    def __scene_initialize(self, context):
+        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
+        self.tool_container = ToolContainer(self.widget_scene)
+        self.widget_scene.add_scenewidget(self.tool_container)
+        self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
+        self.laserpath_widget = LaserPathWidget(self.widget_scene)
+        self.widget_scene.add_scenewidget(self.laserpath_widget)
+        self.widget_scene.add_scenewidget(
+            ElementsWidget(self.widget_scene, self.renderer)
+        )
+        self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
+        self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+        self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
