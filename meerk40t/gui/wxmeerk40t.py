@@ -152,6 +152,12 @@ def plugin(kernel, lifecycle):
             meerk40tgui.MainLoop()
 
     elif lifecycle == "preregister":
+        def run_later(command, *args):
+            if wx.IsMainThread():
+                command(*args)
+            else:
+                wx.CallAfter(command, *args)
+        kernel.run_later = run_later
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root = kernel.root
         kernel_root.open("module/wxMeerK40t")
@@ -324,7 +330,6 @@ class MeerK40t(MWindow):
             wx.ToolTip.Enable(False)
 
         self.root_context = context.root
-        context._kernel.run_later = self.run_later
         self.DragAcceptFiles(True)
 
         self.renderer = LaserRender(context)
@@ -1015,12 +1020,6 @@ class MeerK40t(MWindow):
                     self.tool_container.set_tool(tool.lower())
             except (KeyError, AttributeError):
                 raise SyntaxError
-
-    def run_later(self, command, *args):
-        if wx.IsMainThread():
-            command(*args)
-        else:
-            wx.CallAfter(command, *args)
 
     def __set_menubar(self):
         self.file_menu = wx.Menu()
