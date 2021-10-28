@@ -1623,7 +1623,7 @@ class MeerK40t(MWindow):
         context = self.context
         self.working_file = None
         context.elements.clear_all()
-        self.context(".laserpath_clear")
+        self.context(".laserpath_clear\n")
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context("dialog_load\n")
