@@ -61,29 +61,31 @@ def register_control_tools(context, gui):
                 context.camera_default = 5
 
             v = context.camera_default
-            context("camwin %d\n" % v)
+            context("window toggle CameraInterface %d\n" % v)
 
         def on_camera_dropdown(event=None):
-            menu = wx.Menu()
-            menu.Append(ID_CAMERA1, _("Camera %d") % 1)
-            menu.Append(ID_CAMERA2, _("Camera %d") % 2)
-            menu.Append(ID_CAMERA3, _("Camera %d") % 3)
-            menu.Append(ID_CAMERA4, _("Camera %d") % 4)
-            menu.Append(ID_CAMERA5, _("Camera %d") % 5)
-            menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA1)
-            menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA2)
-            menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA3)
-            menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA4)
-            menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA5)
-            gui.PopupMenu(menu)
-
+            if event.IsDropDownClicked():
+                menu = wx.Menu()
+                menu.Append(ID_CAMERA1, _("Camera %d") % 1)
+                menu.Append(ID_CAMERA2, _("Camera %d") % 2)
+                menu.Append(ID_CAMERA3, _("Camera %d") % 3)
+                menu.Append(ID_CAMERA4, _("Camera %d") % 4)
+                menu.Append(ID_CAMERA5, _("Camera %d") % 5)
+                menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA1)
+                menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA2)
+                menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA3)
+                menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA4)
+                menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA5)
+                gui.PopupMenu(menu)
+            else:
+                on_camera_click(event)
+            toolbar.SetToolSticky(event.GetId(), False)
         toolbar.SetToolDropDown(ID_CAMERA, True)
         toolbar.Bind(
             EVT_AUITOOLBAR_TOOL_DROPDOWN,
             on_camera_dropdown,
             id=ID_CAMERA,
         )
-        toolbar.Bind(wx.EVT_TOOL, on_camera_click, id=ID_CAMERA)
 
     toolbar.AddTool(
         ID_SPOOLER,
