@@ -612,6 +612,7 @@ class MeerK40t(MWindow):
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane().Name("scene"))
 
         from .panes.navigationpanels import register_panel
+
         register_panel(self, self.context)
 
         # Define Tree
@@ -919,9 +920,7 @@ class MeerK40t(MWindow):
 
         context.listen("active", self.on_active_change)
 
-        self.widget_scene.add_scenewidget(
-            SelectionWidget(self.widget_scene)
-        )
+        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
@@ -938,7 +937,9 @@ class MeerK40t(MWindow):
         def clear_laser_path(**kwargs):
             self.laserpath_widget.clear_laserpath()
 
-        @context.console_command("theme", help=_("Theming information and assignments"), hidden=True)
+        @context.console_command(
+            "theme", help=_("Theming information and assignments"), hidden=True
+        )
         def theme(command, channel, _, **kwargs):
             channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
 
@@ -1965,6 +1966,7 @@ class MeerK40t(MWindow):
                 self.context(action + "\n")
         else:
             event.Skip()
+
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         context = self.context
         self.working_file = None
