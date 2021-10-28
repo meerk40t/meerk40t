@@ -13,6 +13,16 @@ from ..svgelements import SVG_ATTR_STROKE, Color, SVGImage, Shape, SVGText, Grou
 
 _ = wx.GetTranslation
 
+NODE_ROOT = 0
+NODE_OPERATION_BRANCH = 10
+NODE_OPERATION = 11
+NODE_OPERATION_ELEMENT = 12
+NODE_ELEMENTS_BRANCH = 20
+NODE_ELEMENT = 21
+NODE_FILES_BRANCH = 30
+NODE_FILE_FILE = 31
+NODE_FILE_ELEMENT = 32
+
 
 def register_panel(window, context):
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
@@ -188,17 +198,6 @@ class ElementsTree(MWindow):
             self.panel.finalize()
         except AttributeError:
             pass
-
-
-NODE_ROOT = 0
-NODE_OPERATION_BRANCH = 10
-NODE_OPERATION = 11
-NODE_OPERATION_ELEMENT = 12
-NODE_ELEMENTS_BRANCH = 20
-NODE_ELEMENT = 21
-NODE_FILES_BRANCH = 30
-NODE_FILE_FILE = 31
-NODE_FILE_ELEMENT = 32
 
 
 class ShadowTree:

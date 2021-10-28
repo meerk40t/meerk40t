@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import copy
 import os
 import sys
 import traceback
@@ -15,14 +14,11 @@ except ImportError as e:
     raise Mk40tImportAbort("wxpython")
 
 import wx.aui as aui
-import wx.ribbon as RB
 
-from ..core.cutcode import CutCode
 from ..main import MEERK40T_VERSION
 from .file.fileoutput import FileOutput
 from .groupproperties import GroupProperty
 from .mwindow import MWindow
-from .wxmtree import TreePanel
 from .panes.consolepanel import Console
 from .panes.devicespanel import DeviceManager
 from .panes.spoolerpanel import JobSpooler
@@ -48,7 +44,6 @@ except ImportError:
 
     tau = pi * 2
 
-from ..core.elements import LaserOperation, isDot
 from ..device.lasercommandconstants import (
     COMMAND_FUNCTION,
     COMMAND_HOME,
@@ -66,18 +61,13 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT,
     COMMAND_WAIT_FINISH,
 )
-from ..kernel import STATE_BUSY, ConsoleFunction, Module
+from ..kernel import ConsoleFunction, Module
 from ..svgelements import (
-    SVG_ATTR_STROKE,
     Color,
-    Group,
     Length,
     Matrix,
     Path,
-    Shape,
-    SVGElement,
     SVGImage,
-    SVGText,
 )
 from .about import About
 from .bufferview import BufferView
@@ -85,33 +75,10 @@ from .controller import Controller
 from .executejob import ExecuteJob
 from .icons import (
     icon_meerk40t,
-    icons8_administrative_tools_50,
-    icons8_camera_50,
-    icons8_comments_50,
-    icons8_computer_support_50,
-    icons8_connected_50,
-    icons8_console_50,
-    icons8_direction_20,
     icons8_emergency_stop_button_50,
-    icons8_fantasy_50,
-    icons8_file_20,
     icons8_gas_industry_50,
-    icons8_group_objects_20,
     icons8_home_filled_50,
-    icons8_keyboard_50,
-    icons8_laser_beam_20,
-    icons8_laser_beam_52,
-    icons8_laser_beam_hazard2_50,
-    icons8_manager_50,
-    icons8_move_50,
-    icons8_opened_folder_50,
     icons8_pause_50,
-    icons8_roll_50,
-    icons8_route_50,
-    icons8_save_50,
-    icons8_scatter_plot_20,
-    icons8_system_task_20,
-    icons8_vector_20,
 )
 from .imageproperty import ImageProperty
 from .keymap import Keymap
@@ -365,7 +332,6 @@ class MeerK40t(MWindow):
         self._rotary_view = False
         self.pipe_state = None
         self.previous_position = None
-        self.ribbonbar_caption_visible = False
         self.is_paused = False
 
         # Define Scene
@@ -373,17 +339,6 @@ class MeerK40t(MWindow):
             self.context, self, scene_name="Scene", style=wx.EXPAND | wx.WANTS_CHARS
         )
         self.widget_scene = self.scene.scene
-
-        # Define Ribbon.
-        self._ribbon = RB.RibbonBar(
-            self,
-            style=RB.RIBBON_BAR_FLOW_HORIZONTAL
-            | RB.RIBBON_BAR_SHOW_PAGE_LABELS
-            | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS
-            | RB.RIBBON_BAR_SHOW_TOGGLE_BUTTON
-            | RB.RIBBON_BAR_SHOW_HELP_BUTTON,
-        )
-        self.__set_ribbonbar()
 
         self._mgr = aui.AuiManager()
         self._mgr.SetFlags(self._mgr.GetFlags() | aui.AUI_MGR_LIVE_RESIZE)
@@ -404,7 +359,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
 
         self.__set_properties()
-        self.__do_layout()
+        self.Layout()
 
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
@@ -417,7 +372,6 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
-
 
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", True)
@@ -434,7 +388,6 @@ class MeerK40t(MWindow):
 
         register_panel(self, self.context)
 
-
         # Define Laser.
         from .panes.laserpanel import register_panel
 
@@ -445,22 +398,12 @@ class MeerK40t(MWindow):
 
         register_panel(self, self.context)
 
-        pane = (
-            aui.AuiPaneInfo()
-            .Name("ribbon")
-            .Top()
-            .RightDockable(False)
-            .LeftDockable(False)
-            .MinSize(300, 120)
-            .FloatingSize(640, 120)
-            .Caption(_("Ribbon"))
-            .CaptionVisible(not self.context.pane_lock)
-        )
-        pane.dock_proportion = 640
-        pane.control = self._ribbon
+        # Define Ribbon
+        from .wxmribbon import register_panel
 
-        self.on_pane_add(pane)
-        self.context.register("pane/ribbon", pane)
+        register_panel(self, self.context)
+
+        # Define Toolbars
 
         from .panes.toolbarproject import register_project_tools
 
@@ -788,8 +731,16 @@ class MeerK40t(MWindow):
         def gear(**kwargs):
             self.open_speedcode_gear_dialog()
 
+        @context.console_command("dialog_load", hidden=True)
+        def load_dialog(**kwargs):
+            self.open_open_dialog()
+
+        @context.console_command("dialog_save", hidden=True)
+        def save_dialog(**kwargs):
+            self.open_save_as_dialog()
+
         @context.console_command("laserpath_clear", hidden=True)
-        def gear(**kwargs):
+        def clear_laser_path(**kwargs):
             self.laserpath_widget.clear_laserpath()
 
         context.register("control/Transform", self.open_transform_dialog)
@@ -900,568 +851,11 @@ class MeerK40t(MWindow):
             except (KeyError, AttributeError):
                 raise SyntaxError
 
-    def ribbon_bar_toggle(self, event=None):
-        pane = self._mgr.GetPane("ribbon")
-        if pane.name == "ribbon":
-            self.ribbonbar_caption_visible = not self.ribbonbar_caption_visible
-            pane.CaptionVisible(self.ribbonbar_caption_visible)
-            self._mgr.Update()
-
-    def __set_ribbonbar(self):
-        self.ribbonbar_caption_visible = False
-
-        if self.is_dark:
-            provider = self._ribbon.GetArtProvider()
-            _update_ribbon_artprovider_for_dark_mode(provider)
-        self.ribbon_position_aspect_ratio = True
-        self.ribbon_position_ignore_update = False
-        self.ribbon_position_x = 0.0
-        self.ribbon_position_y = 0.0
-        self.ribbon_position_h = 0.0
-        self.ribbon_position_w = 0.0
-        self.ribbon_position_units = 0
-        self.ribbon_position_name = None
-
-        home = RB.RibbonPage(
-            self._ribbon,
-            wx.ID_ANY,
-            _("Home"),
-            icons8_opened_folder_50.GetBitmap(),
-        )
-        self.Bind(
-            RB.EVT_RIBBONBAR_HELP_CLICK,
-            lambda e: self.context("webhelp help\n"),
-        )
-        self.Bind(RB.EVT_RIBBONBAR_TOGGLED, self.ribbon_bar_toggle)
-
-        # ==========
-        # PROJECT PANEL
-        # ==========
-
-        self.toolbar_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("" if self.is_dark else "Project"),
-            style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
-        )
-
-        toolbar = RB.RibbonButtonBar(self.toolbar_panel)
-        self.toolbar_button_bar = toolbar
-        toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
-        toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
-        toolbar.AddButton(
-            ID_JOB, _("Execute Job"), icons8_laser_beam_52.GetBitmap(), ""
-        )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle ExecuteJob 0\n"),
-            id=ID_JOB,
-        )
-        toolbar.AddButton(
-            ID_SIM, _("Simulate"), icons8_laser_beam_hazard2_50.GetBitmap(), ""
-        )
-
-        toolbar.AddButton(
-            ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
-        )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle RasterWizard\n"),
-            id=ID_RASTER,
-        )
-
-        toolbar.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Notes\n"),
-            id=ID_NOTES,
-        )
-        toolbar.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Console\n"),
-            id=ID_CONSOLE,
-        )
-
-        def open_simulator(v=None):
-            with wx.BusyInfo(_("Preparing simulation...")):
-                self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-                ),
-
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            open_simulator,
-            id=ID_SIM,
-        )
-        # ==========
-        # CONTROL PANEL
-        # ==========
-
-        self.windows_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("" if self.is_dark else "Control"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-        button_bar = RB.RibbonButtonBar(self.windows_panel)
-        self.window_button_bar = button_bar
-        # So Navigation, Camera, Spooler, Controller, Terminal in one group,
-        # Settings, Keymap, Devices, Preferences, Rotary, USB in another.
-        # Raster Wizard and Notes should IMO be in the Main Group.
-        button_bar.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Navigation\n"),
-            id=ID_NAV,
-        )
-        if self.context.has_feature("modifier/Camera"):
-            button_bar.AddHybridButton(
-                ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), ""
-            )
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA
-            )
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                self.on_camera_dropdown,
-                id=ID_CAMERA,
-            )
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
-
-        button_bar.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle JobSpooler\n"),
-            id=ID_SPOOLER,
-        )
-        button_bar.AddButton(
-            ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), ""
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle -o Controller\n"),
-            id=ID_CONTROLLER,
-        )
-        button_bar.AddToggleButton(
-            ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), ""
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE
-        )
-        button_bar.AddButton(
-            ID_STOP, _("Stop"), icons8_emergency_stop_button_50.GetBitmap(), ""
-        )
-        button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_stop, id=ID_STOP)
-
-        # ==========
-        # DEVICES PANEL
-        # ==========
-        # self.devices_panel = RB.RibbonPanel(
-        #     home,
-        #     wx.ID_ANY,
-        #     _("" if self.is_dark else "Devices"),
-        #     icons8_opened_folder_50.GetBitmap(),
-        #     # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        # )
-        # button_bar = RB.RibbonButtonBar(self.devices_panel)
-        # self.devices_button_bar = button_bar
-
-        # ==========
-        # SETTINGS PANEL
-        # ==========
-        self.settings_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            _("" if self.is_dark else "Preferences"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-        button_bar = RB.RibbonButtonBar(self.settings_panel)
-        self.setting_button_bar = button_bar
-
-        button_bar.AddButton(
-            ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), ""
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle DeviceManager\n"),
-            id=ID_DEVICES,
-        )
-
-        button_bar.AddButton(
-            ID_CONFIGURATION,
-            _("Config"),
-            icons8_computer_support_50.GetBitmap(),
-            "",
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle -d Preferences\n"),
-            id=ID_CONFIGURATION,
-        )
-
-        button_bar.AddButton(
-            ID_SETTING, _("Settings"), icons8_administrative_tools_50.GetBitmap(), ""
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Settings\n"),
-            id=ID_SETTING,
-        )
-
-        button_bar.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Keymap\n"),
-            id=ID_KEYMAP,
-        )
-        button_bar.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window -p rotary/1 toggle Rotary\n"),
-            id=ID_ROTARY,
-        )
-
-        # ==========
-        # TOOLBOX PAGE
-        # ==========
-        # home = RB.RibbonPage(
-        #     self._ribbon,
-        #     wx.ID_ANY,
-        #     _("Toolbox"),
-        #     icons8_opened_folder_50.GetBitmap(),
-        # )
-        #
-        # align_panel = RB.RibbonPanel(
-        #     home,
-        #     wx.ID_ANY,
-        #     _("Align"),
-        #     icons8_opened_folder_50.GetBitmap(),
-        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        # )
-        # align = RB.RibbonButtonBar(align_panel)
-        # align.AddButton(
-        #     ID_ALIGN_LEFT, _("Align Left"), icons8_align_left_50.GetBitmap(), ""
-        # )
-        # align.AddButton(
-        #     ID_ALIGN_RIGHT, _("Align Right"), icons8_align_right_50.GetBitmap(), ""
-        # )
-        # align.AddButton(
-        #     ID_ALIGN_TOP, _("Align Top"), icons8_align_top_50.GetBitmap(), ""
-        # )
-        # align.AddButton(
-        #     ID_ALIGN_BOTTOM, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), ""
-        # )
-        # align.AddButton(
-        #     ID_ALIGN_CENTER, _("Align Center"), icons_centerize.GetBitmap(), ""
-        # )
-        # align.AddButton(
-        #     ID_ALIGN_SPACE_V, _("Space Vertical"), icons_evenspace_vert.GetBitmap(), ""
-        # )
-        # align.AddButton(
-        #     ID_ALIGN_SPACE_H,
-        #     _("Space Horizontal"),
-        #     icons_evenspace_horiz.GetBitmap(),
-        #     "",
-        # )
-        #
-        # # TODO: Fix and reenable.
-        # align.EnableButton(ID_ALIGN_LEFT, False)
-        # align.EnableButton(ID_ALIGN_RIGHT, False)
-        # align.EnableButton(ID_ALIGN_TOP, False)
-        # align.EnableButton(ID_ALIGN_BOTTOM, False)
-        # align.EnableButton(ID_ALIGN_CENTER, False)
-        # align.EnableButton(ID_ALIGN_SPACE_V, False)
-        # align.EnableButton(ID_ALIGN_SPACE_H, False)
-        #
-        # flip_panel = RB.RibbonPanel(
-        #     home,
-        #     wx.ID_ANY,
-        #     _("Flip"),
-        #     icons8_opened_folder_50.GetBitmap(),
-        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        # )
-        # flip = RB.RibbonButtonBar(flip_panel)
-        #
-        # flip.AddButton(
-        #     ID_FLIP_HORIZONTAL,
-        #     _("Flip Horizontal"),
-        #     icons8_flip_horizontal_50.GetBitmap(),
-        #     "",
-        # )
-        # flip.AddButton(
-        #     ID_FLIP_VERTICAL,
-        #     _("Flip Vertical"),
-        #     icons8_flip_vertical_50.GetBitmap(),
-        #     "",
-        # )
-        #
-        # group_panel = RB.RibbonPanel(
-        #     home,
-        #     wx.ID_ANY,
-        #     _("Group"),
-        #     icons8_opened_folder_50.GetBitmap(),
-        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        # )
-        #
-        # group = RB.RibbonButtonBar(group_panel)
-        # group.AddButton(ID_GROUP, _("Group"), icons8_group_objects_50.GetBitmap(), "")
-        # group.AddButton(
-        #     ID_UNGROUP, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), ""
-        # )
-        #
-        # # TODO: Fix and Reenable.
-        # group.EnableButton(ID_GROUP, False)
-        # group.EnableButton(ID_UNGROUP, False)
-        #
-        # tool_panel = RB.RibbonPanel(
-        #     home,
-        #     wx.ID_ANY,
-        #     _("Tools"),
-        #     icons8_opened_folder_50.GetBitmap(),
-        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        # )
-        # tool = RB.RibbonButtonBar(tool_panel)
-        # tool.AddButton(
-        #     ID_TOOL_POSITION, _("Set Position"), icons8_place_marker_50.GetBitmap(), ""
-        # )
-        # tool.AddButton(ID_TOOL_OVAL, _("Oval"), icons8_oval_50.GetBitmap(), "")
-        # tool.AddButton(ID_TOOL_CIRCLE, _("Circle"), icons8_circle_50.GetBitmap(), "")
-        # tool.AddButton(ID_TOOL_POLYGON, _("Polygon"), icons8_polygon_50.GetBitmap(), "")
-        # tool.AddButton(
-        #     ID_TOOL_POLYLINE, _("Polyline"), icons8_polyline_50.GetBitmap(), ""
-        # )
-        # tool.AddButton(
-        #     ID_TOOL_RECT, _("Rectangle"), icons8_rectangular_50.GetBitmap(), ""
-        # )
-        # tool.AddButton(ID_TOOL_TEXT, _("Text"), icons8_type_50.GetBitmap(), "")
-        #
-        # # TODO: Fix and Reenable
-        # tool.EnableButton(ID_TOOL_POSITION, False)
-        # tool.EnableButton(ID_TOOL_OVAL, False)
-        # tool.EnableButton(ID_TOOL_CIRCLE, False)
-        # tool.EnableButton(ID_TOOL_POLYLINE, False)
-        # tool.EnableButton(ID_TOOL_POLYGON, False)
-        # tool.EnableButton(ID_TOOL_RECT, False)
-        # tool.EnableButton(ID_TOOL_TEXT, False)
-        #
-        #
-        # align.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("align left\n"),
-        #     id=ID_ALIGN_LEFT,
-        # )
-        # align.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("align right\n"),
-        #     id=ID_ALIGN_RIGHT,
-        # )
-        # align.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("align top\n"),
-        #     id=ID_ALIGN_TOP,
-        # )
-        # align.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("align bottom\n"),
-        #     id=ID_ALIGN_BOTTOM,
-        # )
-        # align.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("align center\n"),
-        #     id=ID_ALIGN_CENTER,
-        # )
-        # align.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("align spacev\n"),
-        #     id=ID_ALIGN_SPACE_V,
-        # )
-        # align.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("align spaceh\n"),
-        #     id=ID_ALIGN_SPACE_H,
-        # )
-        # flip.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("scale 1 -1\n"),
-        #     id=ID_FLIP_HORIZONTAL,
-        # )
-        # flip.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("scale -1 1\n"),
-        #     id=ID_FLIP_VERTICAL,
-        # )
-        # group.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("group\n"),
-        #     id=ID_GROUP,
-        # )
-        # group.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("ungroup\n"),
-        #     id=ID_UNGROUP,
-        # )
-        # tool.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("tool position\n"),
-        #     id=ID_TOOL_POSITION,
-        # )
-        # tool.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("tool oval\n"),
-        #     id=ID_TOOL_OVAL,
-        # )
-        # tool.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("tool circle\n"),
-        #     id=ID_TOOL_CIRCLE,
-        # )
-        # tool.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("tool polygon\n"),
-        #     id=ID_TOOL_POLYGON,
-        # )
-        # tool.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("tool polyline\n"),
-        #     id=ID_TOOL_POLYLINE,
-        # )
-        # tool.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("tool rect\n"),
-        #     id=ID_TOOL_RECT,
-        # )
-        # tool.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context("tool text\n"),
-        #     id=ID_TOOL_TEXT,
-        # )
-        # ==========
-        # POSITION PAGE
-        # ==========
-        # home = RB.RibbonPage(
-        #     self._ribbon,
-        #     wx.ID_ANY,
-        #     _("Position"),
-        #     icons8_opened_folder_50.GetBitmap(),
-        # )
-        # position_panel = RB.RibbonPanel(
-        #     home,
-        #     wx.ID_ANY,
-        #     _("Position"),
-        #     icons8_opened_folder_50.GetBitmap(),
-        #     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        # )
-        #
-        # self.text_x = wx.TextCtrl(
-        #     position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        # )
-        # self.text_y = wx.TextCtrl(
-        #     position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        # )
-        # self.text_w = wx.TextCtrl(
-        #     position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        # )
-        # self.button_aspect_ratio = wx.BitmapButton(
-        #     position_panel, wx.ID_ANY, icons8_lock_50.GetBitmap()
-        # )
-        # self.text_h = wx.TextCtrl(
-        #     position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        # )
-        # self.combo_box_units = wx.ComboBox(
-        #     position_panel,
-        #     wx.ID_ANY,
-        #     choices=["mm", "cm", "inch", "mil", "%"],
-        #     style=wx.CB_DROPDOWN | wx.CB_READONLY,
-        # )
-        #
-        # self.button_aspect_ratio.SetSize(self.button_aspect_ratio.GetBestSize())
-        # self.combo_box_units.SetSelection(0)
-        #
-        # sizer_panel = wx.BoxSizer(wx.HORIZONTAL)
-        # sizer_units = wx.StaticBoxSizer(
-        #     wx.StaticBox(position_panel, wx.ID_ANY, "Units:"), wx.HORIZONTAL
-        # )
-        # sizer_h = wx.StaticBoxSizer(
-        #     wx.StaticBox(position_panel, wx.ID_ANY, "H:"), wx.HORIZONTAL
-        # )
-        # sizer_w = wx.StaticBoxSizer(
-        #     wx.StaticBox(position_panel, wx.ID_ANY, "W:"), wx.HORIZONTAL
-        # )
-        # sizer_y = wx.StaticBoxSizer(
-        #     wx.StaticBox(position_panel, wx.ID_ANY, "Y:"), wx.HORIZONTAL
-        # )
-        # sizer_x = wx.StaticBoxSizer(
-        #     wx.StaticBox(position_panel, wx.ID_ANY, "X:"), wx.HORIZONTAL
-        # )
-        # sizer_x.Add(self.text_x, 1, 0, 0)
-        # sizer_panel.Add(sizer_x, 0, 0, 0)
-        # sizer_y.Add(self.text_y, 1, 0, 0)
-        # sizer_panel.Add(sizer_y, 0, 0, 0)
-        # sizer_w.Add(self.text_w, 1, 0, 0)
-        # sizer_panel.Add(sizer_w, 0, 0, 0)
-        # sizer_panel.Add(self.button_aspect_ratio, 0, 0, 0)
-        # sizer_h.Add(self.text_h, 1, 0, 0)
-        # sizer_panel.Add(sizer_h, 0, 0, 0)
-        # sizer_units.Add(self.combo_box_units, 0, 0, 0)
-        # sizer_panel.Add(sizer_units, 0, 0, 0)
-        # position_panel.SetSizer(sizer_panel)
-        self._ribbon.Realize()
-        #
-        # self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
-        # self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_x)
-        # self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
-        # self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_y)
-        # self.Bind(wx.EVT_TEXT, self.on_text_w, self.text_w)
-        # self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_w)
-        # self.Bind(wx.EVT_BUTTON, self.on_button_aspect_ratio, self.button_aspect_ratio)
-        # self.Bind(wx.EVT_TEXT, self.on_text_h, self.text_h)
-        # self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
-        # self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
-        #
-        # self.context.setting(int, "units_index", 0)
-        # self.ribbon_position_units = self.context.units_index
-        # self.update_ribbon_position()
-
     def run_later(self, command, *args):
         if wx.IsMainThread():
             command(*args)
         else:
             wx.CallAfter(command, *args)
-
-    def on_camera_dropdown(self, event):
-        menu = wx.Menu()
-        menu.Append(ID_CAMERA1, _("Camera %d") % 1)
-        menu.Append(ID_CAMERA2, _("Camera %d") % 2)
-        menu.Append(ID_CAMERA3, _("Camera %d") % 3)
-        menu.Append(ID_CAMERA4, _("Camera %d") % 4)
-        menu.Append(ID_CAMERA5, _("Camera %d") % 5)
-        event.PopupMenu(menu)
-
-    def on_camera_click(self, event):
-        eid = event.GetId()
-        self.context.setting(int, "camera_default", 1)
-        if eid == ID_CAMERA1:
-            self.context.camera_default = 1
-        elif eid == ID_CAMERA2:
-            self.context.camera_default = 2
-        elif eid == ID_CAMERA3:
-            self.context.camera_default = 3
-        elif eid == ID_CAMERA4:
-            self.context.camera_default = 4
-        elif eid == ID_CAMERA5:
-            self.context.camera_default = 5
-
-        v = self.context.camera_default
-        self.context("camwin %d\n" % v)
 
     def __set_menubar(self):
         self.file_menu = wx.Menu()
@@ -2038,7 +1432,6 @@ class MeerK40t(MWindow):
 
         self.context("quit\n")
 
-
     def on_refresh_scene(self, origin, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
@@ -2096,7 +1489,6 @@ class MeerK40t(MWindow):
         self.main_statusbar.SetStatusText(
             _("Controller: %s") % self.context.kernel.get_text_thread_state(state), 1
         )
-        self.toolbar_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
 
     def on_spooler_state(self, origin, value):
         self.main_statusbar.SetStatusText(
@@ -2163,17 +1555,6 @@ class MeerK40t(MWindow):
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
-
-    def __do_layout(self):
-        # main_sizer = wx.BoxSizer(wx.VERTICAL)
-        # main_sizer.Add(self._ribbon, 0, wx.EXPAND, 0)
-        # widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        # widget_sizer.Add(self.tree, 1, wx.EXPAND, 0)
-        # widget_sizer.Add(self.scene, 5, wx.EXPAND, 0)
-        # main_sizer.Add(widget_sizer, 8, wx.EXPAND, 0)
-        # self.SetSizer(main_sizer)
-        # self._mgr.Update()
-        self.Layout()
 
     def load_or_open(self, filename):
         """
@@ -2377,8 +1758,6 @@ class MeerK40t(MWindow):
         self.request_refresh()
 
     def space_changed(self, origin, *args):
-        self.ribbon_position_units = self.context.units_index
-        self.update_ribbon_position()
         self.scene.signal("grid")
         self.scene.signal("guide")
         self.request_refresh(origin)
@@ -2389,7 +1768,6 @@ class MeerK40t(MWindow):
         self.request_refresh(origin)
 
     def on_emphasized_elements_changed(self, origin, *args):
-        self.update_ribbon_position()
         self.laserpath_widget.clear_laserpath()
         self.request_refresh(origin)
 
@@ -2397,7 +1775,6 @@ class MeerK40t(MWindow):
         self.widget_scene.request_refresh(*args)
 
     def on_element_modified(self, *args):
-        self.update_ribbon_position()
         self.widget_scene.request_refresh(*args)
 
     def on_focus_lost(self, event):
@@ -2424,178 +1801,6 @@ class MeerK40t(MWindow):
                 self.context(action + "\n")
         else:
             event.Skip()
-
-    def update_ribbon_position(self):
-        pass
-        # p = self.context
-        # elements = p.elements
-        # bounds = elements.selected_area()
-        # self.text_w.Enable(bounds is not None)
-        # self.text_h.Enable(bounds is not None)
-        # self.text_x.Enable(bounds is not None)
-        # self.text_y.Enable(bounds is not None)
-        # self.button_aspect_ratio.Enable(bounds is not None)
-        # if bounds is None:
-        #     self.ribbon_position_ignore_update = True
-        #     self.combo_box_units.SetSelection(self.ribbon_position_units)
-        #     self.ribbon_position_ignore_update = False
-        #     return
-        # x0, y0, x1, y1 = bounds
-        # conversion, name, index = (39.37, "mm", 0)
-        # if self.ribbon_position_units == 2:
-        #     conversion, name, index = (1000.0, "in", 2)
-        # elif self.ribbon_position_units == 3:
-        #     conversion, name, index = (1.0, "mil", 3)
-        # elif self.ribbon_position_units == 1:
-        #     conversion, name, index = (393.7, "cm", 1)
-        # elif self.ribbon_position_units == 0:
-        #     conversion, name, index = (39.37, "mm", 0)
-        # self.ribbon_position_name = name
-        # self.ribbon_position_x = x0 / conversion
-        # self.ribbon_position_y = y0 / conversion
-        # self.ribbon_position_w = (x1 - x0) / conversion
-        # self.ribbon_position_h = (y1 - y0) / conversion
-        # self.ribbon_position_ignore_update = True
-        # if self.ribbon_position_units != 4:
-        #     self.text_x.SetValue("%.2f" % self.ribbon_position_x)
-        #     self.text_y.SetValue("%.2f" % self.ribbon_position_y)
-        #     self.text_w.SetValue("%.2f" % self.ribbon_position_w)
-        #     self.text_h.SetValue("%.2f" % self.ribbon_position_h)
-        # else:
-        #     self.text_x.SetValue("%.2f" % 100)
-        #     self.text_y.SetValue("%.2f" % 100)
-        #     self.text_w.SetValue("%.2f" % 100)
-        #     self.text_h.SetValue("%.2f" % 100)
-        # self.combo_box_units.SetSelection(self.ribbon_position_units)
-        # self.ribbon_position_ignore_update = False
-
-    # def on_text_x(self, event):  # wxGlade: MyFrame.<event_handler>
-    #     if self.ribbon_position_ignore_update:
-    #         return
-    #     try:
-    #         if self.ribbon_position_units != 4:
-    #             self.ribbon_position_x = float(self.text_x.GetValue())
-    #     except ValueError:
-    #         pass
-    #
-    # def on_text_y(self, event):  # wxGlade: MyFrame.<event_handler>
-    #     if self.ribbon_position_ignore_update:
-    #         return
-    #     try:
-    #         if self.ribbon_position_units != 4:
-    #             self.ribbon_position_y = float(self.text_y.GetValue())
-    #     except ValueError:
-    #         pass
-
-    # def on_text_w(self, event):  # wxGlade: MyFrame.<event_handler>
-    #     if self.ribbon_position_ignore_update:
-    #         return
-    #     try:
-    #         new = float(self.text_w.GetValue())
-    #         old = self.ribbon_position_w
-    #         if self.ribbon_position_units == 4:
-    #             ratio = new / 100.0
-    #             if self.ribbon_position_aspect_ratio:
-    #                 self.ribbon_position_ignore_update = True
-    #                 self.text_h.SetValue("%.2f" % (ratio * 100))
-    #                 self.ribbon_position_ignore_update = False
-    #         else:
-    #             ratio = new / old
-    #             if self.ribbon_position_aspect_ratio:
-    #                 self.ribbon_position_ignore_update = True
-    #                 self.text_h.SetValue("%.2f" % (self.ribbon_position_h * ratio))
-    #                 self.ribbon_position_ignore_update = False
-    #     except (ValueError, ZeroDivisionError):
-    #         pass
-
-    # def on_button_aspect_ratio(self, event):  # wxGlade: MyFrame.<event_handler>
-    #     if self.ribbon_position_ignore_update:
-    #         return
-    #     if self.ribbon_position_aspect_ratio:
-    #         self.button_aspect_ratio.SetBitmap(icons8_padlock_50.GetBitmap())
-    #     else:
-    #         self.button_aspect_ratio.SetBitmap(icons8_lock_50.GetBitmap())
-    #     self.ribbon_position_aspect_ratio = not self.ribbon_position_aspect_ratio
-
-    # def on_text_h(self, event):  # wxGlade: MyFrame.<event_handler>
-    #     if self.ribbon_position_ignore_update:
-    #         return
-    #     try:
-    #         new = float(self.text_h.GetValue())
-    #         old = self.ribbon_position_h
-    #         if self.ribbon_position_units == 4:
-    #             if self.ribbon_position_aspect_ratio:
-    #                 self.ribbon_position_ignore_update = True
-    #                 self.text_w.SetValue("%.2f" % new)
-    #                 self.ribbon_position_ignore_update = False
-    #         else:
-    #             if self.ribbon_position_aspect_ratio:
-    #                 self.ribbon_position_ignore_update = True
-    #                 self.text_w.SetValue(
-    #                     "%.2f" % (self.ribbon_position_w * (new / old))
-    #                 )
-    #                 self.ribbon_position_ignore_update = False
-    #     except (ValueError, ZeroDivisionError):
-    #         pass
-    #
-    # def on_text_dim_enter(self, event):
-    #     if self.ribbon_position_units == 4:
-    #         ratio_w = float(self.text_w.GetValue()) / 100.0
-    #         ratio_h = float(self.text_h.GetValue()) / 100.0
-    #         self.ribbon_position_w *= ratio_w
-    #         self.ribbon_position_h *= ratio_h
-    #     else:
-    #         w = float(self.text_w.GetValue())
-    #         h = float(self.text_h.GetValue())
-    #         self.ribbon_position_w = w
-    #         self.ribbon_position_h = h
-    #     self.context(
-    #         "resize %f%s %f%s %f%s %f%s\n"
-    #         % (
-    #             self.ribbon_position_x,
-    #             self.ribbon_position_name,
-    #             self.ribbon_position_y,
-    #             self.ribbon_position_name,
-    #             self.ribbon_position_w,
-    #             self.ribbon_position_name,
-    #             self.ribbon_position_h,
-    #             self.ribbon_position_name,
-    #         )
-    #     )
-    #     self.update_ribbon_position()
-    #
-    # def on_text_pos_enter(self, event):
-    #     if self.ribbon_position_units == 4:
-    #         ratio_x = float(self.text_x.GetValue()) / 100.0
-    #         ratio_y = float(self.text_y.GetValue()) / 100.0
-    #         self.ribbon_position_x *= ratio_x
-    #         self.ribbon_position_y *= ratio_y
-    #     else:
-    #         x = float(self.text_x.GetValue())
-    #         y = float(self.text_y.GetValue())
-    #         self.ribbon_position_x = x
-    #         self.ribbon_position_y = y
-    #     self.context(
-    #         "resize %f%s %f%s %f%s %f%s\n"
-    #         % (
-    #             self.ribbon_position_x,
-    #             self.ribbon_position_name,
-    #             self.ribbon_position_y,
-    #             self.ribbon_position_name,
-    #             self.ribbon_position_w,
-    #             self.ribbon_position_name,
-    #             self.ribbon_position_h,
-    #             self.ribbon_position_name,
-    #         )
-    #     )
-    #     self.update_ribbon_position()
-    #
-    # def on_combo_box_units(self, event):  # wxGlade: MyFrame.<event_handler>
-    #     if self.ribbon_position_ignore_update:
-    #         return
-    #     self.ribbon_position_units = self.combo_box_units.GetSelection()
-    #     self.update_ribbon_position()
-
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         context = self.context
         self.working_file = None
@@ -2604,15 +1809,7 @@ class MeerK40t(MWindow):
         self.request_refresh()
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        # This code should load just specific project files rather than all importable formats.
-        files = self.context.load_types()
-        with wx.FileDialog(
-            self, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
-        ) as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-            pathname = fileDialog.GetPath()
-            self.load(pathname)
+        self.open_open_dialog()
 
     def on_click_stop(self, event=None):
         self.context("estop\n")
@@ -2628,21 +1825,7 @@ class MeerK40t(MWindow):
             self.context.save(self.working_file)
 
     def on_click_save_as(self, event=None):
-        files = self.context.save_types()
-        with wx.FileDialog(
-            self,
-            _("Save Project"),
-            wildcard=files,
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
-        ) as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-            pathname = fileDialog.GetPath()
-            if not pathname.lower().endswith(".svg"):
-                pathname += ".svg"
-            self.context.save(pathname)
-            self.working_file = pathname
-            self.save_recent(self.working_file)
+        self.open_save_as_dialog()
 
     def on_click_exit(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         try:
@@ -2700,6 +1883,34 @@ class MeerK40t(MWindow):
             self.request_refresh()
 
         return toggle
+
+    def open_save_as_dialog(self):
+        files = self.context.save_types()
+        with wx.FileDialog(
+            self,
+            _("Save Project"),
+            wildcard=files,
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            if not pathname.lower().endswith(".svg"):
+                pathname += ".svg"
+            self.context.save(pathname)
+            self.working_file = pathname
+            self.save_recent(self.working_file)
+
+    def open_open_dialog(self):
+        # This code should load just specific project files rather than all importable formats.
+        files = self.context.load_types()
+        with wx.FileDialog(
+            self, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+        ) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            self.load(pathname)
 
     def open_speedcode_gear_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter Forced Gear"), _("Gear Entry"), "")
@@ -2984,7 +2195,6 @@ class MeerK40t(MWindow):
             yield COMMAND_WAIT_FINISH
 
         self.context.spooler.job(home_dot_test)
-
 
 
 class wxMeerK40t(wx.App, Module):
@@ -3496,74 +2706,6 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     )
     if answer == wx.YES:
         send_file_to_developers(filename)
-
-
-def _update_ribbon_artprovider_for_dark_mode(provider: RB.RibbonArtProvider) -> None:
-    def _set_ribbon_colour(
-        provider: RB.RibbonArtProvider, art_id_list: list, colour: wx.Colour
-    ) -> None:
-        for id_ in art_id_list:
-            provider.SetColour(id_, colour)
-
-    TEXTCOLOUR = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
-
-    BTNFACE_HOVER = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
-    INACTIVE_BG = copy.copy(
-        wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
-    )
-    INACTIVE_TEXT = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT))
-    BTNFACE = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE))
-    BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
-
-    texts = [
-        RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
-        RB.RIBBON_ART_PANEL_LABEL_COLOUR,
-    ]
-    try:  # wx 4.0 compat, not supported on that
-        texts.extend(
-            [
-                RB.RIBBON_ART_TAB_ACTIVE_LABEL_COLOUR,
-                RB.RIBBON_ART_TAB_HOVER_LABEL_COLOUR,
-            ]
-        )
-        _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], INACTIVE_TEXT)
-    except AttributeError:
-        _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], TEXTCOLOUR)
-        pass
-    _set_ribbon_colour(provider, texts, TEXTCOLOUR)
-
-    backgrounds = [
-        RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TAB_CTRL_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TAB_CTRL_BACKGROUND_GRADIENT_COLOUR,
-    ]
-    _set_ribbon_colour(provider, backgrounds, BTNFACE)
-    _set_ribbon_colour(
-        provider,
-        [
-            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
-            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_GRADIENT_COLOUR,
-            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
-            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
-        ],
-        INACTIVE_BG,
-    )
 
 
 sys.excepthook = handleGUIException
