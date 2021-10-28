@@ -1975,7 +1975,7 @@ class MeerK40t(MWindow):
         self.request_refresh()
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        self.open_open_dialog()
+        self.context("dialog_load\n")
 
     def on_click_stop(self, event=None):
         self.context("estop\n")
@@ -1991,7 +1991,7 @@ class MeerK40t(MWindow):
             self.context.save(self.working_file)
 
     def on_click_save_as(self, event=None):
-        self.open_save_as_dialog()
+        self.context("dialog_save\n")
 
     def on_click_exit(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         try:
