@@ -75,14 +75,6 @@ def plugin(kernel, lifecycle):
             meerk40tgui.MainLoop()
 
     elif lifecycle == "preregister":
-
-        def run_later(command, *args):
-            if wx.IsMainThread():
-                command(*args)
-            else:
-                wx.CallAfter(command, *args)
-
-        kernel.run_later = run_later
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root = kernel.root
         kernel_root.open("module/wxMeerK40t")
@@ -94,7 +86,16 @@ def plugin(kernel, lifecycle):
         if lifecycle == "mainloop":
             kernel_root = kernel.root
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
+            # After main window is launched run_later actually works.
+            def run_later(command, *args):
+                if wx.IsMainThread():
+                    command(*args)
+                else:
+                    wx.CallAfter(command, *args)
+
             kernel.console("window open MeerK40t\n")
+
+            kernel.run_later = run_later
             meerk40tgui.MainLoop()
 
 

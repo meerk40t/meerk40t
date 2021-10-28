@@ -799,7 +799,8 @@ class MeerK40t(MWindow):
 
         # Registers the render-op make_raster. This is used to do cut planning.
         context.register("render-op/make_raster", self.renderer.make_raster)
-        # After main window is launched run_later actually works.
+
+
 
     def __scene_initialize(self, context):
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
