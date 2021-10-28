@@ -195,6 +195,25 @@ class wxMeerK40t(wx.App, Module):
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
 
+        def interrupt_popup():
+            dlg = wx.MessageDialog(
+                None,
+                _("Spooling Interrupted. Press OK to Continue."),
+                _("Interrupt"),
+                wx.OK,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+
+        context.register("function/interrupt", interrupt_popup)
+
+        def interrupt():
+            from ..device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_FUNCTION
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_FUNCTION, context.registered["function/interrupt"]
+
+        context.register("plan/interrupt", interrupt)
+
     def on_app_close(self, event=None):
         try:
             if self.context is not None:

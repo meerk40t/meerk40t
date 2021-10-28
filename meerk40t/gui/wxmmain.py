@@ -779,24 +779,6 @@ class MeerK40t(MWindow):
             bbox, self.scene.ClientSize, 0.1
         )
 
-        def interrupt_popup():
-            dlg = wx.MessageDialog(
-                None,
-                _("Spooling Interrupted. Press OK to Continue."),
-                _("Interrupt"),
-                wx.OK,
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
-
-        context.register("function/interrupt", interrupt_popup)
-
-        def interrupt():
-            yield COMMAND_WAIT_FINISH
-            yield COMMAND_FUNCTION, context.registered["function/interrupt"]
-
-        context.register("plan/interrupt", interrupt)
-
         # Registers the render-op make_raster. This is used to do cut planning.
         context.register("render-op/make_raster", self.renderer.make_raster)
 
