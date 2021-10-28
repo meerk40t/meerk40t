@@ -87,15 +87,16 @@ def plugin(kernel, lifecycle):
             kernel_root = kernel.root
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             # After main window is launched run_later actually works.
+
             def run_later(command, *args):
                 if wx.IsMainThread():
                     command(*args)
                 else:
                     wx.CallAfter(command, *args)
 
+            kernel.run_later = run_later
             kernel.console("window open MeerK40t\n")
 
-            kernel.run_later = run_later
             meerk40tgui.MainLoop()
 
 
