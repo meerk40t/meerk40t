@@ -79,6 +79,7 @@ def plugin(kernel, lifecycle):
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root.open("module/wxMeerK40t")
 
+        # Registers the render-op make_raster. This is used to do cut planning.
         renderer = LaserRender(kernel_root)
         kernel_root.register("render-op/make_raster", renderer.make_raster)
     elif lifecycle == "mainloop":
