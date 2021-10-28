@@ -782,9 +782,8 @@ class MeerK40t(MWindow):
         # Registers the render-op make_raster. This is used to do cut planning.
         context.register("render-op/make_raster", self.renderer.make_raster)
 
-
-
-    def __scene_initialize(self, context):
+    def __scene_initialize(self):
+        context = self.context
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
