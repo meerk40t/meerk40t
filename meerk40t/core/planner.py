@@ -1161,7 +1161,8 @@ def beep():
 
 
 def interrupt_text():
-    input("waiting for user...")
+    input("Interrupted: press enter to continue...\n")
+    print("... continuing")
 
 
 def interrupt():

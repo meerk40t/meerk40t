@@ -59,35 +59,51 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 MILS_IN_MM = 39.3701
 
-GUI_START = [True]
+GUI_START = True
 
 
 def plugin(kernel, lifecycle):
+    global GUI_START
+    kernel_root = kernel.root
     if lifecycle == "console":
-        GUI_START[0] = False
+        GUI_START = False
 
         @kernel.console_command("gui", help=_("starts the gui"))
         def gui_start(**kwargs):
             del kernel.registered["command/None/gui"]
-            kernel_root = kernel.root
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
 
     elif lifecycle == "preregister":
         kernel.register("module/wxMeerK40t", wxMeerK40t)
-        kernel_root = kernel.root
         kernel_root.open("module/wxMeerK40t")
 
-        context = kernel.root
-        renderer = LaserRender(context)
-        context.register("render-op/make_raster", renderer.make_raster)
-    if GUI_START[0]:
-        if lifecycle == "mainloop":
-            kernel_root = kernel.root
+        renderer = LaserRender(kernel_root)
+        kernel_root.register("render-op/make_raster", renderer.make_raster)
+    elif lifecycle == "mainloop":
+        def interrupt_popup():
+            dlg = wx.MessageDialog(
+                None,
+                _("Spooling Interrupted. Press OK to Continue."),
+                _("Interrupt"),
+                wx.OK,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+
+        kernel_root.register("function/interrupt", interrupt_popup)
+
+        def interrupt():
+            from ..device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_FUNCTION
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_FUNCTION, kernel_root.registered["function/interrupt"]
+
+        kernel_root.register("plan/interrupt", interrupt)
+
+        if GUI_START:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
-
             meerk40tgui.MainLoop()
 
 
@@ -194,25 +210,6 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
-
-        def interrupt_popup():
-            dlg = wx.MessageDialog(
-                None,
-                _("Spooling Interrupted. Press OK to Continue."),
-                _("Interrupt"),
-                wx.OK,
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
-
-        context.register("function/interrupt", interrupt_popup)
-
-        def interrupt():
-            from ..device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_FUNCTION
-            yield COMMAND_WAIT_FINISH
-            yield COMMAND_FUNCTION, context.registered["function/interrupt"]
-
-        context.register("plan/interrupt", interrupt)
 
     def on_app_close(self, event=None):
         try:
