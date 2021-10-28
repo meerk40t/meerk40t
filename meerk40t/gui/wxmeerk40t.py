@@ -373,6 +373,236 @@ class MeerK40t(MWindow):
 
         self.CenterOnScreen()
 
+    def __set_dialogs(self):
+        context = self.context
+        gui = self
+
+        @context.console_command("dialog_transform", hidden=True)
+        def transform(**kwargs):
+            dlg = wx.TextEntryDialog(
+                gui,
+                _(
+                    "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, translate, etc..."
+                ),
+                _("Transform Entry"),
+                "",
+            )
+            dlg.SetValue("")
+
+            if dlg.ShowModal() == wx.ID_OK:
+                spooler, input_driver, output = context.registered[
+                    "device/%s" % context.root.active
+                ]
+                root_context = context.root
+                bed_dim = context.root
+                m = str(dlg.GetValue())
+                m = m.replace("$x", str(input_driver.current_x))
+                m = m.replace("$y", str(input_driver.current_y))
+                mx = Matrix(m)
+                wmils = bed_dim.bed_width * 39.37
+                hmils = bed_dim.bed_height * 39.37
+                mx.render(ppi=1000, width=wmils, height=hmils)
+                if mx.is_identity():
+                    dlg.Destroy()
+                    dlg = wx.MessageDialog(
+                        None,
+                        _("The entered command does nothing."),
+                        _("Non-Useful Matrix."),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
+                else:
+                    for element in root_context.elements.elems():
+                        try:
+                            element *= mx
+                            element.node.modified()
+                        except AttributeError:
+                            pass
+
+        @context.console_command("dialog_flip", hidden=True)
+        def flip(**kwargs):
+            dlg = wx.TextEntryDialog(
+                gui,
+                _(
+                    "Material must be jigged at 0,0 either home or home offset.\nHow wide is your material (give units: in, mm, cm, px, etc)?"
+                ),
+                _("Double Side Flip"),
+                "",
+            )
+            dlg.SetValue("")
+            if dlg.ShowModal() == wx.ID_OK:
+                root_context = context.root
+                bed_dim = root_context
+                wmils = bed_dim.bed_width * MILS_IN_MM
+                # hmils = bed_dim.bed_height * MILS_IN_MM
+                length = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=wmils)
+                mx = Matrix()
+                mx.post_scale(-1.0, 1, length / 2.0, 0)
+                for element in root_context.elements.elems(emphasized=True):
+                    try:
+                        element *= mx
+                        element.node.modified()
+                    except AttributeError:
+                        pass
+            dlg.Destroy()
+
+        @context.console_command("dialog_path", hidden=True)
+        def path(**kwargs):
+            dlg = wx.TextEntryDialog(gui, _("Enter SVG Path Data"), _("Path Entry"), "")
+            dlg.SetValue("")
+
+            if dlg.ShowModal() == wx.ID_OK:
+                path = Path(dlg.GetValue())
+                path.stroke = "blue"
+                p = abs(path)
+                context.elements.add_elem(p)
+                context.classify([p])
+            dlg.Destroy()
+
+        @context.console_command("dialog_fill", hidden=True)
+        def fill(**kwargs):
+            elements = context.elements
+            first_selected = elements.first_element(emphasized=True)
+            if first_selected is None:
+                return
+            data = wx.ColourData()
+            if first_selected.fill is not None and first_selected.fill != "none":
+                data.SetColour(wx.Colour(swizzlecolor(first_selected.fill)))
+            dlg = wx.ColourDialog(gui, data)
+            if dlg.ShowModal() == wx.ID_OK:
+                data = dlg.GetColourData()
+                color = data.GetColour()
+                rgb = color.GetRGB()
+                color = swizzlecolor(rgb)
+                color = Color(color, 1.0)
+                for elem in elements.elems(emphasized=True):
+                    elem.fill = color
+                    elem.node.altered()
+
+        @context.console_command("dialog_stroke", hidden=True)
+        def stroke(**kwargs):
+            elements = context.elements
+            first_selected = elements.first_element(emphasized=True)
+            if first_selected is None:
+                return
+            data = wx.ColourData()
+            if first_selected.stroke is not None and first_selected.stroke != "none":
+                data.SetColour(wx.Colour(swizzlecolor(first_selected.stroke)))
+            dlg = wx.ColourDialog(gui, data)
+            if dlg.ShowModal() == wx.ID_OK:
+                data = dlg.GetColourData()
+                color = data.GetColour()
+                rgb = color.GetRGB()
+                color = swizzlecolor(rgb)
+                color = Color(color, 1.0)
+                for elem in elements.elems(emphasized=True):
+                    elem.stroke = color
+                    elem.node.altered()
+
+        @context.console_command("dialog_fps", hidden=True)
+        def fps(**kwargs):
+            dlg = wx.TextEntryDialog(
+                gui, _("Enter FPS Limit"), _("FPS Limit Entry"), ""
+            )
+            dlg.SetValue("")
+
+            if dlg.ShowModal() == wx.ID_OK:
+                fps = dlg.GetValue()
+                try:
+                    gui.widget_scene.set_fps(int(fps))
+                except ValueError:
+                    pass
+            dlg.Destroy()
+
+        @context.console_command("dialog_gear", hidden=True)
+        def gear(**kwargs):
+            dlg = wx.TextEntryDialog(gui, _("Enter Forced Gear"), _("Gear Entry"), "")
+            dlg.SetValue("")
+
+            if dlg.ShowModal() == wx.ID_OK:
+                value = dlg.GetValue()
+                if value in ("0", "1", "2", "3", "4"):
+                    context._stepping_force = int(value)
+                else:
+                    context._stepping_force = None
+            dlg.Destroy()
+
+        @context.console_command("dialog_load", hidden=True)
+        def load_dialog(**kwargs):
+            # This code should load just specific project files rather than all importable formats.
+            files = context.load_types()
+            with wx.FileDialog(
+                gui, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = fileDialog.GetPath()
+                gui.load(pathname)
+
+        @context.console_command("dialog_save", hidden=True)
+        def save_dialog(**kwargs):
+            files = context.save_types()
+            with wx.FileDialog(
+                gui,
+                _("Save Project"),
+                wildcard=files,
+                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = fileDialog.GetPath()
+                if not pathname.lower().endswith(".svg"):
+                    pathname += ".svg"
+                context.save(pathname)
+                gui.working_file = pathname
+                gui.save_recent(gui.working_file)
+
+        @context.console_command("dialog_import_egv", hidden=True)
+        def evg_in_dialog(**kwargs):
+            files = "*.egv"
+            with wx.FileDialog(
+                gui,
+                _("Import EGV"),
+                wildcard=files,
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = fileDialog.GetPath()
+            if pathname is None:
+                return
+            with wx.BusyInfo(_("Loading File...")):
+                context("egv_import %s\n" % pathname)
+                return
+
+        @context.console_command("dialog_export_egv", hidden=True)
+        def egv_out_dialog(**kwargs):
+            files = "*.egv"
+            with wx.FileDialog(
+                gui, _("Export EGV"), wildcard=files, style=wx.FD_SAVE
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = fileDialog.GetPath()
+            if pathname is None:
+                return
+            with wx.BusyInfo(_("Saving File...")):
+                context("egv_export %s\n" % pathname)
+                return
+
+        context.register("control/Transform", lambda: context("dialog_transform\n"))
+        context.register("control/Flip", lambda: context("dialog_flip\n"))
+        context.register("control/Path", lambda: context("dialog_path\n"))
+        context.register("control/Fill", lambda: context("dialog_fill\n"))
+        context.register("control/Stroke", lambda: context("dialog_stroke\n"))
+        context.register("control/FPS", lambda: context("dialog_fps\n"))
+        context.register(
+            "control/Speedcode-Gear-Force", lambda: context("dialog_gear\n")
+        )
+        context.register("control/egv export", lambda: context("dialog_import_egv\n"))
+        context.register("control/egv import", lambda: context("dialog_export_egv\n"))
+
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", True)
         # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
@@ -703,78 +933,11 @@ class MeerK40t(MWindow):
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
-        @context.console_command("dialog_transform", hidden=True)
-        def transform(**kwargs):
-            self.open_transform_dialog()
-
-        @context.console_command("dialog_flip", hidden=True)
-        def flip(**kwargs):
-            self.open_flip_dialog()
-
-        @context.console_command("dialog_path", hidden=True)
-        def path(**kwargs):
-            self.open_path_dialog()
-
-        @context.console_command("dialog_fill", hidden=True)
-        def fill(**kwargs):
-            self.open_fill_dialog()
-
-        @context.console_command("dialog_stroke", hidden=True)
-        def stroke(**kwargs):
-            self.open_stroke_dialog()
-
-        @context.console_command("dialog_fps", hidden=True)
-        def fps(**kwargs):
-            self.open_fps_dialog()
-
-        @context.console_command("dialog_gear", hidden=True)
-        def gear(**kwargs):
-            self.open_speedcode_gear_dialog()
-
-        @context.console_command("dialog_load", hidden=True)
-        def load_dialog(**kwargs):
-            self.open_open_dialog()
-
-        @context.console_command("dialog_save", hidden=True)
-        def save_dialog(**kwargs):
-            self.open_save_as_dialog()
-
         @context.console_command("laserpath_clear", hidden=True)
         def clear_laser_path(**kwargs):
             self.laserpath_widget.clear_laserpath()
 
-        context.register("control/Transform", self.open_transform_dialog)
-        context.register("control/Flip", self.open_flip_dialog)
-        context.register("control/Path", self.open_path_dialog)
-        context.register("control/Fill", self.open_fill_dialog)
-        context.register("control/Stroke", self.open_stroke_dialog)
-        context.register("control/FPS", self.open_fps_dialog)
-        context.register(
-            "control/Speedcode-Gear-Force", self.open_speedcode_gear_dialog
-        )
-        context.register("control/Jog Transition Test", self.run_jog_transition_test)
-        context.register(
-            "control/Jog Transition Switch Test", self.run_jog_transition_switch_test
-        )
-        context.register(
-            "control/Jog Transition Finish Test", self.run_jog_transition_finish_test
-        )
-        context.register("control/Home and Dot", self.run_home_and_dot_test)
-
-        def test_crash_in_thread():
-            def foo():
-                a = 1 / 0
-
-            context.threaded(foo)
-
-        context.register("control/Crash Thread", test_crash_in_thread)
-        context.register(
-            "control/Clear Laserpath", self.laserpath_widget.clear_laserpath
-        )
-        context.register("control/egv export", self.egv_export)
-        context.register("control/egv import", self.egv_import)
-
-        @context.console_command("theme", help=_("Theming information and assignments"))
+        @context.console_command("theme", help=_("Theming information and assignments"), hidden=True)
         def theme(command, channel, _, **kwargs):
             channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
 
@@ -1883,211 +2046,6 @@ class MeerK40t(MWindow):
             self.request_refresh()
 
         return toggle
-
-    def open_save_as_dialog(self):
-        files = self.context.save_types()
-        with wx.FileDialog(
-            self,
-            _("Save Project"),
-            wildcard=files,
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
-        ) as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-            pathname = fileDialog.GetPath()
-            if not pathname.lower().endswith(".svg"):
-                pathname += ".svg"
-            self.context.save(pathname)
-            self.working_file = pathname
-            self.save_recent(self.working_file)
-
-    def open_open_dialog(self):
-        # This code should load just specific project files rather than all importable formats.
-        files = self.context.load_types()
-        with wx.FileDialog(
-            self, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
-        ) as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-            pathname = fileDialog.GetPath()
-            self.load(pathname)
-
-    def open_speedcode_gear_dialog(self):
-        dlg = wx.TextEntryDialog(self, _("Enter Forced Gear"), _("Gear Entry"), "")
-        dlg.SetValue("")
-
-        if dlg.ShowModal() == wx.ID_OK:
-            value = dlg.GetValue()
-            if value in ("0", "1", "2", "3", "4"):
-                self.context._stepping_force = int(value)
-            else:
-                self.context._stepping_force = None
-        dlg.Destroy()
-
-    def open_fps_dialog(self):
-        dlg = wx.TextEntryDialog(self, _("Enter FPS Limit"), _("FPS Limit Entry"), "")
-        dlg.SetValue("")
-
-        if dlg.ShowModal() == wx.ID_OK:
-            fps = dlg.GetValue()
-            try:
-                self.widget_scene.set_fps(int(fps))
-            except ValueError:
-                pass
-        dlg.Destroy()
-
-    def open_transform_dialog(self):
-        dlg = wx.TextEntryDialog(
-            self,
-            _(
-                "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, translate, etc..."
-            ),
-            _("Transform Entry"),
-            "",
-        )
-        dlg.SetValue("")
-
-        if dlg.ShowModal() == wx.ID_OK:
-            spooler, input_driver, output = self.context.registered[
-                "device/%s" % self.context.root.active
-            ]
-            root_context = self.context.root
-            bed_dim = self.context.root
-            m = str(dlg.GetValue())
-            m = m.replace("$x", str(input_driver.current_x))
-            m = m.replace("$y", str(input_driver.current_y))
-            mx = Matrix(m)
-            wmils = bed_dim.bed_width * 39.37
-            hmils = bed_dim.bed_height * 39.37
-            mx.render(ppi=1000, width=wmils, height=hmils)
-            if mx.is_identity():
-                dlg.Destroy()
-                dlg = wx.MessageDialog(
-                    None,
-                    _("The entered command does nothing."),
-                    _("Non-Useful Matrix."),
-                    wx.OK | wx.ICON_WARNING,
-                )
-                dlg.ShowModal()
-                dlg.Destroy()
-            else:
-                for element in root_context.elements.elems():
-                    try:
-                        element *= mx
-                        element.node.modified()
-                    except AttributeError:
-                        pass
-
-    def open_fill_dialog(self):
-        context = self.context
-        elements = context.elements
-        first_selected = elements.first_element(emphasized=True)
-        if first_selected is None:
-            return
-        data = wx.ColourData()
-        if first_selected.fill is not None and first_selected.fill != "none":
-            data.SetColour(wx.Colour(swizzlecolor(first_selected.fill)))
-        dlg = wx.ColourDialog(self, data)
-        if dlg.ShowModal() == wx.ID_OK:
-            data = dlg.GetColourData()
-            color = data.GetColour()
-            rgb = color.GetRGB()
-            color = swizzlecolor(rgb)
-            color = Color(color, 1.0)
-            for elem in elements.elems(emphasized=True):
-                elem.fill = color
-                elem.node.altered()
-
-    def open_stroke_dialog(self):
-        context = self.context
-        elements = context.elements
-        first_selected = elements.first_element(emphasized=True)
-        if first_selected is None:
-            return
-        data = wx.ColourData()
-        if first_selected.stroke is not None and first_selected.stroke != "none":
-            data.SetColour(wx.Colour(swizzlecolor(first_selected.stroke)))
-        dlg = wx.ColourDialog(self, data)
-        if dlg.ShowModal() == wx.ID_OK:
-            data = dlg.GetColourData()
-            color = data.GetColour()
-            rgb = color.GetRGB()
-            color = swizzlecolor(rgb)
-            color = Color(color, 1.0)
-            for elem in elements.elems(emphasized=True):
-                elem.stroke = color
-                elem.node.altered()
-
-    def open_flip_dialog(self):
-        dlg = wx.TextEntryDialog(
-            self,
-            _(
-                "Material must be jigged at 0,0 either home or home offset.\nHow wide is your material (give units: in, mm, cm, px, etc)?"
-            ),
-            _("Double Side Flip"),
-            "",
-        )
-        dlg.SetValue("")
-        if dlg.ShowModal() == wx.ID_OK:
-            p = self.context
-            root_context = p.root
-            bed_dim = root_context
-            wmils = bed_dim.bed_width * MILS_IN_MM
-            # hmils = bed_dim.bed_height * MILS_IN_MM
-            length = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=wmils)
-            mx = Matrix()
-            mx.post_scale(-1.0, 1, length / 2.0, 0)
-            for element in root_context.elements.elems(emphasized=True):
-                try:
-                    element *= mx
-                    element.node.modified()
-                except AttributeError:
-                    pass
-        dlg.Destroy()
-
-    def open_path_dialog(self):
-        dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), "")
-        dlg.SetValue("")
-
-        if dlg.ShowModal() == wx.ID_OK:
-            context = self.context
-            path = Path(dlg.GetValue())
-            path.stroke = "blue"
-            p = abs(path)
-            context.elements.add_elem(p)
-            self.context.classify([p])
-        dlg.Destroy()
-
-    def egv_import(self):
-        files = "*.egv"
-        with wx.FileDialog(
-            self,
-            _("Import EGV"),
-            wildcard=files,
-            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
-        ) as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-            pathname = fileDialog.GetPath()
-        if pathname is None:
-            return
-        with wx.BusyInfo(_("Loading File...")):
-            self.context("egv_import %s\n" % pathname)
-            return
-
-    def egv_export(self):
-        files = "*.egv"
-        with wx.FileDialog(
-            self, _("Export EGV"), wildcard=files, style=wx.FD_SAVE
-        ) as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-            pathname = fileDialog.GetPath()
-        if pathname is None:
-            return
-        with wx.BusyInfo(_("Saving File...")):
-            self.context("egv_export %s\n" % pathname)
-            return
 
     def apply_rotary_scale(self):
         r = self.context.get_context("rotary/1")
