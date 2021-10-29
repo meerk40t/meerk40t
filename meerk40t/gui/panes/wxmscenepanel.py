@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import icons8_console_50
+from meerk40t.gui.icons import icons8_console_50, icon_meerk40t
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scene import ScenePanel
@@ -200,9 +200,9 @@ class SceneWindow(MWindow):
         super().__init__(581, 410, *args, **kwds)
         self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("Console"))
+        self.SetTitle(_("Scene"))
         self.Layout()
 
     def window_open(self):
