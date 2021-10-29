@@ -558,7 +558,7 @@ class SelectionWidget(Widget):
                 return
             try:
                 self.selection_pen.SetWidth(linewidth)
-            except ValueError:
+            except TypeError:
                 self.selection_pen.SetWidth(int(linewidth))
             if font_size < 1.0:
                 font_size = 1.0  # Mac does not allow values lower than 1.
@@ -681,7 +681,7 @@ class RectSelectWidget(Widget):
                 linewidth = 1
             try:
                 self.selection_pen.SetWidth(linewidth)
-            except ValueError:
+            except TypeError:
                 self.selection_pen.SetWidth(int(linewidth))
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(x0, y0, x1, y0)
@@ -917,7 +917,7 @@ class GridWidget(Widget):
                     line_width = 1
                 try:
                     self.grid_line_pen.SetWidth(line_width)
-                except ValueError:
+                except TypeError:
                     self.grid_line_pen.SetWidth(int(line_width))
 
                 gc.SetPen(self.grid_line_pen)
