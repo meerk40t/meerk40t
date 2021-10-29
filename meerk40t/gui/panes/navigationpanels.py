@@ -1072,6 +1072,7 @@ class JogDistancePanel(wx.Panel):
         st_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("steps")), wx.VERTICAL
         )
+        self.Children[0].SetFocus()
         st_sizer.Add(self.spin_jog_mils, 0, 0, 0)
         row_1.Add(st_sizer, 0, wx.EXPAND, 0)
         in_sizer.Add(self.spin_jog_inch, 0, 0, 0)

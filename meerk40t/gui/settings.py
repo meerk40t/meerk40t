@@ -30,6 +30,7 @@ class PreferencesPanel(wx.Panel):
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
+        self.Children[0].SetFocus()
         self.combo_svg_ppi = wx.ComboBox(
             self,
             wx.ID_ANY,

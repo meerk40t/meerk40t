@@ -16,6 +16,7 @@ class KeymapPanel(wx.Panel):
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
         self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
+        self.Children[0].SetFocus()
         self.text_key_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_command_name = wx.TextCtrl(self, wx.ID_ANY, "")
 
