@@ -562,7 +562,10 @@ class SelectionWidget(Widget):
                 self.selection_pen.SetWidth(int(linewidth))
             if font_size < 1.0:
                 font_size = 1.0  # Mac does not allow values lower than 1.
-            font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            try:
+                font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            except TypeError:
+                font = wx.Font(int(font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, wx.Colour(0x7F, 0x7F, 0x7F))
             gc.SetPen(self.selection_pen)
             x0, y0, x1, y1 = bounds
