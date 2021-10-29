@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 
-from .panes.wxmscenepanel import SceneWindow
+from meerk40t.gui.wxmscene import SceneWindow
 
 try:
     import wx

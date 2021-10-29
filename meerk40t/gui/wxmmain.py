@@ -3,7 +3,6 @@ import os
 import wx
 from wx import aui
 
-from ..device.lasercommandconstants import COMMAND_FUNCTION, COMMAND_WAIT_FINISH
 from ..kernel import ConsoleFunction
 from ..svgelements import Color, Length, Matrix, Path, SVGImage
 from .icons import (
@@ -386,7 +385,7 @@ class MeerK40t(MWindow):
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", True)
 
-        from .panes.wxmscenepanel import register_panel
+        from meerk40t.gui.wxmscene import register_panel
 
         register_panel(self, self.context)
 
