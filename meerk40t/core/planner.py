@@ -137,7 +137,18 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("planner", choices)
+
         choices = [
+            {
+                "attr": "opt_rapid_between",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Rapid Moves Between Objects"),
+                "tip": _(
+                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+                ),
+            },
             {
                 "attr": "opt_reduce_travel",
                 "object": context,
