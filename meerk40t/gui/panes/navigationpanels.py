@@ -1135,6 +1135,7 @@ class NavigationPanel(wx.Panel):
         main_panels_sizer.Add(navigationpanel, 1, wx.EXPAND, 0)
 
         alignpanel = Drag(self, wx.ID_ANY, context=self.context)
+        alignpanel.SetBackgroundColour(wx.Colour("black"))
         main_panels_sizer.Add(alignpanel, 1, wx.EXPAND, 0)
 
         transformpanel = Transform(self, wx.ID_ANY, context=self.context)
