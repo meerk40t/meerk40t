@@ -1622,13 +1622,13 @@ class MeerK40t(MWindow):
         """
         Zoomout button press
         """
-        self.context("scene zoom %d\n" % (1.0 / 1.5))
+        self.context("scene zoom %f\n" % (1.0 / 1.5))
 
     def on_click_zoom_in(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoomin button press
         """
-        self.context("scene zoom %d\n" % 1.5)
+        self.context("scene zoom %f\n" % 1.5)
 
     def on_click_zoom_size(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
