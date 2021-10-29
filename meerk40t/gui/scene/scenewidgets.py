@@ -61,7 +61,13 @@ class ElementsWidget(Widget):
 
     def process_draw(self, gc):
         context = self.scene.context
-        zoom_scale = 1 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        matrix = self.scene.widget_root.scene_widget.matrix
+        scale_x = matrix.value_scale_x()
+        try:
+            zoom_scale = 1 / scale_x
+        except ZeroDivisionError:
+            matrix.reset()
+            zoom_scale = 1
         if zoom_scale < 1:
             zoom_scale = 1
         self.renderer.render(
@@ -117,6 +123,7 @@ class SelectionWidget(Widget):
                 xmin = 10 / matrix.value_scale_x()
                 ymin = 10 / matrix.value_scale_y()
             except ZeroDivisionError:
+                matrix.reset()
                 ymin = 10
                 xmin = 10
             if width < xmin:
@@ -543,9 +550,13 @@ class SelectionWidget(Widget):
         bounds = elements.selected_area()
         matrix = self.parent.matrix
         if bounds is not None:
-            linewidth = 2.0 / matrix.value_scale_x()
+            try:
+                linewidth = 2.0 / matrix.value_scale_x()
+                font_size = 14.0 / matrix.value_scale_x()
+            except ZeroDivisionError:
+                matrix.reset()
+                return
             self.selection_pen.SetWidth(linewidth)
-            font_size = 14.0 / matrix.value_scale_x()
             if font_size < 1.0:
                 font_size = 1.0  # Mac does not allow values lower than 1.
             font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
@@ -890,15 +901,17 @@ class GridWidget(Widget):
             if self.grid is None:
                 self.calculate_grid()
             starts, ends = self.grid
+            matrix = self.scene.widget_root.scene_widget.matrix
             try:
-                line_width = int(1 / self.scene.widget_root.scene_widget.matrix.value_scale_x())
+                scale_x = matrix.value_scale_x()
+                line_width = int(1 / scale_x)
                 if line_width < 1:
                     line_width = 1
                 self.grid_line_pen.SetWidth(line_width)
                 gc.SetPen(self.grid_line_pen)
                 gc.StrokeLineSegments(starts, ends)
-            except (OverflowError, ValueError):
-                self.scene.widget_root.scene_widget.matrix.reset()
+            except (OverflowError, ValueError, ZeroDivisionError):
+                matrix.reset()
 
     def signal(self, signal, *args, **kwargs):
         """
