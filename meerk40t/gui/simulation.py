@@ -223,6 +223,7 @@ class SimulationPanel(wx.Panel, Job):
         self.context.setting(str, "units_name", "mm")
         self.context.setting(int, "units_marks", 10)
         self.context.setting(int, "units_index", 0)
+        self.context.setting(float, "units_convert", MILS_IN_MM)
         self.context.listen("refresh_scene", self.on_refresh_scene)
 
         bbox = (

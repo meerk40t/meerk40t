@@ -826,16 +826,19 @@ class GridWidget(Widget):
         """
         Based on the current matrix calculate the grid within the bed-space.
         """
-        if self.scene.context is not None:
-            context = self.scene.context
+        context = self.scene.context
+        if context is not None:
             bed_dim = context.root
             wmils = bed_dim.bed_width * MILS_IN_MM
             hmils = bed_dim.bed_height * MILS_IN_MM
         else:
             wmils = 310 * MILS_IN_MM
             hmils = 210 * MILS_IN_MM
-
-        kernel_root = self.scene.context.root
+        kernel_root = context.root
+        kernel_root.setting(str, "units_name", "mm")
+        kernel_root.setting(int, "units_marks", 10)
+        kernel_root.setting(int, "units_index", 0)
+        kernel_root.setting(float, "units_convert", 39.3701)
         convert = kernel_root.units_convert
         marks = kernel_root.units_marks
         step = convert * marks
