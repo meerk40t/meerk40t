@@ -192,6 +192,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.listen("modified", self.on_element_modified)
         context.listen("altered", self.on_element_modified)
         context.listen("units", self.space_changed)
+        context("scene focus -10% -10% 110% 110%\n")
 
     def finalize(self, *args):
         context = self.context
