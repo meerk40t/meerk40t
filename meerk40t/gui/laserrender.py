@@ -352,7 +352,10 @@ class LaserRender:
                         text.font_size, text.font_size, text.x, text.y
                     )
                 text.font_size = 1  # No zero sized fonts.
-            font = wx.Font(text.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            try:
+                font = wx.Font(text.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            except TypeError:
+                font = wx.Font(int(text.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
             try:
                 f = []
                 if text.font_family is not None:
