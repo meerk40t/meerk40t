@@ -1432,7 +1432,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
                             backwards = True
                             if d <= 0.1:
                                 # Need to swap to next segment forward if it is coincident and permitted
-                                if cut.next and cut.next.start == cut.end:
+                                if cut.next and cut.next.permitted and cut.next.start == cut.end:
                                     closest = cut.next
                                     backwards = False
                                 break  # Distance in px is zero, we cannot improve.
