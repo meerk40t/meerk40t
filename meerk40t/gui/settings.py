@@ -453,7 +453,7 @@ class PreferencesPanel(wx.Panel):
 
 class Settings(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(490, 331, *args, **kwds)
+        super().__init__(565, 327, *args, **kwds)
 
         self.panel = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon

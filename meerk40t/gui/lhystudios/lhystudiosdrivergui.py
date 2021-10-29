@@ -394,7 +394,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
 
 class LhystudiosDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(337, 357, *args, **kwds)
+        super().__init__(365, 365, *args, **kwds)
 
         self.panel = LhystudiosConfigurationPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
