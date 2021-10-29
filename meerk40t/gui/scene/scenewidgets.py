@@ -113,8 +113,12 @@ class SelectionWidget(Widget):
             height = self.bottom - self.top
             matrix = self.parent.matrix
             # Twice size of equivalent in event:hover
-            xmin = 10 / matrix.value_scale_x()
-            ymin = 10 / matrix.value_scale_y()
+            try:
+                xmin = 10 / matrix.value_scale_x()
+                ymin = 10 / matrix.value_scale_y()
+            except ZeroDivisionError:
+                ymin = 10
+                xmin = 10
             if width < xmin:
                 width = (xmin - width) / 2
                 self.left -= width
