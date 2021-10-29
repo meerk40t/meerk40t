@@ -195,6 +195,11 @@ def run():
 
     kernel.add_plugin(vectrace.plugin)
 
+    if not getattr(sys, "frozen", False):
+        from .extra import locale
+
+        kernel.add_plugin(locale.plugin)
+
     from .extra import inkscape
 
     kernel.add_plugin(inkscape.plugin)
