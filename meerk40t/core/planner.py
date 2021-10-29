@@ -59,7 +59,9 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Launch Spooler on Job Start"),
-                "tip": _("Open the Spooler window automatically when you Execute a Job"),
+                "tip": _(
+                    "Open the Spooler window automatically when you Execute a Job"
+                ),
             },
             {
                 "attr": "prehome",
@@ -143,7 +145,10 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Reduce Travel Time"),
                 "tip": _(
-                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+                    "Reduce the travel time by optimizing the order of the elements. "
+                    + "When this option is NOT checked, elements are burned in the order "
+                    + "they appear in the Operation tree. "
+                    + "With this option checked, Meerk40t will find a nearby path instead."
                 ),
             },
             {
@@ -152,7 +157,11 @@ def plugin(kernel, lifecycle=None):
                 "default": False,
                 "type": bool,
                 "label": _("Merge Passes"),
-                "tip": _("Combine passes into the same optimization"),
+                "tip": _(
+                    "Combine passes into the same optimization. "
+                    + "This will typically result in each path being burned multiple times in succession, "
+                    + "before Meerk40 moves to the next path. "
+                ),
             },
             {
                 "attr": "opt_merge_ops",
@@ -160,7 +169,13 @@ def plugin(kernel, lifecycle=None):
                 "default": False,
                 "type": bool,
                 "label": _("Merge Operations"),
-                "tip": _("Combine operations into the same optimization"),
+                "tip": _(
+                    "Combine all operations and optimise across them globally. "
+                    + "Operations of different types will be optimised together to reduce travel time, "
+                    + "so vector and raster burns will be mixed. "
+                    "If Merge Passes is not checked, Operations with >1 passes will only have the same passes merged. "
+                    + "If Merge Passes is also checked, then all burns will be optimised globally."
+                ),
             },
             {
                 "attr": "opt_inner_first",
@@ -169,7 +184,24 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Cut Inner First"),
                 "tip": _(
-                    "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
+                    "Ensure that inside burns are done before an outside cut in order to ensure that burns inside "
+                    + "a cut-out piece are done before the cut piece shifts or drops out of the material."
+                )
+                + "\n\n"
+                + _(
+                    "Note: This is a very CPU intensive activity, dependent on the square "
+                    + "of the total number of path segments being optimised, and may take a long time "
+                    + "particularly when used with Merge Operations or Merge Passes, "
+                    + "both of which increase the number of path segments being optimised. "
+                    + "For example, with Operations Passes = 4, Cut Inner First optimisation "
+                    + "will take 16x longer with Merge Passes than without."
+                )
+                + "\n\n"
+                + _(
+                    "If optimising takes too long with this checked, "
+                    + "try disabling Merge Operations and / or Merge Passes. "
+                    + "Whilst you will not get the maximum travel time savings, "
+                    + "you should still get the majority of them."
                 ),
             },
             {
@@ -469,9 +501,7 @@ class CutPlan:
         step = op.settings.raster_step
         if step == 0:
             step = 1
-        image = make_raster(
-            subitems, bounds, step=step
-        )
+        image = make_raster(subitems, bounds, step=step)
         image_element = SVGImage(image=image)
         image_element.transform.post_scale(step, step)
         image_element.transform.post_translate(xmin, ymin)
