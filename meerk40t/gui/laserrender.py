@@ -158,7 +158,7 @@ class LaserRender:
             try:
                 try:
                     self.pen.SetWidth(width)
-                except ValueError:
+                except TypeError:
                     self.pen.SetWidth(int(width))
             except OverflowError:
                 pass  # Exceeds 32 bit signed integer.
