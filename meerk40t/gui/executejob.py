@@ -127,23 +127,55 @@ class PlannerPanel(wx.Panel):
         # self.text_time_laser.SetToolTip(_("Time Estimate: Lasering Time"))
         # self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
         # self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
-        self.check_merge_passes.SetToolTip(
-            _("Combine passes into the same optimization")
-        )
-        self.check_merge_ops.SetToolTip(
-            _("Combine operations into the same optimization")
-        )
         self.check_rapid_moves_between.SetToolTip(
             _(
                 "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
             )
         )
         self.check_reduce_travel_time.SetToolTip(
-            _("Reduce the travel time by optimizing the order of the elements")
+            _(
+                "Reduce the travel time by optimizing the order of the elements. " +
+                "When this option is NOT checked, elements are burned in the order " +
+                "they appear in the Operation tree. " +
+                "With this option checked, Meerk40t will find a nearby path instead."
+            )
+        )
+        self.check_merge_ops.SetToolTip(
+            _(
+                "Combine all operations and optimise across them globally. " +
+                "Operations of different types will be optimised together to reduce travel time, " +
+                "so vector and raster burns will be mixed. "
+                "If Merge Passes is not checked, Operations with >1 passes will only have the same passes merged. " +
+                "If Merge Passes is also checked, then all burns will be optimised globally."
+            )
+        )
+        self.check_merge_passes.SetToolTip(
+            _(
+                "Combine passes into the same optimization. " +
+                "This will typically result in each path being burned multiple times in succession, " +
+                "before Meerk40 moves to the next path. "
+            )
         )
         self.check_cut_inner_first.SetToolTip(
             _(
-                "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
+                "Ensure that inside burns are done before an outside cut in order to ensure that burns inside " +
+                "a cut-out piece are done before the cut piece shifts or drops out of the material."
+            )
+            + "\n\n"
+            + _(
+                "Note: This is a very CPU intensive activity, dependent on the square " +
+                "of the total number of path segments being optimised, and may take a long time " +
+                "particularly when used with Merge Operations or Merge Passes, " +
+                "both of which increase the number of path segments being optimised. " +
+                "For example, with Operations Passes = 4, Cut Inner First optimisation " +
+                "will take 16x longer with Merge Passes than without."
+            )
+            + "\n\n"
+            + _(
+                "If optimising takes too long with this checked, " +
+                "try disabling Merge Operations and / or Merge Passes. " +
+                "Whilst you will not get the maximum travel time savings, " +
+                "you should still get the majority of them."
             )
         )
         # self.check_reduce_direction_changes.SetToolTip(
