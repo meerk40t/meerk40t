@@ -18,7 +18,7 @@ class RotarySettingsPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Rotary"))
+        self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
         self.text_rotary_scaley = wx.TextCtrl(self, wx.ID_ANY, "1.0")
         self.text_rotary_scalex = wx.TextCtrl(self, wx.ID_ANY, "1.0")
         self.checkbox_rotary_loop = wx.CheckBox(self, wx.ID_ANY, _("Field Loop"))
