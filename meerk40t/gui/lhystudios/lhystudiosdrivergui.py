@@ -209,7 +209,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
         sizer_16 = wx.BoxSizer(wx.VERTICAL)
         sizer_17 = wx.BoxSizer(wx.VERTICAL)
         sizer_board = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Board Setup")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Board Setup:")), wx.HORIZONTAL
         )
         sizer_board.Add(self.combobox_board, 1, 0, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, "")

@@ -25,7 +25,7 @@ class PreferencesPanel(wx.Panel):
         self.radio_units = wx.RadioBox(
             self,
             wx.ID_ANY,
-            _("Units"),
+            _("Units:"),
             choices=["mm", "cm", "inch", "steps"],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
