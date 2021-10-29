@@ -950,6 +950,8 @@ class Kernel:
                     )
                 context.close(opened_name, channel=channel)
 
+        self.process_queue()  # Process last events.
+
         # Detach Modifiers
         for context_name in list(self.contexts):
             try:
