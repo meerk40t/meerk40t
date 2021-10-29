@@ -725,6 +725,7 @@ class MeerK40t(MWindow):
         self.recent_file_menu = wx.Menu()
         self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
         self.file_menu.Append(ID_MENU_IMPORT, _("&Import File"), "")
+        # self.file_menu.Append(wx.ID_NEW, _("&Close\tCtrl-W"), "")
         self.file_menu.AppendSeparator()
         self.file_menu.Append(wx.ID_SAVE, _("&Save\tCtrl-S"), "")
         self.file_menu.Append(wx.ID_SAVEAS, _("Save &As\tCtrl-Shift-S"), "")
@@ -931,7 +932,10 @@ class MeerK40t(MWindow):
         # HELP MENU
         # ==========
         self.help_menu = wx.Menu()
-        self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
+        if platform == "darwin":
+            self.help_menu.Append(wx.ID_HELP, _("&MeerK40t Help"), "")  # os.system("open MeerK40tMac.help")
+        else:
+            self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
         self.help_menu.Append(ID_BEGINNERS, _("&Beginners' Help"), "")
         self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
         self.help_menu.Append(ID_RELEASES, _("&Releases"), "")
@@ -939,7 +943,7 @@ class MeerK40t(MWindow):
         self.help_menu.Append(ID_MAKERS_FORUM, _("&Makers Forum"), "")
         self.help_menu.Append(ID_IRC, _("&IRC"), "")
         self.help_menu.AppendSeparator()
-        self.help_menu.Append(wx.ID_ABOUT, _("&About"), "")
+        self.help_menu.Append(wx.ID_ABOUT, _("&About MeerK40t"), "")
         self.main_menubar.Append(self.help_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
