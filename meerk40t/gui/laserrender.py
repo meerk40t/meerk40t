@@ -156,7 +156,10 @@ class LaserRender:
             self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
             try:
-                self.pen.SetWidth(width)
+                try:
+                    self.pen.SetWidth(width)
+                except ValueError:
+                    self.pen.SetWidth(int(width))
             except OverflowError:
                 pass  # Exceeds 32 bit signed integer.
             gc.SetPen(self.pen)

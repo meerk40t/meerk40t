@@ -556,7 +556,10 @@ class SelectionWidget(Widget):
             except ZeroDivisionError:
                 matrix.reset()
                 return
-            self.selection_pen.SetWidth(linewidth)
+            try:
+                self.selection_pen.SetWidth(linewidth)
+            except ValueError:
+                self.selection_pen.SetWidth(int(linewidth))
             if font_size < 1.0:
                 font_size = 1.0  # Mac does not allow values lower than 1.
             font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
@@ -674,7 +677,12 @@ class RectSelectWidget(Widget):
             x1 = self.end_location[0]
             y1 = self.end_location[1]
             linewidth = 2.0 / matrix.value_scale_x()
-            self.selection_pen.SetWidth(linewidth)
+            if linewidth < 1:
+                linewidth = 1
+            try:
+                self.selection_pen.SetWidth(linewidth)
+            except ValueError:
+                self.selection_pen.SetWidth(int(linewidth))
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(x0, y0, x1, y0)
             gc.StrokeLine(x1, y0, x1, y1)
@@ -904,10 +912,14 @@ class GridWidget(Widget):
             matrix = self.scene.widget_root.scene_widget.matrix
             try:
                 scale_x = matrix.value_scale_x()
-                line_width = int(1 / scale_x)
+                line_width = 1.0 / scale_x
                 if line_width < 1:
                     line_width = 1
-                self.grid_line_pen.SetWidth(line_width)
+                try:
+                    self.grid_line_pen.SetWidth(line_width)
+                except ValueError:
+                    self.grid_line_pen.SetWidth(int(line_width))
+
                 gc.SetPen(self.grid_line_pen)
                 gc.StrokeLineSegments(starts, ends)
             except (OverflowError, ValueError, ZeroDivisionError):
