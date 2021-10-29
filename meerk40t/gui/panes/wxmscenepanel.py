@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import icons8_console_50
+from meerk40t.gui.icons import icons8_console_50, icon_meerk40t
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scene import ScenePanel
@@ -9,6 +9,7 @@ from meerk40t.gui.scene.scenewidgets import SelectionWidget, RectSelectWidget, L
     GridWidget, GuideWidget, ReticleWidget, MILS_IN_MM
 from meerk40t.gui.scene.toolwidgets import ToolContainer, DrawTool, RectTool
 from meerk40t.gui.wxutils import get_key_name
+from meerk40t.svgelements import Angle, Length
 
 _ = wx.GetTranslation
 
@@ -95,6 +96,82 @@ class MeerK40tScenePanel(wx.Panel):
         def toggle_rotary_view(*args, **kwargs):
             self.toggle_rotary_view()
 
+        @self.context.console_command("scene", output_type="scene")
+        def scene(command, _, channel, **kwargs):
+            channel("scene: %s" % str(self.widget_scene))
+            return "scene", self.widget_scene
+
+        @self.context.console_argument("zoom_x", type=float, help="zoom amount from current")
+        @self.context.console_argument("zoom_y", type=float, help="zoom amount from current")
+        @self.context.console_command("aspect", input_type="scene")
+        def scene(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
+            matrix = data.widget_root.scene_widget.matrix
+            matrix.post_scale(zoom_x, zoom_y)
+            data.request_refresh()
+            channel(str(matrix))
+            return "scene", data
+
+        @self.context.console_argument("zoomfactor", type=float, help="zoom amount from current")
+        @self.context.console_command("zoom", input_type="scene")
+        def scene(command, _, channel, data, zoomfactor=1.0, **kwargs):
+            matrix = data.widget_root.scene_widget.matrix
+            matrix.post_scale(zoomfactor)
+            data.request_refresh()
+            channel(str(matrix))
+            return "scene", data
+
+        @self.context.console_argument("pan_x", type=float, default=0, help="pan from current position x")
+        @self.context.console_argument("pan_y", type=float, default=0, help="pan from current position y")
+        @self.context.console_command("pan", input_type="scene")
+        def scene(command, _, channel, data, pan_x, pan_y, **kwargs):
+            matrix = data.widget_root.scene_widget.matrix
+            matrix.post_translate(pan_x, pan_y)
+            data.request_refresh()
+            channel(str(matrix))
+            return "scene", data
+
+        @self.context.console_argument("angle", type=Angle.parse, default=0, help="Rotate scene")
+        @self.context.console_command("rotate", input_type="scene")
+        def scene(command, _, channel, data, angle, **kwargs):
+            matrix = data.widget_root.scene_widget.matrix
+            matrix.post_rotate(angle)
+            data.request_refresh()
+            channel(str(matrix))
+            return "scene", data
+
+        @self.context.console_command("reset", input_type="scene")
+        def scene(command, _, channel, data, **kwargs):
+            matrix = data.widget_root.scene_widget.matrix
+            matrix.reset()
+            data.request_refresh()
+            channel(str(matrix))
+            return "scene", data
+
+        @self.context.console_argument("x", type=Length, help="x position")
+        @self.context.console_argument("y", type=Length, help="y position")
+        @self.context.console_argument("width", type=Length, help="width of view")
+        @self.context.console_argument("height", type=Length, help="height of view")
+        @self.context.console_command("focus", input_type="scene")
+        def scene(command, _, channel, data, x, y, width, height, **kwargs):
+            bed_dim = self.context.root
+            x = x.value(
+                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            y = y.value(
+                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+            )
+            width = width.value(
+                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            height = height.value(
+                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+            )
+            bbox = (x, y, width, height)
+            data.widget_root.focus_viewport_scene(bbox, self.ClientSize)
+            data.request_refresh()
+            channel(str(data.matrix))
+            return "scene", data
+
     def on_refresh_scene(self, origin, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
@@ -115,6 +192,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.listen("modified", self.on_element_modified)
         context.listen("altered", self.on_element_modified)
         context.listen("units", self.space_changed)
+        context("scene focus -10% -10% 110% 110%\n")
 
     def finalize(self, *args):
         context = self.context
@@ -197,12 +275,12 @@ class MeerK40tScenePanel(wx.Panel):
 
 class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(581, 410, *args, **kwds)
+        super().__init__(1280, 800, *args, **kwds)
         self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("Console"))
+        self.SetTitle(_("Scene"))
         self.Layout()
 
     def window_open(self):

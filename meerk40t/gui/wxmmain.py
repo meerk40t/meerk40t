@@ -1623,7 +1623,7 @@ class MeerK40t(MWindow):
         context = self.context
         self.working_file = None
         context.elements.clear_all()
-        self.context(".laserpath_clear")
+        self.context(".laserpath_clear\n")
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context("dialog_load\n")
@@ -1654,21 +1654,13 @@ class MeerK40t(MWindow):
         """
         Zoomout button press
         """
-        m = self.scene.ClientSize / 2
-        self.widget_scene.widget_root.scene_widget.scene_post_scale(
-            1.0 / 1.5, 1.0 / 1.5, m[0], m[1]
-        )
-        self.request_refresh()
+        self.context("scene zoom %d\n" % (1.0 / 1.5))
 
     def on_click_zoom_in(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoomin button press
         """
-        m = self.scene.ClientSize / 2
-        self.widget_scene.widget_root.scene_widget.scene_post_scale(
-            1.5, 1.5, m[0], m[1]
-        )
-        self.request_refresh()
+        self.context("scene zoom %d\n" % 1.5)
 
     def on_click_zoom_size(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1677,14 +1669,9 @@ class MeerK40t(MWindow):
         elements = self.context.elements
         bbox = elements.selected_area()
         if bbox is None:
-            bed_dim = self.context.root
-            bbox = (
-                0,
-                0,
-                bed_dim.bed_width * MILS_IN_MM,
-                bed_dim.bed_height * MILS_IN_MM,
-            )
-        pass
+            self.context("scene focus -10% -10% 110% 110%\n")
+        else:
+            self.context("scene focus %f %f %f %f\n" % (bbox[0], bbox[1], bbox[2], bbox[3]))
 
     def toggle_draw_mode(self, bits):
         """
