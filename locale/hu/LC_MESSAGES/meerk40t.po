@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2021-09-11 02:52-0700\n"
-"PO-Revision-Date: 2021-10-24 07:41-0700\n"
+"PO-Revision-Date: 2021-10-28 18:58-0700\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -275,7 +275,7 @@ msgstr "Eszköz Manager"
 #: meerk40t/gui/devicemanager.py:65 meerk40t/gui/panes/devicespanel.py:48
 #: meerk40t/gui/panes/toolbarcontrol.py:90 meerk40t/gui/wxmeerk40t.py:770 meerk40t/gui/wxmeerk40t.py:1271
 msgid "Spooler"
-msgstr "Puffer tárolór"
+msgstr "Puffer tároló"
 
 #: meerk40t/gui/devicemanager.py:68 meerk40t/gui/panes/devicespanel.py:51
 msgid "Driver/Input"
@@ -329,7 +329,7 @@ msgstr ""
 #: meerk40t/gui/executejob.py:36 meerk40t/gui/executejob.py:65 meerk40t/gui/executejob.py:138
 #: meerk40t/gui/wxmeerk40t.py:732 meerk40t/gui/wxmeerk40t.py:1160
 msgid "Home"
-msgstr "Kezdőpont"
+msgstr "Kezdőpont Gomb"
 
 #: meerk40t/gui/executejob.py:37
 msgid "Automatically add a home command before all jobs"
@@ -797,19 +797,19 @@ msgstr "Navigáció"
 
 #: meerk40t/gui/navigation.py:300 meerk40t/gui/panes/jogdistancepanel.py:42
 msgid "Set Jog Distance in mils (1/1000th of an inch)"
-msgstr "Jog-távolság beállítása mil-ben (1/1000 inch)."
+msgstr "Lépéstávolság beállítása mil-ben (1/1000 inch)."
 
 #: meerk40t/gui/navigation.py:303 meerk40t/gui/panes/jogdistancepanel.py:45
 msgid "Set Jog Distance in mm"
-msgstr "Jog-távolság beállítása mm-ben"
+msgstr "Lépéstávolság beállítása mm-ben"
 
 #: meerk40t/gui/navigation.py:305 meerk40t/gui/panes/jogdistancepanel.py:47
 msgid "Set Jog Distance in cm"
-msgstr "Jog-távolság beállítása cm-ben"
+msgstr "Lépéstávolság beállítása cm-ben"
 
 #: meerk40t/gui/navigation.py:307 meerk40t/gui/panes/jogdistancepanel.py:49
 msgid "Set Jog Distance in inch"
-msgstr "Jog-távolság beállítása inch-ben"
+msgstr "Lépéstávolság beállítása inch-ben"
 
 #: meerk40t/gui/navigation.py:309 meerk40t/gui/panes/jog.py:96
 msgid "Move laser diagonally in the up and left direction"
@@ -973,7 +973,7 @@ msgstr "Rövid pulzus/jel"
 
 #: meerk40t/gui/navigation.py:458 meerk40t/gui/panes/jogdistancepanel.py:55
 msgid "Jog Distance"
-msgstr "Jog távolság"
+msgstr "Lépéstávolság"
 
 #: meerk40t/gui/navigation.py:465
 msgid "mils"
@@ -2132,23 +2132,23 @@ msgstr ""
 
 #: meerk40t/gui/simulation.py:188
 msgid "Total Time"
-msgstr "Teljes idő"
+msgstr "Teljes Idő"
 
 #: meerk40t/gui/simulation.py:191
 msgid "Travel Time"
-msgstr "Utazási idő"
+msgstr "Utazási Idő"
 
 #: meerk40t/gui/simulation.py:194
 msgid "Laser Time"
-msgstr "Lézer idő"
+msgstr "Lézer Idő"
 
 #: meerk40t/gui/simulation.py:198
 msgid "Total Distance"
-msgstr "Teljes távolság"
+msgstr "Teljes Távolság"
 
 #: meerk40t/gui/simulation.py:201
 msgid "Travel Distance"
-msgstr "Mozgási távolság"
+msgstr "Mozgási Távolság"
 
 #: meerk40t/gui/simulation.py:204
 msgid "Laser Distance"
@@ -2160,7 +2160,7 @@ msgstr "Visszajátszás sebessége"
 
 #: meerk40t/gui/textproperty.py:118
 msgid "Text Properties"
-msgstr "Szöveg tulajdonságai"
+msgstr "Szöveg Tulajdonságai"
 
 #: meerk40t/gui/usbconnect.py:54
 msgid "UsbConnect"
@@ -2172,27 +2172,27 @@ msgstr ""
 
 #: meerk40t/gui/wxmeerk40t.py:448
 msgid "Jog"
-msgstr ""
+msgstr "Léptetés"
 
 #: meerk40t/gui/wxmeerk40t.py:467
 msgid "Drag"
-msgstr "Húzás"
+msgstr "Lézerpozícionálás"
 
 #: meerk40t/gui/wxmeerk40t.py:487
 msgid "Transform"
-msgstr ""
+msgstr "Képátalakítás"
 
 #: meerk40t/gui/wxmeerk40t.py:507
 msgid "Distances"
-msgstr "Távolságok"
+msgstr "Hosszátváltás"
 
 #: meerk40t/gui/wxmeerk40t.py:526
 msgid "Pulse"
-msgstr ""
+msgstr "Impulzusvezérlés"
 
 #: meerk40t/gui/wxmeerk40t.py:545
 msgid "Move"
-msgstr "Mozgatás"
+msgstr "Lézermozgatás"
 
 #: meerk40t/gui/wxmeerk40t.py:564
 msgid "Tree"
@@ -2204,7 +2204,7 @@ msgstr "Pozíció"
 
 #: meerk40t/gui/wxmeerk40t.py:596
 msgid "Ribbon"
-msgstr ""
+msgstr "Menüsor"
 
 #: meerk40t/gui/wxmeerk40t.py:631
 msgid "Processing and sending..."
@@ -2212,11 +2212,11 @@ msgstr ""
 
 #: meerk40t/gui/wxmeerk40t.py:642
 msgid "One Touch: Send Job To Laser "
-msgstr ""
+msgstr "Lézerindítás "
 
 #: meerk40t/gui/wxmeerk40t.py:647
 msgid "Go"
-msgstr ""
+msgstr "Lézerindító gomb"
 
 #: meerk40t/gui/wxmeerk40t.py:670
 msgid "Emergency stop/reset the controller."
@@ -2225,7 +2225,7 @@ msgstr "Vészleállító / Vezérlő leállítása."
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:54 meerk40t/gui/moshi/moshicontrollergui.py:34
 #: meerk40t/gui/wxmeerk40t.py:675 meerk40t/gui/wxmeerk40t.py:1292
 msgid "Stop"
-msgstr ""
+msgstr "Stop Gomb"
 
 #: meerk40t/gui/wxmeerk40t.py:708
 msgid "Pause/Resume the controller"
@@ -2323,7 +2323,7 @@ msgstr "&Legutóbbi"
 
 #: meerk40t/gui/wxmeerk40t.py:1708
 msgid "&Import File"
-msgstr ""
+msgstr "File Importálása"
 
 #: meerk40t/gui/wxmeerk40t.py:1710
 msgid "&Save\tCtrl-S"
@@ -2359,7 +2359,7 @@ msgstr "Háttér elrejtése"
 
 #: meerk40t/gui/wxmeerk40t.py:1731
 msgid "Hide Guides"
-msgstr "Útmutatók elrejtése"
+msgstr "Rácsméret elrejtése"
 
 #: meerk40t/gui/wxmeerk40t.py:1732
 msgid "Hide Paths"
@@ -2407,7 +2407,7 @@ msgstr "Fa struktúra elrejtése"
 
 #: meerk40t/gui/wxmeerk40t.py:1754
 msgid "Do Not Cache Image"
-msgstr "Ne tárolja a gyorsítótárat a képen"
+msgstr "Ne mentse háttértárba a képet"
 
 #: meerk40t/gui/wxmeerk40t.py:1757
 msgid "Do Not Refresh"
@@ -2419,7 +2419,7 @@ msgstr "Ne animáljon"
 
 #: meerk40t/gui/wxmeerk40t.py:1763
 msgid "Flip XY"
-msgstr "Flip XY"
+msgstr "XY Tükrözése"
 
 #: meerk40t/gui/wxmeerk40t.py:1765
 msgid "View"
@@ -2427,15 +2427,15 @@ msgstr "Nézet"
 
 #: meerk40t/gui/wxmeerk40t.py:1828
 msgid "Lock Panes"
-msgstr "Zárólapok"
+msgstr "Menüpanelek zárolása"
 
 #: meerk40t/gui/wxmeerk40t.py:1833
 msgid "Reset Panes"
-msgstr "Panelek visszaállítása"
+msgstr "Menüpanelek visszaállítása"
 
 #: meerk40t/gui/wxmeerk40t.py:1835
 msgid "Panes"
-msgstr "Táblák"
+msgstr "Menüpanelek"
 
 #: meerk40t/gui/wxmeerk40t.py:1844
 msgid "E&xecute Job"
@@ -2629,7 +2629,7 @@ msgstr "FPS korlát"
 
 #: meerk40t/gui/wxmeerk40t.py:2990
 msgid "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, translate, etc..."
-msgstr "Írja be az SVG átalakítási utasítást, pl.\" scale (1,49, 1, $x, $y) \", forgatás,fordítani, stb ..."
+msgstr "Írja be az SVG átalakítási utasítást, pl.\" Skála (1,49, 1, $x, $y) \", forgatás,fordítani, stb ..."
 
 #: meerk40t/gui/wxmeerk40t.py:2993
 msgid "Transform Entry"
@@ -2768,7 +2768,7 @@ msgid ""
 "\n"
 msgstr ""
 "Megkaptuk az üzenetét. Köszönjük, hogy segített \n"
-"\n"
+" \n"
 
 #: meerk40t/gui/wxmeerk40t.py:4443 meerk40t/gui/wxmeerk40t.py:4458
 msgid "Thanks"
@@ -3193,11 +3193,11 @@ msgstr "Arra kényszeríti a készüléket, hogy belépjen és kilépjen a progr
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:138 meerk40t/gui/moshi/moshidrivergui.py:52
 msgid "Translate Home X"
-msgstr "Fordítás kezdőlap X"
+msgstr "Fordítás X kezdőpontra"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:140 meerk40t/gui/moshi/moshidrivergui.py:54
 msgid "Translate Home Y"
-msgstr "Übersetzen Startseite Y"
+msgstr "Fordítás Y kezdőpontra"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:142 meerk40t/gui/moshi/moshidrivergui.py:56
 msgid "Set Home Position based on the current position"
@@ -3338,27 +3338,27 @@ msgstr "Balra igazít"
 
 #: meerk40t/gui/panes/toolbaralign.py:30
 msgid "Align Right"
-msgstr "Igazítsa jobbra"
+msgstr "Jobbra igazít"
 
 #: meerk40t/gui/panes/toolbaralign.py:31
 msgid "Align Top"
-msgstr "Igazítsa felül"
+msgstr "Felülre igazít"
 
 #: meerk40t/gui/panes/toolbaralign.py:33
 msgid "Align Bottom"
-msgstr "Igazítsa az alját"
+msgstr "Lentre igazít"
 
 #: meerk40t/gui/panes/toolbaralign.py:35
 msgid "Align Center"
-msgstr "Központ igazítása"
+msgstr "Középre igazít"
 
 #: meerk40t/gui/panes/toolbaralign.py:37
 msgid "Space Vertical"
-msgstr "Függőleges tér"
+msgstr "Elosztás vertikálisan"
 
 #: meerk40t/gui/panes/toolbaralign.py:41
 msgid "Space Horizontal"
-msgstr "Tér Vízszintes"
+msgstr "Elosztás horizontálisan"
 
 #: meerk40t/gui/panes/toolbaralign.py:90
 msgid "Alignment"
@@ -3629,7 +3629,7 @@ msgstr "Vége"
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:52 meerk40t/gui/wxmeerk40t.py:712
 #: meerk40t/gui/wxmeerk40t.py:1286 meerk40t/kernel.py:1510
 msgid "Pause"
-msgstr "Szünet"
+msgstr "Szünet Gomb"
 
 #: meerk40t/kernel.py:1512
 msgid "Busy"
@@ -4078,7 +4078,7 @@ msgstr "elindítja a konzol_kiszolgálót a 23 -as porton (telnet)"
 #: meerk40t/kernelserver.py:42
 #, python-format
 msgid "%s %s Telnet Console.\r\n"
-msgstr "%s %s Telnet konzol. \r\n"
+msgstr "%s %s Telnet konzol.\r\n"
 
 #: meerk40t/kernelserver.py:53
 #, python-format
@@ -5348,7 +5348,7 @@ msgstr "Kép megfordítása"
 
 #: meerk40t/core/elements.py:5004
 msgid "Mirror horizontal"
-msgstr "Vízszintes tükrözés"
+msgstr "Tükrözés vízszintesen"
 
 #: meerk40t/core/elements.py:5010
 msgid "Flip vertical"
@@ -5555,7 +5555,7 @@ msgstr "a parancs beszúrásához szükséges helymutató"
 
 #: meerk40t/core/planner.py:584
 msgid "unlock, origin, home, etc."
-msgstr "feloldás, származás, otthon stb."
+msgstr "feloldás, származás, otthon stb"
 
 #: meerk40t/core/planner.py:588
 msgid "plan<?> command"
@@ -5843,7 +5843,7 @@ msgstr "Illesztőprogram észlelve: %s"
 #: meerk40t/device/ch341/ch341.py:178 meerk40t/device/ch341/libusb.py:56 meerk40t/device/ch341/libusb.py:64
 #: meerk40t/device/ch341/mock.py:59 meerk40t/device/ch341/windll.py:55
 msgid "Device Connected.\n"
-msgstr "Az eszköz csatlakoztatva.\n"
+msgstr "Az eszköz csatlakoztatva\n"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:66 meerk40t/device/ch341/libusb.py:30
 msgid "Using LibUSB to connect."
@@ -5867,7 +5867,7 @@ msgstr "Az operációs rendszere nem engedélyezi az USB elérését."
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:95
 msgid "K40 devices were found. But something else was connected to them."
-msgstr "K40 eszközt találtak. De valami más is kapcsolódott hozzájuk."
+msgstr "K40 eszközt találtak. De valami más is kapcsolódott hozzájuk ."
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:101
 msgid "K40 devices were found but they were rejected by device criteria in Controller."
@@ -6297,7 +6297,7 @@ msgstr "A (z) %s eszköz kimenete nem létezik. A Lhyserver nem csatlakoztathat�
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:445
 #, python-format
 msgid "Output for device %s does not exist. Lhyserver cannot attach."
-msgstr "A (z) %s eszköz kimenete nem létezik. A Lhyserver nem tud csatlakozni."
+msgstr "A (z) %s eszköz kimenete nem létezik. A Lhyserver nem tud csatlakozni ."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:455
 #, python-format
@@ -6502,7 +6502,7 @@ msgstr "optimalizálja a <típust>"
 
 #: meerk40t/extra/pathoptimize.py:17
 msgid "Optimizations: cut_inner, travel, cut_travel"
-msgstr "Optimalizálás:"
+msgstr "Optimalizálás: cut_inner, travel, cut_travel"
 
 #: meerk40t/extra/pathoptimize.py:27
 #, python-format
