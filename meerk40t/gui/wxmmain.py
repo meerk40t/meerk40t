@@ -38,18 +38,6 @@ from .laserrender import (
     swizzlecolor,
 )
 from .mwindow import MWindow
-from .scene.scene import ScenePanel
-from .scene.scenewidgets import (
-    ElementsWidget,
-    GridWidget,
-    GuideWidget,
-    LaserPathWidget,
-    RectSelectWidget,
-    ReticleWidget,
-    SelectionWidget,
-)
-from .scene.toolwidgets import DrawTool, RectTool, ToolContainer
-from .wxutils import get_key_name
 
 _ = wx.GetTranslation
 
@@ -175,7 +163,6 @@ class MeerK40t(MWindow):
 
         self.__set_titlebar()
         self.__kernel_initialize()
-        self.__scene_initialize()
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
@@ -307,21 +294,6 @@ class MeerK40t(MWindow):
                 for elem in elements.elems(emphasized=True):
                     elem.stroke = color
                     elem.node.altered()
-
-        @context.console_command("dialog_fps", hidden=True)
-        def fps(**kwargs):
-            dlg = wx.TextEntryDialog(
-                gui, _("Enter FPS Limit"), _("FPS Limit Entry"), ""
-            )
-            dlg.SetValue("")
-
-            if dlg.ShowModal() == wx.ID_OK:
-                fps = dlg.GetValue()
-                try:
-                    gui.widget_scene.set_fps(int(fps))
-                except ValueError:
-                    pass
-            dlg.Destroy()
 
         @context.console_command("dialog_gear", hidden=True)
         def gear(**kwargs):
@@ -742,9 +714,6 @@ class MeerK40t(MWindow):
         context.setting(str, "file8", None)
         context.setting(str, "file9", None)
         self.populate_recent_menu()
-
-    def __scene_initialize(self):
-        context = self.context
 
     def __set_menubar(self):
         self.file_menu = wx.Menu()

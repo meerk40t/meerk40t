@@ -69,6 +69,21 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
 
+        @context.console_command("dialog_fps", hidden=True)
+        def fps(**kwargs):
+            dlg = wx.TextEntryDialog(
+                None, _("Enter FPS Limit"), _("FPS Limit Entry"), ""
+            )
+            dlg.SetValue("")
+
+            if dlg.ShowModal() == wx.ID_OK:
+                fps = dlg.GetValue()
+                try:
+                    self.widget_scene.set_fps(int(fps))
+                except ValueError:
+                    pass
+            dlg.Destroy()
+
         @context.console_argument("tool", help=_("tool to use."))
         @context.console_command("tool", help=_("sets a particular tool for the scene"))
         def tool_base(command, channel, _, tool=None, **kwargs):
