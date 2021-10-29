@@ -30,7 +30,6 @@ class PreferencesPanel(wx.Panel):
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
-        self.Children[0].SetFocus()
         self.combo_svg_ppi = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -235,6 +234,7 @@ class PreferencesPanel(wx.Panel):
         self.spin_bedheight.SetValue(self.bed_dim.bed_height)
         self.text_scale_x.SetValue("%.3f" % self.bed_dim.scale_x)
         self.text_scale_y.SetValue("%.3f" % self.bed_dim.scale_y)
+        self.Children[0].SetFocus()
 
     def finalize(self):
         pass
