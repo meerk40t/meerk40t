@@ -191,7 +191,12 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_devices, self.combo_devices)
         # end wxGlade
+
+    def initialize(self):
         self.context.listen("plan", self.plan_update)
+
+    def finalize(self):
+        self.context.unlisten("plan", self.plan_update)
 
     def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]
