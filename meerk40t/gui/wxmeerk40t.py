@@ -4,6 +4,8 @@ import os
 import sys
 import traceback
 
+from .panes.wxmscenepanel import SceneWindow
+
 try:
     import wx
 except ImportError as e:
@@ -287,6 +289,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/Simulation", Simulation)
+        kernel.register("window/Scene", SceneWindow)
 
         kernel.register("window/default/Controller", Controller)
         kernel.register("window/default/Preferences", Configuration)
