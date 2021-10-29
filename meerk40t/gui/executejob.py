@@ -63,9 +63,8 @@ class PlannerPanel(wx.Panel):
         self.check_reduce_travel_time = wx.CheckBox(
             self, wx.ID_ANY, _("Reduce Travel Time")
         )
-
-        self.check_merge_passes = wx.CheckBox(self, wx.ID_ANY, _("Merge Passes"))
         self.check_merge_ops = wx.CheckBox(self, wx.ID_ANY, _("Merge Operations"))
+        self.check_merge_passes = wx.CheckBox(self, wx.ID_ANY, _("Merge Passes"))
         self.check_cut_inner_first = wx.CheckBox(self, wx.ID_ANY, _("Cut Inner First"))
         # self.check_reduce_direction_changes = wx.CheckBox(
         #     self, wx.ID_ANY, _("Reduce Direction Changes")
