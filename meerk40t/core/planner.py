@@ -1391,7 +1391,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     distance = abs(complex(closest.end()) - curr)
                     backwards = True
 
-        if distance > 1e-5:
+        if distance > 50: # Stay on current path in same direction if there is a small gap < 1/20" i.e. path not quite closed
             if closest:
                 closest_length = closest.length()
             else:
@@ -1410,8 +1410,8 @@ def short_travel_cutcode(context: CutCode, channel=None):
                         ):
                             closest = cut
                             backwards = False
-                            if d <= 1e-5:
-                                break  # Distance is zero, we cannot improve.
+                            if d <= 0.1:
+                                break  # Distance in px is zero, we cannot improve.
                             distance = d
                             closest_length = l
 
@@ -1430,12 +1430,12 @@ def short_travel_cutcode(context: CutCode, channel=None):
                         ):
                             closest = cut
                             backwards = True
-                            if d <= 1e-5:
+                            if d <= 0.1:
                                 # Need to swap to next segment forward if it is coincident and permitted
                                 if cut.next and cut.next.start == cut.end:
                                     closest = cut.next
                                     backwards = False
-                                break  # Distance is zero, we cannot improve.
+                                break  # Distance in px is zero, we cannot improve.
                             distance = d
                             closest_length = l
 
