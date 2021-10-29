@@ -1,4 +1,5 @@
 from meerk40t.gui.scene.scene import Widget
+from meerk40t.gui.wxutils import create_menu
 
 try:
     from math import tau
@@ -51,17 +52,22 @@ class ElementsWidget(Widget):
     server to process leftclick in order to emphasize the given object.
     """
 
-    def __init__(self, scene, root, renderer):
+    def __init__(self, scene, renderer):
         Widget.__init__(self, scene, all=True)
         self.renderer = renderer
-        self.root = root
 
     def hit(self):
         return HITCHAIN_HIT
 
     def process_draw(self, gc):
         context = self.scene.context
-        zoom_scale = 1 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        matrix = self.scene.widget_root.scene_widget.matrix
+        scale_x = matrix.value_scale_x()
+        try:
+            zoom_scale = 1 / scale_x
+        except ZeroDivisionError:
+            matrix.reset()
+            zoom_scale = 1
         if zoom_scale < 1:
             zoom_scale = 1
         self.renderer.render(
@@ -75,7 +81,7 @@ class ElementsWidget(Widget):
         if event_type == "leftclick":
             elements = self.scene.context.elements
             elements.set_emphasized_by_position(space_pos)
-            self.root.select_in_tree_by_emphasis()
+            self.scene.context.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME
         return RESPONSE_DROP
 
@@ -86,9 +92,8 @@ class SelectionWidget(Widget):
     dealing with moving, resizing and altering the selected object.
     """
 
-    def __init__(self, scene, root):
+    def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
-        self.root = root
         self.elements = scene.context.elements
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
@@ -114,8 +119,13 @@ class SelectionWidget(Widget):
             height = self.bottom - self.top
             matrix = self.parent.matrix
             # Twice size of equivalent in event:hover
-            xmin = 10 / matrix.value_scale_x()
-            ymin = 10 / matrix.value_scale_y()
+            try:
+                xmin = 10 / matrix.value_scale_x()
+                ymin = 10 / matrix.value_scale_y()
+            except ZeroDivisionError:
+                matrix.reset()
+                ymin = 10
+                xmin = 10
             if width < xmin:
                 width = (xmin - width) / 2
                 self.left -= width
@@ -218,13 +228,13 @@ class SelectionWidget(Widget):
             elements.set_emphasized_by_position(space_pos)
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
-            self.root.create_menu(
-                self.scene.context.gui, elements.top_element(emphasized=True)
+            create_menu(
+                self.scene.context.gui, elements.top_element(emphasized=True), elements
             )
             return RESPONSE_CONSUME
         if event_type == "doubleclick":
             elements.set_emphasized_by_position(space_pos)
-            self.root.activate_selected_node()
+            self.scene.context.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
         if event_type == "leftdown":
             self.save_width = self.width
@@ -540,12 +550,22 @@ class SelectionWidget(Widget):
         bounds = elements.selected_area()
         matrix = self.parent.matrix
         if bounds is not None:
-            linewidth = 2.0 / matrix.value_scale_x()
-            self.selection_pen.SetWidth(linewidth)
-            font_size = 14.0 / matrix.value_scale_x()
+            try:
+                linewidth = 2.0 / matrix.value_scale_x()
+                font_size = 14.0 / matrix.value_scale_x()
+            except ZeroDivisionError:
+                matrix.reset()
+                return
+            try:
+                self.selection_pen.SetWidth(linewidth)
+            except TypeError:
+                self.selection_pen.SetWidth(int(linewidth))
             if font_size < 1.0:
                 font_size = 1.0  # Mac does not allow values lower than 1.
-            font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            try:
+                font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            except TypeError:
+                font = wx.Font(int(font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, wx.Colour(0x7F, 0x7F, 0x7F))
             gc.SetPen(self.selection_pen)
             x0, y0, x1, y1 = bounds
@@ -660,7 +680,12 @@ class RectSelectWidget(Widget):
             x1 = self.end_location[0]
             y1 = self.end_location[1]
             linewidth = 2.0 / matrix.value_scale_x()
-            self.selection_pen.SetWidth(linewidth)
+            if linewidth < 1:
+                linewidth = 1
+            try:
+                self.selection_pen.SetWidth(linewidth)
+            except TypeError:
+                self.selection_pen.SetWidth(int(linewidth))
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(x0, y0, x1, y0)
             gc.StrokeLine(x1, y0, x1, y1)
@@ -827,16 +852,19 @@ class GridWidget(Widget):
         """
         Based on the current matrix calculate the grid within the bed-space.
         """
-        if self.scene.context is not None:
-            context = self.scene.context
+        context = self.scene.context
+        if context is not None:
             bed_dim = context.root
             wmils = bed_dim.bed_width * MILS_IN_MM
             hmils = bed_dim.bed_height * MILS_IN_MM
         else:
             wmils = 310 * MILS_IN_MM
             hmils = 210 * MILS_IN_MM
-
-        kernel_root = self.scene.context.root
+        kernel_root = context.root
+        kernel_root.setting(str, "units_name", "mm")
+        kernel_root.setting(int, "units_marks", 10)
+        kernel_root.setting(int, "units_index", 0)
+        kernel_root.setting(float, "units_convert", 39.3701)
         convert = kernel_root.units_convert
         marks = kernel_root.units_marks
         step = convert * marks
@@ -884,15 +912,21 @@ class GridWidget(Widget):
             if self.grid is None:
                 self.calculate_grid()
             starts, ends = self.grid
+            matrix = self.scene.widget_root.scene_widget.matrix
             try:
-                line_width = int(1 / self.scene.widget_root.scene_widget.matrix.value_scale_x())
+                scale_x = matrix.value_scale_x()
+                line_width = 1.0 / scale_x
                 if line_width < 1:
                     line_width = 1
-                self.grid_line_pen.SetWidth(line_width)
+                try:
+                    self.grid_line_pen.SetWidth(line_width)
+                except TypeError:
+                    self.grid_line_pen.SetWidth(int(line_width))
+
                 gc.SetPen(self.grid_line_pen)
                 gc.StrokeLineSegments(starts, ends)
-            except (OverflowError, ValueError):
-                self.scene.widget_root.scene_widget.matrix.reset()
+            except (OverflowError, ValueError, ZeroDivisionError):
+                matrix.reset()
 
     def signal(self, signal, *args, **kwargs):
         """

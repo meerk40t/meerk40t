@@ -608,7 +608,12 @@ class Scene(Module, Job):
         """
         self.hit_chain.clear()
         for current_widget, current_matrix in self.hittable_elements:
-            hit_point = Point(current_matrix.point_in_inverse_space(position))
+            try:
+                hit_point = Point(current_matrix.point_in_inverse_space(position))
+            except ZeroDivisionError:
+                current_matrix.reset()
+                # Some object is zero matrixed, reset it.
+                return
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 

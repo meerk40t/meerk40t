@@ -651,7 +651,7 @@ class MovePanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: MovePanel.__do_layout
         sizer_12 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Move To")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Move To:")), wx.HORIZONTAL
         )
         sizer_13 = wx.BoxSizer(wx.VERTICAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
@@ -733,7 +733,7 @@ class PulsePanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: PulsePanel.__do_layout
         sizer_5 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Short Pulse")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Short Pulse:")), wx.HORIZONTAL
         )
         sizer_5.Add(self.button_navigate_pulse, 0, 0, 0)
         sizer_5.Add(self.spin_pulse_duration, 0, 0, 0)
@@ -1055,7 +1055,7 @@ class JogDistancePanel(wx.Panel):
         # end wxGlade
         # begin wxGlade: JogDistancePanel.__do_layout
         main_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Jog Distance")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Jog Distance:")), wx.VERTICAL
         )
         row_1 = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(row_1, 0, wx.EXPAND, 0)
@@ -1096,6 +1096,7 @@ class JogDistancePanel(wx.Panel):
 
     def initialize(self, *args):
         self.set_jog_distances(self.context.navigate_jog)
+        self.Children[0].SetFocus()
 
     def set_jog_distances(self, jog_mils):
         self.spin_jog_mils.SetValue(jog_mils)

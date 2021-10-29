@@ -40,8 +40,8 @@ def register_project_tools(context, gui):
         short_help_string=_("Saves a project to disk"),
     )
     toolbar.AddSeparator()
-    toolbar.Bind(wx.EVT_TOOL, gui.on_click_open, id=ID_OPEN)
-    toolbar.Bind(wx.EVT_TOOL, gui.on_click_save, id=ID_SAVE)
+    toolbar.Bind(wx.EVT_TOOL, lambda v: context("dialog_load\n"), id=ID_OPEN)
+    toolbar.Bind(wx.EVT_TOOL, lambda v: context("dialog_save\n"), id=ID_SAVE)
 
     toolbar.AddTool(
         ID_JOB,

@@ -23,7 +23,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
             self,
             wx.ID_ANY,
             choices=["M2", "B2", "M", "M1", "A", "B", "B1"],
-            style=wx.CB_DROPDOWN,
+            style=wx.CB_READONLY,
         )
         self.checkbox_fix_speeds = wx.CheckBox(
             self, wx.ID_ANY, _("Fix rated to actual speed")
@@ -189,27 +189,27 @@ class LhystudiosConfigurationPanel(wx.Panel):
         # begin wxGlade: LhystudiosDriver.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_general = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("General Options")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("General Options:")), wx.HORIZONTAL
         )
         sizer_buffer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Write Buffer")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Write Buffer:")), wx.HORIZONTAL
         )
         sizer_6 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Pulse Planner")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Pulse Planner:")), wx.HORIZONTAL
         )
         sizer_home = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Shift Home Position")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Shift Home Position:")), wx.HORIZONTAL
         )
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_config = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Configuration")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Configuration:")), wx.HORIZONTAL
         )
         sizer_3 = wx.BoxSizer(wx.VERTICAL)
         sizer_16 = wx.BoxSizer(wx.VERTICAL)
         sizer_17 = wx.BoxSizer(wx.VERTICAL)
         sizer_board = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Board Setup")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Board Setup:")), wx.HORIZONTAL
         )
         sizer_board.Add(self.combobox_board, 1, 0, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, "")
@@ -258,6 +258,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
     def initialize(self):
         self.context.listen("pipe;buffer", self.on_buffer_update)
         self.context.listen("active", self.on_active_change)
+        self.checkbox_flip_x.SetFocus()
 
     def finalize(self):
         self.context.unlisten("pipe;buffer", self.on_buffer_update)
@@ -394,7 +395,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
 
 class LhystudiosDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(337, 357, *args, **kwds)
+        super().__init__(365, 365, *args, **kwds)
 
         self.panel = LhystudiosConfigurationPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon

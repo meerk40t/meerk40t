@@ -18,7 +18,8 @@ class RotarySettingsPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Rotary"))
+        self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
+        self.Children[0].SetFocus()
         self.text_rotary_scaley = wx.TextCtrl(self, wx.ID_ANY, "1.0")
         self.text_rotary_scalex = wx.TextCtrl(self, wx.ID_ANY, "1.0")
         self.checkbox_rotary_loop = wx.CheckBox(self, wx.ID_ANY, _("Field Loop"))
@@ -107,19 +108,19 @@ class RotarySettingsPanel(wx.Panel):
         # begin wxGlade: RotarySettings.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_circumference = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Object Circumference")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Object Circumference:")), wx.HORIZONTAL
         )
         sizer_20 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Roller Circumference")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Roller Circumference:")), wx.HORIZONTAL
         )
         sizer_steps = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Rotation Steps")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Rotation Steps:")), wx.HORIZONTAL
         )
         sizer_x = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Scale X")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Scale X:")), wx.HORIZONTAL
         )
         sizer_y = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Scale Y")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Scale Y:")), wx.HORIZONTAL
         )
         sizer_main.Add(self.checkbox_rotary, 0, 0, 0)
         sizer_y.Add(self.text_rotary_scaley, 0, 0, 0)

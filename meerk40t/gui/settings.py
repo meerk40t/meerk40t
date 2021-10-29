@@ -25,7 +25,7 @@ class PreferencesPanel(wx.Panel):
         self.radio_units = wx.RadioBox(
             self,
             wx.ID_ANY,
-            _("Units"),
+            _("Units:"),
             choices=["mm", "cm", "inch", "steps"],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
@@ -39,7 +39,7 @@ class PreferencesPanel(wx.Panel):
                 _("90 px/in Old Inkscape"),
                 _("Custom"),
             ],
-            style=wx.CB_DROPDOWN,
+            style=wx.CB_READONLY,
         )
         # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -190,7 +190,7 @@ class PreferencesPanel(wx.Panel):
             for language_code, language_name, language_index in supported_languages
         ]
         self.combo_language = wx.ComboBox(
-            self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
         self.spin_bedwidth = wx.SpinCtrlDouble(
             self, wx.ID_ANY, "330.0", min=1.0, max=1000.0
@@ -227,12 +227,14 @@ class PreferencesPanel(wx.Panel):
         self.context.setting(str, "units_name", "mm")
         self.context.setting(int, "units_marks", 10)
         self.context.setting(int, "units_index", 0)
+        self.context.setting(float, "units_convert", 39.3701)
         self.radio_units.SetSelection(self.context.units_index)
         self.combo_language.SetSelection(self.context.language)
         self.spin_bedwidth.SetValue(self.bed_dim.bed_width)
         self.spin_bedheight.SetValue(self.bed_dim.bed_height)
         self.text_scale_x.SetValue("%.3f" % self.bed_dim.scale_x)
         self.text_scale_y.SetValue("%.3f" % self.bed_dim.scale_y)
+        self.Children[0].SetFocus()
 
     def finalize(self):
         pass
@@ -271,22 +273,22 @@ class PreferencesPanel(wx.Panel):
         sizer_settings = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gui_options = wx.BoxSizer(wx.VERTICAL)
         sizer_bed = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions:")), wx.HORIZONTAL
         )
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_7 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Y Scale Factor")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Y Scale Factor:")), wx.HORIZONTAL
         )
         sizer_4 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("X Scale Factor")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("X Scale Factor:")), wx.HORIZONTAL
         )
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("SVG Pixels Per Inch")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("SVG Pixels Per Inch:")), wx.HORIZONTAL
         )
         sizer_2 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Language")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Language:")), wx.HORIZONTAL
         )
         sizer_gui_options.Add(self.radio_units, 0, wx.EXPAND, 0)
         sizer_2.Add(self.combo_language, 0, 0, 0)
@@ -452,7 +454,7 @@ class PreferencesPanel(wx.Panel):
 
 class Settings(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(490, 331, *args, **kwds)
+        super().__init__(565, 327, *args, **kwds)
 
         self.panel = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon

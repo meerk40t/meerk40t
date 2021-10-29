@@ -32,6 +32,7 @@ class KeymapPanel(wx.Panel):
 
     def initialize(self):
         self.reload_keymap()
+        self.Children[0].SetFocus()
 
     def finalize(self):
         pass

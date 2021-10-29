@@ -130,7 +130,7 @@ class AboutPanel(wx.Panel):
 
 class About(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(653, 332, *args, **kwds)
+        super().__init__(480, 360, *args, **kwds)
         self.panel = AboutPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_about_50.GetBitmap())

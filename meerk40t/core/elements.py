@@ -3065,7 +3065,9 @@ class Elemental(Modifier):
                 data = list(self.elems(emphasized=True))
             elements = context.elements
             make_raster = self.context.registered.get("render-op/make_raster")
-
+            if not make_raster:
+                channel(_("No renderer is registered to perform render."))
+                return
             bounds = Group.union_bbox(data)
             if bounds is None:
                 return

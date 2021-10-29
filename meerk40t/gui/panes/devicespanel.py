@@ -64,7 +64,7 @@ class DevicesPanel(wx.Panel):
             _("Driver/Input"), format=wx.LIST_FORMAT_LEFT, width=170
         )
         self.devices_list.AppendColumn(
-            _("Output"), format=wx.LIST_FORMAT_LEFT, width=170
+            _("Output"), format=wx.LIST_FORMAT_LEFT, width=220
         )
         self.devices_list.AppendColumn(
             _("Registered"), format=wx.LIST_FORMAT_LEFT, width=93
