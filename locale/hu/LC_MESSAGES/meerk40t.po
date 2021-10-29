@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2021-09-11 02:52-0700\n"
-"PO-Revision-Date: 2021-09-11 03:17-0700\n"
+"PO-Revision-Date: 2021-10-28 18:58-0700\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -30,24 +30,20 @@ msgstr "Rólunk"
 
 #: meerk40t/gui/about.py:56
 msgid ""
-"MeerK40t is a free MIT Licensed open source project for lasering on K40 "
-"Devices.\n"
+"MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n"
 "\n"
 msgstr ""
 
 #: meerk40t/gui/about.py:59
-msgid ""
-"Participation in the project is highly encouraged. Past participation, and \n"
+msgid "Participation in the project is highly encouraged. Past participation, and \n"
 msgstr ""
 
 #: meerk40t/gui/about.py:62
-msgid ""
-"continuing participation is graciously thanked. This program is mostly the\n"
+msgid "continuing participation is graciously thanked. This program is mostly the\n"
 msgstr ""
 
 #: meerk40t/gui/about.py:65
-msgid ""
-"brainchild of Tatarize, who sincerely hopes his contributions will be but \n"
+msgid "brainchild of Tatarize, who sincerely hopes his contributions will be but \n"
 msgstr ""
 
 #: meerk40t/gui/about.py:68
@@ -71,18 +67,15 @@ msgid "* Alois Zingl for his brilliant Bresenham curve plotting algorithms.\n"
 msgstr ""
 
 #: meerk40t/gui/about.py:92
-msgid ""
-"* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
+msgid "* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
 msgstr ""
 
 #: meerk40t/gui/about.py:95
-msgid ""
-"* All the MeerKittens, Sophist-UK,  tiger12506, frogmaster, inspectionsbybob. \n"
+msgid "* All the MeerKittens, Sophist-UK,  tiger12506, frogmaster, inspectionsbybob. \n"
 msgstr ""
 
 #: meerk40t/gui/about.py:98
-msgid ""
-"* Beta testers and anyone who reported issues that helped us improve things.\n"
+msgid "* Beta testers and anyone who reported issues that helped us improve things.\n"
 msgstr ""
 
 #: meerk40t/gui/about.py:101
@@ -90,19 +83,15 @@ msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
 msgstr ""
 
 #: meerk40t/gui/about.py:104
-msgid ""
-"* Users who have added to or edited the Wiki documentation to help other users.\n"
+msgid "* Users who have added to or edited the Wiki documentation to help other users.\n"
 msgstr ""
 
 #: meerk40t/gui/about.py:108
-msgid ""
-"* Icons8 (https://icons8.com/) for their great icons used throughout the "
-"project.\n"
+msgid "* Icons8 (https://icons8.com/) for their great icons used throughout the project.\n"
 msgstr ""
 
 #: meerk40t/gui/about.py:111
-msgid ""
-"* The countless developers who created other software that we use internally.\n"
+msgid "* The countless developers who created other software that we use internally.\n"
 msgstr ""
 
 #: meerk40t/gui/about.py:114
@@ -141,8 +130,7 @@ msgstr "File"
 msgid "Could not find buffer.\n"
 msgstr "Buffer nem található.\n"
 
-#: meerk40t/gui/bufferview.py:57
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:59
+#: meerk40t/gui/bufferview.py:57 meerk40t/gui/lhystudios/lhystudioscontrollergui.py:59
 #: meerk40t/gui/moshi/moshicontrollergui.py:43
 msgid "BufferView"
 msgstr ""
@@ -171,17 +159,16 @@ msgstr "Halszem visszaállítás"
 msgid "Set URI"
 msgstr ""
 
-#: meerk40t/gui/camerainteface.py:92 meerk40t/gui/camerainteface.py:94
-#: meerk40t/gui/camerainteface.py:96 meerk40t/gui/camerainteface.py:98
-#: meerk40t/gui/camerainteface.py:100 meerk40t/gui/panes/camerapanel.py:347
+#: meerk40t/gui/camerainteface.py:92 meerk40t/gui/camerainteface.py:94 meerk40t/gui/camerainteface.py:96
+#: meerk40t/gui/camerainteface.py:98 meerk40t/gui/camerainteface.py:100 meerk40t/gui/panes/camerapanel.py:347
 #: meerk40t/gui/panes/camerapanel.py:349 meerk40t/gui/panes/camerapanel.py:351
 #: meerk40t/gui/panes/camerapanel.py:353 meerk40t/gui/panes/camerapanel.py:355
 #, python-format
 msgid "USB %d"
 msgstr ""
 
-#: meerk40t/gui/camerainteface.py:103 meerk40t/gui/panes/toolbarcontrol.py:43
-#: meerk40t/gui/wxmeerk40t.py:837 meerk40t/gui/wxmeerk40t.py:1255
+#: meerk40t/gui/camerainteface.py:103 meerk40t/gui/panes/toolbarcontrol.py:43 meerk40t/gui/wxmeerk40t.py:837
+#: meerk40t/gui/wxmeerk40t.py:1255
 msgid "Camera"
 msgstr "Kamera"
 
@@ -237,8 +224,7 @@ msgstr ""
 msgid "Displays a list of registered camera URIs"
 msgstr ""
 
-#: meerk40t/gui/camerainteface.py:614 meerk40t/gui/devicemanager.py:63
-#: meerk40t/gui/panes/devicespanel.py:46
+#: meerk40t/gui/camerainteface.py:614 meerk40t/gui/devicemanager.py:63 meerk40t/gui/panes/devicespanel.py:46
 msgid "Index"
 msgstr ""
 
@@ -250,8 +236,8 @@ msgstr ""
 msgid "Add a new URL"
 msgstr ""
 
-#: meerk40t/gui/camerainteface.py:679 meerk40t/gui/jobspooler.py:163
-#: meerk40t/gui/keymap.py:73 meerk40t/gui/panes/spoolerpanel.py:124
+#: meerk40t/gui/camerainteface.py:679 meerk40t/gui/jobspooler.py:163 meerk40t/gui/keymap.py:73
+#: meerk40t/gui/panes/spoolerpanel.py:124
 #, python-format
 msgid "Remove %s"
 msgstr "%s eltávolítása"
@@ -264,24 +250,20 @@ msgstr "Duplikálás"
 msgid "Edit"
 msgstr ""
 
-#: meerk40t/gui/camerainteface.py:686 meerk40t/gui/jobspooler.py:168
-#: meerk40t/gui/panes/spoolerpanel.py:127
+#: meerk40t/gui/camerainteface.py:686 meerk40t/gui/jobspooler.py:168 meerk40t/gui/panes/spoolerpanel.py:127
 msgid "Clear All"
 msgstr "Minden törlése"
 
-#: meerk40t/gui/console.py:81 meerk40t/gui/panes/toolbarproject.py:92
-#: meerk40t/gui/wxmeerk40t.py:789 meerk40t/gui/wxmeerk40t.py:1211
+#: meerk40t/gui/console.py:81 meerk40t/gui/panes/toolbarproject.py:92 meerk40t/gui/wxmeerk40t.py:789
+#: meerk40t/gui/wxmeerk40t.py:1211
 msgid "Console"
 msgstr "Konzol"
 
 #: meerk40t/gui/controller.py:21
-msgid ""
-"The output of the selected device is not a controller, or provides no graphical "
-"user interface."
+msgid "The output of the selected device is not a controller, or provides no graphical user interface."
 msgstr ""
 
-#: meerk40t/gui/controller.py:35
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:257
+#: meerk40t/gui/controller.py:35 meerk40t/gui/lhystudios/lhystudioscontrollergui.py:257
 #: meerk40t/gui/panes/toolbarcontrol.py:102 meerk40t/gui/wxmeerk40t.py:1278
 msgid "Controller"
 msgstr "Vezérlő"
@@ -291,8 +273,7 @@ msgid "Device Manager"
 msgstr "Eszköz Manager"
 
 #: meerk40t/gui/devicemanager.py:65 meerk40t/gui/panes/devicespanel.py:48
-#: meerk40t/gui/panes/toolbarcontrol.py:90 meerk40t/gui/wxmeerk40t.py:770
-#: meerk40t/gui/wxmeerk40t.py:1271
+#: meerk40t/gui/panes/toolbarcontrol.py:90 meerk40t/gui/wxmeerk40t.py:770 meerk40t/gui/wxmeerk40t.py:1271
 msgid "Spooler"
 msgstr "Puffer tároló"
 
@@ -300,9 +281,8 @@ msgstr "Puffer tároló"
 msgid "Driver/Input"
 msgstr ""
 
-#: meerk40t/gui/devicemanager.py:71 meerk40t/gui/devicemanager.py:192
-#: meerk40t/gui/devicemanager.py:213 meerk40t/gui/devicemanager.py:235
-#: meerk40t/gui/panes/devicespanel.py:54 meerk40t/gui/rasterwizard.py:1561
+#: meerk40t/gui/devicemanager.py:71 meerk40t/gui/devicemanager.py:192 meerk40t/gui/devicemanager.py:213
+#: meerk40t/gui/devicemanager.py:235 meerk40t/gui/panes/devicespanel.py:54 meerk40t/gui/rasterwizard.py:1561
 msgid "Output"
 msgstr "Kimenet"
 
@@ -346,9 +326,8 @@ msgstr ""
 msgid "What network port does this device output to?"
 msgstr ""
 
-#: meerk40t/gui/executejob.py:36 meerk40t/gui/executejob.py:65
-#: meerk40t/gui/executejob.py:138 meerk40t/gui/wxmeerk40t.py:732
-#: meerk40t/gui/wxmeerk40t.py:1160
+#: meerk40t/gui/executejob.py:36 meerk40t/gui/executejob.py:65 meerk40t/gui/executejob.py:138
+#: meerk40t/gui/wxmeerk40t.py:732 meerk40t/gui/wxmeerk40t.py:1160
 msgid "Home"
 msgstr "Kezdőpont Gomb"
 
@@ -356,8 +335,7 @@ msgstr "Kezdőpont Gomb"
 msgid "Automatically add a home command before all jobs"
 msgstr ""
 
-#: meerk40t/gui/executejob.py:47 meerk40t/gui/executejob.py:76
-#: meerk40t/gui/executejob.py:144
+#: meerk40t/gui/executejob.py:47 meerk40t/gui/executejob.py:76 meerk40t/gui/executejob.py:144
 msgid "Physical Home"
 msgstr ""
 
@@ -401,8 +379,7 @@ msgstr "Hangjelzés"
 msgid "Automatically add a beep after all jobs"
 msgstr ""
 
-#: meerk40t/gui/executejob.py:120 meerk40t/gui/executejob.py:164
-#: meerk40t/gui/wxmeerk40t.py:1074
+#: meerk40t/gui/executejob.py:120 meerk40t/gui/executejob.py:164 meerk40t/gui/wxmeerk40t.py:1074
 msgid "Interrupt"
 msgstr "Megszakítás"
 
@@ -446,10 +423,9 @@ msgstr ""
 msgid "Add"
 msgstr "Hozzáadás"
 
-#: meerk40t/gui/executejob.py:178
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:50
-#: meerk40t/gui/moshi/moshicontrollergui.py:32
-#: meerk40t/gui/panes/toolbarshapes.py:95 meerk40t/gui/wxmeerk40t.py:1894
+#: meerk40t/gui/executejob.py:178 meerk40t/gui/lhystudios/lhystudioscontrollergui.py:50
+#: meerk40t/gui/moshi/moshicontrollergui.py:32 meerk40t/gui/panes/toolbarshapes.py:95
+#: meerk40t/gui/wxmeerk40t.py:1894
 msgid "Tools"
 msgstr ""
 
@@ -493,8 +469,7 @@ msgstr ""
 msgid "Start"
 msgstr ""
 
-#: meerk40t/gui/executejob.py:306 meerk40t/gui/panes/toolbarproject.py:48
-#: meerk40t/gui/wxmeerk40t.py:1185
+#: meerk40t/gui/executejob.py:306 meerk40t/gui/panes/toolbarproject.py:48 meerk40t/gui/wxmeerk40t.py:1185
 msgid "Execute Job"
 msgstr "Munka indítása"
 
@@ -520,8 +495,7 @@ msgstr ""
 
 #: meerk40t/gui/executejob.py:325
 msgid ""
-"Travel between objects (laser off) at the default/rapid speed rather than at the "
-"current laser-on speed"
+"Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
 msgstr ""
 
 #: meerk40t/gui/executejob.py:330
@@ -530,9 +504,8 @@ msgstr ""
 
 #: meerk40t/gui/executejob.py:333
 msgid ""
-"Ensure that inside burns are done before an outside cut which might result in "
-"the cut piece shifting or dropping out of the material, while still requiring "
-"additonal cuts."
+"Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or "
+"dropping out of the material, while still requiring additonal cuts."
 msgstr ""
 
 #: meerk40t/gui/executejob.py:365
@@ -739,8 +712,7 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: meerk40t/gui/jobspooler.py:93 meerk40t/gui/panes/spoolerpanel.py:76
-#: meerk40t/gui/tcp/tcpcontroller.py:78
+#: meerk40t/gui/jobspooler.py:93 meerk40t/gui/panes/spoolerpanel.py:76 meerk40t/gui/tcp/tcpcontroller.py:78
 msgid "Status"
 msgstr "Státusz"
 
@@ -749,8 +721,7 @@ msgid "Type"
 msgstr "Típus"
 
 #: meerk40t/gui/jobspooler.py:102 meerk40t/gui/panes/spoolerpanel.py:85
-#: meerk40t/gui/panes/toolbarpreferences.py:52 meerk40t/gui/settings.py:234
-#: meerk40t/gui/wxmeerk40t.py:1344
+#: meerk40t/gui/panes/toolbarpreferences.py:52 meerk40t/gui/settings.py:234 meerk40t/gui/wxmeerk40t.py:1344
 msgid "Settings"
 msgstr "Beállítások"
 
@@ -818,11 +789,9 @@ msgstr "Hiányzó parancs"
 msgid "No Command for binding."
 msgstr "Nincs parancshoz kötve."
 
-#: meerk40t/gui/navigation.py:297 meerk40t/gui/panes/toolbarcontrol.py:30
-#: meerk40t/gui/wxmeerk40t.py:454 meerk40t/gui/wxmeerk40t.py:474
-#: meerk40t/gui/wxmeerk40t.py:494 meerk40t/gui/wxmeerk40t.py:513
-#: meerk40t/gui/wxmeerk40t.py:532 meerk40t/gui/wxmeerk40t.py:551
-#: meerk40t/gui/wxmeerk40t.py:1247
+#: meerk40t/gui/navigation.py:297 meerk40t/gui/panes/toolbarcontrol.py:30 meerk40t/gui/wxmeerk40t.py:454
+#: meerk40t/gui/wxmeerk40t.py:474 meerk40t/gui/wxmeerk40t.py:494 meerk40t/gui/wxmeerk40t.py:513
+#: meerk40t/gui/wxmeerk40t.py:532 meerk40t/gui/wxmeerk40t.py:551 meerk40t/gui/wxmeerk40t.py:1247
 msgid "Navigation"
 msgstr "Navigáció"
 
@@ -1014,8 +983,8 @@ msgstr "hüvelyk"
 msgid " mm"
 msgstr " mm"
 
-#: meerk40t/gui/navigation.py:473 meerk40t/gui/panes/jogdistancepanel.py:58
-#: meerk40t/gui/panes/position.py:31 meerk40t/gui/rasterwizard.py:685
+#: meerk40t/gui/navigation.py:473 meerk40t/gui/panes/jogdistancepanel.py:58 meerk40t/gui/panes/position.py:31
+#: meerk40t/gui/rasterwizard.py:685
 msgid "cm"
 msgstr "cm"
 
@@ -1031,8 +1000,8 @@ msgstr " ms"
 msgid "Automatically Open Notes"
 msgstr "Jegyzetek automatikus megnyitása"
 
-#: meerk40t/gui/notes.py:47 meerk40t/gui/panes/toolbarproject.py:80
-#: meerk40t/gui/wxmeerk40t.py:751 meerk40t/gui/wxmeerk40t.py:1205
+#: meerk40t/gui/notes.py:47 meerk40t/gui/panes/toolbarproject.py:80 meerk40t/gui/wxmeerk40t.py:751
+#: meerk40t/gui/wxmeerk40t.py:1205
 msgid "Notes"
 msgstr "Jegyzetek"
 
@@ -1052,14 +1021,11 @@ msgstr "Vágás"
 msgid "Raster"
 msgstr "Raszter"
 
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:14
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:19
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:24
-#: meerk40t/gui/operationproperty.py:36 meerk40t/gui/rasterwizard.py:515
-#: meerk40t/gui/rasterwizard.py:593 meerk40t/gui/rasterwizard.py:672
-#: meerk40t/gui/rasterwizard.py:947 meerk40t/gui/rasterwizard.py:1037
-#: meerk40t/gui/rasterwizard.py:1201 meerk40t/gui/rasterwizard.py:1359
-#: meerk40t/gui/rasterwizard.py:1532 meerk40t/gui/rasterwizard.py:1599
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:14 meerk40t/gui/lhystudios/lhystudiosaccel.py:19
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:24 meerk40t/gui/operationproperty.py:36
+#: meerk40t/gui/rasterwizard.py:515 meerk40t/gui/rasterwizard.py:593 meerk40t/gui/rasterwizard.py:672
+#: meerk40t/gui/rasterwizard.py:947 meerk40t/gui/rasterwizard.py:1037 meerk40t/gui/rasterwizard.py:1201
+#: meerk40t/gui/rasterwizard.py:1359 meerk40t/gui/rasterwizard.py:1532 meerk40t/gui/rasterwizard.py:1599
 #: meerk40t/gui/rasterwizard.py:1619 meerk40t/gui/rasterwizard.py:1647
 msgid "Enable"
 msgstr "Aktiválás"
@@ -1120,8 +1086,7 @@ msgstr "Gyorsulás"
 msgid "Dot Length (mils)"
 msgstr "Ponthossz (mils)"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:42
-#: meerk40t/gui/operationproperty.py:99
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:42 meerk40t/gui/operationproperty.py:99
 msgid "Pulse Grouping"
 msgstr ""
 
@@ -1131,8 +1096,8 @@ msgstr "Működési beállítások"
 
 #: meerk40t/gui/operationproperty.py:291
 msgid ""
-"Change/View color of this layer. When Meerk40t classifies elements to "
-"operations, this exact color is used to match elements to this operation."
+"Change/View color of this layer. When Meerk40t classifies elements to operations, this exact color is used "
+"to match elements to this operation."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:300
@@ -1140,15 +1105,13 @@ msgid "Operation Type"
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:302
-msgid ""
-"Cut & Engrave are vector operations, Raster and Image are raster operations."
+msgid "Cut & Engrave are vector operations, Raster and Image are raster operations."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:305
 msgid ""
-"Cut and Engrave operations are essentially the same except that for a Cut "
-"operation with Cut Outer Paths last, only closed Paths in Cut operations are "
-"considered as being Outer-most."
+"Cut and Engrave operations are essentially the same except that for a Cut operation with Cut Outer Paths "
+"last, only closed Paths in Cut operations are considered as being Outer-most."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:312
@@ -1157,9 +1120,8 @@ msgstr ""
 
 #: meerk40t/gui/operationproperty.py:318
 msgid ""
-"When classifying elements, Default operations gain all appropriate elements not "
-"matched to an existing operation of the same colour, rather than a new operation "
-"of that color being created."
+"When classifying elements, Default operations gain all appropriate elements not matched to an existing "
+"operation of the same colour, rather than a new operation of that color being created."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:321
@@ -1172,14 +1134,12 @@ msgstr ""
 
 #: meerk40t/gui/operationproperty.py:330
 msgid ""
-"For Cut/Engrave vector operations, this is the speed of the head regardless of "
-"direction i.e. the separate x/y speeds vary according to the direction."
+"For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate "
+"x/y speeds vary according to the direction."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:333
-msgid ""
-"For Raster/Image operations, this is the speed of the head as it sweeps "
-"backwards and forwards."
+msgid "For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:342
@@ -1191,41 +1151,35 @@ msgid "1000 is always on, 500 is half power (fire every other step)."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:346
-msgid ""
-"Values of 100 or have pulses > 1/10\" and are generally used only for dotted or "
-"perforated lines."
+msgid "Values of 100 or have pulses > 1/10\" and are generally used only for dotted or perforated lines."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:355
 msgid ""
-"In a raster engrave, the step size is the distance between raster lines in "
-"1/1000\" and also the number of raster dots that get combined together."
+"In a raster engrave, the step size is the distance between raster lines in 1/1000\" and also the number of "
+"raster dots that get combined together."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:358
 msgid ""
-"Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster lines "
-"overlap a lot, and consequently  you can raster with steps > 1 without leaving "
-"gaps between the lines."
+"Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster lines overlap a lot, and "
+"consequently  you can raster with steps > 1 without leaving gaps between the lines."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:361
-msgid ""
-"The step size before you get gaps will depend on your focus and the size of your "
-"laser dot."
+msgid "The step size before you get gaps will depend on your focus and the size of your laser dot."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:364
 msgid ""
-"Step size > 1 reduces the laser energy delivered by the same factor, so you may "
-"need to increase power equivalently with a higher front-panel power, a higher "
-"PPI or by rastering at a slower speed."
+"Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase power "
+"equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:367
 msgid ""
-"Step size > 1 also turns the laser on and off fewer times, and combined with a "
-"slower speed this can prevent your laser from stuttering."
+"Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed this can "
+"prevent your laser from stuttering."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:374
@@ -1237,29 +1191,25 @@ msgid "Direction to perform a raster"
 msgstr "Raszter végrehajtásának iránya"
 
 #: meerk40t/gui/operationproperty.py:380
-msgid ""
-"Normally you would raster in an X-direction and select Top-to-Bottom (T2B) or "
-"Bottom-to-Top (B2T)."
+msgid "Normally you would raster in an X-direction and select Top-to-Bottom (T2B) or Bottom-to-Top (B2T)."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:384
 msgid ""
-"This is because rastering in the X-direction involve moving only the laser head "
-"which is relatively low mass."
+"This is because rastering in the X-direction involve moving only the laser head which is relatively low "
+"mass."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:387
 msgid ""
-"Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving "
-"not only the laser head but additionally the entire x-axis gantry assembly "
-"including the stepper motor, mirror and the gantry itself."
+"Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not only the laser head but "
+"additionally the entire x-axis gantry assembly including the stepper motor, mirror and the gantry itself."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:391
 msgid ""
-"This total mass is much greater, acceleration therefore needs to be much slower, "
-"and allow for space at each end of the raster to reverse direction the speed has "
-"to be much slower."
+"This total mass is much greater, acceleration therefore needs to be much slower, and allow for space at "
+"each end of the raster to reverse direction the speed has to be much slower."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:394
@@ -1271,15 +1221,11 @@ msgid "Raster on forward and backswing or only forward swing?"
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:403
-msgid ""
-"Rastering only on forward swings will double the time required to complete the "
-"raster."
+msgid "Rastering only on forward swings will double the time required to complete the raster."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:406
-msgid ""
-"It seems doubtful that there will be significant quality benefits from rastering "
-"in one direction."
+msgid "It seems doubtful that there will be significant quality benefits from rastering in one direction."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:413
@@ -1292,8 +1238,8 @@ msgstr "Engedélyezi az átlós arány módosítását."
 
 #: meerk40t/gui/operationproperty.py:420
 msgid ""
-"Diagonal ratio is the ratio of additional time needed to perform a diagonal step "
-"rather than an orthogonal step. (0.261 default)"
+"Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal "
+"step. (0.261 default)"
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:427
@@ -1302,14 +1248,14 @@ msgstr ""
 
 #: meerk40t/gui/operationproperty.py:432
 msgid ""
-"The m2-nano controller has four acceleration settings, and automatically selects "
-"the appropriate setting for the Cut or Raster speed."
+"The m2-nano controller has four acceleration settings, and automatically selects the appropriate setting "
+"for the Cut or Raster speed."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:435
 msgid ""
-"This setting allows you to override the automoatic selection and specify your "
-"own. The default settings are as follows:"
+"This setting allows you to override the automoatic selection and specify your own. The default settings "
+"are as follows:"
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:439
@@ -1350,8 +1296,8 @@ msgstr ""
 
 #: meerk40t/gui/operationproperty.py:451
 msgid ""
-"This setting might be particularly useful if you want to raster L2R or R2L or "
-"possibly crosshatch to try to maximise speed whilst avoiding losing position."
+"This setting might be particularly useful if you want to raster L2R or R2L or possibly crosshatch to try "
+"to maximise speed whilst avoiding losing position."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:457
@@ -1360,55 +1306,42 @@ msgstr ""
 
 #: meerk40t/gui/operationproperty.py:461
 msgid ""
-"For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length "
-"for the laser to be on in order to change a continuous lower power burn into a "
-"series of dashes."
+"For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length for the laser to be on in "
+"order to change a continuous lower power burn into a series of dashes."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:464
-msgid ""
-"When this is set, the PPI effectively becomes the ratio of dashes to gaps. For "
-"example:"
+msgid "When this is set, the PPI effectively becomes the ratio of dashes to gaps. For example:"
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:467
-msgid ""
-"If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" dashes "
-"and 1/2\" gaps."
+msgid "If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" dashes and 1/2\" gaps."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:470
-msgid ""
-"If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" dashes "
-"and 3/4\" gaps."
+msgid "If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" dashes and 3/4\" gaps."
 msgstr ""
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:147
-#: meerk40t/gui/operationproperty.py:479
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:147 meerk40t/gui/operationproperty.py:479
 msgid ""
-"Pulse Grouping is an alternative means of reducing the incidence of stuttering, "
-"allowing you potentially to burn at higher speeds."
+"Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially "
+"to burn at higher speeds."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:482
-msgid ""
-"This setting is an operation-by-operation equivalent to the Pulse Grouping "
-"option in Device Config."
+msgid "This setting is an operation-by-operation equivalent to the Pulse Grouping option in Device Config."
 msgstr ""
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:153
-#: meerk40t/gui/operationproperty.py:485
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:153 meerk40t/gui/operationproperty.py:485
 msgid ""
-"It works by swapping adjacent on or off bits to group on and off together and "
-"reduce the number of switches."
+"It works by swapping adjacent on or off bits to group on and off together and reduce the number of "
+"switches."
 msgstr ""
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:156
-#: meerk40t/gui/operationproperty.py:488
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:156 meerk40t/gui/operationproperty.py:488
 msgid ""
-"As an example, instead of 1010 it will burn 1100 - because the laser beam is "
-"overlapping, and because a bit is only moved at most 1/1000\", the difference "
-"should not be visible even under magnification."
+"As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a "
+"bit is only moved at most 1/1000\", the difference should not be visible even under magnification."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:494
@@ -1421,21 +1354,20 @@ msgstr ""
 
 #: meerk40t/gui/operationproperty.py:499
 msgid ""
-"Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, "
-"creating a second identical operation with the same settings and same elements."
+"Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, creating a second "
+"identical operation with the same settings and same elements."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:502
 msgid ""
-"The number of Operation Passes can be changed extremely easily, but you cannot "
-"change any of the other settings."
+"The number of Operation Passes can be changed extremely easily, but you cannot change any of the other "
+"settings."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:505
 msgid ""
-"Duplicating the Operation gives more flexibility for changing settings, but is "
-"far more cumbersome to change the number of duplications because you need to add "
-"and delete the duplicates one by one."
+"Duplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to "
+"change the number of duplications because you need to add and delete the duplicates one by one."
 msgstr ""
 
 #: meerk40t/gui/operationproperty.py:523
@@ -1482,40 +1414,39 @@ msgstr "Semmi"
 msgid "Path Properties"
 msgstr "Útvonal tulajdonságok"
 
-#: meerk40t/gui/pathproperty.py:100 meerk40t/gui/pathproperty.py:115
-#: meerk40t/gui/textproperty.py:120 meerk40t/gui/textproperty.py:135
+#: meerk40t/gui/pathproperty.py:100 meerk40t/gui/pathproperty.py:115 meerk40t/gui/textproperty.py:120
+#: meerk40t/gui/textproperty.py:135
 msgid "\"none\" defined value"
 msgstr "Meghatározott érték \"none\""
 
-#: meerk40t/gui/pathproperty.py:102 meerk40t/gui/pathproperty.py:117
-#: meerk40t/gui/textproperty.py:122 meerk40t/gui/textproperty.py:137
+#: meerk40t/gui/pathproperty.py:102 meerk40t/gui/pathproperty.py:117 meerk40t/gui/textproperty.py:122
+#: meerk40t/gui/textproperty.py:137
 msgid "#FF0000 defined values."
 msgstr "#FF0000 Meghatározott érték."
 
-#: meerk40t/gui/pathproperty.py:104 meerk40t/gui/pathproperty.py:106
-#: meerk40t/gui/pathproperty.py:119 meerk40t/gui/pathproperty.py:121
-#: meerk40t/gui/textproperty.py:124 meerk40t/gui/textproperty.py:126
+#: meerk40t/gui/pathproperty.py:104 meerk40t/gui/pathproperty.py:106 meerk40t/gui/pathproperty.py:119
+#: meerk40t/gui/pathproperty.py:121 meerk40t/gui/textproperty.py:124 meerk40t/gui/textproperty.py:126
 #: meerk40t/gui/textproperty.py:139 meerk40t/gui/textproperty.py:141
 msgid "#00FF00 defined values."
 msgstr "#00FF00 Meghatározott érték."
 
-#: meerk40t/gui/pathproperty.py:108 meerk40t/gui/pathproperty.py:123
-#: meerk40t/gui/textproperty.py:128 meerk40t/gui/textproperty.py:143
+#: meerk40t/gui/pathproperty.py:108 meerk40t/gui/pathproperty.py:123 meerk40t/gui/textproperty.py:128
+#: meerk40t/gui/textproperty.py:143
 msgid "#FF00FF defined values."
 msgstr "#FF00FF Meghatározott érték."
 
-#: meerk40t/gui/pathproperty.py:110 meerk40t/gui/pathproperty.py:125
-#: meerk40t/gui/textproperty.py:130 meerk40t/gui/textproperty.py:145
+#: meerk40t/gui/pathproperty.py:110 meerk40t/gui/pathproperty.py:125 meerk40t/gui/textproperty.py:130
+#: meerk40t/gui/textproperty.py:145
 msgid "#00FFFF defined values."
 msgstr "#00FFFF Meghatározott érték."
 
-#: meerk40t/gui/pathproperty.py:112 meerk40t/gui/pathproperty.py:127
-#: meerk40t/gui/textproperty.py:132 meerk40t/gui/textproperty.py:147
+#: meerk40t/gui/pathproperty.py:112 meerk40t/gui/pathproperty.py:127 meerk40t/gui/textproperty.py:132
+#: meerk40t/gui/textproperty.py:147
 msgid "#FFFF00 defined values."
 msgstr "#FFFF00 Meghatározott érték."
 
-#: meerk40t/gui/pathproperty.py:114 meerk40t/gui/pathproperty.py:129
-#: meerk40t/gui/textproperty.py:134 meerk40t/gui/textproperty.py:149
+#: meerk40t/gui/pathproperty.py:114 meerk40t/gui/pathproperty.py:129 meerk40t/gui/textproperty.py:134
+#: meerk40t/gui/textproperty.py:149
 msgid "#000000 defined values."
 msgstr "#000000 Meghatározott érték."
 
@@ -1528,9 +1459,7 @@ msgid "Stroke Color"
 msgstr "Körvonal szín"
 
 #: meerk40t/gui/preferences.py:17
-msgid ""
-"The input/driver properties of the selected device provides no graphical user "
-"interface."
+msgid "The input/driver properties of the selected device provides no graphical user interface."
 msgstr ""
 
 #: meerk40t/gui/preferences.py:29
@@ -1581,9 +1510,8 @@ msgstr "Válasszon ki egy árnyaló algoritmust"
 msgid "Dither"
 msgstr "Árnyalás"
 
-#: meerk40t/gui/rasterwizard.py:594 meerk40t/gui/rasterwizard.py:948
-#: meerk40t/gui/rasterwizard.py:1202 meerk40t/gui/rasterwizard.py:1360
-#: meerk40t/gui/rasterwizard.py:1648
+#: meerk40t/gui/rasterwizard.py:594 meerk40t/gui/rasterwizard.py:948 meerk40t/gui/rasterwizard.py:1202
+#: meerk40t/gui/rasterwizard.py:1360 meerk40t/gui/rasterwizard.py:1648
 msgid "Reset"
 msgstr "Visszaállítás"
 
@@ -1620,9 +1548,8 @@ msgid "inches"
 msgstr "inchek"
 
 #: meerk40t/gui/panes/jogdistancepanel.py:59 meerk40t/gui/panes/position.py:31
-#: meerk40t/gui/rasterwizard.py:685 meerk40t/gui/rotarysettings.py:140
-#: meerk40t/gui/rotarysettings.py:144 meerk40t/gui/settings.py:295
-#: meerk40t/gui/settings.py:301
+#: meerk40t/gui/rasterwizard.py:685 meerk40t/gui/rotarysettings.py:140 meerk40t/gui/rotarysettings.py:144
+#: meerk40t/gui/settings.py:295 meerk40t/gui/settings.py:301
 msgid "mm"
 msgstr "mm"
 
@@ -1789,8 +1716,7 @@ msgstr "Élesítés átmérője"
 
 #: meerk40t/gui/rasterwizard.py:1422
 msgid "Threshold controls the minimum brighteness change to be sharpened."
-msgstr ""
-"A határérték határozza meg az élesítendő minimális fényerő változást."
+msgstr "A határérték határozza meg az élesítendő minimális fényerő változást."
 
 #: meerk40t/gui/rasterwizard.py:1424
 msgid "Sharpen Threshold Amount"
@@ -2039,9 +1965,7 @@ msgid "Unset: Use the image as if it were 1000 pixels per inch."
 msgstr ""
 
 #: meerk40t/gui/settings.py:70
-msgid ""
-"Set: Use the DPI setting saved in the image to scale the image to the correct "
-"size."
+msgid "Set: Use the DPI setting saved in the image to scale the image to the correct size."
 msgstr ""
 
 #: meerk40t/gui/settings.py:79
@@ -2058,8 +1982,8 @@ msgstr "Negative Segédvonal megjelenítés"
 
 #: meerk40t/gui/settings.py:86
 msgid ""
-"Extend the Guide rulers with negative values to assist lining up objects "
-"partially outside the left/top of the bed"
+"Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of "
+"the bed"
 msgstr ""
 
 #: meerk40t/gui/settings.py:93
@@ -2079,9 +2003,7 @@ msgid "Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."
 msgstr ""
 
 #: meerk40t/gui/settings.py:103
-msgid ""
-"Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. Shift+MouseWheel=Horizontal "
-"pan."
+msgid "Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."
 msgstr ""
 
 #: meerk40t/gui/settings.py:112
@@ -2113,9 +2035,7 @@ msgid "Classify Reversed"
 msgstr ""
 
 #: meerk40t/gui/settings.py:133
-msgid ""
-"Classify elements into operations in reverse order e.g. to match Inkscape's "
-"Object List"
+msgid "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
 msgstr ""
 
 #: meerk40t/gui/settings.py:140
@@ -2144,8 +2064,7 @@ msgstr "Válassza ki a kívánt nyelvet."
 
 #: meerk40t/gui/settings.py:239
 msgid "Select the Pixels Per Inch to use when loading an SVG file"
-msgstr ""
-"Inch-enkénti Pixelszám megadása, SVG File betöltésekor"
+msgstr "Inch-enkénti Pixelszám megadása, SVG File betöltésekor"
 
 #: meerk40t/gui/settings.py:243
 msgid "Custom Pixels Per Inch to use when loading an SVG file"
@@ -2161,16 +2080,14 @@ msgstr "Munkafelület magassága."
 
 #: meerk40t/gui/settings.py:250
 msgid ""
-"Scale factor for the X-axis. This defines the ratio of mils to steps. This is "
-"usually at 1:1 steps/mils but due to functional issues it can deviate and needs "
-"to be accounted for"
+"Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils "
+"but due to functional issues it can deviate and needs to be accounted for"
 msgstr ""
 
 #: meerk40t/gui/settings.py:255
 msgid ""
-"Scale factor for the Y-axis. This defines the ratio of mils to steps. This is "
-"usually at 1:1 steps/mils but due to functional issues it can deviate and needs "
-"to be accounted for"
+"Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils "
+"but due to functional issues it can deviate and needs to be accounted for"
 msgstr ""
 
 #: meerk40t/gui/settings.py:268
@@ -2295,7 +2212,7 @@ msgstr ""
 
 #: meerk40t/gui/wxmeerk40t.py:642
 msgid "One Touch: Send Job To Laser "
-msgstr "Lézerindítás"
+msgstr "Lézerindítás "
 
 #: meerk40t/gui/wxmeerk40t.py:647
 msgid "Go"
@@ -2305,9 +2222,8 @@ msgstr "Lézerindító gomb"
 msgid "Emergency stop/reset the controller."
 msgstr "Vészleállító / Vezérlő leállítása."
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:54
-#: meerk40t/gui/moshi/moshicontrollergui.py:34 meerk40t/gui/wxmeerk40t.py:675
-#: meerk40t/gui/wxmeerk40t.py:1292
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:54 meerk40t/gui/moshi/moshicontrollergui.py:34
+#: meerk40t/gui/wxmeerk40t.py:675 meerk40t/gui/wxmeerk40t.py:1292
 msgid "Stop"
 msgstr "Stop Gomb"
 
@@ -2315,16 +2231,14 @@ msgstr "Stop Gomb"
 msgid "Pause/Resume the controller"
 msgstr "Vezérlő megállítása / elindítása"
 
-#: meerk40t/gui/panes/toolbarpreferences.py:26 meerk40t/gui/wxmeerk40t.py:808
-#: meerk40t/gui/wxmeerk40t.py:1323
+#: meerk40t/gui/panes/toolbarpreferences.py:26 meerk40t/gui/wxmeerk40t.py:808 meerk40t/gui/wxmeerk40t.py:1323
 msgid "Devices"
 msgstr "Eszközök"
 
 #: meerk40t/gui/panes/toolbarcontrol.py:68 meerk40t/gui/panes/toolbarcontrol.py:69
 #: meerk40t/gui/panes/toolbarcontrol.py:70 meerk40t/gui/panes/toolbarcontrol.py:71
-#: meerk40t/gui/panes/toolbarcontrol.py:72 meerk40t/gui/wxmeerk40t.py:830
-#: meerk40t/gui/wxmeerk40t.py:1674 meerk40t/gui/wxmeerk40t.py:1675
-#: meerk40t/gui/wxmeerk40t.py:1676 meerk40t/gui/wxmeerk40t.py:1677
+#: meerk40t/gui/panes/toolbarcontrol.py:72 meerk40t/gui/wxmeerk40t.py:830 meerk40t/gui/wxmeerk40t.py:1674
+#: meerk40t/gui/wxmeerk40t.py:1675 meerk40t/gui/wxmeerk40t.py:1676 meerk40t/gui/wxmeerk40t.py:1677
 #: meerk40t/gui/wxmeerk40t.py:1678
 #, python-format
 msgid "Camera %d"
@@ -2366,8 +2280,8 @@ msgstr ""
 msgid "Project"
 msgstr "Projekt"
 
-#: meerk40t/gui/panes/toolbarproject.py:30 meerk40t/gui/wxmeerk40t.py:1182
-#: meerk40t/gui/wxmeerk40t.py:2459 meerk40t/gui/wxmeerk40t.py:2869
+#: meerk40t/gui/panes/toolbarproject.py:30 meerk40t/gui/wxmeerk40t.py:1182 meerk40t/gui/wxmeerk40t.py:2459
+#: meerk40t/gui/wxmeerk40t.py:2869
 msgid "Open"
 msgstr "Megnyitás"
 
@@ -2375,8 +2289,7 @@ msgstr "Megnyitás"
 msgid "Simulate"
 msgstr "Szimuláció"
 
-#: meerk40t/gui/panes/toolbarproject.py:104 meerk40t/gui/wxmeerk40t.py:1219
-#: meerk40t/gui/wxmeerk40t.py:2094
+#: meerk40t/gui/panes/toolbarproject.py:104 meerk40t/gui/wxmeerk40t.py:1219 meerk40t/gui/wxmeerk40t.py:2094
 msgid "Preparing simulation..."
 msgstr "Szimuláció előkészítése..."
 
@@ -2478,7 +2391,7 @@ msgstr "Lézerút elrejtése"
 
 #: meerk40t/gui/wxmeerk40t.py:1746
 msgid "Hide Reticle"
-msgstr "Hajszálkereszt elrejtése "
+msgstr "Hajszálkereszt elrejtése"
 
 #: meerk40t/gui/wxmeerk40t.py:1749
 msgid "Hide Selection"
@@ -2498,7 +2411,7 @@ msgstr "Ne mentse háttértárba a képet"
 
 #: meerk40t/gui/wxmeerk40t.py:1757
 msgid "Do Not Refresh"
-msgstr "Ne frissítsen "
+msgstr "Ne frissítsen"
 
 #: meerk40t/gui/wxmeerk40t.py:1760
 msgid "Do Not Animate"
@@ -2687,8 +2600,8 @@ msgid ""
 "Some files were unrecognized:\n"
 "%s"
 msgstr ""
-"Néhány fájlt nem ismertek fel: \ n"
-"%s" 
+"Néhány fájlt nem ismertek fel: \n"
+"%s"
 
 #: meerk40t/gui/wxmeerk40t.py:2626
 msgid "Error encountered"
@@ -2700,7 +2613,7 @@ msgstr "Projekt mentése"
 
 #: meerk40t/gui/wxmeerk40t.py:2964
 msgid "Enter Forced Gear"
-msgstr "Lépjen be a Kényszerített fogaskerékbe "
+msgstr "Lépjen be a Kényszerített fogaskerékbe"
 
 #: meerk40t/gui/wxmeerk40t.py:2964
 msgid "Gear Entry"
@@ -2715,12 +2628,8 @@ msgid "FPS Limit Entry"
 msgstr "FPS korlát"
 
 #: meerk40t/gui/wxmeerk40t.py:2990
-msgid ""
-"Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
-"translate, etc..."
-msgstr ""
-"Írja be az SVG átalakítási utasítást, pl." Skála (1,49, 1, $ x, $ y) ", forgatás,"
-"fordítani, stb ..." 
+msgid "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, translate, etc..."
+msgstr "Írja be az SVG átalakítási utasítást, pl.\" Skála (1,49, 1, $x, $y) \", forgatás,fordítani, stb ..."
 
 #: meerk40t/gui/wxmeerk40t.py:2993
 msgid "Transform Entry"
@@ -2739,8 +2648,8 @@ msgid ""
 "Material must be jigged at 0,0 either home or home offset.\n"
 "How wide is your material (give units: in, mm, cm, px, etc)?"
 msgstr ""
-"Az anyagot 0,0 kezdőponra kell állítani, vagy a pont eltolására. \ N"
-"Milyen széles az anyaga (adja meg az egységeket: in, mm, cm, px, stb)?" 
+"Az anyagot 0,0 kezdőponra kell állítani, vagy a pont eltolására. \n"
+"Milyen széles az anyaga (adja meg az egységeket: in, mm, cm, px, stb)?"
 
 #: meerk40t/gui/wxmeerk40t.py:3075
 msgid "Double Side Flip"
@@ -2778,7 +2687,7 @@ msgstr "Az ablak betöltése a (z) %s kontextusban:"
 #: meerk40t/gui/wxmeerk40t.py:4160
 #, python-format
 msgid "Loaded Windows in Device %s:"
-msgstr "Betöltött ablak a (z) %s eszközben: "
+msgstr "Betöltött ablak a (z) %s eszközben:"
 
 #: meerk40t/gui/wxmeerk40t.py:4173
 msgid "List available windows."
@@ -2816,8 +2725,7 @@ msgstr "Eszköz nem található."
 msgid "Window Opened."
 msgstr "Ablak nyitva."
 
-#: meerk40t/gui/wxmeerk40t.py:4274 meerk40t/gui/wxmeerk40t.py:4286
-#: meerk40t/gui/wxmeerk40t.py:4305
+#: meerk40t/gui/wxmeerk40t.py:4274 meerk40t/gui/wxmeerk40t.py:4286 meerk40t/gui/wxmeerk40t.py:4305
 #, python-format
 msgid "No such window as %s"
 msgstr "Nincs olyan ablak, mint %s"
@@ -2836,7 +2744,7 @@ msgstr "csukja be a mellékelt ablakot"
 
 #: meerk40t/gui/wxmeerk40t.py:4303
 msgid "Window closed."
-msgstr "Ablak csukva. "
+msgstr "Ablak csukva."
 
 #: meerk40t/gui/wxmeerk40t.py:4309
 msgid "window to be reset"
@@ -2858,8 +2766,9 @@ msgstr "Frissítve."
 msgid ""
 "We got your message. Thank you for helping\n"
 "\n"
-msgstr "Megkaptuk az üzenetét. Köszönjük, hogy segített \n "
-"\n"
+msgstr ""
+"Megkaptuk az üzenetét. Köszönjük, hogy segített \n"
+" \n"
 
 #: meerk40t/gui/wxmeerk40t.py:4443 meerk40t/gui/wxmeerk40t.py:4458
 msgid "Thanks"
@@ -2873,29 +2782,21 @@ msgid ""
 msgstr ""
 "Sajnáljuk, ez nem sikerült. Tegyen fel egy problémát a githubon. \n"
 "\n"
-"A naplófájl a munkakönyvtárban lesz. \n" 
+"A naplófájl a munkakönyvtárban lesz. \n"
 
 #: meerk40t/gui/wxmeerk40t.py:4498
 msgid ""
 "\n"
 "    Good news MeerK40t User! MeerK40t encountered an crash!\n"
 "\n"
-"    You now have the ability to help meerk40t's development by sending us the "
-"log.\n"
+"    You now have the ability to help meerk40t's development by sending us the log.\n"
 "\n"
 "    Send the following data to the MeerK40t team?\n"
 "    ------\n"
 "    "
 msgstr ""
 "\n"
-"Jó hír a MeerK40t felhasználó! A MeerK40t összeomlott! \n"
-"\n"
-"Most már lehetősége van arra, hogy segítsen a meerk40t fejlődésében azzal, hogy elküldi nekünk a
-"napló. \n"
-"\n"
-"Elküldi a következő adatokat a MeerK40t csapatának? \n"
-"------ \n"
-"" 
+"Jó hír a MeerK40t felhasználó! A MeerK40t összeomlott!"
 
 #: meerk40t/gui/wxmeerk40t.py:4510
 msgid "Crash Detected! Send Log?"
@@ -2925,8 +2826,7 @@ msgstr "Kimeneti fájl név"
 msgid "Filename"
 msgstr "File neve"
 
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:18
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:23
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:18 meerk40t/gui/lhystudios/lhystudiosaccel.py:23
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:28
 msgid "infinity"
 msgstr "végtelenség"
@@ -2939,18 +2839,12 @@ msgstr "Gyorsulási táblázat"
 msgid "Enable defined acceleration chart for vectors"
 msgstr "Definiált gyorsulási diagram engedélyezése a vektorokhoz"
 
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:108
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:111
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:114
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:117
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:123
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:126
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:129
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:132
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:138
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:141
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:144
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:147
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:108 meerk40t/gui/lhystudios/lhystudiosaccel.py:111
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:114 meerk40t/gui/lhystudios/lhystudiosaccel.py:117
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:123 meerk40t/gui/lhystudios/lhystudiosaccel.py:126
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:129 meerk40t/gui/lhystudios/lhystudiosaccel.py:132
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:138 meerk40t/gui/lhystudios/lhystudiosaccel.py:141
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:144 meerk40t/gui/lhystudios/lhystudiosaccel.py:147
 #, python-format
 msgid "Upper limit for accel level %d"
 msgstr "%d felső szint felső korlátja"
@@ -2975,62 +2869,49 @@ msgstr "Függőleges raszter"
 msgid "Vector"
 msgstr "Vector"
 
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:179
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:185
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:191
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:197
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:205
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:211
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:217
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:223
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:231
-#: meerk40t/gui/lhystudios/lhystudiosaccel.py:237
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:179 meerk40t/gui/lhystudios/lhystudiosaccel.py:185
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:191 meerk40t/gui/lhystudios/lhystudiosaccel.py:197
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:205 meerk40t/gui/lhystudios/lhystudiosaccel.py:211
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:217 meerk40t/gui/lhystudios/lhystudiosaccel.py:223
+#: meerk40t/gui/lhystudios/lhystudiosaccel.py:231 meerk40t/gui/lhystudios/lhystudiosaccel.py:237
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:243
 msgid "mm/s"
 msgstr "mm/s"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:43
-#: meerk40t/gui/moshi/moshicontrollergui.py:25
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:43 meerk40t/gui/moshi/moshicontrollergui.py:25
 msgid "Reset USB"
 msgstr "Az USB visszaállítása"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:43
-#: meerk40t/gui/moshi/moshicontrollergui.py:25
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:43 meerk40t/gui/moshi/moshicontrollergui.py:25
 msgid "Reset USB connection"
 msgstr "Állítsa vissza az USB -kapcsolatot"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:47
-#: meerk40t/gui/moshi/moshicontrollergui.py:29
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:47 meerk40t/gui/moshi/moshicontrollergui.py:29
 msgid "Release USB"
 msgstr "Huzza ki az USB -t"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:47
-#: meerk40t/gui/moshi/moshicontrollergui.py:29
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:47 meerk40t/gui/moshi/moshicontrollergui.py:29
 msgid "Release USB resources"
 msgstr "Engedje fel az USB -erőforrásokat"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:56
-#: meerk40t/gui/moshi/moshicontrollergui.py:40
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:56 meerk40t/gui/moshi/moshicontrollergui.py:40
 msgid "Commands"
 msgstr "Parancsok"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:59
-#: meerk40t/gui/moshi/moshicontrollergui.py:43
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:59 meerk40t/gui/moshi/moshicontrollergui.py:43
 msgid "Views the Controller Buffer"
 msgstr "A vezérlőpuffer megtekintése"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:62
-#: meerk40t/gui/moshi/moshicontrollergui.py:46
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:62 meerk40t/gui/moshi/moshicontrollergui.py:46
 msgid "Views"
 msgstr "Nézetek"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:65
-#: meerk40t/gui/moshi/moshicontrollergui.py:49 meerk40t/gui/tcp/tcpcontroller.py:16
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:65 meerk40t/gui/moshi/moshicontrollergui.py:49
+#: meerk40t/gui/tcp/tcpcontroller.py:16
 msgid "Connection"
 msgstr "Csatlakozás"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:70
-#: meerk40t/gui/moshi/moshicontrollergui.py:54
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:70 meerk40t/gui/moshi/moshicontrollergui.py:54
 msgid "Mock USB Connection Mode"
 msgstr "Vicces USB csatlakozási mód"
 
@@ -3038,8 +2919,7 @@ msgstr "Vicces USB csatlakozási mód"
 msgid "Start Controller"
 msgstr "Indítsa el a vezérlőt"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:102
-#: meerk40t/gui/moshi/moshicontrollergui.py:75
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:102 meerk40t/gui/moshi/moshicontrollergui.py:75
 msgid "Show USB Log"
 msgstr "USB napló megjelenítése"
 
@@ -3047,37 +2927,32 @@ msgstr "USB napló megjelenítése"
 msgid "Lhystudios-Controller"
 msgstr "Lhystudios-Vezérlő"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:154
-#: meerk40t/gui/moshi/moshicontrollergui.py:124
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:154 meerk40t/gui/moshi/moshicontrollergui.py:124
 #: meerk40t/gui/tcp/tcpcontroller.py:53
 msgid "Force connection/disconnection from the device."
 msgstr "Kényszerített csatlakozás/leválasztás az eszközről."
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:156
-#: meerk40t/gui/moshi/moshicontrollergui.py:126
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:156 meerk40t/gui/moshi/moshicontrollergui.py:126
 #: meerk40t/gui/tcp/tcpcontroller.py:58
 msgid "Connection status"
 msgstr "Kapcsolat állapota"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:158
-#: meerk40t/gui/moshi/moshicontrollergui.py:128
-msgid ""
-"DEBUG. Without a K40 connected continue to process things as if there was one."
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:158 meerk40t/gui/moshi/moshicontrollergui.py:128
+msgid "DEBUG. Without a K40 connected continue to process things as if there was one."
 msgstr "DEBUG. K40 csatlakoztatása nélkül folytassa a dolgok feldolgozását, mintha lenne."
 
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:165
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:173
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:181
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:189
-#: meerk40t/gui/moshi/moshicontrollergui.py:135
-#: meerk40t/gui/moshi/moshicontrollergui.py:143
-#: meerk40t/gui/moshi/moshicontrollergui.py:151
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:189 meerk40t/gui/moshi/moshicontrollergui.py:135
+#: meerk40t/gui/moshi/moshicontrollergui.py:143 meerk40t/gui/moshi/moshicontrollergui.py:151
 #: meerk40t/gui/moshi/moshicontrollergui.py:159
 msgid ""
 "Optional: Distinguish between different lasers using the match criteria below.\n"
 "-1 match anything. 0+ match exactly that value."
-msgstr "Opcionális: különböztesse meg a különböző lézereket az alábbi egyezési feltételek alapján. \ N"
-"-1 egyezik bármivel. A 0+ pontosan megfelel ennek az értéknek." 
+msgstr ""
+"Opcionális: különböztesse meg a különböző lézereket az alábbi egyezési feltételek alapján. \n"
+"-1 egyezik bármivel. A 0+ pontosan megfelel ennek az értéknek."
 
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:200
 msgid "Change the currently performed operation."
@@ -3099,18 +2974,15 @@ msgstr "Az elutasított csomagok teljes száma"
 msgid "Last packet information sent"
 msgstr "Utolsó csomaginformáció elküldve"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:215
-#: meerk40t/gui/moshi/moshicontrollergui.py:167
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:215 meerk40t/gui/moshi/moshicontrollergui.py:167
 msgid "The meaning of Byte 1"
 msgstr "Az 1. bájt jelentése"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:235
-#: meerk40t/gui/moshi/moshicontrollergui.py:181
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:235 meerk40t/gui/moshi/moshicontrollergui.py:181
 msgid "Packet Info"
 msgstr "Paketinfo"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:238
-#: meerk40t/gui/moshi/moshicontrollergui.py:184
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:238 meerk40t/gui/moshi/moshicontrollergui.py:184
 msgid "Byte Data Status"
 msgstr "Bájtadatok állapota"
 
@@ -3126,70 +2998,57 @@ msgstr "Elutasított csomagok"
 msgid "Packet Count"
 msgstr "Csomagok száma"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:260
-#: meerk40t/gui/moshi/moshicontrollergui.py:193
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:260 meerk40t/gui/moshi/moshicontrollergui.py:193
 msgid "USB Settings"
 msgstr "USB beállítások"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:264
-#: meerk40t/gui/moshi/moshicontrollergui.py:197
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:264 meerk40t/gui/moshi/moshicontrollergui.py:197
 msgid "Chip Version"
 msgstr "Chip verzió"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:267
-#: meerk40t/gui/moshi/moshicontrollergui.py:200
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:267 meerk40t/gui/moshi/moshicontrollergui.py:200
 msgid "Device Bus:"
 msgstr "Eszköz busz:"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:270
-#: meerk40t/gui/moshi/moshicontrollergui.py:203
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:270 meerk40t/gui/moshi/moshicontrollergui.py:203
 msgid "Device Address:"
 msgstr "Eszköz címe :"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:273
-#: meerk40t/gui/moshi/moshicontrollergui.py:206
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:273 meerk40t/gui/moshi/moshicontrollergui.py:206
 msgid "Device Index:"
 msgstr "Eszközindex:"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:276
-#: meerk40t/gui/moshi/moshicontrollergui.py:209
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:276 meerk40t/gui/moshi/moshicontrollergui.py:209
 msgid "USB Connection"
 msgstr "USB csatlakozás"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:307
-#: meerk40t/gui/moshi/moshicontrollergui.py:230
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:307 meerk40t/gui/moshi/moshicontrollergui.py:230
 msgid "Byte 0"
 msgstr "Byte 0"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:311
-#: meerk40t/gui/moshi/moshicontrollergui.py:234
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:311 meerk40t/gui/moshi/moshicontrollergui.py:234
 msgid "Byte 1"
 msgstr "Byte 1"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:316
-#: meerk40t/gui/moshi/moshicontrollergui.py:239
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:316 meerk40t/gui/moshi/moshicontrollergui.py:239
 msgid "Byte 2"
 msgstr "Byte 2"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:320
-#: meerk40t/gui/moshi/moshicontrollergui.py:243
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:320 meerk40t/gui/moshi/moshicontrollergui.py:243
 msgid "Byte 3"
 msgstr "Byte 3"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:324
-#: meerk40t/gui/moshi/moshicontrollergui.py:247
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:324 meerk40t/gui/moshi/moshicontrollergui.py:247
 msgid "Byte 4"
 msgstr "Byte 4"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:328
-#: meerk40t/gui/moshi/moshicontrollergui.py:251
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:328 meerk40t/gui/moshi/moshicontrollergui.py:251
 msgid "Byte 5"
 msgstr "Byte 5"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:432
-#: meerk40t/gui/moshi/moshicontrollergui.py:337
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:432 meerk40t/gui/moshi/moshicontrollergui.py:337
 msgid "Kernel Force Event"
-msgstr "Kernel Force esemény "
+msgstr "Kernel Force esemény"
 
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:493
 msgid "Connect Failed"
@@ -3207,35 +3066,29 @@ msgstr "Újrapróbálkozás felfüggesztve"
 msgid "No Backend"
 msgstr "Nincs háttér"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:524
-#: meerk40t/gui/moshi/moshicontrollergui.py:372
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:524 meerk40t/gui/moshi/moshicontrollergui.py:372
 #: meerk40t/gui/tcp/tcpcontroller.py:131
 msgid "Connect"
 msgstr "Csatlakozik"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:531
-#: meerk40t/gui/moshi/moshicontrollergui.py:379
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:531 meerk40t/gui/moshi/moshicontrollergui.py:379
 msgid "Disconnecting..."
-msgstr "Leválasztás ... "
+msgstr "Leválasztás ..."
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:538
-#: meerk40t/gui/moshi/moshicontrollergui.py:386
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:538 meerk40t/gui/moshi/moshicontrollergui.py:386
 #: meerk40t/gui/tcp/tcpcontroller.py:138
 msgid "Disconnect"
 msgstr "Szétkapcsolás"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:545
-#: meerk40t/gui/moshi/moshicontrollergui.py:393
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:545 meerk40t/gui/moshi/moshicontrollergui.py:393
 msgid "Connecting..."
 msgstr "Kapcsolódás..."
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:573
-#: meerk40t/gui/moshi/moshicontrollergui.py:415
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:573 meerk40t/gui/moshi/moshicontrollergui.py:415
 msgid "Connection Refused. See USB Log for detailed information."
 msgstr "Kapcsolódás elutasítva. Részletes információkért lásd: USB Log."
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:574
-#: meerk40t/gui/moshi/moshicontrollergui.py:416
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:574 meerk40t/gui/moshi/moshicontrollergui.py:416
 msgid "Manual Connection"
 msgstr "Kézi csatlakozás"
 
@@ -3249,7 +3102,7 @@ msgstr "Folytatás kényszerítéssel"
 
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:637
 msgid "Pause Controller"
-msgstr "Szünet a vezérlőnek "
+msgstr "Szünet a vezérlőnek"
 
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:647
 msgid "Manual Reset"
@@ -3263,17 +3116,15 @@ msgstr "Fix sebesség"
 msgid "Flip X"
 msgstr "Flip X"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:30
-#: meerk40t/gui/moshi/moshidrivergui.py:14
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:30 meerk40t/gui/moshi/moshidrivergui.py:14
 msgid "Home Right"
-msgstr "Kezdőpont jobbra "
+msgstr "Kezdőpont jobbra"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:31
 msgid "Flip Y"
 msgstr "Flip Y"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:32
-#: meerk40t/gui/moshi/moshidrivergui.py:15
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:32 meerk40t/gui/moshi/moshidrivergui.py:15
 msgid "Home Bottom"
 msgstr "Kezdőpont Alul"
 
@@ -3285,13 +3136,11 @@ msgstr "X és Y cseréje"
 msgid "Strict"
 msgstr "Szigorú"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:41
-#: meerk40t/gui/moshi/moshidrivergui.py:22
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:41 meerk40t/gui/moshi/moshidrivergui.py:22
 msgid "Set Current"
 msgstr "Állítsa be a lézer áramot"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:43
-#: meerk40t/gui/moshi/moshidrivergui.py:23
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:43 meerk40t/gui/moshi/moshidrivergui.py:23
 msgid "Randomize PPI"
 msgstr "Véletlenszerű PPI"
 
@@ -3313,17 +3162,14 @@ msgstr "Válassza ki a használni kívánt táblát. Ez hatással van a használ
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:113
 #, python-format
-msgid ""
-"Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated "
-"speed."
-msgstr "" 
+msgid "Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated speed."
+msgstr ""
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:118
 msgid "Flip the Right and Left commands sent to the controller"
 msgstr "Fordítsa el a vezérlőnek küldött jobb és bal parancsokat"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:121
-#: meerk40t/gui/moshi/moshidrivergui.py:46
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:121 meerk40t/gui/moshi/moshidrivergui.py:46
 msgid "Indicates the device Home is on the right"
 msgstr "Azt jelzi, hogy a Home készülék a jobb oldalon található"
 
@@ -3331,8 +3177,7 @@ msgstr "Azt jelzi, hogy a Home készülék a jobb oldalon található"
 msgid "Flip the Top and Bottom commands sent to the controller"
 msgstr "Fordítsa el a vezérlőnek küldött felső és alsó parancsokat"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:127
-#: meerk40t/gui/moshi/moshidrivergui.py:49
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:127 meerk40t/gui/moshi/moshidrivergui.py:49
 msgid "Indicates the device Home is on the bottom"
 msgstr "Azt jelzi, hogy a Home készülék az alján található"
 
@@ -3342,72 +3187,61 @@ msgstr "Felcseréli az X és Y tengelyt. Ez a FlipX és a FlipY előtt történi
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:133
 msgid ""
-"Forces the device to enter and exit programmed speed mode from the same "
-"direction.\n"
-"This may prevent devices like the M2-V4 and earlier from having issues. Not "
-"typically needed."
-msgstr "Arra kényszeríti a készüléket, hogy belépjen és kilépjen a programozott sebesség üzemmódból "
-"irány. \n" 
-"Ez megakadályozhatja, hogy az M2-V4 és a korábbi eszközökhöz hasonló problémák merüljenek fel. 
-"általában szükség van rá".
+"Forces the device to enter and exit programmed speed mode from the same direction.\n"
+"This may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
+msgstr "Arra kényszeríti a készüléket, hogy belépjen és kilépjen a programozott sebesség üzemmódból irány."
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:138
-#: meerk40t/gui/moshi/moshidrivergui.py:52
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:138 meerk40t/gui/moshi/moshidrivergui.py:52
 msgid "Translate Home X"
 msgstr "Fordítás X kezdőpontra"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:140
-#: meerk40t/gui/moshi/moshidrivergui.py:54
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:140 meerk40t/gui/moshi/moshidrivergui.py:54
 msgid "Translate Home Y"
 msgstr "Fordítás Y kezdőpontra"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:142
-#: meerk40t/gui/moshi/moshidrivergui.py:56
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:142 meerk40t/gui/moshi/moshidrivergui.py:56
 msgid "Set Home Position based on the current position"
 msgstr "Állítsa be az otthoni pozíciót az aktuális pozíció alapján"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:150
-msgid ""
-"This setting is a global equivalent to the Pulse Grouping option in Operation "
-"Properties."
-msgstr "Ez a beállítás globális megfelelője a Művelet Pulse Grouping opciójának "
-"Tulajdonságok".
+msgid "This setting is a global equivalent to the Pulse Grouping option in Operation Properties."
+msgstr "Ez a beállítás globális megfelelője a Művelet Pulse Grouping opciójának."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:159
 msgid ""
-"Whilst the Pulse Grouping option in Operations are set for that operation before "
-"the job is spooled, and cannot be changed on the fly,"
-msgstr "Míg a Műveletek Pulzus csoportosítása opciója korábban erre a műveletre van beállítva "
-"a munka sorba van állítva, és menet közben nem változtatható meg" 
+"Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and "
+"cannot be changed on the fly,"
+msgstr ""
+"Míg a Műveletek Pulzus csoportosítása opciója korábban erre a műveletre van beállítva a munka sorba van "
+"állítva, és menet közben nem változtatható meg,"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:163
 msgid ""
-"this global Pulse Grouping option is checked as instructions are sent to the "
-"laser and can turned on and off during the burn process."
-msgstr "ez a globális impulzuscsoportosítási beállítás be van jelölve az utasítások elküldésekor a "
-"lézer, és be- és kikapcsolható az égési folyamat során."
+"this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and "
+"off during the burn process."
+msgstr ""
+"ez a globális impulzuscsoportosítási beállítás be van jelölve az utasítások elküldésekor a lézer, és be- "
+"és kikapcsolható az égési folyamat során."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:166
 msgid ""
-"Because the changes are believed to be small enough to be undetectable, you may "
-"wish to leave this permanently checked."
-msgstr "Mivel úgy gondolják, hogy a változások elég kicsik ahhoz, hogy észrevehetetlenek legyenek"
-"ezt véglegesen ellenőrizni kívánja."
+"Because the changes are believed to be small enough to be undetectable, you may wish to leave this "
+"permanently checked."
+msgstr ""
+"Mivel úgy gondolják, hogy a változások elég kicsik ahhoz, hogy észrevehetetlenek legyenekezt véglegesen "
+"ellenőrizni kívánja."
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:173
-#: meerk40t/gui/moshi/moshidrivergui.py:59
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:173 meerk40t/gui/moshi/moshidrivergui.py:59
 msgid "Rather than orderly PPI, we perform PPI based on a randomized average"
 msgstr "A rendezett PPI helyett randomizált átlag alapján végezzük a PPI -t"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:177
-msgid ""
-"Limit the write buffer to a certain amount. Permits on-the-fly command "
-"production."
-msgstr "Korlátozza az írási puffert egy bizonyos mennyiségre. Lehetővé teszi az on-the-fly parancsot "
-"Termelés." 
+msgid "Limit the write buffer to a certain amount. Permits on-the-fly command production."
+msgstr ""
+"Korlátozza az írási puffert egy bizonyos mennyiségre. Lehetővé teszi az on-the-fly parancsot Termelés."
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:183
-#: meerk40t/gui/tcp/tcpcontroller.py:63 meerk40t/gui/tcp/tcpcontroller.py:67
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:183 meerk40t/gui/tcp/tcpcontroller.py:63
+#: meerk40t/gui/tcp/tcpcontroller.py:67
 msgid "Current number of bytes in the write buffer."
 msgstr "Az írási puffer jelenlegi bájtja."
 
@@ -3417,7 +3251,7 @@ msgstr "Az aktuális maximális írási puffer korlát."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:186
 msgid "Lock rail after operations are finished."
-msgstr "Zárja el a sínt a műveletek befejezése után"
+msgstr "Zárja el a sínt a műveletek befejezése után."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:194
 msgid "General Options"
@@ -3427,18 +3261,15 @@ msgstr "Általános opciók"
 msgid "Write Buffer"
 msgstr "Írjon puffert"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:200
-#: meerk40t/gui/moshi/moshidrivergui.py:68
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:200 meerk40t/gui/moshi/moshidrivergui.py:68
 msgid "Pulse Planner"
 msgstr "Pulzustervező"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:203
-#: meerk40t/gui/moshi/moshidrivergui.py:71
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:203 meerk40t/gui/moshi/moshidrivergui.py:71
 msgid "Shift Home Position"
 msgstr "Mozgassa kezdő helyzetbe"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:208
-#: meerk40t/gui/moshi/moshidrivergui.py:76
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:208 meerk40t/gui/moshi/moshidrivergui.py:76
 msgid "Configuration"
 msgstr "Konfiguráció"
 
@@ -3446,8 +3277,7 @@ msgstr "Konfiguráció"
 msgid "Board Setup"
 msgstr "Tábla beállítása"
 
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:234
-#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:240
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:234 meerk40t/gui/lhystudios/lhystudiosdrivergui.py:240
 #: meerk40t/gui/moshi/moshidrivergui.py:84 meerk40t/gui/moshi/moshidrivergui.py:90
 #: meerk40t/gui/panes/position.py:31
 msgid "mil"
@@ -3535,8 +3365,8 @@ msgid "Alignment"
 msgstr "Igazítás"
 
 #: meerk40t/gui/panes/toolbaralign.py:96 meerk40t/gui/panes/toolbarcontrol.py:127
-#: meerk40t/gui/panes/toolbarpreferences.py:103
-#: meerk40t/gui/panes/toolbarproject.py:129 meerk40t/gui/panes/toolbarshapes.py:101
+#: meerk40t/gui/panes/toolbarpreferences.py:103 meerk40t/gui/panes/toolbarproject.py:129
+#: meerk40t/gui/panes/toolbarshapes.py:101
 msgid "Toolbars"
 msgstr "Eszköztárak"
 
@@ -3590,7 +3420,7 @@ msgstr "Szimulálja az aktuális lézerfeladatot"
 
 #: meerk40t/gui/panes/toolbarproject.py:70
 msgid "Run RasterWizard "
-msgstr "Futtassa a RasterWizard programot"
+msgstr "Futtassa a RasterWizard programot "
 
 #: meerk40t/gui/panes/toolbarproject.py:83
 msgid "Open Notes Window"
@@ -3654,7 +3484,7 @@ msgstr "Port"
 
 #: meerk40t/gui/tcp/tcpcontroller.py:94
 msgid "Buffer Size: "
-msgstr "Puffer mérete:"
+msgstr "Puffer mérete: "
 
 #: meerk40t/gui/tcp/tcpcontroller.py:98
 msgid "Max Buffer Size:"
@@ -3710,7 +3540,7 @@ msgstr "FIGYELMEZTETÉS: A (z) %s szál még regisztrálva van a (z) %s domainbe
 #: meerk40t/kernel.py:999
 #, python-format
 msgid "Finishing Thread %s for %s"
-msgstr "A (z) %s szál befejezése %s számára "
+msgstr "A (z) %s szál befejezése %s számára"
 
 #: meerk40t/kernel.py:1003
 #, python-format
@@ -3772,7 +3602,7 @@ msgstr "Téma: %s, Kezdés"
 #: meerk40t/kernel.py:1482
 #, python-format
 msgid "Thread: %s, End "
-msgstr "Téma: %s, vége"
+msgstr "Téma: %s, vége "
 
 #: meerk40t/kernel.py:1484
 #, python-format
@@ -3796,19 +3626,18 @@ msgstr "Hiba"
 msgid "Finished"
 msgstr "Vége"
 
-#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:52
-#: meerk40t/gui/wxmeerk40t.py:712 meerk40t/gui/wxmeerk40t.py:1286
-#: meerk40t/kernel.py:1510
+#: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:52 meerk40t/gui/wxmeerk40t.py:712
+#: meerk40t/gui/wxmeerk40t.py:1286 meerk40t/kernel.py:1510
 msgid "Pause"
 msgstr "Szünet Gomb"
 
 #: meerk40t/kernel.py:1512
 msgid "Busy"
-msgstr "foglalt"
+msgstr "Foglalt"
 
 #: meerk40t/kernel.py:1514
 msgid "Waiting"
-msgstr "várakozás"
+msgstr "Várakozás"
 
 #: meerk40t/kernel.py:1516
 msgid "Active"
@@ -3816,7 +3645,7 @@ msgstr "Aktiv"
 
 #: meerk40t/kernel.py:1518
 msgid "Idle"
-msgstr "tétlen"
+msgstr "Tétlen"
 
 #: meerk40t/kernel.py:1520
 msgid "Unknown"
@@ -3896,37 +3725,27 @@ msgstr "Hány másodperc alatt kell ezt futtatni."
 msgid "run the command a given number of times with a given duration between."
 msgstr "futtassa a parancsot meghatározott számú alkalommal, adott időtartam között."
 
-#: meerk40t/core/bindalias.py:38 meerk40t/core/bindalias.py:43
-#: meerk40t/core/bindalias.py:86 meerk40t/core/bindalias.py:91
-#: meerk40t/core/drivers.py:602 meerk40t/core/drivers.py:606
-#: meerk40t/core/drivers.py:609 meerk40t/core/drivers.py:620
-#: meerk40t/core/drivers.py:624 meerk40t/core/drivers.py:627
-#: meerk40t/core/drivers.py:636 meerk40t/core/drivers.py:640
-#: meerk40t/core/inputs.py:120 meerk40t/core/inputs.py:124
-#: meerk40t/core/inputs.py:126 meerk40t/core/inputs.py:138
-#: meerk40t/core/inputs.py:142 meerk40t/core/inputs.py:144
-#: meerk40t/core/inputs.py:149 meerk40t/core/inputs.py:153
-#: meerk40t/core/output.py:306 meerk40t/core/output.py:310
-#: meerk40t/core/output.py:312 meerk40t/core/output.py:319
-#: meerk40t/core/output.py:323 meerk40t/core/planner.py:474
-#: meerk40t/core/planner.py:478 meerk40t/core/planner.py:485
-#: meerk40t/core/planner.py:496 meerk40t/core/planner.py:500
-#: meerk40t/core/planner.py:507 meerk40t/core/spoolers.py:210
-#: meerk40t/core/spoolers.py:214 meerk40t/core/spoolers.py:218
-#: meerk40t/core/spoolers.py:230 meerk40t/core/spoolers.py:234
-#: meerk40t/core/spoolers.py:238 meerk40t/core/webhelp.py:18
-#: meerk40t/core/webhelp.py:24 meerk40t/device/basedevice.py:154
-#: meerk40t/device/basedevice.py:172 meerk40t/extra/inkscape.py:177
-#: meerk40t/extra/inkscape.py:187 meerk40t/gui/wxmeerk40t.py:4151
-#: meerk40t/gui/wxmeerk40t.py:4159 meerk40t/gui/wxmeerk40t.py:4166
-#: meerk40t/gui/wxmeerk40t.py:4176 meerk40t/image/imagetools.py:51
-#: meerk40t/image/imagetools.py:71 meerk40t/kernel.py:2055 meerk40t/kernel.py:2078
-#: meerk40t/kernel.py:2119 meerk40t/kernel.py:2124 meerk40t/kernel.py:2126
-#: meerk40t/kernel.py:2131 meerk40t/kernel.py:2209 meerk40t/kernel.py:2213
-#: meerk40t/kernel.py:2224 meerk40t/kernel.py:2262 meerk40t/kernel.py:2266
-#: meerk40t/kernel.py:2272 meerk40t/kernel.py:2277 meerk40t/kernel.py:2295
-#: meerk40t/kernel.py:2311 meerk40t/kernel.py:2318 meerk40t/kernel.py:2328
-#: meerk40t/kernel.py:2337 meerk40t/kernel.py:2355
+#: meerk40t/core/bindalias.py:38 meerk40t/core/bindalias.py:43 meerk40t/core/bindalias.py:86
+#: meerk40t/core/bindalias.py:91 meerk40t/core/drivers.py:602 meerk40t/core/drivers.py:606
+#: meerk40t/core/drivers.py:609 meerk40t/core/drivers.py:620 meerk40t/core/drivers.py:624
+#: meerk40t/core/drivers.py:627 meerk40t/core/drivers.py:636 meerk40t/core/drivers.py:640
+#: meerk40t/core/inputs.py:120 meerk40t/core/inputs.py:124 meerk40t/core/inputs.py:126
+#: meerk40t/core/inputs.py:138 meerk40t/core/inputs.py:142 meerk40t/core/inputs.py:144
+#: meerk40t/core/inputs.py:149 meerk40t/core/inputs.py:153 meerk40t/core/output.py:306
+#: meerk40t/core/output.py:310 meerk40t/core/output.py:312 meerk40t/core/output.py:319
+#: meerk40t/core/output.py:323 meerk40t/core/planner.py:474 meerk40t/core/planner.py:478
+#: meerk40t/core/planner.py:485 meerk40t/core/planner.py:496 meerk40t/core/planner.py:500
+#: meerk40t/core/planner.py:507 meerk40t/core/spoolers.py:210 meerk40t/core/spoolers.py:214
+#: meerk40t/core/spoolers.py:218 meerk40t/core/spoolers.py:230 meerk40t/core/spoolers.py:234
+#: meerk40t/core/spoolers.py:238 meerk40t/core/webhelp.py:18 meerk40t/core/webhelp.py:24
+#: meerk40t/device/basedevice.py:154 meerk40t/device/basedevice.py:172 meerk40t/extra/inkscape.py:177
+#: meerk40t/extra/inkscape.py:187 meerk40t/gui/wxmeerk40t.py:4151 meerk40t/gui/wxmeerk40t.py:4159
+#: meerk40t/gui/wxmeerk40t.py:4166 meerk40t/gui/wxmeerk40t.py:4176 meerk40t/image/imagetools.py:51
+#: meerk40t/image/imagetools.py:71 meerk40t/kernel.py:2055 meerk40t/kernel.py:2078 meerk40t/kernel.py:2119
+#: meerk40t/kernel.py:2124 meerk40t/kernel.py:2126 meerk40t/kernel.py:2131 meerk40t/kernel.py:2209
+#: meerk40t/kernel.py:2213 meerk40t/kernel.py:2224 meerk40t/kernel.py:2262 meerk40t/kernel.py:2266
+#: meerk40t/kernel.py:2272 meerk40t/kernel.py:2277 meerk40t/kernel.py:2295 meerk40t/kernel.py:2311
+#: meerk40t/kernel.py:2318 meerk40t/kernel.py:2328 meerk40t/kernel.py:2337 meerk40t/kernel.py:2355
 msgid "----------"
 msgstr "----------"
 
@@ -3936,7 +3755,7 @@ msgstr "Időzítők:"
 
 #: meerk40t/kernel.py:2068 meerk40t/kernel.py:2303
 msgid "forever,"
-msgstr "örökké," 
+msgstr "örökké,"
 
 #: meerk40t/kernel.py:2070 meerk40t/kernel.py:2305
 #, python-format
@@ -3954,7 +3773,7 @@ msgstr "minden %f másodperc"
 
 #: meerk40t/kernel.py:2076
 msgid "- gui"
-msgstr "- drága "
+msgstr "- drága"
 
 #: meerk40t/kernel.py:2087
 msgid "All timers canceled."
@@ -3963,12 +3782,12 @@ msgstr "Minden időzítőt töröltek."
 #: meerk40t/kernel.py:2093
 #, python-format
 msgid "Timer '%s' canceled."
-msgstr "'%s' időzítő törölve. "
+msgstr "'%s' időzítő törölve."
 
 #: meerk40t/kernel.py:2095
 #, python-format
 msgid "Timer '%s' does not exist."
-msgstr "A (z) "%s" időzítő nem létezik."
+msgstr "A (z) \"%s\" időzítő nem létezik."
 
 #: meerk40t/kernel.py:2113
 msgid "Syntax Error: timer<name> <times> <interval> <command>"
@@ -3995,8 +3814,7 @@ msgstr "kontextus"
 msgid "list loaded plugins in kernel"
 msgstr "listázza a betöltött beépülő modulokat a kernelben"
 
-#: meerk40t/kernel.py:2148 meerk40t/kernel.py:2186 meerk40t/kernel.py:2204
-#: meerk40t/kernel.py:2251
+#: meerk40t/kernel.py:2148 meerk40t/kernel.py:2186 meerk40t/kernel.py:2204 meerk40t/kernel.py:2251
 msgid "Path of variables to set."
 msgstr "A beállítandó változók elérési útja."
 
@@ -4019,12 +3837,12 @@ msgstr "vezérlés [<executive>]"
 #: meerk40t/kernel.py:2199
 #, python-format
 msgid "Executed '%s'"
-msgstr "'%s' végrehajtva "
+msgstr "'%s' végrehajtva"
 
 #: meerk40t/kernel.py:2201
 #, python-format
 msgid "Control '%s' not found."
-msgstr "A (z) "%s" vezérlő nem található."
+msgstr "A (z) \"%s\" vezérlő nem található."
 
 #: meerk40t/kernel.py:2206
 msgid "module [(open|close) <module_name>]"
@@ -4039,8 +3857,8 @@ msgstr "Regisztrált modulok:"
 msgid "Loaded Modules in Context %s:"
 msgstr "Betöltött modulok a %s kontextusban:"
 
-#: meerk40t/gui/wxmeerk40t.py:4157 meerk40t/gui/wxmeerk40t.py:4165
-#: meerk40t/kernel.py:2222 meerk40t/kernel.py:2271 meerk40t/kernel.py:2276
+#: meerk40t/gui/wxmeerk40t.py:4157 meerk40t/gui/wxmeerk40t.py:4165 meerk40t/kernel.py:2222
+#: meerk40t/kernel.py:2271 meerk40t/kernel.py:2276
 #, python-format
 msgid "%d: %s as type of %s"
 msgstr "%d: %s as type of %s"
@@ -4048,7 +3866,7 @@ msgstr "%d: %s as type of %s"
 #: meerk40t/kernel.py:2241 meerk40t/kernel.py:2247
 #, python-format
 msgid "Module '%s' not found."
-msgstr "A (z) "%s" modul nem található."
+msgstr "A (z) \"%s\" modul nem található."
 
 #: meerk40t/kernel.py:2254
 msgid "modifier [(open|close) <module_name>]"
@@ -4071,7 +3889,7 @@ msgstr "Betöltött módosítók a (z) %s eszközben:"
 #: meerk40t/kernel.py:2285 meerk40t/kernel.py:2291
 #, python-format
 msgid "Modifier '%s' not found."
-msgstr "A (z) "%s" módosító nem található."
+msgstr "A (z) \"%s\" módosító nem található."
 
 #: meerk40t/kernel.py:2293
 msgid "show scheduled events"
@@ -4091,7 +3909,7 @@ msgstr "Regisztrált szálak:"
 
 #: meerk40t/kernel.py:2326
 msgid "is alive."
-msgstr "aktiv"
+msgstr "aktiv."
 
 #: meerk40t/kernel.py:2332
 msgid "channel (open|close|save|list|print) <channel_name>"
@@ -4113,8 +3931,7 @@ msgstr "a csatorna neve"
 msgid "watch this channel in the console"
 msgstr "nézd meg ezt a csatornát a konzolon"
 
-#: meerk40t/kernel.py:2375 meerk40t/kernel.py:2393 meerk40t/kernel.py:2411
-#: meerk40t/kernel.py:2434
+#: meerk40t/kernel.py:2375 meerk40t/kernel.py:2393 meerk40t/kernel.py:2411 meerk40t/kernel.py:2434
 msgid "channel_name is not specified."
 msgstr "csatorna_neve nincs megadva."
 
@@ -4240,13 +4057,12 @@ msgstr "A fájlok betöltése nem volt definiálva"
 msgid "loading..."
 msgstr "Betöltés..."
 
-#: meerk40t/device/grbl/grbldevice.py:49
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:415 meerk40t/kernelserver.py:13
+#: meerk40t/device/grbl/grbldevice.py:49 meerk40t/device/lhystudios/lhystudiosdevice.py:415
+#: meerk40t/kernelserver.py:13
 msgid "port to listen on."
 msgstr "port listázni."
 
-#: meerk40t/device/grbl/grbldevice.py:56
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:422
+#: meerk40t/device/grbl/grbldevice.py:56 meerk40t/device/lhystudios/lhystudiosdevice.py:422
 #: meerk40t/device/ruida/ruidadevice.py:32 meerk40t/kernelserver.py:20
 msgid "do not watch server channels"
 msgstr "ne nézze a szerver csatornákat"
@@ -4262,15 +4078,15 @@ msgstr "elindítja a konzol_kiszolgálót a 23 -as porton (telnet)"
 #: meerk40t/kernelserver.py:42
 #, python-format
 msgid "%s %s Telnet Console.\r\n"
-msgstr "%s %s Telnet konzol. \ r \ n"
+msgstr "%s %s Telnet konzol.\r\n"
 
 #: meerk40t/kernelserver.py:53
 #, python-format
 msgid "%s %s console server on port: %d"
 msgstr "%s %s konzolszerver a porton: %d"
 
-#: meerk40t/device/grbl/grbldevice.py:111
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:466 meerk40t/kernelserver.py:63
+#: meerk40t/device/grbl/grbldevice.py:111 meerk40t/device/lhystudios/lhystudiosdevice.py:466
+#: meerk40t/kernelserver.py:63
 #, python-format
 msgid "Server failed on port: %d"
 msgstr "A kiszolgáló nem sikerült a következő porton: %d"
@@ -4353,7 +4169,7 @@ msgstr "Álnevek:"
 
 #: meerk40t/core/bindalias.py:97
 msgid "Set default aliases."
-msgstr "Alapértelmezett álnevek beállítása"
+msgstr "Alapértelmezett álnevek beállítása."
 
 #: meerk40t/core/bindalias.py:115
 msgid "This is not an alias."
@@ -4378,7 +4194,7 @@ msgstr "Driver %s:"
 
 #: meerk40t/core/drivers.py:614
 msgid "driver<?> list"
-msgstr "driver <?> lista "
+msgstr "driver <?> lista"
 
 #: meerk40t/core/drivers.py:632
 msgid "list driver types"
@@ -4390,7 +4206,7 @@ msgstr "Vezetők számára engedélyezett:"
 
 #: meerk40t/core/drivers.py:644
 msgid "driver<?> reset"
-msgstr "illesztőprogram <?> visszaállítása "
+msgstr "illesztőprogram <?> visszaállítása"
 
 #: meerk40t/core/elements.py:1717
 msgid "Show information about operations"
@@ -4416,8 +4232,8 @@ msgstr "művelet: kiválasztott műveletek."
 msgid "operation0,2: operation #0 and #2"
 msgstr "operation0,2: operation #0 and #2"
 
-#: meerk40t/core/elements.py:1766 meerk40t/core/elements.py:2313
-#: meerk40t/core/elements.py:3106 meerk40t/core/elements.py:3162
+#: meerk40t/core/elements.py:1766 meerk40t/core/elements.py:2313 meerk40t/core/elements.py:3106
+#: meerk40t/core/elements.py:3162
 #, python-format
 msgid "index %d out of range"
 msgstr "%d index kívül esik a tartományon"
@@ -4527,11 +4343,11 @@ msgstr "A (z) ' %s' sebessége jelenleg: %f"
 #: meerk40t/core/elements.py:2156
 #, python-format
 msgid "Speed for '%s' updated %f -> %f"
-msgstr " %s' sebessége frissítve: %f -> %f"
+msgstr "%s' sebessége frissítve: %f -> %f"
 
 #: meerk40t/core/elements.py:2162
 msgid "power in pulses per inch (ppi, 1000=max)"
-msgstr "teljesítmény impulzus / hüvelyk (ppi, 1000=max) "
+msgstr "teljesítmény impulzus / hüvelyk (ppi, 1000=max)"
 
 #: meerk40t/core/elements.py:2165
 msgid "power <ppi>"
@@ -4581,7 +4397,7 @@ msgstr "Engedélyezze a megadott műveleteket"
 #: meerk40t/core/elements.py:2228
 #, python-format
 msgid "Operation '%s' enabled."
-msgstr "A (z) '%s' művelet engedélyezve"
+msgstr "A (z) '%s' művelet engedélyezve."
 
 #: meerk40t/core/elements.py:2237
 msgid "Duplicate elements"
@@ -4695,7 +4511,7 @@ msgstr "x távolság"
 
 #: meerk40t/core/elements.py:2733
 msgid "y distance"
-msgstr "y távolság "
+msgstr "y távolság"
 
 #: meerk40t/core/elements.py:2736
 msgid "grid <columns> <rows> <x_distance> <y_distance>"
@@ -4739,7 +4555,7 @@ msgstr "lekerekített rx sarokérték."
 
 #: meerk40t/core/elements.py:2889
 msgid "rounded ry corner value."
-msgstr "kerekített ry sarokérték. "
+msgstr "kerekített ry sarokérték."
 
 #: meerk40t/core/elements.py:2893
 msgid "adds rectangle to scene"
@@ -4787,7 +4603,7 @@ msgstr "A távolsággal határolt lebegőpontos számok listájának kell lennie
 
 #: meerk40t/core/elements.py:2983
 msgid "polyline (float float)*"
-msgstr "vonallánc (úszó úszó)* "
+msgstr "vonallánc (úszó úszó)*"
 
 #: meerk40t/core/elements.py:2998
 msgid "Convert any shapes to paths"
@@ -4811,7 +4627,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:3036
 msgid "stroke-width <length>"
-msgstr "löket-szélesség <length> "
+msgstr "löket-szélesség <length>"
 
 #: meerk40t/core/elements.py:3048
 msgid "Stroke-Width Values:"
@@ -4827,9 +4643,8 @@ msgstr "%d: stroke = none - %s"
 msgid "%d: stroke = %s - %s"
 msgstr "%d: stroke = %s - %s"
 
-#: meerk40t/core/elements.py:3063 meerk40t/core/elements.py:3299
-#: meerk40t/core/elements.py:3397 meerk40t/core/elements.py:3494
-#: meerk40t/core/elements.py:3624 meerk40t/core/elements.py:3718
+#: meerk40t/core/elements.py:3063 meerk40t/core/elements.py:3299 meerk40t/core/elements.py:3397
+#: meerk40t/core/elements.py:3494 meerk40t/core/elements.py:3624 meerk40t/core/elements.py:3718
 #: meerk40t/core/elements.py:3733 meerk40t/extra/pathoptimize.py:14
 msgid "No selected elements."
 msgstr "Nincsenek kijelölt elemek."
@@ -4852,7 +4667,7 @@ msgstr "Szín a kitöltés beállításához"
 
 #: meerk40t/core/elements.py:3141
 msgid "fill <svg color>"
-msgstr "kitöltés <svg color> "
+msgstr "kitöltés <svg color>"
 
 #: meerk40t/core/elements.py:3165
 msgid "Fill Values:"
@@ -4866,11 +4681,11 @@ msgstr "%d: kitöltés = none - %s"
 #: meerk40t/core/elements.py:3174
 #, python-format
 msgid "%d: fill = %s - %s"
-msgstr "%d: kitöltés = %s - %s "
+msgstr "%d: kitöltés = %s - %s"
 
 #: meerk40t/core/elements.py:3191
 msgid "x offset."
-msgstr "x eltolás"
+msgstr "x eltolás."
 
 #: meerk40t/core/elements.py:3192 meerk40t/core/spoolers.py:429
 msgid "y offset"
@@ -4988,11 +4803,11 @@ msgstr "a kiválasztott új magassága"
 
 #: meerk40t/core/elements.py:3542
 msgid "resize <x-pos> <y-pos> <width> <height>"
-msgstr "átméretezés <x-pos> <y-pos> <width> <height> "
+msgstr "átméretezés <x-pos> <y-pos> <width> <height>"
 
 #: meerk40t/core/elements.py:3595
 msgid "skew_x value"
-msgstr "ferde_x érték "
+msgstr "ferde_x érték"
 
 #: meerk40t/core/elements.py:3597
 msgid "skew_y value"
@@ -5000,7 +4815,7 @@ msgstr "ferde_y érték"
 
 #: meerk40t/core/elements.py:3598
 msgid "translate_x value"
-msgstr "translate_x érték "
+msgstr "translate_x érték"
 
 #: meerk40t/core/elements.py:3599
 msgid "translate_y value"
@@ -5066,7 +4881,7 @@ msgstr "Betöltési menü az adott csomóponthoz"
 
 #: meerk40t/core/elements.py:3930 meerk40t/core/elements.py:3984
 msgid "delegate commands to focused value"
-msgstr "delegálja a parancsokat a fókuszált értékre "
+msgstr "delegálja a parancsokat a fókuszált értékre"
 
 #: meerk40t/core/elements.py:3942 meerk40t/core/elements.py:3954
 msgid "delegate commands to sub-focused value"
@@ -5102,11 +4917,11 @@ msgstr "Hiba: A vágólap üres"
 
 #: meerk40t/core/elements.py:4075
 msgid "clipboard cut"
-msgstr "vágólap vágás "
+msgstr "vágólap vágás"
 
 #: meerk40t/core/elements.py:4087
 msgid "clipboard clear"
-msgstr "vágólap tiszta "
+msgstr "vágólap tiszta"
 
 #: meerk40t/core/elements.py:4099
 msgid "clipboard contents"
@@ -5122,11 +4937,11 @@ msgstr "megjegyzés <note>"
 
 #: meerk40t/core/elements.py:4128
 msgid "No Note."
-msgstr "Nincs jegyzet"
+msgstr "Nincs jegyzet."
 
 #: meerk40t/core/elements.py:4136
 msgid "Note Set."
-msgstr "Jegyzet gyüjtemény"
+msgstr "Jegyzet gyüjtemény."
 
 #: meerk40t/core/elements.py:4143
 msgid "trace the convex hull of current elements"
@@ -5172,8 +4987,8 @@ msgstr "Csoport elemek"
 msgid "Enable/Disable ops"
 msgstr "Opciók engedélyezése/letiltása"
 
-#: meerk40t/core/elements.py:4270 meerk40t/core/elements.py:4276
-#: meerk40t/core/elements.py:4282 meerk40t/core/elements.py:4288
+#: meerk40t/core/elements.py:4270 meerk40t/core/elements.py:4276 meerk40t/core/elements.py:4282
+#: meerk40t/core/elements.py:4288
 msgid "Convert operation"
 msgstr "Konvertálás művelet"
 
@@ -5193,8 +5008,8 @@ msgstr "Átalakítás gravírozni"
 msgid "Convert to Cut"
 msgstr "Átalakítás vágásra"
 
-#: meerk40t/core/elements.py:4298 meerk40t/core/elements.py:4307
-#: meerk40t/gui/jobspooler.py:99 meerk40t/gui/panes/spoolerpanel.py:82
+#: meerk40t/core/elements.py:4298 meerk40t/core/elements.py:4307 meerk40t/gui/jobspooler.py:99
+#: meerk40t/gui/panes/spoolerpanel.py:82
 msgid "Speed"
 msgstr "Sebesség"
 
@@ -5203,8 +5018,7 @@ msgstr "Sebesség"
 msgid "Speed %smm/s"
 msgstr "Sebesség %smm/s"
 
-#: meerk40t/core/elements.py:4319 meerk40t/core/elements.py:4934
-#: meerk40t/gui/rasterwizard.py:795
+#: meerk40t/core/elements.py:4319 meerk40t/core/elements.py:4934 meerk40t/gui/rasterwizard.py:795
 msgid "Step"
 msgstr "Lépés"
 
@@ -5339,10 +5153,9 @@ msgstr "Mentés-2"
 msgid "Save-3"
 msgstr "Mentés-3"
 
-#: meerk40t/core/elements.py:4568 meerk40t/core/elements.py:4578
-#: meerk40t/core/elements.py:4583
+#: meerk40t/core/elements.py:4568 meerk40t/core/elements.py:4578 meerk40t/core/elements.py:4583
 msgid "Use"
-msgstr "használat"
+msgstr "Használat"
 
 #: meerk40t/core/elements.py:4573
 #, python-format
@@ -5357,13 +5170,12 @@ msgstr "Egyéb/Kék/Piros"
 msgid "Basic"
 msgstr "Alapvető"
 
-#: meerk40t/core/elements.py:4588 meerk40t/gui/panes/toolbarproject.py:37
-#: meerk40t/gui/wxmeerk40t.py:1183
+#: meerk40t/core/elements.py:4588 meerk40t/gui/panes/toolbarproject.py:37 meerk40t/gui/wxmeerk40t.py:1183
 msgid "Save"
 msgstr "Mentés"
 
-#: meerk40t/core/elements.py:4595 meerk40t/core/elements.py:4600
-#: meerk40t/core/elements.py:4605 meerk40t/core/elements.py:4610
+#: meerk40t/core/elements.py:4595 meerk40t/core/elements.py:4600 meerk40t/core/elements.py:4605
+#: meerk40t/core/elements.py:4610
 msgid "Add operation"
 msgstr "Művelet hozzáadása"
 
@@ -5383,9 +5195,8 @@ msgstr "Gravírozás hozzáadása"
 msgid "Add Cut"
 msgstr "Vágás hozzáadása"
 
-#: meerk40t/core/elements.py:4615 meerk40t/core/elements.py:4622
-#: meerk40t/core/elements.py:4629 meerk40t/core/elements.py:4636
-#: meerk40t/core/elements.py:4648
+#: meerk40t/core/elements.py:4615 meerk40t/core/elements.py:4622 meerk40t/core/elements.py:4629
+#: meerk40t/core/elements.py:4636 meerk40t/core/elements.py:4648
 msgid "Special operations"
 msgstr "Különleges műveletek"
 
@@ -5421,8 +5232,8 @@ msgstr "Ismétlődő művelet (ek)"
 msgid "duplicate operation element nodes"
 msgstr "ismétlődő műveleti elem csomópontok"
 
-#: meerk40t/core/elements.py:4695 meerk40t/core/elements.py:4704
-#: meerk40t/gui/operationproperty.py:101 meerk40t/gui/operationproperty.py:519
+#: meerk40t/core/elements.py:4695 meerk40t/core/elements.py:4704 meerk40t/gui/operationproperty.py:101
+#: meerk40t/gui/operationproperty.py:519
 msgid "Passes"
 msgstr "Passzok"
 
@@ -5435,8 +5246,8 @@ msgstr "1 bérlet hozzáadása"
 msgid "Add %s passes"
 msgstr "%s bérletek hozzáadása"
 
-#: meerk40t/core/elements.py:4727 meerk40t/core/elements.py:4736
-#: meerk40t/core/elements.py:4787 meerk40t/core/elements.py:4792
+#: meerk40t/core/elements.py:4727 meerk40t/core/elements.py:4736 meerk40t/core/elements.py:4787
+#: meerk40t/core/elements.py:4792
 msgid "Duplicate element(s)"
 msgstr "Ismétlődő elem (ek)"
 
@@ -5517,11 +5328,9 @@ msgstr "Z-mélység osztás"
 msgid "Divide into %s images"
 msgstr "Ossza fel %s képekre"
 
-#: meerk40t/core/elements.py:4985 meerk40t/core/elements.py:4991
-#: meerk40t/core/elements.py:4997 meerk40t/core/elements.py:5003
-#: meerk40t/core/elements.py:5009 meerk40t/core/elements.py:5015
-#: meerk40t/core/elements.py:5021 meerk40t/core/elements.py:5027
-#: meerk40t/gui/operationproperty.py:33
+#: meerk40t/core/elements.py:4985 meerk40t/core/elements.py:4991 meerk40t/core/elements.py:4997
+#: meerk40t/core/elements.py:5003 meerk40t/core/elements.py:5009 meerk40t/core/elements.py:5015
+#: meerk40t/core/elements.py:5021 meerk40t/core/elements.py:5027 meerk40t/gui/operationproperty.py:33
 msgid "Image"
 msgstr "Kép"
 
@@ -5557,8 +5366,7 @@ msgstr "Forgassa el 90° (óra járásával ellenkezően)"
 msgid "Save output.png"
 msgstr "A output.png mentése"
 
-#: meerk40t/core/elements.py:5033 meerk40t/gui/panes/toolbarproject.py:67
-#: meerk40t/gui/wxmeerk40t.py:1197
+#: meerk40t/core/elements.py:5033 meerk40t/gui/panes/toolbarproject.py:67 meerk40t/gui/wxmeerk40t.py:1197
 msgid "RasterWizard"
 msgstr "Rasztervarázsló"
 
@@ -5619,7 +5427,7 @@ msgstr "Bemenet %s: %s"
 
 #: meerk40t/core/inputs.py:132
 msgid "input<?> list, list current inputs"
-msgstr "bemenet <?> lista, listázza az aktuális bemeneteket "
+msgstr "bemenet <?> lista, listázza az aktuális bemeneteket"
 
 #: meerk40t/core/inputs.py:147
 msgid "list input types"
@@ -5627,7 +5435,7 @@ msgstr "listázza a bemeneti típusokat"
 
 #: meerk40t/core/inputs.py:150
 msgid "A TCP kimenet portja módosítandó. "
-msgstr "A TCP kimenet portja módosítandó."
+msgstr "A TCP kimenet portja módosítandó. "
 
 #: meerk40t/core/output.py:18
 msgid "Port of TCPOutput to change."
@@ -5685,7 +5493,7 @@ msgstr "%s kimenet: %s"
 
 #: meerk40t/core/output.py:316
 msgid "list output types"
-msgstr "listázza a kimeneti típusokat "
+msgstr "listázza a kimeneti típusokat"
 
 #: meerk40t/core/output.py:320
 msgid "Output types:"
@@ -5693,7 +5501,7 @@ msgstr "Kimeneti típusok:"
 
 #: meerk40t/core/planner.py:408
 msgid "plan command name to alias"
-msgstr "tervezze a parancs nevét álnévnek."
+msgstr "tervezze a parancs nevét álnévnek"
 
 #: meerk40t/core/planner.py:412
 msgid "Define a spoolable console command"
@@ -5735,7 +5543,7 @@ msgstr "terv <?> másolat kiválasztva"
 
 #: meerk40t/core/planner.py:542 meerk40t/core/planner.py:576
 msgid "Copied Operations."
-msgstr "Másolt műveletek"
+msgstr "Másolt műveletek."
 
 #: meerk40t/core/planner.py:548
 msgid "plan<?> copy"
@@ -5755,19 +5563,18 @@ msgstr "terv <?> parancs"
 
 #: meerk40t/core/planner.py:596
 msgid "Plan Commands:"
-msgstr "Érvénytelen index a parancsbeillesztéshez"
+msgstr "Érvénytelen index a parancsbeillesztéshez:"
 
 #: meerk40t/core/planner.py:609
 msgid "Invalid index for command insert."
 msgstr ""
 
-#: meerk40t/core/planner.py:613 meerk40t/core/planner.py:638
-#: meerk40t/core/planner.py:662 meerk40t/core/spoolers.py:261
+#: meerk40t/core/planner.py:613 meerk40t/core/planner.py:638 meerk40t/core/planner.py:662
+#: meerk40t/core/spoolers.py:261
 msgid "No plan command found."
-msgstr "Nem található tervparancs"
+msgstr "Nem található tervparancs."
 
-#: meerk40t/core/planner.py:617 meerk40t/core/planner.py:642
-#: meerk40t/core/spoolers.py:241
+#: meerk40t/core/planner.py:617 meerk40t/core/planner.py:642 meerk40t/core/spoolers.py:241
 msgid "unlock, origin, home, etc"
 msgstr "feloldás, származás, otthon stb"
 
@@ -5845,7 +5652,7 @@ msgstr "terv <?> visszatérés"
 
 #: meerk40t/core/planner.py:862
 msgid "Returned Operations."
-msgstr "Visszaadott műveletek"
+msgstr "Visszaadott műveletek."
 
 #: meerk40t/core/spoolers.py:170
 msgid "Register this device"
@@ -5857,11 +5664,11 @@ msgstr ""
 
 #: meerk40t/core/spoolers.py:206
 msgid "Spooled Plan."
-msgstr "Spoolid terv"
+msgstr "Spoolid terv."
 
 #: meerk40t/core/spoolers.py:211 meerk40t/core/spoolers.py:231
 msgid "Spoolers:"
-msgstr "Spoolers: "
+msgstr "Spoolers:"
 
 #: meerk40t/core/spoolers.py:215 meerk40t/core/spoolers.py:235
 #, python-format
@@ -5874,7 +5681,7 @@ msgstr "orsó <?> lista"
 
 #: meerk40t/core/spoolers.py:244
 msgid "send a plan-command to the spooler"
-msgstr "küldjön tervparancsot a spoolozónak "
+msgstr "küldjön tervparancsot a spoolozónak"
 
 #: meerk40t/core/spoolers.py:266
 msgid "spooler<?> clear"
@@ -5890,7 +5697,7 @@ msgstr "kapcsolja ki a lézert"
 
 #: meerk40t/core/spoolers.py:335
 msgid "amount to move in the set direction."
-msgstr "összeget a meghatározott irányba mozgatni"
+msgstr "összeget a meghatározott irányba mozgatni."
 
 #: meerk40t/core/spoolers.py:341
 msgid "cmd <amount>"
@@ -5905,8 +5712,7 @@ msgstr "kiemelkedő jogpuffert hajt végre"
 msgid "Position moved: %d %d"
 msgstr "Pozíció áthelyezve: %d %d"
 
-#: meerk40t/core/spoolers.py:389 meerk40t/core/spoolers.py:407
-#: meerk40t/core/spoolers.py:425
+#: meerk40t/core/spoolers.py:389 meerk40t/core/spoolers.py:407 meerk40t/core/spoolers.py:425
 msgid "Busy Error"
 msgstr "Foglalt hiba"
 
@@ -5920,11 +5726,11 @@ msgstr "váltás y-ra"
 
 #: meerk40t/core/spoolers.py:398
 msgid "move <x> <y>: move to position."
-msgstr "mozog <x> <y>: lépés a pozícióba"
+msgstr "mozog <x> <y>: lépés a pozícióba."
 
 #: meerk40t/core/spoolers.py:416
 msgid "move_relative <dx> <dy>"
-msgstr "mozgás_relative <dx> <dy> "
+msgstr "mozgás_relative <dx> <dy>"
 
 #: meerk40t/core/spoolers.py:428
 msgid "x offset"
@@ -5952,11 +5758,11 @@ msgstr "Indítson el egy regisztrált webhelp oldalt"
 
 #: meerk40t/core/webhelp.py:19
 msgid "Webhelp Registered:"
-msgstr "Webhelp regisztrálva"
+msgstr "Webhelp regisztrálva:"
 
 #: meerk40t/core/webhelp.py:44
 msgid "Webhelp not found."
-msgstr "A webes segítség nem található"
+msgstr "A webes segítség nem található."
 
 #: meerk40t/device/basedevice.py:51
 msgid "match on output rather than driver"
@@ -5973,11 +5779,11 @@ msgstr "Eszköz %s, %s, %s"
 
 #: meerk40t/device/basedevice.py:96
 msgid "No device selected."
-msgstr "Nincs kiválasztott eszköz"
+msgstr "Nincs kiválasztott eszköz."
 
 #: meerk40t/device/basedevice.py:128
 msgid "No matching command."
-msgstr "Nincs megfelelő parancs"
+msgstr "Nincs megfelelő parancs."
 
 #: meerk40t/device/basedevice.py:131
 msgid "Index of device being activated"
@@ -5990,7 +5796,7 @@ msgstr "delegálja a parancsokat a jelenleg kiválasztott eszközre"
 #: meerk40t/device/basedevice.py:143
 #, python-format
 msgid "Activated device %s at index %d."
-msgstr "%s eszköz aktiválva %d indexnél"
+msgstr "%s eszköz aktiválva %d indexnél."
 
 #: meerk40t/device/basedevice.py:148
 msgid "device"
@@ -6014,7 +5820,7 @@ msgstr "törölje az <index> -et"
 
 #: meerk40t/device/basedevice.py:210
 msgid "Invalid device-string index."
-msgstr "Érvénytelen eszköz-karakterlánc-index"
+msgstr "Érvénytelen eszköz-karakterlánc-index."
 
 #: meerk40t/device/ch341/ch341.py:131
 msgid "PyUsb is not installed. Skipping."
@@ -6034,11 +5840,10 @@ msgstr "CH341 Chip Version: %d"
 msgid "Driver Detected: %s"
 msgstr "Illesztőprogram észlelve: %s"
 
-#: meerk40t/device/ch341/ch341.py:178 meerk40t/device/ch341/libusb.py:56
-#: meerk40t/device/ch341/libusb.py:64 meerk40t/device/ch341/mock.py:59
-#: meerk40t/device/ch341/windll.py:55
+#: meerk40t/device/ch341/ch341.py:178 meerk40t/device/ch341/libusb.py:56 meerk40t/device/ch341/libusb.py:64
+#: meerk40t/device/ch341/mock.py:59 meerk40t/device/ch341/windll.py:55
 msgid "Device Connected.\n"
-msgstr "Az eszköz csatlakoztatva \ n"
+msgstr "Az eszköz csatlakoztatva\n"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:66 meerk40t/device/ch341/libusb.py:30
 msgid "Using LibUSB to connect."
@@ -6058,16 +5863,15 @@ msgstr "K40 eszköz felismerve:"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:91
 msgid "Your OS does not give you permissions to access USB."
-msgstr "Az operációs rendszere nem engedélyezi az USB elérését"
+msgstr "Az operációs rendszere nem engedélyezi az USB elérését."
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:95
 msgid "K40 devices were found. But something else was connected to them."
-msgstr "K40 eszközt találtak. De valami más is kapcsolódott hozzájuk "
+msgstr "K40 eszközt találtak. De valami más is kapcsolódott hozzájuk ."
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:101
-msgid ""
-"K40 devices were found but they were rejected by device criteria in Controller."
-msgstr "K40 eszközt találtunk, de a vezérlő eszköz kritériumai elutasították"
+msgid "K40 devices were found but they were rejected by device criteria in Controller."
+msgstr "K40 eszközt találtunk, de a vezérlő eszköz kritériumai elutasították."
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:113
 msgid "Attempting to detach kernel."
@@ -6109,8 +5913,9 @@ msgstr "Konfiguráció: Sikeres"
 msgid ""
 "Config Set: Fail\n"
 "(Hint: may recover if you change where the USB is plugged in.)"
-msgstr "Konfiguráció: Sikertelen\n"
-"(Tipp: helyreállhat, ha megváltoztatja az USB csatlakozó helyét.)" 
+msgstr ""
+"Konfiguráció: Sikertelen\n"
+"(Tipp: helyreállhat, ha megváltoztatja az USB csatlakozó helyét.)"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:162
 msgid "Attempting to claim interface."
@@ -6124,17 +5929,15 @@ msgstr "Felület igény: Siker"
 msgid "Interface claim: Failed. (Interface is in use.)"
 msgstr "Interfész követelés: Nem sikerült. (Az interfész használatban van.)"
 
-
 #: meerk40t/device/ch341/ch341libusbdriver.py:176
 msgid "Attempting kernel attach"
 msgstr "Kernel csatolásának kísérlete"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:178
 msgid "Kernel attach: Success."
-msgstr "Kernel melléklet: Siker" 
+msgstr "Kernel melléklet: Siker."
 
-#: meerk40t/device/ch341/ch341libusbdriver.py:183
-#: meerk40t/device/ch341/ch341libusbdriver.py:186
+#: meerk40t/device/ch341/ch341libusbdriver.py:183 meerk40t/device/ch341/ch341libusbdriver.py:186
 msgid "Kernel attach: Fail."
 msgstr "Kernel melléklet: Nem sikerült."
 
@@ -6170,21 +5973,18 @@ msgstr "USB visszaállítási kísérlet."
 msgid "USB connection reset."
 msgstr "USB kapcsolat visszaállítása."
 
-#: meerk40t/device/ch341/ch341libusbdriver.py:222
-#: meerk40t/device/ch341/libusb.py:72 meerk40t/device/ch341/mock.py:70
-#: meerk40t/device/ch341/windll.py:66
+#: meerk40t/device/ch341/ch341libusbdriver.py:222 meerk40t/device/ch341/libusb.py:72
+#: meerk40t/device/ch341/mock.py:70 meerk40t/device/ch341/windll.py:66
 msgid "USB connection did not exist."
 msgstr "USB kapcsolat nem létezett."
 
-#: meerk40t/device/ch341/ch341libusbdriver.py:233
-#: meerk40t/device/ch341/libusb.py:31 meerk40t/device/ch341/mock.py:41
-#: meerk40t/device/ch341/windll.py:31
+#: meerk40t/device/ch341/ch341libusbdriver.py:233 meerk40t/device/ch341/libusb.py:31
+#: meerk40t/device/ch341/mock.py:41 meerk40t/device/ch341/windll.py:31
 msgid "Attempting connection to USB."
 msgstr "USB -csatlakozás megkísérlése."
 
-#: meerk40t/device/ch341/ch341libusbdriver.py:248
-#: meerk40t/device/ch341/libusb.py:44 meerk40t/device/ch341/mock.py:49
-#: meerk40t/device/ch341/windll.py:44
+#: meerk40t/device/ch341/ch341libusbdriver.py:248 meerk40t/device/ch341/libusb.py:44
+#: meerk40t/device/ch341/mock.py:49 meerk40t/device/ch341/windll.py:44
 msgid "USB Connected."
 msgstr "USB csatlakoztatva."
 
@@ -6192,35 +5992,30 @@ msgstr "USB csatlakoztatva."
 msgid "PyUsb detected no backend LibUSB driver."
 msgstr "A PyUsb nem talált LibUSB háttérprogramot."
 
-#: meerk40t/device/ch341/ch341libusbdriver.py:255
-#: meerk40t/device/ch341/libusb.py:41 meerk40t/device/ch341/windll.py:39
+#: meerk40t/device/ch341/ch341libusbdriver.py:255 meerk40t/device/ch341/libusb.py:41
+#: meerk40t/device/ch341/windll.py:39
 msgid "Connection to USB failed.\n"
-msgstr "Nem sikerült csatlakozni az USB -hez. \ N"
+msgstr "Nem sikerült csatlakozni az USB -hez. \n"
 
-#: meerk40t/device/ch341/ch341libusbdriver.py:263
-#: meerk40t/device/ch341/libusb.py:70 meerk40t/device/ch341/mock.py:68
-#: meerk40t/device/ch341/windll.py:64
+#: meerk40t/device/ch341/ch341libusbdriver.py:263 meerk40t/device/ch341/libusb.py:70
+#: meerk40t/device/ch341/mock.py:68 meerk40t/device/ch341/windll.py:64
 msgid "Attempting disconnection from USB."
 msgstr "Kísérlet az USB -ről való leválasztásra."
 
-#: meerk40t/device/ch341/ch341libusbdriver.py:270
-#: meerk40t/device/ch341/libusb.py:76 meerk40t/device/ch341/mock.py:78
-#: meerk40t/device/ch341/windll.py:72
+#: meerk40t/device/ch341/ch341libusbdriver.py:270 meerk40t/device/ch341/libusb.py:76
+#: meerk40t/device/ch341/mock.py:78 meerk40t/device/ch341/windll.py:72
 msgid "USB Disconnection Successful.\n"
 msgstr "Az USB leválasztása sikeres.\n"
 
-#: meerk40t/device/ch341/libusb.py:46 meerk40t/device/ch341/mock.py:50
-#: meerk40t/device/ch341/windll.py:45
+#: meerk40t/device/ch341/libusb.py:46 meerk40t/device/ch341/mock.py:50 meerk40t/device/ch341/windll.py:45
 msgid "Sending CH341 mode change to EPP1.9."
 msgstr "A CH341 módváltás küldése EPP1.9 -re."
 
-#: meerk40t/device/ch341/libusb.py:51 meerk40t/device/ch341/mock.py:53
-#: meerk40t/device/ch341/windll.py:50
+#: meerk40t/device/ch341/libusb.py:51 meerk40t/device/ch341/mock.py:53 meerk40t/device/ch341/windll.py:50
 msgid "CH341 mode change to EPP1.9: Success."
 msgstr "CH341 módváltás EPP1.9 -re: Sikeres."
 
-#: meerk40t/device/ch341/libusb.py:53 meerk40t/device/ch341/mock.py:56
-#: meerk40t/device/ch341/windll.py:53
+#: meerk40t/device/ch341/libusb.py:53 meerk40t/device/ch341/mock.py:56 meerk40t/device/ch341/windll.py:53
 msgid "CH341 mode change to EPP1.9: Fail."
 msgstr "CH341 mód váltás EPP1.9 -re: hiba."
 
@@ -6228,18 +6023,17 @@ msgstr "CH341 mód váltás EPP1.9 -re: hiba."
 msgid "Driver Detected: LibUsb"
 msgstr "Illesztőprogram megtalálva: LibUsb"
 
-#: meerk40t/device/ch341/libusb.py:112 meerk40t/device/ch341/mock.py:168
-#: meerk40t/device/ch341/windll.py:174
+#: meerk40t/device/ch341/libusb.py:112 meerk40t/device/ch341/mock.py:168 meerk40t/device/ch341/windll.py:174
 msgid "K40 devices were found but they were rejected due to chip version."
-msgstr "K40 eszközöket találtak, de a chipes verzió miatt elutasították"
+msgstr "K40 eszközöket találtak, de a chipes verzió miatt elutasították."
 
 #: meerk40t/device/ch341/libusb.py:123
 msgid "K40 devices were found but they were rejected due to usb bus."
-msgstr "K40 eszközt találtak, de az usb busz miatt elutasították "
+msgstr "K40 eszközt találtak, de az usb busz miatt elutasították."
 
 #: meerk40t/device/ch341/libusb.py:132
 msgid "K40 devices were found but they were rejected due to usb address."
-msgstr "K40 eszközt találtak, de az USB -cím miatt elutasították"
+msgstr "K40 eszközt találtak, de az USB -cím miatt elutasították."
 
 #: meerk40t/device/ch341/mock.py:37
 msgid "Using Mock Driver."
@@ -6247,7 +6041,7 @@ msgstr "Használjon ál -illesztőprogramokat."
 
 #: meerk40t/device/ch341/mock.py:40
 msgid "Using Mock Driver to connect."
-msgstr "A Mock Driver használata a csatlakozáshoz"
+msgstr "A Mock Driver használata a csatlakozáshoz."
 
 #: meerk40t/device/ch341/windll.py:30
 msgid "Using CH341 Driver to connect."
@@ -6255,7 +6049,7 @@ msgstr "A CH341 illesztőprogram használata a csatlakozáshoz."
 
 #: meerk40t/device/grbl/grbldevice.py:34
 msgid "run grbl-emulator on given port."
-msgstr "futtassa a grbl-emulátort az adott porton"
+msgstr "futtassa a grbl-emulátort az adott porton."
 
 #: meerk40t/device/grbl/grbldevice.py:37
 msgid "grbl x-flip"
@@ -6273,8 +6067,7 @@ msgstr "állítsa be a grbl home_x pozícióját"
 msgid "adjust grbl home_y position"
 msgstr "grbl home_y helyzetének beállítása"
 
-#: meerk40t/device/grbl/grbldevice.py:59
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:425
+#: meerk40t/device/grbl/grbldevice.py:59 meerk40t/device/lhystudios/lhystudiosdevice.py:425
 msgid "watch send/recv data"
 msgstr "nézze a küldés/visszavétel adatokat"
 
@@ -6284,11 +6077,11 @@ msgstr "leállítás jelenlegi grblserver"
 
 #: meerk40t/device/grbl/grbldevice.py:68
 msgid "activate the grblserver."
-msgstr "aktiválja a grblservert"
+msgstr "aktiválja a grblservert."
 
 #: meerk40t/device/grbl/grbldevice.py:96
 msgid "GRBL Mode."
-msgstr "GRBL mód"
+msgstr "GRBL mód."
 
 #: meerk40t/device/grbl/grbldevice.py:109
 #, python-format
@@ -6305,16 +6098,16 @@ msgstr "lézertűz impulzus időtartama"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:63
 msgid "pulse <time>: Pulse the laser in place."
-msgstr "pulzus <time>: Helyezze a lézert a helyére"
+msgstr "pulzus <time>: Helyezze a lézert a helyére."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:70
 msgid "Must specify a pulse time in milliseconds."
-msgstr "Az impulzusidőt ezredmásodpercben kell megadni"
+msgstr "Az impulzusidőt ezredmásodpercben kell megadni."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:75
 #, python-format
 msgid "\"%s\" exceeds 1 second limit to fire a standing laser."
-msgstr "\"%s\" túllépi az 1 másodperc korlátot az álló lézer kilövésére"
+msgstr "\"%s\" túllépi az 1 másodperc korlátot az álló lézer kilövésére."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:90
 #, python-format
@@ -6327,25 +6120,24 @@ msgstr "Az impulzuslézer meghibásodott: foglalt"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:100
 msgid "Change speed by this amount."
-msgstr "Változtassa meg a sebességet ennyivel"
+msgstr "Változtassa meg a sebességet ennyivel."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:102
 msgid "Set the driver speed."
-msgstr "Állítsa be a vezető sebességét"
+msgstr "Állítsa be a vezető sebességét."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:104
 msgid "Set current speed of driver."
-msgstr "Állítsa be a vezető aktuális sebességét"
+msgstr "Állítsa be a vezető aktuális sebességét."
 
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:118
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:137
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:118 meerk40t/device/lhystudios/lhystudiosdevice.py:137
 #, python-format
 msgid "Speed set at: %f mm/s"
 msgstr "A sebesség beállítása: %f mm/s"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:128
 msgid "Not a valid speed or percent."
-msgstr "Nem érvényes sebesség vagy százalék"
+msgstr "Nem érvényes sebesség vagy százalék."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:139
 msgid "pulses per inch [0-1000]"
@@ -6368,13 +6160,11 @@ msgstr "Gyorsulás mértéke [1-4]"
 msgid "Set Driver Acceleration [1-4]"
 msgstr "Illesztőprogram-gyorsítás beállítása [1-4]"
 
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:171
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:180
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:171 meerk40t/device/lhystudios/lhystudiosdevice.py:180
 msgid "Acceleration is set to default."
-msgstr "A gyorsítás alapértelmezett"
+msgstr "A gyorsítás alapértelmezett."
 
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:173
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:183
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:173 meerk40t/device/lhystudios/lhystudiosdevice.py:183
 #, python-format
 msgid "Acceleration: %d"
 msgstr "Gyorsulás: %d"
@@ -6387,41 +6177,38 @@ msgstr "Érvénytelen gyorsítás [1-4]"
 msgid "update movement codes for the drivers"
 msgstr "frissítse az illesztőprogramok mozgáskódjait"
 
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:200
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:212
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:200 meerk40t/device/lhystudios/lhystudiosdevice.py:212
 #: meerk40t/device/moshi/moshidevice.py:147
 msgid "abort waiting process on the controller."
-msgstr "megszakítja a várakozási folyamatot a vezérlőn"
+msgstr "megszakítja a várakozási folyamatot a vezérlőn."
 
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:207
-#: meerk40t/device/moshi/moshidevice.py:142
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:207 meerk40t/device/moshi/moshidevice.py:142
 msgid "Could not check status, usb not connected."
-msgstr "Nem sikerült ellenőrizni az állapotát, az USB nincs csatlakoztatva"
+msgstr "Nem sikerült ellenőrizni az állapotát, az USB nincs csatlakoztatva."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:221
 msgid "realtime pause/resume of the machine"
 msgstr "a gép valós idejű szüneteltetése/folytatása"
 
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:231
-#: meerk40t/device/moshi/moshidevice.py:118
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:231 meerk40t/device/moshi/moshidevice.py:118
 msgid "Abort Job"
-msgstr "rossz munka"
+msgstr "Rossz munka"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:236
 msgid "Lhystudios Channel Aborted."
-msgstr "A Lhystudios csatorna megszakítva"
+msgstr "A Lhystudios csatorna megszakítva."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:239
 msgid "limit x speed for rapid."
-msgstr "korlátozza az x gyors sebességét"
+msgstr "korlátozza az x gyors sebességét."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:242
 msgid "limit y speed for rapid."
-msgstr "korlátozza az y gyors sebességét"
+msgstr "korlátozza az y gyors sebességét."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:247
 msgid "limit speed of typical rapid moves."
-msgstr "korlátozza a tipikus gyors mozgások sebességét"
+msgstr "korlátozza a tipikus gyors mozgások sebességét."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:258
 #, python-format
@@ -6438,7 +6225,7 @@ msgstr "Lhystudios Engrave Buffer Import. egv_import <egv_file>"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:306
 msgid "Lhystudios Engrave Buffer Export. egv_export <egv_file>"
-msgstr "Lhystudios gravírozza a puffer exportot. egv_export <egv_file> "
+msgstr "Lhystudios gravírozza a puffer exportot. egv_export <egv_file>"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:327
 #, python-format
@@ -6449,30 +6236,27 @@ msgstr "Nem sikerült menteni: %s"
 msgid "Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
 msgstr "Lhystudios gravírozza a kódküldőt. egv <lhymicro-gl>"
 
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:344
-#: meerk40t/device/moshi/moshidevice.py:84
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:344 meerk40t/device/moshi/moshidevice.py:84
 msgid "Start Pipe to Controller"
 msgstr "Indítsa el a Pipe to Controller-t"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:350
 msgid "Lhystudios Channel Started."
-msgstr "Elindult a Lhystudios csatorna"
+msgstr "Elindult a Lhystudios csatorna."
 
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:353
-#: meerk40t/device/moshi/moshidevice.py:95
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:353 meerk40t/device/moshi/moshidevice.py:95
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:602
 msgid "Hold Controller"
 msgstr "Tartsa lenyomva a vezérlőt"
 
-#: meerk40t/device/lhystudios/lhystudiosdevice.py:362
-#: meerk40t/device/moshi/moshidevice.py:106
+#: meerk40t/device/lhystudios/lhystudiosdevice.py:362 meerk40t/device/moshi/moshidevice.py:106
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:627
 msgid "Resume Controller"
 msgstr "Folytatásvezérlő"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:368
 msgid "Lhystudios Channel Resumed."
-msgstr "A Lhystudios csatorna folytatódott"
+msgstr "A Lhystudios csatorna folytatódott."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:371
 msgid "Connects USB"
@@ -6480,7 +6264,7 @@ msgstr "USB csatlakoztatása"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:376
 msgid "CH341 Opened."
-msgstr "CH341 Megnyitva"
+msgstr "CH341 Megnyitva."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:379
 msgid "Disconnects USB"
@@ -6488,7 +6272,7 @@ msgstr "USB lekapcsolása"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:384
 msgid "CH341 Closed."
-msgstr "CH341 Zárt"
+msgstr "CH341 Zárt."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:387
 msgid "Reset USB device"
@@ -6508,17 +6292,17 @@ msgstr "Folytatja az USB újrapróbálkozását"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:434
 msgid "activate the lhyserver."
-msgstr "A (z) %s eszköz kimenete nem létezik. A Lhyserver nem csatlakoztatható"
+msgstr "A (z) %s eszköz kimenete nem létezik. A Lhyserver nem csatlakoztatható."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:445
 #, python-format
 msgid "Output for device %s does not exist. Lhyserver cannot attach."
-msgstr "A (z) %s eszköz kimenete nem létezik. A Lhyserver nem tud csatlakozni "
+msgstr "A (z) %s eszköz kimenete nem létezik. A Lhyserver nem tud csatlakozni ."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:455
 #, python-format
 msgid "TCP Server for Lhystudios on port: %d"
-msgstr "TCP -kiszolgáló a Lhystudios számára a porton: %d "
+msgstr "TCP -kiszolgáló a Lhystudios számára a porton: %d"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:463
 #, python-format
@@ -6527,11 +6311,11 @@ msgstr "Csatolva: %s"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:468
 msgid "Server cannot be attached to any device."
-msgstr "A szerver nem csatlakoztatható semmilyen eszközhöz"
+msgstr "A szerver nem csatlakoztatható semmilyen eszközhöz."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:471
 msgid "activate the lhyemulator."
-msgstr "aktiválja a limeemulátort"
+msgstr "aktiválja a limeemulátort."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:478
 #, python-format
@@ -6540,7 +6324,7 @@ msgstr "Lhystudios Emulator a következőhöz csatlakoztatva: %s"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:480
 msgid "Emulator cannot be attached to any device."
-msgstr "Az emulátor nem csatlakoztatható semmilyen eszközhöz"
+msgstr "Az emulátor nem csatlakoztatható semmilyen eszközhöz."
 
 #: meerk40t/device/moshi/moshidevice.py:58
 msgid "Connect USB"
@@ -6548,7 +6332,7 @@ msgstr "Csatlakoztassa az USB -t"
 
 #: meerk40t/device/moshi/moshidevice.py:71
 msgid "Disconnect USB"
-msgstr "huzza ki az USB -t"
+msgstr "Huzza ki az USB -t"
 
 #: meerk40t/device/moshi/moshidevice.py:103
 msgid "Moshi Channel Paused."
@@ -6594,7 +6378,7 @@ msgstr "Megfelelő aktív eszközzel kell futtatni"
 
 #: meerk40t/device/ruida/ruidadevice.py:103
 msgid "Server failed."
-msgstr "A szerver nem sikerült"
+msgstr "A szerver nem sikerült."
 
 #: meerk40t/extra/embroider.py:14
 msgid "Angle of the fill"
@@ -6624,8 +6408,8 @@ msgstr "inkScape betöltés - az előző konverzió betöltése ..."
 msgid "inkscape simplify  - convert to plain svg"
 msgstr "InkScape egyszerűsítés - konvertálás egyszerű svg-re"
 
-#: meerk40t/extra/inkscape.py:33 meerk40t/extra/inkscape.py:57
-#: meerk40t/extra/inkscape.py:87 meerk40t/extra/inkscape.py:135
+#: meerk40t/extra/inkscape.py:33 meerk40t/extra/inkscape.py:57 meerk40t/extra/inkscape.py:87
+#: meerk40t/extra/inkscape.py:135
 msgid "Inkscape not found. Try 'inkscape locate'"
 msgstr "Az Inkscape nem található. Próbálja ki az inkcape locate -t"
 
@@ -6651,7 +6435,7 @@ msgstr "lépés a használathoz"
 
 #: meerk40t/extra/inkscape.py:78
 msgid "inkscape makepng   - make a png of all elements"
-msgstr "inkScape makepng - készítsen png -t az összes elemből "
+msgstr "inkScape makepng - készítsen png -t az összes elemből"
 
 #: meerk40t/extra/inkscape.py:89
 msgid "inkscape makepng - making a png of all elements"
@@ -6667,7 +6451,7 @@ msgstr "input filename ... - adja meg a feldolgozandó fájlnevet"
 
 #: meerk40t/extra/inkscape.py:120
 msgid "inkscape filename fn - filename not specified"
-msgstr "inkcape fájlnév - a fájlnév nincs megadva "
+msgstr "inkcape fájlnév - a fájlnév nincs megadva"
 
 #: meerk40t/extra/inkscape.py:122
 #, python-format
@@ -6702,7 +6486,7 @@ msgstr "Nem sikerült"
 #: meerk40t/extra/inkscape.py:186
 #, python-format
 msgid "Searching: %s -- Result: %s"
-msgstr "Keresés: %s - Eredmény: %s "
+msgstr "Keresés: %s - Eredmény: %s"
 
 #: meerk40t/extra/inkscape.py:193
 msgid "Inkscape location: Inkscape not found in default installation directories"
@@ -6718,7 +6502,7 @@ msgstr "optimalizálja a <típust>"
 
 #: meerk40t/extra/pathoptimize.py:17
 msgid "Optimizations: cut_inner, travel, cut_travel"
-msgstr "Optimalizálás:"
+msgstr "Optimalizálás: cut_inner, travel, cut_travel"
 
 #: meerk40t/extra/pathoptimize.py:27
 #, python-format
@@ -6742,7 +6526,7 @@ msgstr "Vágott utazás optimalizált: %f"
 
 #: meerk40t/extra/pathoptimize.py:55
 msgid "Optimization not found."
-msgstr "Az optimalizálás nem található"
+msgstr "Az optimalizálás nem található."
 
 #: meerk40t/extra/vectrace.py:10 meerk40t/image/imagetools.py:94
 msgid "return paths around image"
@@ -6758,7 +6542,7 @@ msgstr "Képek:"
 
 #: meerk40t/image/imagetools.py:75
 msgid "No selected images."
-msgstr "Nincsenek kiválasztott képek"
+msgstr "Nincsenek kiválasztott képek."
 
 #: meerk40t/image/imagetools.py:115
 msgid "script to apply"
@@ -6775,12 +6559,12 @@ msgstr "Raszteres szkript: %s"
 
 #: meerk40t/image/imagetools.py:128
 msgid "No Raster Scripts Found."
-msgstr "Nem található raszteres szkript"
+msgstr "Nem található raszteres szkript."
 
 #: meerk40t/image/imagetools.py:134
 #, python-format
 msgid "Raster Script %s is not registered."
-msgstr "A (z) %s raszteres szkript nincs regisztrálva"
+msgstr "A (z) %s raszteres szkript nincs regisztrálva."
 
 #: meerk40t/image/imagetools.py:153
 msgid "unlock manipulations"
@@ -6805,7 +6589,7 @@ msgstr "Dither 1 bitesre"
 
 #: meerk40t/image/imagetools.py:241
 msgid "Distance from color to be removed."
-msgstr "Az eltávolítandó színtől való távolság"
+msgstr "Az eltávolítandó színtől való távolság."
 
 #: meerk40t/image/imagetools.py:245
 msgid "Color to be removed"
@@ -6825,11 +6609,11 @@ msgstr "Hozzáadandó szín"
 
 #: meerk40t/image/imagetools.py:285
 msgid "Must specify a color, to add."
-msgstr "Hozzáadáshoz meg kell adnia egy színt"
+msgstr "Hozzáadáshoz meg kell adnia egy színt."
 
 #: meerk40t/image/imagetools.py:312
 msgid "Requires 1-bit or grayscale image."
-msgstr "1 bites vagy szürkeárnyalatos kép szükséges"
+msgstr "1 bites vagy szürkeárnyalatos kép szükséges."
 
 #: meerk40t/image/imagetools.py:340
 msgid "Crop image"
@@ -6837,11 +6621,11 @@ msgstr "Kép levágása"
 
 #: meerk40t/image/imagetools.py:372 meerk40t/image/imagetools.py:908
 msgid "Right margin is to the left of the left margin."
-msgstr "A jobb margó a bal margótól balra van"
+msgstr "A jobb margó a bal margótól balra van."
 
 #: meerk40t/image/imagetools.py:376 meerk40t/image/imagetools.py:910
 msgid "Lower margin is higher than the upper margin."
-msgstr "Az alsó margó magasabb, mint a felső margó"
+msgstr "Az alsó margó magasabb, mint a felső margó."
 
 #: meerk40t/image/imagetools.py:388 meerk40t/image/imagetools.py:412
 msgid "contrast factor"
@@ -6896,7 +6680,7 @@ msgstr "élességi tényező"
 
 #: meerk40t/image/imagetools.py:458
 msgid "shapen image"
-msgstr "Shapen Imagine "
+msgstr "Shapen Imagine"
 
 #: meerk40t/image/imagetools.py:470
 #, python-format
@@ -6913,7 +6697,7 @@ msgstr "elmosódott kép"
 
 #: meerk40t/image/imagetools.py:488
 msgid "Image Blurred."
-msgstr "Kép homályos"
+msgstr "Kép homályos."
 
 #: meerk40t/image/imagetools.py:492
 msgid "sharpen image"
@@ -6921,7 +6705,7 @@ msgstr "élesítse a képet"
 
 #: meerk40t/image/imagetools.py:504
 msgid "Image Sharpened."
-msgstr "Kép élesítve"
+msgstr "Kép élesítve."
 
 #: meerk40t/image/imagetools.py:508
 msgid "enhance edges"
@@ -6929,7 +6713,7 @@ msgstr "fokozza az éleket"
 
 #: meerk40t/image/imagetools.py:520
 msgid "Image Edges Enhanced."
-msgstr "Képszél javítva"
+msgstr "Képszél javítva."
 
 #: meerk40t/image/imagetools.py:524
 msgid "find edges"
@@ -6937,7 +6721,7 @@ msgstr "találja meg az éleket"
 
 #: meerk40t/image/imagetools.py:536
 msgid "Image Edges Found."
-msgstr "Képszéleket találtunk"
+msgstr "Képszéleket találtunk."
 
 #: meerk40t/image/imagetools.py:540
 msgid "emboss image"
@@ -6945,7 +6729,7 @@ msgstr "domború kép"
 
 #: meerk40t/image/imagetools.py:552
 msgid "Image Embossed."
-msgstr "Kép dombornyomott"
+msgstr "Kép dombornyomott."
 
 #: meerk40t/image/imagetools.py:556
 msgid "smooth image"
@@ -6953,7 +6737,7 @@ msgstr "sima kép"
 
 #: meerk40t/image/imagetools.py:568
 msgid "Image Smoothed."
-msgstr "Kép simítva"
+msgstr "Kép simítva."
 
 #: meerk40t/image/imagetools.py:572
 msgid "contour image"
@@ -6961,7 +6745,7 @@ msgstr "kontúrkép"
 
 #: meerk40t/image/imagetools.py:584
 msgid "Image Contoured."
-msgstr "kontúrozott kép"
+msgstr "Kontúrozott kép."
 
 #: meerk40t/image/imagetools.py:588
 msgid "detail image"
@@ -6969,7 +6753,7 @@ msgstr "részletkép"
 
 #: meerk40t/image/imagetools.py:600
 msgid "Image Detailed."
-msgstr "színeket kvantálni"
+msgstr "Színeket kvantálni."
 
 #: meerk40t/image/imagetools.py:604
 msgid "colors to quantize into"
@@ -6977,21 +6761,21 @@ msgstr "színeket kvantálni"
 
 #: meerk40t/image/imagetools.py:608
 msgid "image quantize <colors>"
-msgstr "képkvantál <colors> "
+msgstr "képkvantál <colors>"
 
 #: meerk40t/image/imagetools.py:619
 #, python-format
 msgid "Image Quantized to %d colors."
-msgstr "A kép %d színre van állítva"
+msgstr "A kép %d színre van állítva."
 
 #: meerk40t/image/imagetools.py:625
 msgid "threshold for solarize"
-msgstr "szolárizálás küszöbértéke "
+msgstr "szolárizálás küszöbértéke"
 
 #: meerk40t/image/imagetools.py:639
 #, python-format
 msgid "Image Solarized at %d gray."
-msgstr "Kép napsugárzás %d szürke színben"
+msgstr "Kép napsugárzás %d szürke színben."
 
 #: meerk40t/image/imagetools.py:641
 msgid "image solarize <threshold>"
@@ -6999,11 +6783,11 @@ msgstr "kép szolárium <threshold>"
 
 #: meerk40t/image/imagetools.py:645
 msgid "invert the image"
-msgstr "fordítsa meg a képet "
+msgstr "fordítsa meg a képet"
 
 #: meerk40t/image/imagetools.py:661
 msgid "Image Inverted."
-msgstr "kép megfordítva"
+msgstr "Kép megfordítva."
 
 #: meerk40t/image/imagetools.py:663
 #, python-format
@@ -7016,7 +6800,7 @@ msgstr "flip kép"
 
 #: meerk40t/image/imagetools.py:677
 msgid "Image Flipped."
-msgstr "A kép megfordítva"
+msgstr "A kép megfordítva."
 
 #: meerk40t/image/imagetools.py:681
 msgid "mirror image"
@@ -7036,11 +6820,11 @@ msgstr "A kép az óramutató járásával ellentétes irányba forgatva."
 
 #: meerk40t/image/imagetools.py:713
 msgid "rotate image cw"
-msgstr "kép elforgatása cw "
+msgstr "kép elforgatása cw"
 
 #: meerk40t/image/imagetools.py:727
 msgid "Rotated image clockwise."
-msgstr "A kép az óramutató járásával megegyező irányba forgatva"
+msgstr "A kép az óramutató járásával megegyező irányba forgatva."
 
 #: meerk40t/image/imagetools.py:731
 msgid "cutoff limit for autocontrast"
@@ -7076,11 +6860,11 @@ msgstr "kép kiegyenlítése"
 
 #: meerk40t/image/imagetools.py:807
 msgid "Image Equalized."
-msgstr "Kép kiegyenlített"
+msgstr "Kép kiegyenlített."
 
 #: meerk40t/image/imagetools.py:813
 msgid "X position at which to slice the image"
-msgstr "X pozíció a kép szeleteléséhez "
+msgstr "X pozíció a kép szeleteléséhez"
 
 #: meerk40t/image/imagetools.py:817
 msgid "Slice image for more efficient rastering"
@@ -7110,15 +6894,15 @@ msgstr "Mentés %s"
 
 #: meerk40t/image/imagetools.py:952
 msgid "No file given."
-msgstr "Nincs fájl megadva"
+msgstr "Nincs fájl megadva."
 
 #: meerk40t/image/imagetools.py:954
 msgid "File could not be written / created."
-msgstr "A fájl nem írható /létrehozás "
+msgstr "A fájl nem írható /létrehozás."
 
 #: meerk40t/image/imagetools.py:956
 msgid "Could not determine expected format."
-msgstr "Nem sikerült meghatározni a várt formátumot"
+msgstr "Nem sikerült meghatározni a várt formátumot."
 
 #: meerk40t/image/imagetools.py:960
 msgid "apply flatrotary bilinear mesh"
@@ -7134,7 +6918,7 @@ msgstr "pixel túlmintamennyiség"
 
 #: meerk40t/image/imagetools.py:1000
 msgid "pixel sample size"
-msgstr "pixel minta mérete "
+msgstr "pixel minta mérete"
 
 #: meerk40t/image/imagetools.py:1003
 msgid "half-tone angle"
