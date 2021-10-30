@@ -14,7 +14,7 @@ except ImportError as e:
     raise Mk40tImportAbort("wxpython")
 
 from ..kernel import Module
-from ..main import MEERK40T_VERSION
+from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
 from .configuration import Configuration
@@ -533,45 +533,60 @@ class wxMeerK40t(wx.App, Module):
 # end of class MeerK40tGui
 def send_file_to_developers(filename):
     """
+    Loads a file to send data to the developers.
+
+    @param filename: file to send
+    @return:
+    """
+    try:
+        with open(filename, "r") as f:
+            data = f.read()
+    except:
+        if data is None:
+            return  # There is no file, there is no data.
+    send_data_to_developers(filename, data)
+
+
+def send_data_to_developers(filename, data):
+    """
     Sends crash log to a server using rfc1341 7.2 The multipart Content-Type
     https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
 
-    :param filename: filename to send. (must be text/plain)
-    :return:
+    @param filename: filename to use when sending file
+    @param data: data to send
+    @return:
     """
     import socket
 
-    with open(filename, "r") as f:
-        data = f.read()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        ipaddr = socket.gethostbyname("api.anonfiles.com")
-        s.connect((ipaddr, 80))
-        boundary = "----------------meerk40t-boundary"
-        file_head = list()
-        file_head.append("--" + boundary)
-        file_head.append(
-            'Content-Disposition: form-data; name="file"; filename="%s"' % filename
-        )
-        file_head.append("Content-Type: text/plain")
-        file_head.append("")
-        part = "\x0D\x0A".join(file_head)
-        terminal = "--" + boundary + "--"
-        payload = "\x0D\x0A".join((part, data, terminal, ""))
-        http_req = list()
-        http_req.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
-        http_req.append("Host: api.anonfiles.com")
-        http_req.append("User-Agent: meerk40t/0.0.1")
-        http_req.append("Accept: */*")
-        http_req.append("Content-Length: %d" % (len(payload)))
-        http_req.append("Content-Type: multipart/form-data; boundary=%s" % boundary)
-        http_req.append("")
-        header = "\x0D\x0A".join(http_req)
-        request = "\x0D\x0A".join((header, payload))
-        s.send(bytes(request, "utf-8"))
-        response = s.recv(4096)
-        response = response.decode("utf-8")
-        print(response)
-        s.close()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ipaddr = socket.gethostbyname("api.anonfiles.com")
+    s.connect((ipaddr, 80))
+    boundary = "----------------meerk40t-boundary"
+    file_head = list()
+    file_head.append("--" + boundary)
+    file_head.append(
+        'Content-Disposition: form-data; name="file"; filename="%s"' % filename
+    )
+    file_head.append("Content-Type: text/plain")
+    file_head.append("")
+    part = "\x0D\x0A".join(file_head)
+    terminal = "--" + boundary + "--"
+    payload = "\x0D\x0A".join((part, data, terminal, ""))
+    http_req = list()
+    http_req.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
+    http_req.append("Host: api.anonfiles.com")
+    http_req.append("User-Agent: meerk40t/0.0.1")
+    http_req.append("Accept: */*")
+    http_req.append("Content-Length: %d" % (len(payload)))
+    http_req.append("Content-Type: multipart/form-data; boundary=%s" % boundary)
+    http_req.append("")
+    header = "\x0D\x0A".join(http_req)
+    request = "\x0D\x0A".join((header, payload))
+    s.send(bytes(request, "utf-8"))
+    response = s.recv(4096)
+    response = response.decode("utf-8")
+    print(response)
+    s.close()
     if response is None or len(response) == 0:
         http_code = "No Response."
     else:
@@ -620,7 +635,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     error_log = "MeerK40t crash log. Version: %s on %s - %s\n" % (
-        MEERK40T_VERSION,
+        APPLICATION_VERSION,
         sys.platform,
         wxversion,
     )
@@ -636,11 +651,18 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         filename = "MeerK40t-Crash.txt"
 
     try:
-        with open(filename, "w") as file:
-            # Crash logs are not translated.
-            file.write(error_log)
-            print(file)
-    except Exception:  # I already crashed once, if there's another here just ignore it.
+        try:
+            with open(filename, "w") as file:
+                file.write(error_log)
+                print(file)
+        except PermissionError:
+            from meerk40t.kernel import get_safe_path
+            path = get_safe_path(APPLICATION_NAME)
+            with open(path.joinpath(filename), "w") as file:
+                file.write(error_log)
+                print(file)
+    except Exception:
+        # I already crashed once, if there's another here just ignore it.
         pass
 
     # Ask to send file.
@@ -659,7 +681,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         message, _("Crash Detected! Send Log?"), wx.YES_NO | wx.CANCEL, None
     )
     if answer == wx.YES:
-        send_file_to_developers(filename)
+        send_data_to_developers(filename, error_log)
 
 
 sys.excepthook = handleGUIException

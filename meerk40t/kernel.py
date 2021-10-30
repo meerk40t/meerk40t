@@ -781,6 +781,14 @@ class Kernel:
                 return self.read_persistent(t, key, default)
         return self.read_item_persistent(item)
 
+    def open_safe(self, *args):
+        try:
+            return open(*args)
+        except PermissionError:
+            from os import chdir
+            chdir(get_safe_path(self.name, True))
+            return open(*args)
+
     def _start_debugging(self) -> None:
         """
         Debug function hooks all functions within the device with a debug call that saves the data to the disk and
@@ -795,7 +803,7 @@ class Kernel:
         filename = "{name}-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
             name=self.name, date=datetime.datetime.now()
         )
-        debug_file = open(filename, "a")
+        debug_file = self.open_safe(filename, "a")
         debug_file.write("\n\n\n")
 
         def debug(func: Callable, obj: Any) -> Callable:
@@ -2460,7 +2468,7 @@ class Kernel:
                     date=datetime.now()
                 )
             channel(_("Opening file: %s") % filename)
-            console_channel_file = open(filename, "a")
+            console_channel_file = self.open_safe(filename, "a")
             for cn in channel_name.split(","):
                 channel(
                     _("Recording Channel: %s to file %s") % (channel_name, filename)
@@ -2726,3 +2734,20 @@ class ConsoleFunction(Job):
 
     def __str__(self):
         return self.data.replace("\n", "")
+
+
+def get_safe_path(name, create=False):
+    from sys import platform
+    from pathlib import Path
+    Path("/my/directory").mkdir(parents=True, exist_ok=True)
+
+    if platform == 'darwin':
+        directory = Path.home().joinpath('Library').joinpath('Application Support').joinpath(name)
+    elif "win" in platform:
+        from os.path import expandvars
+        directory = Path(expandvars('%LOCALAPPDATA%')).joinpath(name)
+    else:
+        directory = Path.home().joinpath('.config').joinpath(name)
+    if directory is not None and create:
+        directory.mkdir(parents=True, exist_ok=True)
+    return directory
