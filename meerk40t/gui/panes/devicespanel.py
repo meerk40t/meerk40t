@@ -161,6 +161,7 @@ class DevicesPanel(wx.Panel):
 
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
+        select = None
         for i, dev_suffix in enumerate(self.context.match("device", suffix=True)):
             dev = "device/%s" % dev_suffix
             device = self.context.registered[dev]
@@ -174,6 +175,7 @@ class DevicesPanel(wx.Panel):
                 registered = False
             m = self.devices_list.InsertItem(i, str(i))
             if self.context.active == str(m):
+                select = i
                 from ..icons import DARKMODE
 
                 if DARKMODE:
@@ -186,6 +188,9 @@ class DevicesPanel(wx.Panel):
                 self.devices_list.SetItem(m, 2, str(input_device))
                 self.devices_list.SetItem(m, 3, str(output))
                 self.devices_list.SetItem(m, 4, str(registered))
+            self.devices_list.SetFocus()
+            if select is not None:
+                self.devices_list.Select(select)
 
     def on_list_drag(self, event):  # wxGlade: DeviceManager.<event_handler>
         pass
