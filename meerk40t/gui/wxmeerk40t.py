@@ -40,7 +40,7 @@ from .panes.spoolerpanel import JobSpooler
 from .pathproperty import PathProperty
 from .rasterwizard import RasterWizard
 from .rotarysettings import RotarySettings
-from .settings import Preferences
+from .preferences import Preferences
 from .simulation import Simulation
 from .tcp.tcpcontroller import TCPController
 from .textproperty import TextProperty
