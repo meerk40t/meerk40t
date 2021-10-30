@@ -294,15 +294,15 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Scene", SceneWindow)
 
         kernel.register("window/default/Controller", Controller)
-        kernel.register("window/default/Preferences", Configuration)
+        kernel.register("window/default/Configuration", Configuration)
         kernel.register("window/tcp/Controller", TCPController)
         kernel.register("window/file/Controller", FileOutput)
-        kernel.register("window/lhystudios/Preferences", LhystudiosDriverGui)
+        kernel.register("window/lhystudios/Configuration", LhystudiosDriverGui)
         kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
         kernel.register(
             "window/lhystudios/AccelerationChart", LhystudiosAccelerationChart
         )
-        kernel.register("window/moshi/Preferences", MoshiDriverGui)
+        kernel.register("window/moshi/Configuration", MoshiDriverGui)
         kernel.register("window/moshi/Controller", MoshiControllerGui)
 
         context = kernel.root

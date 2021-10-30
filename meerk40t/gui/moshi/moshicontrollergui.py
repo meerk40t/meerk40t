@@ -370,23 +370,23 @@ class MoshiControllerPanel(wx.Panel):
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
             self.context("dev usb_disconnect\n")
 
-    def spin_on_device_index(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_index(self, event=None): 
         self.context.usb_index = int(self.spin_device_index.GetValue())
 
     def spin_on_device_address(
         self, event=None
-    ):  # wxGlade: Preferences.<event_handler>
+    ): 
         self.context.usb_address = int(self.spin_device_address.GetValue())
 
-    def spin_on_device_bus(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def spin_on_device_bus(self, event=None): 
         self.context.usb_bus = int(self.spin_device_bus.GetValue())
 
     def spin_on_device_version(
         self, event=None
-    ):  # wxGlade: Preferences.<event_handler>
+    ): 
         self.context.usb_version = int(self.spin_device_version.GetValue())
 
-    def on_check_mock_usb(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_check_mock_usb(self, event=None): 
         self.context.mock = self.checkbox_mock_usb.GetValue()
 
     def on_button_start_controller(

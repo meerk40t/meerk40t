@@ -934,7 +934,7 @@ class OperationPropertyPanel(wx.Panel):
 
     def on_combo_raster_direction(
         self, event=None
-    ):  # wxGlade: Preferences.<event_handler>
+    ):
         self.operation.settings.raster_direction = (
             self.combo_raster_direction.GetSelection()
         )

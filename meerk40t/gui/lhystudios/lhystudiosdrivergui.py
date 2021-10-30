@@ -316,42 +316,42 @@ class LhystudiosConfigurationPanel(wx.Panel):
             y = int(self.bed_dim.bed_height * MILS_IN_MM)
         return x, y
 
-    def on_combobox_boardtype(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_combobox_boardtype(self, event=None): 
         self.context.board = self.combobox_board.GetValue()
 
-    def on_check_swapxy(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_check_swapxy(self, event=None): 
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
         self.context("dev code_update\n")
 
-    def on_check_fix_speeds(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_check_fix_speeds(self, event=None): 
         self.context.fix_speeds = self.checkbox_fix_speeds.GetValue()
 
-    def on_check_strict(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_check_strict(self, event=None): 
         self.context.strict = self.checkbox_strict.GetValue()
 
-    def on_check_flip_x(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_check_flip_x(self, event=None): 
         self.context.flip_x = self.checkbox_flip_x.GetValue()
         self.context("dev code_update\n")
 
-    def on_check_home_right(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_check_home_right(self, event=None): 
         self.context.home_right = self.checkbox_home_right.GetValue()
 
-    def on_check_flip_y(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_check_flip_y(self, event=None): 
         self.context.flip_y = self.checkbox_flip_y.GetValue()
         self.context("dev code_update\n")
 
-    def on_check_home_bottom(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_check_home_bottom(self, event=None): 
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
 
-    def spin_on_home_x(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def spin_on_home_x(self, event=None): 
         self.context.home_adjust_x = int(self.spin_home_x.GetValue())
 
-    def spin_on_home_y(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def spin_on_home_y(self, event=None): 
         self.context.home_adjust_y = int(self.spin_home_y.GetValue())
 
     def on_button_set_home_current(
         self, event=None
-    ):  # wxGlade: Preferences.<event_handler>
+    ): 
         x, y = self.calc_home_position()
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
@@ -363,7 +363,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.spin_home_x.SetValue(self.context.home_adjust_x)
         self.spin_home_y.SetValue(self.context.home_adjust_y)
 
-    def on_check_autolock(self, event=None):  # wxGlade: Preferences.<event_handler>
+    def on_check_autolock(self, event=None): 
         self.context.autolock = self.checkbox_autolock.GetValue()
 
     def on_check_limit_packet_buffer(

@@ -43,7 +43,7 @@ def register_preferences_tools(context, gui):
     )
     toolbar.Bind(
         wx.EVT_TOOL,
-        lambda v: context("window toggle -d Preferences\n"),
+        lambda v: context("window toggle -d Configuration\n"),
         id=ID_CONFIGURATION,
     )
 
@@ -94,7 +94,7 @@ def register_preferences_tools(context, gui):
         .ToolbarPane()
         .FloatingSize(290, 58)
         .Layer(1)
-        .Caption(_("Preferences"))
+        .Caption(_("Configuration"))
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )

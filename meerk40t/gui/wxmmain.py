@@ -897,8 +897,8 @@ class MeerK40t(MWindow):
         self.window_menu.devices = self.window_menu.Append(
             ID_MENU_DEVICE_MANAGER, _("&Devices"), ""
         )
-        self.window_menu.preferences = self.window_menu.Append(
-            wx.ID_PREFERENCES, _("Confi&g"), ""
+        self.window_menu.config = self.window_menu.Append(
+            wx.ID_CONFIG, _("Confi&g"), ""
         )
         self.window_menu.settings = self.window_menu.Append(
             ID_MENU_SETTINGS, _("Se&ttings"), ""
@@ -1096,8 +1096,8 @@ class MeerK40t(MWindow):
             )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window toggle -d Preferences\n"),
-            id=wx.ID_PREFERENCES,
+            lambda v: self.context("window toggle -d Configuration\n"),
+            id=wx.ID_CONFIG,
         )
         self.Bind(
             wx.EVT_MENU,
@@ -1660,7 +1660,6 @@ class MeerK40t(MWindow):
             self.context.draw_mode ^= bits
             self.context.signal("draw_mode", self.context.draw_mode)
             self.context.signal("request_refresh", 0)
-
 
         return toggle
 
