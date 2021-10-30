@@ -51,6 +51,35 @@ BUFFER = 10.0
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         kernel.register("module/Scene", Scene)
+    elif lifecycle == "boot":
+        kernel_root = kernel.root
+        choices = [
+            {
+                "attr": "units_name",
+                "object": kernel_root,
+                "default": "mm",
+                "type": str,
+            },
+            {
+                "attr": "units_marks",
+                "object": kernel_root,
+                "default": 10,
+                "type": int,
+            },
+            {
+                "attr": "units_index",
+                "object": kernel_root,
+                "default": 0,
+                "type": int,
+            },
+            {
+                "attr": "units_convert",
+                "object": kernel_root,
+                "default": 39.3701,
+                "type": float,
+            },
+        ]
+        kernel.register_choices("units", choices)
 
 
 class ScenePanel(wx.Panel):

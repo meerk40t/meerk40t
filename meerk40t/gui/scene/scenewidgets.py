@@ -861,10 +861,6 @@ class GridWidget(Widget):
             wmils = 310 * MILS_IN_MM
             hmils = 210 * MILS_IN_MM
         kernel_root = context.root
-        kernel_root.setting(str, "units_name", "mm")
-        kernel_root.setting(int, "units_marks", 10)
-        kernel_root.setting(int, "units_index", 0)
-        kernel_root.setting(float, "units_convert", 39.3701)
         convert = kernel_root.units_convert
         marks = kernel_root.units_marks
         step = convert * marks
