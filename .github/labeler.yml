@@ -1,32 +1,32 @@
 # Format at https://github.com/actions/labeler
 
-Context\: Config
+"Context: Config":
 - '*'
 - '.*/**'
 
-Context\: Docs
+"Context: Docs":
 - '**.md'
 
-Context\: Base
+"Context: Base":
 - 'meerk40t/*.py'
 
-Context\: Core
+"Context: Core":
 - 'meerk40t/core/**.py'
 
-Context\: Devices
+"Context: Devices":
 - 'meerk40t/device/**.py'
 
-Context\\: GUI
+"Context: GUI":
 - 'meerk40t/gui/**.py'
 
-Context\: Misc
+"Context: Misc":
 - 'meerk40t/dxf/**.py'
 - 'meerk40t/extra/**.py'
 - 'meerk40t/image/**.py'
 - 'meerk40t/tools/**.py'
 
-Context\: Tests
+"Context: Tests":
 - 'test/**.py'
 
-Context\: I18ns
+"Context: I18n":
 - 'locale/**'
