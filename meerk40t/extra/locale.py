@@ -187,8 +187,8 @@ def plugin(kernel, lifecycle):
 
 try:
     import wx
-    from ..gui.icons import icons8_connected_50
-    from ..gui.mwindow import MWindow
+    from meerk40t.gui.icons import icons8_translation_50
+    from meerk40t.gui.mwindow import MWindow
 
     class TranslationPanel(wx.Panel):
         def __init__(self, *args, context=None, language=None, **kwds):
@@ -469,7 +469,7 @@ try:
             # Menu Bar end
 
             _icon = wx.NullIcon
-            _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+            _icon.CopyFromBitmap(icons8_translation_50.GetBitmap())
             self.SetIcon(_icon)
             self.SetTitle("Translation")
 
