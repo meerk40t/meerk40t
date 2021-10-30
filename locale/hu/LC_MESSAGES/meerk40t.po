@@ -3322,7 +3322,7 @@ msgstr "Nyissa meg a CameraInterface alkalmazást"
 #: meerk40t/gui/panes/camerapanel.py:342
 #, python-format
 msgid "URI: %s"
-msgstr "URI:% s"
+msgstr "URI:%s"
 
 #: meerk40t/gui/panes/movepanel.py:80
 msgid "Cannot Move Outside Bed Dimensions"
