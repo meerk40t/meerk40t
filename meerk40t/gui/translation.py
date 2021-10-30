@@ -25,8 +25,8 @@ class TranslationPanel(wx.Panel):
             msgstr = ""
             try:
                 # Find comments and all multiline comments
-                if re.match("#\"(.*)\"", file_lines[index]):
-                    m = re.match("#\"(.*)\"", file_lines[index])
+                if re.match("^#(.*)$", file_lines[index]):
+                    m = re.match("^#(.*)$", file_lines[index])
                     comment = m.group(1)
                     index += 1
                     if index >= len(file_lines):
@@ -60,37 +60,44 @@ class TranslationPanel(wx.Panel):
             except IndexError:
                 break
             if len(comment) or len(msgid) or len(msgstr):
+                msgid = msgid.replace("\\n", "\n")
+                msgstr = msgstr.replace("\\n", "\n")
                 self.entries.append([comment, msgid, msgstr, list()])
             index += 1
 
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tree_translation_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_HAS_BUTTONS | wx.TR_HAS_VARIABLE_ROW_HEIGHT | wx.TR_HIDE_ROOT | wx.TR_NO_LINES | wx.TR_SINGLE | wx.TR_TWIST_BUTTONS)
-        sizer_1.Add(self.tree_translation_tree, 1, wx.EXPAND, 0)
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_HAS_BUTTONS | wx.TR_HAS_VARIABLE_ROW_HEIGHT | wx.TR_HIDE_ROOT | wx.TR_NO_LINES | wx.TR_SINGLE | wx.TR_TWIST_BUTTONS)
+        sizer_1.Add(self.tree, 1, wx.EXPAND, 0)
 
-        self.root = self.tree_translation_tree.AddRoot("en -> %s" % language)
+        self.root = self.tree.AddRoot("en -> %s" % language)
 
-        self.workflow = self.tree_translation_tree.AppendItem(self.root, "Workflow")
-        self.errors = self.tree_translation_tree.AppendItem(self.root, "Errors")
-        self.issues = self.tree_translation_tree.AppendItem(self.root, "Issues")
+        self.workflow = self.tree.AppendItem(self.root, "Workflow")
+        self.errors = self.tree.AppendItem(self.root, "Errors")
+        self.issues = self.tree.AppendItem(self.root, "Issues")
 
-        self.tree_translation_tree.SetItemTextColour(self.errors, wx.RED)
-        self.printf = self.tree_translation_tree.AppendItem(self.errors, "printf-tokens")
+        self.tree.SetItemTextColour(self.errors, wx.RED)
+        self.printf = self.tree.AppendItem(self.errors, "printf-tokens")
 
-        self.tree_translation_tree.SetItemTextColour(self.issues, wx.Colour(127, 127, 0))
-        self.equal = self.tree_translation_tree.AppendItem(self.issues, "msgid==msgstr")
-        self.start_capital = self.tree_translation_tree.AppendItem(self.issues, "capitalization")
-        self.end_punct = self.tree_translation_tree.AppendItem(self.issues, "ending punctuation")
-        self.end_space = self.tree_translation_tree.AppendItem(self.issues, "ending whitespace")
-        self.double_space = self.tree_translation_tree.AppendItem(self.issues, "double space")
+        self.tree.SetItemTextColour(self.issues, wx.Colour(127, 127, 0))
+        self.equal = self.tree.AppendItem(self.issues, "msgid==msgstr")
+        self.start_capital = self.tree.AppendItem(self.issues, "capitalization")
+        self.end_punct = self.tree.AppendItem(self.issues, "ending punctuation")
+        self.end_space = self.tree.AppendItem(self.issues, "ending whitespace")
+        self.double_space = self.tree.AppendItem(self.issues, "double space")
 
-        self.all = self.tree_translation_tree.AppendItem(self.workflow, "All Translations")
-        self.untranslated = self.tree_translation_tree.AppendItem(self.workflow, "Untranslated")
-        self.translated = self.tree_translation_tree.AppendItem(self.workflow, "Translated")
+        self.all = self.tree.AppendItem(self.workflow, "All Translations")
+        self.untranslated = self.tree.AppendItem(self.workflow, "Untranslated")
+        self.translated = self.tree.AppendItem(self.workflow, "Translated")
         for entry in self.entries:
+            msgid = entry[1]
+            name = msgid.strip()
+            if name == "":
+                name = "HEADER"
+            self.tree.AppendItem(self.all, name, data=entry)
             self.process_validate_entry(entry)
-        self.tree_translation_tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_tree_selection)
-        self.tree_translation_tree.ExpandAll()
+        self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_tree_selection)
+        self.tree.ExpandAll()
 
         self.panel_entry = wx.Panel(self, wx.ID_ANY)
         sizer_1.Add(self.panel_entry, 3, wx.EXPAND, 0)
@@ -98,23 +105,24 @@ class TranslationPanel(wx.Panel):
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
         self.text_comment = wx.TextCtrl(self.panel_entry, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY)
+        self.text_comment.SetFont(wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_2.Add(self.text_comment, 3, wx.EXPAND, 0)
 
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
-
-        text_quality = wx.StaticText(self.panel_entry, wx.ID_ANY, "Valid")
-        text_quality.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        sizer_3.Add(text_quality, 1, wx.EXPAND, 0)
 
         self.checkbox_1 = wx.CheckBox(self.panel_entry, wx.ID_ANY, "Fuzzy")
         self.checkbox_1.SetFont(wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_3.Add(self.checkbox_1, 0, 0, 0)
 
         self.text_original_text = wx.TextCtrl(self.panel_entry, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY)
+        self.text_original_text.SetFont(
+            wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_2.Add(self.text_original_text, 6, wx.EXPAND, 0)
 
-        self.text_translated_text = wx.TextCtrl(self.panel_entry, wx.ID_ANY, "", style=wx.TE_MULTILINE)
+        self.text_translated_text = wx.TextCtrl(self.panel_entry, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER)
+        self.text_translated_text.SetFont(
+            wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_2.Add(self.text_translated_text, 6, wx.EXPAND, 0)
 
         self.panel_entry.SetSizer(sizer_2)
@@ -124,6 +132,7 @@ class TranslationPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_TEXT, self.on_text_translated, self.text_translated_text)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.text_translated_text)
         self.text_translated_text.SetFocus()
         self.text_original_text.SetCanFocus(False)
         self.text_comment.SetCanFocus(False)
@@ -139,7 +148,7 @@ class TranslationPanel(wx.Panel):
     def on_tree_selection(self, event):
         try:
             data = [
-                self.tree_translation_tree.GetItemData(item) for item in self.tree_translation_tree.GetSelections()
+                self.tree.GetItemData(item) for item in self.tree.GetSelections()
             ]
             if len(data) > 0:
                 self.entry = data[0]
@@ -151,53 +160,73 @@ class TranslationPanel(wx.Panel):
         self.text_translated_text.SetValue(self.text_original_text.GetValue())
 
     def next(self):
-        for item in list(self.tree_translation_tree.GetSelections()):
-            t = self.tree_translation_tree.GetNextSibling(item)
-            if t.IsOk():
-                self.tree_translation_tree.SelectItem(t)
+        t = None
+        for item in list(self.tree.GetSelections()):
+            t = item
+            break
+        n = self.tree.GetNextSibling(t)
+        self.process_validate_entry(self.entry)
+        if n.IsOk():
+            self.tree.SelectItem(n)
 
     def previous(self):
-        for item in list(self.tree_translation_tree.GetSelections()):
-            t = self.tree_translation_tree.GetPrevSibling(item)
-            if t.IsOk():
-                self.tree_translation_tree.SelectItem(t)
+        t = None
+        for item in list(self.tree.GetSelections()):
+            t = item
+            break
+        n = self.tree.GetPrevSibling(t)
+        self.process_validate_entry(self.entry)
+        if n.IsOk():
+            self.tree.SelectItem(n)
 
     def process_validate_entry(self, entry):
         comment = entry[0]
         msgid = entry[1]
         msgstr = entry[2]
         items = entry[3]
-        if msgid == "":
-            msgid = "HEADER"
-        items.append(self.tree_translation_tree.AppendItem(self.all, msgid, data=entry))
+        for item in list(items):
+            self.tree.Delete(item)
+        items.clear()
+        name = msgid.strip()
+        if name == "":
+            name = "HEADER"
         if not msgstr:
-            items.append(self.tree_translation_tree.AppendItem(self.untranslated, msgid, data=entry))
+            items.append(self.tree.AppendItem(self.untranslated, name, data=entry))
             return
         else:
-            items.append(self.tree_translation_tree.AppendItem(self.translated, msgid, data=entry))
-        if msgid == "HEADER":
+            items.append(self.tree.AppendItem(self.translated, name, data=entry))
+        if name == "HEADER":
             return
         if msgid == msgstr:
-            items.append(self.tree_translation_tree.AppendItem(self.equal, msgid, data=entry))
+            items.append(self.tree.AppendItem(self.equal, name, data=entry))
         if msgid[-1] != msgstr[-1]:
             if msgid[-1] in PUNCTUATION or msgstr[-1] in PUNCTUATION:
-                items.append(self.tree_translation_tree.AppendItem(self.end_punct, msgid, data=entry))
+                items.append(self.tree.AppendItem(self.end_punct, name, data=entry))
             if msgid[-1] == " " or msgstr[-1] == " ":
-                items.append(self.tree_translation_tree.AppendItem(self.end_space, msgid, data=entry))
+                items.append(self.tree.AppendItem(self.end_space, name, data=entry))
         if "%f" in msgid and "%f" not in msgid:
-            items.append(self.tree_translation_tree.AppendItem(self.printf, msgid, data=entry))
+            items.append(self.tree.AppendItem(self.printf, name, data=entry))
         elif "%s" in msgid and "%s" not in msgid:
-            items.append(self.tree_translation_tree.AppendItem(self.printf, msgid, data=entry))
+            items.append(self.tree.AppendItem(self.printf, name, data=entry))
         elif "%d" in msgid and "%d" not in msgid:
-            items.append(self.tree_translation_tree.AppendItem(self.printf, msgid, data=entry))
+            items.append(self.tree.AppendItem(self.printf, name, data=entry))
         if msgid[0].isupper() != msgstr[0].isupper():
-            items.append(self.tree_translation_tree.AppendItem(self.start_capital, msgid, data=entry))
+            items.append(self.tree.AppendItem(self.start_capital, name, data=entry))
         if "  " in msgstr and "  " not in msgid:
-            items.append(self.tree_translation_tree.AppendItem(self.double_space, msgid, data=entry))
+            items.append(self.tree.AppendItem(self.double_space, name, data=entry))
 
     def on_text_translated(self, event):  # wxGlade: TranslationPanel.<event_handler>
         if self.entry:
             self.entry[2] = self.text_translated_text.GetValue()
+
+    def on_text_enter(self, event):
+        t = None
+        for item in list(self.tree.GetSelections()):
+            t = self.tree.GetNextSibling(item)
+        self.process_validate_entry(self.entry)
+        if t is not None and t.IsOk():
+            self.tree.SelectItem(t)
+        self.text_translated_text.SetFocus()
 
 
 class Translation(MWindow):
