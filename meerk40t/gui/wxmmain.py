@@ -1659,7 +1659,8 @@ class MeerK40t(MWindow):
         def toggle(event=None):
             self.context.draw_mode ^= bits
             self.context.signal("draw_mode", self.context.draw_mode)
-            self.request_refresh()
+            self.context.signal("request_refresh", 0)
+
 
         return toggle
 
