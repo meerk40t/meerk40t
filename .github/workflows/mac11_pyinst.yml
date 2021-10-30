@@ -95,8 +95,8 @@ jobs:
         rm -rf dist/MeerK40t
         sed -i "" "s|$MKVERSION|0.0.0|g" setup_mac.py
         # Backwards compatibility
-        rm dist/MeerK40t.app/Contents/Resources/libusb-1.0.dylib
-        cp libusb-1.0.dylib dist/MeerK40t.app/Contents/Resources/libusb-1.0.dylib
+        rm dist/MeerK40t.app/Contents/MacOS/libusb-1.0.dylib
+        cp libusb-1.0.dylib dist/MeerK40t.app/Contents/MacOS/libusb-1.0.dylib
         #plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/meerk40t.app/Contents/Info.plist
         plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/meerk40t.app/Contents/Info.plist
         plutil -insert CFBundleDevelopmentRegion -string en dist/meerk40t.app/Contents/Info.plist
