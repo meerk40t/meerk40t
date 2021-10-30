@@ -120,7 +120,7 @@ class TranslationPanel(wx.Panel):
             wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_2.Add(self.text_original_text, 6, wx.EXPAND, 0)
 
-        self.text_translated_text = wx.TextCtrl(self.panel_entry, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER)
+        self.text_translated_text = wx.TextCtrl(self.panel_entry, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_translated_text.SetFont(
             wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_2.Add(self.text_translated_text, 6, wx.EXPAND, 0)
@@ -184,36 +184,63 @@ class TranslationPanel(wx.Panel):
         msgid = entry[1]
         msgstr = entry[2]
         items = entry[3]
-        for item in list(items):
-            self.tree.Delete(item)
-        items.clear()
+
+        old_parents = []
+        for item in items:
+            old_parents.append(self.tree.GetItemParent(item))
+        new_parents = self.find_classifications(entry)
+
         name = msgid.strip()
         if name == "":
             name = "HEADER"
+
+        removing = []
+        for i, itm in enumerate(old_parents):
+            if itm not in new_parents:
+                # removing contains actual items, not parents.
+                removing.append(items[i])
+        adding = []
+        for itm in new_parents:
+            if itm not in old_parents:
+                # Adding contains parents to be added to.
+                adding.append(itm)
+        for item in removing:
+            self.tree.Delete(item)
+            items.remove(item)
+        for item in adding:
+            items.append(self.tree.AppendItem(item, name, data=entry))
+
+    def find_classifications(self, entry):
+        classes = []
+        comment = entry[0]
+        msgid = entry[1]
+        msgstr = entry[2]
+        if msgid == "":
+            return classes
         if not msgstr:
-            items.append(self.tree.AppendItem(self.untranslated, name, data=entry))
-            return
+            classes.append(self.untranslated)
+            return classes
         else:
-            items.append(self.tree.AppendItem(self.translated, name, data=entry))
-        if name == "HEADER":
-            return
+            classes.append(self.translated)
+
         if msgid == msgstr:
-            items.append(self.tree.AppendItem(self.equal, name, data=entry))
+            classes.append(self.equal)
         if msgid[-1] != msgstr[-1]:
             if msgid[-1] in PUNCTUATION or msgstr[-1] in PUNCTUATION:
-                items.append(self.tree.AppendItem(self.end_punct, name, data=entry))
+                classes.append(self.end_punct)
             if msgid[-1] == " " or msgstr[-1] == " ":
-                items.append(self.tree.AppendItem(self.end_space, name, data=entry))
-        if "%f" in msgid and "%f" not in msgid:
-            items.append(self.tree.AppendItem(self.printf, name, data=entry))
-        elif "%s" in msgid and "%s" not in msgid:
-            items.append(self.tree.AppendItem(self.printf, name, data=entry))
-        elif "%d" in msgid and "%d" not in msgid:
-            items.append(self.tree.AppendItem(self.printf, name, data=entry))
+                classes.append(self.end_space)
+        if ("%f" in msgid) != ("%f" in msgstr):
+            classes.append(self.printf)
+        elif ("%s" in msgid) != ("%s" in msgstr):
+            classes.append(self.printf)
+        elif ("%d" in msgid) != ("%d" in msgstr):
+            classes.append(self.printf)
         if msgid[0].isupper() != msgstr[0].isupper():
-            items.append(self.tree.AppendItem(self.start_capital, name, data=entry))
+            classes.append(self.start_capital)
         if "  " in msgstr and "  " not in msgid:
-            items.append(self.tree.AppendItem(self.double_space, name, data=entry))
+            classes.append(self.double_space)
+        return classes
 
     def on_text_translated(self, event):  # wxGlade: TranslationPanel.<event_handler>
         if self.entry:
@@ -223,7 +250,8 @@ class TranslationPanel(wx.Panel):
         t = None
         for item in list(self.tree.GetSelections()):
             t = self.tree.GetNextSibling(item)
-        self.process_validate_entry(self.entry)
+        if self.entry is not None:
+            self.process_validate_entry(self.entry)
         if t is not None and t.IsOk():
             self.tree.SelectItem(t)
         self.text_translated_text.SetFocus()
