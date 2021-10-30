@@ -1265,6 +1265,10 @@ class MeerK40t(MWindow):
         context = self.context
 
         context.perspective = self._mgr.SavePerspective()
+        for pane in self._mgr.GetAllPanes():
+            if pane.IsShown():
+                if hasattr(pane.window, "finalize"):
+                    pane.window.finalize()
         self._mgr.UnInit()
 
         if context.print_shutdown:

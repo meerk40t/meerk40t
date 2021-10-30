@@ -272,9 +272,6 @@ class OperationPropertyPanel(wx.Panel):
         self.on_combo_operation()
 
     def __set_properties(self):
-        # self.button_add_layer.SetSize(self.button_add_layer.GetBestSize())
-        # self.listbox_layer.SetMinSize((40, -1))
-        # self.button_remove_layer.SetSize(self.button_remove_layer.GetBestSize())
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
         self.button_layer_color.SetToolTip(
             "\n".join(
@@ -1001,9 +998,9 @@ class OperationPropertyPanel(wx.Panel):
         self.advanced_panel.Show(on)
         self.operation.settings.advanced = bool(on)
         if on:
-            self.SetSize((_advanced_width, 500))
+            self.GetParent().SetSize((_advanced_width, 500))
         else:
-            self.SetSize((_simple_width, 500))
+            self.GetParent().SetSize((_simple_width, 500))
 
     def on_check_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()

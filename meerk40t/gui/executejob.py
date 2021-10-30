@@ -471,6 +471,7 @@ class PlannerPanel(wx.Panel):
         # self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
 
         cutplan = self.context.default_plan()
+        self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
             self.context("plan%s copy preprocess\n" % self.plan_name)
 

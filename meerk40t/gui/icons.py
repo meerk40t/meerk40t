@@ -9,7 +9,7 @@ class PyEmbeddedImage(py_embedded_image):
     def __init__(self, data):
         super().__init__(data)
 
-    def GetBitmap(self, use_theme=True, resize=None, color=None):
+    def GetBitmap(self, use_theme=True, resize=None, color=None, rotate=None):
         # Assumes greyscale icon black on transparent background using alpha for shading
         # Ready for Dark Theme
         # If color is provided, the black is changed to this
@@ -22,7 +22,13 @@ class PyEmbeddedImage(py_embedded_image):
                 image = image.Scale(resize, resize)
             else:
                 image = image.Scale(*resize)
-
+        if rotate is not None:
+            if rotate == 1:
+                image = image.Rotate90()
+            elif rotate == 2:
+                image = image.Rotate180()
+            elif rotate == 3:
+                image = image.Rotate90(False)
         if color is not None:
             image.Replace(0, 0, 0, color.red, color.green, color.blue)
             if DARKMODE and use_theme:

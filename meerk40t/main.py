@@ -21,7 +21,7 @@ for full details.
 
 """
 
-MEERK40T_VERSION = "0.7.3"
+MEERK40T_VERSION = "0.7.4-beta1"
 
 if not getattr(sys, "frozen", False):
     MEERK40T_VERSION += " src"

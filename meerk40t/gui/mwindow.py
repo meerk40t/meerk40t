@@ -59,29 +59,11 @@ class MWindow(wx.Frame, Module):
                 pass
 
         table = [
-                (wx.ACCEL_CTRL, ord("W"), wx.NewId()),
-                (wx.ACCEL_ALT, ord("N"), wx.NewId())
-            ]
-        accel_tbl = wx.AcceleratorTable(
-            table
-        )
+            (wx.ACCEL_CTRL, ord("W"), wx.NewId()),
+        ]
+        accel_tbl = wx.AcceleratorTable(table)
         window.Bind(wx.EVT_MENU, close_window, id=table[0][2])
-        window.Bind(wx.EVT_MENU, self.focus_next_child, id=table[1][2])
         window.SetAcceleratorTable(accel_tbl)
-
-    def focus_next_child(self, event=None):
-        f = self.FindFocus()
-        children_count = len(self.Children)
-        if children_count == 0:
-            return
-        index = 0
-        for child in self.Children:
-            if child is f:
-                break
-            index += 1
-        index += 1
-        index %= children_count
-        self.Children[index].SetFocus()
 
     def on_menu_request(self, event):
         menu = wx.Menu()

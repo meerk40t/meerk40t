@@ -16,6 +16,7 @@ class Notes(MWindow):
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Notes"))
+        self.Children[0].SetFocus()
 
     def window_open(self):
         self.context.close(self.name)

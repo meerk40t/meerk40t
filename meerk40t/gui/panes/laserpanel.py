@@ -110,8 +110,9 @@ class LaserPanel(wx.Panel):
         sizer_control.Add(self.button_start, 1, 0, 0)
 
         self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
+        self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25))
+        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25, use_theme=False))
         self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         sizer_control.Add(self.button_pause, 1, 0, 0)
 
@@ -190,7 +191,12 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_devices, self.combo_devices)
         # end wxGlade
+
+    def initialize(self):
         self.context.listen("plan", self.plan_update)
+
+    def finalize(self):
+        self.context.unlisten("plan", self.plan_update)
 
     def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]

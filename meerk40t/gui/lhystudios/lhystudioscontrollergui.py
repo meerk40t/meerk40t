@@ -653,9 +653,9 @@ class LhystudiosControllerPanel(wx.Panel):
         self.text_usb_log.Show(on)
         self.context.show_usb_log = bool(on)
         if on:
-            self.SetSize((_advanced_width, _default_height))
+            self.GetParent().SetSize((_advanced_width, _default_height))
         else:
-            self.SetSize((_simple_width, _default_height))
+            self.GetParent().SetSize((_simple_width, _default_height))
 
 
 class LhystudiosControllerGui(MWindow):
