@@ -40,7 +40,7 @@ from .panes.spoolerpanel import JobSpooler
 from .pathproperty import PathProperty
 from .rasterwizard import RasterWizard
 from .rotarysettings import RotarySettings
-from .settings import Settings
+from .settings import Preferences
 from .simulation import Simulation
 from .tcp.tcpcontroller import TCPController
 from .textproperty import TextProperty
@@ -108,60 +108,6 @@ def plugin(kernel, lifecycle):
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
-
-
-ID_MAIN_TOOLBAR = wx.NewId()
-ID_ADD_FILE = wx.NewId()
-ID_OPEN = wx.NewId()
-
-ID_SAVE = wx.NewId()
-ID_NAV = wx.NewId()
-ID_USB = wx.NewId()
-ID_CONTROLLER = wx.NewId()
-ID_CONFIGURATION = wx.NewId()
-ID_DEVICES = wx.NewId()
-ID_CAMERA = wx.NewId()
-ID_CAMERA1 = wx.NewId()
-ID_CAMERA2 = wx.NewId()
-ID_CAMERA3 = wx.NewId()
-ID_CAMERA4 = wx.NewId()
-ID_CAMERA5 = wx.NewId()
-ID_JOB = wx.NewId()
-ID_SIM = wx.NewId()
-ID_PAUSE = wx.NewId()
-ID_STOP = wx.NewId()
-
-ID_SPOOLER = wx.NewId()
-ID_KEYMAP = wx.NewId()
-ID_SETTING = wx.NewId()
-ID_NOTES = wx.NewId()
-ID_OPERATIONS = wx.NewId()
-ID_CONSOLE = wx.NewId()
-ID_ROTARY = wx.NewId()
-ID_RASTER = wx.NewId()
-
-ID_SELECT = wx.NewId()
-
-ID_ALIGN_LEFT = wx.NewId()
-ID_ALIGN_RIGHT = wx.NewId()
-ID_ALIGN_TOP = wx.NewId()
-ID_ALIGN_BOTTOM = wx.NewId()
-ID_ALIGN_CENTER = wx.NewId()
-
-ID_ALIGN_SPACE_V = wx.NewId()
-ID_ALIGN_SPACE_H = wx.NewId()
-
-ID_FLIP_HORIZONTAL = wx.NewId()
-ID_FLIP_VERTICAL = wx.NewId()
-ID_GROUP = wx.NewId()
-ID_UNGROUP = wx.NewId()
-ID_TOOL_POSITION = wx.NewId()
-ID_TOOL_OVAL = wx.NewId()
-ID_TOOL_CIRCLE = wx.NewId()
-ID_TOOL_POLYGON = wx.NewId()
-ID_TOOL_POLYLINE = wx.NewId()
-ID_TOOL_RECT = wx.NewId()
-ID_TOOL_TEXT = wx.NewId()
 
 _ = wx.GetTranslation
 supported_languages = (
@@ -278,7 +224,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/CameraInterface", CameraInterface)
         kernel.register("window/Terminal", Console)
         kernel.register("window/Console", Console)
-        kernel.register("window/Settings", Settings)
+        kernel.register("window/Preferences", Preferences)
         kernel.register("window/Rotary", RotarySettings)
         kernel.register("window/About", About)
         kernel.register("window/DeviceManager", DeviceManager)

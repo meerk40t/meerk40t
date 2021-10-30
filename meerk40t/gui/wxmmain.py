@@ -84,7 +84,7 @@ ID_MENU_FILE_CLEAR = wx.NewId()
 
 ID_MENU_KEYMAP = wx.NewId()
 ID_MENU_DEVICE_MANAGER = wx.NewId()
-ID_MENU_SETTINGS = wx.NewId()
+ID_MENU_CONFIG = wx.NewId()
 ID_MENU_ROTARY = wx.NewId()
 ID_MENU_NAVIGATION = wx.NewId()
 ID_MENU_NOTES = wx.NewId()
@@ -898,10 +898,10 @@ class MeerK40t(MWindow):
             ID_MENU_DEVICE_MANAGER, _("&Devices"), ""
         )
         self.window_menu.config = self.window_menu.Append(
-            wx.ID_CONFIG, _("Confi&g"), ""
+            ID_MENU_CONFIG, _("Confi&g"), ""
         )
-        self.window_menu.settings = self.window_menu.Append(
-            ID_MENU_SETTINGS, _("Se&ttings"), ""
+        self.window_menu.preferences = self.window_menu.Append(
+            wx.ID_PREFERENCES, _("Pr&eferences"), ""
         )
 
         self.window_menu.keymap = self.window_menu.Append(
@@ -1070,8 +1070,8 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window toggle Settings\n"),
-            id=ID_MENU_SETTINGS,
+            lambda v: self.context("window toggle Preferences\n"),
+            id=wx.ID_PREFERENCES,
         )
         self.Bind(
             wx.EVT_MENU,
@@ -1097,7 +1097,7 @@ class MeerK40t(MWindow):
         self.Bind(
             wx.EVT_MENU,
             lambda v: self.context("window toggle -d Configuration\n"),
-            id=wx.ID_CONFIG,
+            id=ID_MENU_CONFIG,
         )
         self.Bind(
             wx.EVT_MENU,
