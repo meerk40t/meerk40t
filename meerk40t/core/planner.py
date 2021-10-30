@@ -1161,7 +1161,7 @@ def beep():
 
 
 def interrupt_text():
-    input("Interrupted: press enter to continue...\n")
+    input(_("Interrupted: press enter to continue...\n"))
     print("... continuing")
 
 
