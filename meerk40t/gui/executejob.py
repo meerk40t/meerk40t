@@ -2,6 +2,7 @@ import math
 
 import wx
 
+from .propertiespanel import PropertiesPanel
 from ..core.elements import LaserOperation
 from ..svgelements import Length
 from .icons import icons8_laser_beam_52
@@ -56,23 +57,10 @@ class PlannerPanel(wx.Panel):
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
         self.panel_operation = wx.Panel(self, wx.ID_ANY)
-
-        self.check_rapid_moves_between = wx.CheckBox(
-            self, wx.ID_ANY, _("Rapid Moves Between Objects")
+        choices = self.context.registered["choices/optimize"][:5]
+        self.panel_optimize = PropertiesPanel(
+            self, wx.ID_ANY, context=self.context, choices=choices
         )
-        self.check_reduce_travel_time = wx.CheckBox(
-            self, wx.ID_ANY, _("Reduce Travel Time")
-        )
-
-        self.check_merge_passes = wx.CheckBox(self, wx.ID_ANY, _("Merge Passes"))
-        self.check_merge_ops = wx.CheckBox(self, wx.ID_ANY, _("Merge Operations"))
-        self.check_cut_inner_first = wx.CheckBox(self, wx.ID_ANY, _("Cut Inner First"))
-        # self.check_reduce_direction_changes = wx.CheckBox(
-        #     self, wx.ID_ANY, _("Reduce Direction Changes")
-        # )
-        # self.check_remove_overlap_cuts = wx.CheckBox(
-        #     self, wx.ID_ANY, _("Remove Overlap Cuts")
-        # )
         self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
 
         self.__set_properties()
@@ -89,27 +77,6 @@ class PlannerPanel(wx.Panel):
         self.Bind(
             wx.EVT_LISTBOX_DCLICK, self.on_listbox_commands_dclick, self.list_command
         )
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_merge_passes, self.check_merge_passes)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_merge_ops, self.check_merge_ops)
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_rapid_between, self.check_rapid_moves_between
-        )
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_reduce_travel, self.check_reduce_travel_time
-        )
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_inner_first, self.check_cut_inner_first
-        )
-        # self.Bind(
-        #     wx.EVT_CHECKBOX,
-        #     self.on_check_reduce_directions,
-        #     self.check_reduce_direction_changes,
-        # )
-        # self.Bind(
-        #     wx.EVT_CHECKBOX,
-        #     self.on_check_remove_overlap,
-        #     self.check_remove_overlap_cuts,
-        # )
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         self.stage = 0
 
@@ -121,39 +88,6 @@ class PlannerPanel(wx.Panel):
         )
         self.list_operations.SetToolTip(_("Operations being added to the current job"))
         self.list_command.SetToolTip(_("Commands being applied to the current job"))
-        # self.slider_progress.SetToolTip(_("Preview slider to set progress position"))
-        # self.text_operation_name.SetToolTip(_("Current Operation Being Processed"))
-        # self.gauge_operation.SetToolTip(_("Gauge of Operation Progress"))
-        # self.text_time_laser.SetToolTip(_("Time Estimate: Lasering Time"))
-        # self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
-        # self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
-        self.check_merge_passes.SetToolTip(
-            _("Combine passes into the same optimization")
-        )
-        self.check_merge_ops.SetToolTip(
-            _("Combine operations into the same optimization")
-        )
-        self.check_rapid_moves_between.SetToolTip(
-            _(
-                "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
-            )
-        )
-        self.check_reduce_travel_time.SetToolTip(
-            _("Reduce the travel time by optimizing the order of the elements")
-        )
-        self.check_cut_inner_first.SetToolTip(
-            _(
-                "Ensure that inside burns are done before an outside cut which might result in the cut piece shifting or dropping out of the material, while still requiring additonal cuts."
-            )
-        )
-        # self.check_reduce_direction_changes.SetToolTip(
-        #     _("Reorder to reduce the number of sharp directional changes")
-        # )
-        # self.check_reduce_direction_changes.Hide()
-        # self.check_remove_overlap_cuts.SetToolTip(
-        #     _("Remove elements of overlapped cuts")
-        # )
-        # self.check_remove_overlap_cuts.Hide()
         self.button_start.SetBackgroundColour(wx.Colour(0, 255, 0))
         self.button_start.SetFont(
             wx.Font(
@@ -176,74 +110,21 @@ class PlannerPanel(wx.Panel):
         sizer_optimizations = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Optimizations")), wx.VERTICAL
         )
-        # sizer_time = wx.BoxSizer(wx.HORIZONTAL)
-        # sizer_total_time = wx.StaticBoxSizer(
-        #     wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL
-        # )
-        # sizer_travel_time = wx.StaticBoxSizer(
-        #     wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL
-        # )
-        # sizer_laser_time = wx.StaticBoxSizer(
-        #     wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL
-        # )
-        # sizer_operation = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
         sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_operations, 2, wx.EXPAND, 0)
         sizer_main.Add(self.list_command, 2, wx.EXPAND, 0)
         sizer_frame.Add(sizer_main, 1, wx.EXPAND, 0)
-        # sizer_frame.Add(self.slider_progress, 0, wx.EXPAND, 0)
-        # sizer_operation.Add(self.text_operation_name, 2, 0, 0)
-        # sizer_operation.Add(self.gauge_operation, 7, wx.EXPAND, 0)
-        # self.panel_operation.SetSizer(sizer_operation)
+
         sizer_frame.Add(self.panel_operation, 0, wx.EXPAND, 0)
-        # sizer_laser_time.Add(self.text_time_laser, 0, wx.EXPAND, 0)
-        # sizer_time.Add(sizer_laser_time, 1, wx.EXPAND, 0)
-        # sizer_travel_time.Add(self.text_time_travel, 0, wx.EXPAND, 0)
-        # sizer_time.Add(sizer_travel_time, 1, wx.EXPAND, 0)
-        # sizer_total_time.Add(self.text_time_total, 0, wx.EXPAND, 0)
-        # sizer_time.Add(sizer_total_time, 1, wx.EXPAND, 0)
-        # sizer_frame.Add(sizer_time, 0, wx.EXPAND, 0)
-        sizer_optimizations.Add(self.check_rapid_moves_between, 0, 0, 0)
-        sizer_optimizations.Add(self.check_reduce_travel_time, 0, 0, 0)
-        sizer_optimizations.Add(self.check_merge_ops, 0, 0, 0)
-        sizer_optimizations.Add(self.check_merge_passes, 0, 0, 0)
-        sizer_optimizations.Add(self.check_cut_inner_first, 0, 0, 0)
-        # sizer_optimizations.Add(self.check_reduce_direction_changes, 0, 0, 0)
-        # sizer_optimizations.Add(self.check_remove_overlap_cuts, 0, 0, 0)
+
+        sizer_optimizations.Add(self.panel_optimize)
         sizer_options.Add(sizer_optimizations, 2, wx.EXPAND, 0)
         sizer_options.Add(self.button_start, 3, wx.EXPAND, 0)
         sizer_frame.Add(sizer_options, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_frame)
         self.Layout()
         # end wxGlade
-
-    def on_check_reduce_travel(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context.opt_reduce_travel = self.check_reduce_travel_time.IsChecked()
-        self.check_merge_ops.Enable(self.context.opt_reduce_travel)
-        self.check_merge_passes.Enable(self.context.opt_reduce_travel)
-
-    def on_check_inner_first(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context.opt_inner_first = self.check_cut_inner_first.IsChecked()
-
-    # def on_check_reduce_directions(
-    #     self, event=None
-    # ):  # wxGlade: Preview.<event_handler>
-    #     self.context.opt_reduce_directions = (
-    #         self.check_reduce_direction_changes.IsChecked()
-    #     )
-    #
-    # def on_check_remove_overlap(self, event=None):  # wxGlade: Preview.<event_handler>
-    #     self.context.opt_remove_overlap = self.check_remove_overlap_cuts.IsChecked()
-
-    def on_check_merge_ops(self, event=None):
-        self.context.opt_merge_ops = self.check_merge_ops.IsChecked()
-
-    def on_check_merge_passes(self, event=None):
-        self.context.opt_merge_passes = self.check_merge_passes.IsChecked()
-
-    def on_check_rapid_between(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context.opt_rapid_between = self.check_rapid_moves_between.IsChecked()
 
     def jobchange_return_to_operations(self, event=None):
         self.context("plan%s return clear\n" % (self.plan_name))
@@ -459,14 +340,14 @@ class PlannerPanel(wx.Panel):
 
         self.context.listen("element_property_reload", self.on_element_property_update)
         self.context.listen("plan", self.plan_update)
-
-        self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
-        self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
-        self.check_merge_passes.SetValue(self.context.opt_merge_passes)
-        self.check_merge_ops.SetValue(self.context.opt_merge_ops)
-        self.check_merge_ops.Enable(self.context.opt_reduce_travel)
-        self.check_merge_passes.Enable(self.context.opt_reduce_travel)
-        self.check_cut_inner_first.SetValue(self.context.opt_inner_first)
+        #
+        # self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
+        # self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
+        # self.check_merge_passes.SetValue(self.context.opt_merge_passes)
+        # self.check_merge_ops.SetValue(self.context.opt_merge_ops)
+        # self.check_merge_ops.Enable(self.context.opt_reduce_travel)
+        # self.check_merge_passes.Enable(self.context.opt_reduce_travel)
+        # self.check_cut_inner_first.SetValue(self.context.opt_inner_first)
         # self.check_reduce_direction_changes.SetValue(self.context.opt_reduce_directions)
         # self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
 
