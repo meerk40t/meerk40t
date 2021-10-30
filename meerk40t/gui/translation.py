@@ -7,6 +7,7 @@ from .mwindow import MWindow
 
 PUNCTUATION = (".", "?", "!", ":", ";")
 
+
 class TranslationPanel(wx.Panel):
     def __init__(self, *args, context=None, language=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -152,12 +153,14 @@ class TranslationPanel(wx.Panel):
     def next(self):
         for item in list(self.tree_translation_tree.GetSelections()):
             t = self.tree_translation_tree.GetNextSibling(item)
-            self.tree_translation_tree.SelectItem(t)
+            if t.IsOk():
+                self.tree_translation_tree.SelectItem(t)
 
     def previous(self):
         for item in list(self.tree_translation_tree.GetSelections()):
             t = self.tree_translation_tree.GetPrevSibling(item)
-            self.tree_translation_tree.SelectItem(t)
+            if t.IsOk():
+                self.tree_translation_tree.SelectItem(t)
 
     def process_validate_entry(self, entry):
         comment = entry[0]
@@ -189,6 +192,8 @@ class TranslationPanel(wx.Panel):
             items.append(self.tree_translation_tree.AppendItem(self.printf, msgid, data=entry))
         if msgid[0].isupper() != msgstr[0].isupper():
             items.append(self.tree_translation_tree.AppendItem(self.start_capital, msgid, data=entry))
+        if "  " in msgstr and "  " not in msgid:
+            items.append(self.tree_translation_tree.AppendItem(self.double_space, msgid, data=entry))
 
     def on_text_translated(self, event):  # wxGlade: TranslationPanel.<event_handler>
         if self.entry:
