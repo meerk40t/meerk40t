@@ -5,6 +5,7 @@ import sys
 import traceback
 
 from meerk40t.gui.wxmscene import SceneWindow
+from .translation import Translation
 
 try:
     import wx
@@ -290,6 +291,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Scene", SceneWindow)
+        kernel.register("window/Translate", Translation)
 
         kernel.register("window/default/Controller", Controller)
         kernel.register("window/default/Preferences", Configuration)
