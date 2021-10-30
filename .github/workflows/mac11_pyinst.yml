@@ -80,6 +80,7 @@ jobs:
         cp .github/workflows/mac/setup_mac.py setup_mac.py
         cp .github/workflows/mac/entitlements.plist entitlements.plist
         cp .github/workflows/mac/meerk40t.icns meerk40t.icns
+        cp .github/workflows/mac/libusb-1.0.dylib libusb-1.0.dylib
         VERSION=$(python3.8 meerk40t.py -V)
         MKVERSION=$(echo $VERSION | cut -d" " -f 2)
         sed -i "" "s|0.0.0|$MKVERSION|g" setup_mac.py
@@ -93,6 +94,9 @@ jobs:
         mv mk40t.py meerk40t.py
         rm -rf dist/MeerK40t
         sed -i "" "s|$MKVERSION|0.0.0|g" setup_mac.py
+        # Backwards compatibility
+        rm dist/MeerK40t.app/Contents/Resources/libusb-1.0.dylib
+        cp libusb-1.0.dylib dist/MeerK40t.app/Contents/Resources/libusb-1.0.dylib
         #plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/meerk40t.app/Contents/Info.plist
         plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/meerk40t.app/Contents/Info.plist
         plutil -insert CFBundleDevelopmentRegion -string en dist/meerk40t.app/Contents/Info.plist
@@ -130,7 +134,7 @@ jobs:
         ##codesign -s $SIG --deep --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/meerk40t.app
 
         echo "DMG Build..."
-        hdiutil create -volname "MeerK40t Mac" -srcfolder dist -ov MeerK40t_PyInst_11.dmg
+        hdiutil create -volname "MeerK40t Mac" -srcfolder dist -ov MeerK40t_Mac11_Autobuild.dmg
             ##GUI function check
         ##open dist/MeerK40t.app
             ##Binary bundle CLI function check
@@ -153,4 +157,4 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: ${{ steps.build.outputs.mkversion }}
         files: |
-          MeerK40t_PyInst_11.dmg
+          MeerK40t_Mac11_Autobuild.dmg
