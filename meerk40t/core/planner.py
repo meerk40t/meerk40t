@@ -1159,7 +1159,7 @@ class Planner(Modifier):
                     c = CutCode(c[:end - pos])
                 data.plan.append(c)
 
-            self.context.signal("plan", plan, None)
+            self.context.signal("plan", data.name, None)
             return data_type, data
 
     def plan(self, **kwargs):
