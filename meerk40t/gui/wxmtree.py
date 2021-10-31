@@ -396,7 +396,6 @@ class ShadowTree:
         self.wxtree.Expand(node_operations.item)
         self.wxtree.Expand(node_elements.item)
 
-
     def register_children(self, node):
         for child in node.children:
             self.node_register(child)
