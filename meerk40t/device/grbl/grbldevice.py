@@ -177,6 +177,8 @@ class GRBLDriver(Driver):
             if self.settings.power is not None:
                 line.append("S%f" % self.settings.power)
             self.power_updated = False
+        if self.settings.speed is None:
+            self.settings.speed = 20.0
         if self.speed_updated:
             line.append("F%d" % int(self.feed_convert(self.settings.speed)))
             self.speed_updated = False
