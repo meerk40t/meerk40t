@@ -1211,6 +1211,7 @@ class ToneCurvePanel(wx.Panel):
         self.curve_panel.Bind(wx.EVT_MOTION, self.on_curve_mouse_move)
         self.curve_panel.Bind(wx.EVT_LEFT_DOWN, self.on_curve_mouse_left_down)
         self.curve_panel.Bind(wx.EVT_LEFT_UP, self.on_curve_mouse_left_up)
+        self.curve_panel.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.on_curve_mouse_lost)
         self.context = None
         self.op = None
         self.original_op = None
@@ -1306,6 +1307,9 @@ class ToneCurvePanel(wx.Panel):
     def on_curve_mouse_left_up(self, event=None):
         if self.curve_panel.HasCapture():
             self.curve_panel.ReleaseMouse()
+
+    def on_curve_mouse_lost(self, event=None):
+        pass
 
     def on_update_tone(self, event=None):
         if self._tone_panel_buffer is None:
