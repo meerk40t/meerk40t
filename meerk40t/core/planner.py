@@ -787,10 +787,10 @@ class Planner(Modifier):
             for i, plan_name in enumerate(self._plan):
                 channel("%d: %s" % (i, plan_name))
             channel(_("----------"))
-            channel(_("Plan %s:" % self._default_plan))
+            channel(_("Plan %s:" % data.name))
             for i, op_name in enumerate(data.plan):
                 channel("%d: %s" % (i, op_name))
-            channel(_("Commands %s:" % self._default_plan))
+            channel(_("Commands %s:" % data.name))
             for i, cmd_name in enumerate(data.commands):
                 channel("%d: %s" % (i, cmd_name))
             channel(_("----------"))
@@ -832,7 +832,7 @@ class Planner(Modifier):
                 data.plan.append(copy_c)
 
             channel(_("Copied Operations."))
-            self.context.signal("plan", self._default_plan, 1)
+            self.context.signal("plan", data.name, 1)
             return data_type, data
 
         @self.context.console_command(
@@ -866,7 +866,7 @@ class Planner(Modifier):
                     pass
                 data.plan.append(copy_c)
             channel(_("Copied Operations."))
-            self.context.signal("plan", self._default_plan, 1)
+            self.context.signal("plan", data.name, 1)
             return data_type, data
 
         @self.context.console_option(
@@ -900,7 +900,7 @@ class Planner(Modifier):
                         except ValueError:
                             channel(_("Invalid index for command insert."))
                     break
-                self.context.signal("plan", self._default_plan, None)
+                self.context.signal("plan", data.name, None)
             except (KeyError, IndexError):
                 channel(_("No plan command found."))
             return data_type, data
@@ -923,7 +923,7 @@ class Planner(Modifier):
                 for command_name in self.context.match("plan/%s" % op):
                     plan_command = self.context.registered[command_name]
                     data.plan.append(plan_command)
-                    self.context.signal("plan", self._default_plan, None)
+                    self.context.signal("plan", data.name, None)
                     return data_type, data
             except (KeyError, IndexError):
                 pass
@@ -949,7 +949,7 @@ class Planner(Modifier):
                     plan_command = self.context.registered[command_name]
                     data.plan.insert(0, plan_command)
                     break
-                self.context.signal("plan", self._default_plan, None)
+                self.context.signal("plan", data.name, None)
             except (KeyError, IndexError):
                 channel(_("No plan command found."))
             return data_type, data
@@ -962,7 +962,7 @@ class Planner(Modifier):
         )
         def plan_preprocess(command, channel, _, data_type=None, data=None, **kwgs):
             data.preprocess()
-            self.context.signal("plan", self._default_plan, 2)
+            self.context.signal("plan", data.name, 2)
             return data_type, data
 
         @self.context.console_command(
@@ -973,7 +973,7 @@ class Planner(Modifier):
         )
         def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
             data.execute()
-            self.context.signal("plan", self._default_plan, 3)
+            self.context.signal("plan", data.name, 3)
             return data_type, data
 
         @self.context.console_command(
@@ -984,7 +984,7 @@ class Planner(Modifier):
         )
         def plan_blob(data_type=None, data=None, **kwgs):
             data.blob()
-            self.context.signal("plan", self._default_plan, 4)
+            self.context.signal("plan", data.name, 4)
             return data_type, data
 
         @self.context.console_command(
@@ -995,7 +995,7 @@ class Planner(Modifier):
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
             data.preopt()
-            self.context.signal("plan", self._default_plan, 5)
+            self.context.signal("plan", data.name, 5)
             return data_type, data
 
         @self.context.console_command(
@@ -1006,7 +1006,7 @@ class Planner(Modifier):
         )
         def plan_optimize(data_type=None, data=None, **kwgs):
             data.execute()
-            self.context.signal("plan", self._default_plan, 6)
+            self.context.signal("plan", data.name, 6)
             return data_type, data
 
         @self.context.console_command(
@@ -1017,7 +1017,7 @@ class Planner(Modifier):
         )
         def plan_clear(data_type=None, data=None, **kwgs):
             data.clear()
-            self.context.signal("plan", self._default_plan, 0)
+            self.context.signal("plan", data.name, 0)
             return data_type, data
 
         @self.context.console_argument("cols", type=int, help=_("columns for the grid"))
@@ -1085,7 +1085,7 @@ class Planner(Modifier):
                 y_pos += y_distance
             if x_pos != 0 or y_pos != 0:
                 data.plan.append(offset(-x_pos, -y_pos))
-            self.context.signal("plan", self._default_plan, None)
+            self.context.signal("plan", data.name, None)
             return data_type, data
 
         @self.context.console_command(
@@ -1105,7 +1105,61 @@ class Planner(Modifier):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")
             channel(_("Returned Operations."))
-            self.context.signal("plan", self._default_plan, None)
+            self.context.signal("plan", data.name, None)
+            return data_type, data
+
+        @self.context.console_argument(
+            "start", help="start index for cutcode", type=int, default=0
+        )
+        @self.context.console_argument(
+            "end", help="end index for cutcode (-1 is last value)", type=int, default=-1
+        )
+        @self.context.console_command(
+            "sublist",
+            help=_("plan<?> sublist"),
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan_sublist(command, channel, _, start=None, end=None, data_type=None, data=None, **kwgs):
+            pos = 0
+            index = 0
+            plan = list(data.plan)
+            data.plan.clear()
+            c = None
+            while pos < start:
+                # Process prestart elements.
+                try:
+                    c = plan[index]
+                except IndexError:
+                    break
+                index += 1
+                if isinstance(c, CutCode):
+                    c = CutCode(c.flat())
+                    size = len(c)
+                else:
+                    size = 0
+                pos += size
+            if pos > start:
+                # We overshot the start
+                c = c[pos-start:]
+                data.plan.append(c)
+            while end > pos or end == -1:
+                try:
+                    c = plan[index]
+                except IndexError:
+                    break
+                index += 1
+                if isinstance(c, CutCode):
+                    c = CutCode(c.flat())
+                    size = len(c)
+                else:
+                    size = 0
+                pos += size
+                if pos > end:
+                    c = c[:end - pos]
+                data.plan.append(c)
+
+            self.context.signal("plan", plan, None)
             return data_type, data
 
     def plan(self, **kwargs):
