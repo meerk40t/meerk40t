@@ -289,6 +289,9 @@ class CutPlan:
         context = self.context
         _ = context._
         rotary_context = context.get_context("rotary/1")
+        # ==========
+        # before
+        # ==========
         if context.prephysicalhome:
             if not rotary_context.rotary:
                 self.plan.insert(0, context.registered["plan/physicalhome"])
@@ -300,7 +303,7 @@ class CutPlan:
             else:
                 self.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
         # ==========
-        # BEFORE/AFTER
+        # After
         # ==========
         if context.autohome:
             if not rotary_context.rotary:
@@ -1048,9 +1051,37 @@ class Planner(Modifier):
         ):
             if y_distance is None:
                 raise SyntaxError
+            # Following must be in same order as added in preprocess()
+            pre_plan_items = (
+                (self.context.prephysicalhome, physicalhome),
+                (self.context.prehome, home),
+            )
+            # Following must be in reverse order as added in preprocess()
+            post_plan_items = (
+                (self.context.autointerrupt, interrupt),
+                (self.context.autobeep, beep),
+                (self.context.postunlock, unlock),
+                (self.context.autoorigin, origin),
+                (self.context.autophysicalhome, physicalhome),
+                (self.context.autohome, home),
+            )
+            post_plan = []
+
             c_plan = list(data.plan)
             data.plan.clear()
             data.commands.clear()
+            for cmd, func in pre_plan_items:
+                if (cmd and c_plan[0] is func):
+                    data.plan.append(c_plan.pop(0))
+                elif type(c_plan[0]) == str:  # Rotary disabled
+                    data.plan.append(c_plan.pop(0))
+
+            for cmd, func in post_plan_items:
+                if (cmd and c_plan[-1] is func):
+                    post_plan.insert(0, c_plan.pop())
+                elif type(c_plan[-1]) == str:  # Rotary disabled
+                    post_plan.insert(0, c_plan.pop())
+
             try:
                 if x_distance is None:
                     x_distance = Length("%f%%" % (100.0 / (cols + 1)))
@@ -1085,6 +1116,7 @@ class Planner(Modifier):
                 y_pos += y_distance
             if x_pos != 0 or y_pos != 0:
                 data.plan.append(offset(-x_pos, -y_pos))
+            data.plan.extend(post_plan)
             self.context.signal("plan", self._default_plan, None)
             return data_type, data
 
