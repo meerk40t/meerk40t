@@ -215,7 +215,7 @@ class RibbonPanel(wx.Panel):
         button_bar = RB.RibbonButtonBar(self.windows_panel)
         self.window_button_bar = button_bar
         # So Navigation, Camera, Spooler, Controller, Terminal in one group,
-        # Settings, Keymap, Devices, Preferences, Rotary, USB in another.
+        # Settings, Keymap, Devices, Configuration, Rotary, USB in another.
         # Raster Wizard and Notes should IMO be in the Main Group.
         button_bar.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
         button_bar.Bind(
@@ -272,7 +272,7 @@ class RibbonPanel(wx.Panel):
         self.settings_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
-            "" if self.is_dark else _("Preferences"),
+            "" if self.is_dark else _("Configuration"),
             icons8_opened_folder_50.GetBitmap(),
             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
@@ -296,16 +296,20 @@ class RibbonPanel(wx.Panel):
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle -d Preferences\n"),
+            lambda v: self.context("window toggle -d Configuration\n"),
             id=ID_CONFIGURATION,
         )
-
-        button_bar.AddButton(
-            ID_SETTING, _("Settings"), icons8_administrative_tools_50.GetBitmap(), ""
-        )
+        
+        from sys import platform
+        
+        if platform != "darwin":
+            button_bar.AddButton(
+            ID_SETTING, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), ""
+            )
+        
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Settings\n"),
+            lambda v: self.context("window toggle Preferences\n"),
             id=ID_SETTING,
         )
 

@@ -53,7 +53,8 @@ jobs:
         python3.8 -m pip install --upgrade pip
         python3.8 -m pip install meerk40t-camera opencv-python-headless==3.4.13.47
         ## python3.8 -m pip install meerk40t-camera opencv-python
-        python3.8 -m pip install pyinstaller wheel six numpy ezdxf
+        python3.8 -m pip install --upgrade pyinstaller==4.3 
+        python3.8 -m pip install wheel six numpy ezdxf
         ## python3.8 -m pip install wheel six numpy
         ## python3.8 -m pip install pyinstaller py2app wheel six numpy
         python3.8 -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
@@ -117,6 +118,8 @@ jobs:
         SIG="-"
         plutil -replace CFBundleSupportedPlatforms -xml "<array><string>MacOSX</string></array>" dist/MeerK40t.app/Contents/Info.plist
         echo "Codesign for GITHUB"
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.zip
+
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/wx/*.so
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/Python
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/PIL/*.so
@@ -124,11 +127,12 @@ jobs:
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/numpy/linalg/*.so
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/numpy/fft/*.so
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/numpy/core/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/MeerK40t
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/lib-dynload/*.so
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/ezdxf/acc/*.so
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/cv2/*.so
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.dylib
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/MeerK40t
 
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app
         ##codesign -s $SIG --deep --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/meerk40t.app

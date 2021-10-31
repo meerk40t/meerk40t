@@ -51,6 +51,35 @@ BUFFER = 10.0
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         kernel.register("module/Scene", Scene)
+    elif lifecycle == "boot":
+        kernel_root = kernel.root
+        choices = [
+            {
+                "attr": "units_name",
+                "object": kernel_root,
+                "default": "mm",
+                "type": str,
+            },
+            {
+                "attr": "units_marks",
+                "object": kernel_root,
+                "default": 10,
+                "type": int,
+            },
+            {
+                "attr": "units_index",
+                "object": kernel_root,
+                "default": 0,
+                "type": int,
+            },
+            {
+                "attr": "units_convert",
+                "object": kernel_root,
+                "default": 39.3701,
+                "type": float,
+            },
+        ]
+        kernel.register_choices("units", choices)
 
 
 class ScenePanel(wx.Panel):
@@ -88,6 +117,7 @@ class ScenePanel(wx.Panel):
 
         self.scene_panel.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
         self.scene_panel.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
+        self.scene_panel.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.on_mouse_capture_lost)
 
         self.scene_panel.Bind(wx.EVT_SIZE, self.on_size)
 
@@ -170,6 +200,9 @@ class ScenePanel(wx.Panel):
             self.scene.event(event.GetPosition(), "wheelup")
         elif rotation < -1:
             self.scene.event(event.GetPosition(), "wheeldown")
+
+    def on_mouse_capture_lost(self, event):
+        self.scene.event(None, "lost")
 
     def on_mouse_middle_down(self, event):
         """
@@ -632,6 +665,14 @@ class Scene(Module, Job):
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
         consider the dropped element within the hitchain.
         """
+        if window_pos is None:
+            # Capture Lost
+            for i, hit in enumerate(self.hit_chain):
+                if hit is None:
+                    continue  # Element was dropped.
+                current_widget, current_matrix = hit
+                current_widget.event(None, None, event_type)
+            return
         if self.last_position is None:
             self.last_position = window_pos
         dx = window_pos[0] - self.last_position[0]
@@ -1287,6 +1328,8 @@ class SceneSpaceWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "gesture-end":
             self._previous_zoom = None
+            return RESPONSE_CONSUME
+        elif event_type == "lost":
             return RESPONSE_CONSUME
         elif str(event_type).startswith("zoom"):
             if self._previous_zoom is None:

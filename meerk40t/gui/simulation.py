@@ -54,7 +54,10 @@ class SimulationPanel(wx.Panel, Job):
         self.bed_dim.setting(int, "bed_height", 210)
 
         self.view_pane = ScenePanel(
-            self.context, self, scene_name="SimScene", style=wx.EXPAND | wx.TAB_TRAVERSAL
+            self.context,
+            self,
+            scene_name="SimScene",
+            style=wx.EXPAND | wx.TAB_TRAVERSAL,
         )
         self.widget_scene = self.view_pane.scene
 
@@ -124,6 +127,7 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_SLIDER, self.on_slider_playback, self.slider_playbackspeed)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         # end wxGlade
 
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
@@ -218,13 +222,58 @@ class SimulationPanel(wx.Panel, Job):
         self.Layout()
         # end wxGlade
 
+    def on_mouse_right_down(self, event=None):
+        gui = self
+        menu = wx.Menu()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context(
+                "plan%s sublist %d -1\n" % (self.plan_name, self.progress)
+            ),
+            menu.Append(
+                wx.ID_ANY,
+                _("Delete cuts before"),
+                _("Delete all cuts before the current position in Simulation"),
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context(
+                "plan%s sublist 0 %d\n" % (self.plan_name, self.progress)
+            ),
+            menu.Append(
+                wx.ID_ANY,
+                _("Delete cuts after"),
+                _("Delete all cuts after the current position in Simulation"),
+            ),
+        )
+        if menu.MenuItemCount != 0:
+            gui.PopupMenu(menu)
+            menu.Destroy()
+
+    def on_plan_change(self, origin, plan_name, status):
+        if plan_name == self.plan_name:
+            # Refresh cutcode
+            self.cutcode = CutCode()
+
+            for c in self.operations:
+                if isinstance(c, CutCode):
+                    self.cutcode.extend(c)
+            self.cutcode = CutCode(self.cutcode.flat())
+            self.max = max(len(self.cutcode), 0) + 1
+            self.progress = self.max
+            self.slider_progress.SetMin(0)
+            self.slider_progress.SetMax(self.max)
+            self.slider_progress.SetValue(self.max)
+            self.request_refresh()
+
     def initialize(self):
-        self.context.setting(int, "language", 0)
         self.context.setting(str, "units_name", "mm")
         self.context.setting(int, "units_marks", 10)
         self.context.setting(int, "units_index", 0)
         self.context.setting(float, "units_convert", MILS_IN_MM)
         self.context.listen("refresh_scene", self.on_refresh_scene)
+        self.context.listen("plan", self.on_plan_change)
 
         bbox = (
             0,
@@ -268,6 +317,7 @@ class SimulationPanel(wx.Panel, Job):
 
     def finalize(self):
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
+        self.context.unlisten("plan", self.on_plan_change)
         if self.auto_clear:
             self.context("plan%s clear\n" % self.plan_name)
         self.context.close("SimScene")
@@ -476,7 +526,13 @@ class Simulation(MWindow):
         else:
             auto_clear = True
 
-        self.panel = SimulationPanel(self, wx.ID_ANY, context=self.context, plan_name=plan_name, auto_clear=auto_clear)
+        self.panel = SimulationPanel(
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            plan_name=plan_name,
+            auto_clear=auto_clear,
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)

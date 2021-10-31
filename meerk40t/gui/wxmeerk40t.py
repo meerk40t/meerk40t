@@ -14,7 +14,7 @@ except ImportError as e:
     raise Mk40tImportAbort("wxpython")
 
 from ..kernel import Module
-from ..main import MEERK40T_VERSION
+from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
 from .configuration import Configuration
@@ -40,7 +40,7 @@ from .panes.spoolerpanel import JobSpooler
 from .pathproperty import PathProperty
 from .rasterwizard import RasterWizard
 from .rotarysettings import RotarySettings
-from .settings import Settings
+from .preferences import Preferences
 from .simulation import Simulation
 from .tcp.tcpcontroller import TCPController
 from .textproperty import TextProperty
@@ -109,60 +109,6 @@ def plugin(kernel, lifecycle):
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
 
-
-ID_MAIN_TOOLBAR = wx.NewId()
-ID_ADD_FILE = wx.NewId()
-ID_OPEN = wx.NewId()
-
-ID_SAVE = wx.NewId()
-ID_NAV = wx.NewId()
-ID_USB = wx.NewId()
-ID_CONTROLLER = wx.NewId()
-ID_CONFIGURATION = wx.NewId()
-ID_DEVICES = wx.NewId()
-ID_CAMERA = wx.NewId()
-ID_CAMERA1 = wx.NewId()
-ID_CAMERA2 = wx.NewId()
-ID_CAMERA3 = wx.NewId()
-ID_CAMERA4 = wx.NewId()
-ID_CAMERA5 = wx.NewId()
-ID_JOB = wx.NewId()
-ID_SIM = wx.NewId()
-ID_PAUSE = wx.NewId()
-ID_STOP = wx.NewId()
-
-ID_SPOOLER = wx.NewId()
-ID_KEYMAP = wx.NewId()
-ID_SETTING = wx.NewId()
-ID_NOTES = wx.NewId()
-ID_OPERATIONS = wx.NewId()
-ID_CONSOLE = wx.NewId()
-ID_ROTARY = wx.NewId()
-ID_RASTER = wx.NewId()
-
-ID_SELECT = wx.NewId()
-
-ID_ALIGN_LEFT = wx.NewId()
-ID_ALIGN_RIGHT = wx.NewId()
-ID_ALIGN_TOP = wx.NewId()
-ID_ALIGN_BOTTOM = wx.NewId()
-ID_ALIGN_CENTER = wx.NewId()
-
-ID_ALIGN_SPACE_V = wx.NewId()
-ID_ALIGN_SPACE_H = wx.NewId()
-
-ID_FLIP_HORIZONTAL = wx.NewId()
-ID_FLIP_VERTICAL = wx.NewId()
-ID_GROUP = wx.NewId()
-ID_UNGROUP = wx.NewId()
-ID_TOOL_POSITION = wx.NewId()
-ID_TOOL_OVAL = wx.NewId()
-ID_TOOL_CIRCLE = wx.NewId()
-ID_TOOL_POLYGON = wx.NewId()
-ID_TOOL_POLYLINE = wx.NewId()
-ID_TOOL_RECT = wx.NewId()
-ID_TOOL_TEXT = wx.NewId()
-
 _ = wx.GetTranslation
 supported_languages = (
     ("en", u"English", wx.LANGUAGE_ENGLISH),
@@ -215,6 +161,9 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
+
+        # App started add the except hook
+        sys.excepthook = handleGUIException
 
     def on_app_close(self, event=None):
         try:
@@ -278,7 +227,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/CameraInterface", CameraInterface)
         kernel.register("window/Terminal", Console)
         kernel.register("window/Console", Console)
-        kernel.register("window/Settings", Settings)
+        kernel.register("window/Preferences", Preferences)
         kernel.register("window/Rotary", RotarySettings)
         kernel.register("window/About", About)
         kernel.register("window/DeviceManager", DeviceManager)
@@ -294,15 +243,15 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Scene", SceneWindow)
 
         kernel.register("window/default/Controller", Controller)
-        kernel.register("window/default/Preferences", Configuration)
+        kernel.register("window/default/Configuration", Configuration)
         kernel.register("window/tcp/Controller", TCPController)
         kernel.register("window/file/Controller", FileOutput)
-        kernel.register("window/lhystudios/Preferences", LhystudiosDriverGui)
+        kernel.register("window/lhystudios/Configuration", LhystudiosDriverGui)
         kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
         kernel.register(
             "window/lhystudios/AccelerationChart", LhystudiosAccelerationChart
         )
-        kernel.register("window/moshi/Preferences", MoshiDriverGui)
+        kernel.register("window/moshi/Configuration", MoshiDriverGui)
         kernel.register("window/moshi/Controller", MoshiControllerGui)
 
         context = kernel.root
@@ -587,45 +536,60 @@ class wxMeerK40t(wx.App, Module):
 # end of class MeerK40tGui
 def send_file_to_developers(filename):
     """
+    Loads a file to send data to the developers.
+
+    @param filename: file to send
+    @return:
+    """
+    try:
+        with open(filename, "r") as f:
+            data = f.read()
+    except:
+        if data is None:
+            return  # There is no file, there is no data.
+    send_data_to_developers(filename, data)
+
+
+def send_data_to_developers(filename, data):
+    """
     Sends crash log to a server using rfc1341 7.2 The multipart Content-Type
     https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
 
-    :param filename: filename to send. (must be text/plain)
-    :return:
+    @param filename: filename to use when sending file
+    @param data: data to send
+    @return:
     """
     import socket
 
-    with open(filename, "r") as f:
-        data = f.read()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        ipaddr = socket.gethostbyname("api.anonfiles.com")
-        s.connect((ipaddr, 80))
-        boundary = "----------------meerk40t-boundary"
-        file_head = list()
-        file_head.append("--" + boundary)
-        file_head.append(
-            'Content-Disposition: form-data; name="file"; filename="%s"' % filename
-        )
-        file_head.append("Content-Type: text/plain")
-        file_head.append("")
-        part = "\x0D\x0A".join(file_head)
-        terminal = "--" + boundary + "--"
-        payload = "\x0D\x0A".join((part, data, terminal, ""))
-        http_req = list()
-        http_req.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
-        http_req.append("Host: api.anonfiles.com")
-        http_req.append("User-Agent: meerk40t/0.0.1")
-        http_req.append("Accept: */*")
-        http_req.append("Content-Length: %d" % (len(payload)))
-        http_req.append("Content-Type: multipart/form-data; boundary=%s" % boundary)
-        http_req.append("")
-        header = "\x0D\x0A".join(http_req)
-        request = "\x0D\x0A".join((header, payload))
-        s.send(bytes(request, "utf-8"))
-        response = s.recv(4096)
-        response = response.decode("utf-8")
-        print(response)
-        s.close()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ipaddr = socket.gethostbyname("api.anonfiles.com")
+    s.connect((ipaddr, 80))
+    boundary = "----------------meerk40t-boundary"
+    file_head = list()
+    file_head.append("--" + boundary)
+    file_head.append(
+        'Content-Disposition: form-data; name="file"; filename="%s"' % filename
+    )
+    file_head.append("Content-Type: text/plain")
+    file_head.append("")
+    part = "\x0D\x0A".join(file_head)
+    terminal = "--" + boundary + "--"
+    payload = "\x0D\x0A".join((part, data, terminal, ""))
+    http_req = list()
+    http_req.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
+    http_req.append("Host: api.anonfiles.com")
+    http_req.append("User-Agent: meerk40t/0.0.1")
+    http_req.append("Accept: */*")
+    http_req.append("Content-Length: %d" % (len(payload)))
+    http_req.append("Content-Type: multipart/form-data; boundary=%s" % boundary)
+    http_req.append("")
+    header = "\x0D\x0A".join(http_req)
+    request = "\x0D\x0A".join((header, payload))
+    s.send(bytes(request, "utf-8"))
+    response = s.recv(4096)
+    response = response.decode("utf-8")
+    print(response)
+    s.close()
     if response is None or len(response) == 0:
         http_code = "No Response."
     else:
@@ -674,7 +638,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     error_log = "MeerK40t crash log. Version: %s on %s - %s\n" % (
-        MEERK40T_VERSION,
+        APPLICATION_VERSION,
         sys.platform,
         wxversion,
     )
@@ -690,11 +654,18 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         filename = "MeerK40t-Crash.txt"
 
     try:
-        with open(filename, "w") as file:
-            # Crash logs are not translated.
-            file.write(error_log)
-            print(file)
-    except Exception:  # I already crashed once, if there's another here just ignore it.
+        try:
+            with open(filename, "w") as file:
+                file.write(error_log)
+                print(file)
+        except PermissionError:
+            from meerk40t.kernel import get_safe_path
+            path = get_safe_path(APPLICATION_NAME)
+            with open(path.joinpath(filename), "w") as file:
+                file.write(error_log)
+                print(file)
+    except Exception:
+        # I already crashed once, if there's another here just ignore it.
         pass
 
     # Ask to send file.
@@ -713,7 +684,5 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         message, _("Crash Detected! Send Log?"), wx.YES_NO | wx.CANCEL, None
     )
     if answer == wx.YES:
-        send_file_to_developers(filename)
+        send_data_to_developers(filename, error_log)
 
-
-sys.excepthook = handleGUIException

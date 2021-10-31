@@ -20,11 +20,11 @@ open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 
 """
-
-MEERK40T_VERSION = "0.7.4-beta1"
+APPLICATION_NAME = "MeerK40t"
+APPLICATION_VERSION = "0.7.4-beta2"
 
 if not getattr(sys, "frozen", False):
-    MEERK40T_VERSION += " src"
+    APPLICATION_VERSION += " src"
 
 
 def pair(value):
@@ -103,13 +103,18 @@ def run():
     args = parser.parse_args(argv)
 
     if args.version:
-        print("MeerK40t %s" % MEERK40T_VERSION)
+        print("%s %s" % (APPLICATION_NAME, APPLICATION_VERSION))
         return
     python_version_required = (3, 5)
     if sys.version_info < python_version_required:
         print(
-            "MeerK40t %s requires Python %d.%d or greater."
-            % (MEERK40T_VERSION, python_version_required[0], python_version_required[1])
+            "%s %s requires Python %d.%d or greater."
+            % (
+                APPLICATION_NAME,
+                APPLICATION_VERSION,
+                python_version_required[0],
+                python_version_required[1],
+            )
         )
         return
 
@@ -117,7 +122,7 @@ def run():
         path = "profile%d" % args.profile
     else:
         path = ""
-    kernel = Kernel("MeerK40t", MEERK40T_VERSION, "MeerK40t", path)
+    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME, path)
 
     """
     These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
@@ -277,7 +282,7 @@ def run():
         kernel.bootstrap("gui")
 
     kernel_root = kernel.root
-    kernel_root.device_version = MEERK40T_VERSION
+    kernel_root.device_version = APPLICATION_VERSION
     kernel_root.device_name = "MeerK40t"
 
     kernel.bootstrap("preregister")

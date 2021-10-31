@@ -224,26 +224,62 @@ class ShadowTree:
         self.do_not_select = False
 
     def node_created(self, node, **kwargs):
+        """
+        Notified that this node has been created.
+        @param node: Node that was created.
+        @param kwargs:
+        @return:
+        """
         pass
 
     def node_destroyed(self, node, **kwargs):
+        """
+        Notified that this node has been destroyed.
+        @param node: Node that was destroyed.
+        @param kwargs:
+        @return:
+        """
         pass
 
     def node_detached(self, node, **kwargs):
+        """
+        Notified that this node has been detached from the tree.
+        @param node: Node that was detached.
+        @param kwargs:
+        @return:
+        """
         self.unregister_children(node)
         self.node_unregister(node, **kwargs)
 
     def node_attached(self, node, **kwargs):
+        """
+        Notified that this node has been attached to teh tree.
+        @param node: Node that was attached.
+        @param kwargs:
+        @return:
+        """
         self.node_register(node, **kwargs)
         self.register_children(node)
 
     def node_changed(self, node):
+        """
+        Notified that this node has been changed.
+        @param node: Node that was changed.
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.update_label(node)
 
     def selected(self, node):
+        """
+        Notified that this node was selected.
+
+        Directly selected within the tree, specifically selected within the treectrl
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -252,6 +288,13 @@ class ShadowTree:
         self.context.signal("selected", node)
 
     def emphasized(self, node):
+        """
+        Notified that this node was emphasized.
+
+        Item is selected by being emphasized this is treated like a soft selection throughout
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -260,6 +303,13 @@ class ShadowTree:
         self.context.signal("emphasized", node)
 
     def targeted(self, node):
+        """
+        Notified that this node was targeted.
+
+        If any element is emphasized, all operations containing that element are targeted.
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -268,6 +318,14 @@ class ShadowTree:
         self.context.signal("targeted", node)
 
     def highlighted(self, node):
+        """
+        Notified that this node was highlighted.
+
+        If any operation is selected, all sub-operations are highlighted.
+        If any element is emphasized, all copies are highlighted.
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -276,6 +334,12 @@ class ShadowTree:
         self.context.signal("highlighted", node)
 
     def modified(self, node):
+        """
+        Notified that this node was modified.
+        This node position values were changed, but nothing about the core data was altered.
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -288,6 +352,12 @@ class ShadowTree:
         self.context.signal("modified", node)
 
     def altered(self, node):
+        """
+        Notified that this node was altered.
+        This node was changed in fundamental ways and nothing about this node remains trusted.
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -301,12 +371,24 @@ class ShadowTree:
         self.context.signal("altered", node)
 
     def expand(self, node):
+        """
+        Notified that this node was expanded.
+
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.wxtree.ExpandAllChildren(item)
 
     def collapse(self, node):
+        """
+        Notified that this node was collapsed.
+
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -315,9 +397,22 @@ class ShadowTree:
             self.wxtree.Expand(item)
 
     def reorder(self, node):
+        """
+        Notified that this node was reordered.
+
+        Tree is rebuilt.
+
+        @param node:
+        @return:
+        """
         self.rebuild_tree()
 
     def update(self, node):
+        """
+        Notified that this node has been updated.
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -325,6 +420,13 @@ class ShadowTree:
         self.on_force_element_update(node)
 
     def focus(self, node):
+        """
+        Notified that this node has been focused.
+
+        It must be seen in the tree.
+        @param node:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -335,6 +437,11 @@ class ShadowTree:
         self.wxtree.ScrollTo(item)
 
     def on_force_element_update(self, *args):
+        """
+        Called by signal "element_property_reload"
+        @param args:
+        @return:
+        """
         element = args[0]
         if hasattr(element, "node"):
             self.update_label(element.node, force=True)
@@ -342,6 +449,11 @@ class ShadowTree:
             self.update_label(element, force=True)
 
     def on_element_update(self, *args):
+        """
+        Called by signal "element_property_update"
+        @param args:
+        @return:
+        """
         element = args[0]
         if hasattr(element, "node"):
             self.update_label(element.node)
@@ -365,6 +477,11 @@ class ShadowTree:
             child, cookie = tree.GetNextChild(node, cookie)
 
     def rebuild_tree(self):
+        """
+        Tree requires being deleted and completely rebuilt.
+
+        @return:
+        """
         self.dragging_nodes = None
         self.wxtree.DeleteAllItems()
 
@@ -393,30 +510,39 @@ class ShadowTree:
         # Expand Ops and Element nodes only
         # We check these two exist but will open any additional siblings just in case
         self.wxtree.CollapseAll()
-        item = self.wxtree.GetFirstVisibleItem()
-        if not item.IsOk():
-            raise ValueError("Bad Item")
-        self.wxtree.Expand(item)
-        item = self.wxtree.GetNextSibling(item)
-        if not item.IsOk():
-            raise ValueError("Bad Item")
-        self.wxtree.Expand(item)
-        item = self.wxtree.GetNextSibling(item)
-        while item.IsOk():
-            self.wxtree.Expand(item)
-            item = self.wxtree.GetNextSibling(item)
+        self.wxtree.Expand(node_operations.item)
+        self.wxtree.Expand(node_elements.item)
 
     def register_children(self, node):
+        """
+        All children of this node are registered.
+
+        @param node:
+        @return:
+        """
         for child in node.children:
             self.node_register(child)
             self.register_children(child)
 
     def unregister_children(self, node):
+        """
+        All children of this node are unregistered.
+
+        @param node:
+        @return:
+        """
         for child in node.children:
             self.unregister_children(child)
             self.node_unregister(child)
 
     def node_unregister(self, node, **kwargs):
+        """
+        Node object is unregistered and item is deleted.
+
+        @param node:
+        @param kwargs:
+        @return:
+        """
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
@@ -426,6 +552,14 @@ class ShadowTree:
             self.wxtree.SelectItem(i, False)
 
     def node_register(self, node, pos=None, **kwargs):
+        """
+        Node.item is added/inserted. Label is updated and values are set. Icon is set. And tree is refreshed.
+
+        @param node:
+        @param pos:
+        @param kwargs:
+        @return:
+        """
         parent = node.parent
         parent_item = parent.item
         tree = self.wxtree
@@ -449,6 +583,11 @@ class ShadowTree:
         self.context.signal("refresh_tree")
 
     def set_enhancements(self, node):
+        """
+        Node in the tree is drawn special based on nodes current setting.
+        @param node:
+        @return:
+        """
         tree = self.wxtree
         node_item = node.item
         tree.SetItemBackgroundColour(node_item, None)
@@ -463,6 +602,13 @@ class ShadowTree:
             pass
 
     def set_color(self, node, color=None):
+        """
+        Node color is set.
+
+        @param node: Not to be colored
+        @param color: Color to be set.
+        @return:
+        """
         item = node.item
         if item is None:
             return
@@ -473,6 +619,13 @@ class ShadowTree:
             tree.SetItemTextColour(item, wx.Colour(swizzlecolor(color)))
 
     def set_icon(self, node, icon=None):
+        """
+        Node icon to be created and applied
+
+        @param node: Node to have the icon set.
+        @param icon: overriding icon to be forcably set, rather than a default.
+        @return:
+        """
         root = self
         drawmode = self.context.draw_mode
         if drawmode & DRAW_MODE_ICONS != 0:
@@ -535,11 +688,17 @@ class ShadowTree:
             tree.SetItemImage(item, image=image_id)
 
     def update_label(self, node, force=False):
+        """
+        Updates the label if the label is currently blank or force was set to true.
+        @param node:
+        @param force:
+        @return:
+        """
         if node.label is None or force:
             node.label = node.create_label()
             self.set_icon(node)
-        if not hasattr(node, "item"):
-            # Unregistered node updating name.
+        if node.item is None:
+            # This node is not registered the tree has desynced.
             self.rebuild_tree()
             return
 
@@ -556,25 +715,6 @@ class ShadowTree:
             self.wxtree.SetItemTextColour(node.item, c)
         except AttributeError:
             pass
-
-    def move_node(self, node, new_parent, pos=None):
-        tree = self.root.shadow_tree
-        item = self.item
-        image = tree.GetItemImage(item)
-        data = tree.GetItemData(item)
-        color = tree.GetItemTextColour(item)
-        tree.Delete(item)
-        if pos is None:
-            self.item = tree.AppendItem(new_parent.item, self.name)
-        else:
-            self.item = tree.InsertItem(new_parent.item, pos, self.name)
-        item = self.item
-        tree.SetItemImage(item, image)
-        tree.SetItemData(item, data)
-        tree.SetItemTextColour(item, color)
-
-    def bbox(self, node):
-        return Group.union_bbox([self.object])
 
     def on_drag_begin_handler(self, event):
         """
@@ -667,11 +807,23 @@ class ShadowTree:
         self.activated_node(node)
 
     def activate_selected_node(self, *args):
+        """
+        Call activated on the first emphasized node.
+
+        @param args:
+        @return:
+        """
         first_element = self.elements.first_element(emphasized=True)
         if hasattr(first_element, "node"):
             self.activated_node(first_element.node)
 
     def activated_node(self, node):
+        """
+        Activate the node in question.
+
+        @param node:
+        @return:
+        """
         if isinstance(node, LaserOperation):
             self.context.open("window/OperationProperty", self.gui, node=node)
             return
@@ -727,15 +879,11 @@ class ShadowTree:
 
     def select_in_tree_by_emphasis(self, origin, *args):
         """
+        Selected the actual wx.tree control those items which are currently emphasized.
+
         :return:
         """
         self.do_not_select = True
         for e in self.elements.elems_nodes(emphasized=True):
             self.wxtree.SelectItem(e.item, True)
         self.do_not_select = False
-
-    def contains(self, box, x, y=None):
-        if y is None:
-            y = x[1]
-            x = x[0]
-        return box[0] <= x <= box[2] and box[1] <= y <= box[3]
