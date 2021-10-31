@@ -133,7 +133,6 @@ class PlannerPanel(wx.Panel):
         dlg = wx.TextEntryDialog(
             self, _("How many copies wide?"), _("Enter Columns"), ""
         )
-        dlg.SetValue("5")
 
         if dlg.ShowModal() == wx.ID_OK:
             try:
@@ -147,7 +146,6 @@ class PlannerPanel(wx.Panel):
         dlg.Destroy()
 
         dlg = wx.TextEntryDialog(self, _("How many copies high?"), _("Enter Rows"), "")
-        dlg.SetValue("5")
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 rows = int(dlg.GetValue())
@@ -168,10 +166,20 @@ class PlannerPanel(wx.Panel):
 
         dlg = wx.TextEntryDialog(
             self,
-            _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"),
-            _("Enter X Gap"),
+            _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%")
+            + "\n\n"
+            + _("This should be the item width + any gap."),
+            _("Enter X Delta"),
             "",
         )
+
+        if self.context:
+            conversion = self.context.units_convert
+            name = self.context.units_name
+            if height:
+                height = "%.1f%s" % (height / conversion, name)
+            if width:
+                width  = "%.1f%s" % (width / conversion, name)
         dlg.SetValue(str(width) if width is not None else "%f%%" % (100.0 / cols))
         bed_dim = self.context.root
         bed_dim.setting(int, "bed_width", 310)
@@ -197,8 +205,10 @@ class PlannerPanel(wx.Panel):
 
         dlg = wx.TextEntryDialog(
             self,
-            _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"),
-            _("Enter Y Gap"),
+            _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%")
+            + "\n\n"
+            + _("This should be the item height + any gap."),
+            _("Enter Y Delta"),
             "",
         )
         dlg.SetValue(str(height) if height is not None else "%f%%" % (100.0 / rows))
