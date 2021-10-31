@@ -4,7 +4,7 @@ import wx
 
 from .propertiespanel import PropertiesPanel
 from ..core.elements import LaserOperation
-from ..svgelements import Length
+from ..svgelements import Length, Group
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow
 
@@ -156,11 +156,19 @@ class PlannerPanel(wx.Panel):
             dlg.Destroy()
             return
         dlg.Destroy()
+
+        elems = []
+        cutplan = self.context.default_plan()
+        for node in cutplan.plan:
+            if type(node) is LaserOperation:
+                objs = [e.object for e in node.children]
+                elems.extend(objs)
+        bounds = Group.union_bbox(elems)
+
         try:
-            bounds = self.context.elements._emphasized_bounds
             width = math.ceil(bounds[2] - bounds[0])
             height = math.ceil(bounds[3] - bounds[1])
-        except Exception:
+        except TypeError:
             width = None
             height = None
 
