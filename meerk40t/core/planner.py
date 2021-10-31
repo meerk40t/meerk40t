@@ -1141,7 +1141,7 @@ class Planner(Modifier):
                 pos += size
             if pos > start:
                 # We overshot the start
-                c = c[pos-start:]
+                c = CutCode(c[pos-start:])
                 data.plan.append(c)
             while end > pos or end == -1:
                 try:
@@ -1156,7 +1156,7 @@ class Planner(Modifier):
                     size = 0
                 pos += size
                 if pos > end:
-                    c = c[:end - pos]
+                    c = CutCode(c[:end - pos])
                 data.plan.append(c)
 
             self.context.signal("plan", plan, None)
