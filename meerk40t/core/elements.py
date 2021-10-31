@@ -3575,6 +3575,9 @@ class Elemental(Modifier):
                 return
             self.validate_selected_area()
             bounds = self.selected_area()
+            if bounds is None:
+                channel(_("No selected elements."))
+                return
             rot = angle.as_degrees
 
             if cx is not None:
