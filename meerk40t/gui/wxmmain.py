@@ -901,7 +901,7 @@ class MeerK40t(MWindow):
             ID_MENU_CONFIG, _("Confi&g"), ""
         )
         self.window_menu.preferences = self.window_menu.Append(
-            wx.ID_PREFERENCES, _("Pr&eferences"), ""
+            wx.ID_PREFERENCES, _("Pr&eferences...\tCtrl-,"), ""
         )
 
         self.window_menu.keymap = self.window_menu.Append(

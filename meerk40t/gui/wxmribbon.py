@@ -299,10 +299,14 @@ class RibbonPanel(wx.Panel):
             lambda v: self.context("window toggle -d Configuration\n"),
             id=ID_CONFIGURATION,
         )
-
-        button_bar.AddButton(
+        
+        from sys import platform
+        
+        if platform != "darwin":
+            button_bar.AddButton(
             ID_SETTING, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), ""
-        )
+            )
+        
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window toggle Preferences\n"),
