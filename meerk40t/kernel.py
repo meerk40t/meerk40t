@@ -1,6 +1,7 @@
 import datetime
 import functools
 import inspect
+import os
 import re
 import threading
 import time
@@ -786,7 +787,9 @@ class Kernel:
             return open(*args)
         except PermissionError:
             from os import chdir
+            original = os.getcwd()
             chdir(get_safe_path(self.name, True))
+            print("Changing working directory from %s to %s." % (str(original), str(os.getcwd())))
             return open(*args)
 
     def _start_debugging(self) -> None:
