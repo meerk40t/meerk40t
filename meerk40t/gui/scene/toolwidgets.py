@@ -139,6 +139,9 @@ class DrawTool(ToolWidget):
             if self.series is None:
                 return RESPONSE_DROP
             self.add_point(space_pos[:2])
+        elif event_type == "lost":
+            self.series = None
+            return RESPONSE_DROP
         elif event_type == "leftup":
             try:
                 t = Path(stroke="blue")

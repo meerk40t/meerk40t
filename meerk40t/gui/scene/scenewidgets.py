@@ -153,11 +153,11 @@ class SelectionWidget(Widget):
             self.cursor = wx.CURSOR_SIZING
             self.scene.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
-        if event_type == "hover_end":
+        elif event_type == "hover_end":
             self.cursor = wx.CURSOR_ARROW
             self.scene.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
-        if event_type == "hover":
+        elif event_type == "hover":
             matrix = self.parent.matrix
             xin = space_pos[0] - self.left
             yin = space_pos[1] - self.top
@@ -232,27 +232,27 @@ class SelectionWidget(Widget):
                 self.scene.context.gui, elements.top_element(emphasized=True), elements
             )
             return RESPONSE_CONSUME
-        if event_type == "doubleclick":
+        elif event_type == "doubleclick":
             elements.set_emphasized_by_position(space_pos)
             self.scene.context.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
-        if event_type == "leftdown":
+        elif event_type == "leftdown":
             self.save_width = self.width
             self.save_height = self.height
             self.uniform = True
             self.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
-        if event_type == "middledown":
+        elif event_type == "middledown":
             self.save_width = self.width
             self.save_height = self.height
             self.uniform = False
             self.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
-        if event_type in ("middleup", "leftup"):
+        elif event_type in ("middleup", "leftup", "lost"):
             self.tool(space_pos, dx, dy, 1)
             self.elements.ensure_positive_bounds()
             return RESPONSE_CONSUME
-        if event_type == "move":
+        elif event_type == "move":
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
             if self.save_width is None or self.save_height is None:
@@ -666,6 +666,10 @@ class RectSelectWidget(Widget):
         elif event_type == "move":
             self.scene.context.signal("refresh_scene", 0)
             self.end_location = space_pos
+            return RESPONSE_CONSUME
+        elif event_type == "lost":
+            self.start_location = None
+            self.end_location = None
             return RESPONSE_CONSUME
         return RESPONSE_DROP
 
