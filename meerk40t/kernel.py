@@ -2739,7 +2739,6 @@ class ConsoleFunction(Job):
 def get_safe_path(name, create=False):
     from sys import platform
     from pathlib import Path
-    Path("/my/directory").mkdir(parents=True, exist_ok=True)
 
     if platform == 'darwin':
         directory = Path.home().joinpath('Library').joinpath('Application Support').joinpath(name)
