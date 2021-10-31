@@ -162,6 +162,9 @@ class wxMeerK40t(wx.App, Module):
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
 
+        # App started add the except hook
+        sys.excepthook = handleGUIException
+
     def on_app_close(self, event=None):
         try:
             if self.context is not None:
@@ -683,5 +686,3 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     if answer == wx.YES:
         send_data_to_developers(filename, error_log)
 
-
-sys.excepthook = handleGUIException
