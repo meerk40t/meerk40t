@@ -42,8 +42,9 @@ class FileOutput:
         return True
 
     def write(self, data):
+        filename = self.filename.replace("?", "").replace(":", "")
         with open(
-            self.filename, "ab" if isinstance(data, (bytes, bytearray)) else "a"
+            filename, "ab" if isinstance(data, (bytes, bytearray)) else "a"
         ) as stream:
             stream.write(data)
             stream.flush()
