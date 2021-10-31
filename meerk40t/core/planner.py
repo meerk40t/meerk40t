@@ -1121,8 +1121,11 @@ class Planner(Modifier):
             output_type="plan",
         )
         def plan_sublist(command, channel, _, start=None, end=None, data_type=None, data=None, **kwgs):
+            if end == -1:
+                end = float('inf')
             pos = 0
             index = 0
+            size = 0
             plan = list(data.plan)
             data.plan.clear()
             c = None
@@ -1138,12 +1141,16 @@ class Planner(Modifier):
                     size = len(c)
                 else:
                     size = 0
+                if (pos + size) > start:
+                    break
                 pos += size
-            if pos > start:
+                size = 0
+            if (pos + size) > start:
                 # We overshot the start
-                c = CutCode(c[pos-start:])
+                c = CutCode(c[start-pos:])
+                pos = start
                 data.plan.append(c)
-            while end > pos or end == -1:
+            while end > pos:
                 try:
                     c = plan[index]
                 except IndexError:
