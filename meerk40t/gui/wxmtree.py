@@ -393,18 +393,9 @@ class ShadowTree:
         # Expand Ops and Element nodes only
         # We check these two exist but will open any additional siblings just in case
         self.wxtree.CollapseAll()
-        item = self.wxtree.GetFirstVisibleItem()
-        if not item.IsOk():
-            raise ValueError("Bad Item")
-        self.wxtree.Expand(item)
-        item = self.wxtree.GetNextSibling(item)
-        if not item.IsOk():
-            raise ValueError("Bad Item")
-        self.wxtree.Expand(item)
-        item = self.wxtree.GetNextSibling(item)
-        while item.IsOk():
-            self.wxtree.Expand(item)
-            item = self.wxtree.GetNextSibling(item)
+        self.wxtree.Expand(node_operations.item)
+        self.wxtree.Expand(node_elements.item)
+
 
     def register_children(self, node):
         for child in node.children:
