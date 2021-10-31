@@ -178,6 +178,8 @@ class SpoolerPanel(wx.Panel):
             return
 
         spooler = self.connected_spooler
+        if spooler is None:
+            return
         if len(spooler.queue) > 0:
             # This should actually process and update the queue items.
             for i, e in enumerate(spooler.queue):
