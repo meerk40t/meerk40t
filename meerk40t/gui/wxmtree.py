@@ -528,8 +528,8 @@ class ShadowTree:
         if node.label is None or force:
             node.label = node.create_label()
             self.set_icon(node)
-        if not hasattr(node, "item"):
-            # Unregistered node updating name.
+        if node.item is None:
+            # This node is not registered the tree has desynced.
             self.rebuild_tree()
             return
 

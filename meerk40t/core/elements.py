@@ -168,6 +168,7 @@ class Node:
         self._bounds_dirty = True
         self.label = None
 
+        self.item = None
         self.icon = None
         self.cache = None
         self.last_transform = None
