@@ -1084,22 +1084,26 @@ class MeerK40t(MWindow):
                     _resource_path = os.path.join(os.environ["RESOURCEPATH"], "help/meerk40t.help")
                 except Exception:
                     pass
-            if not os.path.exists(_resource_path):
-                message = _("Could not locate offline help at %s. View online help?") % _resource_path
-                answer = wx.MessageBox(
-                    message, _("Help not found..."), wx.YES_NO | wx.CANCEL, None
-                )
-                if answer == wx.YES:
-                    self.context("webhelp help\n")
-            else:
+            if os.path.exists(_resource_path):
                 os.system("open %s" % _resource_path)
+            else:
+                dlg = wx.MessageDialog(
+                    None,
+                    _('Offline help file ("%s") was not found.') % _resource_path,
+                    _("File Not Found"),
+                    wx.OK | wx.ICON_WARNING,
+                )
+                dlg.ShowModal()
+                dlg.Destroy()
 
         if platform == "darwin":
             self.help_menu.Append(
                 wx.ID_HELP, _("&MeerK40t Help"), ""
             )
             self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
-
+            ONLINE_HELP = wx.NewId()
+            self.help_menu.Append(ONLINE_HELP, _("&Online Help"), "")
+            self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=ONLINE_HELP)
         else:
             self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
             self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
