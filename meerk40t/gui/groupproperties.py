@@ -87,9 +87,10 @@ class GroupProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(372, 141, *args, **kwds)
 
-        self.panel = GroupPropertiesPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.panel = GroupPropertiesPanel(
+            self, wx.ID_ANY, context=self.context, node=node
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Group Properties"))
-

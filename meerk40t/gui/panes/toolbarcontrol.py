@@ -80,6 +80,7 @@ def register_control_tools(context, gui):
             else:
                 on_camera_click(event)
             toolbar.SetToolSticky(event.GetId(), False)
+
         toolbar.SetToolDropDown(ID_CAMERA, True)
         toolbar.Bind(
             EVT_AUITOOLBAR_TOOL_DROPDOWN,

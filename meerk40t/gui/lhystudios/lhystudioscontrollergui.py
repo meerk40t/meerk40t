@@ -312,7 +312,6 @@ class LhystudiosControllerPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-
     def initialize(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
@@ -621,23 +620,19 @@ class LhystudiosControllerPanel(wx.Panel):
     def on_usb_failing(self, origin, count):
         self.retries = count
 
-    def spin_on_device_index(self, event=None): 
+    def spin_on_device_index(self, event=None):
         self.context.usb_index = int(self.spin_device_index.GetValue())
 
-    def spin_on_device_address(
-        self, event=None
-    ): 
+    def spin_on_device_address(self, event=None):
         self.context.usb_address = int(self.spin_device_address.GetValue())
 
-    def spin_on_device_bus(self, event=None): 
+    def spin_on_device_bus(self, event=None):
         self.context.usb_bus = int(self.spin_device_bus.GetValue())
 
-    def spin_on_device_version(
-        self, event=None
-    ): 
+    def spin_on_device_version(self, event=None):
         self.context.usb_version = int(self.spin_device_version.GetValue())
 
-    def on_check_mock_usb(self, event=None): 
+    def on_check_mock_usb(self, event=None):
         self.context.mock = self.checkbox_mock_usb.GetValue()
 
     def on_button_start_controller(
@@ -666,6 +661,7 @@ class LhystudiosControllerGui(MWindow):
         # MENU BAR
         # ==========
         from sys import platform as _platform
+
         if _platform != "darwin":
             self.LhystudiosController_menubar = wx.MenuBar()
             self.create_menu(self.LhystudiosController_menubar.Append)

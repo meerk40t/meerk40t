@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import icons8_plus_50, icons8_trash_50, icons8_manager_50
+from meerk40t.gui.icons import icons8_manager_50, icons8_plus_50, icons8_trash_50
 from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation

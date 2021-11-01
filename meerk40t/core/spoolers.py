@@ -588,5 +588,3 @@ class Spoolers(Modifier):
                     yield COMMAND_WAIT_FINISH
 
             spooler.job(jog_transition_test)
-
-

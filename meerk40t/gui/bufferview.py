@@ -69,6 +69,7 @@ class BufferView(MWindow):
         # MENU BAR
         # ==========
         from sys import platform as _platform
+
         if _platform != "darwin":
             self.BufferView_menubar = wx.MenuBar()
             self.create_menu(self.BufferView_menubar.Append)

@@ -191,7 +191,9 @@ class ImageProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(276, 218, *args, **kwds)
 
-        self.panel = ImagePropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.panel = ImagePropertyPanel(
+            self, wx.ID_ANY, context=self.context, node=node
+        )
         # begin wxGlade: ImageProperty.__set_properties
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_image_50.GetBitmap())

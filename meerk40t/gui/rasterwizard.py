@@ -1947,7 +1947,9 @@ class RasterWizard(MWindow):
     def __init__(self, *args, script=None, **kwds):
         super().__init__(605, 636, *args, **kwds)
 
-        self.panel = RasterWizardPanel(self, wx.ID_ANY, context=self.context, script=script)
+        self.panel = RasterWizardPanel(
+            self, wx.ID_ANY, context=self.context, script=script
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_fantasy_50.GetBitmap())
         self.SetIcon(_icon)

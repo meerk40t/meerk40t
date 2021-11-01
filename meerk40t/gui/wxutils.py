@@ -24,9 +24,9 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
             return default
 
     def execute(choice):
-        func = choice['action']
-        func_kwargs = choice['kwargs']
-        func_args = choice['kwargs']
+        func = choice["action"]
+        func_kwargs = choice["kwargs"]
+        func_args = choice["kwargs"]
 
         def specific(event=None):
             func(*func_args, **func_kwargs)
@@ -34,8 +34,8 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
         return specific
 
     def set_bool(choice, value):
-        obj = choice['object']
-        param = choice['attr']
+        obj = choice["object"]
+        param = choice["attr"]
 
         def check(event=None):
             setattr(obj, param, value)
@@ -49,7 +49,7 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
         if submenu_name in submenus:
             submenu = submenus[submenu_name]
         else:
-            if get('separate_before', default=False):
+            if get("separate_before", default=False):
                 menu.AppendSeparator()
             if submenu_name is not None:
                 submenu = wx.Menu()
@@ -57,11 +57,13 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
                 submenus[submenu_name] = submenu
 
         menu_context = submenu if submenu is not None else menu
-        t = get('type')
+        t = get("type")
         if t == bool:
-            item = menu_context.Append(wx.ID_ANY, get("label"), get("tip"), wx.ITEM_CHECK)
-            obj = get('object')
-            param = get('attr')
+            item = menu_context.Append(
+                wx.ID_ANY, get("label"), get("tip"), wx.ITEM_CHECK
+            )
+            obj = get("object")
+            param = get("attr")
             check = bool(getattr(obj, param, False))
             item.Check(check)
             gui.Bind(
@@ -70,7 +72,9 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
                 item,
             )
         elif t == "action":
-            item = menu_context.Append(wx.ID_ANY, get("label"), get("tip"), wx.ITEM_NORMAL)
+            item = menu_context.Append(
+                wx.ID_ANY, get("label"), get("tip"), wx.ITEM_NORMAL
+            )
             gui.Bind(
                 wx.EVT_MENU,
                 execute(choice),
@@ -115,7 +119,8 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
         menu_context = submenu if submenu is not None else menu
         if func.reference is not None:
             menu_context.AppendSubMenu(
-                create_menu_for_node(gui, func.reference(node), elements), func.real_name
+                create_menu_for_node(gui, func.reference(node), elements),
+                func.real_name,
             )
             continue
         if func.radio_state is not None:

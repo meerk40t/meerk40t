@@ -950,7 +950,9 @@ class MeerK40t(MWindow):
         # ==========
         self.help_menu = wx.Menu()
         if platform == "darwin":
-            self.help_menu.Append(wx.ID_HELP, _("&MeerK40t Help"), "")  # os.system("open MeerK40tMac.help")
+            self.help_menu.Append(
+                wx.ID_HELP, _("&MeerK40t Help"), ""
+            )  # os.system("open MeerK40tMac.help")
         else:
             self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
         self.help_menu.Append(ID_BEGINNERS, _("&Beginners' Help"), "")
@@ -1664,7 +1666,9 @@ class MeerK40t(MWindow):
         if bbox is None:
             self.context("scene focus -10% -10% 110% 110%\n")
         else:
-            self.context("scene focus %f %f %f %f\n" % (bbox[0], bbox[1], bbox[2], bbox[3]))
+            self.context(
+                "scene focus %f %f %f %f\n" % (bbox[0], bbox[1], bbox[2], bbox[3])
+            )
 
     def toggle_draw_mode(self, bits):
         """

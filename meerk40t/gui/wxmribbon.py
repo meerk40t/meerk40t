@@ -1,28 +1,28 @@
 import copy
 
 import wx
-from wx import aui, ID_OPEN, ID_SAVE
 import wx.ribbon as RB
+from wx import ID_OPEN, ID_SAVE, aui
 
 from .icons import (
+    icons8_administrative_tools_50,
+    icons8_camera_50,
+    icons8_comments_50,
+    icons8_computer_support_50,
     icons8_connected_50,
-    icons8_opened_folder_50,
-    icons8_save_50,
+    icons8_console_50,
+    icons8_emergency_stop_button_50,
+    icons8_fantasy_50,
+    icons8_keyboard_50,
     icons8_laser_beam_52,
     icons8_laser_beam_hazard2_50,
-    icons8_fantasy_50,
-    icons8_comments_50,
-    icons8_console_50,
-    icons8_move_50,
-    icons8_camera_50,
-    icons8_roll_50,
-    icons8_keyboard_50,
-    icons8_administrative_tools_50,
-    icons8_computer_support_50,
     icons8_manager_50,
-    icons8_emergency_stop_button_50,
+    icons8_move_50,
+    icons8_opened_folder_50,
     icons8_pause_50,
+    icons8_roll_50,
     icons8_route_50,
+    icons8_save_50,
 )
 from .mwindow import MWindow
 
@@ -49,7 +49,6 @@ ID_KEYMAP = wx.NewId()
 ID_ROTARY = wx.NewId()
 
 from ..kernel import STATE_BUSY
-
 
 _ = wx.GetTranslation
 
@@ -299,14 +298,17 @@ class RibbonPanel(wx.Panel):
             lambda v: self.context("window toggle -d Configuration\n"),
             id=ID_CONFIGURATION,
         )
-        
+
         from sys import platform
-        
+
         if platform != "darwin":
             button_bar.AddButton(
-            ID_SETTING, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), ""
+                ID_SETTING,
+                _("Preferences"),
+                icons8_administrative_tools_50.GetBitmap(),
+                "",
             )
-        
+
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window toggle Preferences\n"),
