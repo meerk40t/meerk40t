@@ -16,20 +16,15 @@ class MWindow(wx.Frame, Module):
     close events.
     """
 
-    def __init__(self, width, height, context, path, parent, *args, **kwds):
-        # begin wxGlade: Notes.__init__
-        if parent is None:
-            wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
-        else:
-            wx.Frame.__init__(
-                self,
-                parent,
-                -1,
-                "",
-                style=wx.DEFAULT_FRAME_STYLE
-                | wx.FRAME_FLOAT_ON_PARENT
-                | wx.TAB_TRAVERSAL,
-            )
+    def __init__(self, width, height, context, path, parent, *args, style=-1, **kwds):
+        if style == -1:
+            if parent is None:
+                style = wx.DEFAULT_FRAME_STYLE
+            else:
+                style = (
+                    wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
+                )
+        wx.Frame.__init__(self, parent, style=style)
         Module.__init__(self, context, path)
 
         self.root_context = context.root
