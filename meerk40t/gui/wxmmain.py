@@ -593,6 +593,132 @@ class MeerK40t(MWindow):
             self._mgr.LoadPerspective(self.context.perspective)
         self.on_config_panes()
 
+        context = self.context
+
+        @context.console_command(
+            "pane",
+            help=_("control various panes for main window"),
+            output_type="panes",
+        )
+        def pane(**kwargs):
+            return "panes", self
+
+        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_command(
+            "show",
+            input_type="panes",
+            help=_("show the pane"),
+        )
+        def show_pane(command, _, channel, pane=None, **kwargs):
+            if pane is None:
+                raise SyntaxError
+            try:
+                _pane = context.registered["pane/%s" % pane]
+            except KeyError:
+                channel(_("Pane not found."))
+                return
+            _pane.Show()
+            self._mgr.Update()
+
+        @context.console_argument("pane", help=_("pane to be hidden"))
+        @context.console_command(
+            "hide",
+            input_type="panes",
+            help=_("show the pane"),
+        )
+        def hide_pane(command, _, channel, pane=None, **kwargs):
+            if pane is None:
+                raise SyntaxError
+            try:
+                _pane = context.registered["pane/%s" % pane]
+            except KeyError:
+                channel(_("Pane not found."))
+                return
+            _pane.Hide()
+            self._mgr.Update()
+
+        @context.console_option("always", "a", type=bool, action="store_true")
+        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_command(
+            "float",
+            input_type="panes",
+            help=_("show the pane"),
+        )
+        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
+            if pane is None:
+                raise SyntaxError
+            try:
+                _pane = context.registered["pane/%s" % pane]
+            except KeyError:
+                channel(_("Pane not found."))
+                return
+            _pane.Float()
+            _pane.Show()
+            _pane.Dockable(not always)
+            print(_pane.IsDockable())
+            self._mgr.Update()
+
+        @context.console_command(
+            "reset",
+            input_type="panes",
+            help=_("reset all panes restoring the default perspective"),
+        )
+        def reset_pane(command, _, channel, **kwargs):
+            self.on_pane_reset(None)
+
+        @context.console_command(
+            "lock",
+            input_type="panes",
+            help=_("lock the panes"),
+        )
+        def lock_pane(command, _, channel, **kwargs):
+            self.on_pane_lock(None, lock=True)
+
+        @context.console_command(
+            "unlock",
+            input_type="panes",
+            help=_("unlock the panes"),
+        )
+        def lock_pane(command, _, channel, **kwargs):
+            self.on_pane_lock(None, lock=False)
+
+        @context.console_argument("pane", help=_("pane to create"))
+        @context.console_command(
+            "create",
+            input_type="panes",
+            help=_("create a floating about pane"),
+        )
+        def create_pane(command, _, channel, pane=None, **kwargs):
+            if pane == "about":
+                from .about import AboutPanel as CreatePanel
+                caption = _("About")
+                width = 646
+                height = 519
+            elif pane == "preferences":
+                from .preferences import PreferencesPanel as CreatePanel
+                caption = _("Preferences")
+                width = 565
+                height = 327
+            else:
+                channel(_("Pane not found."))
+                return
+            panel = CreatePanel(self, context=context)
+            _pane = (
+                aui.AuiPaneInfo()
+                    .Dockable(False)
+                    .Float()
+                    .Caption(caption)
+                    .FloatingSize(width, height)
+                    .Name(pane)
+                    .CaptionVisible(True)
+            )
+            _pane.control = panel
+            self.on_pane_add(_pane)
+            if hasattr(panel,"initialize"):
+                panel.initialize()
+            self.context.register("pane/about", _pane)
+            self._mgr.Update()
+
     def on_pane_reset(self, event=None):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
@@ -685,11 +811,6 @@ class MeerK40t(MWindow):
     def __kernel_initialize(self):
         context = self.context
         context.setting(int, "draw_mode", 0)
-        context.setting(float, "units_convert", MILS_IN_MM)
-        context.setting(str, "units_name", "mm")
-        context.setting(int, "units_marks", 10)
-        context.setting(int, "units_index", 0)
-        context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "print_shutdown", False)
 
         context.listen("export-image", self.on_export_signal)
