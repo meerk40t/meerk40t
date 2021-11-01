@@ -130,7 +130,16 @@ class AboutPanel(wx.Panel):
 
 class About(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(480, 360, *args, **kwds)
+        super().__init__(
+            480,
+            360,
+            *args,
+            style=wx.CAPTION
+            | wx.CLOSE_BOX
+            | wx.FRAME_FLOAT_ON_PARENT
+            | wx.TAB_TRAVERSAL,
+            **kwds
+        )
         self.panel = AboutPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
