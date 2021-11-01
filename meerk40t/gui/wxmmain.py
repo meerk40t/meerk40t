@@ -1,4 +1,5 @@
 import os
+import sys
 
 import wx
 from wx import aui
@@ -1292,7 +1293,21 @@ class MeerK40t(MWindow):
             self.on_pane_lock,
             id=ID_MENU_PANE_LOCK,
         )
-        self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
+
+        def launch_help(event=None):
+            try:  # pyinstaller internal location
+                _resource_path = os.path.join(sys._MEIPASS, "help/meerk40t.help")
+                os.system("open %s" % _resource_path)
+            except Exception:
+                pass
+
+            try:  # Mac py2app resource
+                _resource_path = os.path.join(os.environ["RESOURCEPATH"], "help/meerk40t.help")
+                os.system("open %s" % _resource_path)
+            except Exception:
+                pass
+            self.context("webhelp help\n")
+        self.Bind(wx.EVT_MENU, launch_help, id=wx.ID_HELP)
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp beginners\n"),
