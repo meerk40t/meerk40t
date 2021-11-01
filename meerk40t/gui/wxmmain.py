@@ -596,19 +596,36 @@ class MeerK40t(MWindow):
     def on_pane_reset(self, event=None):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
-                if hasattr(pane.window, "finalize"):
-                    pane.window.finalize()
+                window = pane.window
+                if hasattr(window, "finalize"):
+                    window.finalize()
+                if isinstance(window, wx.aui.AuiNotebook):
+                    for i in range(window.GetPageCount()):
+                        page = window.GetPage(i)
+                        if hasattr(page, "finalize"):
+                            page.finalize()
         self._mgr.LoadPerspective(self.default_perspective, update=True)
         self.on_config_panes()
 
     def on_config_panes(self):
         for pane in self._mgr.GetAllPanes():
+            window = pane.window
             if pane.IsShown():
-                if hasattr(pane.window, "initialize"):
-                    pane.window.initialize()
+                if hasattr(window, "initialize"):
+                    window.initialize()
+                if isinstance(window, wx.aui.AuiNotebook):
+                    for i in range(window.GetPageCount()):
+                        page = window.GetPage(i)
+                        if hasattr(page, "initialize"):
+                            page.initialize()
             else:
-                if hasattr(pane.window, "noninitialize"):
-                    pane.window.noninitialize()
+                if hasattr(window, "noninitialize"):
+                    window.noninitialize()
+                if isinstance(window, wx.aui.AuiNotebook):
+                    for i in range(window.GetPageCount()):
+                        page = window.GetPage(i)
+                        if hasattr(page, "noninitialize"):
+                            page.noninitialize()
         self.on_pane_lock(lock=self.context.pane_lock)
         wx.CallAfter(self.on_pane_changed, None)
 
