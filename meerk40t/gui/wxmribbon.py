@@ -4,6 +4,7 @@ import wx
 import wx.ribbon as RB
 from wx import ID_OPEN, ID_SAVE, aui
 
+from ..kernel import STATE_BUSY
 from .icons import (
     icons8_administrative_tools_50,
     icons8_camera_50,
@@ -26,6 +27,8 @@ from .icons import (
 )
 from .mwindow import MWindow
 
+_ = wx.GetTranslation
+
 ID_JOB = wx.NewId()
 ID_SIM = wx.NewId()
 ID_RASTER = wx.NewId()
@@ -47,10 +50,6 @@ ID_CONFIGURATION = wx.NewId()
 ID_SETTING = wx.NewId()
 ID_KEYMAP = wx.NewId()
 ID_ROTARY = wx.NewId()
-
-from ..kernel import STATE_BUSY
-
-_ = wx.GetTranslation
 
 
 def register_panel(window, context):
