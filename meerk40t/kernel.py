@@ -1175,6 +1175,23 @@ class Kernel:
         input_type: Union[str, Tuple[str, ...]] = None,
         output_type: str = None,
     ):
+        """
+        Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
+        within the console are registered with this decorator. It various attributes that define how the decorator
+        should be treated. Commands work with named contexts in a pipelined architecture. So "element" commands output
+        must be followed by "element" command inputs. The input_type and output_type do not have to match and can be
+        a tuple of different types. None refers to the base context.
+
+        The long_help is the docstring of the actual function itself.
+
+        @param path: command name of the command being registered
+        @param regex: Should this command name match regex command values.
+        @param hidden: Whether this command shows up in `help` or not.
+        @param help: What should the help for this command be.
+        @param input_type: What is the incoming context for the command
+        @param output_type: What is the outgoing context for the command
+        @return:
+        """
         def decorator(func: Callable):
             @functools.wraps(func)
             def inner(command: str, remainder: str, channel: "Channel", **ik):
@@ -1270,16 +1287,19 @@ class Kernel:
                     out_type, value = returned
                 return value, remainder, out_type
 
+            if hasattr(inner, "arguments"):
+                raise MalformedCommandRegistration("Applying console_command() to console_command()")
+
             # Main Decorator
             cmds = path if isinstance(path, tuple) else (path,)
             ins = input_type if isinstance(input_type, tuple) else (input_type,)
-
             inner.long_help = func.__doc__
             inner.help = help
             inner.regex = regex
             inner.hidden = hidden
             inner.input_type = input_type
             inner.output_type = output_type
+
             inner.arguments = list()
             inner.options = list()
 
@@ -2589,6 +2609,11 @@ class Kernel:
 
 
 class CommandMatchRejected(BaseException):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+class MalformedCommandRegistration(BaseException):
     def __init__(self, *args):
         super().__init__(*args)
 
