@@ -1071,12 +1071,39 @@ class MeerK40t(MWindow):
         # HELP MENU
         # ==========
         self.help_menu = wx.Menu()
+
+        def launch_help_osx(event=None):
+            _resource_path = "help/meerk40t.help"
+            if not os.path.exists(_resource_path):
+                try:  # pyinstaller internal location
+                    _resource_path = os.path.join(sys._MEIPASS, "help/meerk40t.help")
+                except Exception:
+                    pass
+            if not os.path.exists(_resource_path):
+                try:  # Mac py2app resource
+                    _resource_path = os.path.join(os.environ["RESOURCEPATH"], "help/meerk40t.help")
+                except Exception:
+                    pass
+            if not os.path.exists(_resource_path):
+                message = _("Could not locate offline help at %s. View online help?") % _resource_path
+                answer = wx.MessageBox(
+                    message, _("Help not found..."), wx.YES_NO | wx.CANCEL, None
+                )
+                if answer == wx.YES:
+                    self.context("webhelp help\n")
+            else:
+                os.system("open %s" % _resource_path)
+
         if platform == "darwin":
             self.help_menu.Append(
                 wx.ID_HELP, _("&MeerK40t Help"), ""
-            )  # os.system("open MeerK40tMac.help")
+            )
+            self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
+
         else:
             self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
+            self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
+
         self.help_menu.Append(ID_BEGINNERS, _("&Beginners' Help"), "")
         self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
         self.help_menu.Append(ID_RELEASES, _("&Releases"), "")
@@ -1294,30 +1321,6 @@ class MeerK40t(MWindow):
             id=ID_MENU_PANE_LOCK,
         )
 
-        def launch_help(event=None):
-            _resource_path = "help/meerk40t.help"
-            if not os.path.exists(_resource_path):
-                try:  # pyinstaller internal location
-                    _resource_path = os.path.join(sys._MEIPASS, "help/meerk40t.help")
-                except Exception:
-                    pass
-            if not os.path.exists(_resource_path):
-                try:  # Mac py2app resource
-                    _resource_path = os.path.join(os.environ["RESOURCEPATH"], "help/meerk40t.help")
-                except Exception:
-                    pass
-            if not os.path.exists(_resource_path):
-                message = _("Could not locate offline help at %s. Open online help?") % _resource_path
-                answer = wx.MessageBox(
-                    message, _("Help not found..."), wx.YES_NO | wx.CANCEL, None
-                )
-                if answer == wx.YES:
-                    self.context("webhelp help\n")
-            else:
-                os.system("open %s" % _resource_path)
-
-        #
-        self.Bind(wx.EVT_MENU, launch_help, id=wx.ID_HELP)
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp beginners\n"),
