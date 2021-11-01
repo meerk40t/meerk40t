@@ -47,7 +47,7 @@ ID_PAUSE = wx.NewId()
 ID_STOP = wx.NewId()
 ID_DEVICES = wx.NewId()
 ID_CONFIGURATION = wx.NewId()
-ID_SETTING = wx.NewId()
+ID_PREFERENCES = wx.NewId()
 ID_KEYMAP = wx.NewId()
 ID_ROTARY = wx.NewId()
 
@@ -302,17 +302,17 @@ class RibbonPanel(wx.Panel):
 
         if platform != "darwin":
             button_bar.AddButton(
-                ID_SETTING,
+                ID_PREFERENCES,
                 _("Preferences"),
                 icons8_administrative_tools_50.GetBitmap(),
                 "",
             )
 
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Preferences\n"),
-            id=ID_SETTING,
-        )
+            button_bar.Bind(
+                RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                lambda v: self.context("window toggle Preferences\n"),
+                id=ID_PREFERENCES,
+            )
 
         button_bar.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
         button_bar.Bind(
