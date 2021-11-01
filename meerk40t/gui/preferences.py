@@ -320,7 +320,7 @@ class PreferencesPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def on_combo_svg_ppi(self, event=None): 
+    def on_combo_svg_ppi(self, event=None):
         context_root = self.context.root
         ppi = self.combo_svg_ppi.GetSelection()
         if ppi == 0:
@@ -337,7 +337,7 @@ class PreferencesPanel(wx.Panel):
             context_root.svg_ppi = 96.0
         self.text_svg_ppi.SetValue(str(context_root.svg_ppi))
 
-    def on_text_svg_ppi(self, event=None): 
+    def on_text_svg_ppi(self, event=None):
         context_root = self.context.root
         try:
             svg_ppi = float(self.text_svg_ppi.GetValue())
@@ -357,12 +357,12 @@ class PreferencesPanel(wx.Panel):
                 self.combo_svg_ppi.SetSelection(3)
         context_root.svg_ppi = svg_ppi
 
-    def on_combo_language(self, event=None):  
+    def on_combo_language(self, event=None):
         lang = self.combo_language.GetSelection()
         if lang != -1 and self.context.app is not None:
             self.context.app.update_language(lang)
 
-    def on_radio_units(self, event): 
+    def on_radio_units(self, event):
         if event.Int == 0:
             self.set_mm()
         elif event.Int == 1:
@@ -416,21 +416,21 @@ class PreferencesPanel(wx.Panel):
         )
         p.signal("units")
 
-    def spin_on_bedwidth(self, event=None): 
+    def spin_on_bedwidth(self, event=None):
         self.bed_dim.bed_width = int(self.spin_bedwidth.GetValue())
         self.bed_dim.bed_height = int(self.spin_bedheight.GetValue())
         self.context.signal(
             "bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height)
         )
 
-    def spin_on_bedheight(self, event=None): 
+    def spin_on_bedheight(self, event=None):
         self.bed_dim.bed_width = int(self.spin_bedwidth.GetValue())
         self.bed_dim.bed_height = int(self.spin_bedheight.GetValue())
         self.context.signal(
             "bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height)
         )
 
-    def on_text_x_scale(self, event=None): 
+    def on_text_x_scale(self, event=None):
         try:
             self.bed_dim.scale_x = float(self.text_scale_x.GetValue())
             self.bed_dim.scale_y = float(self.text_scale_y.GetValue())
@@ -440,7 +440,7 @@ class PreferencesPanel(wx.Panel):
         except ValueError:
             pass
 
-    def on_text_y_scale(self, event=None): 
+    def on_text_y_scale(self, event=None):
         try:
             self.bed_dim.scale_x = float(self.text_scale_x.GetValue())
             self.bed_dim.scale_y = float(self.text_scale_y.GetValue())

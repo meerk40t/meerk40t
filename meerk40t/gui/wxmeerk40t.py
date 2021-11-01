@@ -38,9 +38,9 @@ from .panes.devicespanel import DeviceManager
 from .panes.navigationpanels import Navigation
 from .panes.spoolerpanel import JobSpooler
 from .pathproperty import PathProperty
+from .preferences import Preferences
 from .rasterwizard import RasterWizard
 from .rotarysettings import RotarySettings
-from .preferences import Preferences
 from .simulation import Simulation
 from .tcp.tcpcontroller import TCPController
 from .textproperty import TextProperty
@@ -85,6 +85,7 @@ def plugin(kernel, lifecycle):
         renderer = LaserRender(kernel_root)
         kernel_root.register("render-op/make_raster", renderer.make_raster)
     elif lifecycle == "mainloop":
+
         def interrupt_popup():
             dlg = wx.MessageDialog(
                 None,
@@ -98,7 +99,11 @@ def plugin(kernel, lifecycle):
         kernel_root.register("function/interrupt", interrupt_popup)
 
         def interrupt():
-            from ..device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_FUNCTION
+            from ..device.lasercommandconstants import (
+                COMMAND_FUNCTION,
+                COMMAND_WAIT_FINISH,
+            )
+
             yield COMMAND_WAIT_FINISH
             yield COMMAND_FUNCTION, kernel_root.registered["function/interrupt"]
 
@@ -108,6 +113,7 @@ def plugin(kernel, lifecycle):
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
+
 
 _ = wx.GetTranslation
 supported_languages = (
@@ -660,6 +666,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
                 print(file)
         except PermissionError:
             from meerk40t.kernel import get_safe_path
+
             path = get_safe_path(APPLICATION_NAME)
             with open(path.joinpath(filename), "w") as file:
                 file.write(error_log)
@@ -685,4 +692,3 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     )
     if answer == wx.YES:
         send_data_to_developers(filename, error_log)
-

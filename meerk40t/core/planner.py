@@ -1120,9 +1120,11 @@ class Planner(Modifier):
             input_type="plan",
             output_type="plan",
         )
-        def plan_sublist(command, channel, _, start=None, end=None, data_type=None, data=None, **kwgs):
+        def plan_sublist(
+            command, channel, _, start=None, end=None, data_type=None, data=None, **kwgs
+        ):
             if end == -1:
-                end = float('inf')
+                end = float("inf")
             pos = 0
             index = 0
             size = 0
@@ -1147,7 +1149,7 @@ class Planner(Modifier):
                 size = 0
             if (pos + size) > start:
                 # We overshot the start
-                c = CutCode(c[start-pos:])
+                c = CutCode(c[start - pos :])
                 pos = start
                 data.plan.append(c)
             while end > pos:
@@ -1163,7 +1165,7 @@ class Planner(Modifier):
                     size = 0
                 pos += size
                 if pos > end:
-                    c = CutCode(c[:end - pos])
+                    c = CutCode(c[: end - pos])
                 data.plan.append(c)
 
             self.context.signal("plan", data.name, None)
@@ -1536,7 +1538,11 @@ def short_travel_cutcode(context: CutCode, channel=None):
                             backwards = True
                             if d <= 0.1:  # Distance in px is zero, we cannot improve.
                                 # Need to swap to next segment forward if it is coincident and permitted
-                                if cut.next and cut.next.permitted and cut.next.start == cut.end:
+                                if (
+                                    cut.next
+                                    and cut.next.permitted
+                                    and cut.next.start == cut.end
+                                ):
                                     closest = cut.next
                                     backwards = False
                                 break

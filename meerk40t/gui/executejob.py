@@ -2,11 +2,11 @@ import math
 
 import wx
 
-from .propertiespanel import PropertiesPanel
 from ..core.elements import LaserOperation
 from ..svgelements import Length
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow
+from .propertiespanel import PropertiesPanel
 
 _ = wx.GetTranslation
 
@@ -435,7 +435,9 @@ class ExecuteJob(MWindow):
             plan_name = args[3]
         else:
             plan_name = 0
-        self.panel = PlannerPanel(self, wx.ID_ANY, context=self.context, plan_name=plan_name)
+        self.panel = PlannerPanel(
+            self, wx.ID_ANY, context=self.context, plan_name=plan_name
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
@@ -445,6 +447,7 @@ class ExecuteJob(MWindow):
         # MENU BAR
         # ==========
         from sys import platform as _platform
+
         if _platform != "darwin":
             self.preview_menu = wx.MenuBar()
             self.create_menu(self.preview_menu.Append)
@@ -455,7 +458,10 @@ class ExecuteJob(MWindow):
 
     def create_menu(self, append):
         from .wxutils import create_menu_for_choices
-        wx_menu = create_menu_for_choices(self, self.context.registered["choices/planner"])
+
+        wx_menu = create_menu_for_choices(
+            self, self.context.registered["choices/planner"]
+        )
         append(wx_menu, _("Automatic"))
 
         # ==========
@@ -465,35 +471,30 @@ class ExecuteJob(MWindow):
         append(wx_menu, _("Add"))
 
         self.Bind(
-            wx.EVT_MENU, self.panel.jobadd_home, wx_menu.Append(
-            wx.ID_ANY, _("Home"), _("Add a home")
-        )
+            wx.EVT_MENU,
+            self.panel.jobadd_home,
+            wx_menu.Append(wx.ID_ANY, _("Home"), _("Add a home")),
         )
         self.Bind(
             wx.EVT_MENU,
             self.panel.jobadd_physicalhome,
-            wx_menu.Append(
-                wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")
-            )
+            wx_menu.Append(wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")),
         )
         self.Bind(
-            wx.EVT_MENU, self.panel.jobadd_wait, wx_menu.Append(
-            wx.ID_ANY, _("Wait"), _("Add a wait")
-        )
+            wx.EVT_MENU,
+            self.panel.jobadd_wait,
+            wx_menu.Append(wx.ID_ANY, _("Wait"), _("Add a wait")),
         )
         self.Bind(
-            wx.EVT_MENU, self.panel.jobadd_beep, wx_menu.Append(
-            wx.ID_ANY, _("Beep"), _("Add a beep")
-        )
+            wx.EVT_MENU,
+            self.panel.jobadd_beep,
+            wx_menu.Append(wx.ID_ANY, _("Beep"), _("Add a beep")),
         )
         self.Bind(
             wx.EVT_MENU,
             self.panel.jobadd_interrupt,
-            wx_menu.Append(
-                wx.ID_ANY, _("Interrupt"), _("Add an interrupt")
-            )
+            wx_menu.Append(wx.ID_ANY, _("Interrupt"), _("Add an interrupt")),
         )
-
 
         # ==========
         # Tools Menu
@@ -510,15 +511,13 @@ class ExecuteJob(MWindow):
                     wx.ID_ANY,
                     _("Return to Operations"),
                     _("Return the current Plan to Operations"),
-                )
+                ),
             )
 
         self.Bind(
             wx.EVT_MENU,
             self.panel.jobchange_step_repeat,
-            wx_menu.Append(
-                wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")
-            )
+            wx_menu.Append(wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")),
         )
 
     def window_open(self):

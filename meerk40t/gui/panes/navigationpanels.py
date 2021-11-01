@@ -6,40 +6,37 @@ from meerk40t.gui.icons import (
     icon_corner2,
     icon_corner3,
     icon_corner4,
+    icons8_center_of_gravity_50,
+    icons8_compress_50,
+    icons8_delete_50,
     icons8_down,
+    icons8_down_50,
+    icons8_down_left_50,
+    icons8_down_right_50,
+    icons8_enlarge_50,
+    icons8_home_filled_50,
+    icons8_laser_beam_52,
     icons8_left,
+    icons8_left_50,
     icons8_level_1_50,
+    icons8_lock_50,
+    icons8_move_50,
+    icons8_padlock_50,
     icons8_pentagon_50,
     icons8_pentagon_square_50,
     icons8_right,
-    icons8_square_border_50,
-    icons8up, icons8_move_50,
-)
-from meerk40t.gui.icons import icons8_laser_beam_52
-
-from meerk40t.gui.icons import (
-    icons8_down_left_50,
-    icons8_down_right_50,
-    icons8_home_filled_50,
-    icons8_lock_50,
-    icons8_padlock_50,
-    icons8_up_left_50,
-    icons8_up_right_50,
-)
-from meerk40t.gui.icons import icons8_center_of_gravity_50
-from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Length
-from meerk40t.gui.icons import (
-    icons8_compress_50,
-    icons8_delete_50,
-    icons8_down_50,
-    icons8_enlarge_50,
-    icons8_left_50,
     icons8_right_50,
     icons8_rotate_left_50,
     icons8_rotate_right_50,
+    icons8_square_border_50,
     icons8_up_50,
+    icons8_up_left_50,
+    icons8_up_right_50,
+    icons8up,
 )
+from meerk40t.gui.mwindow import MWindow
+from meerk40t.svgelements import Length
+
 _ = wx.GetTranslation
 
 
@@ -1064,8 +1061,12 @@ class JogDistancePanel(wx.Panel):
             main_sizer.Add(row_2, 0, wx.EXPAND, 0)
         else:
             row_2 = row_1
-        cm_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("cm")), wx.VERTICAL)
-        mm_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("mm")), wx.VERTICAL)
+        cm_sizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("cm")), wx.VERTICAL
+        )
+        mm_sizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("mm")), wx.VERTICAL
+        )
         in_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("inches")), wx.VERTICAL
         )
@@ -1151,7 +1152,14 @@ class NavigationPanel(wx.Panel):
         main_sizer.Add(pulse_and_move_sizer, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
-        self.panels = [jogdistancepanel, navigationpanel,alignpanel, transformpanel, short_pulse, move_panel]
+        self.panels = [
+            jogdistancepanel,
+            navigationpanel,
+            alignpanel,
+            transformpanel,
+            short_pulse,
+            move_panel,
+        ]
         # end wxGlade
 
     def initialize(self):

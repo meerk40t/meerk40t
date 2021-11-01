@@ -1,13 +1,21 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import icons8_console_50, icon_meerk40t
+from meerk40t.gui.icons import icon_meerk40t, icons8_console_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scene import ScenePanel
-from meerk40t.gui.scene.scenewidgets import SelectionWidget, RectSelectWidget, LaserPathWidget, ElementsWidget, \
-    GridWidget, GuideWidget, ReticleWidget, MILS_IN_MM
-from meerk40t.gui.scene.toolwidgets import ToolContainer, DrawTool, RectTool
+from meerk40t.gui.scene.scenewidgets import (
+    MILS_IN_MM,
+    ElementsWidget,
+    GridWidget,
+    GuideWidget,
+    LaserPathWidget,
+    RectSelectWidget,
+    ReticleWidget,
+    SelectionWidget,
+)
+from meerk40t.gui.scene.toolwidgets import DrawTool, RectTool, ToolContainer
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.svgelements import Angle, Length
 
@@ -116,8 +124,12 @@ class MeerK40tScenePanel(wx.Panel):
             channel("scene: %s" % str(self.widget_scene))
             return "scene", self.widget_scene
 
-        @self.context.console_argument("zoom_x", type=float, help="zoom amount from current")
-        @self.context.console_argument("zoom_y", type=float, help="zoom amount from current")
+        @self.context.console_argument(
+            "zoom_x", type=float, help="zoom amount from current"
+        )
+        @self.context.console_argument(
+            "zoom_y", type=float, help="zoom amount from current"
+        )
         @self.context.console_command("aspect", input_type="scene")
         def scene(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
@@ -126,7 +138,9 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @self.context.console_argument("zoomfactor", type=float, help="zoom amount from current")
+        @self.context.console_argument(
+            "zoomfactor", type=float, help="zoom amount from current"
+        )
         @self.context.console_command("zoom", input_type="scene")
         def scene(command, _, channel, data, zoomfactor=1.0, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
@@ -135,8 +149,12 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @self.context.console_argument("pan_x", type=float, default=0, help="pan from current position x")
-        @self.context.console_argument("pan_y", type=float, default=0, help="pan from current position y")
+        @self.context.console_argument(
+            "pan_x", type=float, default=0, help="pan from current position x"
+        )
+        @self.context.console_argument(
+            "pan_y", type=float, default=0, help="pan from current position y"
+        )
         @self.context.console_command("pan", input_type="scene")
         def scene(command, _, channel, data, pan_x, pan_y, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
@@ -145,7 +163,9 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @self.context.console_argument("angle", type=Angle.parse, default=0, help="Rotate scene")
+        @self.context.console_argument(
+            "angle", type=Angle.parse, default=0, help="Rotate scene"
+        )
         @self.context.console_command("rotate", input_type="scene")
         def scene(command, _, channel, data, angle, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
@@ -169,12 +189,8 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_command("focus", input_type="scene")
         def scene(command, _, channel, data, x, y, width, height, **kwargs):
             bed_dim = self.context.root
-            x = x.value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            y = y.value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-            )
+            x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
+            y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
             width = width.value(
                 ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
             )

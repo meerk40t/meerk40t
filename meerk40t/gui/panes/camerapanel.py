@@ -1,10 +1,15 @@
 import wx
 from wx import aui
 
-from ..icons import icons8_camera_50, icons8_picture_in_picture_alternative_50, icons8_connected_50, icons8_detective_50
-from ..mwindow import MWindow
 from ...kernel import Job
 from ...svgelements import Color
+from ..icons import (
+    icons8_camera_50,
+    icons8_connected_50,
+    icons8_detective_50,
+    icons8_picture_in_picture_alternative_50,
+)
+from ..mwindow import MWindow
 from ..scene.scene import (
     HITCHAIN_HIT,
     RESPONSE_ABORT,
@@ -21,7 +26,9 @@ CORNER_SIZE = 25
 
 def register_panel(window, context):
     for index in range(5):
-        panel = CameraPanel(window, wx.ID_ANY, context=context, gui=window, index=index, pane=True)
+        panel = CameraPanel(
+            window, wx.ID_ANY, context=context, gui=window, index=index, pane=True
+        )
         pane = (
             aui.AuiPaneInfo()
             .Left()
@@ -40,7 +47,9 @@ def register_panel(window, context):
 
 
 class CameraPanel(wx.Panel, Job):
-    def __init__(self, *args, context=None, gui=None, index:int = None, pane=False, **kwds):
+    def __init__(
+        self, *args, context=None, gui=None, index: int = None, pane=False, **kwds
+    ):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         if index is None:
@@ -77,7 +86,9 @@ class CameraPanel(wx.Panel, Job):
                 self, wx.ID_ANY, icons8_connected_50.GetBitmap()
             )
             self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
-            self.check_perspective = wx.CheckBox(self, wx.ID_ANY, _("Correct Perspective"))
+            self.check_perspective = wx.CheckBox(
+                self, wx.ID_ANY, _("Correct Perspective")
+            )
             self.slider_fps = wx.Slider(
                 self,
                 wx.ID_ANY,
@@ -127,7 +138,9 @@ class CameraPanel(wx.Panel, Job):
             self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
             self.Bind(wx.EVT_BUTTON, self.on_button_reconnect, self.button_reconnect)
             self.Bind(wx.EVT_CHECKBOX, self.on_check_fisheye, self.check_fisheye)
-            self.Bind(wx.EVT_CHECKBOX, self.on_check_perspective, self.check_perspective)
+            self.Bind(
+                wx.EVT_CHECKBOX, self.on_check_perspective, self.check_perspective
+            )
             self.Bind(wx.EVT_SLIDER, self.on_slider_fps, self.slider_fps)
             self.Bind(wx.EVT_BUTTON, self.on_button_detect, self.button_detect)
         sizer_main.Add(self.display_camera, 10, wx.EXPAND, 0)
@@ -657,6 +670,7 @@ class CameraInterface(MWindow):
         # MENU BAR
         # ==========
         from sys import platform as _platform
+
         if _platform != "darwin":
             self.CameraInterface_menubar = wx.MenuBar()
             self.create_menu(self.CameraInterface_menubar.Append)
@@ -682,7 +696,9 @@ class CameraInterface(MWindow):
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context.open("window/CameraURI", self, index=self.panel.index),
+            lambda e: self.context.open(
+                "window/CameraURI", self, index=self.panel.index
+            ),
             id=item.GetId(),
         )
 

@@ -2120,7 +2120,9 @@ class LhystudiosController:
         if self.context is not None:
             try:
                 self.context.signal(
-                    "pipe;status", self._status, get_code_string_from_code(self._status[1])
+                    "pipe;status",
+                    self._status,
+                    get_code_string_from_code(self._status[1]),
                 )
             except IndexError:
                 pass

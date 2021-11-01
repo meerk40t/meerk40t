@@ -112,7 +112,9 @@ class LaserPanel(wx.Panel):
         self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
         self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25, use_theme=False))
+        self.button_pause.SetBitmap(
+            icons8_pause_50.GetBitmap(resize=25, use_theme=False)
+        )
         self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         sizer_control.Add(self.button_pause, 1, 0, 0)
 

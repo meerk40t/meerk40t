@@ -1,15 +1,32 @@
-
 import wx
 from wx import aui
 
-from .icons import icons8_smartphone_ram_50, icon_meerk40t, icons8_laser_beam_20, icons8_vector_20, \
-    icons8_scatter_plot_20, icons8_direction_20, icons8_system_task_20, icons8_file_20, icons8_group_objects_20
-from .laserrender import swizzlecolor, DRAW_MODE_ICONS, DRAW_MODE_TREE
-from .mwindow import MWindow
-from .wxutils import get_key_name, create_menu
 from ..core.cutcode import CutCode
-from ..core.elements import isDot, LaserOperation
-from ..svgelements import SVG_ATTR_STROKE, Color, SVGImage, Shape, SVGText, Group, Path, SVGElement
+from ..core.elements import LaserOperation, isDot
+from ..svgelements import (
+    SVG_ATTR_STROKE,
+    Color,
+    Group,
+    Path,
+    Shape,
+    SVGElement,
+    SVGImage,
+    SVGText,
+)
+from .icons import (
+    icon_meerk40t,
+    icons8_direction_20,
+    icons8_file_20,
+    icons8_group_objects_20,
+    icons8_laser_beam_20,
+    icons8_scatter_plot_20,
+    icons8_smartphone_ram_50,
+    icons8_system_task_20,
+    icons8_vector_20,
+)
+from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor
+from .mwindow import MWindow
+from .wxutils import create_menu, get_key_name
 
 _ = wx.GetTranslation
 
@@ -29,15 +46,15 @@ def register_panel(window, context):
 
     pane = (
         aui.AuiPaneInfo()
-            .Name("tree")
-            .Left()
-            .MinSize(200, -1)
-            .LeftDockable()
-            .RightDockable()
-            .BottomDockable(False)
-            .Caption(_("Tree"))
-            .CaptionVisible(not context.pane_lock)
-            .TopDockable(False)
+        .Name("tree")
+        .Left()
+        .MinSize(200, -1)
+        .LeftDockable()
+        .RightDockable()
+        .BottomDockable(False)
+        .Caption(_("Tree"))
+        .CaptionVisible(not context.pane_lock)
+        .TopDockable(False)
     )
     pane.dock_proportion = 275
     pane.control = wxtree
@@ -64,7 +81,9 @@ class TreePanel(wx.Panel):
         self.on_rebuild_tree_request()
 
     def __set_tree(self):
-        self.shadow_tree = ShadowTree(self.context, self.GetParent(), self.context.elements._tree, self.wxtree)
+        self.shadow_tree = ShadowTree(
+            self.context, self.GetParent(), self.context.elements._tree, self.wxtree
+        )
         self.Bind(
             wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
         )
@@ -111,16 +130,24 @@ class TreePanel(wx.Panel):
         self.context.listen("refresh_tree", self.request_refresh)
         self.context.listen("element_property_update", self.on_element_update)
         self.context.listen("element_property_reload", self.on_force_element_update)
-        self.context.listen("select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis)
-        self.context.listen("activate_selected_nodes", self.shadow_tree.activate_selected_node)
+        self.context.listen(
+            "select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis
+        )
+        self.context.listen(
+            "activate_selected_nodes", self.shadow_tree.activate_selected_node
+        )
 
     def finalize(self):
         self.context.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
         self.context.unlisten("refresh_tree", self.request_refresh)
         self.context.unlisten("element_property_update", self.on_element_update)
         self.context.unlisten("element_property_reload", self.on_force_element_update)
-        self.context.unlisten("select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis)
-        self.context.unlisten("activate_selected_nodes", self.shadow_tree.activate_selected_node)
+        self.context.unlisten(
+            "select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis
+        )
+        self.context.unlisten(
+            "activate_selected_nodes", self.shadow_tree.activate_selected_node
+        )
 
     def on_element_update(self, origin, *args):
         """

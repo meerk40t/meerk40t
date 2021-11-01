@@ -787,9 +787,13 @@ class Kernel:
             return open(*args)
         except PermissionError:
             from os import chdir
+
             original = os.getcwd()
             chdir(get_safe_path(self.name, True))
-            print("Changing working directory from %s to %s." % (str(original), str(os.getcwd())))
+            print(
+                "Changing working directory from %s to %s."
+                % (str(original), str(os.getcwd()))
+            )
             return open(*args)
 
     def _start_debugging(self) -> None:
@@ -936,6 +940,7 @@ class Kernel:
         def signal(code, path, *message):
             if channel:
                 channel(_("Suspended Signal: %s for %s" % (code, message)))
+
         self.signal = signal  # redefine signal function.
 
         def console(code):
@@ -943,6 +948,7 @@ class Kernel:
                 for c in code.split("\n"):
                     if c:
                         channel(_("Suspended Command: %s" % c))
+
         self.console = console  # redefine console signal
 
         self.process_queue()  # Process last events.
@@ -1930,9 +1936,9 @@ class Kernel:
     def register_choices(self, sheet, choices):
         self.register("choices/%s" % sheet, choices)
         for c in choices:
-            obj = c['object']
+            obj = c["object"]
             if isinstance(obj, Context):
-                obj.setting(c['type'], c['attr'], c['default'])
+                obj.setting(c["type"], c["attr"], c["default"])
 
     # ==========
     # KERNEL CONSOLE COMMANDS
@@ -2740,16 +2746,22 @@ class ConsoleFunction(Job):
 
 
 def get_safe_path(name, create=False):
-    from sys import platform
     from pathlib import Path
+    from sys import platform
 
-    if platform == 'darwin':
-        directory = Path.home().joinpath('Library').joinpath('Application Support').joinpath(name)
+    if platform == "darwin":
+        directory = (
+            Path.home()
+            .joinpath("Library")
+            .joinpath("Application Support")
+            .joinpath(name)
+        )
     elif "win" in platform:
         from os.path import expandvars
-        directory = Path(expandvars('%LOCALAPPDATA%')).joinpath(name)
+
+        directory = Path(expandvars("%LOCALAPPDATA%")).joinpath(name)
     else:
-        directory = Path.home().joinpath('.config').joinpath(name)
+        directory = Path.home().joinpath(".config").joinpath(name)
     if directory is not None and create:
         directory.mkdir(parents=True, exist_ok=True)
     return directory
