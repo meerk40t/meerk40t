@@ -578,3 +578,41 @@ class Group(PlotManipulation):
         self.group_y = None
         self.group_dx = 0
         self.group_dy = 0
+
+
+def grouped(plot):
+    """
+    Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
+
+    :param plot: single stepped plots to be grouped into orth/diag sequences.
+    :return:
+    """
+    group_x = None
+    group_y = None
+    group_dx = 0
+    group_dy = 0
+
+    for x, y in plot:
+        if group_x is None:
+            group_x = x
+        if group_y is None:
+            group_y = y
+        if x == group_x + group_dx and y == group_y + group_dy:
+            # This is an orthogonal/diagonal step along the same path.
+            group_x = x
+            group_y = y
+            continue
+        # This is non orth-diag point. Must drop a point.
+        yield group_x, group_y
+        # If we do not have a defined direction, set our current direction.
+        group_dx = x - group_x
+        group_dy = y - group_y
+        if abs(group_dx) > 1 or abs(group_dy) > 1:
+            # The last step was not valid.
+            raise ValueError(
+                "dx(%d) or dy(%d) exceeds 1" % (group_dx, group_dy)
+            )
+        group_x = x
+        group_y = y
+    # There are no more plots.
+    yield group_x, group_y
