@@ -814,7 +814,7 @@ def plugin(kernel, lifecycle=None):
     )
     @context.console_command(
         "slice",
-        help=_("Slice image for more efficient rastering"),
+        help=_("Slice image cutting it vertically into two images."),
         input_type="image",
         output_type="image",
     )
@@ -846,11 +846,57 @@ def plugin(kernel, lifecycle=None):
 
             if hasattr(element, "node"):
                 element.node.remove_node()
-
             context.elements.add_elem(element_left, classify=True)
             context.elements.add_elem(element_right, classify=True)
-
             channel(_("Image sliced at position %d" % x))
+            return "image", [element_left, element_right]
+
+        return "image", data
+
+    @context.console_argument(
+        "y",
+        type=Length,
+        help=_("Y position at which to slash the image"),
+    )
+    @context.console_command(
+        "slash",
+        help=_("Slash image cutting it horizontally into two images"),
+        input_type="image",
+        output_type="image",
+    )
+    def image(command, channel, _, data, y, **kwargs):
+        for element in data:
+            y = int(
+                y.value(
+                    ppi=1000.0,
+                    relative_length=element.image_height,
+                )
+            )
+            img = element.image
+            image_top = img.crop((0, 0, element.image_width, y))
+            image_bottom = img.crop((0, y, element.image_width, element.image_height))
+            element_top = copy(element)
+            element_top.image = image_top
+            (
+                element_top.image_width,
+                element_top.image_height,
+            ) = element_top.image.size
+
+            element_bottom = copy(element)
+            element_bottom.image = image_bottom
+            (
+                element_bottom.image_width,
+                element_bottom.image_height,
+            ) = element_bottom.image.size
+            element_bottom.transform.pre_translate(0,y)
+
+            if hasattr(element, "node"):
+                element.node.remove_node()
+            context.elements.add_elem(element_top, classify=True)
+            context.elements.add_elem(element_bottom, classify=True)
+            channel(_("Image slashed at position %d" % y))
+            return "image", [element_top, element_bottom]
+
         return "image", data
 
     @context.console_option(
