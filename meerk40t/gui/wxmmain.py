@@ -134,7 +134,10 @@ class MeerK40t(MWindow):
         self.DragAcceptFiles(True)
 
         self.renderer = LaserRender(context)
+
+        self.needs_saving = False
         self.working_file = None
+
         self.pipe_state = None
         self.previous_position = None
         self.is_paused = False
@@ -335,8 +338,9 @@ class MeerK40t(MWindow):
                 if not pathname.lower().endswith(".svg"):
                     pathname += ".svg"
                 context.save(pathname)
+                gui.needs_saving = False
                 gui.working_file = pathname
-                gui.save_recent(gui.working_file)
+                gui.set_file_as_recently_used(gui.working_file)
 
         @context.console_command("dialog_import_egv", hidden=True)
         def evg_in_dialog(**kwargs):
@@ -828,6 +832,8 @@ class MeerK40t(MWindow):
         bed_dim.setting(int, "bed_height", 210)  # Default Value
 
         context.listen("active", self.on_active_change)
+        context.listen("modified", self.on_invalidate_save)
+        context.listen("altered", self.on_invalidate_save)
 
         @context.console_command(
             "theme", help=_("Theming information and assignments"), hidden=True
@@ -1431,7 +1437,19 @@ class MeerK40t(MWindow):
             answer = wx.MessageBox(
                 message, _("Currently Sending Data..."), wx.YES_NO | wx.CANCEL, None
             )
-            return answer != wx.YES
+            if answer != wx.YES:
+                return True  # VETO
+        if self.needs_saving:
+            message = _("Save changes to project before closing?\n\n"
+                        "Your changes will be lost if you do not save them.")
+            answer = wx.MessageBox(
+                message, _("Save Project..."), wx.YES_NO | wx.CANCEL, None
+            )
+            if answer == wx.YES:
+                self.context("dialog_save\n")
+            if answer == wx.CANCEL:
+                return True  # VETO
+        return False
 
     def window_close(self):
         context = self.context
@@ -1459,8 +1477,13 @@ class MeerK40t(MWindow):
         context.unlisten("warning", self.on_warning_signal)
 
         context.unlisten("active", self.on_active_change)
+        context.unlisten("modified", self.on_invalidate_save)
+        context.unlisten("altered", self.on_invalidate_save)
 
         self.context("quit\n")
+
+    def on_invalidate_save(self, origin, *args):
+        self.needs_saving = True
 
     def on_warning_signal(self, origin, message, caption, style):
         dlg = wx.MessageDialog(
@@ -1685,7 +1708,7 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
-    def save_recent(self, pathname):
+    def set_file_as_recently_used(self, pathname):
         recent = list()
         for i in range(10):
             recent.append(getattr(self.context, "file" + str(i)))
@@ -1721,7 +1744,7 @@ class MeerK40t(MWindow):
                 dlg.Destroy()
                 return False
             if results:
-                self.save_recent(pathname)
+                self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
                 try:
@@ -1729,6 +1752,7 @@ class MeerK40t(MWindow):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
                         # TODO: Disabled uniform_svg, no longer detecting namespace.
                         self.working_file = pathname
+                        self.needs_saving = False
                 except AttributeError:
                     pass
                 return True
@@ -1770,6 +1794,7 @@ class MeerK40t(MWindow):
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         context = self.context
         self.working_file = None
+        self.needs_saving = False
         context.elements.clear_all()
         self.context(".laserpath_clear\n")
 
@@ -1786,7 +1811,8 @@ class MeerK40t(MWindow):
         if self.working_file is None:
             self.on_click_save_as(event)
         else:
-            self.save_recent(self.working_file)
+            self.set_file_as_recently_used(self.working_file)
+            self.needs_saving = False
             self.context.save(self.working_file)
 
     def on_click_save_as(self, event=None):
