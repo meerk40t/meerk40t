@@ -178,6 +178,8 @@ class SpoolerPanel(wx.Panel):
             return
 
         spooler = self.connected_spooler
+        if spooler is None:
+            return
         if len(spooler.queue) > 0:
             # This should actually process and update the queue items.
             for i, e in enumerate(spooler.queue):
@@ -238,7 +240,9 @@ class JobSpooler(MWindow):
         selected_spooler = None
         if len(args) >= 4 and args[3]:
             selected_spooler = args[3]
-        self.panel_executejob = SpoolerPanel(self, wx.ID_ANY, context=self.context, selected_spooler=selected_spooler)
+        self.panel_executejob = SpoolerPanel(
+            self, wx.ID_ANY, context=self.context, selected_spooler=selected_spooler
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
         self.SetIcon(_icon)

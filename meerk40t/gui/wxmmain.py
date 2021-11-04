@@ -84,7 +84,7 @@ ID_MENU_FILE_CLEAR = wx.NewId()
 
 ID_MENU_KEYMAP = wx.NewId()
 ID_MENU_DEVICE_MANAGER = wx.NewId()
-ID_MENU_SETTINGS = wx.NewId()
+ID_MENU_CONFIG = wx.NewId()
 ID_MENU_ROTARY = wx.NewId()
 ID_MENU_NAVIGATION = wx.NewId()
 ID_MENU_NOTES = wx.NewId()
@@ -596,19 +596,36 @@ class MeerK40t(MWindow):
     def on_pane_reset(self, event=None):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
-                if hasattr(pane.window, "finalize"):
-                    pane.window.finalize()
+                window = pane.window
+                if hasattr(window, "finalize"):
+                    window.finalize()
+                if isinstance(window, wx.aui.AuiNotebook):
+                    for i in range(window.GetPageCount()):
+                        page = window.GetPage(i)
+                        if hasattr(page, "finalize"):
+                            page.finalize()
         self._mgr.LoadPerspective(self.default_perspective, update=True)
         self.on_config_panes()
 
     def on_config_panes(self):
         for pane in self._mgr.GetAllPanes():
+            window = pane.window
             if pane.IsShown():
-                if hasattr(pane.window, "initialize"):
-                    pane.window.initialize()
+                if hasattr(window, "initialize"):
+                    window.initialize()
+                if isinstance(window, wx.aui.AuiNotebook):
+                    for i in range(window.GetPageCount()):
+                        page = window.GetPage(i)
+                        if hasattr(page, "initialize"):
+                            page.initialize()
             else:
-                if hasattr(pane.window, "noninitialize"):
-                    pane.window.noninitialize()
+                if hasattr(window, "noninitialize"):
+                    window.noninitialize()
+                if isinstance(window, wx.aui.AuiNotebook):
+                    for i in range(window.GetPageCount()):
+                        page = window.GetPage(i)
+                        if hasattr(page, "noninitialize"):
+                            page.noninitialize()
         self.on_pane_lock(lock=self.context.pane_lock)
         wx.CallAfter(self.on_pane_changed, None)
 
@@ -897,11 +914,11 @@ class MeerK40t(MWindow):
         self.window_menu.devices = self.window_menu.Append(
             ID_MENU_DEVICE_MANAGER, _("&Devices"), ""
         )
-        self.window_menu.preferences = self.window_menu.Append(
-            wx.ID_PREFERENCES, _("Confi&g"), ""
+        self.window_menu.config = self.window_menu.Append(
+            ID_MENU_CONFIG, _("Confi&g"), ""
         )
-        self.window_menu.settings = self.window_menu.Append(
-            ID_MENU_SETTINGS, _("Se&ttings"), ""
+        self.window_menu.preferences = self.window_menu.Append(
+            wx.ID_PREFERENCES, _("Pr&eferences...\tCtrl-,"), ""
         )
 
         self.window_menu.keymap = self.window_menu.Append(
@@ -933,7 +950,9 @@ class MeerK40t(MWindow):
         # ==========
         self.help_menu = wx.Menu()
         if platform == "darwin":
-            self.help_menu.Append(wx.ID_HELP, _("&MeerK40t Help"), "")  # os.system("open MeerK40tMac.help")
+            self.help_menu.Append(
+                wx.ID_HELP, _("&MeerK40t Help"), ""
+            )  # os.system("open MeerK40tMac.help")
         else:
             self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
         self.help_menu.Append(ID_BEGINNERS, _("&Beginners' Help"), "")
@@ -1070,8 +1089,8 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window toggle Settings\n"),
-            id=ID_MENU_SETTINGS,
+            lambda v: self.context("window toggle Preferences\n"),
+            id=wx.ID_PREFERENCES,
         )
         self.Bind(
             wx.EVT_MENU,
@@ -1096,8 +1115,8 @@ class MeerK40t(MWindow):
             )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window toggle -d Preferences\n"),
-            id=wx.ID_PREFERENCES,
+            lambda v: self.context("window toggle -d Configuration\n"),
+            id=ID_MENU_CONFIG,
         )
         self.Bind(
             wx.EVT_MENU,
@@ -1647,7 +1666,9 @@ class MeerK40t(MWindow):
         if bbox is None:
             self.context("scene focus -10% -10% 110% 110%\n")
         else:
-            self.context("scene focus %f %f %f %f\n" % (bbox[0], bbox[1], bbox[2], bbox[3]))
+            self.context(
+                "scene focus %f %f %f %f\n" % (bbox[0], bbox[1], bbox[2], bbox[3])
+            )
 
     def toggle_draw_mode(self, bits):
         """
@@ -1659,7 +1680,7 @@ class MeerK40t(MWindow):
         def toggle(event=None):
             self.context.draw_mode ^= bits
             self.context.signal("draw_mode", self.context.draw_mode)
-            self.request_refresh()
+            self.context.signal("refresh_scene")
 
         return toggle
 

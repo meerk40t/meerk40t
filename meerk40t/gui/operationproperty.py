@@ -932,9 +932,7 @@ class OperationPropertyPanel(wx.Panel):
                 self.slider_top.Enable(True)
                 self.slider_left.Enable(True)
 
-    def on_combo_raster_direction(
-        self, event=None
-    ):  # wxGlade: Preferences.<event_handler>
+    def on_combo_raster_direction(self, event=None):
         self.operation.settings.raster_direction = (
             self.combo_raster_direction.GetSelection()
         )
@@ -1070,7 +1068,9 @@ class OperationProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(_simple_width, 500, *args, **kwds)
 
-        self.panel = OperationPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.panel = OperationPropertyPanel(
+            self, wx.ID_ANY, context=self.context, node=node
+        )
         # begin wxGlade: OperationProperty.__set_properties
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
@@ -1087,4 +1087,3 @@ class OperationProperty(MWindow):
 
     def window_close(self):
         self.panel.finalize()
-

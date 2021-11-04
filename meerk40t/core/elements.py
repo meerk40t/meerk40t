@@ -168,6 +168,7 @@ class Node:
         self._bounds_dirty = True
         self.label = None
 
+        self.item = None
         self.icon = None
         self.cache = None
         self.last_transform = None
@@ -3575,6 +3576,9 @@ class Elemental(Modifier):
                 return
             self.validate_selected_area()
             bounds = self.selected_area()
+            if bounds is None:
+                channel(_("No selected elements."))
+                return
             rot = angle.as_degrees
 
             if cx is not None:

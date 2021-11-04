@@ -1,30 +1,33 @@
 import copy
 
 import wx
-from wx import aui, ID_OPEN, ID_SAVE
 import wx.ribbon as RB
+from wx import ID_OPEN, ID_SAVE, aui
 
+from ..kernel import STATE_BUSY
 from .icons import (
+    icons8_administrative_tools_50,
+    icons8_camera_50,
+    icons8_comments_50,
+    icons8_computer_support_50,
     icons8_connected_50,
-    icons8_opened_folder_50,
-    icons8_save_50,
+    icons8_console_50,
+    icons8_emergency_stop_button_50,
+    icons8_fantasy_50,
+    icons8_keyboard_50,
     icons8_laser_beam_52,
     icons8_laser_beam_hazard2_50,
-    icons8_fantasy_50,
-    icons8_comments_50,
-    icons8_console_50,
-    icons8_move_50,
-    icons8_camera_50,
-    icons8_roll_50,
-    icons8_keyboard_50,
-    icons8_administrative_tools_50,
-    icons8_computer_support_50,
     icons8_manager_50,
-    icons8_emergency_stop_button_50,
+    icons8_move_50,
+    icons8_opened_folder_50,
     icons8_pause_50,
+    icons8_roll_50,
     icons8_route_50,
+    icons8_save_50,
 )
 from .mwindow import MWindow
+
+_ = wx.GetTranslation
 
 ID_JOB = wx.NewId()
 ID_SIM = wx.NewId()
@@ -44,14 +47,9 @@ ID_PAUSE = wx.NewId()
 ID_STOP = wx.NewId()
 ID_DEVICES = wx.NewId()
 ID_CONFIGURATION = wx.NewId()
-ID_SETTING = wx.NewId()
+ID_PREFERENCES = wx.NewId()
 ID_KEYMAP = wx.NewId()
 ID_ROTARY = wx.NewId()
-
-from ..kernel import STATE_BUSY
-
-
-_ = wx.GetTranslation
 
 
 def register_panel(window, context):
@@ -215,7 +213,7 @@ class RibbonPanel(wx.Panel):
         button_bar = RB.RibbonButtonBar(self.windows_panel)
         self.window_button_bar = button_bar
         # So Navigation, Camera, Spooler, Controller, Terminal in one group,
-        # Settings, Keymap, Devices, Preferences, Rotary, USB in another.
+        # Settings, Keymap, Devices, Configuration, Rotary, USB in another.
         # Raster Wizard and Notes should IMO be in the Main Group.
         button_bar.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
         button_bar.Bind(
@@ -272,7 +270,7 @@ class RibbonPanel(wx.Panel):
         self.settings_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
-            "" if self.is_dark else _("Preferences"),
+            "" if self.is_dark else _("Configuration"),
             icons8_opened_folder_50.GetBitmap(),
             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
@@ -296,18 +294,25 @@ class RibbonPanel(wx.Panel):
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle -d Preferences\n"),
+            lambda v: self.context("window toggle -d Configuration\n"),
             id=ID_CONFIGURATION,
         )
 
-        button_bar.AddButton(
-            ID_SETTING, _("Settings"), icons8_administrative_tools_50.GetBitmap(), ""
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Settings\n"),
-            id=ID_SETTING,
-        )
+        from sys import platform
+
+        if platform != "darwin":
+            button_bar.AddButton(
+                ID_PREFERENCES,
+                _("Preferences"),
+                icons8_administrative_tools_50.GetBitmap(),
+                "",
+            )
+
+            button_bar.Bind(
+                RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                lambda v: self.context("window toggle Preferences\n"),
+                id=ID_PREFERENCES,
+            )
 
         button_bar.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
         button_bar.Bind(
