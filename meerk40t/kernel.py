@@ -965,7 +965,7 @@ class Kernel:
                         _("%s: Finalizing Module %s: %s")
                         % (str(context), opened_name, str(obj))
                     )
-                context.close(opened_name, channel=channel)
+                context.close(opened_name, channel=channel, shutdown=True)
 
         self.process_queue()  # Process last events.
 

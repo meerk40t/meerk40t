@@ -170,6 +170,16 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+        self.__start_windows()
+
+    def __start_windows(self):
+        kernel = self.context.kernel
+        for window in self.context.match("window/.*", suffix=False):
+            if kernel.read_persistent(bool, "%s/open_on_start" % window, False):
+                try:
+                    self.context("window open %s\n" % window.split('/')[-1])
+                except Exception:
+                    pass
 
     def __set_dialogs(self):
         context = self.context
