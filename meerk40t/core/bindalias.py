@@ -89,6 +89,8 @@ class BindAlias(Modifier):
                     value = context.alias[key]
                     channel("%d: %s %s" % (i, key.ljust(15), value))
                 channel(_("----------"))
+            elif len(args) == 1:
+                raise SyntaxError
             else:
                 key = args[0].lower()
                 if key == "default":
