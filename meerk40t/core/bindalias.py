@@ -76,33 +76,35 @@ class BindAlias(Modifier):
                         pass
             return
 
+        @self.context.console_argument("alias", type=str, help=_("alias command"))
         @self.context.console_command(
             "alias", help=_("alias <alias> <console commands[;console command]*>")
         )
-        def alias(command, channel, _, args=tuple(), **kwgs):
+        def alias(command, channel, _, alias=None, remainder=None, **kwgs):
             context = self.context
             _ = self.context._
-            if len(args) == 0:
+            if alias is None:
                 channel(_("----------"))
                 channel(_("Aliases:"))
                 for i, key in enumerate(context.alias):
                     value = context.alias[key]
                     channel("%d: %s %s" % (i, key.ljust(15), value))
                 channel(_("----------"))
-            elif len(args) == 1:
-                raise SyntaxError
-            else:
-                key = args[0].lower()
-                if key == "default":
-                    context.alias = dict()
-                    context.default_alias()
-                    channel(_("Set default aliases."))
-                    return
-                value = " ".join(args[1:])
-                if value == "":
-                    del context.alias[args[0]]
+                return
+            alias = alias.lower()
+            if alias == "default":
+                context.alias = dict()
+                context.default_alias()
+                channel(_("Set default aliases."))
+                return
+            if remainder is None:
+                if alias in context.alias:
+                    channel(_("Alias %s unset.") % alias)
+                    del context.alias[alias]
                 else:
-                    context.alias[args[0]] = value
+                    channel(_("No alias for %s was set.") % alias)
+            else:
+                context.alias[alias] = remainder
 
         @self.context.console_command(".*", regex=True, hidden=True)
         def alias_execute(command, **kwgs):
