@@ -137,7 +137,7 @@ class KeymapPanel(wx.Panel):
         self.reload_keymap()
 
     def on_key_press(self, event):
-        from .wxmeerk40t import get_key_name
+        from meerk40t.gui.wxutils import get_key_name
 
         keyvalue = get_key_name(event)
         self.text_command_name.SetValue("")
