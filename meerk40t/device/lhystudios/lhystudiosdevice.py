@@ -35,6 +35,7 @@ from ..basedevice import (
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
 from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
+from ...svgelements import Length
 
 MILS_IN_MM = 39.3701
 
@@ -90,6 +91,36 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
             else:
                 channel(_("Pulse laser failed: Busy"))
+            return
+
+        @context.console_argument("speed", type=float, help=_("Set the movement speed"))
+        @context.console_argument("dx", type=Length, help=_("change in x"))
+        @context.console_argument("dy", type=Length, help=_("change in y"))
+        @context.console_command(
+            "move_at_speed",
+            input_type="lhystudios",
+            help=_("move_at_speed <speed> <dx> <dy>"),
+        )
+        def move_speed(channel, _, speed, dx, dy, data=None, **kwgs):
+            spooler, driver, output = data
+            dx = Length(dx).value(
+                ppi=1000.0
+            )
+            dy = Length(dy).value(
+                ppi=1000.0
+            )
+
+            def move_at_speed():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_SET_SPEED, speed
+                yield COMMAND_MODE_PROGRAM
+                yield COMMAND_SET_INCREMENTAL
+                yield COMMAND_MOVE, int(dx), int(dy)
+                yield COMMAND_SET_ABSOLUTE
+                yield COMMAND_MODE_RAPID
+
+            if not spooler.job_if_idle(move_at_speed):
+                channel(_("Busy"))
             return
 
         @context.console_option(
