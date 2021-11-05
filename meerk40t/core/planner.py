@@ -505,7 +505,7 @@ class CutPlan:
             subitems = list(reversed(subitems))
         make_raster = self.context.registered.get("render-op/make_raster")
         objs = [s.object for s in subitems]
-        bounds = Group.union_bbox(objs)
+        bounds = Group.union_bbox(objs, with_stroke=True)
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds
