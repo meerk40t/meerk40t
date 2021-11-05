@@ -114,12 +114,7 @@ def plugin(kernel, lifecycle):
             kernel.console("window open MeerK40t\n")
             for window in kernel.match("window/.*", suffix=False):
                 if kernel.read_persistent(bool, "%s/open_on_start" % window, False):
-                    try:
-                        kernel.console("window open %s\n" % window.split('/')[-1])
-                    except Exception:
-                        # This is incase loading causes failures these should be
-                        # checked and then permitted.
-                        pass
+                    kernel.console("window open %s\n" % window.split('/')[-1])
             meerk40tgui.MainLoop()
 
 
