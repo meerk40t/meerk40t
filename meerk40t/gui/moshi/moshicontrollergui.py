@@ -462,6 +462,9 @@ class MoshiControllerGui(MWindow):
     def window_close(self):
         self.panel.finalize()
 
+    def window_preserve(self):
+        return False
+
     def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
         try:
             self.context("dev usb_reset\n")
