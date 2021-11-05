@@ -112,6 +112,14 @@ def plugin(kernel, lifecycle):
         if GUI_START:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
+            for window in kernel.match("window/.*", suffix=False):
+                if kernel.read_persistent(bool, "%s/open_on_start" % window, False):
+                    try:
+                        kernel.console("window open %s\n" % window.split('/')[-1])
+                    except Exception:
+                        # This is incase loading causes failures these should be
+                        # checked and then permitted.
+                        pass
             meerk40tgui.MainLoop()
 
 
