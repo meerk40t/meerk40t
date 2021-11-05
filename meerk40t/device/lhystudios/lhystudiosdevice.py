@@ -4,6 +4,7 @@ import time
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ...core.drivers import Driver
+from ...core.plotplanner import grouped
 from ...kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -35,6 +36,7 @@ from ..basedevice import (
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
 from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
+from ...svgelements import Length
 
 MILS_IN_MM = 39.3701
 
@@ -90,6 +92,35 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
             else:
                 channel(_("Pulse laser failed: Busy"))
+            return
+
+        @context.console_argument("speed", type=float, help=_("Set the movement speed"))
+        @context.console_argument("dx", type=Length, help=_("change in x"))
+        @context.console_argument("dy", type=Length, help=_("change in y"))
+        @context.console_command(
+            "move_at_speed",
+            input_type="lhystudios",
+            help=_("move_at_speed <speed> <dx> <dy>"),
+        )
+        def move_speed(channel, _, speed, dx, dy, data=None, **kwgs):
+            spooler, driver, output = data
+            dx = Length(dx).value(
+                ppi=1000.0
+            )
+            dy = Length(dy).value(
+                ppi=1000.0
+            )
+
+            def move_at_speed():
+                yield COMMAND_SET_SPEED, speed
+                yield COMMAND_MODE_PROGRAM
+                x = driver.current_x
+                y = driver.current_y
+                yield COMMAND_MOVE, x + dx, y + dy
+                yield COMMAND_MODE_RAPID
+
+            if not spooler.job_if_idle(move_at_speed):
+                channel(_("Busy"))
             return
 
         @context.console_option(
@@ -1031,7 +1062,8 @@ class LhystudiosDriver(Driver):
         elif self.state == DRIVER_STATE_PROGRAM:
             mx = 0
             my = 0
-            for x, y in ZinglPlotter.plot_line(0, 0, dx, dy):
+            line = list(grouped(ZinglPlotter.plot_line(0, 0, dx, dy)))
+            for x, y in line:
                 self.goto_octent(x - mx, y - my, cut)
                 mx = x
                 my = y
