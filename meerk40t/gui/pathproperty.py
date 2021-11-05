@@ -217,3 +217,6 @@ class PathProperty(MWindow):
         self.panel.element = node.object
         self.panel.element_node = node
         self.panel.set_widgets()
+
+    def window_preserve(self):
+        return False

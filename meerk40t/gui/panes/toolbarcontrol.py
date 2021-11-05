@@ -30,7 +30,7 @@ def register_control_tools(context, gui):
         _("Navigation"),
         icons8_move_50.GetBitmap(),
         kind=wx.ITEM_NORMAL,
-        short_help_string=_("Opens new project"),
+        short_help_string=_("Opens Navigation Window"),
     )
     toolbar.Bind(
         wx.EVT_TOOL,

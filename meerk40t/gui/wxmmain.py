@@ -1,4 +1,5 @@
 import os
+import sys
 
 import wx
 from wx import aui
@@ -133,7 +134,10 @@ class MeerK40t(MWindow):
         self.DragAcceptFiles(True)
 
         self.renderer = LaserRender(context)
+
+        self.needs_saving = False
         self.working_file = None
+
         self.pipe_state = None
         self.previous_position = None
         self.is_paused = False
@@ -334,8 +338,9 @@ class MeerK40t(MWindow):
                 if not pathname.lower().endswith(".svg"):
                     pathname += ".svg"
                 context.save(pathname)
+                gui.needs_saving = False
                 gui.working_file = pathname
-                gui.save_recent(gui.working_file)
+                gui.set_file_as_recently_used(gui.working_file)
 
         @context.console_command("dialog_import_egv", hidden=True)
         def evg_in_dialog(**kwargs):
@@ -593,6 +598,132 @@ class MeerK40t(MWindow):
             self._mgr.LoadPerspective(self.context.perspective)
         self.on_config_panes()
 
+        context = self.context
+
+        @context.console_command(
+            "pane",
+            help=_("control various panes for main window"),
+            output_type="panes",
+        )
+        def pane(**kwargs):
+            return "panes", self
+
+        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_command(
+            "show",
+            input_type="panes",
+            help=_("show the pane"),
+        )
+        def show_pane(command, _, channel, pane=None, **kwargs):
+            if pane is None:
+                raise SyntaxError
+            try:
+                _pane = context.registered["pane/%s" % pane]
+            except KeyError:
+                channel(_("Pane not found."))
+                return
+            _pane.Show()
+            self._mgr.Update()
+
+        @context.console_argument("pane", help=_("pane to be hidden"))
+        @context.console_command(
+            "hide",
+            input_type="panes",
+            help=_("show the pane"),
+        )
+        def hide_pane(command, _, channel, pane=None, **kwargs):
+            if pane is None:
+                raise SyntaxError
+            try:
+                _pane = context.registered["pane/%s" % pane]
+            except KeyError:
+                channel(_("Pane not found."))
+                return
+            _pane.Hide()
+            self._mgr.Update()
+
+        @context.console_option("always", "a", type=bool, action="store_true")
+        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_command(
+            "float",
+            input_type="panes",
+            help=_("show the pane"),
+        )
+        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
+            if pane is None:
+                raise SyntaxError
+            try:
+                _pane = context.registered["pane/%s" % pane]
+            except KeyError:
+                channel(_("Pane not found."))
+                return
+            _pane.Float()
+            _pane.Show()
+            _pane.Dockable(not always)
+            print(_pane.IsDockable())
+            self._mgr.Update()
+
+        @context.console_command(
+            "reset",
+            input_type="panes",
+            help=_("reset all panes restoring the default perspective"),
+        )
+        def reset_pane(command, _, channel, **kwargs):
+            self.on_pane_reset(None)
+
+        @context.console_command(
+            "lock",
+            input_type="panes",
+            help=_("lock the panes"),
+        )
+        def lock_pane(command, _, channel, **kwargs):
+            self.on_pane_lock(None, lock=True)
+
+        @context.console_command(
+            "unlock",
+            input_type="panes",
+            help=_("unlock the panes"),
+        )
+        def lock_pane(command, _, channel, **kwargs):
+            self.on_pane_lock(None, lock=False)
+
+        @context.console_argument("pane", help=_("pane to create"))
+        @context.console_command(
+            "create",
+            input_type="panes",
+            help=_("create a floating about pane"),
+        )
+        def create_pane(command, _, channel, pane=None, **kwargs):
+            if pane == "about":
+                from .about import AboutPanel as CreatePanel
+                caption = _("About")
+                width = 646
+                height = 519
+            elif pane == "preferences":
+                from .preferences import PreferencesPanel as CreatePanel
+                caption = _("Preferences")
+                width = 565
+                height = 327
+            else:
+                channel(_("Pane not found."))
+                return
+            panel = CreatePanel(self, context=context)
+            _pane = (
+                aui.AuiPaneInfo()
+                    .Dockable(False)
+                    .Float()
+                    .Caption(caption)
+                    .FloatingSize(width, height)
+                    .Name(pane)
+                    .CaptionVisible(True)
+            )
+            _pane.control = panel
+            self.on_pane_add(_pane)
+            if hasattr(panel,"initialize"):
+                panel.initialize()
+            self.context.register("pane/about", _pane)
+            self._mgr.Update()
+
     def on_pane_reset(self, event=None):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
@@ -685,11 +816,6 @@ class MeerK40t(MWindow):
     def __kernel_initialize(self):
         context = self.context
         context.setting(int, "draw_mode", 0)
-        context.setting(float, "units_convert", MILS_IN_MM)
-        context.setting(str, "units_name", "mm")
-        context.setting(int, "units_marks", 10)
-        context.setting(int, "units_index", 0)
-        context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "print_shutdown", False)
 
         context.listen("export-image", self.on_export_signal)
@@ -706,6 +832,8 @@ class MeerK40t(MWindow):
         bed_dim.setting(int, "bed_height", 210)  # Default Value
 
         context.listen("active", self.on_active_change)
+        context.listen("modified", self.on_invalidate_save)
+        context.listen("altered", self.on_invalidate_save)
 
         @context.console_command(
             "theme", help=_("Theming information and assignments"), hidden=True
@@ -949,12 +1077,43 @@ class MeerK40t(MWindow):
         # HELP MENU
         # ==========
         self.help_menu = wx.Menu()
+
+        def launch_help_osx(event=None):
+            _resource_path = "help/meerk40t.help"
+            if not os.path.exists(_resource_path):
+                try:  # pyinstaller internal location
+                    _resource_path = os.path.join(sys._MEIPASS, "help/meerk40t.help")
+                except Exception:
+                    pass
+            if not os.path.exists(_resource_path):
+                try:  # Mac py2app resource
+                    _resource_path = os.path.join(os.environ["RESOURCEPATH"], "help/meerk40t.help")
+                except Exception:
+                    pass
+            if os.path.exists(_resource_path):
+                os.system("open %s" % _resource_path)
+            else:
+                dlg = wx.MessageDialog(
+                    None,
+                    _('Offline help file ("%s") was not found.') % _resource_path,
+                    _("File Not Found"),
+                    wx.OK | wx.ICON_WARNING,
+                )
+                dlg.ShowModal()
+                dlg.Destroy()
+
         if platform == "darwin":
             self.help_menu.Append(
                 wx.ID_HELP, _("&MeerK40t Help"), ""
-            )  # os.system("open MeerK40tMac.help")
+            )
+            self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
+            ONLINE_HELP = wx.NewId()
+            self.help_menu.Append(ONLINE_HELP, _("&Online Help"), "")
+            self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=ONLINE_HELP)
         else:
             self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
+            self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
+
         self.help_menu.Append(ID_BEGINNERS, _("&Beginners' Help"), "")
         self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
         self.help_menu.Append(ID_RELEASES, _("&Releases"), "")
@@ -1171,7 +1330,7 @@ class MeerK40t(MWindow):
             self.on_pane_lock,
             id=ID_MENU_PANE_LOCK,
         )
-        self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
+
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp beginners\n"),
@@ -1278,7 +1437,19 @@ class MeerK40t(MWindow):
             answer = wx.MessageBox(
                 message, _("Currently Sending Data..."), wx.YES_NO | wx.CANCEL, None
             )
-            return answer != wx.YES
+            if answer != wx.YES:
+                return True  # VETO
+        if self.needs_saving:
+            message = _("Save changes to project before closing?\n\n"
+                        "Your changes will be lost if you do not save them.")
+            answer = wx.MessageBox(
+                message, _("Save Project..."), wx.YES_NO | wx.CANCEL, None
+            )
+            if answer == wx.YES:
+                self.context("dialog_save\n")
+            if answer == wx.CANCEL:
+                return True  # VETO
+        return False
 
     def window_close(self):
         context = self.context
@@ -1306,8 +1477,13 @@ class MeerK40t(MWindow):
         context.unlisten("warning", self.on_warning_signal)
 
         context.unlisten("active", self.on_active_change)
+        context.unlisten("modified", self.on_invalidate_save)
+        context.unlisten("altered", self.on_invalidate_save)
 
         self.context("quit\n")
+
+    def on_invalidate_save(self, origin, *args):
+        self.needs_saving = True
 
     def on_warning_signal(self, origin, message, caption, style):
         dlg = wx.MessageDialog(
@@ -1532,7 +1708,7 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
-    def save_recent(self, pathname):
+    def set_file_as_recently_used(self, pathname):
         recent = list()
         for i in range(10):
             recent.append(getattr(self.context, "file" + str(i)))
@@ -1568,7 +1744,7 @@ class MeerK40t(MWindow):
                 dlg.Destroy()
                 return False
             if results:
-                self.save_recent(pathname)
+                self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
                 try:
@@ -1576,6 +1752,7 @@ class MeerK40t(MWindow):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
                         # TODO: Disabled uniform_svg, no longer detecting namespace.
                         self.working_file = pathname
+                        self.needs_saving = False
                 except AttributeError:
                     pass
                 return True
@@ -1617,6 +1794,7 @@ class MeerK40t(MWindow):
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         context = self.context
         self.working_file = None
+        self.needs_saving = False
         context.elements.clear_all()
         self.context(".laserpath_clear\n")
 
@@ -1633,7 +1811,8 @@ class MeerK40t(MWindow):
         if self.working_file is None:
             self.on_click_save_as(event)
         else:
-            self.save_recent(self.working_file)
+            self.set_file_as_recently_used(self.working_file)
+            self.needs_saving = False
             self.context.save(self.working_file)
 
     def on_click_save_as(self, event=None):

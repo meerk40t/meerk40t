@@ -94,3 +94,6 @@ class GroupProperty(MWindow):
         _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Group Properties"))
+
+    def window_preserve(self):
+        return False

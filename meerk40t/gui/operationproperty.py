@@ -1,7 +1,7 @@
 import wx
 
 from ..svgelements import Color
-from .icons import icons8_delete_50, icons8_laser_beam_52, icons8_plus_50
+from .icons import icons8_laser_beam_52
 from .laserrender import swizzlecolor
 from .mwindow import MWindow
 
@@ -18,15 +18,6 @@ class OperationPropertyPanel(wx.Panel):
         self.context = context
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
-        # self.button_add_layer = wx.BitmapButton(
-        #     self.main_panel, wx.ID_ANY, icons8_plus_50.GetBitmap()
-        # )
-        # self.listbox_layer = wx.ListBox(
-        #     self.main_panel, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE
-        # )
-        # self.button_remove_layer = wx.BitmapButton(
-        #     self.main_panel, wx.ID_ANY, icons8_delete_50.GetBitmap()
-        # )
         self.button_layer_color = wx.Button(self.main_panel, wx.ID_ANY, "")
         self.combo_type = wx.ComboBox(
             self.main_panel,
@@ -41,7 +32,7 @@ class OperationPropertyPanel(wx.Panel):
         self.power_label = wx.StaticBox(
             self.main_panel,
             wx.ID_ANY,
-            _("Power (ppi)") + ("⚠️" if node.settings.power <= 100 else ""),
+            _("Power (ppi)"),
         )
         self.raster_panel = wx.Panel(self.main_panel, wx.ID_ANY)
         self.text_raster_step = wx.TextCtrl(self.raster_panel, wx.ID_ANY, "1")
@@ -136,6 +127,10 @@ class OperationPropertyPanel(wx.Panel):
         else:
             self.toggle_sliders = True
             self._toggle_sliders()
+        if self.operation is None:
+            for m in self.main_panel.Children:
+                if isinstance(m, wx.Window):
+                    m.Hide()
 
     def finalize(self):
         pass
@@ -212,6 +207,7 @@ class OperationPropertyPanel(wx.Panel):
         if self.operation.settings.speed is not None:
             self.text_speed.SetValue(str(self.operation.settings.speed))
         if self.operation.settings.power is not None:
+            self.update_power_label()
             self.text_power.SetValue(str(self.operation.settings.power))
         if self.operation.settings.dratio is not None:
             self.text_dratio.SetValue(str(self.operation.settings.dratio))
@@ -776,36 +772,6 @@ class OperationPropertyPanel(wx.Panel):
         self.display_panel.Refresh()
         self.display_panel.Update()
 
-    # def on_menu_clear(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     self.context.elements.clear_operations()
-    #
-    # def on_menu_default0(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     self.context.elements.load_default()
-    #
-    # def on_menu_default1(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     self.context.elements.load_default2()
-
-    # def on_menu_save(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     pass
-    #
-    # def on_menu_load(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     pass
-    #
-    # def on_menu_import(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     pass
-
-    # def on_button_add(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     pass
-    #
-    # def on_list_layer_click(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     pass
-    #
-    # def on_list_layer_dclick(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     pass
-    #
-    # def on_button_remove(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-    #     pass
-
     def on_button_layer(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         data = wx.ColourData()
         if self.operation.color is not None and self.operation.color != "none":
@@ -878,15 +844,18 @@ class OperationPropertyPanel(wx.Panel):
             return
         self.context.signal("element_property_reload", self.operation)
 
+    def update_power_label(self):
+        if self.operation.settings.power <= 100:
+            self.power_label.SetLabel(_("Power (ppi)") + "⚠️")
+        else:
+            self.power_label.SetLabel(_("Power (ppi)"))
+
     def on_text_power(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.power = float(self.text_power.GetValue())
         except ValueError:
             return
-        if self.operation.settings.power <= 100:
-            self.power_label.LabelText = "Power (ppi) ⚠️"
-        else:
-            self.power_label.LabelText = "Power (ppi)"
+        self.update_power_label()
         self.context.signal("element_property_reload", self.operation)
 
     def on_text_raster_step(
@@ -1087,3 +1056,6 @@ class OperationProperty(MWindow):
 
     def window_close(self):
         self.panel.finalize()
+
+    def window_preserve(self):
+        return False

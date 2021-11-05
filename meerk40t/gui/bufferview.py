@@ -65,3 +65,6 @@ class BufferView(MWindow):
         # begin wxGlade: BufferView.__set_properties
         self.SetTitle(_("BufferView"))
 
+    def window_preserve(self):
+        return False
+

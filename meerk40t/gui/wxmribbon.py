@@ -142,10 +142,20 @@ class RibbonPanel(wx.Panel):
 
         toolbar = RB.RibbonButtonBar(self.toolbar_panel)
         self.toolbar_button_bar = toolbar
-        toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
-        toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
         toolbar.AddButton(
-            ID_JOB, _("Execute Job"), icons8_laser_beam_52.GetBitmap(), ""
+            ID_OPEN,
+            _("Open"),
+            icons8_opened_folder_50.GetBitmap(),
+            _("Opens new project"),
+        )
+        toolbar.AddButton(
+            ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), _("Saves a project to disk")
+        )
+        toolbar.AddButton(
+            ID_JOB,
+            _("Execute Job"),
+            icons8_laser_beam_52.GetBitmap(),
+            _("Execute the current laser project"),
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -153,11 +163,17 @@ class RibbonPanel(wx.Panel):
             id=ID_JOB,
         )
         toolbar.AddButton(
-            ID_SIM, _("Simulate"), icons8_laser_beam_hazard2_50.GetBitmap(), ""
+            ID_SIM,
+            _("Simulate"),
+            icons8_laser_beam_hazard2_50.GetBitmap(),
+            _("Simulate the current laser job"),
         )
 
         toolbar.AddButton(
-            ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), ""
+            ID_RASTER,
+            _("RasterWizard"),
+            icons8_fantasy_50.GetBitmap(),
+            _("Run RasterWizard"),
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -165,13 +181,20 @@ class RibbonPanel(wx.Panel):
             id=ID_RASTER,
         )
 
-        toolbar.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
+        toolbar.AddButton(
+            ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), _("Open Notes Window")
+        )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window toggle Notes\n"),
             id=ID_NOTES,
         )
-        toolbar.AddButton(ID_CONSOLE, _("Console"), icons8_console_50.GetBitmap(), "")
+        toolbar.AddButton(
+            ID_CONSOLE,
+            _("Console"),
+            icons8_console_50.GetBitmap(),
+            _("Open Console Window"),
+        )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window toggle Console\n"),
@@ -215,7 +238,12 @@ class RibbonPanel(wx.Panel):
         # So Navigation, Camera, Spooler, Controller, Terminal in one group,
         # Settings, Keymap, Devices, Configuration, Rotary, USB in another.
         # Raster Wizard and Notes should IMO be in the Main Group.
-        button_bar.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
+        button_bar.AddButton(
+            ID_NAV,
+            _("Navigation"),
+            icons8_move_50.GetBitmap(),
+            _("Opens Navigation Window"),
+        )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window toggle Navigation\n"),
@@ -223,7 +251,10 @@ class RibbonPanel(wx.Panel):
         )
         if self.context.has_feature("modifier/Camera"):
             button_bar.AddHybridButton(
-                ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), ""
+                ID_CAMERA,
+                _("Camera"),
+                icons8_camera_50.GetBitmap(),
+                _("Opens Camera Window"),
             )
             button_bar.Bind(
                 RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA
@@ -239,14 +270,22 @@ class RibbonPanel(wx.Panel):
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
 
-        button_bar.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
+        button_bar.AddButton(
+            ID_SPOOLER,
+            _("Spooler"),
+            icons8_route_50.GetBitmap(),
+            _("Opens Spooler Window"),
+        )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window toggle JobSpooler\n"),
             id=ID_SPOOLER,
         )
         button_bar.AddButton(
-            ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), ""
+            ID_CONTROLLER,
+            _("Controller"),
+            icons8_connected_50.GetBitmap(),
+            _("Opens Controller Window"),
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -254,13 +293,16 @@ class RibbonPanel(wx.Panel):
             id=ID_CONTROLLER,
         )
         button_bar.AddToggleButton(
-            ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), ""
+            ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), _("Pause the laser")
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE
         )
         button_bar.AddButton(
-            ID_STOP, _("Stop"), icons8_emergency_stop_button_50.GetBitmap(), ""
+            ID_STOP,
+            _("Stop"),
+            icons8_emergency_stop_button_50.GetBitmap(),
+            _("Emergency stop the laser"),
         )
         button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_stop, id=ID_STOP)
 
@@ -278,7 +320,10 @@ class RibbonPanel(wx.Panel):
         self.setting_button_bar = button_bar
 
         button_bar.AddButton(
-            ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), ""
+            ID_DEVICES,
+            _("Devices"),
+            icons8_manager_50.GetBitmap(),
+            _("Opens DeviceManager Window"),
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -305,7 +350,7 @@ class RibbonPanel(wx.Panel):
                 ID_PREFERENCES,
                 _("Preferences"),
                 icons8_administrative_tools_50.GetBitmap(),
-                "",
+                _("Opens Preferences Window"),
             )
 
             button_bar.Bind(
@@ -314,13 +359,20 @@ class RibbonPanel(wx.Panel):
                 id=ID_PREFERENCES,
             )
 
-        button_bar.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
+        button_bar.AddButton(
+            ID_KEYMAP,
+            _("Keymap"),
+            icons8_keyboard_50.GetBitmap(),
+            _("Opens Keymap Window"),
+        )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window toggle Keymap\n"),
             id=ID_KEYMAP,
         )
-        button_bar.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
+        button_bar.AddButton(
+            ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), _("Opens Rotary Window")
+        )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
             lambda v: self.context("window -p rotary/1 toggle Rotary\n"),

@@ -16,20 +16,15 @@ class MWindow(wx.Frame, Module):
     close events.
     """
 
-    def __init__(self, width, height, context, path, parent, *args, **kwds):
-        # begin wxGlade: Notes.__init__
-        if parent is None:
-            wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
-        else:
-            wx.Frame.__init__(
-                self,
-                parent,
-                -1,
-                "",
-                style=wx.DEFAULT_FRAME_STYLE
-                | wx.FRAME_FLOAT_ON_PARENT
-                | wx.TAB_TRAVERSAL,
-            )
+    def __init__(self, width, height, context, path, parent, *args, style=-1, **kwds):
+        if style == -1:
+            if parent is None:
+                style = wx.DEFAULT_FRAME_STYLE
+            else:
+                style = (
+                    wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
+                )
+        wx.Frame.__init__(self, parent, style=style)
         Module.__init__(self, context, path)
 
         self.root_context = context.root
@@ -95,6 +90,9 @@ class MWindow(wx.Frame, Module):
     def window_close(self):
         pass
 
+    def window_preserve(self):
+        return True
+
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         if self.window_save:
@@ -105,12 +103,13 @@ class MWindow(wx.Frame, Module):
         self.Show()
         self.window_open()
 
-    def finalize(self, *args, **kwargs):
+    def finalize(self, *args, shutdown=False, **kwargs):
         self.window_close()
         if self.window_save:
             try:
                 self.window_context.width, self.window_context.height = self.Size
                 self.window_context.x, self.window_context.y = self.GetPosition()
+                self.window_context.open_on_start = shutdown and self.window_preserve()
             except RuntimeError:
                 pass
         try:

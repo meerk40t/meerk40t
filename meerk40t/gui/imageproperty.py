@@ -204,3 +204,6 @@ class ImageProperty(MWindow):
         self.panel.element_node = node
         self.panel.element = node.object
         self.panel.set_widgets()
+
+    def window_preserve(self):
+        return False

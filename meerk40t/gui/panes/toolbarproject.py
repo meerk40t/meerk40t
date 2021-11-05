@@ -67,7 +67,7 @@ def register_project_tools(context, gui):
         _("RasterWizard"),
         icons8_fantasy_50.GetBitmap(),
         kind=wx.ITEM_NORMAL,
-        short_help_string=_("Run RasterWizard "),
+        short_help_string=_("Run RasterWizard"),
     )
     toolbar.Bind(
         wx.EVT_TOOL,

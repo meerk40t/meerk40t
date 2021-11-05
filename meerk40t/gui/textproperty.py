@@ -281,3 +281,6 @@ class TextProperty(MWindow):
 
     def window_close(self):
         self.panel.finalize()
+
+    def window_preserve(self):
+        return False
