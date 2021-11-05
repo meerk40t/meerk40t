@@ -57,11 +57,13 @@ class SimulationPanel(wx.Panel, Job):
             self.context,
             self,
             scene_name="SimScene",
-            style=wx.EXPAND | wx.TAB_TRAVERSAL,
+            style=wx.EXPAND,
         )
+        self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
 
         self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
+        self.slider_progress.SetFocus()
         self.text_distance_laser = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
