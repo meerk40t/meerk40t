@@ -90,6 +90,9 @@ class MWindow(wx.Frame, Module):
     def window_close(self):
         pass
 
+    def window_preserve(self):
+        return True
+
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         if self.window_save:
@@ -106,7 +109,7 @@ class MWindow(wx.Frame, Module):
             try:
                 self.window_context.width, self.window_context.height = self.Size
                 self.window_context.x, self.window_context.y = self.GetPosition()
-                self.window_context.open_on_start = shutdown
+                self.window_context.open_on_start = shutdown and self.window_preserve()
             except RuntimeError:
                 pass
         try:
