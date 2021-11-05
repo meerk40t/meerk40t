@@ -3064,12 +3064,15 @@ class Elemental(Modifier):
             context = self.context
             if data is None:
                 data = list(self.elems(emphasized=True))
+            reverse = context.classify_reverse
+            if reverse:
+                data = list(reversed(data))
             elements = context.elements
             make_raster = self.context.registered.get("render-op/make_raster")
             if not make_raster:
                 channel(_("No renderer is registered to perform render."))
                 return
-            bounds = Group.union_bbox(data)
+            bounds = Group.union_bbox(data, with_stroke=True)
             if bounds is None:
                 return
             if step <= 0:
@@ -5085,8 +5088,11 @@ class Elemental(Modifier):
             context = self.context
             elements = context.elements
             subitems = list(node.flat(types=("elem", "opnode")))
+            reverse = self.context.classify_reverse
+            if reverse:
+                subitems = list(reversed(subitems))
             make_raster = self.context.registered.get("render-op/make_raster")
-            bounds = Group.union_bbox([s.object for s in subitems])
+            bounds = Group.union_bbox([s.object for s in subitems], with_stroke=True)
             if bounds is None:
                 return
             step = float(node.settings.raster_step)
