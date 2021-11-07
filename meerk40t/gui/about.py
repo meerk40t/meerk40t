@@ -137,7 +137,8 @@ class About(MWindow):
             style=wx.CAPTION
             | wx.CLOSE_BOX
             | wx.FRAME_FLOAT_ON_PARENT
-            | wx.TAB_TRAVERSAL,
+            | wx.TAB_TRAVERSAL
+            | wx.RESIZE_BORDER,
             **kwds
         )
         self.panel = AboutPanel(self, wx.ID_ANY, context=self.context)

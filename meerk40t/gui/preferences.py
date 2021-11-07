@@ -460,7 +460,8 @@ class Preferences(MWindow):
             style=wx.CAPTION
             | wx.CLOSE_BOX
             | wx.FRAME_FLOAT_ON_PARENT
-            | wx.TAB_TRAVERSAL,
+            | wx.TAB_TRAVERSAL
+            | wx.RESIZE_BORDER,
             **kwds
         )
 
