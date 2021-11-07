@@ -205,9 +205,9 @@ class LaserPanel(wx.Panel):
         if plan_name == "z":
             plan = self.context.planner.get_or_make_plan("z")
             if not len(plan.plan):
-                self.text_plan.SetLabel(_("--- Empty ---"))
+                self.text_plan.SetValue(_("--- Empty ---"))
             else:
-                self.text_plan.SetLabel("%s: %s" % (str(stage), str(plan)))
+                self.text_plan.SetValue("%s: %s" % (str(stage), str(plan)))
 
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
