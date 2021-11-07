@@ -4585,7 +4585,7 @@ msgstr "Janela fechada."
 
 #: meerk40t/gui/wxmeerk40t.py:450
 msgid "window to be reset"
-#N/A
+msgstr "Janela a ser reiniciada"
 
 #: meerk40t/gui/wxmeerk40t.py:455
 msgid "reset the supplied window, or '*' for all windows"
@@ -5700,7 +5700,7 @@ msgstr "pixels de sobreamostra"
 
 #: meerk40t/image/imagetools.py:1046
 msgid "pixel sample size"
-#N/A
+msgstr "Taman ho da amostra de píxeis"
 
 #: meerk40t/image/imagetools.py:1049
 msgid "half-tone angle"
@@ -5925,15 +5925,15 @@ msgstr "Condutor Detectado: LibUsb"
 #: meerk40t/device/ch341/libusb.py:112 meerk40t/device/ch341/mock.py:168
 #: meerk40t/device/ch341/windll.py:174
 msgid "K40 devices were found but they were rejected due to chip version."
-#N/A
+msgstr "Foram encontrados dispositivos de K40 mas foram rejeitados devido à versão chip."
 
 #: meerk40t/device/ch341/libusb.py:123
 msgid "K40 devices were found but they were rejected due to usb bus."
-#N/A
+msgstr "Foram encontrados dispositivos de K40, mas foram rejeitados devido ao usb bus."
 
 #: meerk40t/device/ch341/libusb.py:132
 msgid "K40 devices were found but they were rejected due to usb address."
-#N/A
+msgstr "Foram encontrados dispositivos de K40, mas foram rejeitados devido ao endereço usb."
 
 #: meerk40t/device/ch341/mock.py:37
 msgid "Using Mock Driver."
