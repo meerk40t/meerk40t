@@ -316,7 +316,7 @@ msgstr "毎 %f 秒"
 
 #: meerk40t/kernel.py:2134
 msgid "- gui"
-#NAME?
+msgstr "- ガイダンス"
 
 #: meerk40t/kernel.py:2145
 msgid "All timers canceled."
@@ -2971,7 +2971,7 @@ msgstr "「行」を入力"
 
 #: meerk40t/gui/executejob.py:177
 msgid "How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"
-#N/A
+msgstr "コピーの幅は何センチですか？ 例：2インチ、3cm、50mm、10％。"
 
 #: meerk40t/gui/executejob.py:179
 msgid "This should be the item width + any gap."
@@ -4680,11 +4680,11 @@ msgstr "ギア入力"
 #: meerk40t/gui/panes/toolbarproject.py:30 meerk40t/gui/wxmmain.py:319
 #: meerk40t/gui/wxmmain.py:1612 meerk40t/gui/wxmribbon.py:147
 msgid "Open"
-#N/A
+msgstr "開く"
 
 #: meerk40t/gui/wxmmain.py:331
 msgid "Save Project"
-msgstr "開く"
+msgstr "プロジェクトの保存"
 
 #: meerk40t/gui/wxmmain.py:350
 msgid "Import EGV"
@@ -5441,24 +5441,24 @@ msgstr "画像の色の要因：%f"
 
 #: meerk40t/image/imagetools.py:451
 msgid "image color <factor>"
-#N/A
+msgstr "画像の色<ファクタ"
 
 #: meerk40t/image/imagetools.py:455
 msgid "sharpness factor"
-#N/A
+msgstr "シャープネス係数"
 
 #: meerk40t/image/imagetools.py:458
 msgid "shapen image"
-#N/A
+msgstr "画像のシェイピング"
 
 #: meerk40t/image/imagetools.py:470
 #, python-format
 msgid "Image Sharpness Factor: %f"
-#N/A
+msgstr "画像のシャープネス・ファクター：%f"
 
 #: meerk40t/image/imagetools.py:472
 msgid "image sharpness <factor>"
-#N/A
+msgstr "画像のシャープネス<因子"
 
 #: meerk40t/image/imagetools.py:476
 msgid "blur image"
@@ -5526,11 +5526,11 @@ msgstr "画像の詳細。"
 
 #: meerk40t/image/imagetools.py:604
 msgid "colors to quantize into"
-#N/A
+msgstr "量子化する色"
 
 #: meerk40t/image/imagetools.py:608
 msgid "image quantize <colors>"
-msgstr "量子化する色"
+msgstr "画像の量子化 <色"
 
 #: meerk40t/image/imagetools.py:619
 #, python-format
