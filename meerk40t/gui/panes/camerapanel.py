@@ -500,18 +500,25 @@ class CamInterfaceWidget(Widget):
             item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.setting("camera%d perspective reset\n" % self.index),
+                lambda e: self.cam.setting("camera%d perspective reset\n" % self.cam.index),
                 id=item.GetId(),
             )
             item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.setting("camera%d fisheye reset\n" % self.index),
+                lambda e: self.cam.setting("camera%d fisheye reset\n" % self.cam.index),
                 id=item.GetId(),
             )
             menu.AppendSeparator()
 
             sub_menu = wx.Menu()
+            item = sub_menu.Append(wx.ID_ANY, _("Set URI"), "")
+            self.cam.Bind(
+                wx.EVT_MENU,
+                lambda e: self.cam.context.open("window/CameraURI", self.cam, index=self.cam.index),
+                id=item.GetId()
+            )
+
             camera_setting = self.cam.context.get_context("camera")
             keylist = camera_setting.kernel.load_persistent_string_dict(
                 camera_setting.path, suffix=True
@@ -741,6 +748,7 @@ class CameraURIPanel(wx.Panel):
         if index is None:
             index = 0
         self.index = index
+        assert(isinstance(self.index, int))
 
         self.list_uri = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
