@@ -628,7 +628,7 @@ msgstr "ポート 23 で console_server を起動 (telnet)"
 
 #: meerk40t/kernelserver.py:42
 #, python-format
-msgid "%s %s Telnet Console.\r \n "
+msgid "%s %s Telnet Console.\r\n"
 msgstr "%s %s Telnet Console.\ r ୨୧"
 
 #: meerk40t/kernelserver.py:53
@@ -2793,26 +2793,26 @@ msgstr "スリープモードの有効化"
 #: meerk40t/gui/about.py:53
 msgid ""
 "MeerK40t is a free MIT Licensed open source project for lasering on K40 "
-"Devices. \n "
-" \n "
+"Devices.\n"
+"\n"
 msgstr "MeerK40tは、K40デバイスでレーザー照射を行うためのMITライセンス取得済みのオープンソースプロジェクトです。\0641"
 
 #: meerk40t/gui/about.py:56
 msgid ""
 "Participation in the project is highly encouraged. Past participation, "
-"and \n "
+"and \n"
 msgstr "このプロジェクトへの参加を強く推奨します。これまでの参加はもちろんのこと"
 
 #: meerk40t/gui/about.py:59
 msgid ""
 "continuing participation is graciously thanked. This program is mostly "
-"the \n "
+"the\n"
 msgstr "継続的な参加に感謝しています。このプログラムは、ほとんどの場合、Tatarn"
 
 #: meerk40t/gui/about.py:62
 msgid ""
 "brainchild of Tatarize, who sincerely hopes his contributions will be but"
-" \n "
+" \n"
 msgstr "タタライズが考案したもので、彼の貢献が大河になることを心より願っています。"
 
 #: meerk40t/gui/about.py:65
@@ -2820,67 +2820,67 @@ msgid "the barest trickle that becomes a raging river."
 msgstr "the barest trickle that becomes a raging river."
 
 #: meerk40t/gui/about.py:82
-msgid "Thanks go out to... \n "
+msgid "Thanks go out to...\n"
 msgstr "Thanks go out to... \n"
 
 #: meerk40t/gui/about.py:83
-msgid "* Li Huiyu for their controller. \n "
+msgid "* Li Huiyu for their controller. \n"
 msgstr "* Li Huiyu for their controller. \n"
 
 #: meerk40t/gui/about.py:84
-msgid "* Scorch for lighting our path. \n "
+msgid "* Scorch for lighting our path.\n"
 msgstr "* Scorch for lighting our path. \n"
 
 #: meerk40t/gui/about.py:85
-msgid "* Alois Zingl for his brilliant Bresenham curve plotting algorithms. \n "
+msgid "* Alois Zingl for his brilliant Bresenham curve plotting algorithms.\n"
 msgstr "* Alois Zingl 氏 Bresenham curve plotting algorithms を提供して下さいました。\n"
 
 #: meerk40t/gui/about.py:89
 msgid ""
 "* @joerlane for his hardware investigation wizardry into how the M2-Nano "
-"works. \n "
+"works.\n"
 msgstr "* @joerlane M2-Nanoがどのように動作するのか、ハードウェアの調査をしてくれました。\n"
 
 #: meerk40t/gui/about.py:92
 msgid ""
 "* All the MeerKittens, Sophist-UK,  tiger12506, frogmaster, "
-"inspectionsbybob. \n "
+"inspectionsbybob. \n"
 msgstr "* All the MeerKittens, Sophist-UK, tiger12506, frogmaster, inspectionsbybob. \n"
 
 #: meerk40t/gui/about.py:95
 msgid ""
 "* Beta testers and anyone who reported issues that helped us improve "
-"things. \n "
+"things.\n"
 msgstr "* Beta testers and all those who report issues to us improve things. \n"
 
 #: meerk40t/gui/about.py:98
-msgid "* Translators who helped internationalise MeerK40t for worldwide use. \n "
+msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
 msgstr "* MeerK40t を世界中で使用できるように国際化してくれた翻訳者の皆さん。\n"
 
 #: meerk40t/gui/about.py:101
 msgid ""
 "* Users who have added to or edited the Wiki documentation to help other "
-"users. \n "
+"users.\n"
 msgstr "* 他のユーザーを助けるために Wiki ドキュメントを追加・編集してくださったユーザーの方々 \n"
 
 #: meerk40t/gui/about.py:105
 msgid ""
 "* Icons8 (https://icons8.com/) for their great icons used throughout the "
-"project. \n "
+"project.\n"
 msgstr "* Icons8 (https://icons8.com/) プロジェクト全体で使用されている素晴らしいアイコンを提供してくれました。\n"
 
 #: meerk40t/gui/about.py:108
 msgid ""
 "* The countless developers who created other software that we use "
-"internally. \n "
+"internally.\n"
 msgstr "* 社内で使用している他のソフトウェアを作成した無数の開発者たち。\n"
 
 #: meerk40t/gui/about.py:111
-msgid "* Regebro for his svg.path module which inspired svgelements. \n "
+msgid "* Regebro for his svg.path module which inspired svgelements.\n"
 msgstr "* Regebro svgelements にインスピレーションを与えてくれた svg.path モジュール。\n"
 
 #: meerk40t/gui/about.py:112
-msgid "* The SVG Working Group. \n "
+msgid "* The SVG Working Group.\n"
 msgstr "* The SVG Working Group. \n"
 
 #: meerk40t/gui/about.py:113
@@ -2897,7 +2897,7 @@ msgid "About %s v%s"
 msgstr "%s v%s について"
 
 #: meerk40t/gui/bufferview.py:33
-msgid "Could not find buffer. \n "
+msgid "Could not find buffer.\n"
 msgstr "バッファが見つかりませんでした。\n"
 
 #: meerk40t/gui/bufferview.py:46
@@ -4601,8 +4601,8 @@ msgstr "リフレッシュされました"
 
 #: meerk40t/gui/wxmeerk40t.py:611
 msgid ""
-"We got your message. Thank you for helping \n "
-" \n "
+"We got your message. Thank you for helping\n"
+"\n"
 msgstr "あなたのメッセージを受け取りました。Thank you for helping ˶ˆ꒳ˆ˵"
 
 #: meerk40t/gui/wxmeerk40t.py:612 meerk40t/gui/wxmeerk40t.py:627
@@ -4611,21 +4611,21 @@ msgstr "ありがとうございます"
 
 #: meerk40t/gui/wxmeerk40t.py:621
 msgid ""
-"We're sorry, that didn't work. Raise an issue on the github please. \n "
-" \n "
-" The log file will be in your working directory. \n "
+"We're sorry, that didn't work. Raise an issue on the github please.\n"
+"\n"
+" The log file will be in your working directory.\n"
 msgstr "申し訳ありませんが、うまくいきませんでした。1052 We're sorry, that didn't work. Raise an issue on the github please. \ログファイルはあなたの作業ディレクトリにあります。\n"
 
 #: meerk40t/gui/wxmeerk40t.py:682
 msgid ""
-" \n "
-"    Good news MeerK40t User! MeerK40t encountered an crash! \n "
-" \n "
+"\n"
+"    Good news MeerK40t User! MeerK40t encountered an crash!\n"
+"\n"
 "    You now have the ability to help meerk40t's development by sending us"
-" the log. \n "
-" \n "
-"    Send the following data to the MeerK40t team? \n "
-"    ------ \n "
+" the log.\n"
+"\n"
+"    Send the following data to the MeerK40t team?\n"
+"    ------\n"
 "    "
 msgstr "♪Good news MeerK40t User! MeerK40t encountered an crash! \MeerK40t はクラッシュしました！ログを送ってください。\♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪"
 
@@ -4653,7 +4653,7 @@ msgstr "使い道のないマトリックス。"
 
 #: meerk40t/gui/wxmmain.py:225
 msgid ""
-"Material must be jigged at 0,0 either home or home offset. \n "
+"Material must be jigged at 0,0 either home or home offset.\n"
 "How wide is your material (give units: in, mm, cm, px, etc)?"
 msgstr "材料は、ホームまたはホームオフセットのいずれかで、0,0で治具されなければなりません。\1059 材料の幅はどのくらいですか？"
 
@@ -5056,8 +5056,8 @@ msgstr "現在、データを送信中..."
 
 #: meerk40t/gui/wxmmain.py:1443
 msgid ""
-"Save changes to project before closing? \n "
-" \n "
+"Save changes to project before closing?\n"
+"\n"
 "Your changes will be lost if you do not save them."
 msgstr "Save changes to project before close? \1157 Save changes to project before close?"
 
@@ -5117,7 +5117,7 @@ msgstr "ファイルがMalformedです。"
 #: meerk40t/gui/wxmmain.py:1778
 #, python-format
 msgid ""
-"Some files were unrecognized: \n "
+"Some files were unrecognized:\n"
 "%s"
 msgstr "いくつかのファイルが認識されませんでした。\%s"
 
@@ -5731,7 +5731,7 @@ msgstr "ドライバが検出されました: %s"
 #: meerk40t/device/ch341/ch341.py:178 meerk40t/device/ch341/libusb.py:56
 #: meerk40t/device/ch341/libusb.py:64 meerk40t/device/ch341/mock.py:59
 #: meerk40t/device/ch341/windll.py:55
-msgid "Device Connected. \n "
+msgid "Device Connected.\n"
 msgstr "デバイスが接続されました。\n"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:66
@@ -5803,7 +5803,7 @@ msgstr "Config Set（コンフィグセット）。成功"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:153
 msgid ""
-"Config Set: Fail \n "
+"Config Set: Fail\n"
 "(Hint: may recover if you change where the USB is plugged in.)"
 msgstr "Config Set: Fail ＼(^o^)／ (Hint: USBを挿す場所を変えれば回復するかもしれません。)"
 
@@ -5888,7 +5888,7 @@ msgstr "PyUsb はバックエンドの LibUSB ドライバーがないことを�
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:255
 #: meerk40t/device/ch341/libusb.py:41 meerk40t/device/ch341/windll.py:39
-msgid "Connection to USB failed. \n "
+msgid "Connection to USB failed.\n"
 msgstr "USB への接続に失敗しました。\n"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:263
@@ -5900,7 +5900,7 @@ msgstr "USB からの切り離しを試みています。"
 #: meerk40t/device/ch341/ch341libusbdriver.py:270
 #: meerk40t/device/ch341/libusb.py:76 meerk40t/device/ch341/mock.py:78
 #: meerk40t/device/ch341/windll.py:72
-msgid "USB Disconnection Successful. \n "
+msgid "USB Disconnection Successful.\n"
 msgstr "USB の切断に成功しました。\n"
 
 #: meerk40t/device/ch341/libusb.py:46 meerk40t/device/ch341/mock.py:50
@@ -6449,7 +6449,7 @@ msgstr "DEBUG K40が接続されていない場合は、K40があるかのよう
 #: meerk40t/gui/moshi/moshicontrollergui.py:128
 msgid ""
 "Optional: Distinguish between different lasers using the match criteria "
-"below. \n "
+"below.\n"
 "-1 match anything. 0+ match exactly that value."
 msgstr "オプション。オプション：以下の一致基準を使用して、異なるレーザーを区別します。\1 は何にでもマッチします。0+ は正確にその値にマッチします。"
 
@@ -6747,7 +6747,7 @@ msgstr "X軸とY軸を入れ替える。これは FlipX と FlipY の前に起�
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:131
 msgid ""
 "Forces the device to enter and exit programmed speed mode from the same "
-"direction. \n "
+"direction.\n"
 "This may prevent devices like the M2-V4 and earlier from having issues. "
 "Not typically needed."
 msgstr "デバイスに同じ方向からプログラムされた速度モードを強制的に開始および終了させます。 \ nこれにより、M2-V4以前のようなデバイスで問題が発生するのを防ぐことができます。通常は必要ありません。"
@@ -6904,7 +6904,7 @@ msgstr "歪み/キャリブレーションの検出"
 
 #: meerk40t/gui/panes/camerapanel.py:370
 msgid ""
-"Camera backend failure... \n "
+"Camera backend failure...\n"
 "Cannot attempt camera connection."
 msgstr "カメラバックエンド障害... \ nカメラ接続を試行できません。"
 

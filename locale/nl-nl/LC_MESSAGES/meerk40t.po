@@ -18,6 +18,7 @@ msgstr ""
 "Generated-By: Poboy 0.0.1 \n "
 
 #: meerk40t/kernel.py:942
+#: meerk40t/kernel.py:942
 #, python-format
 msgid "Suspended Signal: %s for %s"
 msgstr "Opgeschort signaal: %s voor %s"
@@ -628,7 +629,7 @@ msgstr "start een console_server op poort 23 (telnet)"
 
 #: meerk40t/kernelserver.py:42
 #, python-format
-msgid "%s %s Telnet Console.\r \n "
+msgid "%s %s Telnet Console.\r\n"
 msgstr "%s %s Telnet Console.\r \n"
 
 #: meerk40t/kernelserver.py:53
@@ -2793,26 +2794,26 @@ msgstr "activeert slaapstand"
 #: meerk40t/gui/about.py:53
 msgid ""
 "MeerK40t is a free MIT Licensed open source project for lasering on K40 "
-"Devices. \n "
-" \n "
+"Devices.\n"
+"\n"
 msgstr "MeerK40t is een gratis open source project met MIT-licentie voor laseren op K40-apparaten. \0641"
 
 #: meerk40t/gui/about.py:56
 msgid ""
 "Participation in the project is highly encouraged. Past participation, "
-"and \n "
+"and \n"
 msgstr "Deelname aan het project wordt sterk aangemoedigd. Deelname in het verleden, en"
 
 #: meerk40t/gui/about.py:59
 msgid ""
 "continuing participation is graciously thanked. This program is mostly "
-"the \n "
+"the\n"
 msgstr "voortdurende deelname wordt hartelijk bedankt. Dit programma is grotendeels het geesteskind"
 
 #: meerk40t/gui/about.py:62
 msgid ""
 "brainchild of Tatarize, who sincerely hopes his contributions will be but"
-" \n "
+" \n"
 msgstr "geesteskind van Tatarize, die van harte hoopt dat zijn bijdragen slechts"
 
 #: meerk40t/gui/about.py:65
@@ -2820,67 +2821,67 @@ msgid "the barest trickle that becomes a raging river."
 msgstr "het barste beekje dat een woeste rivier wordt."
 
 #: meerk40t/gui/about.py:82
-msgid "Thanks go out to... \n "
+msgid "Thanks go out to...\n"
 msgstr "Dank gaat uit naar... \n"
 
 #: meerk40t/gui/about.py:83
-msgid "* Li Huiyu for their controller. \n "
+msgid "* Li Huiyu for their controller. \n"
 msgstr "* Li Huiyu voor hun controleur. \n"
 
 #: meerk40t/gui/about.py:84
-msgid "* Scorch for lighting our path. \n "
+msgid "* Scorch for lighting our path.\n"
 msgstr "* Scorch voor het verlichten van ons pad. \n"
 
 #: meerk40t/gui/about.py:85
-msgid "* Alois Zingl for his brilliant Bresenham curve plotting algorithms. \n "
+msgid "* Alois Zingl for his brilliant Bresenham curve plotting algorithms.\n"
 msgstr "* Alois Zingl voor zijn briljante Bresenham curve plotting algoritmen. \n"
 
 #: meerk40t/gui/about.py:89
 msgid ""
 "* @joerlane for his hardware investigation wizardry into how the M2-Nano "
-"works. \n "
+"works.\n"
 msgstr "* @joerlane voor zijn hardware-onderzoek naar de werking van de M2-Nano. \n"
 
 #: meerk40t/gui/about.py:92
 msgid ""
 "* All the MeerKittens, Sophist-UK,  tiger12506, frogmaster, "
-"inspectionsbybob. \n "
+"inspectionsbybob. \n"
 msgstr "* Alle MeerKittens, Sophist-UK, tiger12506, frogmaster, inspectionsbybob. \n"
 
 #: meerk40t/gui/about.py:95
 msgid ""
 "* Beta testers and anyone who reported issues that helped us improve "
-"things. \n "
+"things.\n"
 msgstr "* Beta-testers en iedereen die problemen meldde die ons hielpen dingen te verbeteren. \n"
 
 #: meerk40t/gui/about.py:98
-msgid "* Translators who helped internationalise MeerK40t for worldwide use. \n "
+msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
 msgstr "* Vertalers die hebben geholpen MeerK40t te internationaliseren voor wereldwijd gebruik. \n"
 
 #: meerk40t/gui/about.py:101
 msgid ""
 "* Users who have added to or edited the Wiki documentation to help other "
-"users. \n "
+"users.\n"
 msgstr "* Gebruikers die de Wiki-documentatie hebben aangevuld of bewerkt om andere gebruikers te helpe"
 
 #: meerk40t/gui/about.py:105
 msgid ""
 "* Icons8 (https://icons8.com/) for their great icons used throughout the "
-"project. \n "
+"project.\n"
 msgstr "* Icons8 (https://icons8.com/) voor hun geweldige iconen die in het hele project zijn gebruikt."
 
 #: meerk40t/gui/about.py:108
 msgid ""
 "* The countless developers who created other software that we use "
-"internally. \n "
+"internally.\n"
 msgstr "* De ontelbare ontwikkelaars die andere software hebben gemaakt die we intern gebruiken. \n"
 
 #: meerk40t/gui/about.py:111
-msgid "* Regebro for his svg.path module which inspired svgelements. \n "
+msgid "* Regebro for his svg.path module which inspired svgelements.\n"
 msgstr "* Regebro voor zijn svg.path module die ons inspireerde tot svgelements. \n"
 
 #: meerk40t/gui/about.py:112
-msgid "* The SVG Working Group. \n "
+msgid "* The SVG Working Group.\n"
 msgstr "* De SVG Werkgroep. \n"
 
 #: meerk40t/gui/about.py:113
@@ -2897,7 +2898,7 @@ msgid "About %s v%s"
 msgstr "Over %s v%s"
 
 #: meerk40t/gui/bufferview.py:33
-msgid "Could not find buffer. \n "
+msgid "Could not find buffer.\n"
 msgstr "Kon buffer niet vinden. \n"
 
 #: meerk40t/gui/bufferview.py:46
@@ -4601,8 +4602,8 @@ msgstr "Vernieuwd."
 
 #: meerk40t/gui/wxmeerk40t.py:611
 msgid ""
-"We got your message. Thank you for helping \n "
-" \n "
+"We got your message. Thank you for helping\n"
+"\n"
 msgstr "We hebben uw bericht ontvangen. Bedankt voor uw hulp."
 
 #: meerk40t/gui/wxmeerk40t.py:612 meerk40t/gui/wxmeerk40t.py:627
@@ -4611,21 +4612,21 @@ msgstr "Bedankt."
 
 #: meerk40t/gui/wxmeerk40t.py:621
 msgid ""
-"We're sorry, that didn't work. Raise an issue on the github please. \n "
-" \n "
-" The log file will be in your working directory. \n "
+"We're sorry, that didn't work. Raise an issue on the github please.\n"
+"\n"
+" The log file will be in your working directory.\n"
 msgstr "Het spijt ons, dat werkte niet. Plaats een issue op de github alstublieft. \Het logbestand zal in uw werkdirectory staan. \n"
 
 #: meerk40t/gui/wxmeerk40t.py:682
 msgid ""
-" \n "
-"    Good news MeerK40t User! MeerK40t encountered an crash! \n "
-" \n "
+"\n"
+"    Good news MeerK40t User! MeerK40t encountered an crash!\n"
+"\n"
 "    You now have the ability to help meerk40t's development by sending us"
-" the log. \n "
-" \n "
-"    Send the following data to the MeerK40t team? \n "
-"    ------ \n "
+" the log.\n"
+"\n"
+"    Send the following data to the MeerK40t team?\n"
+"    ------\n"
 "    "
 msgstr "Goed nieuws MeerK40t gebruiker! MeerK40t is een crash tegengekomen! \U heeft nu de mogelijkheid om meerk40t's ontwikkeling te helpen door ons de log te sturen. \."
 
@@ -4653,7 +4654,7 @@ msgstr "Niet bruikbare Matrix."
 
 #: meerk40t/gui/wxmmain.py:225
 msgid ""
-"Material must be jigged at 0,0 either home or home offset. \n "
+"Material must be jigged at 0,0 either home or home offset.\n"
 "How wide is your material (give units: in, mm, cm, px, etc)?"
 msgstr "Materiaal moet op 0,0 gezet worden, ofwel thuis of thuis offset. \Hoe breed is uw materiaal (geef eenheden: in, mm, cm, px, enz.)?"
 
@@ -5056,8 +5057,8 @@ msgstr "Momenteel gegevens aan het verzenden..."
 
 #: meerk40t/gui/wxmmain.py:1443
 msgid ""
-"Save changes to project before closing? \n "
-" \n "
+"Save changes to project before closing?\n"
+"\n"
 "Your changes will be lost if you do not save them."
 msgstr "Wijzigingen in project opslaan voordat u afsluit? \Uw wijzigingen gaan verloren als u ze niet opslaat."
 
@@ -5117,7 +5118,7 @@ msgstr "Bestand is misvormd."
 #: meerk40t/gui/wxmmain.py:1778
 #, python-format
 msgid ""
-"Some files were unrecognized: \n "
+"Some files were unrecognized:\n"
 "%s"
 msgstr "Sommige bestanden werden niet herkend: \%s"
 
@@ -5731,7 +5732,7 @@ msgstr "Stuurprogramma gedetecteerd: %s"
 #: meerk40t/device/ch341/ch341.py:178 meerk40t/device/ch341/libusb.py:56
 #: meerk40t/device/ch341/libusb.py:64 meerk40t/device/ch341/mock.py:59
 #: meerk40t/device/ch341/windll.py:55
-msgid "Device Connected. \n "
+msgid "Device Connected.\n"
 msgstr "Apparaat Aangesloten. \n"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:66
@@ -5803,7 +5804,7 @@ msgstr "Config ingesteld: Succes"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:153
 msgid ""
-"Config Set: Fail \n "
+"Config Set: Fail\n"
 "(Hint: may recover if you change where the USB is plugged in.)"
 msgstr "Config ingesteld: Mislukt (Hint: kan herstellen als u de USB-stekker verplaatst)."
 
@@ -5888,7 +5889,7 @@ msgstr "PyUsb heeft geen achterliggend LibUSB-stuurprogramma gedetecteerd."
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:255
 #: meerk40t/device/ch341/libusb.py:41 meerk40t/device/ch341/windll.py:39
-msgid "Connection to USB failed. \n "
+msgid "Connection to USB failed.\n"
 msgstr "Verbinding met USB mislukt. \n"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:263
@@ -5900,7 +5901,7 @@ msgstr "Poging tot ontkoppeling van USB."
 #: meerk40t/device/ch341/ch341libusbdriver.py:270
 #: meerk40t/device/ch341/libusb.py:76 meerk40t/device/ch341/mock.py:78
 #: meerk40t/device/ch341/windll.py:72
-msgid "USB Disconnection Successful. \n "
+msgid "USB Disconnection Successful.\n"
 msgstr "USB loskoppeling geslaagd. \n"
 
 #: meerk40t/device/ch341/libusb.py:46 meerk40t/device/ch341/mock.py:50
@@ -6449,7 +6450,7 @@ msgstr "DEBUG. Zonder een aangesloten K40 doorgaan met dingen te verwerken alsof
 #: meerk40t/gui/moshi/moshicontrollergui.py:128
 msgid ""
 "Optional: Distinguish between different lasers using the match criteria "
-"below. \n "
+"below.\n"
 "-1 match anything. 0+ match exactly that value."
 msgstr "Optioneel: Maak onderscheid tussen verschillende lasers met behulp van de onderstaande match criteria. -1 komt met alles overeen. 0+ komt overeen met precies die waarde."
 
@@ -6747,7 +6748,7 @@ msgstr "Verwisselt de X- en Y-as. Dit gebeurt vóór de FlipX en FlipY."
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:131
 msgid ""
 "Forces the device to enter and exit programmed speed mode from the same "
-"direction. \n "
+"direction.\n"
 "This may prevent devices like the M2-V4 and earlier from having issues. "
 "Not typically needed."
 msgstr "Dwingt het apparaat de geprogrammeerde snelheidsmodus in en uit te schakelen vanuit dezelfde richting. \Dit kan voorkomen dat apparaten zoals de M2-V4 en eerder problemen hebben. Normaal gesproken niet nodig."
@@ -6904,7 +6905,7 @@ msgstr "Vervormingen detecteren/Kalibratie"
 
 #: meerk40t/gui/panes/camerapanel.py:370
 msgid ""
-"Camera backend failure... \n "
+"Camera backend failure...\n"
 "Cannot attempt camera connection."
 msgstr "Camera backend failure... \Kan cameraverbinding niet proberen."
 
