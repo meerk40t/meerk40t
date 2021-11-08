@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 21-11-07 15:19UTC\n"
-"PO-Revision-Date: 21-11-07 15:19UTC\n"
+"POT-Creation-Date: 21-11-08 16:11UTC\n"
+"PO-Revision-Date: 21-11-08 16:11UTC\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -35,7 +35,7 @@ msgstr "%s: モジュール %s の最終調整: %s"
 #: meerk40t/kernel.py:983
 #, python-format
 msgid "%s: Detaching %s: %s"
-msgstr "%s: s をデタッチする: %s"
+msgstr "%s: %s をデタッチする: %s"
 
 #: meerk40t/kernel.py:994
 #, python-format
@@ -663,7 +663,7 @@ msgstr "リスニングを開始できませんでした。"
 #: meerk40t/kernelserver.py:186
 #, python-format
 msgid "Listening %s on port %d..."
-msgstr "ポート %d で %s をリスニングしています..."
+msgstr "ポート %s で %d をリスニングしています..."
 
 #: meerk40t/kernelserver.py:192
 #, python-format
@@ -2604,7 +2604,7 @@ msgstr "現在選択されているデバイスにコマンドを委ねる"
 #: meerk40t/device/basedevice.py:143
 #, python-format
 msgid "Activated device %s at index %d."
-msgstr "インデックス %d でデバイス %s をアクティブにしました。"
+msgstr "インデックス %s でデバイス %d をアクティブにしました。"
 
 #: meerk40t/device/basedevice.py:148
 msgid "device"
@@ -5407,7 +5407,7 @@ msgstr "画像のコントラストを上げる"
 #: meerk40t/image/imagetools.py:406
 #, python-format
 msgid "Image Contrast Factor: %f"
-msgstr "画像のコントラスト係数：％f"
+msgstr "画像のコントラスト係数：%f"
 
 #: meerk40t/image/imagetools.py:408
 msgid "image contrast <factor>"
@@ -6931,7 +6931,7 @@ msgstr "アスペクト"
 #: meerk40t/gui/panes/camerapanel.py:475
 #, python-format
 msgid "Preserve: %s"
-msgstr "保存：％s"
+msgstr "保存：%s"
 
 #: meerk40t/gui/panes/camerapanel.py:500 meerk40t/gui/panes/camerapanel.py:697
 msgid "Reset Perspective"
@@ -6949,7 +6949,7 @@ msgstr "URIを設定する"
 #: meerk40t/gui/panes/camerapanel.py:531
 #, python-format
 msgid "URI: %s"
-msgstr "URI：％s"
+msgstr "URI：%s"
 
 #: meerk40t/gui/panes/camerapanel.py:536 meerk40t/gui/panes/camerapanel.py:538
 #: meerk40t/gui/panes/camerapanel.py:540 meerk40t/gui/panes/camerapanel.py:542
@@ -6958,12 +6958,12 @@ msgstr "URI：％s"
 #: meerk40t/gui/panes/camerapanel.py:718 meerk40t/gui/panes/camerapanel.py:720
 #, python-format
 msgid "USB %d"
-msgstr "USB％d"
+msgstr "USB%d"
 
 #: meerk40t/gui/panes/camerapanel.py:692
 #, python-format
 msgid "CameraInterface %d"
-msgstr "CameraInterface％d"
+msgstr "CameraInterface%d"
 
 #: meerk40t/gui/panes/camerapanel.py:737
 msgid "camwin <index>: Open camera window at index"
@@ -7377,22 +7377,22 @@ msgstr "設定"
 #: meerk40t/gui/panes/spoolerpanel.py:198
 #, python-format
 msgid "%.1fmm/s"
-msgstr "％.1fmm / s"
+msgstr "%.1fmm / s"
 
 #: meerk40t/gui/panes/spoolerpanel.py:203
 #, python-format
 msgid "power=%g"
-msgstr "パワー=％g"
+msgstr "パワー=%g"
 
 #: meerk40t/gui/panes/spoolerpanel.py:207
 #, python-format
 msgid "step=%d"
-msgstr "ステップ=％d"
+msgstr "ステップ=%d"
 
 #: meerk40t/gui/panes/spoolerpanel.py:211
 #, python-format
 msgid "overscan=%d"
-msgstr "オーバースキャン=％d"
+msgstr "オーバースキャン=%d"
 
 #: meerk40t/gui/panes/spoolerpanel.py:249
 msgid "Job Spooler"
