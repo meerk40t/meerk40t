@@ -316,7 +316,7 @@ msgstr "elke %f seconden"
 
 #: meerk40t/kernel.py:2134
 msgid "- gui"
-#NAME?
+msgstr "- gui"
 
 #: meerk40t/kernel.py:2145
 msgid "All timers canceled."
