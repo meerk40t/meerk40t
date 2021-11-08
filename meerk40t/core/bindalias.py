@@ -27,7 +27,7 @@ class BindAlias(Modifier):
         self.context.default_keymap = self.default_keymap
         self.context.default_alias = self.default_alias
 
-        @self.context.console_command("bind", help=_("bind <key> <console command>"))
+        @self.context.console_command("bind", help="bind "+_("<key> <console command>"))
         def bind(command, channel, _, args=tuple(), **kwgs):
             """
             Binds a key to a given keyboard keystroke.
@@ -35,12 +35,11 @@ class BindAlias(Modifier):
             context = self.context
             _ = self.context._
             if len(args) == 0:
-                channel(_("----------"))
                 channel(_("Binds:"))
                 for i, key in enumerate(context.keymap):
                     value = context.keymap[key]
-                    channel(_("%d: key %s %s") % (i, key.ljust(15), value))
-                channel(_("----------"))
+                    channel(_("{i:3d}: key {key:s} {value:s}").format(i=i, key=key.ljust(25), value=value))
+                channel("----------")
             else:
                 key = args[0].lower()
                 if key == "default":
@@ -52,7 +51,7 @@ class BindAlias(Modifier):
                 f = command_line.find("bind")
                 if f == -1:  # If bind value has a bind, do not evaluate.
                     spooler, input_driver, output = context.registered[
-                        "device/%s" % context.root.active
+                        "device/{device:s}".format(device=context.root.active)
                     ]
                     if "$x" in command_line:
                         try:
@@ -71,40 +70,40 @@ class BindAlias(Modifier):
                 else:
                     try:
                         del context.keymap[key]
-                        channel(_("Unbound %s") % key)
+                        channel(_("Unbound {key:s}").format(key=key))
                     except KeyError:
                         pass
             return
 
         @self.context.console_argument("alias", type=str, help=_("alias command"))
         @self.context.console_command(
-            "alias", help=_("alias <alias> <console commands[;console command]*>")
+            "alias", help="alias "+_("<alias> <console commands[;console command]*>")
         )
         def alias(command, channel, _, alias=None, remainder=None, **kwgs):
             context = self.context
             _ = self.context._
             if alias is None:
-                channel(_("----------"))
                 channel(_("Aliases:"))
                 for i, key in enumerate(context.alias):
                     value = context.alias[key]
-                    channel("%d: %s %s" % (i, key.ljust(15), value))
-                channel(_("----------"))
+                    channel("{i:3d}: {key:s} {value:s}".format(i=i, key=key.ljust(25), value=value))
+                channel("----------")
                 return
             alias = alias.lower()
             if alias == "default":
                 context.alias = dict()
                 context.default_alias()
-                channel(_("Set default aliases."))
+                channel(_("Default aliases set."))
                 return
             if remainder is None:
                 if alias in context.alias:
-                    channel(_("Alias %s unset.") % alias)
+                    channel(_("Alias {alias:s} unset.").format(alias=alias))
                     del context.alias[alias]
                 else:
-                    channel(_("No alias for %s was set.") % alias)
+                    channel(_("No alias for {alias:s} was set.").format(alias))
             else:
                 context.alias[alias] = remainder
+                channel(_("Alias {alias:s} set to {remainder:s}.").format(alias=alias, remainder=remainder))
 
         @self.context.console_command(".*", regex=True, hidden=True)
         def alias_execute(command, **kwgs):
@@ -116,10 +115,10 @@ class BindAlias(Modifier):
             context = self.context
             if command in self.alias:
                 aliased_command = self.alias[command]
-                for cmd in aliased_command.split(";"):
-                    context("%s\n" % cmd)
+                for alias in aliased_command.split(";"):
+                    context("{alias:s}\n".format(alias=alias)
             else:
-                raise CommandMatchRejected(_("This is not an alias."))
+                raise CommandMatchRejected(_("{command:s} is not an alias.").format(command=command))
 
     def boot(self, *args, **kwargs):
         self.boot_keymap()
