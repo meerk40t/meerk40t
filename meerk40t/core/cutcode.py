@@ -249,9 +249,9 @@ class CutGroup(list, CutObject, ABC):
         return CutGroup(self.parent, self)
 
     def __repr__(self):
-        return "CutGroup(children=%s, parent=%s)" % (
-            list.__repr__(self),
-            str(self.parent),
+        return "CutGroup(children={children:s}, parent={parent:s})".format(
+            children=list.__repr__(self),
+            parent=str(self.parent),
         )
 
     def reversible(self):
@@ -308,9 +308,7 @@ class CutCode(CutGroup):
         self.mode = None
 
     def __str__(self):
-        parts = list()
-        parts.append("%d items" % len(self))
-        return "CutCode(%s)" % " ".join(parts)
+        return "CutCode({len:d} items})".format(len=len(self))
 
     def __copy__(self):
         return CutCode(self)
