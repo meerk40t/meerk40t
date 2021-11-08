@@ -27,7 +27,10 @@ class BindAlias(Modifier):
         self.context.default_keymap = self.default_keymap
         self.context.default_alias = self.default_alias
 
-        @self.context.console_command("bind", help="bind "+_("<key> <console command>"))
+        @self.context.console_command(
+            "bind",
+            help=_("Lists key bindings or adds/removes a binding of a command to a key.")
+            )
         def bind(command, channel, _, args=tuple(), **kwgs):
             """
             Binds a key to a given keyboard keystroke.
@@ -75,9 +78,10 @@ class BindAlias(Modifier):
                         pass
             return
 
-        @self.context.console_argument("alias", type=str, help=_("alias command"))
+        @self.context.console_argument("alias", type=str, help=_("<alias> <console commands[;console command]*>"))
         @self.context.console_command(
-            "alias", help="alias "+_("<alias> <console commands[;console command]*>")
+            "alias",
+            help=_("Lists command aliases or adds/removes an alias equivalent to one or more commands.")
         )
         def alias(command, channel, _, alias=None, remainder=None, **kwgs):
             context = self.context
@@ -116,7 +120,7 @@ class BindAlias(Modifier):
             if command in self.alias:
                 aliased_command = self.alias[command]
                 for alias in aliased_command.split(";"):
-                    context("{alias:s}\n".format(alias=alias)
+                    context("{alias:s}\n".format(alias=alias))
             else:
                 raise CommandMatchRejected(_("{command:s} is not an alias.").format(command=command))
 

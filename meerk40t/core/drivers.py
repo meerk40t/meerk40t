@@ -569,7 +569,7 @@ class Drivers(Modifier):
         @context.console_option("new", "n", type=str, help=_("new driver type"))
         @self.context.console_command(
             "driver",
-            help=_("driver<?> <command>"),
+            help=_("Lists devices or selects a device to be active"),
             regex=True,
             input_type=(None, "spooler"),
             output_type="driver",
@@ -589,7 +589,7 @@ class Drivers(Modifier):
 
             driver = self.get_or_make_driver(device_name, new)
             if driver is None:
-                raise SyntaxError("No Driver.")
+                raise SyntaxError("No driver.")
 
             if spooler is not None:
                 try:
@@ -599,45 +599,42 @@ class Drivers(Modifier):
                 except AttributeError:
                     pass
             elif remainder is None:
-                channel(_("----------"))
-                channel(_("Driver:"))
+                channel(_("Device slots:"))
                 for i, drv in enumerate(self.context.root.match("device", suffix=True)):
-                    channel("%d: %s" % (i, drv))
-                channel(_("----------"))
-                channel(_("Driver %s:" % device_name))
+                    channel("{i:2d}: {driver:s}".format(i=i, driver=drv))
+                channel("----------")
+                channel(_("Active device {device:s}:".format(device=device_name)))
                 channel(str(driver))
-                channel(_("----------"))
+                channel("----------")
             return "driver", (driver, device_name)
 
         @self.context.console_command(
             "list",
-            help=_("driver<?> list"),
+            help=_("Lists devices"),
             input_type="driver",
             output_type="driver",
         )
         def driver_list(command, channel, _, data_type=None, data=None, **kwgs):
-            driver_obj, name = data
-            channel(_("----------"))
-            channel(_("Driver:"))
+            driver, device_name = data
+            channel(_("Device slots:"))
             for i, drv in enumerate(self.context.root.match("device", suffix=True)):
-                channel("%d: %s" % (i, drv))
-            channel(_("----------"))
-            channel(_("Driver %s:" % name))
-            channel(str(driver_obj))
-            channel(_("----------"))
+                channel("{i:2d}: {driver:s}".format(i=i, driver=drv))
+            channel("----------")
+            channel(_("Active device {device:s}:".format(device=device_name)))
+            channel(str(driver))
+            channel("----------")
             return data_type, data
 
         @context.console_command(
             "type",
-            help=_("list driver types"),
+            help=_("List available drivers"),
             input_type="driver",
         )
         def list_type(channel, _, **kwgs):
-            channel(_("----------"))
-            channel(_("Drivers permitted:"))
+            channel(_("Drivers available:"))
             for i, name in enumerate(context.match("driver/", suffix=True)):
                 channel("%d: %s" % (i + 1, name))
-            channel(_("----------"))
+            channel("----------")
 
         @self.context.console_command(
             "reset",
