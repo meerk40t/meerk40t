@@ -127,8 +127,13 @@ supported_languages = (
     ("es", u"español", wx.LANGUAGE_SPANISH),
     ("zh", u"中文", wx.LANGUAGE_CHINESE),
     ("hu", u"Magyar", wx.LANGUAGE_HUNGARIAN),
-    ("pt", u"português", wx.LANGUAGE_PORTUGUESE),
+    ("pt-pt", u"português", wx.LANGUAGE_PORTUGUESE),
     ("pt-br", u"português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    ("ja", u"Japanese", wx.LANGUAGE_JAPANESE),
+    ("nl-nl", u"Dutch", wx.LANGUAGE_DUTCH),
+    ("ru", u"Russian", wx.LANGUAGE_RUSSIAN),
+    ("po", u"Polish", wx.LANGUAGE_POLISH),
+    ("ro", u"Romanian", wx.LANGUAGE_ROMANIAN)
 )
 
 
