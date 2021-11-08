@@ -2894,7 +2894,7 @@ msgstr "Sobre"
 #: meerk40t/gui/about.py:151
 #, python-format
 msgid "About %s v%s"
-msgstr "Cerca de %s v%s"
+msgstr "Sobre de %s v%s"
 
 #: meerk40t/gui/bufferview.py:33
 msgid "Could not find buffer. \n "
