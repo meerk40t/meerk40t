@@ -508,7 +508,7 @@ class Driver:
         parts.append("x={x:f}".format(x=self.current_x))
         parts.append("y={y:f}".format(y=self.current_y))
         parts.append("speed={speed:f}".format(speed=self.settings.speed))
-        parts.append("power={power:d}".format(power=self.settings.power)
+        parts.append("power={power:d}".format(power=self.settings.power))
         status = ";".join(parts)
         self.context.signal("driver;status", status)
 
