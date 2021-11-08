@@ -98,7 +98,7 @@ class Driver:
             self._thread = self.context.threaded(
                 self._driver_threaded,
                 result=clear_thread,
-                thread_name="Driver(%s)" % self.context.path,
+                thread_name="Driver({path:s})".format(self.context.path),
             )
             self._thread.stop = clear_thread
 
@@ -174,7 +174,7 @@ class Driver:
 
         if self.last_fetch is not None:
             self.context.channel("spooler")(
-                "Time between fetches: %f" % (time.time() - self.last_fetch)
+                "Time between fetches: {delta:f}".format(delta=time.time()-self.last_fetch)
             )
             self.last_fetch = None
 
@@ -505,10 +505,10 @@ class Driver:
 
     def status(self):
         parts = list()
-        parts.append("x=%f" % self.current_x)
-        parts.append("y=%f" % self.current_y)
-        parts.append("speed=%f" % self.settings.speed)
-        parts.append("power=%d" % self.settings.power)
+        parts.append("x={x:f}".format(x=self.current_x))
+        parts.append("y={y:f}".format(y=self.current_y))
+        parts.append("speed={speed:f}".format(speed=self.settings.speed))
+        parts.append("power={power:d}".format(power=self.settings.power)
         status = ";".join(parts)
         self.context.signal("driver;status", status)
 
@@ -533,14 +533,14 @@ class Drivers(Modifier):
         Modifier.__init__(self, context, name, channel)
 
     def get_driver(self, driver_name, **kwargs):
-        dev = "device/%s" % driver_name
+        dev = "device/{device:s}".format(device=driver_name)
         try:
             return self.context.registered[dev][1]
         except (KeyError, IndexError):
             return None
 
     def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
-        dev = "device/%s" % device_name
+        dev = "device/{device:s}".format(device=device_name)
         try:
             device = self.context.registered[dev]
         except KeyError:
@@ -549,7 +549,7 @@ class Drivers(Modifier):
         if device[1] is not None and driver_type is None:
             return device[1]
         try:
-            for itype in self.context.match("driver/%s" % driver_type):
+            for itype in self.context.match("driver/{driver:s}".format(driver_type)):
                 driver_class = self.context.registered[itype]
                 driver = driver_class(self.context, device_name, **kwargs)
                 device[1] = driver
@@ -633,12 +633,12 @@ class Drivers(Modifier):
         def list_type(channel, _, **kwgs):
             channel(_("Drivers available:"))
             for i, name in enumerate(context.match("driver/", suffix=True)):
-                channel("%d: %s" % (i + 1, name))
+                channel("{i:2d}: {name:s}".format(i=i+1, name=name))
             channel("----------")
 
         @self.context.console_command(
             "reset",
-            help=_("driver<?> reset"),
+            help=_("Reset a driver"),
             input_type="driver",
             output_type="driver",
         )
