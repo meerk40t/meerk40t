@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 21-11-07 15:19UTC\n"
-"PO-Revision-Date: 21-11-07 15:19UTC\n"
+"POT-Creation-Date: 21-11-08 16:27UTC\n"
+"PO-Revision-Date: 21-11-08 16:27UTC\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -91,7 +91,7 @@ msgstr "À espera de fio %s: %s"
 #: meerk40t/kernel.py:1046
 #, python-format
 msgid "Thread %s has finished. %s"
-msgstr "A % de fios está terminada. %s"
+msgstr "A %s de fios está terminada. %s"
 
 #: meerk40t/kernel.py:1051
 #, python-format
@@ -1325,7 +1325,7 @@ msgstr "Rodar valores:"
 #: meerk40t/core/elements.py:3569
 #, python-format
 msgid "%d: rotate(%fturn) - %s"
-msgstr "%d: rodar(%volume) - %s"
+msgstr "%d: rodar(%fvolume) - %s"
 
 #: meerk40t/core/elements.py:3627 meerk40t/core/elements.py:3914
 msgid "scale_x value"
