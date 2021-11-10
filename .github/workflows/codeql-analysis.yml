@@ -3,9 +3,15 @@ name: "CodeQL"
 on:
   push:
     branches: [main, legacy, 0.7]
+    paths:
+      - '**.py'
+      - '.github/workflows/codeql*.yml'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [main, legacy, 0.7]
+    paths:
+      - '**.py'
+      - '.github/workflows/codeql*.yml'
   schedule:
     - cron: '0 23 * * 5'
 
@@ -13,16 +19,62 @@ concurrency:
   group: codeql-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   analyze:
-    name: CodeQL
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }}+py${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04]
+        python-version: [3.9]
 
     steps:
-    - name: Checkout repository
+    - name: Checkout ${{ github.ref }}
       uses: actions/checkout@v2
 
-    # Initializes the CodeQL tools for scanning.
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - name: Identify precise Python version
+      id: full-python-version
+      shell: bash
+      run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+    - name: Cache Python env for ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requireoptions.txt') }}
+
+    - name: Install Python dependencies
+      run: |
+        python3 -m pip install --upgrade --upgrade-strategy eager pip setuptools wheel babel
+        if [ "${{ runner.os }}" == "Windows" ]; then
+            pip3 install --upgrade --upgrade-strategy eager wxPython
+        else
+            pip3 install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
+        fi
+        if [ -f requireoptions.txt ]; then pip3 install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
+
+    - name: List environment
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
+        JOB_CONTEXT: ${{ toJSON(job) }}
+        STEPS_CONTEXT: ${{ toJSON(steps) }}
+        RUNNER_CONTEXT: ${{ toJSON(runner) }}
+        STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
+        MATRIX_CONTEXT: ${{ toJSON(matrix) }}
+      run: |
+        pip3 list
+        env
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
@@ -31,23 +83,6 @@ jobs:
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
-
-
-    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-    # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
-
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 https://git.io/JvXDl
-
-    # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
-    #    and modify them (or add more) to build your code if your project
-    #    uses a compiled language
-
-    #- run: |
-    #   make bootstrap
-    #   make release
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
