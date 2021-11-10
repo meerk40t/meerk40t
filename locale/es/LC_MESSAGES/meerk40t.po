@@ -1,12 +1,12 @@
-# Spanish translations for PROJECT.
-# Copyright (C) 2021 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
+# Spanish translations for Meerk40t.
+# Copyright (C) 2021 Meerk40t & David Olsen
+# This file is distributed under the same license as the Meerk40t project.
+# David Olsen <tatarize@gmail.com>, 2021.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"Report-Msgid-Bugs-To: tatarize@gmail.com\n"
 "POT-Creation-Date: 2021-03-07 06:05-0800\n"
 "PO-Revision-Date: 2021-09-11 03:02-0700\n"
 "Last-Translator: Peter Cuevas <petercuevas.6@gmail.com>\n"
