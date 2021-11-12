@@ -986,6 +986,7 @@ class Kernel:
         """
         self.bootstrap("preboot")
         self.command_boot()
+        self.choices_boot()
 
         for i, serv in enumerate(self._services):
             # Replace all services with initialized versions.
@@ -2115,6 +2116,20 @@ class Kernel:
     # ==========
     # KERNEL CONSOLE COMMANDS
     # ==========
+
+    def choices_boot(self) -> None:
+        _ = self.translation
+        choices = [
+            {
+                "attr": "print_shutdown",
+                "object": self.root,
+                "default": False,
+                "type": bool,
+                "label": _("Print Shutdown"),
+                "tip": _("Print shutdown log when closed."),
+            },
+        ]
+        self.register_choices("preferences", choices)
 
     def command_boot(self) -> None:
         _ = self.translation
