@@ -2090,7 +2090,23 @@ class Kernel:
         return data
 
     def register_choices(self, sheet, choices):
-        self.register("choices/%s" % sheet, choices)
+        """
+        Registers choices to a given sheet. If the sheet already exists then the new choices
+        are appended to the given sheet.
+
+        If these choices are registered to an object of Context type we then set the given
+        default values.
+
+        @param sheet: sheet being registered to
+        @param choices: choices being registered
+        @return:
+        """
+        key = "choices/%s" % sheet
+        if key in self.registered:
+            others = self.registered[key]
+            others.extend(choices)
+        else:
+            self.register(key, choices)
         for c in choices:
             obj = c["object"]
             if isinstance(obj, Context):
