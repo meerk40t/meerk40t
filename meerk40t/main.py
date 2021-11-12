@@ -289,6 +289,7 @@ def run():
     kernel.bootstrap("register")
     kernel.bootstrap("configure")
     kernel.boot()
+    elements = kernel_root.elements
 
     device_context = kernel.get_context("devices")
     if not hasattr(device_context, "_devices") or device_context._devices == 0:
@@ -306,8 +307,7 @@ def run():
         # Load any input file
         import os
 
-        kernel_root.elements.load(os.path.realpath(args.input.name))
-        elements = kernel_root.elements
+        elements.load(os.path.realpath(args.input.name))
         elements.classify(list(elements.elems()))
 
     if args.mock:
@@ -347,7 +347,6 @@ def run():
 
     if args.auto:
         # Auto start does the planning and spooling of the data.
-        elements = kernel_root.elements
         if args.speed is not None:
             for o in elements.ops():
                 o.speed = args.speed
@@ -366,7 +365,7 @@ def run():
         # output the file you have at this point.
         import os
 
-        kernel_root.elements.save(os.path.realpath(args.output.name))
+        elements.save(os.path.realpath(args.output.name))
 
     if args.console:
         kernel_root.channel("console").watch(print)

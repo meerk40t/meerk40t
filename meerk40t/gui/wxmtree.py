@@ -246,7 +246,6 @@ class ShadowTree:
         self.object = "Project"
         self.name = "Project"
         self.context = context
-        self.elements = context.elements
         self.elements.listen_tree(self)
         self.do_not_select = False
 
@@ -820,7 +819,7 @@ class ShadowTree:
             return
         node = self.wxtree.GetItemData(item)
 
-        create_menu(self.gui, node, self.elements)
+        create_menu(self.gui, node, self.context.elements)
 
     def on_item_activated(self, event):
         """
@@ -840,7 +839,7 @@ class ShadowTree:
         @param args:
         @return:
         """
-        first_element = self.elements.first_element(emphasized=True)
+        first_element = self.context.elements.first_element(emphasized=True)
         if hasattr(first_element, "node"):
             self.activated_node(first_element.node)
 
@@ -886,7 +885,7 @@ class ShadowTree:
         selected = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
-        self.elements.set_selected(selected)
+        self.context.elements.set_selected(selected)
 
         emphasized = list(selected)
         for i in range(len(emphasized)):
@@ -900,7 +899,7 @@ class ShadowTree:
                     except Exception:
                         pass
 
-        self.elements.set_emphasis(emphasized)
+        self.context.elements.set_emphasis(emphasized)
         self.refresh_tree()
         event.Allow()
 
@@ -911,6 +910,6 @@ class ShadowTree:
         :return:
         """
         self.do_not_select = True
-        for e in self.elements.elems_nodes(emphasized=True):
+        for e in self.context.elements.elems_nodes(emphasized=True):
             self.wxtree.SelectItem(e.item, True)
         self.do_not_select = False

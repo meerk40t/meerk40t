@@ -58,10 +58,11 @@ def plugin(kernel, lifecycle=None):
         kernel.add_service(Elemental)
     elif lifecycle == "postboot":
         _ = kernel.root._
+        elements = kernel.root.elements
         choices = [
             {
                 "attr": "uniform_svg",
-                "object": kernel.root.elements,
+                "object": elements,
                 "default": False,
                 "type": bool,
                 "label": _("SVG Uniform Save"),
@@ -71,7 +72,7 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "image_dpi",
-                "object": kernel.root.elements,
+                "object": elements,
                 "default": True,
                 "type": bool,
                 "label": _("Image DPI Scaling"),
@@ -86,7 +87,7 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "dxf_center",
-                "object": kernel.root.elements,
+                "object": elements,
                 "default": True,
                 "type": bool,
                 "label": _("DXF Centering"),
@@ -94,7 +95,7 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "operation_default_empty",
-                "object": kernel.root.elements,
+                "object": elements,
                 "default": True,
                 "type": bool,
                 "label": _("Default Operation Other/Red/Blue"),
@@ -102,7 +103,7 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "classify_reverse",
-                "object": kernel.root.elements,
+                "object": elements,
                 "default": False,
                 "type": bool,
                 "label": _("Classify Reversed"),
@@ -112,7 +113,7 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "legacy_classification",
-                "object": kernel.root.elements,
+                "object": elements,
                 "default": False,
                 "type": bool,
                 "label": _("Legacy Classify"),

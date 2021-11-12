@@ -2761,9 +2761,9 @@ class Kernel:
             if not os.path.exists(new_file):
                 channel(_("No such file."))
                 return
-            root_context = self.root
+            elements = self.root.elements
             try:
-                root_context.elements.load(new_file)
+                elements.load(new_file)
             except AttributeError:
                 raise SyntaxError(_("Loading files was not defined"))
             channel(_("loading..."))

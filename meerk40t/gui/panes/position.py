@@ -140,9 +140,7 @@ class PositionPanel(wx.Panel):
         # end wxGlade
 
     def _update_position(self, *args, **kwargs):
-        p = self.context
-        elements = p.elements
-        bounds = elements.selected_area()
+        bounds = self.context.elements.selected_area()
         if bounds is None:
             if self.text_x.IsEnabled():
                 self.text_w.Enable(False)

@@ -191,7 +191,7 @@ class MeerK40t(MWindow):
                 spooler, input_driver, output = context.registered[
                     "device/%s" % context.root.active
                 ]
-                root_context = context.root
+                elements = context.elements
                 bed_dim = context.root
                 m = str(dlg.GetValue())
                 m = m.replace("$x", str(input_driver.current_x))
@@ -211,7 +211,7 @@ class MeerK40t(MWindow):
                     dlg.ShowModal()
                     dlg.Destroy()
                 else:
-                    for element in root_context.elements.elems():
+                    for element in elements.elems():
                         try:
                             element *= mx
                             element.node.modified()
@@ -1728,7 +1728,7 @@ class MeerK40t(MWindow):
                 results = self.context.elements.load(
                     pathname,
                     channel=self.context.channel("load"),
-                    svg_ppi=self.context.svg_ppi,
+                    svg_ppi=self.context.elements.svg_ppi,
                 )
             except SyntaxError as e:
                 dlg = wx.MessageDialog(
@@ -1789,10 +1789,9 @@ class MeerK40t(MWindow):
         # event.Skip()
 
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        context = self.context
         self.working_file = None
         self.needs_saving = False
-        context.elements.clear_all()
+        self.context.elements.clear_all()
         self.context(".laserpath_clear\n")
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
@@ -1837,8 +1836,7 @@ class MeerK40t(MWindow):
         """
         Zoom size button press.
         """
-        elements = self.context.elements
-        bbox = elements.selected_area()
+        bbox = self.context.elements.selected_area()
         if bbox is None:
             self.context("scene focus -10% -10% 110% 110%\n")
         else:
@@ -1870,7 +1868,7 @@ class MeerK40t(MWindow):
             "scale(%f, %f, %f, %f)"
             % (sx, sy, input_driver.current_x, input_driver.current_y)
         )
-        for element in self.context.root.elements.elems():
+        for element in self.context.elements.elems():
             try:
                 element *= mx
                 element.node.modified()

@@ -148,7 +148,7 @@ class DrawTool(ToolWidget):
                 t.move(self.series[0])
                 for m in self.series:
                     t.line(m)
-                self.scene.context.root.elements.add_elem(t, classify=True)
+                self.scene.context.elements.add_elem(t, classify=True)
             except IndexError:
                 pass
             self.series = None
@@ -195,7 +195,7 @@ class RectTool(ToolWidget):
                 rect = Rect(x0, y0, x1 - x0, y1 - y0, stroke="blue")
                 t = Path(rect)
                 if len(t) != 0:
-                    self.scene.context.root.elements.add_elem(t, classify=True)
+                    self.scene.context.elements.add_elem(t, classify=True)
                 self.p1 = None
                 self.p2 = None
             except IndexError:
