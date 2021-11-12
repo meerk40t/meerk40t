@@ -5320,7 +5320,7 @@ class Elemental(Service):
 
         self.listen_tree(self)
 
-    def detach(self, *a, **kwargs):
+    def shutdown(self, *args, **kwargs):
         self.save_persistent_operations("previous")
         self.unlisten_tree(self)
 
