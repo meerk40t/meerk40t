@@ -75,14 +75,14 @@ class PropertiesPanel(wx.Panel):
                 control = wx.CheckBox(self, label=label)
                 control.SetValue(data)
 
-                def on_checkbox_check(param, ctrl):
+                def on_checkbox_check(param, ctrl, obj):
                     def check(event=None):
                         v = ctrl.GetValue()
                         setattr(obj, param, v)
 
                     return check
 
-                control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control))
+                control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
                 sizer_main.Add(control, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 control_sizer = wx.StaticBoxSizer(
@@ -92,7 +92,7 @@ class PropertiesPanel(wx.Panel):
                 control.SetValue(str(data))
                 control_sizer.Add(control)
 
-                def on_textbox_text(param, ctrl):
+                def on_textbox_text(param, ctrl, obj):
                     def text(event=None):
                         v = ctrl.GetValue()
                         try:
@@ -103,7 +103,7 @@ class PropertiesPanel(wx.Panel):
 
                     return text
 
-                control.Bind(wx.EVT_TEXT, on_textbox_text(attr, control))
+                control.Bind(wx.EVT_TEXT, on_textbox_text(attr, control, obj))
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Color:
                 control_sizer = wx.StaticBoxSizer(
@@ -116,7 +116,7 @@ class PropertiesPanel(wx.Panel):
                     control.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
                     control.color = color
 
-                def on_button_color(param, ctrl):
+                def on_button_color(param, ctrl, obj):
                     def click(event=None):
                         color_data = wx.ColourData()
                         color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
@@ -138,7 +138,7 @@ class PropertiesPanel(wx.Panel):
                 set_color(data)
                 control_sizer.Add(control)
 
-                control.Bind(wx.EVT_BUTTON, on_button_color(attr, control))
+                control.Bind(wx.EVT_BUTTON, on_button_color(attr, control, obj))
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             else:
                 # Requires a registered data_type
