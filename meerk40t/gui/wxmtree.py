@@ -237,7 +237,7 @@ class ShadowTree:
 
     def __init__(self, context, gui, root, wxtree):
         self.context = context
-        self.element_root = root
+        self.elemtree = root
         self.gui = gui
         self.wxtree = wxtree
         self.renderer = gui.renderer
@@ -246,7 +246,7 @@ class ShadowTree:
         self.object = "Project"
         self.name = "Project"
         self.context = context
-        self.elements.listen_tree(self)
+        self.context.elements.listen_tree(self)
         self.do_not_select = False
 
     def node_created(self, node, **kwargs):
@@ -490,7 +490,7 @@ class ShadowTree:
         """Any tree elements currently displaying wrong data as per elements should be updated to display
         the proper values and contexts and icons."""
         if node is None:
-            node = self.element_root.item
+            node = self.elemtree.item
         if node is None:
             return
         tree = self.wxtree
@@ -515,22 +515,22 @@ class ShadowTree:
         self.tree_images.Create(width=20, height=20)
 
         self.wxtree.SetImageList(self.tree_images)
-        self.element_root.item = self.wxtree.AddRoot(self.name)
+        self.elemtree.item = self.wxtree.AddRoot(self.name)
 
-        self.wxtree.SetItemData(self.element_root.item, self.element_root)
+        self.wxtree.SetItemData(self.elemtree.item, self.elemtree)
 
         self.set_icon(
-            self.element_root, icon_meerk40t.GetBitmap(False, resize=(20, 20))
+            self.elemtree, icon_meerk40t.GetBitmap(False, resize=(20, 20))
         )
-        self.register_children(self.element_root)
+        self.register_children(self.elemtree)
 
-        node_operations = self.element_root.get(type="branch ops")
+        node_operations = self.elemtree.get(type="branch ops")
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap())
 
         for n in node_operations.children:
             self.set_icon(n)
 
-        node_elements = self.element_root.get(type="branch elems")
+        node_elements = self.elemtree.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap())
 
         # Expand Ops and Element nodes only
