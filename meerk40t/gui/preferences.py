@@ -7,6 +7,7 @@ import wx
 
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
+from .propertiespanel import PropertiesPanel
 
 _ = wx.GetTranslation
 
@@ -43,30 +44,40 @@ class PreferencesPanel(wx.Panel):
         )
         # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.choices = [
-            (
-                _("Save Window Positions"),
-                _("Open Windows at the same place they were last closed"),
-                "windows_save",
-                True,
-            ),
-            (
-                _("Print Shutdown"),
-                _("Print shutdown log when Meerk40t is closed."),
-                "print_shutdown",
-                False,
-            ),
-            (
-                _("SVG Uniform Save"),
-                _(
+        choices = [
+            {
+                "attr": "windows_save",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Save Window Positions"),
+                "tip": _("Open Windows at the same place they were last closed"),
+            },
+            {
+                "attr": "print_shutdown",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Print Shutdown"),
+                "tip": _("Print shutdown log when Meerk40t is closed."),
+            },
+            {
+                "attr": "uniform_svg",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("SVG Uniform Save"),
+                "tip": _(
                     "Do not treat overwriting SVG differently if they are MeerK40t files"
                 ),
-                "uniform_svg",
-                False,
-            ),
-            (
-                _("Image DPI Scaling"),
-                "\n".join(
+            },
+            {
+                "attr": "image_dpi",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Image DPI Scaling"),
+                "tip": "\n".join(
                     (
                         _("Unset: Use the image as if it were 1000 pixels per inch."),
                         _(
@@ -74,32 +85,40 @@ class PreferencesPanel(wx.Panel):
                         ),
                     )
                 ),
-                "image_dpi",
-                True,
-            ),
-            (
-                _("DXF Centering"),
-                _("Fit (scale down if necessary) and center a DXF file within the bed"),
-                "dxf_center",
-                True,
-            ),
-            (
-                _("Show Negative Guide"),
-                _(
+            },
+            {
+                "attr": "dxf_center",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("DXF Centering"),
+                "tip": _("Fit (scale down if necessary) and center a DXF file within the bed"),
+            },
+            {
+                "attr": "show_negative_guide",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Show Negative Guide"),
+                "tip": _(
                     "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
                 ),
-                "show_negative_guide",
-                True,
-            ),
-            (
-                _("Launch Spooler on Job Start"),
-                _("Open the Spooler window automatically when you Execute a Job"),
-                "auto_spooler",
-                True,
-            ),
-            (
-                _("MouseWheel Pan"),
-                "\n".join(
+            },
+            {
+                "attr": "auto_spooler",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Launch Spooler on Job Start"),
+                "tip": _("Open the Spooler window automatically when you Execute a Job"),
+            },
+            {
+                "attr": "mouse_wheel_pan",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("MouseWheel Pan"),
+                "tip": "\n".join(
                     (
                         _("Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."),
                         _(
@@ -107,48 +126,60 @@ class PreferencesPanel(wx.Panel):
                         ),
                     )
                 ),
-                "mouse_wheel_pan",
-                True,
-            ),
-            (
-                _("Invert MouseWheel Pan"),
-                _(
+            },
+            {
+                "attr": "mouse_pan_invert",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Invert MouseWheel Pan"),
+                "tip": _(
                     "Reverses the direction of the MouseWheel for horizontal & vertical pan"
-                ),
-                "mouse_pan_invert",
-                False,
-            ),
-            (
-                _("Invert MouseWheel Zoom"),
-                _("Reverses the direction of the MouseWheel for zoom"),
-                "mouse_zoom_invert",
-                False,
-            ),
-            (
-                _("Default Operation Other/Red/Blue"),
-                _("Sets Operations to Other/Red/Blue if loaded with no operations."),
-                "operation_default_empty",
-                True,
-            ),
-            (
-                _("Classify Reversed"),
-                _(
+                )
+            },
+            {
+                "attr": "mouse_zoom_invert",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Invert MouseWheel Zoom"),
+                "tip": _("Reverses the direction of the MouseWheel for zoom"),
+            },
+            {
+                "attr": "operation_default_empty",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Default Operation Other/Red/Blue"),
+                "tip": _("Sets Operations to Other/Red/Blue if loaded with no operations."),
+            },
+            {
+                "attr": "classify_reverse",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Classify Reversed"),
+                "tip": _(
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
-                "classify_reverse",
-                False,
-            ),
-            (
-                _("Legacy Classify"),
-                _(
+            },
+            {
+                "attr": "legacy_classification",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Legacy Classify"),
+                "tip": _(
                     "Use the legacy classification algorithm rather than the modern classification algorithm."
                 ),
-                "legacy_classification",
-                False,
-            ),
-            (
-                _("Disable ToolTips"),
-                "\n".join(
+            },
+            {
+                "attr": "disable_tool_tips",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Disable ToolTips"),
+                "tip": "\n".join(
                     (
                         _(
                             "If you do not want to see tooltips like this one, check this box."
@@ -159,30 +190,15 @@ class PreferencesPanel(wx.Panel):
                         ),
                     )
                 ),
-                "disable_tool_tips",
-                False,
-            ),
+            },
         ]
+        context.kernel.register_choices("preferences", choices)
+
         self.text_scale_x = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.text_scale_y = wx.TextCtrl(self, wx.ID_ANY, "1.000")
-        self.checklist_options = wx.Panel(self, wx.ID_ANY)
-        pos_y = 10
-        for i, c in enumerate(self.choices):
-            name, tip, choice, default = c
-            cb = wx.CheckBox(self.checklist_options, label=name, pos=(10, pos_y))
-            cb.SetToolTip(tip)
-            pos_y += 20
-            self.context.setting(bool, choice, default)
-            cb.SetValue(getattr(self.context, choice))
-
-            def on_checkbox_check(param, checkbox):
-                def check(event=None):
-                    v = checkbox.GetValue()
-                    setattr(self.context, param, v)
-
-                return check
-
-            cb.Bind(wx.EVT_CHECKBOX, on_checkbox_check(choice, cb))
+        self.checklist_options = PropertiesPanel(
+            self, wx.ID_ANY, context=context, choices="preferences"
+        )
         from .wxmeerk40t import supported_languages
 
         choices = [
