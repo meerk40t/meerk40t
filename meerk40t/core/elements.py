@@ -1415,7 +1415,6 @@ class RootNode(Node):
         self.context = context
         self.listeners = []
 
-        self.elements = context.elements
         self.bootstrap = {
             "op": LaserOperation,
             "cmdop": CommandOperation,
@@ -1586,47 +1585,43 @@ class Elemental(Service):
         self.note = None
         self._emphasized_bounds = None
         self._emphasized_bounds_dirty = True
-        self._tree = None
+        self._tree = RootNode(self)
 
-    def attach(self, *a, **kwargs):
-        context = self.context
-        _ = context._
-        context.elements = self
-        context.classify = self.classify
-        context.save = self.save
-        context.save_types = self.save_types
-        context.load = self.load
-        context.load_types = self.load_types
-        context = self.context
-        self._tree = RootNode(context)
-        bed_dim = context.root
+        _ = kernel.translation
+        # context.classify = self.classify
+        # context.save = self.save
+        # context.save_types = self.save_types
+        # context.load = self.load
+        # context.load_types = self.load_types
+
+        bed_dim = self.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
-        context.root.setting(bool, "classify_reverse", False)
-        context.root.setting(bool, "legacy_classification", False)
+        self.root.setting(bool, "classify_reverse", False)
+        self.root.setting(bool, "legacy_classification", False)
 
         # ==========
         # OPERATION BASE
         # ==========
-        @context.console_command(
+        @self.console_command(
             "operations", help=_("Show information about operations")
         )
         def element(**kwgs):
-            context(".operation* list\n")
+            self(".operation* list\n")
 
-        @context.console_command(
+        @self.console_command(
             "operation.*", help=_("operation.*: selected operations"), output_type="ops"
         )
         def operation(**kwgs):
             return "ops", list(self.ops(emphasized=True))
 
-        @context.console_command(
+        @self.console_command(
             "operation*", help=_("operation*: all operations"), output_type="ops"
         )
         def operation(**kwgs):
             return "ops", list(self.ops())
 
-        @context.console_command(
+        @self.console_command(
             "operation~",
             help=_("operation~: non selected operations."),
             output_type="ops",
@@ -1634,13 +1629,13 @@ class Elemental(Service):
         def operation(**kwgs):
             return "ops", list(self.ops(emphasized=False))
 
-        @context.console_command(
+        @self.console_command(
             "operation", help=_("operation: selected operations."), output_type="ops"
         )
         def operation(**kwgs):
             return "ops", list(self.ops(emphasized=True))
 
-        @context.console_command(
+        @self.console_command(
             r"operation([0-9]+,?)+",
             help=_("operation0,2: operation #0 and #2"),
             regex=True,
@@ -1665,8 +1660,8 @@ class Elemental(Service):
         # OPERATION SUBCOMMANDS
         # ==========
 
-        @context.console_argument("name", help=_("Name to save the operation under"))
-        @context.console_command(
+        @self.console_argument("name", help=_("Name to save the operation under"))
+        @self.console_command(
             "save",
             help=_("Save current operations to persistent settings"),
             input_type="ops",
@@ -1680,8 +1675,8 @@ class Elemental(Service):
             self.save_persistent_operations(name)
             return "ops", list(self.ops())
 
-        @context.console_argument("name", help=_("Name to load the operation from"))
-        @context.console_command(
+        @self.console_argument("name", help=_("Name to load the operation from"))
+        @self.console_command(
             "load",
             help=_("Load operations from persistent settings"),
             input_type="ops",
@@ -1695,7 +1690,7 @@ class Elemental(Service):
             self.load_persistent_operations(name)
             return "ops", list(self.ops())
 
-        @context.console_command(
+        @self.console_command(
             "select",
             help=_("Set these values as the selection."),
             input_type="ops",
@@ -1705,7 +1700,7 @@ class Elemental(Service):
             self.set_emphasis(data)
             return "ops", data
 
-        @context.console_command(
+        @self.console_command(
             "select+",
             help=_("Add the input to the selection"),
             input_type="ops",
@@ -1717,7 +1712,7 @@ class Elemental(Service):
             self.set_emphasis(ops)
             return "ops", ops
 
-        @context.console_command(
+        @self.console_command(
             "select-",
             help=_("Remove the input data from the selection"),
             input_type="ops",
@@ -1733,7 +1728,7 @@ class Elemental(Service):
             self.set_emphasis(ops)
             return "ops", ops
 
-        @context.console_command(
+        @self.console_command(
             "select^",
             help=_("Toggle the input data in the selection"),
             input_type="ops",
@@ -1749,10 +1744,10 @@ class Elemental(Service):
             self.set_emphasis(ops)
             return "ops", ops
 
-        @context.console_argument("start", type=int, help=_("operation start"))
-        @context.console_argument("end", type=int, help=_("operation end"))
-        @context.console_argument("step", type=int, help=_("operation step"))
-        @context.console_command(
+        @self.console_argument("start", type=int, help=_("operation start"))
+        @self.console_argument("end", type=int, help=_("operation end"))
+        @self.console_argument("step", type=int, help=_("operation step"))
+        @self.console_command(
             "range",
             help=_("Subset existing selection by begin and end indices and step"),
             input_type="ops",
@@ -1768,8 +1763,8 @@ class Elemental(Service):
             self.set_emphasis(subops)
             return "ops", subops
 
-        @context.console_argument("filter", type=str, help=_("Filter to apply"))
-        @context.console_command(
+        @self.console_argument("filter", type=str, help=_("Filter to apply"))
+        @self.console_command(
             "filter",
             help=_("Filter data by given value"),
             input_type="ops",
@@ -1903,7 +1898,7 @@ class Elemental(Service):
             self.set_emphasis(subops)
             return "ops", subops
 
-        @context.console_command(
+        @self.console_command(
             "list",
             help=_("Show information about the chained data"),
             input_type="ops",
@@ -1948,14 +1943,14 @@ class Elemental(Service):
                         channel(name)
             channel("----------")
 
-        @context.console_option("color", "c", type=Color)
-        @context.console_option("default", "d", type=bool)
-        @context.console_option("speed", "s", type=float)
-        @context.console_option("power", "p", type=float)
-        @context.console_option("step", "S", type=int)
-        @context.console_option("overscan", "o", type=Length)
-        @context.console_option("passes", "x", type=int)
-        @context.console_command(
+        @self.console_option("color", "c", type=Color)
+        @self.console_option("default", "d", type=bool)
+        @self.console_option("speed", "s", type=float)
+        @self.console_option("power", "p", type=float)
+        @self.console_option("step", "S", type=int)
+        @self.console_option("overscan", "o", type=Length)
+        @self.console_option("passes", "x", type=int)
+        @self.console_command(
             ("cut", "engrave", "raster", "imageop", "dots"),
             help=_(
                 "<cut/engrave/raster/imageop/dots> - group the elements into this operation"
@@ -2011,8 +2006,8 @@ class Elemental(Service):
                     op.add(item, type="opnode")
             return "ops", [op]
 
-        @context.console_argument("step_size", type=int, help=_("raster step size"))
-        @context.console_command(
+        @self.console_argument("step_size", type=int, help=_("raster step size"))
+        @self.console_command(
             "step", help=_("step <raster-step-size>"), input_type="ops"
         )
         def op_step(command, channel, _, data, step_size=None, **kwrgs):
@@ -2032,10 +2027,10 @@ class Elemental(Service):
                     op.notify_update()
             return "ops", data
 
-        @context.console_argument(
+        @self.console_argument(
             "speed", type=float, help=_("operation speed in mm/s")
         )
-        @context.console_command(
+        @self.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
         def op_speed(command, channel, _, speed=None, data=None, **kwrgs):
@@ -2053,10 +2048,10 @@ class Elemental(Service):
                 op.notify_update()
             return "ops", data
 
-        @context.console_argument(
+        @self.console_argument(
             "power", type=int, help=_("power in pulses per inch (ppi, 1000=max)")
         )
-        @context.console_command(
+        @self.console_command(
             "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
         )
         def op_power(command, channel, _, power=None, data=None, **kwrgs):
@@ -2074,8 +2069,8 @@ class Elemental(Service):
                 op.notify_update()
             return "ops", data
 
-        @context.console_argument("passes", type=int, help=_("Set operation passes"))
-        @context.console_command(
+        @self.console_argument("passes", type=int, help=_("Set operation passes"))
+        @self.console_command(
             "passes", help=_("passes <passes>"), input_type="ops", output_type="ops"
         )
         def op_passes(command, channel, _, passes=None, data=None, **kwrgs):
@@ -2098,7 +2093,7 @@ class Elemental(Service):
                 op.notify_update()
             return "ops", data
 
-        @context.console_command(
+        @self.console_command(
             "disable",
             help=_("Disable the given operations"),
             input_type="ops",
@@ -2111,7 +2106,7 @@ class Elemental(Service):
                 op.notify_update()
             return "ops", data
 
-        @context.console_command(
+        @self.console_command(
             "enable",
             help=_("Enable the given operations"),
             input_type="ops",
@@ -2127,7 +2122,7 @@ class Elemental(Service):
         # ==========
         # ELEMENT/OPERATION SUBCOMMANDS
         # ==========
-        @context.console_command(
+        @self.console_command(
             "copy",
             help=_("Duplicate elements"),
             input_type=("elements", "ops"),
@@ -2141,7 +2136,7 @@ class Elemental(Service):
                 self.add_elems(add_elem)
             return data_type, add_elem
 
-        @context.console_command(
+        @self.console_command(
             "delete", help=_("Delete elements"), input_type=("elements", "ops")
         )
         def e_delete(command, channel, _, data=None, data_type=None, **kwgs):
@@ -2150,20 +2145,20 @@ class Elemental(Service):
                 self.remove_elements(data)
             else:
                 self.remove_operations(data)
-            self.context.signal("refresh_scene", 0)
+            self.signal("refresh_scene", 0)
 
         # ==========
         # ELEMENT BASE
         # ==========
 
-        @context.console_command(
+        @self.console_command(
             "elements",
             help=_("Show information about elements"),
         )
         def element(**kwgs):
-            context(".element* list\n")
+            self(".element* list\n")
 
-        @context.console_command(
+        @self.console_command(
             "element*",
             help=_("element*, all elements"),
             output_type="elements",
@@ -2171,7 +2166,7 @@ class Elemental(Service):
         def element_star(**kwgs):
             return "elements", list(self.elems())
 
-        @context.console_command(
+        @self.console_command(
             "element~",
             help=_("element~, all non-selected elements"),
             output_type="elements",
@@ -2179,7 +2174,7 @@ class Elemental(Service):
         def element_not(**kwgs):
             return "elements", list(self.elems(emphasized=False))
 
-        @context.console_command(
+        @self.console_command(
             "element",
             help=_("element, selected elements"),
             output_type="elements",
@@ -2187,7 +2182,7 @@ class Elemental(Service):
         def element_base(**kwargs):
             return "elements", list(self.elems(emphasized=True))
 
-        @context.console_command(
+        @self.console_command(
             r"element([0-9]+,?)+",
             help=_("element0,3,4,5: chain a list of specific elements"),
             regex=True,
@@ -2212,8 +2207,8 @@ class Elemental(Service):
         # ELEMENT SUBCOMMANDS
         # ==========
 
-        @context.console_argument("step_size", type=int, help=_("element step size"))
-        @context.console_command(
+        @self.console_argument("step_size", type=int, help=_("element step size"))
+        @self.console_command(
             "step",
             help=_("step <element step-size>"),
             input_type="elements",
@@ -2245,11 +2240,11 @@ class Elemental(Service):
                 element.transform.post_translate(tx, ty)
                 if hasattr(element, "node"):
                     element.node.modified()
-                self.context.signal("element_property_reload", element)
-                self.context.signal("refresh_scene")
+                self.signal("element_property_reload", element)
+                self.signal("refresh_scene")
             return ("elements",)
 
-        @context.console_command(
+        @self.console_command(
             "select",
             help=_("Set these values as the selection."),
             input_type="elements",
@@ -2259,7 +2254,7 @@ class Elemental(Service):
             self.set_emphasis(data)
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "select+",
             help=_("Add the input to the selection"),
             input_type="elements",
@@ -2271,7 +2266,7 @@ class Elemental(Service):
             self.set_emphasis(elems)
             return "elements", elems
 
-        @context.console_command(
+        @self.console_command(
             "select-",
             help=_("Remove the input data from the selection"),
             input_type="elements",
@@ -2287,7 +2282,7 @@ class Elemental(Service):
             self.set_emphasis(elems)
             return "elements", elems
 
-        @context.console_command(
+        @self.console_command(
             "select^",
             help=_("Toggle the input data in the selection"),
             input_type="elements",
@@ -2303,7 +2298,7 @@ class Elemental(Service):
             self.set_emphasis(elems)
             return "elements", elems
 
-        @context.console_command(
+        @self.console_command(
             "list",
             help=_("Show information about the chained data"),
             input_type="elements",
@@ -2325,10 +2320,10 @@ class Elemental(Service):
             channel("----------")
             return "elements", data
 
-        @context.console_argument("start", type=int, help=_("elements start"))
-        @context.console_argument("end", type=int, help=_("elements end"))
-        @context.console_argument("step", type=int, help=_("elements step"))
-        @context.console_command(
+        @self.console_argument("start", type=int, help=_("elements start"))
+        @self.console_argument("end", type=int, help=_("elements end"))
+        @self.console_argument("step", type=int, help=_("elements step"))
+        @self.console_command(
             "range",
             help=_("Subset selection by begin & end indices and step"),
             input_type="elements",
@@ -2344,7 +2339,7 @@ class Elemental(Service):
             self.set_emphasis(subelem)
             return "elements", subelem
 
-        @context.console_command(
+        @self.console_command(
             "merge",
             help=_("merge elements"),
             input_type="elements",
@@ -2365,7 +2360,7 @@ class Elemental(Service):
             self.classify([super_element])
             return "elements", [super_element]
 
-        @context.console_command(
+        @self.console_command(
             "subpath",
             help=_("break elements"),
             input_type="elements",
@@ -2397,7 +2392,7 @@ class Elemental(Service):
         # Align consist of top level node objects that can be manipulated within the scene.
         # ==========
 
-        @context.console_command(
+        @self.console_command(
             "align",
             help=_("align selected elements"),
             input_type=("elements", None),
@@ -2425,7 +2420,7 @@ class Elemental(Service):
             data = d
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "top",
             help=_("align elements at top"),
             input_type="align",
@@ -2450,7 +2445,7 @@ class Elemental(Service):
                         q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "bottom",
             help=_("align elements at bottom"),
             input_type="align",
@@ -2475,7 +2470,7 @@ class Elemental(Service):
                         q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "left",
             help=_("align elements at left"),
             input_type="align",
@@ -2500,7 +2495,7 @@ class Elemental(Service):
                         q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "right",
             help=_("align elements at right"),
             input_type="align",
@@ -2525,7 +2520,7 @@ class Elemental(Service):
                         q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "center",
             help=_("align elements at center"),
             input_type="align",
@@ -2553,7 +2548,7 @@ class Elemental(Service):
                     q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "centerv",
             help=_("align elements at center vertical"),
             input_type="align",
@@ -2578,7 +2573,7 @@ class Elemental(Service):
                     q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "centerh",
             help=_("align elements at center horizontal"),
             input_type="align",
@@ -2603,7 +2598,7 @@ class Elemental(Service):
                     q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "spaceh",
             help=_("align elements across horizontal space"),
             input_type="align",
@@ -2640,7 +2635,7 @@ class Elemental(Service):
                 dim_pos += subbox[2] - subbox[0] + distributed_distance
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "spacev",
             help=_("align elements down vertical space"),
             input_type="align",
@@ -2677,7 +2672,7 @@ class Elemental(Service):
                 dim_pos += subbox[3] - subbox[1] + distributed_distance
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "bedcenter",
             help=_("align elements to bedcenter"),
             input_type="align",
@@ -2704,16 +2699,16 @@ class Elemental(Service):
                     if obj is not None:
                         obj *= matrix
                     q.modified()
-            self.context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "align", data
 
-        @context.console_argument(
+        @self.console_argument(
             "preserve_aspect_ratio",
             type=str,
             default="none",
             help="preserve aspect ratio value",
         )
-        @context.console_command(
+        @self.console_command(
             "view",
             help=_("align elements within viewbox"),
             input_type="align",
@@ -2817,14 +2812,14 @@ class Elemental(Service):
                         q.modified()
                     for q in node.flat(types=("file", "group")):
                         q.modified()
-                self.context.signal("refresh_scene")
+                self.signal("refresh_scene")
             return "align", data
 
-        @context.console_argument("c", type=int, help=_("Number of columns"))
-        @context.console_argument("r", type=int, help=_("Number of rows"))
-        @context.console_argument("x", type=Length, help=_("x distance"))
-        @context.console_argument("y", type=Length, help=_("y distance"))
-        @context.console_command(
+        @self.console_argument("c", type=int, help=_("Number of columns"))
+        @self.console_argument("r", type=int, help=_("Number of rows"))
+        @self.console_argument("x", type=Length, help=_("x distance"))
+        @self.console_argument("y", type=Length, help=_("y distance"))
+        @self.console_command(
             "grid",
             help=_("grid <columns> <rows> <x_distance> <y_distance>"),
             input_type=(None, "elements"),
@@ -2869,22 +2864,20 @@ class Elemental(Service):
                 y_pos += y
             return "elements", data_out
 
-        @context.console_option("step", "s", default=2.0, type=float)
-        @context.console_command(
+        @self.console_option("step", "s", default=2.0, type=float)
+        @self.console_command(
             "render",
             help=_("Convert given elements to a raster image"),
             input_type=(None, "elements"),
             output_type="image",
         )
         def make_raster_image(command, channel, _, step=2.0, data=None, **kwgs):
-            context = self.context
             if data is None:
                 data = list(self.elems(emphasized=True))
-            reverse = context.classify_reverse
+            reverse = self.classify_reverse
             if reverse:
                 data = list(reversed(data))
-            elements = context.elements
-            make_raster = self.context.registered.get("render-op/make_raster")
+            make_raster = self.registered.get("render-op/make_raster")
             if not make_raster:
                 channel(_("No renderer is registered to perform render."))
                 return
@@ -2904,16 +2897,16 @@ class Elemental(Service):
             image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
             image_element.values["raster_step"] = step
-            elements.add_elem(image_element)
+            self.add_elem(image_element)
             return "image", [image_element]
 
         # ==========
         # ELEMENT/SHAPE COMMANDS
         # ==========
-        @context.console_argument("x_pos", type=Length)
-        @context.console_argument("y_pos", type=Length)
-        @context.console_argument("r_pos", type=Length)
-        @context.console_command(
+        @self.console_argument("x_pos", type=Length)
+        @self.console_argument("y_pos", type=Length)
+        @self.console_argument("r_pos", type=Length)
+        @self.console_command(
             "circle",
             help=_("circle <x> <y> <r> or circle <r>"),
             input_type=("elements", None),
@@ -2940,11 +2933,11 @@ class Elemental(Service):
                 data.append(circ)
                 return "elements", data
 
-        @context.console_argument("x_pos", type=Length)
-        @context.console_argument("y_pos", type=Length)
-        @context.console_argument("rx_pos", type=Length)
-        @context.console_argument("ry_pos", type=Length)
-        @context.console_command(
+        @self.console_argument("x_pos", type=Length)
+        @self.console_argument("y_pos", type=Length)
+        @self.console_argument("rx_pos", type=Length)
+        @self.console_argument("ry_pos", type=Length)
+        @self.console_command(
             "ellipse",
             help=_("ellipse <cx> <cy> <rx> <ry>"),
             input_type=("elements", None),
@@ -2966,25 +2959,25 @@ class Elemental(Service):
                 data.append(ellip)
                 return "elements", data
 
-        @context.console_argument(
+        @self.console_argument(
             "x_pos", type=Length, help=_("x position for top left corner of rectangle.")
         )
-        @context.console_argument(
+        @self.console_argument(
             "y_pos", type=Length, help=_("y position for top left corner of rectangle.")
         )
-        @context.console_argument(
+        @self.console_argument(
             "width", type=Length, help=_("width of the rectangle.")
         )
-        @context.console_argument(
+        @self.console_argument(
             "height", type=Length, help=_("height of the rectangle.")
         )
-        @context.console_option(
+        @self.console_option(
             "rx", "x", type=Length, help=_("rounded rx corner value.")
         )
-        @context.console_option(
+        @self.console_option(
             "ry", "y", type=Length, help=_("rounded ry corner value.")
         )
-        @context.console_command(
+        @self.console_command(
             "rect",
             help=_("adds rectangle to scene"),
             input_type=("elements", None),
@@ -3012,11 +3005,11 @@ class Elemental(Service):
                 data.append(rect)
                 return "elements", data
 
-        @context.console_argument("x0", type=Length, help=_("start x position"))
-        @context.console_argument("y0", type=Length, help=_("start y position"))
-        @context.console_argument("x1", type=Length, help=_("end x position"))
-        @context.console_argument("y1", type=Length, help=_("end y position"))
-        @context.console_command(
+        @self.console_argument("x0", type=Length, help=_("start x position"))
+        @self.console_argument("y0", type=Length, help=_("start y position"))
+        @self.console_argument("x1", type=Length, help=_("end x position"))
+        @self.console_argument("y1", type=Length, help=_("end y position"))
+        @self.console_command(
             "line",
             help=_("adds line to scene"),
             input_type=("elements", None),
@@ -3041,8 +3034,8 @@ class Elemental(Service):
                 data.append(simple_line)
                 return "elements", data
 
-        @context.console_argument("text", type=str, help=_("quoted string of text"))
-        @context.console_command(
+        @self.console_argument("text", type=str, help=_("quoted string of text"))
+        @self.console_command(
             "text",
             help=_("text <text>"),
             input_type=(None, "elements"),
@@ -3060,7 +3053,7 @@ class Elemental(Service):
                 data.append(svg_text)
                 return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "polygon", help=_("polygon (float float)*"), input_type=("elements", None)
         )
         def element_polygon(args=tuple(), **kwgs):
@@ -3074,7 +3067,7 @@ class Elemental(Service):
                 )
             self.add_element(element)
 
-        @context.console_command(
+        @self.console_command(
             "polyline",
             help=_("polyline (float float)*"),
             input_type=("elements", None),
@@ -3090,7 +3083,7 @@ class Elemental(Service):
                 )
             self.add_element(element)
 
-        @context.console_command(
+        @self.console_command(
             "path", help=_("Convert any shapes to paths"), input_type="elements"
         )
         def element_path_convert(data, **kwgs):
@@ -3102,10 +3095,10 @@ class Elemental(Service):
                 except AttributeError:
                     pass
 
-        @context.console_argument(
+        @self.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
         )
-        @context.console_command(
+        @self.console_command(
             "path",
             help=_("path <svg path>"),
             output_type="elements",
@@ -3123,10 +3116,10 @@ class Elemental(Service):
                 data.append(path)
                 return "elements", data
 
-        @context.console_argument(
+        @self.console_argument(
             "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
         )
-        @context.console_command(
+        @self.console_command(
             "stroke-width",
             help=_("stroke-width <length>"),
             input_type=(
@@ -3166,14 +3159,14 @@ class Elemental(Service):
                 e.stroke_width = stroke_width
                 if hasattr(e, "node"):
                     e.node.altered()
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data
 
-        @context.console_option("filter", "f", type=str, help="Filter indexes")
-        @context.console_argument(
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument(
             "color", type=Color, help=_("Color to color the given stroke")
         )
-        @context.console_command(
+        @self.console_command(
             "stroke",
             help=_("stroke <svg color>"),
             input_type=(
@@ -3224,14 +3217,14 @@ class Elemental(Service):
                     e.stroke = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data
 
-        @context.console_option("filter", "f", type=str, help="Filter indexes")
-        @context.console_argument(
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument(
             "color", type=Color, help=_("Color to set the fill to")
         )
-        @context.console_command(
+        @self.console_command(
             "fill",
             help=_("fill <svg color>"),
             input_type=(
@@ -3280,12 +3273,12 @@ class Elemental(Service):
                     e.fill = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument("x_offset", type=Length, help=_("x offset."))
-        @context.console_argument("y_offset", type=Length, help=_("y offset"))
-        @context.console_command(
+        @self.console_argument("x_offset", type=Length, help=_("x offset."))
+        @self.console_argument("y_offset", type=Length, help=_("y offset"))
+        @self.console_command(
             "outline",
             help=_("outline the current selected elements"),
             input_type=(
@@ -3341,19 +3334,19 @@ class Elemental(Service):
                 data.append(element)
                 return "elements", data
 
-        @context.console_argument(
+        @self.console_argument(
             "angle", type=Angle.parse, help=_("angle to rotate by")
         )
-        @context.console_option("cx", "x", type=Length, help=_("center x"))
-        @context.console_option("cy", "y", type=Length, help=_("center y"))
-        @context.console_option(
+        @self.console_option("cx", "x", type=Length, help=_("center x"))
+        @self.console_option("cy", "y", type=Length, help=_("center y"))
+        @self.console_option(
             "absolute",
             "a",
             type=bool,
             action="store_true",
             help=_("angle_to absolute angle"),
         )
-        @context.console_command(
+        @self.console_command(
             "rotate",
             help=_("rotate <angle>"),
             input_type=(
@@ -3437,21 +3430,21 @@ class Elemental(Service):
                             element.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument("scale_x", type=float, help=_("scale_x value"))
-        @context.console_argument("scale_y", type=float, help=_("scale_y value"))
-        @context.console_option("px", "x", type=Length, help=_("scale x origin point"))
-        @context.console_option("py", "y", type=Length, help=_("scale y origin point"))
-        @context.console_option(
+        @self.console_argument("scale_x", type=float, help=_("scale_x value"))
+        @self.console_argument("scale_y", type=float, help=_("scale_y value"))
+        @self.console_option("px", "x", type=Length, help=_("scale x origin point"))
+        @self.console_option("py", "y", type=Length, help=_("scale y origin point"))
+        @self.console_option(
             "absolute",
             "a",
             type=bool,
             action="store_true",
             help=_("scale to absolute size"),
         )
-        @context.console_command(
+        @self.console_command(
             "scale",
             help=_("scale <scale> [<scale-y>]?"),
             input_type=(None, "elements"),
@@ -3545,19 +3538,19 @@ class Elemental(Service):
                             e.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument("tx", type=Length, help=_("translate x value"))
-        @context.console_argument("ty", type=Length, help=_("translate y value"))
-        @context.console_option(
+        @self.console_argument("tx", type=Length, help=_("translate x value"))
+        @self.console_argument("ty", type=Length, help=_("translate y value"))
+        @self.console_option(
             "absolute",
             "a",
             type=bool,
             action="store_true",
             help=_("translate to absolute position"),
         )
-        @context.console_command(
+        @self.console_command(
             "translate",
             help=_("translate <tx> <ty>"),
             input_type=(None, "elements"),
@@ -3622,10 +3615,10 @@ class Elemental(Service):
                             e.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "move_to_laser",
             help=_("translates the selected element to the laser head"),
             input_type=(None, "elements"),
@@ -3637,8 +3630,8 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            spooler, input_driver, output = context.registered[
-                "device/%s" % context.root.active
+            spooler, input_driver, output = self.registered[
+                "device/%s" % self.root.active
             ]
             try:
                 tx = input_driver.current_x
@@ -3660,20 +3653,20 @@ class Elemental(Service):
                         e.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument(
+        @self.console_argument(
             "x_pos", type=Length, help=_("x position for top left corner")
         )
-        @context.console_argument(
+        @self.console_argument(
             "y_pos", type=Length, help=_("y position for top left corner")
         )
-        @context.console_argument("width", type=Length, help=_("new width of selected"))
-        @context.console_argument(
+        @self.console_argument("width", type=Length, help=_("new width of selected"))
+        @self.console_argument(
             "height", type=Length, help=_("new height of selected")
         )
-        @context.console_command(
+        @self.console_command(
             "resize",
             help=_("resize <x-pos> <y-pos> <width> <height>"),
             input_type=(None, "elements"),
@@ -3722,18 +3715,18 @@ class Elemental(Service):
                     e *= m
                     if hasattr(e, "node"):
                         e.node.modified()
-                context.signal("refresh_scene")
+                self.signal("refresh_scene")
                 return "elements", data
             except (ValueError, ZeroDivisionError, TypeError):
                 raise SyntaxError
 
-        @context.console_argument("sx", type=float, help=_("scale_x value"))
-        @context.console_argument("kx", type=float, help=_("skew_x value"))
-        @context.console_argument("sy", type=float, help=_("scale_y value"))
-        @context.console_argument("ky", type=float, help=_("skew_y value"))
-        @context.console_argument("tx", type=Length, help=_("translate_x value"))
-        @context.console_argument("ty", type=Length, help=_("translate_y value"))
-        @context.console_command(
+        @self.console_argument("sx", type=float, help=_("scale_x value"))
+        @self.console_argument("kx", type=float, help=_("skew_x value"))
+        @self.console_argument("sy", type=float, help=_("scale_y value"))
+        @self.console_argument("ky", type=float, help=_("skew_y value"))
+        @self.console_argument("tx", type=Length, help=_("translate_x value"))
+        @self.console_argument("ty", type=Length, help=_("translate_y value"))
+        @self.console_command(
             "matrix",
             help=_("matrix <sx> <kx> <sy> <ky> <tx> <ty>"),
             input_type=(None, "elements"),
@@ -3786,10 +3779,10 @@ class Elemental(Service):
                         e.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return
 
-        @context.console_command(
+        @self.console_command(
             "reset",
             help=_("reset affine transformations"),
             input_type=(None, "elements"),
@@ -3812,10 +3805,10 @@ class Elemental(Service):
                 e.transform.reset()
                 if hasattr(e, "node"):
                     e.node.modified()
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "reify",
             help=_("reify affine transformations"),
             input_type=(None, "elements"),
@@ -3838,10 +3831,10 @@ class Elemental(Service):
                 e.reify()
                 if hasattr(e, "node"):
                     e.node.altered()
-            context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "classify",
             help=_("classify elements into operations"),
             input_type=(None, "elements"),
@@ -3856,7 +3849,7 @@ class Elemental(Service):
             self.classify(data)
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "declassify",
             help=_("declassify selected elements"),
             input_type=(None, "elements"),
@@ -3874,13 +3867,13 @@ class Elemental(Service):
         # ==========
         # TREE BASE
         # ==========
-        @context.console_command(
+        @self.console_command(
             "tree", help=_("access and alter tree elements"), output_type="tree"
         )
         def tree(**kwgs):
             return "tree", [self._tree]
 
-        @context.console_command(
+        @self.console_command(
             "bounds", help=_("view tree bounds"), input_type="tree", output_type="tree"
         )
         def tree_bounds(command, channel, _, data=None, **kwgs):
@@ -3914,7 +3907,7 @@ class Elemental(Service):
 
             return "tree", data
 
-        @context.console_command(
+        @self.console_command(
             "list", help=_("view tree"), input_type="tree", output_type="tree"
         )
         def tree_list(command, channel, _, data=None, **kwgs):
@@ -3950,9 +3943,9 @@ class Elemental(Service):
 
             return "tree", data
 
-        @context.console_argument("drag", help="Drag node address")
-        @context.console_argument("drop", help="Drop node address")
-        @context.console_command(
+        @self.console_argument("drag", help="Drag node address")
+        @self.console_argument("drop", help="Drop node address")
+        @self.console_command(
             "dnd", help=_("Drag and Drop Node"), input_type="tree", output_type="tree"
         )
         def tree_dnd(command, channel, _, data=None, drag=None, drop=None, **kwgs):
@@ -3976,9 +3969,9 @@ class Elemental(Service):
                 raise SyntaxError
             return "tree", data
 
-        @context.console_argument("node", help="Node address for menu")
-        @context.console_argument("execute", help="Command to execute")
-        @context.console_command(
+        @self.console_argument("node", help="Node address for menu")
+        @self.console_argument("execute", help="Command to execute")
+        @self.console_command(
             "menu",
             help=_("Load menu for given node"),
             input_type="tree",
@@ -4061,7 +4054,7 @@ class Elemental(Service):
 
             return "tree", data
 
-        @context.console_command(
+        @self.console_command(
             "selected",
             help=_("delegate commands to focused value"),
             input_type="tree",
@@ -4073,7 +4066,7 @@ class Elemental(Service):
             """
             return "tree", list(self.flat(emphasized=True))
 
-        @context.console_command(
+        @self.console_command(
             "highlighted",
             help=_("delegate commands to sub-focused value"),
             input_type="tree",
@@ -4085,7 +4078,7 @@ class Elemental(Service):
             """
             return "tree", list(self.flat(highlighted=True))
 
-        @context.console_command(
+        @self.console_command(
             "targeted",
             help=_("delegate commands to sub-focused value"),
             input_type="tree",
@@ -4097,7 +4090,7 @@ class Elemental(Service):
             """
             return "tree", list(self.flat(targeted=True))
 
-        @context.console_command(
+        @self.console_command(
             "delete",
             help=_("delete the given nodes"),
             input_type="tree",
@@ -4115,7 +4108,7 @@ class Elemental(Service):
                     break
             return "tree", [self._tree]
 
-        @context.console_command(
+        @self.console_command(
             "delegate",
             help=_("delegate commands to focused value"),
             input_type="tree",
@@ -4136,8 +4129,8 @@ class Elemental(Service):
         # ==========
         # CLIPBOARD COMMANDS
         # ==========
-        @context.console_option("name", "n", type=str)
-        @context.console_command(
+        @self.console_option("name", "n", type=str)
+        @self.console_command(
             "clipboard",
             help=_("clipboard"),
             input_type=(None, "elements"),
@@ -4158,7 +4151,7 @@ class Elemental(Service):
             else:
                 return "clipboard", data
 
-        @context.console_command(
+        @self.console_command(
             "copy",
             help=_("clipboard copy"),
             input_type="clipboard",
@@ -4169,9 +4162,9 @@ class Elemental(Service):
             self._clipboard[destination] = [copy(e) for e in data]
             return "elements", self._clipboard[destination]
 
-        @context.console_option("dx", "x", help=_("paste offset x"), type=Length)
-        @context.console_option("dy", "y", help=_("paste offset y"), type=Length)
-        @context.console_command(
+        @self.console_option("dx", "x", help=_("paste offset x"), type=Length)
+        @self.console_option("dy", "y", help=_("paste offset y"), type=Length)
+        @self.console_command(
             "paste",
             help=_("clipboard paste"),
             input_type="clipboard",
@@ -4206,7 +4199,7 @@ class Elemental(Service):
             self.set_emphasis([group])
             return "elements", pasted
 
-        @context.console_command(
+        @self.console_command(
             "cut",
             help=_("clipboard cut"),
             input_type="clipboard",
@@ -4218,7 +4211,7 @@ class Elemental(Service):
             self.remove_elements(data)
             return "elements", self._clipboard[destination]
 
-        @context.console_command(
+        @self.console_command(
             "clear",
             help=_("clipboard clear"),
             input_type="clipboard",
@@ -4230,7 +4223,7 @@ class Elemental(Service):
             self._clipboard[destination] = None
             return "elements", old
 
-        @context.console_command(
+        @self.console_command(
             "contents",
             help=_("clipboard contents"),
             input_type="clipboard",
@@ -4240,7 +4233,7 @@ class Elemental(Service):
             destination = self._clipboard_default
             return "elements", self._clipboard[destination]
 
-        @context.console_command(
+        @self.console_command(
             "list",
             help=_("clipboard list"),
             input_type="clipboard",
@@ -4253,10 +4246,10 @@ class Elemental(Service):
         # ==========
         # NOTES COMMANDS
         # ==========
-        @context.console_option(
+        @self.console_option(
             "append", "a", type=bool, action="store_true", default=False
         )
-        @context.console_command("note", help=_("note <note>"))
+        @self.console_command("note", help=_("note <note>"))
         def note(command, channel, _, append=False, remainder=None, **kwgs):
             note = remainder
             if note is None:
@@ -4275,15 +4268,15 @@ class Elemental(Service):
         # ==========
         # TRACE OPERATIONS
         # ==========
-        @context.console_command(
+        @self.console_command(
             "trace_hull",
             help=_("trace the convex hull of current elements"),
             input_type=(None, "elements"),
         )
         def trace_trace_hull(command, channel, _, data=None, **kwgs):
-            active = self.context.active
+            active = self.active
             try:
-                spooler, input_device, output = self.context.registered[
+                spooler, input_device, output = self.registered[
                     "device/%s" % active
                 ]
             except KeyError:
@@ -4318,13 +4311,13 @@ class Elemental(Service):
 
             spooler.job(trace_hull)
 
-        @context.console_command(
+        @self.console_command(
             "trace_quick", help=_("quick trace the bounding box of current elements")
         )
         def trace_trace_quick(command, channel, _, **kwgs):
-            active = self.context.active
+            active = self.active
             try:
-                spooler, input_device, output = self.context.registered[
+                spooler, input_device, output = self.registered[
                     "device/%s" % active
                 ]
             except KeyError:
@@ -4349,7 +4342,7 @@ class Elemental(Service):
 
         # --------------------------- TREE OPERATIONS ---------------------------
 
-        _ = self.context._
+        _ = self._
 
         non_structural_nodes = (
             "op",
@@ -4367,31 +4360,31 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(_("Operation properties"), node_type="op", help="")
         def operation_property(node, **kwgs):
-            self.context.open("window/OperationProperty", self.context.gui, node=node)
+            self.open("window/OperationProperty", self.gui, node=node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Shape))
         @self.tree_operation(_("Element properties"), node_type="elem", help="")
         def path_property(node, **kwgs):
-            self.context.open("window/PathProperty", self.context.gui, node=node)
+            self.open("window/PathProperty", self.gui, node=node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Group))
         @self.tree_operation(_("Group properties"), node_type="group", help="")
         def group_property(node, **kwgs):
-            self.context.open("window/GroupProperty", self.context.gui, node=node)
+            self.open("window/GroupProperty", self.gui, node=node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, SVGText))
         @self.tree_operation(_("Text properties"), node_type="elem", help="")
         def text_property(node, **kwgs):
-            self.context.open("window/TextProperty", self.context.gui, node=node)
+            self.open("window/TextProperty", self.gui, node=node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_operation(_("Image properties"), node_type="elem", help="")
         def image_property(node, **kwgs):
-            self.context.open("window/ImageProperty", self.context.gui, node=node)
+            self.open("window/ImageProperty", self.gui, node=node)
 
         @self.tree_operation(
             _("Ungroup elements"), node_type=("group", "file"), help=""
@@ -4449,7 +4442,7 @@ class Elemental(Service):
         @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
         def set_speed_raster(node, speed=150, **kwgs):
             node.settings.speed = float(speed)
-            self.context.signal("element_property_reload", node)
+            self.signal("element_property_reload", node)
 
         @self.tree_conditional(lambda node: node.operation in ("Cut", "Engrave"))
         @self.tree_submenu(_("Speed"))
@@ -4458,7 +4451,7 @@ class Elemental(Service):
         @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
         def set_speed_vector(node, speed=35, **kwgs):
             node.settings.speed = float(speed)
-            self.context.signal("element_property_reload", node)
+            self.signal("element_property_reload", node)
 
         def radio_match(node, i=1, **kwgs):
             return node.settings.raster_step == i
@@ -4475,7 +4468,7 @@ class Elemental(Service):
         def set_step_n(node, i=1, **kwgs):
             settings = node.settings
             settings.raster_step = i
-            self.context.signal("element_property_reload", node)
+            self.signal("element_property_reload", node)
 
         def radio_match(node, passvalue=1, **kwgs):
             return (
@@ -4489,7 +4482,7 @@ class Elemental(Service):
         def set_n_passes(node, passvalue=1, **kwgs):
             node.settings.passes = passvalue
             node.settings.passes_custom = passvalue != 1
-            self.context.signal("element_property_reload", node)
+            self.signal("element_property_reload", node)
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -4499,8 +4492,8 @@ class Elemental(Service):
         )
         def execute_job(node, **kwgs):
             node.emphasized = True
-            self.context("plan0 clear copy-selected\n")
-            self.context("window open ExecuteJob 0\n")
+            self("plan0 clear copy-selected\n")
+            self("window open ExecuteJob 0\n")
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -4510,18 +4503,18 @@ class Elemental(Service):
         )
         def compile_and_simulate(node, **kwgs):
             node.emphasized = True
-            self.context(
+            self(
                 "plan0 copy-selected preprocess validate blob preopt optimize\n"
             )
-            self.context("window open Simulation 0\n")
+            self("window open Simulation 0\n")
 
         @self.tree_operation(_("Clear all"), node_type="branch ops", help="")
         def clear_all(node, **kwgs):
-            self.context("operation* delete\n")
+            self("operation* delete\n")
 
         @self.tree_operation(_("Clear all"), node_type="branch elems", help="")
         def clear_all_ops(node, **kwgs):
-            self.context("element* delete\n")
+            self("element* delete\n")
             self.elem_branch.remove_all_children()
 
         # ==========
@@ -4598,7 +4591,7 @@ class Elemental(Service):
             help="",
         )
         def remove_n_ops(node, **kwgs):
-            self.context("operation delete\n")
+            self("operation delete\n")
 
         # ==========
         # REMOVE ELEMENTS
@@ -4615,7 +4608,7 @@ class Elemental(Service):
             help="",
         )
         def remove_n_elements(node, **kwgs):
-            self.context("element delete\n")
+            self("element delete\n")
 
         # ==========
         # CONVERT TREE OPERATIONS
@@ -4667,7 +4660,7 @@ class Elemental(Service):
             for i in range(copies):
                 node.parent.add(node.object, type="opnode", pos=index)
             node.modified()
-            self.context.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree", 0)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
@@ -4677,18 +4670,16 @@ class Elemental(Service):
         )
         def reverse_layer_order(node, **kwgs):
             node.reverse()
-            self.context.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree", 0)
 
         @self.tree_separator_after()
         @self.tree_operation(
             _("Refresh classification"), node_type="branch ops", help=""
         )
         def refresh_clasifications(node, **kwgs):
-            context = self.context
-            elements = context.elements
-            elements.remove_elements_from_operations(list(elements.elems()))
-            elements.classify(list(elements.elems()))
-            self.context.signal("rebuild_tree", 0)
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.signal("rebuild_tree", 0)
 
         materials = [
             _("Wood"),
@@ -4707,7 +4698,7 @@ class Elemental(Service):
         def union_materials_saved():
             union = [
                 d
-                for d in self.context.get_context("operations").derivable()
+                for d in self.get_context("operations").derivable()
                 if d not in materials and d != "previous"
             ]
             union.extend(materials)
@@ -4715,80 +4706,80 @@ class Elemental(Service):
 
         @self.tree_submenu(_("Use"))
         @self.tree_values(
-            "opname", values=self.context.get_context("operations").derivable
+            "opname", values=self.get_context("operations").derivable
         )
         @self.tree_operation(
             _("Load: %s") % "{opname}", node_type="branch ops", help=""
         )
         def load_ops(node, opname, **kwgs):
-            self.context("operation load %s\n" % opname)
+            self("operation load %s\n" % opname)
 
         @self.tree_submenu(_("Use"))
         @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
         def default_classifications(node, **kwgs):
-            self.context.elements.load_default()
+            self.load_default()
 
         @self.tree_submenu(_("Use"))
         @self.tree_operation(_("Basic"), node_type="branch ops", help="")
         def basic_classifications(node, **kwgs):
-            self.context.elements.load_default2()
+            self.load_default2()
 
         @self.tree_submenu(_("Save"))
         @self.tree_values("opname", values=union_materials_saved)
         @self.tree_operation("{opname}", node_type="branch ops", help="")
         def save_ops(node, opname="saved", **kwgs):
-            self.context("operation save %s\n" % opname)
+            self("operation save %s\n" % opname)
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Image"), node_type="branch ops", help="")
         def add_operation_image(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Image"))
+            self.add_op(LaserOperation(operation="Image"))
 
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Raster"), node_type="branch ops", help="")
         def add_operation_raster(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Raster"))
+            self.add_op(LaserOperation(operation="Raster"))
 
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Engrave"), node_type="branch ops", help="")
         def add_operation_engrave(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Engrave"))
+            self.add_op(LaserOperation(operation="Engrave"))
 
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Cut"), node_type="branch ops", help="")
         def add_operation_cut(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Cut"))
+            self.add_op(LaserOperation(operation="Cut"))
 
         @self.tree_submenu(_("Special operations"))
         @self.tree_operation(_("Add Home"), node_type="branch ops", help="")
         def add_operation_home(node, **kwgs):
-            self.context.elements.op_branch.add(
+            self.op_branch.add(
                 CommandOperation("Home", COMMAND_HOME), type="cmdop"
             )
 
         @self.tree_submenu(_("Special operations"))
         @self.tree_operation(_("Add Beep"), node_type="branch ops", help="")
         def add_operation_beep(node, **kwgs):
-            self.context.elements.op_branch.add(
+            self.op_branch.add(
                 CommandOperation("Beep", COMMAND_BEEP), type="cmdop"
             )
 
         @self.tree_submenu(_("Special operations"))
         @self.tree_operation(_("Add Move Origin"), node_type="branch ops", help="")
         def add_operation_origin(node, **kwgs):
-            self.context.elements.op_branch.add(
+            self.op_branch.add(
                 CommandOperation("Origin", COMMAND_MOVE, 0, 0), type="cmdop"
             )
 
         @self.tree_submenu(_("Special operations"))
         @self.tree_operation(_("Add Interrupt"), node_type="branch ops", help="")
         def add_operation_interrupt(node, **kwgs):
-            self.context.elements.op_branch.add(
+            self.op_branch.add(
                 CommandOperation(
                     "Interrupt",
                     COMMAND_FUNCTION,
-                    self.context.registered["function/interrupt"],
+                    self.registered["function/interrupt"],
                 ),
                 type="cmdop",
             )
@@ -4796,11 +4787,11 @@ class Elemental(Service):
         @self.tree_submenu(_("Special operations"))
         @self.tree_operation(_("Add Shutdown"), node_type="branch ops", help="")
         def add_operation_shutdown(node, **kwgs):
-            self.context.elements.op_branch.add(
+            self.op_branch.add(
                 CommandOperation(
                     "Shutdown",
                     COMMAND_FUNCTION,
-                    self.context.console_function("quit\n"),
+                    self.console_function("quit\n"),
                 ),
                 type="cmdop",
             )
@@ -4809,12 +4800,10 @@ class Elemental(Service):
             _("Reclassify operations"), node_type="branch elems", help=""
         )
         def reclassify_operations(node, **kwgs):
-            context = self.context
-            elements = context.elements
-            elems = list(elements.elems())
-            elements.remove_elements_from_operations(elems)
-            elements.classify(list(elements.elems()))
-            self.context.signal("rebuild_tree", 0)
+            elems = list(self.elems())
+            self.remove_elements_from_operations(elems)
+            self.classify(list(self.elems()))
+            self.signal("rebuild_tree", 0)
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
@@ -4866,7 +4855,7 @@ class Elemental(Service):
                 add_elements = [c for c in add_elements if c is not None]
             add_elements *= copies
             node.add_all(add_elements, type="opnode")
-            self.context.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree", 0)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_conditional(
@@ -4892,7 +4881,7 @@ class Elemental(Service):
             ]
             add_elements *= copies
             node.add_all(add_elements, type="opnode")
-            self.context.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree", 0)
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_operation(
@@ -4901,13 +4890,11 @@ class Elemental(Service):
             help=_("Convert a vector element into a raster element."),
         )
         def make_raster_image(node, **kwgs):
-            context = self.context
-            elements = context.elements
             subitems = list(node.flat(types=("elem", "opnode")))
-            reverse = self.context.classify_reverse
+            reverse = self.classify_reverse
             if reverse:
                 subitems = list(reversed(subitems))
-            make_raster = self.context.registered.get("render-op/make_raster")
+            make_raster = self.registered.get("render-op/make_raster")
             bounds = Group.union_bbox([s.object for s in subitems], with_stroke=True)
             if bounds is None:
                 return
@@ -4925,7 +4912,7 @@ class Elemental(Service):
             image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
             image_element.values["raster_step"] = step
-            elements.add_elem(image_element)
+            self.add_elem(image_element)
 
         @self.tree_operation(_("Reload '%s'") % "{name}", node_type="file", help="")
         def reload_file(node, **kwgs):
@@ -4944,14 +4931,12 @@ class Elemental(Service):
             _("Make %s copies") % "{copies}", node_type="elem", help=""
         )
         def duplicate_element_n(node, copies, **kwgs):
-            context = self.context
-            elements = context.elements
             adding_elements = [
                 copy(e) for e in list(self.elems(emphasized=True)) * copies
             ]
-            elements.add_elems(adding_elements)
-            elements.classify(adding_elements)
-            elements.set_emphasis(None)
+            self.add_elems(adding_elements)
+            self.classify(adding_elements)
+            self.set_emphasis(None)
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -4959,7 +4944,7 @@ class Elemental(Service):
             _("Reset user changes"), node_type=("branch elem", "elem"), help=""
         )
         def reset_user_changes(node, copies=1, **kwgs):
-            self.context("reset\n")
+            self("reset\n")
 
         @self.tree_conditional(
             lambda node: isinstance(node.object, Shape)
@@ -4986,7 +4971,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("scale -1 1 %f %f\n" % (center_x, center_y))
+            self("scale -1 1 %f %f\n" % (center_x, center_y))
 
         @self.tree_submenu(_("Flip"))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -5003,7 +4988,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("scale 1 -1 %f %f\n" % (center_x, center_y))
+            self("scale 1 -1 %f %f\n" % (center_x, center_y))
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -5022,7 +5007,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
+            self("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -5081,19 +5066,19 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("rotate %fturn %f %f\n" % (turns, center_x, center_y))
+            self("rotate %fturn %f %f\n" % (turns, center_x, center_y))
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Reify User Changes"), node_type="elem", help="")
         def reify_elem_changes(node, **kwgs):
-            self.context("reify\n")
+            self("reify\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, Path))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
         def break_subpath_elem(node, **kwgs):
-            self.context("element subpath\n")
+            self("element subpath\n")
 
         @self.tree_operation(
             _("Merge items"),
@@ -5101,7 +5086,7 @@ class Elemental(Service):
             help=_("Merge this node's children into 1 path."),
         )
         def merge_elements(node, **kwgs):
-            self.context("element merge\n")
+            self("element merge\n")
 
         def radio_match(node, i=0, **kwgs):
             if "raster_step" in node.object.values:
@@ -5130,14 +5115,14 @@ class Elemental(Service):
             element.transform.post_translate(tx, ty)
             if hasattr(element, "node"):
                 element.node.modified()
-            self.context.signal("element_property_reload", node.object)
-            self.context.signal("refresh_scene")
+            self.signal("element_property_reload", node.object)
+            self.signal("refresh_scene")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Actualize pixels"), node_type="elem", help="")
         def image_actualize_pixels(node, **kwgs):
-            self.context("image resample\n")
+            self("image resample\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Z-depth divide"))
@@ -5155,7 +5140,7 @@ class Elemental(Service):
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-                self.context("image threshold %f %f\n" % (threshold_min, threshold_max))
+                self("image threshold %f %f\n" % (threshold_min, threshold_max))
 
         def is_locked(node):
             try:
@@ -5169,79 +5154,79 @@ class Elemental(Service):
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Unlock manipulations"), node_type="elem", help="")
         def image_unlock_manipulations(node, **kwgs):
-            self.context("image unlock\n")
+            self("image unlock\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Dither to 1 bit"), node_type="elem", help="")
         def image_dither(node, **kwgs):
-            self.context("image dither\n")
+            self("image dither\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Invert image"), node_type="elem", help="")
         def image_invert(node, **kwgs):
-            self.context("image invert\n")
+            self("image invert\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Mirror horizontal"), node_type="elem", help="")
         def image_mirror(node, **kwgs):
-            context("image mirror\n")
+            self("image mirror\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Flip vertical"), node_type="elem", help="")
         def image_flip(node, **kwgs):
-            self.context("image flip\n")
+            self("image flip\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CW"), node_type="elem", help="")
         def image_cw(node, **kwgs):
-            self.context("image cw\n")
+            self("image cw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CCW"), node_type="elem", help="")
         def image_ccw(node, **kwgs):
-            self.context("image ccw\n")
+            self("image ccw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Save output.png"), node_type="elem", help="")
         def image_save(node, **kwgs):
-            self.context("image save output.png\n")
+            self("image save output.png\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("RasterWizard"))
         @self.tree_values(
-            "script", values=list(self.context.match("raster_script", suffix=True))
+            "script", values=list(self.match("raster_script", suffix=True))
         )
         @self.tree_operation(
             _("RasterWizard: %s") % "{script}", node_type="elem", help=""
         )
         def image_rasterwizard_open(node, script=None, **kwgs):
-            self.context("window open RasterWizard %s\n" % script)
+            self("window open RasterWizard %s\n" % script)
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply raster script"))
         @self.tree_values(
-            "script", values=list(self.context.match("raster_script", suffix=True))
+            "script", values=list(self.match("raster_script", suffix=True))
         )
         @self.tree_operation(_("Apply: %s") % "{script}", node_type="elem", help="")
         def image_rasterwizard_apply(node, script=None, **kwgs):
-            self.context("image wizard %s\n" % script)
+            self("image wizard %s\n" % script)
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "as_elements"))
         @self.tree_operation(_("Convert to SVG"), node_type="elem", help="")
         def cutcode_convert_svg(node, **kwgs):
-            self.context.elements.add_elems(list(node.object.as_elements()))
+            self.add_elems(list(node.object.as_elements()))
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "generate"))
         @self.tree_operation(_("Process as Operation"), node_type="elem", help="")
         def cutcode_operation(node, **kwgs):
-            self.context.elements.add_op(node.object)
+            self.add_op(node.object)
 
         @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_separator_before()
@@ -5274,16 +5259,15 @@ class Elemental(Service):
         self.unlisten(self)
 
     def boot(self, *a, **kwargs):
-        self.context.setting(bool, "operation_default_empty", True)
+        self.setting(bool, "operation_default_empty", True)
         self.load_persistent_operations("previous")
         ops = list(self.ops())
-        if not len(ops) and self.context.operation_default_empty:
+        if not len(ops) and self.operation_default_empty:
             self.load_default()
             return
 
     def save_persistent_operations(self, name):
-        context = self.context
-        settings = context.derive("operations/" + name)
+        settings = self.derive("operations/" + name)
         settings.clear_persistent()
 
         for i, op in enumerate(self.ops()):
@@ -5307,7 +5291,7 @@ class Elemental(Service):
 
     def load_persistent_operations(self, name):
         self.clear_operations()
-        settings = self.context.get_context("operations/" + name)
+        settings = self.get_context("operations/" + name)
         subitems = list(settings.derivable())
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
@@ -5335,10 +5319,10 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
 
-    def listen(self, listener):
+    def listen_tree(self, listener):
         self._tree.listen(listener)
 
-    def unlisten(self, listener):
+    def unlisten_tree(self, listener):
         self._tree.unlisten(listener)
 
     def add_element(self, element, stroke="black"):
@@ -5348,11 +5332,10 @@ class Elemental(Service):
             and len(element) == 0
         ):
             return  # No empty elements.
-        context_root = self.context.root
         if hasattr(element, "stroke") and element.stroke is None:
             element.stroke = Color(stroke)
-        node = context_root.elements.add_elem(element)
-        context_root.elements.set_emphasis([element])
+        node = self.add_elem(element)
+        self.set_emphasis([element])
         node.focus()
         return node
 
@@ -5680,7 +5663,7 @@ class Elemental(Service):
         """
         element_branch = self._tree.get(type="branch elems")
         node = element_branch.add(element, type="elem")
-        self.context.signal("element_added", element)
+        self.signal("element_added", element)
         if classify:
             self.classify([element])
         return node
@@ -5690,7 +5673,7 @@ class Elemental(Service):
         items = []
         for element in adding_elements:
             items.append(element_branch.add(element, type="elem"))
-        self.context.signal("element_added", adding_elements)
+        self.signal("element_added", adding_elements)
         return items
 
     def clear_operations(self):
@@ -5731,7 +5714,7 @@ class Elemental(Service):
             for i, o in enumerate(list(self.ops())):
                 if o is op:
                     o.remove_node()
-            self.context.signal("operation_removed", op)
+            self.signal("operation_removed", op)
 
     def remove_elements_from_operations(self, elements_list):
         for i, op in enumerate(self.ops()):
@@ -5775,7 +5758,7 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = False
         if self._emphasized_bounds != new_bounds:
             self._emphasized_bounds = new_bounds
-            self.context.signal("selected_bounds", self._emphasized_bounds)
+            self.signal("selected_bounds", self._emphasized_bounds)
 
     def highlight_children(self, node_context):
         """
@@ -5867,11 +5850,11 @@ class Elemental(Service):
             max(b[0], b[2]),
             max(b[1], b[3]),
         ]
-        self.context.signal("selected_bounds", self._emphasized_bounds)
+        self.signal("selected_bounds", self._emphasized_bounds)
 
     def update_bounds(self, b):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
-        self.context.signal("selected_bounds", self._emphasized_bounds)
+        self.signal("selected_bounds", self._emphasized_bounds)
 
     def move_emphasized(self, dx, dy):
         for obj in self.elems(emphasized=True):
@@ -5924,7 +5907,7 @@ class Elemental(Service):
         # Use of Classify in reverse is new functionality in 0.7.1
         # So using it is incompatible, but not using it would be inconsistent
         # Perhaps classify_reverse should be cleared and disabled if classify_legacy is set.
-        reverse = self.context.classify_reverse
+        reverse = self.classify_reverse
         if reverse:
             elements = reversed(elements)
         if operations is None:
@@ -6140,7 +6123,7 @@ class Elemental(Service):
         :param add_op_function: function to add a new operation, because of a lack of classification options.
         :return:
         """
-        if self.context.legacy_classification:
+        if self.legacy_classification:
             self.classify_legacy(elements, operations, add_op_function)
             return
 
@@ -6151,7 +6134,7 @@ class Elemental(Service):
         if add_op_function is None:
             add_op_function = self.add_classify_op
 
-        reverse = self.context.classify_reverse
+        reverse = self.classify_reverse
         # If reverse then we insert all elements into operations at the beginning rather than appending at the end
         # EXCEPT for Rasters which have to be in the correct sequence.
         element_pos = 0 if reverse else None
@@ -6483,13 +6466,13 @@ class Elemental(Service):
         return element_color
 
     def load(self, pathname, **kwargs):
-        kernel = self.context.kernel
+        kernel = self.kernel
         for loader_name in kernel.match("load"):
             loader = kernel.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
                     try:
-                        results = loader.load(self.context, self, pathname, **kwargs)
+                        results = loader.load(self, self, pathname, **kwargs)
                     except FileNotFoundError:
                         return False
                     except OSError:
@@ -6499,7 +6482,7 @@ class Elemental(Service):
         return False
 
     def load_types(self, all=True):
-        kernel = self.context.kernel
+        kernel = self.kernel
         _ = kernel.translation
         filetypes = []
         if all:
@@ -6522,17 +6505,17 @@ class Elemental(Service):
         return "|".join(filetypes)
 
     def save(self, pathname):
-        kernel = self.context.kernel
+        kernel = self.kernel
         for save_name in kernel.match("save"):
             saver = kernel.registered[save_name]
             for description, extension, mimetype in saver.save_types():
                 if pathname.lower().endswith(extension):
-                    saver.save(self.context, pathname, "default")
+                    saver.save(self, pathname, "default")
                     return True
         return False
 
     def save_types(self):
-        kernel = self.context.kernel
+        kernel = self.kernel
         filetypes = []
         for save_name in kernel.match("save"):
             saver = kernel.registered[save_name]
