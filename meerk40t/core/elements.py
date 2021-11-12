@@ -60,24 +60,8 @@ def plugin(kernel, lifecycle=None):
         _ = kernel.root._
         choices = [
             {
-                "attr": "windows_save",
-                "object": kernel.root,
-                "default": True,
-                "type": bool,
-                "label": _("Save Window Positions"),
-                "tip": _("Open Windows at the same place they were last closed"),
-            },
-            {
-                "attr": "print_shutdown",
-                "object": kernel.root,
-                "default": False,
-                "type": bool,
-                "label": _("Print Shutdown"),
-                "tip": _("Print shutdown log when Meerk40t is closed."),
-            },
-            {
                 "attr": "uniform_svg",
-                "object": kernel.root,
+                "object": kernel.root.elements,
                 "default": False,
                 "type": bool,
                 "label": _("SVG Uniform Save"),
@@ -87,7 +71,7 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "image_dpi",
-                "object": kernel.root,
+                "object": kernel.root.elements,
                 "default": True,
                 "type": bool,
                 "label": _("Image DPI Scaling"),
@@ -102,12 +86,50 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "dxf_center",
-                "object": kernel.root,
+                "object": kernel.root.elements,
                 "default": True,
                 "type": bool,
                 "label": _("DXF Centering"),
                 "tip": _("Fit (scale down if necessary) and center a DXF file within the bed"),
             },
+            {
+                "attr": "operation_default_empty",
+                "object": kernel.root.elements,
+                "default": True,
+                "type": bool,
+                "label": _("Default Operation Other/Red/Blue"),
+                "tip": _("Sets Operations to Other/Red/Blue if loaded with no operations."),
+            },
+            {
+                "attr": "classify_reverse",
+                "object": kernel.root.elements,
+                "default": False,
+                "type": bool,
+                "label": _("Classify Reversed"),
+                "tip": _(
+                    "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
+                ),
+            },
+            {
+                "attr": "legacy_classification",
+                "object": kernel.root.elements,
+                "default": False,
+                "type": bool,
+                "label": _("Legacy Classify"),
+                "tip": _(
+                    "Use the legacy classification algorithm rather than the modern classification algorithm."
+                ),
+            },
+
+            {
+                "attr": "print_shutdown",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("Print Shutdown"),
+                "tip": _("Print shutdown log when Meerk40t is closed."),
+            },
+
             {
                 "attr": "show_negative_guide",
                 "object": kernel.root,
@@ -117,6 +139,14 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
                 ),
+            },
+            {
+                "attr": "windows_save",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Save Window Positions"),
+                "tip": _("Open Windows at the same place they were last closed"),
             },
             {
                 "attr": "auto_spooler",
@@ -158,34 +188,6 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Invert MouseWheel Zoom"),
                 "tip": _("Reverses the direction of the MouseWheel for zoom"),
-            },
-            {
-                "attr": "operation_default_empty",
-                "object": kernel.root,
-                "default": True,
-                "type": bool,
-                "label": _("Default Operation Other/Red/Blue"),
-                "tip": _("Sets Operations to Other/Red/Blue if loaded with no operations."),
-            },
-            {
-                "attr": "classify_reverse",
-                "object": kernel.root,
-                "default": False,
-                "type": bool,
-                "label": _("Classify Reversed"),
-                "tip": _(
-                    "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
-                ),
-            },
-            {
-                "attr": "legacy_classification",
-                "object": kernel.root,
-                "default": False,
-                "type": bool,
-                "label": _("Legacy Classify"),
-                "tip": _(
-                    "Use the legacy classification algorithm rather than the modern classification algorithm."
-                ),
             },
             {
                 "attr": "disable_tool_tips",
