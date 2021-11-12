@@ -204,7 +204,7 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(data.matrix))
             return "scene", data
 
-    def on_refresh_scene(self, origin, *args):
+    def on_refresh_scene(self, origin, scene_name=None, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
 
@@ -212,7 +212,8 @@ class MeerK40tScenePanel(wx.Panel):
         :param args:
         :return:
         """
-        self.request_refresh()
+        if scene_name == "Scene":
+            self.request_refresh()
 
     def initialize(self, *args):
         context = self.context

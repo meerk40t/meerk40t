@@ -623,7 +623,7 @@ class CamPerspectiveWidget(Widget):
                     if isinstance(w, CamPerspectiveWidget):
                         w.update()
                 self.cam.setting.perspective = repr(perspective)
-                self.cam.context.signal("refresh_scene", 1)
+                self.cam.context.signal("refresh_scene", self.scene.name)
             return RESPONSE_CONSUME
 
 

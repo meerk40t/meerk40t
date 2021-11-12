@@ -545,7 +545,7 @@ class wxMeerK40t(wx.App, Module):
 
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def scene_refresh(command, channel, _, **kwargs):
-            context.signal("refresh_scene")
+            context.signal("refresh_scene", "Scene")
             context.signal("rebuild_tree")
             channel(_("Refreshed."))
 

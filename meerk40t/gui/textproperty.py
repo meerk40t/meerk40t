@@ -192,7 +192,7 @@ class TextPropertyPanel(wx.Panel):
 
     def refresh(self):
         self.context.elements.signal("element_property_reload", self.element)
-        self.context.signal("refresh_scene")
+        self.context.signal("refresh_scene", "Scene")
 
     def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:

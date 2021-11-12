@@ -326,21 +326,22 @@ class SimulationPanel(wx.Panel, Job):
         self.context.unschedule(self)
         self.running = False
 
-    def on_refresh_scene(self, origin, *args):
+    def on_refresh_scene(self, origin, scene_name=None, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
         :param origin: the path of the originating signal
         :param args:
         :return:
         """
-        self.request_refresh()
+        if scene_name == "SimScene":
+            self.request_refresh()
 
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)
 
     def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.progress = min(self.slider_progress.GetValue(), self.max)
-        self.context.signal("refresh_scene")
+        self.context.signal("refresh_scene", self.widget_scene.name)
 
     def _start(self):
         self.button_play.SetBitmap(icons8_pause_50.GetBitmap())
@@ -367,7 +368,7 @@ class SimulationPanel(wx.Panel, Job):
             self.progress = self.max
             self._stop()
         else:
-            self.context.signal("refresh_scene")
+            self.context.signal("refresh_scene", self.widget_scene.name)
         self.slider_progress.SetValue(self.progress)
 
     def on_slider_playback(self, event=None):  # wxGlade: Simulation.<event_handler>
