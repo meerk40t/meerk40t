@@ -1588,187 +1588,6 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._tree = None
 
-    def tree_operations_for_node(self, node):
-        for m in self.match("tree/%s/.*" % node.type):
-            func = self.registered[m]
-            reject = False
-            for cond in func.conditionals:
-                if not cond(node):
-                    reject = True
-                    break
-            if reject:
-                continue
-            for cond in func.try_conditionals:
-                try:
-                    if not cond(node):
-                        reject = True
-                        break
-                except Exception:
-                    continue
-            if reject:
-                continue
-            func_dict = {
-                "name": label_truncate_re.sub("", str(node.label)),
-                "label": str(node.label),
-            }
-
-            iterator = func.values
-            if iterator is None:
-                iterator = [0]
-            else:
-                try:
-                    iterator = list(iterator())
-                except TypeError:
-                    pass
-            for i, value in enumerate(iterator):
-                func_dict["iterator"] = i
-                func_dict["value"] = value
-                try:
-                    func_dict[func.value_name] = value
-                except AttributeError:
-                    pass
-
-                for calc in func.calcs:
-                    key, c = calc
-                    value = c(value)
-                    func_dict[key] = value
-                if func.radio is not None:
-                    try:
-                        func.radio_state = func.radio(node, **func_dict)
-                    except:
-                        func.radio_state = False
-                else:
-                    func.radio_state = None
-                name = func.name.format_map(func_dict)
-                func.func_dict = func_dict
-                func.real_name = name
-
-                yield func
-
-    def flat(self, **kwargs):
-        yield from self._tree.flat(**kwargs)
-
-    @staticmethod
-    def tree_calc(value_name, calc_func):
-        def decor(func):
-            func.calcs.append((value_name, calc_func))
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_values(value_name, values):
-        def decor(func):
-            func.value_name = value_name
-            func.values = values
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_iterate(value_name, start, stop, step=1):
-        def decor(func):
-            func.value_name = value_name
-            func.values = range(start, stop, step)
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_radio(radio_function):
-        def decor(func):
-            func.radio = radio_function
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_submenu(submenu):
-        def decor(func):
-            func.submenu = submenu
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_conditional(conditional):
-        def decor(func):
-            func.conditionals.append(conditional)
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_conditional_try(conditional):
-        def decor(func):
-            func.try_conditionals.append(conditional)
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_reference(node):
-        def decor(func):
-            func.reference = node
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_separator_after():
-        def decor(func):
-            func.separate_after = True
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_separator_before():
-        def decor(func):
-            func.separate_before = True
-            return func
-
-        return decor
-
-    def tree_operation(self, name, node_type=None, help=None, **kwargs):
-        def decorator(func):
-            @functools.wraps(func)
-            def inner(node, **ik):
-                returned = func(node, **ik, **kwargs)
-                return returned
-
-            kernel = self.kernel
-            if isinstance(node_type, tuple):
-                ins = node_type
-            else:
-                ins = (node_type,)
-
-            # inner.long_help = func.__doc__
-            inner.help = help
-            inner.node_type = ins
-            inner.name = name
-            inner.radio = None
-            inner.submenu = None
-            inner.reference = None
-            inner.separate_after = False
-            inner.separate_before = False
-            inner.conditionals = list()
-            inner.try_conditionals = list()
-            inner.calcs = list()
-            inner.values = [0]
-            registered_name = inner.__name__
-
-            for _in in ins:
-                p = "tree/%s/%s" % (_in, registered_name)
-                if p in kernel.registered:
-                    raise NameError(
-                        "A function of this name was already registered: %s" % p
-                    )
-                kernel.register(p, inner)
-            return inner
-
-        return decorator
-
     def attach(self, *a, **kwargs):
         context = self.context
         _ = context._
@@ -5572,6 +5391,187 @@ class Elemental(Service):
         self.add_op(LaserOperation(operation="Engrave", color="yellow"))
         self.add_op(LaserOperation(operation="Cut"))
         self.classify(list(self.elems()))
+
+    def tree_operations_for_node(self, node):
+        for m in self.match("tree/%s/.*" % node.type):
+            func = self.registered[m]
+            reject = False
+            for cond in func.conditionals:
+                if not cond(node):
+                    reject = True
+                    break
+            if reject:
+                continue
+            for cond in func.try_conditionals:
+                try:
+                    if not cond(node):
+                        reject = True
+                        break
+                except Exception:
+                    continue
+            if reject:
+                continue
+            func_dict = {
+                "name": label_truncate_re.sub("", str(node.label)),
+                "label": str(node.label),
+            }
+
+            iterator = func.values
+            if iterator is None:
+                iterator = [0]
+            else:
+                try:
+                    iterator = list(iterator())
+                except TypeError:
+                    pass
+            for i, value in enumerate(iterator):
+                func_dict["iterator"] = i
+                func_dict["value"] = value
+                try:
+                    func_dict[func.value_name] = value
+                except AttributeError:
+                    pass
+
+                for calc in func.calcs:
+                    key, c = calc
+                    value = c(value)
+                    func_dict[key] = value
+                if func.radio is not None:
+                    try:
+                        func.radio_state = func.radio(node, **func_dict)
+                    except:
+                        func.radio_state = False
+                else:
+                    func.radio_state = None
+                name = func.name.format_map(func_dict)
+                func.func_dict = func_dict
+                func.real_name = name
+
+                yield func
+
+    def flat(self, **kwargs):
+        yield from self._tree.flat(**kwargs)
+
+    @staticmethod
+    def tree_calc(value_name, calc_func):
+        def decor(func):
+            func.calcs.append((value_name, calc_func))
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_values(value_name, values):
+        def decor(func):
+            func.value_name = value_name
+            func.values = values
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_iterate(value_name, start, stop, step=1):
+        def decor(func):
+            func.value_name = value_name
+            func.values = range(start, stop, step)
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_radio(radio_function):
+        def decor(func):
+            func.radio = radio_function
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_submenu(submenu):
+        def decor(func):
+            func.submenu = submenu
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_conditional(conditional):
+        def decor(func):
+            func.conditionals.append(conditional)
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_conditional_try(conditional):
+        def decor(func):
+            func.try_conditionals.append(conditional)
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_reference(node):
+        def decor(func):
+            func.reference = node
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_separator_after():
+        def decor(func):
+            func.separate_after = True
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_separator_before():
+        def decor(func):
+            func.separate_before = True
+            return func
+
+        return decor
+
+    def tree_operation(self, name, node_type=None, help=None, **kwargs):
+        def decorator(func):
+            @functools.wraps(func)
+            def inner(node, **ik):
+                returned = func(node, **ik, **kwargs)
+                return returned
+
+            kernel = self.kernel
+            if isinstance(node_type, tuple):
+                ins = node_type
+            else:
+                ins = (node_type,)
+
+            # inner.long_help = func.__doc__
+            inner.help = help
+            inner.node_type = ins
+            inner.name = name
+            inner.radio = None
+            inner.submenu = None
+            inner.reference = None
+            inner.separate_after = False
+            inner.separate_before = False
+            inner.conditionals = list()
+            inner.try_conditionals = list()
+            inner.calcs = list()
+            inner.values = [0]
+            registered_name = inner.__name__
+
+            for _in in ins:
+                p = "tree/%s/%s" % (_in, registered_name)
+                if p in kernel.registered:
+                    raise NameError(
+                        "A function of this name was already registered: %s" % p
+                    )
+                kernel.register(p, inner)
+            return inner
+
+        return decorator
 
     @property
     def op_branch(self):
