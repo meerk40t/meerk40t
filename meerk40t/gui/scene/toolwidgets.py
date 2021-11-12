@@ -175,14 +175,14 @@ class RectTool(ToolWidget):
             y1 = max(self.p1.imag, self.p2.imag)
             gc.SetPen(wx.BLUE_PEN)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            gc.DrawRectangle(x0, y0, x0 - x1, y0 - y1)
+            gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftdown":
             self.p1 = complex(space_pos[0], space_pos[1])
         elif event_type == "move":
             self.p2 = complex(space_pos[0], space_pos[1])
-            self.scene.gui.signal("refresh_scene")
+            self.scene.context.signal("refresh_scene")
         elif event_type == "leftup":
             try:
                 if self.p1 is None:
