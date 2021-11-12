@@ -918,7 +918,7 @@ class Transform(wx.Panel):
         self.button_reset.Enable(v)
 
     def matrix_updated(self):
-        self.context.signal("refresh_scene")
+        self.context.elements.signal("refresh_scene")
         self.update_matrix_text()
 
     def on_scale_down(self, event=None):  # wxGlade: Navigation.<event_handler>
@@ -1018,7 +1018,6 @@ class Transform(wx.Panel):
             )
         except ValueError:
             self.update_matrix_text()
-        self.context.signal("refresh_scene")
 
 
 class JogDistancePanel(wx.Panel):

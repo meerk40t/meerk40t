@@ -80,7 +80,7 @@ class GroupPropertiesPanel(wx.Panel):
                 del self.element.values["label"]
             except KeyError:
                 pass
-        self.context.signal("element_property_update", self.element)
+        self.context.elements.signal("element_property_update", self.element)
 
 
 class GroupProperty(MWindow):

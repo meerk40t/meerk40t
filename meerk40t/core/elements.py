@@ -125,9 +125,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register_choices("preferences", choices)
 
     elif lifecycle == "ready":
-        context = kernel.root
-        context.signal("rebuild_tree")
-        context.signal("refresh_tree")
+        elements = kernel.root.elements
+        elements.signal("rebuild_tree")
+        elements.signal("refresh_tree")
 
 
 MILS_IN_MM = 39.3701
@@ -2211,7 +2211,7 @@ class Elemental(Service):
                 self.remove_elements(data)
             else:
                 self.remove_operations(data)
-            self.signal("refresh_scene", 0)
+            self.signal("tree_changed")
 
         # ==========
         # ELEMENT BASE
@@ -2307,7 +2307,6 @@ class Elemental(Service):
                 if hasattr(element, "node"):
                     element.node.modified()
                 self.signal("element_property_reload", element)
-                self.signal("refresh_scene")
             return ("elements",)
 
         @self.console_command(
@@ -2765,7 +2764,7 @@ class Elemental(Service):
                     if obj is not None:
                         obj *= matrix
                     q.modified()
-            self.signal("refresh_scene")
+            self.signal("tree_changed")
             return "align", data
 
         @self.console_argument(
@@ -2878,7 +2877,6 @@ class Elemental(Service):
                         q.modified()
                     for q in node.flat(types=("file", "group")):
                         q.modified()
-                self.signal("refresh_scene")
             return "align", data
 
         @self.console_argument("c", type=int, help=_("Number of columns"))
@@ -3225,7 +3223,6 @@ class Elemental(Service):
                 e.stroke_width = stroke_width
                 if hasattr(e, "node"):
                     e.node.altered()
-            self.signal("refresh_scene")
             return "elements", data
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
@@ -3283,7 +3280,6 @@ class Elemental(Service):
                     e.stroke = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
-            self.signal("refresh_scene")
             return "elements", data
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
@@ -3339,7 +3335,6 @@ class Elemental(Service):
                     e.fill = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
-            self.signal("refresh_scene")
             return "elements", data
 
         @self.console_argument("x_offset", type=Length, help=_("x offset."))
@@ -3496,7 +3491,6 @@ class Elemental(Service):
                             element.node.modified()
             except ValueError:
                 raise SyntaxError
-            self.signal("refresh_scene")
             return "elements", data
 
         @self.console_argument("scale_x", type=float, help=_("scale_x value"))
@@ -3604,7 +3598,6 @@ class Elemental(Service):
                             e.node.modified()
             except ValueError:
                 raise SyntaxError
-            self.signal("refresh_scene")
             return "elements", data
 
         @self.console_argument("tx", type=Length, help=_("translate x value"))
@@ -3681,7 +3674,6 @@ class Elemental(Service):
                             e.node.modified()
             except ValueError:
                 raise SyntaxError
-            self.signal("refresh_scene")
             return "elements", data
 
         @self.console_command(
@@ -3719,7 +3711,6 @@ class Elemental(Service):
                         e.node.modified()
             except ValueError:
                 raise SyntaxError
-            self.signal("refresh_scene")
             return "elements", data
 
         @self.console_argument(
@@ -3781,7 +3772,6 @@ class Elemental(Service):
                     e *= m
                     if hasattr(e, "node"):
                         e.node.modified()
-                self.signal("refresh_scene")
                 return "elements", data
             except (ValueError, ZeroDivisionError, TypeError):
                 raise SyntaxError
@@ -3845,7 +3835,6 @@ class Elemental(Service):
                         e.node.modified()
             except ValueError:
                 raise SyntaxError
-            self.signal("refresh_scene")
             return
 
         @self.console_command(
@@ -3871,7 +3860,6 @@ class Elemental(Service):
                 e.transform.reset()
                 if hasattr(e, "node"):
                     e.node.modified()
-            self.signal("refresh_scene")
             return "elements", data
 
         @self.console_command(
@@ -3897,7 +3885,6 @@ class Elemental(Service):
                 e.reify()
                 if hasattr(e, "node"):
                     e.node.altered()
-            self.signal("refresh_scene")
             return "elements", data
 
         @self.console_command(
@@ -5182,7 +5169,6 @@ class Elemental(Service):
             if hasattr(element, "node"):
                 element.node.modified()
             self.signal("element_property_reload", node.object)
-            self.signal("refresh_scene")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -6544,6 +6530,7 @@ class Elemental(Service):
                     except OSError:
                         return False
                     if results:
+                        self.signal("tree_changed")
                         return True
         return False
 

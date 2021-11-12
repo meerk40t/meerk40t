@@ -362,7 +362,7 @@ class SVGLoader:
                     if str(element.values[SVG_ATTR_TAG]).lower() == "note":
                         try:
                             elements_modifier.note = element.values[SVG_TAG_TEXT]
-                            elements_modifier.context.signal("note", pathname)
+                            elements_modifier.signal("note", pathname)
                         except (KeyError, AttributeError):
                             pass
                 except KeyError:

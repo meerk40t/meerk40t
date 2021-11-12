@@ -162,7 +162,7 @@ class PathPropertyPanel(wx.Panel):
         try:
             self.element.id = self.text_name.GetValue()
             self.element.values[SVG_ATTR_ID] = self.element.id
-            self.context.signal("element_property_update", self.element)
+            self.context.elements.signal("element_property_update", self.element)
         except AttributeError:
             pass
 
@@ -198,8 +198,7 @@ class PathPropertyPanel(wx.Panel):
         self.element.node.emphasized = True
         self.Refresh()
         self.context("declassify\nclassify\n")
-        self.context.signal("element_property_update", self.element)
-        self.context.signal("refresh_scene", 0)
+        self.context.elements.signal("element_property_update", self.element)
 
 
 class PathProperty(MWindow):

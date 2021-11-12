@@ -84,7 +84,7 @@ class NotePanel(wx.Panel):
             self.context.elements.note = None
         else:
             self.context.elements.note = self.text_notes.GetValue()
-        self.context.signal("note", self)
+        self.context.elements.signal("note", self)
 
     def on_note_listen(self, origin, source):
         if source is self:

@@ -78,7 +78,7 @@ class TreePanel(wx.Panel):
         self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
-        self.on_rebuild_tree_request()
+        self.context.elements.signal("rebuild_tree")
 
     def __set_tree(self):
         self.shadow_tree = ShadowTree(
@@ -126,26 +126,26 @@ class TreePanel(wx.Panel):
             event.Skip()
 
     def initialize(self):
-        self.context.listen("rebuild_tree", self.on_rebuild_tree_signal)
-        self.context.listen("refresh_tree", self.request_refresh)
-        self.context.listen("element_property_update", self.on_element_update)
-        self.context.listen("element_property_reload", self.on_force_element_update)
-        self.context.listen(
+        self.context.elements.listen("rebuild_tree", self.on_rebuild_tree_signal)
+        self.context.elements.listen("refresh_tree", self.request_refresh)
+        self.context.elements.listen("element_property_update", self.on_element_update)
+        self.context.elements.listen("element_property_reload", self.on_force_element_update)
+        self.context.elements.listen(
             "select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis
         )
-        self.context.listen(
+        self.context.elements.listen(
             "activate_selected_nodes", self.shadow_tree.activate_selected_node
         )
 
     def finalize(self):
-        self.context.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
-        self.context.unlisten("refresh_tree", self.request_refresh)
-        self.context.unlisten("element_property_update", self.on_element_update)
-        self.context.unlisten("element_property_reload", self.on_force_element_update)
-        self.context.unlisten(
+        self.context.elements.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
+        self.context.elements.unlisten("refresh_tree", self.request_refresh)
+        self.context.elements.unlisten("element_property_update", self.on_element_update)
+        self.context.elements.unlisten("element_property_reload", self.on_force_element_update)
+        self.context.elements.unlisten(
             "select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis
         )
-        self.context.unlisten(
+        self.context.elements.unlisten(
             "activate_selected_nodes", self.shadow_tree.activate_selected_node
         )
 
@@ -170,16 +170,6 @@ class TreePanel(wx.Panel):
         """
         if self.shadow_tree is not None:
             self.shadow_tree.on_force_element_update(*args)
-
-    def on_rebuild_tree_request(self, *args):
-        """
-        Called by various functions, sends a rebuild_tree signal.
-        This is to prevent multiple events from overtaxing the rebuild.
-
-        :param args:
-        :return:
-        """
-        self.context.signal("rebuild_tree")
 
     def on_refresh_tree_signal(self, *args):
         self.request_refresh()
@@ -311,7 +301,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_label(node)
         self.set_enhancements(node)
-        self.context.signal("selected", node)
+        self.context.elements.signal("selected", node)
 
     def emphasized(self, node):
         """
@@ -326,7 +316,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_label(node)
         self.set_enhancements(node)
-        self.context.signal("emphasized", node)
+        self.context.elements.signal("emphasized", node)
 
     def targeted(self, node):
         """
@@ -341,7 +331,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_label(node)
         self.set_enhancements(node)
-        self.context.signal("targeted", node)
+        self.context.elements.signal("targeted", node)
 
     def highlighted(self, node):
         """
@@ -357,7 +347,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_label(node)
         self.set_enhancements(node)
-        self.context.signal("highlighted", node)
+        self.context.elements.signal("highlighted", node)
 
     def modified(self, node):
         """
@@ -375,7 +365,7 @@ class ShadowTree:
             self.set_color(node, c)
         except AttributeError:
             pass
-        self.context.signal("modified", node)
+        self.context.elements.signal("modified", node)
 
     def altered(self, node):
         """
@@ -394,7 +384,7 @@ class ShadowTree:
         except AttributeError:
             pass
         self.set_icon(node)
-        self.context.signal("altered", node)
+        self.context.elements.signal("altered", node)
 
     def expand(self, node):
         """
@@ -606,7 +596,7 @@ class ShadowTree:
         except TypeError:
             pass
         self.set_icon(node)
-        self.context.signal("refresh_tree")
+        self.context.elements.signal("refresh_tree")
 
     def set_enhancements(self, node):
         """
@@ -686,7 +676,7 @@ class ShadowTree:
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-                    self.context.signal("refresh_tree")
+                    self.context.elements.signal("refresh_tree")
             elif isinstance(node, LaserOperation):
                 try:
                     op = node.operation

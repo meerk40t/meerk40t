@@ -103,7 +103,6 @@ class TextPropertyPanel(wx.Panel):
                     self.label_fonttest.SetFont(self.element_node.wxfont)
                 except AttributeError:
                     pass
-                self.context.signal("refresh_scene", 0)
         except AttributeError:
             pass
 
@@ -192,12 +191,13 @@ class TextPropertyPanel(wx.Panel):
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(element.fill)))
 
     def refresh(self):
-        self.context.signal("element_property_reload", self.element)
-        self.context.signal("refresh_scene", 0)
+        self.context.elements.signal("element_property_reload", self.element)
+        self.context.signal("refresh_scene")
 
     def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
             self.element.text = self.text_text.GetValue()
+            self.element.modified()
             self.update_label()
             self.refresh()
         except AttributeError:
@@ -221,6 +221,7 @@ class TextPropertyPanel(wx.Panel):
                 color = swizzlecolor(rgb)
                 color = Color(color, 1.0)
                 self.element.fill = color
+                self.element.modified()
             except Exception:  # rgb get failed.
                 pass
             self.element_node.wxfont = font

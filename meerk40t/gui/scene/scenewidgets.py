@@ -81,7 +81,7 @@ class ElementsWidget(Widget):
         if event_type == "leftclick":
             elements = self.scene.context.elements
             elements.set_emphasized_by_position(space_pos)
-            self.scene.context.signal("select_emphasized_tree", 0)
+            self.scene.context.elements.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME
         return RESPONSE_DROP
 
@@ -136,7 +136,7 @@ class SelectionWidget(Widget):
                 self.bottom += height
 
             self.clear()
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
             return HITCHAIN_HIT
         else:
             self.left = float("inf")
@@ -144,7 +144,7 @@ class SelectionWidget(Widget):
             self.right = -float("inf")
             self.bottom = -float("inf")
             self.clear()
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
             return HITCHAIN_DELEGATE
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
@@ -234,7 +234,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             elements.set_emphasized_by_position(space_pos)
-            self.scene.context.signal("activate_selected_nodes", 0)
+            self.scene.context.elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
         elif event_type == "leftdown":
             self.save_width = self.width
@@ -284,7 +284,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], position[0], position[1]])
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
 
     def tool_scalexy_se(self, position, dx, dy, event=0):
         """
@@ -317,7 +317,7 @@ class SelectionWidget(Widget):
             elements.update_bounds(
                 [b[0], b[1], b[0] + self.save_width, b[1] + self.save_height]
             )
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
 
     def tool_scalexy_nw(self, position, dx, dy, event=0):
         """
@@ -350,7 +350,7 @@ class SelectionWidget(Widget):
             elements.update_bounds(
                 [b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]]
             )
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
 
     def tool_scalexy_ne(self, position, dx, dy, event=0):
         """
@@ -383,7 +383,7 @@ class SelectionWidget(Widget):
             elements.update_bounds(
                 [b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]]
             )
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
 
     def tool_scalexy_sw(self, position, dx, dy, event=0):
         """
@@ -416,7 +416,7 @@ class SelectionWidget(Widget):
             elements.update_bounds(
                 [b[2] - self.save_width, b[1], b[2], b[1] + self.save_height]
             )
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
 
     def tool_scalex_e(self, position, dx, dy, event=0):
         """
@@ -441,7 +441,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], position[0], b[3]])
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
 
     def tool_scalex_w(self, position, dx, dy, event=0):
         """
@@ -466,7 +466,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([position[0], b[1], b[2], b[3]])
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
 
     def tool_scaley_s(self, position, dx, dy, event=0):
         """
@@ -491,7 +491,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], b[2], position[1]])
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
 
     def tool_scaley_n(self, position, dx, dy, event=0):
         """
@@ -516,7 +516,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], position[1], b[2], b[3]])
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
 
     def tool_translate(self, position, dx, dy, event=0):
         """
@@ -536,7 +536,7 @@ class SelectionWidget(Widget):
                 e._bounds_dirty = True
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
-        self.scene.context.signal("refresh_scene", 0)
+        self.scene.context.signal("refresh_scene")
 
     def process_draw(self, gc):
         """
@@ -659,12 +659,12 @@ class RectSelectWidget(Widget):
                         obj.node.emphasized = True
                     else:
                         obj.node.emphasized = False
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
             self.start_location = None
             self.end_location = None
             return RESPONSE_CONSUME
         elif event_type == "move":
-            self.scene.context.signal("refresh_scene", 0)
+            self.scene.context.signal("refresh_scene")
             self.end_location = space_pos
             return RESPONSE_CONSUME
         elif event_type == "lost":

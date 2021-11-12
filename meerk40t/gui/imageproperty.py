@@ -171,8 +171,7 @@ class ImagePropertyPanel(wx.Panel):
         element.transform.post_translate(tx, ty)
         element.node.modified()
         if self.context is not None:
-            self.context.signal("element_property_reload", element)
-            self.context.signal("refresh_scene")
+            self.context.elements.signal("element_property_reload", element)
 
     def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()
