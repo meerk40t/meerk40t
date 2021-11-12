@@ -63,6 +63,8 @@ MILS_IN_MM = 39.3701
 
 GUI_START = True
 
+_ = wx.GetTranslation
+
 
 def plugin(kernel, lifecycle):
     global GUI_START
@@ -85,7 +87,6 @@ def plugin(kernel, lifecycle):
         renderer = LaserRender(kernel_root)
         kernel_root.register("render-op/make_raster", renderer.make_raster)
     elif lifecycle == "postboot":
-        _ = kernel.root._
         choices = [
             {
                 "attr": "show_negative_guide",
@@ -168,8 +169,6 @@ def plugin(kernel, lifecycle):
         kernel.register_choices("preferences", choices)
 
     elif lifecycle == "mainloop":
-        _ = kernel.translation
-
         def interrupt_popup():
             dlg = wx.MessageDialog(
                 None,
@@ -202,7 +201,6 @@ def plugin(kernel, lifecycle):
             meerk40tgui.MainLoop()
 
 
-_ = wx.GetTranslation
 supported_languages = (
     ("en", u"English", wx.LANGUAGE_ENGLISH),
     ("it", u"italiano", wx.LANGUAGE_ITALIAN),
