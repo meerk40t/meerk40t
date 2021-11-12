@@ -213,7 +213,7 @@ class wxMeerK40t(wx.App, Module):
     def MacOpenFile(self, filename):
         try:
             if self.context is not None:
-                self.context.load(os.path.realpath(filename))
+                self.context.elements.load(os.path.realpath(filename))
         except AttributeError:
             pass
 
@@ -221,7 +221,7 @@ class wxMeerK40t(wx.App, Module):
         try:
             if self.context is not None:
                 for filename in filenames:
-                    self.context.load(os.path.realpath(filename))
+                    self.context.elements.load(os.path.realpath(filename))
         except AttributeError:
             pass
 

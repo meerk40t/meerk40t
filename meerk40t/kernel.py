@@ -2731,7 +2731,7 @@ class Kernel:
                 return
             root_context = self.root
             try:
-                root_context.load(new_file)
+                root_context.elements.load(new_file)
             except AttributeError:
                 raise SyntaxError(_("Loading files was not defined"))
             channel(_("loading..."))

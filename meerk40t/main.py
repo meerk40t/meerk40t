@@ -306,7 +306,7 @@ def run():
         # Load any input file
         import os
 
-        kernel_root.load(os.path.realpath(args.input.name))
+        kernel_root.elements.load(os.path.realpath(args.input.name))
         elements = kernel_root.elements
         elements.classify(list(elements.elems()))
 

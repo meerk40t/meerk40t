@@ -314,7 +314,7 @@ class MeerK40t(MWindow):
         @context.console_command("dialog_load", hidden=True)
         def load_dialog(**kwargs):
             # This code should load just specific project files rather than all importable formats.
-            files = context.load_types()
+            files = context.elements.load_types()
             with wx.FileDialog(
                 gui, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
             ) as fileDialog:
@@ -1603,7 +1603,7 @@ class MeerK40t(MWindow):
         """
         Loads an open dialog at given filename to load data.
         """
-        files = self.context.load_types()
+        files = self.context.elements.load_types()
         default_file = os.path.basename(filename)
         default_dir = os.path.dirname(filename)
 
@@ -1728,7 +1728,7 @@ class MeerK40t(MWindow):
         with wx.BusyInfo(_("Loading File...")):
             n = self.context.elements.note
             try:
-                results = self.context.load(
+                results = self.context.elements.load(
                     pathname,
                     channel=self.context.channel("load"),
                     svg_ppi=self.context.svg_ppi,
@@ -1745,10 +1745,10 @@ class MeerK40t(MWindow):
                 return False
             if results:
                 self.set_file_as_recently_used(pathname)
-                if n != self.context.elements.note and self.context.auto_note:
+                if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
                 try:
-                    if self.context.uniform_svg and pathname.lower().endswith("svg"):
+                    if self.context.elements.uniform_svg and pathname.lower().endswith("svg"):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
                         # TODO: Disabled uniform_svg, no longer detecting namespace.
                         self.working_file = pathname
