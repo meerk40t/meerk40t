@@ -1722,9 +1722,6 @@ class MeerK40t(MWindow):
         self.populate_recent_menu()
 
     def load(self, pathname):
-        self.context.setting(bool, "auto_note", True)
-        self.context.setting(bool, "uniform_svg", False)
-        self.context.setting(float, "svg_ppi", 96.0)
         with wx.BusyInfo(_("Loading File...")):
             n = self.context.elements.note
             try:

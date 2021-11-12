@@ -221,7 +221,7 @@ class PreferencesPanel(wx.Panel):
         context_root = self.context.root
 
         context_root.setting(float, "svg_ppi", 96.0)
-        self.text_svg_ppi.SetValue(str(context_root.svg_ppi))
+        self.text_svg_ppi.SetValue(str(context_root.elements.svg_ppi))
 
         self.context.setting(int, "language", 0)
         self.context.setting(str, "units_name", "mm")
@@ -324,18 +324,14 @@ class PreferencesPanel(wx.Panel):
         context_root = self.context.root
         ppi = self.combo_svg_ppi.GetSelection()
         if ppi == 0:
-            context_root.setting(float, "svg_ppi", 96.0)
-            context_root.svg_ppi = 96.0
+            context_root.elements.svg_ppi = 96.0
         elif ppi == 1:
-            context_root.setting(float, "svg_ppi", 72.0)
-            context_root.svg_ppi = 72.0
+            context_root.elements.svg_ppi = 72.0
         elif ppi == 2:
-            context_root.setting(float, "svg_ppi", 90.0)
-            context_root.svg_ppi = 90.0
+            context_root.elements.svg_ppi = 90.0
         else:
-            context_root.setting(float, "svg_ppi", 96.0)
-            context_root.svg_ppi = 96.0
-        self.text_svg_ppi.SetValue(str(context_root.svg_ppi))
+            context_root.elements.svg_ppi = 96.0
+        self.text_svg_ppi.SetValue(str(context_root.elements.svg_ppi))
 
     def on_text_svg_ppi(self, event=None):
         context_root = self.context.root
@@ -355,7 +351,7 @@ class PreferencesPanel(wx.Panel):
         else:
             if self.combo_svg_ppi.GetSelection() != 3:
                 self.combo_svg_ppi.SetSelection(3)
-        context_root.svg_ppi = svg_ppi
+        context_root.elements.svg_ppi = svg_ppi
 
     def on_combo_language(self, event=None):
         lang = self.combo_language.GetSelection()

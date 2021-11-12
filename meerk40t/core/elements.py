@@ -1599,6 +1599,9 @@ class Elemental(Service):
         bed_dim.setting(int, "bed_height", 210)
         self.root.setting(bool, "classify_reverse", False)
         self.root.setting(bool, "legacy_classification", False)
+        self.setting(bool, "auto_note", True)
+        self.setting(bool, "uniform_svg", False)
+        self.setting(float, "svg_ppi", 96.0)
 
         # ==========
         # OPERATION BASE
