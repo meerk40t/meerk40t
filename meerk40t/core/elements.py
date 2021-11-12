@@ -15,7 +15,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
 )
 from ..image.actualize import actualize
-from ..kernel import Modifier
+from ..kernel import Service
 from ..svgelements import (
     SVG_STRUCT_ATTRIB,
     Angle,
@@ -55,10 +55,7 @@ from .cutcode import (
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/Elemental", Elemental)
-    elif lifecycle == "boot":
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Elemental")
+        kernel.add_service(Elemental)
     elif lifecycle == "ready":
         context = kernel.root
         context.signal("rebuild_tree")
@@ -1570,9 +1567,9 @@ class RootNode(Node):
                 listen.focus(node, **kwargs)
 
 
-class Elemental(Modifier):
+class Elemental(Service):
     """
-    The elemental module is governs all the interactions with the various elements,
+    The elemental service is governs all the interactions with the various elements,
     operations, and filenodes. Handling structure change and selection, emphasis, and
     highlighting changes. The goal of this module is to make sure that the life cycle
     of the elements is strictly enforced. For example, every element that is removed
@@ -1580,8 +1577,8 @@ class Elemental(Modifier):
     that information out to inform other interested modules.
     """
 
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+    def __init__(self, kernel, name=None, *args, **kwargs):
+        Service.__init__(self, kernel, "elements")
 
         self._clipboard = {}
         self._clipboard_default = "0"
@@ -1592,8 +1589,8 @@ class Elemental(Modifier):
         self._tree = None
 
     def tree_operations_for_node(self, node):
-        for m in self.context.match("tree/%s/.*" % node.type):
-            func = self.context.registered[m]
+        for m in self.match("tree/%s/.*" % node.type):
+            func = self.registered[m]
             reject = False
             for cond in func.conditionals:
                 if not cond(node):
@@ -1740,7 +1737,7 @@ class Elemental(Modifier):
                 returned = func(node, **ik, **kwargs)
                 return returned
 
-            kernel = self.context.kernel
+            kernel = self.kernel
             if isinstance(node_type, tuple):
                 ins = node_type
             else:
