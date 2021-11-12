@@ -247,7 +247,7 @@ class ShadowTree:
         self.name = "Project"
         self.context = context
         self.elements = context.elements
-        self.elements.listen(self)
+        self.elements.listen_tree(self)
         self.do_not_select = False
 
     def node_created(self, node, **kwargs):

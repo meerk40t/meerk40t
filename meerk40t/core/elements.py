@@ -5407,11 +5407,11 @@ class Elemental(Service):
         def reference_opnode(node, **kwgs):
             pass
 
-        self.listen(self)
+        self.listen_tree(self)
 
     def detach(self, *a, **kwargs):
         self.save_persistent_operations("previous")
-        self.unlisten(self)
+        self.unlisten_tree(self)
 
     def boot(self, *a, **kwargs):
         self.setting(bool, "operation_default_empty", True)
