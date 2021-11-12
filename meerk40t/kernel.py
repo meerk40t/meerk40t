@@ -984,7 +984,7 @@ class Kernel:
 
         :return:
         """
-
+        self.bootstrap("preboot")
         self.command_boot()
 
         for i, serv in enumerate(self._services):
@@ -1017,6 +1017,7 @@ class Kernel:
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
             context.boot()
+        self.bootstrap("postboot")
 
     def shutdown(self):
         """
