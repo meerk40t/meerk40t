@@ -366,7 +366,7 @@ def run():
         # output the file you have at this point.
         import os
 
-        kernel_root.save(os.path.realpath(args.output.name))
+        kernel_root.elements.save(os.path.realpath(args.output.name))
 
     if args.console:
         kernel_root.channel("console").watch(print)

@@ -325,7 +325,7 @@ class MeerK40t(MWindow):
 
         @context.console_command("dialog_save", hidden=True)
         def save_dialog(**kwargs):
-            files = context.save_types()
+            files = context.elements.save_types()
             with wx.FileDialog(
                 gui,
                 _("Save Project"),
@@ -337,7 +337,7 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 if not pathname.lower().endswith(".svg"):
                     pathname += ".svg"
-                context.save(pathname)
+                context.elements.save(pathname)
                 gui.needs_saving = False
                 gui.working_file = pathname
                 gui.set_file_as_recently_used(gui.working_file)
@@ -1813,7 +1813,7 @@ class MeerK40t(MWindow):
         else:
             self.set_file_as_recently_used(self.working_file)
             self.needs_saving = False
-            self.context.save(self.working_file)
+            self.context.elements.save(self.working_file)
 
     def on_click_save_as(self, event=None):
         self.context("dialog_save\n")
