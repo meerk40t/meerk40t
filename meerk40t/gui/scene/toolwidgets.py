@@ -127,7 +127,6 @@ class DrawTool(ToolWidget):
             last = self.series[-1]
             if Point.distance(last, point) < self.preferred_length:
                 return
-            self.scene.gui.Update()
         self.series.append(point)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
@@ -139,6 +138,7 @@ class DrawTool(ToolWidget):
             if self.series is None:
                 return RESPONSE_DROP
             self.add_point(space_pos[:2])
+            self.scene.context.signal("refresh_scene", self.scene.name)
         elif event_type == "lost":
             self.series = None
             return RESPONSE_DROP
