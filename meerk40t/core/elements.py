@@ -56,7 +56,7 @@ from .cutcode import (
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service(Elemental)
-    elif lifecycle == "boot":
+    elif lifecycle == "postboot":
         _ = kernel.root._
         choices = [
             {
