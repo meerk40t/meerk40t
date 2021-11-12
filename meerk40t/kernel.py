@@ -1584,12 +1584,13 @@ class Kernel:
             dictionary[k] = item
         return dictionary
 
-    def keylist(self, path: str) -> Generator[str, None, None]:
+    def keylist(self, path: str, suffix: bool=False) -> Generator[str, None, None]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
 
-        :param path:
-        :return:
+        @param path: Path to check for keys.
+        @param suffix:  Should only the suffix be yielded.
+        @return:
         """
         if self._config is None:
             return
@@ -1597,7 +1598,10 @@ class Kernel:
         self._config.SetPath(path)
         more, value, index = self._config.GetFirstEntry()
         while more:
-            yield "%s/%s" % (path, value)
+            if suffix:
+                yield value
+            else:
+                yield "%s/%s" % (path, value)
             more, value, index = self._config.GetNextEntry(index)
         self._config.SetPath("/")
 
