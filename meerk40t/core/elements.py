@@ -124,11 +124,6 @@ def plugin(kernel, lifecycle=None):
         ]
         kernel.register_choices("preferences", choices)
 
-    elif lifecycle == "ready":
-        elements = kernel.root.elements
-        elements.signal("rebuild_tree")
-        elements.signal("refresh_tree")
-
 
 MILS_IN_MM = 39.3701
 
@@ -4713,7 +4708,7 @@ class Elemental(Service):
             for i in range(copies):
                 node.parent.add(node.object, type="opnode", pos=index)
             node.modified()
-            self.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
@@ -4723,7 +4718,7 @@ class Elemental(Service):
         )
         def reverse_layer_order(node, **kwgs):
             node.reverse()
-            self.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree")
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -4732,7 +4727,7 @@ class Elemental(Service):
         def refresh_clasifications(node, **kwgs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
-            self.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree")
 
         materials = [
             _("Wood"),
@@ -4856,7 +4851,7 @@ class Elemental(Service):
             elems = list(self.elems())
             self.remove_elements_from_operations(elems)
             self.classify(list(self.elems()))
-            self.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree")
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
@@ -4908,7 +4903,7 @@ class Elemental(Service):
                 add_elements = [c for c in add_elements if c is not None]
             add_elements *= copies
             node.add_all(add_elements, type="opnode")
-            self.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_conditional(
@@ -4934,7 +4929,7 @@ class Elemental(Service):
             ]
             add_elements *= copies
             node.add_all(add_elements, type="opnode")
-            self.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_operation(

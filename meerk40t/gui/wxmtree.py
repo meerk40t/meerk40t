@@ -78,7 +78,7 @@ class TreePanel(wx.Panel):
         self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
-        self.context.elements.signal("rebuild_tree")
+        self.context.signal("rebuild_tree")
 
     def __set_tree(self):
         self.shadow_tree = ShadowTree(
@@ -126,26 +126,24 @@ class TreePanel(wx.Panel):
             event.Skip()
 
     def initialize(self):
-        self.context.elements.listen("rebuild_tree", self.on_rebuild_tree_signal)
-        self.context.elements.listen("refresh_tree", self.request_refresh)
-        self.context.elements.listen("element_property_update", self.on_element_update)
-        self.context.elements.listen("element_property_reload", self.on_force_element_update)
-        self.context.elements.listen(
+        self.context.listen("rebuild_tree", self.on_rebuild_tree_signal)
+        self.context.listen("element_property_update", self.on_element_update)
+        self.context.listen("element_property_reload", self.on_force_element_update)
+        self.context.listen(
             "select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis
         )
-        self.context.elements.listen(
+        self.context.listen(
             "activate_selected_nodes", self.shadow_tree.activate_selected_node
         )
 
     def finalize(self):
-        self.context.elements.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
-        self.context.elements.unlisten("refresh_tree", self.request_refresh)
-        self.context.elements.unlisten("element_property_update", self.on_element_update)
-        self.context.elements.unlisten("element_property_reload", self.on_force_element_update)
-        self.context.elements.unlisten(
+        self.context.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
+        self.context.unlisten("element_property_update", self.on_element_update)
+        self.context.unlisten("element_property_reload", self.on_force_element_update)
+        self.context.unlisten(
             "select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis
         )
-        self.context.elements.unlisten(
+        self.context.unlisten(
             "activate_selected_nodes", self.shadow_tree.activate_selected_node
         )
 
@@ -171,9 +169,6 @@ class TreePanel(wx.Panel):
         if self.shadow_tree is not None:
             self.shadow_tree.on_force_element_update(*args)
 
-    def on_refresh_tree_signal(self, *args):
-        self.request_refresh()
-
     def on_rebuild_tree_signal(self, origin, *args):
         """
         Called by 'rebuild_tree' signal. To refresh tree directly
@@ -188,10 +183,6 @@ class TreePanel(wx.Panel):
         else:
             self.wxtree.Show()
         self.shadow_tree.rebuild_tree()
-        self.request_refresh()
-
-    def request_refresh(self, *args):
-        pass
 
 
 class ElementsTree(MWindow):
@@ -596,7 +587,6 @@ class ShadowTree:
         except TypeError:
             pass
         self.set_icon(node)
-        self.context.elements.signal("refresh_tree")
 
     def set_enhancements(self, node):
         """
@@ -676,7 +666,6 @@ class ShadowTree:
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-                    self.context.elements.signal("refresh_tree")
             elif isinstance(node, LaserOperation):
                 try:
                     op = node.operation
