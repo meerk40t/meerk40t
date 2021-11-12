@@ -660,6 +660,77 @@ class Context:
         return ConsoleFunction(self, data)
 
 
+class Service(Context):
+    """
+    A service alters the kernel and all contexts with additional functionality.
+    For settings purposes they are always located at '/<service>' path in the kernel.
+    These are attached prior to boot.
+
+    The kernel services exist throughout the kernel's lifecycle. They apply to all contexts.
+    This usually is intended to be .<service> value for each context, eg. .device as a service will
+    point to the active value, for the registered entries. Any modifier with a non-None .active directly
+    modifiers the registered library of paths within the kernel.
+    """
+
+    def __init__(self, kernel: "Kernel", name: str):
+        super().__init__(kernel, name)
+        self.name = name
+        # All registered aspects of the modifier
+        self._active = self
+        self.aspects = []
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, active):
+        if isinstance(active, int):
+            names = list(self.derivable())
+            active = names[active]
+        if isinstance(active, str):
+            found = False
+            for a in self.aspects:
+                if a.name == active:
+                    active = a
+                    found = True
+                    break
+            if not found:
+                return
+        self._active = active
+        self.kernel.root.signal("%s;active" % self.name, self._active)
+
+    @property
+    def delegated(self):
+        return self.active is not self
+
+    def add_aspect(self, aspect):
+        self.aspects.append(aspect)
+        self.active = aspect
+
+    def register(self, path: str, obj: Any) -> None:
+        """
+        Register an element at a given subpath, on the active profile.
+        :param path:
+        :param obj:
+        :return:
+        """
+        if self.active is not None:
+            if isinstance(self.active, dict):
+                self.active[path] = obj
+            else:
+                self.active.registered[path] = obj
+
+    def shutdown(self, *args, **kwargs):
+        """
+        Called by kernel during shutdown process for all modifiers.
+        @param args:
+        @param kwargs:
+        @return:
+        """
+        pass
+
+
 class Kernel:
     """
     The Kernel serves as the central hub of communication between different objects within the system. These are mapped
@@ -699,6 +770,9 @@ class Kernel:
 
         # All established contexts.
         self.contexts = {}
+
+        # All established services
+        self._services = []
 
         # All registered threads.
         self.threads = {}
@@ -747,6 +821,7 @@ class Kernel:
             self.set_config(config)
         else:
             self._config = None
+        self._booted = False
 
     def __str__(self):
         return "Kernel()"
@@ -870,6 +945,22 @@ class Kernel:
             self._plugins.append(plugin)
 
     # ==========
+    # SERVICES API
+    # ==========
+
+    def add_service(self, service: Service):
+        """
+        Adds a reference to a service. This is initialized at kernel.boot.
+        @param service:
+        @return:
+        """
+        if self._booted:
+            raise RuntimeError("Attempting to add service after kernel boot")
+        if service not in self._services:
+            self._services.append(service)
+
+
+    # ==========
     # LIFECYCLE PROCESSES
     # ==========
 
@@ -895,6 +986,22 @@ class Kernel:
         """
 
         self.command_boot()
+
+        for i, serv in enumerate(self._services):
+            # Replace all services with initialized versions.
+            m = serv(self)
+            self._services[i] = m
+            for context_name in self.contexts:
+                context = self.contexts[context_name]
+                setattr(context, m.name, m)
+            # Services are also contexts and need to be treated as such.
+            self.contexts[m.name] = m
+        for serv in self._services:
+            # Register all modifiers in self same modifiers.
+            for context_name in self.contexts:
+                context = self.contexts[context_name]
+                setattr(context, serv.name, serv)
+
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
@@ -904,6 +1011,8 @@ class Kernel:
             conditional=lambda: not self._is_queue_processing,
         )
         self.bootstrap("boot")
+        self._booted = True
+
         self.register("control/Debug Device", self._start_debugging)
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
@@ -952,6 +1061,24 @@ class Kernel:
         self.console = console  # redefine console signal
 
         self.process_queue()  # Process last events.
+
+        for serv in self._services:
+            try:
+                if channel:
+                    channel(
+                        _("Shutting down service: %s")
+                        % (str(serv))
+                    )
+                serv.shutdown()
+                for a in serv.aspects:
+                    if channel:
+                        channel(
+                            _("Shutting down service aspect: %s")
+                            % (str(a))
+                        )
+                    a.shutdown()
+            except AttributeError:
+                pass
 
         # Close Modules
         for context_name in list(self.contexts):
@@ -1345,6 +1472,10 @@ class Kernel:
         except KeyError:
             pass
         derive = Context(self, path=path)
+        if self._booted:
+            # If context get after boot,apply all services.
+            for serv in self._services:
+                setattr(derive, serv.name, serv)
         self.contexts[path] = derive
         return derive
 
