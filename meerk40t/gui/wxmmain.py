@@ -255,7 +255,7 @@ class MeerK40t(MWindow):
                 path.stroke = "blue"
                 p = abs(path)
                 context.elements.add_elem(p)
-                context.classify([p])
+                context.elements.classify([p])
             dlg.Destroy()
 
         @context.console_command("dialog_fill", hidden=True)
