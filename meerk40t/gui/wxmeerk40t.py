@@ -168,6 +168,7 @@ def plugin(kernel, lifecycle):
         kernel.register_choices("preferences", choices)
 
     elif lifecycle == "mainloop":
+        _ = kernel.translation
 
         def interrupt_popup():
             dlg = wx.MessageDialog(
