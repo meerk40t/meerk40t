@@ -56,6 +56,158 @@ from .cutcode import (
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service(Elemental)
+    elif lifecycle == "boot":
+        _ = kernel.root._
+        choices = [
+            {
+                "attr": "windows_save",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Save Window Positions"),
+                "tip": _("Open Windows at the same place they were last closed"),
+            },
+            {
+                "attr": "print_shutdown",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("Print Shutdown"),
+                "tip": _("Print shutdown log when Meerk40t is closed."),
+            },
+            {
+                "attr": "uniform_svg",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("SVG Uniform Save"),
+                "tip": _(
+                    "Do not treat overwriting SVG differently if they are MeerK40t files"
+                ),
+            },
+            {
+                "attr": "image_dpi",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Image DPI Scaling"),
+                "tip": "\n".join(
+                    (
+                        _("Unset: Use the image as if it were 1000 pixels per inch."),
+                        _(
+                            "Set: Use the DPI setting saved in the image to scale the image to the correct size."
+                        ),
+                    )
+                ),
+            },
+            {
+                "attr": "dxf_center",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("DXF Centering"),
+                "tip": _("Fit (scale down if necessary) and center a DXF file within the bed"),
+            },
+            {
+                "attr": "show_negative_guide",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Show Negative Guide"),
+                "tip": _(
+                    "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
+                ),
+            },
+            {
+                "attr": "auto_spooler",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Launch Spooler on Job Start"),
+                "tip": _("Open the Spooler window automatically when you Execute a Job"),
+            },
+            {
+                "attr": "mouse_wheel_pan",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("MouseWheel Pan"),
+                "tip": "\n".join(
+                    (
+                        _("Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."),
+                        _(
+                            "Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."
+                        ),
+                    )
+                ),
+            },
+            {
+                "attr": "mouse_pan_invert",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("Invert MouseWheel Pan"),
+                "tip": _(
+                    "Reverses the direction of the MouseWheel for horizontal & vertical pan"
+                )
+            },
+            {
+                "attr": "mouse_zoom_invert",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("Invert MouseWheel Zoom"),
+                "tip": _("Reverses the direction of the MouseWheel for zoom"),
+            },
+            {
+                "attr": "operation_default_empty",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Default Operation Other/Red/Blue"),
+                "tip": _("Sets Operations to Other/Red/Blue if loaded with no operations."),
+            },
+            {
+                "attr": "classify_reverse",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("Classify Reversed"),
+                "tip": _(
+                    "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
+                ),
+            },
+            {
+                "attr": "legacy_classification",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("Legacy Classify"),
+                "tip": _(
+                    "Use the legacy classification algorithm rather than the modern classification algorithm."
+                ),
+            },
+            {
+                "attr": "disable_tool_tips",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("Disable ToolTips"),
+                "tip": "\n".join(
+                    (
+                        _(
+                            "If you do not want to see tooltips like this one, check this box."
+                        ),
+                        _("Particularly useful if you have a touch screen."),
+                        _(
+                            "Note: You will need to restart MeerK40t for any change to take effect."
+                        ),
+                    )
+                ),
+            },
+        ]
+        kernel.register_choices("preferences", choices)
+
     elif lifecycle == "ready":
         context = kernel.root
         context.signal("rebuild_tree")
@@ -1597,8 +1749,8 @@ class Elemental(Service):
         bed_dim = self.root
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
-        self.root.setting(bool, "classify_reverse", False)
-        self.root.setting(bool, "legacy_classification", False)
+        self.setting(bool, "classify_reverse", False)
+        self.setting(bool, "legacy_classification", False)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
