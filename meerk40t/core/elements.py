@@ -1656,11 +1656,6 @@ class Elemental(Service):
         self._tree = RootNode(self)
 
         _ = kernel.translation
-        # context.classify = self.classify
-        # context.save = self.save
-        # context.save_types = self.save_types
-        # context.load = self.load
-        # context.load_types = self.load_types
 
         bed_dim = self.root
         bed_dim.setting(int, "bed_width", 310)
