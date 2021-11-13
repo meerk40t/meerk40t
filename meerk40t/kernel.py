@@ -1066,7 +1066,7 @@ class Kernel:
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
         for domain in self._available_services:
-            services = self._active_services[domain]
+            services = self._available_services[domain]
             for service in services:
                 try:
                     service.shutdown(self)
