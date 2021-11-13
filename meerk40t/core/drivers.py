@@ -546,7 +546,7 @@ class Drivers(Modifier):
         if device[1] is not None and driver_type is None:
             return device[1]
         try:
-            for driver_class, itype, sname in self.context.find("driver/%s" % driver_type):
+            for driver_class, itype, sname in self.context.find("driver", driver_type):
                 driver = driver_class(self.context, device_name, **kwargs)
                 device[1] = driver
                 return driver

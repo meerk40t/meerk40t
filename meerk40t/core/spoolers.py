@@ -250,7 +250,7 @@ class Spoolers(Modifier):
             if op is None:
                 raise SyntaxError
             try:
-                for plan_command, command_name, suffix in self.context.find("plan/%s" % op):
+                for plan_command, command_name, suffix in self.context.find("plan", op):
                     spooler.job(plan_command)
                     return data_type, data
             except (KeyError, IndexError):

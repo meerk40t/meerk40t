@@ -891,7 +891,7 @@ class Planner(Modifier):
                     channel(command_name)
                 return
             try:
-                for cmd, command_name, suffix in self.context.find("plan/%s" % op):
+                for cmd, command_name, suffix in self.context.find("plan", op):
                     if index is None:
                         data.plan.append(cmd)
                     else:
@@ -920,7 +920,7 @@ class Planner(Modifier):
             if op is None:
                 raise SyntaxError
             try:
-                for plan_command, command_name, sname in self.context.find("plan/%s" % op):
+                for plan_command, command_name, sname in self.context.find("plan", op):
                     data.plan.append(plan_command)
                     self.context.signal("plan", data.name, None)
                     return data_type, data
@@ -943,7 +943,7 @@ class Planner(Modifier):
         ):
             if op is None:
                 raise SyntaxError
-            for plan_command, command_name, sname in self.context.find("plan/%s" % op):
+            for plan_command, command_name, sname in self.context.find("plan", op):
                 data.plan.insert(0, plan_command)
                 self.context.signal("plan", data.name, None)
                 return data_type, data

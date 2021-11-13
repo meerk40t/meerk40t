@@ -5416,7 +5416,7 @@ class Elemental(Service):
         self.classify(list(self.elems()))
 
     def tree_operations_for_node(self, node):
-        for func, m, sname in self.find("tree/%s/.*" % node.type):
+        for func, m, sname in self.find("tree", node.type, ".*"):
             reject = False
             for cond in func.conditionals:
                 if not cond(node):

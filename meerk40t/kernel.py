@@ -2116,7 +2116,7 @@ class Kernel:
             command = command.lower()
             command_executed = False
             # Process command matches.
-            for command_funct, command_name, cmd_re in self.find("command/%s/.*" % str(input_type)):
+            for command_funct, command_name, cmd_re in self.find("command", str(input_type), ".*"):
                 if command_funct.regex:
                     match = re.compile(cmd_re)
                     if not match.match(command):
@@ -2214,7 +2214,7 @@ class Kernel:
             """
             if extended_help is not None:
                 found = False
-                for func, command_name, sname in self.find("command/.*/%s" % extended_help):
+                for func, command_name, sname in self.find("command", ".*", extended_help):
                     parts = command_name.split("/")
                     input_type = parts[1]
                     command_item = parts[2]

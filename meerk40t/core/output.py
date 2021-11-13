@@ -164,7 +164,7 @@ class Outputs(Modifier):
         if device[2] is not None and output_type is None:
             return device[2]
         try:
-            for output_class, itype, sname in self.context.find("output/%s" % output_type):
+            for output_class, itype, sname in self.context.find("output", output_type):
                 output = output_class(self.context, device_name, **kwargs)
                 device[2] = output
                 return output
