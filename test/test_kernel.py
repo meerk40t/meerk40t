@@ -13,11 +13,12 @@ class TestKernel(unittest.TestCase):
         """
         kernel = bootstrap.bootstrap()
         try:
-            for command in kernel.match("command/.*"):
-                cmd = kernel.registered[command]
+            for cmd, command, sname in kernel.find("command/.*"):
                 if "server" in command:
                     continue
+                if sname in ("shutdown", "quit"):
+                    continue
                 if not cmd.regex:
-                    kernel.console(command.split("/")[-1] + "\n")
+                    kernel.console(sname + "\n")
         finally:
             kernel.shutdown()

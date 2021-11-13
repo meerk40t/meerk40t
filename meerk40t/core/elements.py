@@ -4320,7 +4320,7 @@ class Elemental(Service):
             input_type=(None, "elements"),
         )
         def trace_trace_hull(command, channel, _, data=None, **kwgs):
-            active = self.active
+            active = self.root.active
             try:
                 spooler, input_device, output = self.lookup("device", active)
             except TypeError:
@@ -4359,7 +4359,7 @@ class Elemental(Service):
             "trace_quick", help=_("quick trace the bounding box of current elements")
         )
         def trace_trace_quick(command, channel, _, **kwgs):
-            active = self.active
+            active = self.root.active
             try:
                 spooler, input_device, output = self.lookup("device", active)
             except TypeError:

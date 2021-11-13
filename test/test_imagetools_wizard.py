@@ -95,7 +95,7 @@ class TestRasterWizard(unittest.TestCase):
                 kernel_root("image wizard %s\n" % script)
                 # Solve for step.
                 step = 1
-                for op in kernel_root.registered["raster_script/%s" % script]:
+                for op in kernel_root.lookup("raster_script", script):
                     if op["name"] == "resample" and op["enable"]:
                         step = op["step"]
                 for element in kernel_root.elements.elems():

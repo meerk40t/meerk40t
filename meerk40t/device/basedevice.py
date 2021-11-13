@@ -88,7 +88,7 @@ def plugin(kernel, lifecycle=None):
         def virtual_dev(command, remainder=None, **kwargs):
             try:
                 spooler, input_driver, output = root.lookup("device", root.active)
-            except (KeyError, ValueError, AttributeError):
+            except TypeError:
                 raise CommandMatchRejected(_("No device selected."))
 
             if input_driver is not None:
