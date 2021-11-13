@@ -55,7 +55,7 @@ from .cutcode import (
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.add_service(Elemental)
+        kernel.add_service("elements", Elemental(kernel))
     elif lifecycle == "postboot":
         _ = kernel.root._
         elements = kernel.root.elements
@@ -1639,7 +1639,7 @@ class Elemental(Service):
     that information out to inform other interested modules.
     """
 
-    def __init__(self, kernel, name=None, *args, **kwargs):
+    def __init__(self, kernel, *args, **kwargs):
         Service.__init__(self, kernel, "elements")
 
         self._clipboard = {}
@@ -5299,13 +5299,12 @@ class Elemental(Service):
         def reference_opnode(node, **kwgs):
             pass
 
-        self.listen_tree(self)
-
-    def shutdown(self, *args, **kwargs):
+    def detach(self, *args, **kwargs):
         self.save_persistent_operations("previous")
         self.unlisten_tree(self)
 
-    def boot(self, *a, **kwargs):
+    def attach(self, *args, **kwargs):
+        self.listen_tree(self)
         self.setting(bool, "operation_default_empty", True)
         self.load_persistent_operations("previous")
         ops = list(self.ops())

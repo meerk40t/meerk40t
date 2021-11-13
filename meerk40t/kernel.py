@@ -663,67 +663,37 @@ class Context:
 class Service(Context):
     """
     A service alters the kernel and all contexts with additional functionality.
-    For settings purposes they are always located at '/<service>' path in the kernel.
-    These are attached prior to boot.
 
-    The kernel services exist throughout the kernel's lifecycle. They apply to all contexts.
-    This usually is intended to be .<service> value for each context, eg. .device as a service will
-    point to the active value, for the registered entries. Any modifier with a non-None .active directly
-    modifiers the registered library of paths within the kernel.
+    These are attached prior to boot.
     """
 
-    def __init__(self, kernel: "Kernel", name: str):
-        super().__init__(kernel, name)
-        self.name = name
-        # All registered aspects of the modifier
-        self._active = self
-        self.aspects = []
-
-    @property
-    def active(self):
-        return self._active
-
-    @active.setter
-    def active(self, active):
-        if isinstance(active, int):
-            names = list(self.derivable())
-            active = names[active]
-        if isinstance(active, str):
-            found = False
-            for a in self.aspects:
-                if a.name == active:
-                    active = a
-                    found = True
-                    break
-            if not found:
-                return
-        self._active = active
-        self.kernel.root.signal("%s;active" % self.name, self._active)
-
-    @property
-    def delegated(self):
-        return self.active is not self
-
-    def add_aspect(self, aspect):
-        self.aspects.append(aspect)
-        self.active = aspect
+    def __init__(self, kernel: "Kernel", path: str):
+        super().__init__(kernel, path)
+        kernel.contexts[path] = self
 
     def register(self, path: str, obj: Any) -> None:
         """
-        Register an element at a given subpath, on the active profile.
+        Registers an element within this service.
+
         :param path:
         :param obj:
         :return:
         """
-        if self.active is not None:
-            if isinstance(self.active, dict):
-                self.active[path] = obj
-            else:
-                self.active.registered[path] = obj
+        self.registered[path] = obj
+        try:
+            obj.sub_register(self)
+        except AttributeError:
+            pass
+
+    def attach(self, *args, **kwargs):
+        pass
+
+    def detach(self, *args, **kwargs):
+        pass
 
     def shutdown(self, *args, **kwargs):
         """
-        Called by kernel during shutdown process for all modifiers.
+        Called by kernel during shutdown process for all services.
         @param args:
         @param kwargs:
         @return:
@@ -772,7 +742,8 @@ class Kernel:
         self.contexts = {}
 
         # All established services
-        self._services = []
+        self._available_services = {}
+        self._active_services = {}
 
         # All registered threads.
         self.threads = {}
@@ -948,17 +919,49 @@ class Kernel:
     # SERVICES API
     # ==========
 
-    def add_service(self, service: Service):
+    def add_service(self, domain: str, service: Service):
         """
         Adds a reference to a service. This is initialized at kernel.boot.
-        @param service:
+        @param domain: service domain
+        @param service: service to add
         @return:
         """
-        if self._booted:
-            raise RuntimeError("Attempting to add service after kernel boot")
-        if service not in self._services:
-            self._services.append(service)
+        if domain in self._available_services:
+            services = self._available_services[domain]
+        else:
+            services = []
+            self._available_services[domain] = services
+        services.append(service)
 
+    def activate(self, domain: str, index=0):
+        """
+        Activate the service at the given domain and index.
+
+        If there is a currently active service it will be detached and shutdown.
+
+        @param domain: service domain name
+        @param index: index of the service to activate.
+        @return:
+        """
+        if domain not in self._available_services:
+            raise ValueError
+        services = self._available_services[domain]
+
+        service = services[index]
+
+        if domain in self._active_services:
+            previous_active = self._active_services[domain]
+            previous_active.detach(self)
+            for context_name in self.contexts:
+                # For every registered context, set the given domain to None.
+                context = self.contexts[context_name]
+                setattr(context, domain, None)
+        self._active_services[domain] = service
+        service.attach(self)
+        for context_name in self.contexts:
+            # For every registered context, set the given domain to this service
+            context = self.contexts[context_name]
+            setattr(context, domain, service)
 
     # ==========
     # LIFECYCLE PROCESSES
@@ -987,22 +990,9 @@ class Kernel:
         self.bootstrap("preboot")
         self.command_boot()
         self.choices_boot()
-
-        for i, serv in enumerate(self._services):
-            # Replace all services with initialized versions.
-            m = serv(self)
-            self._services[i] = m
-            for context_name in self.contexts:
-                context = self.contexts[context_name]
-                setattr(context, m.name, m)
-            # Services are also contexts and need to be treated as such.
-            self.contexts[m.name] = m
-        for serv in self._services:
-            # Register all modifiers in self same modifiers.
-            for context_name in self.contexts:
-                context = self.contexts[context_name]
-                setattr(context, serv.name, serv)
-
+        for domain in self._available_services:
+            # for each domain activate the first service.
+            self.activate(domain, 0)
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
@@ -1064,23 +1054,28 @@ class Kernel:
 
         self.process_queue()  # Process last events.
 
-        for serv in self._services:
-            try:
-                if channel:
-                    channel(
-                        _("Shutting down service: %s")
-                        % (str(serv))
-                    )
-                serv.shutdown()
-                for a in serv.aspects:
+        for domain in self._active_services:
+            previous_active = self._active_services[domain]
+            if channel:
+                channel(
+                    _("Detatching service: {domain}").format(domain=domain)
+                )
+            previous_active.detach(self)
+            for context_name in self.contexts:
+                # For every registered context, set the given domain to None.
+                context = self.contexts[context_name]
+                setattr(context, domain, None)
+        for domain in self._available_services:
+            services = self._active_services[domain]
+            for service in services:
+                try:
+                    service.shutdown(self)
                     if channel:
                         channel(
-                            _("Shutting down service aspect: %s")
-                            % (str(a))
+                            _("Shutdown {path} for service {path}").format(path=service.path, domain=domain)
                         )
-                    a.shutdown()
-            except AttributeError:
-                pass
+                except AttributeError:
+                    pass
 
         # Close Modules
         for context_name in list(self.contexts):
@@ -1475,9 +1470,10 @@ class Kernel:
             pass
         derive = Context(self, path=path)
         if self._booted:
-            # If context get after boot,apply all services.
-            for serv in self._services:
-                setattr(derive, serv.name, serv)
+            # If context get after boot, apply all services.
+            for domain in self._active_services:
+                service = self._active_services[domain]
+                setattr(derive, domain, service)
         self.contexts[path] = derive
         return derive
 
