@@ -533,18 +533,16 @@ class Drivers(Modifier):
         Modifier.__init__(self, context, name, channel)
 
     def get_driver(self, driver_name, **kwargs):
-        dev = "device/%s" % driver_name
         try:
-            return self.context.lookup(dev)[1]
+            return self.context.lookup("device", driver_name)[1]
         except (TypeError, IndexError):
             return None
 
     def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
-        dev = "device/%s" % device_name
-        device = self.context.lookup(dev)
+        device = self.context.lookup("device", device_name)
         if device is None:
             device = [None, None, None]
-            self.context.register(dev, device)
+            self.context.register("device/%s" % device_name, device)
         if device[1] is not None and driver_type is None:
             return device[1]
         try:

@@ -564,9 +564,7 @@ class CutPlan:
 
     def scale_for_rotary(self):
         r = self.context.get_context("rotary/1")
-        spooler, input_driver, output = self.context.lookup(
-            "device/%s" % self.context.root.active
-        )
+        spooler, input_driver, output = self.context.lookup("device", self.context.root.active)
         if input_driver is None:
             return
         scale_str = "scale(%f,%f,%f,%f)" % (

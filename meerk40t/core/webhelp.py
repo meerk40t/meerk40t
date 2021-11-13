@@ -31,8 +31,7 @@ def plugin(kernel, lifecycle):
                         page = value
             except ValueError:
                 pass
-            key = "webhelp/%s" % page
-            value = kernel.lookup(key)
+            value = kernel.lookup("webhelp", page)
             if value is None:
                 channel(_("Webhelp not found."))
                 return

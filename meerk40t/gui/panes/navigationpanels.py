@@ -923,9 +923,7 @@ class Transform(wx.Panel):
 
     def on_scale_down(self, event=None):  # wxGlade: Navigation.<event_handler>
         scale = 19.0 / 20.0
-        spooler, input_driver, output = self.context.lookup(
-            "device/%s" % self.context.root.active
-        )
+        spooler, input_driver, output = self.context.lookup("device", self.context.root.active)
         x = input_driver.current_x if input_driver is not None else 0
         y = input_driver.current_y if input_driver is not None else 0
         self.context(
@@ -941,9 +939,7 @@ class Transform(wx.Panel):
 
     def on_scale_up(self, event=None):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
-        spooler, input_driver, output = self.context.lookup(
-            "device/%s" % self.context.root.active
-        )
+        spooler, input_driver, output = self.context.lookup("device", self.context.root.active)
         x = input_driver.current_x if input_driver is not None else 0
         y = input_driver.current_y if input_driver is not None else 0
         self.context(
@@ -993,9 +989,7 @@ class Transform(wx.Panel):
         self.matrix_updated()
 
     def on_rotate_cw(self, event=None):  # wxGlade: Navigation.<event_handler>
-        spooler, input_driver, output = self.context.lookup(
-            "device/%s" % self.context.root.active
-        )
+        spooler, input_driver, output = self.context.lookup("device", self.context.root.active)
         x = input_driver.current_x if input_driver is not None else 0
         y = input_driver.current_y if input_driver is not None else 0
         self.context("rotate %fdeg %f %f\n" % (5, x, y))

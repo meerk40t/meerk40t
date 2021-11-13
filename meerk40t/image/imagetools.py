@@ -128,7 +128,7 @@ def plugin(kernel, lifecycle=None):
                 channel(_("No Raster Scripts Found."))
             return
 
-        script = context.lookup("raster_script/%s" % script)
+        script = context.lookup("raster_script", script)
         if script is None:
             channel(_("Raster Script %s is not registered.") % script)
             return

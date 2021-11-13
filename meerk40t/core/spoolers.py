@@ -140,11 +140,10 @@ class Spoolers(Modifier):
         Modifier.__init__(self, context, name, channel)
 
     def get_or_make_spooler(self, device_name):
-        dev = "device/%s" % device_name
-        device = self.context.lookup(dev)
+        device = self.context.lookup("device", device_name)
         if device is None:
             device = [None, None, None]
-            self.context.register(dev, device)
+            self.context.register("device/%s" % device_name, device)
         if device[0] is None:
             device[0] = Spooler(self.context, device_name)
         return device[0]

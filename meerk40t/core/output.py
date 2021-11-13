@@ -157,11 +157,10 @@ class Outputs(Modifier):
         Modifier.__init__(self, context, name, channel)
 
     def get_or_make_output(self, device_name, output_type=None, **kwargs):
-        dev = "device/%s" % device_name
-        device = self.context.lookup(dev)
+        device = self.context.lookup("device", device_name)
         if device is None:
             device = [None, None, None]
-            self.context.register(dev, device)
+            self.context.register("device/%s" % device_name, device)
         if device[2] is not None and output_type is None:
             return device[2]
         try:
@@ -173,11 +172,10 @@ class Outputs(Modifier):
             return None
 
     def put_output(self, device_name, output):
-        dev = "device/%s" % device_name
-        device = self.context.lookup(dev)
+        device = self.context.lookup("device", device_name)
         if device is None:
             device = [None, None, None]
-            self.context.register(dev, device)
+            self.context.register("device/%s" % device_name, device)
 
         try:
             device[2] = output

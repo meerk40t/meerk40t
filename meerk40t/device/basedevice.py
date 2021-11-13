@@ -37,7 +37,7 @@ def plugin(kernel, lifecycle=None):
         root = kernel.root
 
         def device():
-            v = root.lookup("device/%s" % root.active)
+            v = root.lookup("device", root.active)
             if v is None:
                 return None, None, None
             return v
@@ -87,9 +87,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(".+", regex=True, hidden=True)
         def virtual_dev(command, remainder=None, **kwargs):
             try:
-                spooler, input_driver, output = root.lookup(
-                    "device/%s" % root.active
-                )
+                spooler, input_driver, output = root.lookup("device", root.active)
             except (KeyError, ValueError, AttributeError):
                 raise CommandMatchRejected(_("No device selected."))
 
@@ -188,7 +186,7 @@ def plugin(kernel, lifecycle=None):
             device_context = kernel.get_context("devices")
             try:
                 setattr(device_context, "device_%s" % device_name, "")
-                device = root.lookup("device/%s" % device_name)
+                device = root.lookup("device", device_name)
                 if device is not None:
                     spooler, driver, output = device
                     if driver is not None:

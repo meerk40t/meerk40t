@@ -94,7 +94,7 @@ class RasterWizardPanel(wx.Panel):
                 return
             self.ops = ops
         else:
-            self.ops = deepcopy(self.context.lookup("raster_script/%s" % name))
+            self.ops = deepcopy(self.context.lookup("raster_script", name))
         self.list_operation.Clear()
         if self.ops is not None:
             list_choices = [_(op["name"]) for op in self.ops]

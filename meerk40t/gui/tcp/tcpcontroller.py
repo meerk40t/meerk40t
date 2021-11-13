@@ -10,9 +10,7 @@ _ = wx.GetTranslation
 class TCPController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
-        self.spooler, self.input_driver, self.output = self.context.lookup(
-            "device/%s" % self.context.root.active
-        )
+        self.spooler, self.input_driver, self.output = self.context.lookup("device", self.context.root.active)
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_ip_host = wx.TextCtrl(self, wx.ID_ANY, "")

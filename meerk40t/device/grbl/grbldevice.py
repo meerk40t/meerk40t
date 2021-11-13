@@ -614,9 +614,7 @@ class GRBLEmulator(Module):
         Module.__init__(self, context, path)
         self.cutcode = None
 
-        self.spooler, self.input_driver, self.output = context.lookup(
-            "device/%s" % context.root.active
-        )
+        self.spooler, self.input_driver, self.output = context.lookup("device", context.root.active)
 
         self.home_adjust = None
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal

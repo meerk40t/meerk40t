@@ -188,9 +188,7 @@ class MeerK40t(MWindow):
             dlg.SetValue("")
 
             if dlg.ShowModal() == wx.ID_OK:
-                spooler, input_driver, output = context.lookup(
-                    "device/%s" % context.root.active
-                )
+                spooler, input_driver, output = context.lookup("device", context.root.active)
                 elements = context.elements
                 bed_dim = context.root
                 m = str(dlg.GetValue())
@@ -617,7 +615,7 @@ class MeerK40t(MWindow):
         def show_pane(command, _, channel, pane=None, **kwargs):
             if pane is None:
                 raise SyntaxError
-            _pane = context.lookup("pane/%s" % pane)
+            _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
                 return
@@ -633,7 +631,7 @@ class MeerK40t(MWindow):
         def hide_pane(command, _, channel, pane=None, **kwargs):
             if pane is None:
                 raise SyntaxError
-            _pane = context.lookup("pane/%s" % pane)
+            _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
                 return
@@ -947,7 +945,7 @@ class MeerK40t(MWindow):
                     pane_obj.Hide()
                     self._mgr.Update()
                     return
-                pane_init = self.context.lookup("pane/%s" % pane_toggle)
+                pane_init = self.context.lookup("pane", pane_toggle)
                 self.on_pane_add(pane_init)
 
             return toggle
@@ -1555,9 +1553,7 @@ class MeerK40t(MWindow):
             device_name = str(self.context.device_name)
         try:
             active = self.context.active
-            _spooler, _input_driver, _output = self.context.lookup(
-                "device/%s" % active
-            )
+            _spooler, _input_driver, _output = self.context.lookup("device", active)
             self.SetTitle(
                 _("%s v%s      (%s -> %s -> %s)")
                 % (

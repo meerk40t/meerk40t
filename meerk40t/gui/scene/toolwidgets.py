@@ -53,7 +53,7 @@ class ToolContainer(Widget):
         self.remove_all_widgets()
         if tool is None:
             return
-        new_tool = self.scene.context.lookup("tool/%s" % tool)
+        new_tool = self.scene.context.lookup("tool", tool)
         if new_tool is not None:
             self.add_widget(0, new_tool(self.scene))
 

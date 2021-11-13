@@ -21,7 +21,7 @@ class BufferViewPanel(wx.Panel):
 
     def window_open(self):
         active = self.context.root.active
-        spooler, input_device, output = self.context.lookup("device/%s" % active)
+        spooler, input_device, output = self.context.lookup("device", active)
         # pipe = self.context.open("pipe")
         buffer = None
         if output is not None:

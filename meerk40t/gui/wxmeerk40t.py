@@ -457,10 +457,8 @@ class wxMeerK40t(wx.App, Module):
             if output or driver:
                 # Specific class subwindow
                 try:
-                    _spooler, _input_driver, _output = context.lookup(
-                        "device/%s" % active
-                    )
-                except KeyError:
+                    _spooler, _input_driver, _output = context.lookup("device", active)
+                except TypeError:
                     channel(_("Device not found."))
                     return
                 if output:

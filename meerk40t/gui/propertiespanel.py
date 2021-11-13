@@ -21,9 +21,8 @@ class PropertiesPanel(wx.Panel):
         if choices is None:
             return
         if isinstance(choices, str):
-            try:
-                choices = self.context.lookup("choices/%s" % choices)
-            except KeyError:
+            choices = self.context.lookup("choices", choices)
+            if choices is None:
                 return
         self.choices = choices
         sizer_main = wx.BoxSizer(wx.VERTICAL)
