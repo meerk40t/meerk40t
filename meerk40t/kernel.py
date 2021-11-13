@@ -1054,29 +1054,6 @@ class Kernel:
 
         self.process_queue()  # Process last events.
 
-        for domain in self._active_services:
-            previous_active = self._active_services[domain]
-            if channel:
-                channel(
-                    _("Detatching service: {domain}").format(domain=domain)
-                )
-            previous_active.detach(self)
-            for context_name in self.contexts:
-                # For every registered context, set the given domain to None.
-                context = self.contexts[context_name]
-                setattr(context, domain, None)
-        for domain in self._available_services:
-            services = self._available_services[domain]
-            for service in services:
-                try:
-                    service.shutdown(self)
-                    if channel:
-                        channel(
-                            _("Shutdown {path} for service {path}").format(path=service.path, domain=domain)
-                        )
-                except AttributeError:
-                    pass
-
         # Close Modules
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
@@ -1108,6 +1085,30 @@ class Kernel:
                         % (str(context), attached_name, str(obj))
                     )
                 context.deactivate(attached_name, channel=channel)
+
+        # Close services.
+        for domain in self._active_services:
+            previous_active = self._active_services[domain]
+            if channel:
+                channel(
+                    _("Detatching service: {domain}").format(domain=domain)
+                )
+            previous_active.detach(self)
+            for context_name in self.contexts:
+                # For every registered context, set the given domain to None.
+                context = self.contexts[context_name]
+                setattr(context, domain, None)
+        for domain in self._available_services:
+            services = self._available_services[domain]
+            for service in services:
+                try:
+                    service.shutdown(self)
+                    if channel:
+                        channel(
+                            _("Shutdown {path} for service {path}").format(path=service.path, domain=domain)
+                        )
+                except AttributeError:
+                    pass
 
         # Context Flush and Shutdown
         for context_name in list(self.contexts):
