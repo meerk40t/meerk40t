@@ -74,7 +74,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command("gui", help=_("starts the gui"))
         def gui_start(**kwargs):
-            del kernel.registered["command/None/gui"]
+            del kernel._registered["command/None/gui"]
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
@@ -188,16 +188,16 @@ def plugin(kernel, lifecycle):
             )
 
             yield COMMAND_WAIT_FINISH
-            yield COMMAND_FUNCTION, kernel_root.registered["function/interrupt"]
+            yield COMMAND_FUNCTION, kernel_root.lookup("function/interrupt")
 
         kernel_root.register("plan/interrupt", interrupt)
 
         if GUI_START:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
-            for window in kernel.match("window/.*", suffix=False):
+            for obj, window, sname in kernel.find("window/.*"):
                 if kernel.read_persistent(bool, "%s/open_on_start" % window, False):
-                    kernel.console("window open %s\n" % window.split('/')[-1])
+                    kernel.console("window open %s\n" % sname)
             meerk40tgui.MainLoop()
 
 
@@ -457,9 +457,9 @@ class wxMeerK40t(wx.App, Module):
             if output or driver:
                 # Specific class subwindow
                 try:
-                    _spooler, _input_driver, _output = context.registered[
+                    _spooler, _input_driver, _output = context.lookup(
                         "device/%s" % active
-                    ]
+                    )
                 except KeyError:
                     channel(_("Device not found."))
                     return
@@ -480,7 +480,8 @@ class wxMeerK40t(wx.App, Module):
                         pass
                 path = context.get_context(m)
                 window_uri = "window/%s/%s" % (t, window)
-                if window_uri not in context.registered:
+                v = context.lookup(window_uri)
+                if v is None:
                     window_uri = "window/%s/%s" % ("default", window)
 
             def window_open(*a, **k):
@@ -490,14 +491,15 @@ class wxMeerK40t(wx.App, Module):
                 path.close(window_uri, *args)
 
             if command == "open":
-                if window_uri in context.registered:
+
+                if context.lookup(window_uri) is not None:
                     kernel.run_later(window_open, None)
                     channel(_("Window Opened."))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
             else:
-                if window_uri in context.registered:
+                if context.lookup(window_uri) is not None:
                     try:
                         w = path.opened[window_uri]
                         kernel.run_later(window_close, None)

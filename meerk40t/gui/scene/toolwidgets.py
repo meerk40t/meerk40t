@@ -53,8 +53,9 @@ class ToolContainer(Widget):
         self.remove_all_widgets()
         if tool is None:
             return
-        new_tool = self.scene.context.registered["tool/%s" % tool]
-        self.add_widget(0, new_tool(self.scene))
+        new_tool = self.scene.context.lookup("tool/%s" % tool)
+        if new_tool is not None:
+            self.add_widget(0, new_tool(self.scene))
 
 
 class CircleBrush:

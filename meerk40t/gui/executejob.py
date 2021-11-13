@@ -23,10 +23,10 @@ class PlannerPanel(wx.Panel):
         self.plan_name = plan_name
 
         self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
+            data for data, name, suffix_name in self.context.find("device")
         ]
         selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        spools = list(self.context.root.match("device", suffix=True))
         try:
             index = spools.index(selected_spooler)
         except ValueError:
@@ -57,7 +57,7 @@ class PlannerPanel(wx.Panel):
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
         self.panel_operation = wx.Panel(self, wx.ID_ANY)
-        choices = self.context.registered["choices/optimize"][:5]
+        choices = self.context.lookup("choices/optimize")[:5]
         self.panel_optimize = PropertiesPanel(
             self, wx.ID_ANY, context=self.context, choices=choices
         )
@@ -273,7 +273,7 @@ class PlannerPanel(wx.Panel):
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
         self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
+            data for data, name, sname in self.context.find("device")
         ]
         index = self.combo_device.GetSelection()
         (
@@ -281,9 +281,7 @@ class PlannerPanel(wx.Panel):
             self.connected_driver,
             self.connected_output,
         ) = self.available_devices[index]
-        self.connected_name = [
-            str(i) for i in self.context.match("device", suffix=True)
-        ][index]
+        self.connected_name = list(self.context.match("device", suffix=True))[index]
 
     def on_listbox_operation_click(self, event):  # wxGlade: JobInfo.<event_handler>
         event.Skip()
@@ -478,7 +476,7 @@ class ExecuteJob(MWindow):
         from .wxutils import create_menu_for_choices
 
         wx_menu = create_menu_for_choices(
-            self, self.context.registered["choices/planner"]
+            self, self.context.lookup("choices/planner")
         )
         append(wx_menu, _("Automatic"))
 

@@ -37,10 +37,10 @@ def plugin(kernel, lifecycle=None):
         root = kernel.root
 
         def device():
-            try:
-                return root.registered["device/%s" % root.active]
-            except (KeyError, AttributeError):
+            v = root.lookup("device/%s" % root.active)
+            if v is None:
                 return None, None, None
+            return v
 
         root.device = device
 
@@ -58,10 +58,8 @@ def plugin(kernel, lifecycle=None):
         )
         def dev(channel, _, remainder=None, out=False, **kwargs):
             try:
-                spooler, input_driver, output = root.registered[
-                    "device/%s" % root.active
-                ]
-            except (KeyError, ValueError):
+                spooler, input_driver, output = root.lookup("device", root.active)
+            except TypeError:
                 return
             if remainder is None:
                 channel(
@@ -89,9 +87,9 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(".+", regex=True, hidden=True)
         def virtual_dev(command, remainder=None, **kwargs):
             try:
-                spooler, input_driver, output = root.registered[
+                spooler, input_driver, output = root.lookup(
                     "device/%s" % root.active
-                ]
+                )
             except (KeyError, ValueError, AttributeError):
                 raise CommandMatchRejected(_("No device selected."))
 
@@ -100,8 +98,7 @@ def plugin(kernel, lifecycle=None):
                     t = input_driver.type
                     match = "command/%s/%s$" % (str(t), command)
                     match = "".join([i for i in match if i not in "(){}[]"])
-                    for command_name in root.match(match):
-                        command_funct = root.registered[command_name]
+                    for command_funct, command_name, suffix in root.find(match):
                         if command_funct is not None:
                             if remainder is not None:
                                 root(".dev %s %s\n" % (command, remainder))
@@ -115,8 +112,7 @@ def plugin(kernel, lifecycle=None):
                     t = output.type + "out"
                     match = "command/%s/%s" % (str(t), command)
                     match = "".join([i for i in match if i not in "(){}[]"])
-                    for command_name in root.match(match):
-                        command_funct = root.registered[command_name]
+                    for command_funct, command_name, sname in root.find(match):
                         if command_funct is not None:
                             if remainder is not None:
                                 root(".dev -o %s %s\n" % (command, remainder))
@@ -137,7 +133,7 @@ def plugin(kernel, lifecycle=None):
             output_type="device",
         )
         def device(channel, _, index, **kwargs):
-            spools = [str(i) for i in kernel.root.match("device", suffix=True)]
+            spools = list(kernel.root.match("device", suffix=True))
             root.active = spools[index]
             root.signal("active", index)
             channel(_("Activated device %s at index %d." % (root.active, index)))
@@ -186,13 +182,13 @@ def plugin(kernel, lifecycle=None):
             input_type="device",
         )
         def delete(channel, _, index, **kwargs):
-            spools = [str(i) for i in kernel.root.match("device", suffix=True)]
+            spools = list(kernel.root.match("device", suffix=True))
             device_name = spools[index]
 
             device_context = kernel.get_context("devices")
             try:
                 setattr(device_context, "device_%s" % device_name, "")
-                device = root.registered["device/%s" % device_name]
+                device = root.lookup("device/%s" % device_name)
                 if device is not None:
                     spooler, driver, output = device
                     if driver is not None:
@@ -205,6 +201,6 @@ def plugin(kernel, lifecycle=None):
                             output.finalize()
                         except AttributeError:
                             pass
-                root.registered["device/%s" % device_name] = [None, None, None]
+                root.register("device/%s" % device_name, [None, None, None])
             except (KeyError, ValueError):
                 raise SyntaxError(_("Invalid device-string index."))

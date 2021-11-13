@@ -2936,7 +2936,7 @@ class Elemental(Service):
             reverse = self.classify_reverse
             if reverse:
                 data = list(reversed(data))
-            make_raster = self.registered.get("render-op/make_raster")
+            make_raster = self.lookup("render-op/make_raster")
             if not make_raster:
                 channel(_("No renderer is registered to perform render."))
                 return
@@ -3683,9 +3683,7 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            spooler, input_driver, output = self.registered[
-                "device/%s" % self.root.active
-            ]
+            spooler, input_driver, output = self.lookup("device", self.root.active)
             try:
                 tx = input_driver.current_x
             except AttributeError:
@@ -4324,10 +4322,8 @@ class Elemental(Service):
         def trace_trace_hull(command, channel, _, data=None, **kwgs):
             active = self.active
             try:
-                spooler, input_device, output = self.registered[
-                    "device/%s" % active
-                ]
-            except KeyError:
+                spooler, input_device, output = self.lookup("device", active)
+            except TypeError:
                 channel(_("No active device found."))
                 return
             if data is None:
@@ -4365,10 +4361,8 @@ class Elemental(Service):
         def trace_trace_quick(command, channel, _, **kwgs):
             active = self.active
             try:
-                spooler, input_device, output = self.registered[
-                    "device/%s" % active
-                ]
-            except KeyError:
+                spooler, input_device, output = self.lookup("device", active)
+            except TypeError:
                 channel(_("No active device found."))
                 return
             bbox = self.selected_area()
@@ -4827,7 +4821,7 @@ class Elemental(Service):
                 CommandOperation(
                     "Interrupt",
                     COMMAND_FUNCTION,
-                    self.registered["function/interrupt"],
+                    self.lookup("function/interrupt"),
                 ),
                 type="cmdop",
             )
@@ -4942,7 +4936,7 @@ class Elemental(Service):
             reverse = self.classify_reverse
             if reverse:
                 subitems = list(reversed(subitems))
-            make_raster = self.registered.get("render-op/make_raster")
+            make_raster = self.lookup("render-op/make_raster")
             bounds = Group.union_bbox([s.object for s in subitems], with_stroke=True)
             if bounds is None:
                 return
@@ -5422,8 +5416,7 @@ class Elemental(Service):
         self.classify(list(self.elems()))
 
     def tree_operations_for_node(self, node):
-        for m in self.match("tree/%s/.*" % node.type):
-            func = self.registered[m]
+        for func, m, sname in self.find("tree/%s/.*" % node.type):
             reject = False
             for cond in func.conditionals:
                 if not cond(node):
@@ -5570,7 +5563,6 @@ class Elemental(Service):
                 returned = func(node, **ik, **kwargs)
                 return returned
 
-            kernel = self.kernel
             if isinstance(node_type, tuple):
                 ins = node_type
             else:
@@ -5593,11 +5585,11 @@ class Elemental(Service):
 
             for _in in ins:
                 p = "tree/%s/%s" % (_in, registered_name)
-                if p in kernel.registered:
+                if self.lookup(p) is not None:
                     raise NameError(
                         "A function of this name was already registered: %s" % p
                     )
-                kernel.register(p, inner)
+                self.register(p, inner)
             return inner
 
         return decorator
@@ -6513,8 +6505,7 @@ class Elemental(Service):
 
     def load(self, pathname, **kwargs):
         kernel = self.kernel
-        for loader_name in kernel.match("load"):
-            loader = kernel.registered[loader_name]
+        for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
                     try:
@@ -6535,14 +6526,12 @@ class Elemental(Service):
         if all:
             filetypes.append(_("All valid types"))
             exts = []
-            for loader_name in kernel.match("load"):
-                loader = kernel.registered[loader_name]
+            for loader, loader_name, sname in kernel.find("load"):
                 for description, extensions, mimetype in loader.load_types():
                     for ext in extensions:
                         exts.append("*.%s" % ext)
             filetypes.append(";".join(exts))
-        for loader_name in kernel.match("load"):
-            loader = kernel.registered[loader_name]
+        for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 exts = []
                 for ext in extensions:
@@ -6553,8 +6542,7 @@ class Elemental(Service):
 
     def save(self, pathname):
         kernel = self.kernel
-        for save_name in kernel.match("save"):
-            saver = kernel.registered[save_name]
+        for saver, save_name, sname in kernel.find("save"):
             for description, extension, mimetype in saver.save_types():
                 if pathname.lower().endswith(extension):
                     saver.save(self, pathname, "default")
@@ -6564,8 +6552,7 @@ class Elemental(Service):
     def save_types(self):
         kernel = self.kernel
         filetypes = []
-        for save_name in kernel.match("save"):
-            saver = kernel.registered[save_name]
+        for saver, save_name, sname in kernel.find("save"):
             for description, extension, mimetype in saver.save_types():
                 filetypes.append("%s (%s)" % (description, extension))
                 filetypes.append("*.%s" % extension)

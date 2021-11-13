@@ -139,9 +139,9 @@ def plugin(kernel, lifecycle=None):
                     )
 
                 try:
-                    spooler, input_driver, output = kernel.registered[
+                    spooler, input_driver, output = kernel.lookup(
                         "device/%s" % kernel.root.active
-                    ]
+                    )
                 except (KeyError, ValueError):
                     channel(_("Must run with a correct active device"))
                     return

@@ -83,10 +83,10 @@ class SimulationPanel(wx.Panel, Job):
         )
 
         self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
+            data for data, name, sname in self.context.find("device")
         ]
         selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        spools = list(self.context.match("device", suffix=True))
         try:
             index = spools.index(selected_spooler)
         except ValueError:
@@ -382,7 +382,7 @@ class SimulationPanel(wx.Panel, Job):
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
         self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
+            data for data, name, sname in self.context.find("device")
         ]
         index = self.combo_device.GetSelection()
         (
@@ -390,9 +390,7 @@ class SimulationPanel(wx.Panel, Job):
             self.connected_driver,
             self.connected_output,
         ) = self.available_devices[index]
-        self.connected_name = [
-            str(i) for i in self.context.match("device", suffix=True)
-        ][index]
+        self.connected_name = list(self.context.match("device", suffix=True))[index]
 
     def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))

@@ -122,15 +122,14 @@ def plugin(kernel, lifecycle=None):
     def image(command, channel, _, data, script, **kwargs):
         if script is None:
             try:
-                for script_name in context.match("raster_script", True):
+                for script_name in context.match("raster_script", suffix=True):
                     channel(_("Raster Script: %s") % script_name)
             except KeyError:
                 channel(_("No Raster Scripts Found."))
             return
 
-        try:
-            script = context.registered["raster_script/%s" % script]
-        except KeyError:
+        script = context.lookup("raster_script/%s" % script)
+        if script is None:
             channel(_("Raster Script %s is not registered.") % script)
             return
 

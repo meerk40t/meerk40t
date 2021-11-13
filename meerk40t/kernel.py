@@ -343,7 +343,7 @@ class Context:
         :return:
         """
         try:
-            funct = self._kernel.registered[self.abs_path("control/%s" % control)]
+            funct = self._kernel.lookup(self.abs_path("control/%s" % control))
         except KeyError:
             return
         funct()
@@ -381,13 +381,6 @@ class Context:
         return Kernel.console_command(self._kernel, *args, **kwargs)
 
     @property
-    def registered(self) -> Dict[str, Any]:
-        """
-        Delegate to Kernel
-        """
-        return self._kernel.registered
-
-    @property
     def contexts(self) -> Dict[str, "Context"]:
         return self._kernel.contexts
 
@@ -398,7 +391,26 @@ class Context:
         :param feature: feature to check if exists in kernel.
         :return:
         """
-        return feature in self._kernel.registered
+        return self.lookup(feature) is not None
+
+    def lookup(self, *args) -> Any:
+        """
+        Lookup a value in the kernel or services.
+
+        @param args: arguments
+        @return:
+        """
+        return self._kernel.lookup(*args)
+
+    def find(self, *args):
+        """
+        Delegate of Kernel match.
+
+        :param matchtext:  regex matchtext to locate.
+        :param suffix: provide the suffix of the match only.
+        :yield: matched entries.
+        """
+        yield from self._kernel.find(*args)
 
     def match(self, matchtext: str, suffix: bool = False) -> Generator[str, None, None]:
         """
@@ -408,8 +420,7 @@ class Context:
         :param suffix: provide the suffix of the match only.
         :yield: matched entries.
         """
-        for m in self._kernel.match(matchtext, suffix):
-            yield m
+        yield from self._kernel.match(matchtext, suffix)
 
     def console(self, data: str) -> None:
         """
@@ -456,7 +467,7 @@ class Context:
     # MODULES
     # ==========
 
-    def find(self, path: str) -> Union["Module", None]:
+    def get_open(self, path: str) -> Union["Module", None]:
         """
         Finds a loaded instance. Or returns None if not such instance.
 
@@ -512,7 +523,7 @@ class Context:
             pass
 
         try:
-            open_object = self._kernel.registered[registered_path]
+            open_object = self._kernel.lookup(registered_path)
         except KeyError:
             raise ValueError
 
@@ -575,7 +586,7 @@ class Context:
         except KeyError:
             pass
         try:
-            open_object = self._kernel.registered[registered_path]
+            open_object = self.lookup(registered_path)
         except KeyError:
             raise ValueError("Modifier not found.")
 
@@ -662,14 +673,15 @@ class Context:
 
 class Service(Context):
     """
-    A service alters the kernel and all contexts with additional functionality.
+    A service is a context that alters the kernel and all contexts with additional functionality.
 
-    These are attached prior to boot.
+    Services have their own registered values.
     """
 
     def __init__(self, kernel: "Kernel", path: str):
         super().__init__(kernel, path)
         kernel.contexts[path] = self
+        self._registered = {}
 
     def register(self, path: str, obj: Any) -> None:
         """
@@ -679,11 +691,30 @@ class Service(Context):
         :param obj:
         :return:
         """
-        self.registered[path] = obj
+        self._registered[path] = obj
         try:
             obj.sub_register(self)
         except AttributeError:
             pass
+
+    def console_command(self, *args, **kwargs) -> Callable:
+        """
+        Service console command registration.
+
+        Uses the current registration to register the given command.
+        """
+        return Kernel.console_command(self, *args, **kwargs)
+
+    def register_choices(self, sheet, choices):
+        """
+        Service register choices command registration.
+
+        Uses the current registration to register the choices.
+        @param sheet: Name of choices being registered
+        @param choices: list of choices
+        @return:
+        """
+        Kernel.register_choices(self, sheet, choices)
 
     def attach(self, *args, **kwargs):
         pass
@@ -750,7 +781,7 @@ class Kernel:
         self.thread_lock = Lock()
 
         # All registered locations within the kernel.
-        self.registered = {}
+        self._registered = {}
 
         # The translation object to be overridden by any valid transition functions
         self.translation = lambda e: e
@@ -1201,6 +1232,24 @@ class Kernel:
     # REGISTRATION
     # ==========
 
+    def find(self, *args):
+        """
+        Find registered path and objects that regex match the given matchtext
+
+        :param args: parts of matchtext
+        :return:
+        """
+        matchtext = "/".join(args)
+        match = re.compile(matchtext)
+        for domain in self._active_services:
+            service = self._active_services[domain]
+            for r in service._registered:
+                if match.match(r):
+                    yield service._registered[r], r, list(r.split("/"))[-1]
+        for r in self._registered:
+            if match.match(r):
+                yield self._registered[r], r, list(r.split("/"))[-1]
+
     def match(self, matchtext: str, suffix: bool = False) -> Generator[str, None, None]:
         """
         Lists all registered paths that regex match the given matchtext
@@ -1210,23 +1259,49 @@ class Kernel:
         :return:
         """
         match = re.compile(matchtext)
-        for r in self.registered:
+        for domain in self._active_services:
+            service = self._active_services[domain]
+            for r in service._registered:
+                if match.match(r):
+                    if suffix:
+                        yield list(r.split("/"))[-1]
+                    else:
+                        yield r
+        for r in self._registered:
             if match.match(r):
                 if suffix:
                     yield list(r.split("/"))[-1]
                 else:
                     yield r
 
+    def lookup(self, *args):
+        """
+        Lookup registered value from the registered dictionary checking the active devices first.
+
+        @param args: parts of value
+        @return:
+        """
+        value = "/".join(args)
+        for domain in self._active_services:
+            service = self._active_services[domain]
+            try:
+                return service._registered[value]
+            except KeyError:
+                pass
+        try:
+            return self._registered[value]
+        except KeyError:
+            return None
+
     def register(self, path: str, obj: Any) -> None:
         """
-        Register an element at a given subpath. If this Kernel is not root. Then
-        it is registered relative to this location.
+        Register an element at a given subpath.
 
         :param path:
         :param obj:
         :return:
         """
-        self.registered[path] = obj
+        self._registered[path] = obj
         try:
             obj.sub_register(self)
         except AttributeError:
@@ -2041,10 +2116,7 @@ class Kernel:
             command = command.lower()
             command_executed = False
             # Process command matches.
-            for command_name in self.match("command/%s/.*" % str(input_type)):
-                command_funct = self.registered[command_name]
-                cmd_re = command_name.split("/")[-1]
-
+            for command_funct, command_name, cmd_re in self.find("command/%s/.*" % str(input_type)):
                 if command_funct.regex:
                     match = re.compile(cmd_re)
                     if not match.match(command):
@@ -2100,8 +2172,8 @@ class Kernel:
         @return:
         """
         key = "choices/%s" % sheet
-        if key in self.registered:
-            others = self.registered[key]
+        if key in self._registered:
+            others = self._registered[key]
             others.extend(choices)
         else:
             self.register(key, choices)
@@ -2142,8 +2214,7 @@ class Kernel:
             """
             if extended_help is not None:
                 found = False
-                for command_name in self.match("command/.*/%s" % extended_help):
-                    func = self.registered[command_name]
+                for func, command_name, sname in self.find("command/.*/%s" % extended_help):
                     parts = command_name.split("/")
                     input_type = parts[1]
                     command_item = parts[2]
@@ -2151,7 +2222,7 @@ class Kernel:
                         continue
                     if input is not None and input != input_type:
                         continue
-                    func = self.registered[command_name]
+                    func = self.lookup(command_name)
                     if output is not None and output != func.output_type:
                         continue
                     help_args = []
@@ -2209,7 +2280,7 @@ class Kernel:
                 command_item = parts[2]
                 if input is not None and input != input_type:
                     continue
-                func = self.registered[command_name]
+                func = self.lookup(command_name)
                 if output is not None and output != func.output_type:
                     continue
                 if previous_input_type != input_type:
@@ -2340,15 +2411,15 @@ class Kernel:
             if len(args) == 0:
                 channel(_("----------"))
                 channel(_("Objects Registered:"))
-                for i, name in enumerate(self.match(".*")):
-                    obj = self.registered[name]
+                for i, find in enumerate(self.find(".*")):
+                    obj, name, sname = find
                     channel(_("%d: %s type of %s") % (i + 1, name, str(obj)))
                 channel(_("----------"))
             if len(args) == 1:
                 channel(_("----------"))
                 channel("Objects Registered:")
-                for i, name in enumerate(self.match("%s.*" % args[0])):
-                    obj = self.registered[name]
+                for i, find in enumerate(self.find("%s.*" % args[0])):
+                    obj, name, sname = find
                     channel("%d: %s type of %s" % (i + 1, name, str(obj)))
                 channel(_("----------"))
 
@@ -2453,7 +2524,7 @@ class Kernel:
                 name = None
                 if len(args) >= 3:
                     name = args[2]
-                if index in self.registered:
+                if self.lookup(index) is not None:
                     if name is not None:
                         path_context.open_as(index, name)
                     else:
@@ -2500,7 +2571,7 @@ class Kernel:
                 value = args[0]
                 if value == "open":
                     index = args[1]
-                    if index in self.registered:
+                    if self.lookup(index) is not None:
                         path_context.activate(index)
                     else:
                         channel(_("Modifier '%s' not found.") % index)

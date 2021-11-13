@@ -468,9 +468,9 @@ def plugin(kernel, lifecycle=None):
         ):
             root = kernel.root
             try:
-                spooler, input_driver, output = root.registered[
+                spooler, input_driver, output = root.lookup(
                     "device/%s" % root.active
-                ]
+                )
                 if output is None:
                     channel(
                         _(

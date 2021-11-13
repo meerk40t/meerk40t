@@ -158,16 +158,14 @@ class Outputs(Modifier):
 
     def get_or_make_output(self, device_name, output_type=None, **kwargs):
         dev = "device/%s" % device_name
-        try:
-            device = self.context.registered[dev]
-        except KeyError:
+        device = self.context.lookup(dev)
+        if device is None:
             device = [None, None, None]
-            self.context.registered[dev] = device
+            self.context.register(dev, device)
         if device[2] is not None and output_type is None:
             return device[2]
         try:
-            for itype in self.context.match("output/%s" % output_type):
-                output_class = self.context.registered[itype]
+            for output_class, itype, sname in self.context.find("output/%s" % output_type):
                 output = output_class(self.context, device_name, **kwargs)
                 device[2] = output
                 return output
@@ -176,11 +174,10 @@ class Outputs(Modifier):
 
     def put_output(self, device_name, output):
         dev = "device/%s" % device_name
-        try:
-            device = self.context.registered[dev]
-        except KeyError:
+        device = self.context.lookup(dev)
+        if device is None:
             device = [None, None, None]
-            self.context.registered[dev] = device
+            self.context.register(dev, device)
 
         try:
             device[2] = output

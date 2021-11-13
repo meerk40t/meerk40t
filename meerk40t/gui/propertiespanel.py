@@ -22,7 +22,7 @@ class PropertiesPanel(wx.Panel):
             return
         if isinstance(choices, str):
             try:
-                choices = self.context.registered["choices/%s" % choices]
+                choices = self.context.lookup("choices/%s" % choices)
             except KeyError:
                 return
         self.choices = choices

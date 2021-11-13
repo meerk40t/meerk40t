@@ -48,8 +48,7 @@ class Inputs(Modifier):
             return self._inputs[input_name]
         except KeyError:
             try:
-                for pname in self.context.match("input/%s" % input_type):
-                    input_class = self.context.registered[pname]
+                for input_class, pname, s in self.context.find("input/%s" % input_type):
                     input_obj = input_class(self.context, input_name, **kwargs)
                     self._inputs[input_name] = input_obj, input_name
                     return input_obj, input_name

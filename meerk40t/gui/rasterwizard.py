@@ -94,7 +94,7 @@ class RasterWizardPanel(wx.Panel):
                 return
             self.ops = ops
         else:
-            self.ops = deepcopy(self.context.registered["raster_script/%s" % name])
+            self.ops = deepcopy(self.context.lookup("raster_script/%s" % name))
         self.list_operation.Clear()
         if self.ops is not None:
             list_choices = [_(op["name"]) for op in self.ops]
@@ -358,7 +358,7 @@ class RasterWizardPanel(wx.Panel):
         menu = wx.Menu()
         sub_menu = wx.Menu()
         try:
-            for script_name in self.context.match("raster_script", True):
+            for script_name in self.context.match("raster_script", suffix=True):
                 gui.Bind(
                     wx.EVT_MENU,
                     self.set_script(script_name),

@@ -141,11 +141,10 @@ class Spoolers(Modifier):
 
     def get_or_make_spooler(self, device_name):
         dev = "device/%s" % device_name
-        try:
-            device = self.context.registered[dev]
-        except KeyError:
+        device = self.context.lookup(dev)
+        if device is None:
             device = [None, None, None]
-            self.context.registered[dev] = device
+            self.context.register(dev, device)
         if device[0] is None:
             device[0] = Spooler(self.context, device_name)
         return device[0]
@@ -209,7 +208,7 @@ class Spoolers(Modifier):
             if remainder is None:
                 channel(_("----------"))
                 channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.context.match("device", True)):
+                for d, d_name in enumerate(self.context.match("device", suffix=True)):
                     channel("%d: %s" % (d, d_name))
                 channel(_("----------"))
                 channel(_("Spooler %s:" % device_name))
@@ -229,7 +228,7 @@ class Spoolers(Modifier):
             spooler, device_name = data
             channel(_("----------"))
             channel(_("Spoolers:"))
-            for d, d_name in enumerate(self.context.match("device", True)):
+            for d, d_name in enumerate(self.context.match("device", suffix=True)):
                 channel("%d: %s" % (d, d_name))
             channel(_("----------"))
             channel(_("Spooler %s:" % device_name))
@@ -252,8 +251,7 @@ class Spoolers(Modifier):
             if op is None:
                 raise SyntaxError
             try:
-                for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
+                for plan_command, command_name, suffix in self.context.find("plan/%s" % op):
                     spooler.job(plan_command)
                     return data_type, data
             except (KeyError, IndexError):

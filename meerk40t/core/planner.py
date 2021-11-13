@@ -294,12 +294,12 @@ class CutPlan:
         # ==========
         if context.prephysicalhome:
             if not rotary_context.rotary:
-                self.plan.insert(0, context.registered["plan/physicalhome"])
+                self.plan.insert(0, context.lookup("plan/physicalhome"))
             else:
                 self.plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
         if context.prehome:
             if not rotary_context.rotary:
-                self.plan.insert(0, context.registered["plan/home"])
+                self.plan.insert(0, context.lookup("plan/home"))
             else:
                 self.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
         # ==========
@@ -307,22 +307,22 @@ class CutPlan:
         # ==========
         if context.autohome:
             if not rotary_context.rotary:
-                self.plan.append(context.registered["plan/home"])
+                self.plan.append(context.lookup("plan/home"))
             else:
                 self.plan.append(_("Home After: Disabled (Rotary On)"))
         if context.autophysicalhome:
             if not rotary_context.rotary:
-                self.plan.append(context.registered["plan/physicalhome"])
+                self.plan.append(context.lookup("plan/physicalhome"))
             else:
                 self.plan.append(_("Physical Home After: Disabled (Rotary On)"))
         if context.autoorigin:
-            self.plan.append(context.registered["plan/origin"])
+            self.plan.append(context.lookup("plan/origin"))
         if context.postunlock:
-            self.plan.append(context.registered["plan/unlock"])
+            self.plan.append(context.lookup("plan/unlock"))
         if context.autobeep:
-            self.plan.append(context.registered["plan/beep"])
+            self.plan.append(context.lookup("plan/beep"))
         if context.autointerrupt:
-            self.plan.append(context.registered["plan/interrupt"])
+            self.plan.append(context.lookup("plan/interrupt"))
 
         # ==========
         # Conditional Ops
@@ -506,7 +506,7 @@ class CutPlan:
         reverse = self.context.elements.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))
-        make_raster = self.context.registered.get("render-op/make_raster")
+        make_raster = self.context.lookup("render-op/make_raster")
         objs = [s.object for s in subitems]
         bounds = Group.union_bbox(objs, with_stroke=True)
         if bounds is None:
@@ -564,9 +564,9 @@ class CutPlan:
 
     def scale_for_rotary(self):
         r = self.context.get_context("rotary/1")
-        spooler, input_driver, output = self.context.registered[
+        spooler, input_driver, output = self.context.lookup(
             "device/%s" % self.context.root.active
-        ]
+        )
         if input_driver is None:
             return
         scale_str = "scale(%f,%f,%f,%f)" % (
@@ -615,7 +615,7 @@ class CutPlan:
                         continue
                     if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
                         continue  # make raster not needed since its a single real raster.
-                    make_raster = self.context.registered.get("render-op/make_raster")
+                    make_raster = self.context.lookup("render-op/make_raster")
 
                     if make_raster is None:
                         self.commands.append(self.strip_rasters)
@@ -721,7 +721,7 @@ class Planner(Modifier):
             if alias is None:
                 raise SyntaxError
             plan_command = "plan/%s" % alias
-            if plan_command in self.context.registered:
+            if self.context.lookup(plan_command) is not None:
                 raise SyntaxError(_("You may not overwrite an already used alias."))
 
             def user_defined_alias():
@@ -729,7 +729,7 @@ class Planner(Modifier):
                     self.context(s + "\n")
 
             user_defined_alias.__name__ = remainder
-            self.context.registered[plan_command] = user_defined_alias
+            self.context.register(plan_command, user_defined_alias)
 
         @self.context.console_command(
             "plan",
@@ -893,8 +893,7 @@ class Planner(Modifier):
                     channel(command_name)
                 return
             try:
-                for command_name in self.context.match("plan/%s" % op):
-                    cmd = self.context.registered[command_name]
+                for cmd, command_name, suffix in self.context.find("plan/%s" % op):
                     if index is None:
                         data.plan.append(cmd)
                     else:
@@ -923,8 +922,7 @@ class Planner(Modifier):
             if op is None:
                 raise SyntaxError
             try:
-                for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
+                for plan_command, command_name, sname in self.context.find("plan/%s" % op):
                     data.plan.append(plan_command)
                     self.context.signal("plan", data.name, None)
                     return data_type, data
@@ -947,14 +945,11 @@ class Planner(Modifier):
         ):
             if op is None:
                 raise SyntaxError
-            try:
-                for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
-                    data.plan.insert(0, plan_command)
-                    break
+            for plan_command, command_name, sname in self.context.find("plan/%s" % op):
+                data.plan.insert(0, plan_command)
                 self.context.signal("plan", data.name, None)
-            except (KeyError, IndexError):
-                channel(_("No plan command found."))
+                return data_type, data
+            channel(_("No plan command found."))
             return data_type, data
 
         @self.context.console_command(

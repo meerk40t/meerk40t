@@ -18,31 +18,31 @@ def plugin(kernel, lifecycle):
             if page is None:
                 channel(_("----------"))
                 channel(_("Webhelp Registered:"))
-                for i, name in enumerate(kernel.match("webhelp")):
-                    value = kernel.registered[name]
-                    name = name.split("/")[-1]
-                    channel("%d: %s %s" % (i + 1, str(name).ljust(15), value))
+                for i, find in enumerate(kernel.find("webhelp")):
+                    value, name, suffix = find
+                    channel("%d: %s %s" % (i + 1, str(suffix).ljust(15), value))
                 channel(_("----------"))
                 return
             try:
                 page_num = int(page)
-                for i, name in enumerate(kernel.match("webhelp")):
+                for i, find in enumerate(kernel.find("webhelp")):
                     if i == page_num:
-                        value = kernel.registered[name]
+                        value, name, suffix = find
                         page = value
             except ValueError:
                 pass
             key = "webhelp/%s" % page
-            if key in kernel.registered:
-                value = str(kernel.registered[key])
-                if not value.startswith("http"):
-                    channel("bad webhelp")
-                    return
-                import webbrowser
-
-                webbrowser.open(value, new=0, autoraise=True)
-            else:
+            value = kernel.lookup(key)
+            if value is None:
                 channel(_("Webhelp not found."))
+                return
+            value = str(value)
+            if not value.startswith("http"):
+                channel("bad webhelp")
+                return
+            import webbrowser
+
+            webbrowser.open(value, new=0, autoraise=True)
 
         kernel.register("webhelp/help", MEERK40T_HELP)
         kernel.register("webhelp/beginners", MEERK40T_BEGINNERS)

@@ -162,9 +162,8 @@ class DevicesPanel(wx.Panel):
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
         select = None
-        for i, dev_suffix in enumerate(self.context.match("device", suffix=True)):
-            dev = "device/%s" % dev_suffix
-            device = self.context.registered[dev]
+        for i, find in enumerate(self.context.find("device")):
+            device, dev, dev_suffix = find
             spooler, input_device, output = device
             device_context = self.context.get_context("devices")
             dev_string = "device_%s" % dev_suffix
@@ -221,7 +220,7 @@ class DevicesPanel(wx.Panel):
         spooler_input = self.devices_list.GetItem(item).Text
         # END SPOOLER
 
-        names = [name for name in self.context.match("driver", suffix=True)]
+        names = list(self.context.match("driver", suffix=True))
         dlg = wx.SingleChoiceDialog(
             None, _("What type of driver is being added?"), _("Device Type"), names
         )
@@ -234,7 +233,7 @@ class DevicesPanel(wx.Panel):
         dlg.Destroy()
         # END Driver
 
-        names = [name for name in self.context.match("output", suffix=True)]
+        names = list(self.context.match("output", suffix=True))
         dlg = wx.SingleChoiceDialog(
             None, _("Where does the device output data?"), _("Output Type"), names
         )

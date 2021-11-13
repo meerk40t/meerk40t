@@ -64,10 +64,10 @@ class LaserPanel(wx.Panel):
 
         # Devices Initialize.
         self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
+            data for data, name, sname in self.context.find("device")
         ]
         selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        spools = list(self.context.match("device", suffix=True))
         try:
             index = spools.index(selected_spooler)
         except ValueError:
@@ -267,7 +267,7 @@ class LaserPanel(wx.Panel):
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
+            data for data, name, sname in self.context.find("device")
         ]
         index = self.combo_devices.GetSelection()
         (

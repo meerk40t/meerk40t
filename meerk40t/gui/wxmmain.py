@@ -188,9 +188,9 @@ class MeerK40t(MWindow):
             dlg.SetValue("")
 
             if dlg.ShowModal() == wx.ID_OK:
-                spooler, input_driver, output = context.registered[
+                spooler, input_driver, output = context.lookup(
                     "device/%s" % context.root.active
-                ]
+                )
                 elements = context.elements
                 bed_dim = context.root
                 m = str(dlg.GetValue())
@@ -617,9 +617,8 @@ class MeerK40t(MWindow):
         def show_pane(command, _, channel, pane=None, **kwargs):
             if pane is None:
                 raise SyntaxError
-            try:
-                _pane = context.registered["pane/%s" % pane]
-            except KeyError:
+            _pane = context.lookup("pane/%s" % pane)
+            if _pane is None:
                 channel(_("Pane not found."))
                 return
             _pane.Show()
@@ -634,9 +633,8 @@ class MeerK40t(MWindow):
         def hide_pane(command, _, channel, pane=None, **kwargs):
             if pane is None:
                 raise SyntaxError
-            try:
-                _pane = context.registered["pane/%s" % pane]
-            except KeyError:
+            _pane = context.lookup("pane/%s" % pane)
+            if _pane is None:
                 channel(_("Pane not found."))
                 return
             _pane.Hide()
@@ -652,9 +650,8 @@ class MeerK40t(MWindow):
         def float_pane(command, _, channel, always=False, pane=None, **kwargs):
             if pane is None:
                 raise SyntaxError
-            try:
-                _pane = context.registered["pane/%s" % pane]
-            except KeyError:
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
                 channel(_("Pane not found."))
                 return
             _pane.Float()
@@ -950,14 +947,13 @@ class MeerK40t(MWindow):
                     pane_obj.Hide()
                     self._mgr.Update()
                     return
-                pane_init = self.context.registered["pane/%s" % pane_toggle]
+                pane_init = self.context.lookup("pane/%s" % pane_toggle)
                 self.on_pane_add(pane_init)
 
             return toggle
 
         submenus = {}
-        for p in self.context.match("pane/.*"):
-            pane = self.context.registered[p]
+        for pane, p, sp in self.context.find("pane/.*"):
             submenu = None
             try:
                 submenu_name = pane.submenu
@@ -1559,9 +1555,9 @@ class MeerK40t(MWindow):
             device_name = str(self.context.device_name)
         try:
             active = self.context.active
-            _spooler, _input_driver, _output = self.context.registered[
+            _spooler, _input_driver, _output = self.context.lookup(
                 "device/%s" % active
-            ]
+            )
             self.SetTitle(
                 _("%s v%s      (%s -> %s -> %s)")
                 % (

@@ -386,23 +386,6 @@ class LhystudiosControllerPanel(wx.Panel):
 
         return menu_element
 
-    # def on_controller_menu(self, event=None):
-    #     gui = self
-    #     menu = wx.Menu()
-    #     path_scale_sub_menu = wx.Menu()
-    #     for control_name in self.context.match("control"):
-    #         gui.Bind(
-    #             wx.EVT_MENU,
-    #             self.context.execute(control_name),
-    #             path_scale_sub_menu.Append(
-    #                 wx.ID_ANY, list(control_name.split("/"))[-1], "", wx.ITEM_NORMAL
-    #             ),
-    #         )
-    #     menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
-    #     if menu.MenuItemCount != 0:
-    #         gui.PopupMenu(menu)
-    #         menu.Destroy()
-
     def on_update_pipe_index(self, origin, value):
         if origin != self.context.path:
             return
