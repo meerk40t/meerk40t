@@ -2408,20 +2408,23 @@ class Kernel:
 
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Objects Registered:"))
-                for i, find in enumerate(self.find(".*")):
-                    obj, name, sname = find
-                    channel(_("%d: %s type of %s") % (i + 1, name, str(obj)))
-                channel(_("----------"))
-            if len(args) == 1:
-                channel(_("----------"))
-                channel("Objects Registered:")
-                for i, find in enumerate(self.find("%s.*" % args[0])):
-                    obj, name, sname = find
-                    channel("%d: %s type of %s" % (i + 1, name, str(obj)))
-                channel(_("----------"))
+            channel(_("----------"))
+            channel(_("Objects Registered:"))
+            matchtext = ".*"
+            if len(args) >= 1:
+                matchtext = str(args[0]) + matchtext
+            match = re.compile(matchtext)
+            for domain in self._active_services:
+                service = self._active_services[domain]
+                for i, r in enumerate(service._registered):
+                    if match.match(r):
+                        obj = service._registered[r]
+                        channel(_("%s, %d: %s type of %s") % (domain, i + 1, r, str(obj)))
+            for i, r in enumerate(self._registered):
+                if match.match(r):
+                    obj = self._registered[r]
+                    channel(_("%s, %d: %s type of %s") % ("kernel", i + 1, r, str(obj)))
+            channel(_("----------"))
 
         @self.console_command("context", _("context"))
         def context(channel, _, args=tuple(), **kwargs):
