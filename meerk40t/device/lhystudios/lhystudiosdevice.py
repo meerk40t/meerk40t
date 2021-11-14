@@ -468,7 +468,7 @@ def plugin(kernel, lifecycle=None):
         ):
             root = kernel.root
             try:
-                spooler, input_driver, output = root.lookup("device",root.active)
+                spooler, input_driver, output = root.lookup("device", root.active)
                 if output is None:
                     channel(
                         _(
@@ -500,7 +500,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command("lhyemulator", help=_("activate the lhyemulator."))
         def lhyemulator(channel, _, **kwargs):
             root = kernel.root
-            name = root.active
+            name = root.device.active
             driver_context = kernel.get_context("lhystudios/driver/%s" % name)
             try:
                 driver_context.open_as("emulator/lhystudios", "lhyemulator%s" % name)

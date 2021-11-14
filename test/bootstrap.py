@@ -12,9 +12,9 @@ def bootstrap():
         pass
 
     try:
-        from meerk40t.device import basedevice
+        from meerk40t.legacy import device
 
-        kernel.add_plugin(basedevice.plugin)
+        kernel.add_plugin(device.plugin)
     except ImportError:
         pass
 

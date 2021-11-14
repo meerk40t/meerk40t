@@ -139,7 +139,7 @@ def plugin(kernel, lifecycle=None):
                     )
 
                 try:
-                    spooler, input_driver, output = kernel.lookup("device", kernel.root.active)
+                    spooler, input_driver, output = kernel.lookup("device", kernel.root.device.active)
                 except TypeError:
                     channel(_("Must run with a correct active device"))
                     return

@@ -26,13 +26,13 @@ class LhystudiosEmulator(Module):
 
     def initialize(self, *args, **kwargs):
         context = self.context
-        active = self.context.root.active
+        active = self.context.device.active
         send = context.channel("%s/usb_send" % active)
         send.watch(self.parser.write_packet)
 
     def finalize(self, *args, **kwargs):
         context = self.context
-        active = self.context.root.active
+        active = self.context.device.active
         send = context.channel("%s/usb_send" % active)
         send.unwatch(self.parser.write_packet)
 
