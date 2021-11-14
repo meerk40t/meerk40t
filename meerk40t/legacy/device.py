@@ -205,6 +205,14 @@ class LegacyDevice(Service):
         return self.default_driver().current_y
 
     @property
+    def settings(self):
+        return self.default_driver().settings
+
+    @property
+    def state(self):
+        return self.default_driver().state
+
+    @property
     def spooler(self):
         return self.default_spooler()
 
