@@ -289,6 +289,7 @@ def plugin(kernel, lifecycle=None):
         @context.console_command(
             "test_jog_transition",
             help="test_jog_transition <finish,jog,switch>",
+            input_type=("spooler", None),
             hidden=True,
         )
         def run_jog_transition_test(data, transition_type, **kwgs):
