@@ -21,7 +21,7 @@ for full details.
 
 """
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.7.4-beta2"
+APPLICATION_VERSION = "0.8.0-beta1"
 
 if not getattr(sys, "frozen", False):
     APPLICATION_VERSION += " src"
