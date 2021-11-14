@@ -69,6 +69,94 @@ class LegacyDevice(Service):
         self.setting(str, "active", "0")
 
         ########################
+        # DRIVERS COMMANDS
+        ########################
+
+        @self.console_option("new", "n", type=str, help=_("new driver type"))
+        @self.console_command(
+            "driver",
+            help=_("driver<?> <command>"),
+            regex=True,
+            input_type=(None, "spooler"),
+            output_type="driver",
+        )
+        def driver_base(
+                command, channel, _, data=None, new=None, remainder=None, **kwgs
+        ):
+            spooler = None
+            if data is None:
+                if len(command) > 6:
+                    device_name = command[6:]
+                    self.active = device_name
+                else:
+                    device_name = self.active
+            else:
+                spooler, device_name = data
+
+            driver = self.get_or_make_driver(device_name, new)
+            if driver is None:
+                raise SyntaxError("No Driver.")
+
+            if spooler is not None:
+                try:
+                    driver.spooler = spooler
+                    spooler.next = driver
+                    driver.prev = spooler
+                except AttributeError:
+                    pass
+            elif remainder is None:
+                channel(_("----------"))
+                channel(_("Driver:"))
+                for i, drv in enumerate(self.match("device", suffix=True)):
+                    channel("%d: %s" % (i, drv))
+                channel(_("----------"))
+                channel(_("Driver %s:" % device_name))
+                channel(str(driver))
+                channel(_("----------"))
+            return "driver", (driver, device_name)
+
+        @self.console_command(
+            "list",
+            help=_("driver<?> list"),
+            input_type="driver",
+            output_type="driver",
+        )
+        def driver_list(command, channel, _, data_type=None, data=None, **kwgs):
+            driver_obj, name = data
+            channel(_("----------"))
+            channel(_("Driver:"))
+            for i, drv in enumerate(self.match("device", suffix=True)):
+                channel("%d: %s" % (i, drv))
+            channel(_("----------"))
+            channel(_("Driver %s:" % name))
+            channel(str(driver_obj))
+            channel(_("----------"))
+            return data_type, data
+
+        @self.console_command(
+            "type",
+            help=_("list driver types"),
+            input_type="driver",
+        )
+        def list_type(channel, _, **kwgs):
+            channel(_("----------"))
+            channel(_("Drivers permitted:"))
+            for i, name in enumerate(self.match("driver/", suffix=True)):
+                channel("%d: %s" % (i + 1, name))
+            channel(_("----------"))
+
+        @self.console_command(
+            "reset",
+            help=_("driver<?> reset"),
+            input_type="driver",
+            output_type="driver",
+        )
+        def driver_reset(data_type=None, data=None, **kwargs):
+            driver_obj, name = data
+            driver_obj.reset()
+            return data_type, data
+
+        ########################
         # SPOOLER DEVICE COMMANDS
         ########################
 
@@ -341,6 +429,30 @@ class LegacyDevice(Service):
 
     def default_spooler(self):
         return self.get_or_make_spooler(self.active)
+
+    def get_driver(self, driver_name, **kwargs):
+        try:
+            return self.lookup("device", driver_name)[1]
+        except (TypeError, IndexError):
+            return None
+
+    def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
+        device = self.lookup("device", device_name)
+        if device is None:
+            device = [None, None, None]
+            self.register("device/%s" % device_name, device)
+        if device[1] is not None and driver_type is None:
+            return device[1]
+        try:
+            for driver_class, itype, sname in self.find("driver", driver_type):
+                driver = driver_class(self, device_name, **kwargs)
+                device[1] = driver
+                return driver
+        except (KeyError, IndexError):
+            return None
+
+    def default_driver(self):
+        return self.get_driver(self.active)
 
     def device(self):
         v = self.lookup("device", self.active)

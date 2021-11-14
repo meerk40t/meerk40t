@@ -3,7 +3,6 @@ import time
 
 from ..core.cutcode import LaserSettings
 from ..device.lasercommandconstants import *
-from ..kernel import Modifier
 from .plotplanner import PlotPlanner
 
 DRIVER_STATE_RAPID = 0
@@ -22,9 +21,7 @@ PLOT_DIRECTION = 32
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/Drivers", Drivers)
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Drivers")
+        pass
     elif lifecycle == "boot":
         pass
 
@@ -526,122 +523,3 @@ class Driver:
             self.unset_prop(mask)
         else:
             self.set_prop(mask)
-
-
-class Drivers(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
-
-    def get_driver(self, driver_name, **kwargs):
-        try:
-            return self.context.lookup("device", driver_name)[1]
-        except (TypeError, IndexError):
-            return None
-
-    def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
-        device = self.context.lookup("device", device_name)
-        if device is None:
-            device = [None, None, None]
-            self.context.register("device/%s" % device_name, device)
-        if device[1] is not None and driver_type is None:
-            return device[1]
-        try:
-            for driver_class, itype, sname in self.context.find("driver", driver_type):
-                driver = driver_class(self.context, device_name, **kwargs)
-                device[1] = driver
-                return driver
-        except (KeyError, IndexError):
-            return None
-
-    def default_driver(self):
-        return self.get_driver(self.context.root.active)
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.drivers = self
-
-        _ = self.context._
-
-        @context.console_option("new", "n", type=str, help=_("new driver type"))
-        @self.context.console_command(
-            "driver",
-            help=_("driver<?> <command>"),
-            regex=True,
-            input_type=(None, "spooler"),
-            output_type="driver",
-        )
-        def driver_base(
-            command, channel, _, data=None, new=None, remainder=None, **kwgs
-        ):
-            spooler = None
-            if data is None:
-                if len(command) > 6:
-                    device_name = command[6:]
-                    self.context.active = device_name
-                else:
-                    device_name = self.context.active
-            else:
-                spooler, device_name = data
-
-            driver = self.get_or_make_driver(device_name, new)
-            if driver is None:
-                raise SyntaxError("No Driver.")
-
-            if spooler is not None:
-                try:
-                    driver.spooler = spooler
-                    spooler.next = driver
-                    driver.prev = spooler
-                except AttributeError:
-                    pass
-            elif remainder is None:
-                channel(_("----------"))
-                channel(_("Driver:"))
-                for i, drv in enumerate(self.context.root.match("device", suffix=True)):
-                    channel("%d: %s" % (i, drv))
-                channel(_("----------"))
-                channel(_("Driver %s:" % device_name))
-                channel(str(driver))
-                channel(_("----------"))
-            return "driver", (driver, device_name)
-
-        @self.context.console_command(
-            "list",
-            help=_("driver<?> list"),
-            input_type="driver",
-            output_type="driver",
-        )
-        def driver_list(command, channel, _, data_type=None, data=None, **kwgs):
-            driver_obj, name = data
-            channel(_("----------"))
-            channel(_("Driver:"))
-            for i, drv in enumerate(self.context.root.match("device", suffix=True)):
-                channel("%d: %s" % (i, drv))
-            channel(_("----------"))
-            channel(_("Driver %s:" % name))
-            channel(str(driver_obj))
-            channel(_("----------"))
-            return data_type, data
-
-        @context.console_command(
-            "type",
-            help=_("list driver types"),
-            input_type="driver",
-        )
-        def list_type(channel, _, **kwgs):
-            channel(_("----------"))
-            channel(_("Drivers permitted:"))
-            for i, name in enumerate(context.match("driver/", suffix=True)):
-                channel("%d: %s" % (i + 1, name))
-            channel(_("----------"))
-
-        @self.context.console_command(
-            "reset",
-            help=_("driver<?> reset"),
-            input_type="driver",
-            output_type="driver",
-        )
-        def driver_reset(data_type=None, data=None, **kwargs):
-            driver_obj, name = data
-            driver_obj.reset()
-            return data_type, data
