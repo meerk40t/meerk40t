@@ -450,8 +450,7 @@ class wxMeerK40t(wx.App, Module):
             except AttributeError:
                 parent = None
             window_uri = "window/%s" % window
-            context.root.setting(str, "active", "0")
-            active = context.root.active
+            active = context.device.active
             if source is not None:
                 active = source
             if output or driver:

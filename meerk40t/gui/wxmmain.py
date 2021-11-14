@@ -188,12 +188,12 @@ class MeerK40t(MWindow):
             dlg.SetValue("")
 
             if dlg.ShowModal() == wx.ID_OK:
-                spooler, input_driver, output = context.lookup("device", context.root.active)
                 elements = context.elements
                 bed_dim = context.root
+
                 m = str(dlg.GetValue())
-                m = m.replace("$x", str(input_driver.current_x))
-                m = m.replace("$y", str(input_driver.current_y))
+                m = m.replace("$x", str(context.device.current_x))
+                m = m.replace("$y", str(context.device.current_y))
                 mx = Matrix(m)
                 wmils = bed_dim.bed_width * 39.37
                 hmils = bed_dim.bed_height * 39.37
@@ -1551,21 +1551,9 @@ class MeerK40t(MWindow):
         if self.context is not None:
             device_version = self.context.device_version
             device_name = str(self.context.device_name)
-        try:
-            active = self.context.active
-            _spooler, _input_driver, _output = self.context.lookup("device", active)
-            self.SetTitle(
-                _("%s v%s      (%s -> %s -> %s)")
-                % (
-                    device_name,
-                    device_version,
-                    _spooler.name,
-                    _input_driver.type,
-                    _output.type,
-                )
-            )
-        except (KeyError, AttributeError):
-            self.SetTitle(_("%s v%s") % (device_name, device_version))
+        title = _("%s v%s") % (device_name, device_version)
+        title += "      %s" % self.context.device.name
+        self.SetTitle(title)
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties

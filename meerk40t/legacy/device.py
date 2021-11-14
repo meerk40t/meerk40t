@@ -220,6 +220,14 @@ class LegacyDevice(Service):
     def viewbuffer(self):
         return self.default_output().viewbuffer()
 
+    @property
+    def name(self):
+        return "(%s -> %s -> %s)" % (
+            self.default_spooler().name,
+            self.default_driver().type,
+            self.default_output().type,
+        )
+
     def attach(self, *args, **kwargs):
         # self.register("plan/interrupt", interrupt)
         _ = self.kernel.translation

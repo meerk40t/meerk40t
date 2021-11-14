@@ -28,7 +28,7 @@ class UsbConnectPanel(wx.Panel):
         self._active_when_loaded = None
 
     def initialize(self):
-        active = self.context.root.active
+        active = self.context.device.active
         self._active_when_loaded = active
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 

@@ -37,7 +37,7 @@ class SpoolerPanel(wx.Panel):
             data for data, name, sname in self.context.find("device")
         ]
         if selected_spooler is None:
-            selected_spooler = self.context.root.active
+            selected_spooler = self.context.device.active
         spools = list(self.context.match("device", suffix=True))
         try:
             index = spools.index(selected_spooler)

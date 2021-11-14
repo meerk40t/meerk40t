@@ -173,7 +173,7 @@ class DevicesPanel(wx.Panel):
             else:
                 registered = False
             m = self.devices_list.InsertItem(i, str(i))
-            if self.context.active == str(m):
+            if self.context.device.active == str(m):
                 select = i
                 from ..icons import DARKMODE
 

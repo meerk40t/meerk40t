@@ -351,9 +351,8 @@ class LhystudiosConfigurationPanel(wx.Panel):
 
     def on_button_set_home_current(self, event=None):
         x, y = self.calc_home_position()
-        spooler, input_driver, output = self.context.lookup("device", self.context.root.active)
-        current_x = input_driver.current_x - x
-        current_y = input_driver.current_y - y
+        current_x = self.context.device.current_x - x
+        current_y = self.context.device.current_y - y
         self.context.home_adjust_x = int(current_x)
         self.context.home_adjust_y = int(current_y)
         self.spin_home_x.SetValue(self.context.home_adjust_x)

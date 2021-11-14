@@ -25,8 +25,8 @@ class PlannerPanel(wx.Panel):
         self.available_devices = [
             data for data, name, suffix_name in self.context.find("device")
         ]
-        selected_spooler = self.context.root.active
-        spools = list(self.context.root.match("device", suffix=True))
+        selected_spooler = self.context.device.active
+        spools = list(self.context.match("device", suffix=True))
         try:
             index = spools.index(selected_spooler)
         except ValueError:

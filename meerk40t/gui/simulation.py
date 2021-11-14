@@ -85,7 +85,7 @@ class SimulationPanel(wx.Panel, Job):
         self.available_devices = [
             data for data, name, sname in self.context.find("device")
         ]
-        selected_spooler = self.context.root.active
+        selected_spooler = self.context.device.active
         spools = list(self.context.match("device", suffix=True))
         try:
             index = spools.index(selected_spooler)

@@ -12,7 +12,7 @@ class FileOutputPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        self.spooler, self.input_driver, self.output = self.context.lookup("device", self.context.root.active)
+        self.output = self.context.device.default_output()
         self.text_filename = wx.TextCtrl(self, wx.ID_ANY, "")
         self.radio_file = wx.RadioBox(
             self,
