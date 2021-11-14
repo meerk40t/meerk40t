@@ -138,16 +138,9 @@ def plugin(kernel, lifecycle=None):
                         root.channel("rd2mk-jog/send")
                     )
 
-                try:
-                    spooler, input_driver, output = kernel.lookup("device", kernel.device.active)
-                except TypeError:
-                    channel(_("Must run with a correct active device"))
-                    return
-
-                emulator.spooler = spooler
-                emulator.driver = input_driver
-                emulator.output = output
-                emulator.elements = root.elements
+                emulator.spooler = kernel.device.spooler
+                emulator.device = kernel.device
+                emulator.elements = kernel.elements
 
                 if command == "ruidadesign":
                     emulator.design = True
@@ -176,8 +169,7 @@ class RuidaEmulator(Module):
         self.settings = LaserSettings()
         self._use_set = None
         self.spooler = None
-        self.driver = None
-        self.output = None
+        self.device = None
 
         self.elements = None
         self.color = None
@@ -1977,9 +1969,9 @@ class RuidaEmulator(Module):
         if mem == 0x021F:
             return "Ring Number", 0
         if mem == 0x0221:
-            if self.driver is not None:
+            if self.device is not None:
                 try:
-                    self.x = int(self.driver.current_x * UM_PER_MIL)
+                    self.x = int(self.device.current_x * UM_PER_MIL)
                 except AttributeError:
                     pass
             x = int(self.x)
@@ -1989,9 +1981,9 @@ class RuidaEmulator(Module):
         if mem == 0x0224:
             return "Position Point 0", 0
         if mem == 0x0231:
-            if self.driver is not None:
+            if self.device is not None:
                 try:
-                    self.y = int(self.driver.current_y * UM_PER_MIL)
+                    self.y = int(self.device.current_y * UM_PER_MIL)
                 except AttributeError:
                     pass
             y = int(self.y)

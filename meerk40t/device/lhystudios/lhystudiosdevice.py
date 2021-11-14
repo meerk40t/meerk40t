@@ -468,13 +468,13 @@ def plugin(kernel, lifecycle=None):
         ):
             root = kernel.root
             try:
-                spooler, input_driver, output = root.lookup("device", root.active)
+                spooler, input_driver, output = root.lookup("device", root.device.active)
                 if output is None:
                     channel(
                         _(
                             "Output for device %s does not exist. Lhyserver cannot attach."
                         )
-                        % root.active
+                        % root.device.active
                     )
                     return
                 server = root.open_as("module/TCPServer", "lhyserver", port=port)
