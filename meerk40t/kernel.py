@@ -980,6 +980,7 @@ class Kernel:
 
         service = services[index]
 
+        setattr(self, domain, None)
         if domain in self._active_services:
             previous_active = self._active_services[domain]
             previous_active.detach(self)
@@ -989,6 +990,8 @@ class Kernel:
                 setattr(context, domain, None)
         self._active_services[domain] = service
         service.attach(self)
+
+        setattr(self, domain, service)
         for context_name in self.contexts:
             # For every registered context, set the given domain to this service
             context = self.contexts[context_name]
