@@ -16,9 +16,6 @@ class LhystudiosConfigurationPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        self.bed_dim = self.context.root
-        self.bed_dim.setting(int, "bed_width", 310)
-        self.bed_dim.setting(int, "bed_height", 210)
         self.combobox_board = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -311,9 +308,9 @@ class LhystudiosConfigurationPanel(wx.Panel):
         x = 0
         y = 0
         if self.context.home_right:
-            x = int(self.bed_dim.bed_width * MILS_IN_MM)
+            x = int(self.context.device.bed_width * MILS_IN_MM)
         if self.context.home_bottom:
-            y = int(self.bed_dim.bed_height * MILS_IN_MM)
+            y = int(self.context.device.bed_height * MILS_IN_MM)
         return x, y
 
     def on_combobox_boardtype(self, event=None):

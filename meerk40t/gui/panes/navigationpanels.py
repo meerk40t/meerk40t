@@ -632,10 +632,6 @@ class MovePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to
         )
-        # end wxGlade
-        self.bed_dim = context.root
-        self.bed_dim.setting(int, "bed_width", 310)  # Default Value
-        self.bed_dim.setting(int, "bed_height", 210)  # Default Value
 
     def __set_properties(self):
         # begin wxGlade: MovePanel.__set_properties
@@ -672,8 +668,8 @@ class MovePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         try:
-            width = self.bed_dim.bed_width * MILS_IN_MM
-            height = self.bed_dim.bed_height * MILS_IN_MM
+            width = self.context.device.bed_width * MILS_IN_MM
+            height = self.context.device.bed_height * MILS_IN_MM
             x = Length(self.text_position_x.GetValue()).value(
                 ppi=1000.0, relative_length=width
             )

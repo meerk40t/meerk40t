@@ -76,11 +76,8 @@ class SVGWriter:
         # Native unit is mils, these must convert to mm and to px
         # mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        bed_dim = context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
-        mm_width = bed_dim.bed_width
-        mm_height = bed_dim.bed_height
+        mm_width = context.device.bed_width
+        mm_height = context.device.bed_height
         root.set(SVG_ATTR_WIDTH, "%fmm" % mm_width)
         root.set(SVG_ATTR_HEIGHT, "%fmm" % mm_height)
         px_width = mm_width * MILS_IN_MM * px_per_mils
@@ -261,9 +258,6 @@ class SVGLoader:
     def load(context, elements_modifier, pathname, **kwargs):
         # context.root.setting(bool, "classify_reverse", False)
         reverse = False
-        bed_dim = context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
         else:
@@ -277,8 +271,8 @@ class SVGLoader:
         svg = SVG.parse(
             source=source,
             reify=True,
-            width="%fmm" % bed_dim.bed_width,
-            height="%fmm" % bed_dim.bed_height,
+            width="%fmm" % context.device.bed_width,
+            height="%fmm" % context.device.bed_height,
             ppi=ppi,
             color="none",
             transform="scale(%f)" % scale_factor,

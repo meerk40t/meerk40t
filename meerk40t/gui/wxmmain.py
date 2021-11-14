@@ -189,14 +189,13 @@ class MeerK40t(MWindow):
 
             if dlg.ShowModal() == wx.ID_OK:
                 elements = context.elements
-                bed_dim = context.root
 
                 m = str(dlg.GetValue())
                 m = m.replace("$x", str(context.device.current_x))
                 m = m.replace("$y", str(context.device.current_y))
                 mx = Matrix(m)
-                wmils = bed_dim.bed_width * 39.37
-                hmils = bed_dim.bed_height * 39.37
+                wmils = context.device.bed_width * 39.37
+                hmils = context.device.bed_height * 39.37
                 mx.render(ppi=1000, width=wmils, height=hmils)
                 if mx.is_identity():
                     dlg.Destroy()
@@ -228,14 +227,12 @@ class MeerK40t(MWindow):
             )
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
-                root_context = context.root
-                bed_dim = root_context
-                wmils = bed_dim.bed_width * MILS_IN_MM
-                # hmils = bed_dim.bed_height * MILS_IN_MM
+                wmils = context.device.bed_width * MILS_IN_MM
+                # hmils = context.device.bed_height * MILS_IN_MM
                 length = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=wmils)
                 mx = Matrix()
                 mx.post_scale(-1.0, 1, length / 2.0, 0)
-                for element in root_context.elements.elems(emphasized=True):
+                for element in context.elements.elems(emphasized=True):
                     try:
                         element *= mx
                         element.node.modified()
@@ -822,9 +819,6 @@ class MeerK40t(MWindow):
         context.listen("pipe;thread", self.on_pipe_state)
         context.listen("spooler;thread", self.on_spooler_state)
         context.listen("warning", self.on_warning_signal)
-        bed_dim = context.root
-        bed_dim.setting(int, "bed_width", 310)  # Default Value
-        bed_dim.setting(int, "bed_height", 210)  # Default Value
 
         context.listen("active", self.on_active_change)
         context.listen("modified", self.on_invalidate_save)

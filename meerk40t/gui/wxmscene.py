@@ -189,14 +189,13 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_argument("height", type=Length, help="height of view")
         @self.context.console_command("focus", input_type="scene")
         def scene(command, _, channel, data, x, y, width, height, **kwargs):
-            bed_dim = self.context.root
-            x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
+            x = x.value(ppi=1000.0, relative_length=self.context.device.bed_width * MILS_IN_MM)
+            y = y.value(ppi=1000.0, relative_length=self.context.device.bed_height * MILS_IN_MM)
             width = width.value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.context.device.bed_width * MILS_IN_MM
             )
             height = height.value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                ppi=1000.0, relative_length=self.context.device.bed_height * MILS_IN_MM
             )
             bbox = (x, y, width, height)
             data.widget_root.focus_viewport_scene(bbox, self.ClientSize)

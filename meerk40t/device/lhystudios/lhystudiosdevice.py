@@ -468,7 +468,7 @@ def plugin(kernel, lifecycle=None):
         ):
             root = kernel.root
             try:
-                spooler, input_driver, output = root.lookup("device", root.device.active)
+                output = root.device.default_output()
                 if output is None:
                     channel(
                         _(
@@ -1331,13 +1331,10 @@ class LhystudiosDriver(Driver):
     def calc_home_position(self):
         x = 0
         y = 0
-        bed_dim = self.context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
         if self.context.home_right:
-            x = int(bed_dim.bed_width * MILS_IN_MM)
+            x = int(self.context.device.bed_width * MILS_IN_MM)
         if self.context.home_bottom:
-            y = int(bed_dim.bed_height * MILS_IN_MM)
+            y = int(self.context.device.bed_height * MILS_IN_MM)
         return x, y
 
     def home(self, *values):

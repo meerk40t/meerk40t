@@ -189,16 +189,13 @@ class PlannerPanel(wx.Panel):
             if width:
                 width  = "%.1f%s" % (width / conversion, name)
         dlg.SetValue(str(width) if width is not None else "%f%%" % (100.0 / cols))
-        bed_dim = self.context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 x_distance = Length(dlg.GetValue()).value(
                     ppi=1000.0,
                     relative_length=width
                     if width is not None
-                    else bed_dim.bed_width * MILS_PER_MM,
+                    else self.context.device.bed_width * MILS_PER_MM,
                 )
             except ValueError:
                 dlg.Destroy()
@@ -226,7 +223,7 @@ class PlannerPanel(wx.Panel):
                     ppi=1000.0,
                     relative_length=height
                     if height is not None
-                    else bed_dim.bed_height * MILS_PER_MM,
+                    else self.context.device.bed_height * MILS_PER_MM,
                 )
             except ValueError:
                 dlg.Destroy()

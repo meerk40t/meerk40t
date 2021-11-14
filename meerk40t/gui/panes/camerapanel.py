@@ -154,10 +154,6 @@ class CameraPanel(wx.Panel, Job):
         self.SetDoubleBuffered(True)
         # end wxGlade
 
-        self.bed_dim = self.context.root
-        self.bed_dim.setting(int, "bed_width", 310)
-        self.bed_dim.setting(int, "bed_height", 210)
-
         self.setting.setting(int, "width", 640)
         self.setting.setting(int, "height", 480)
         self.setting.setting(bool, "aspect", False)

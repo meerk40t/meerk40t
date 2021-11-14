@@ -49,10 +49,6 @@ class SimulationPanel(wx.Panel, Job):
         self.max = max(len(self.cutcode), 0) + 1
         self.progress = self.max
 
-        self.bed_dim = self.context.root
-        self.bed_dim.setting(int, "bed_width", 310)
-        self.bed_dim.setting(int, "bed_height", 210)
-
         self.view_pane = ScenePanel(
             self.context,
             self,
@@ -280,8 +276,8 @@ class SimulationPanel(wx.Panel, Job):
         bbox = (
             0,
             0,
-            self.bed_dim.bed_width * MILS_IN_MM,
-            self.bed_dim.bed_height * MILS_IN_MM,
+            self.context.device.bed_width * MILS_IN_MM,
+            self.context.device.bed_height * MILS_IN_MM,
         )
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1

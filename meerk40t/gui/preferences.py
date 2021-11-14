@@ -17,11 +17,6 @@ class PreferencesPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.bed_dim = self.context.root
-        self.bed_dim.setting(int, "bed_width", 310)
-        self.bed_dim.setting(int, "bed_height", 210)
-        self.bed_dim.setting(float, "scale_x", 1.000)
-        self.bed_dim.setting(float, "scale_y", 1.000)
 
         self.radio_units = wx.RadioBox(
             self,
@@ -97,10 +92,10 @@ class PreferencesPanel(wx.Panel):
         self.context.setting(float, "units_convert", 39.3701)
         self.radio_units.SetSelection(self.context.units_index)
         self.combo_language.SetSelection(self.context.language)
-        self.spin_bedwidth.SetValue(self.bed_dim.bed_width)
-        self.spin_bedheight.SetValue(self.bed_dim.bed_height)
-        self.text_scale_x.SetValue("%.3f" % self.bed_dim.scale_x)
-        self.text_scale_y.SetValue("%.3f" % self.bed_dim.scale_y)
+        self.spin_bedwidth.SetValue(self.context.device.bed_width)
+        self.spin_bedheight.SetValue(self.context.device.bed_height)
+        self.text_scale_x.SetValue("%.3f" % self.context.device.scale_x)
+        self.text_scale_y.SetValue("%.3f" % self.context.device.scale_y)
         self.Children[0].SetFocus()
 
     def finalize(self):
@@ -280,35 +275,35 @@ class PreferencesPanel(wx.Panel):
         p.signal("units")
 
     def spin_on_bedwidth(self, event=None):
-        self.bed_dim.bed_width = int(self.spin_bedwidth.GetValue())
-        self.bed_dim.bed_height = int(self.spin_bedheight.GetValue())
+        self.context.device.bed_width = int(self.spin_bedwidth.GetValue())
+        self.context.device.bed_height = int(self.spin_bedheight.GetValue())
         self.context.signal(
-            "bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height)
+            "bed_size", (self.context.device.bed_width, self.context.device.bed_height)
         )
 
     def spin_on_bedheight(self, event=None):
-        self.bed_dim.bed_width = int(self.spin_bedwidth.GetValue())
-        self.bed_dim.bed_height = int(self.spin_bedheight.GetValue())
+        self.context.device.bed_width = int(self.spin_bedwidth.GetValue())
+        self.context.device.bed_height = int(self.spin_bedheight.GetValue())
         self.context.signal(
-            "bed_size", (self.bed_dim.bed_width, self.bed_dim.bed_height)
+            "bed_size", (self.context.device.bed_width, self.context.device.bed_height)
         )
 
     def on_text_x_scale(self, event=None):
         try:
-            self.bed_dim.scale_x = float(self.text_scale_x.GetValue())
-            self.bed_dim.scale_y = float(self.text_scale_y.GetValue())
+            self.context.device.scale_x = float(self.text_scale_x.GetValue())
+            self.context.device.scale_y = float(self.text_scale_y.GetValue())
             self.context.signal(
-                "scale_step", (self.bed_dim.scale_x, self.bed_dim.scale_y)
+                "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
         except ValueError:
             pass
 
     def on_text_y_scale(self, event=None):
         try:
-            self.bed_dim.scale_x = float(self.text_scale_x.GetValue())
-            self.bed_dim.scale_y = float(self.text_scale_y.GetValue())
+            self.context.device.scale_x = float(self.text_scale_x.GetValue())
+            self.context.device.scale_y = float(self.text_scale_y.GetValue())
             self.context.signal(
-                "scale_step", (self.bed_dim.scale_x, self.bed_dim.scale_y)
+                "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
         except ValueError:
             pass

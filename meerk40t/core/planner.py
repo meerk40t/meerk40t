@@ -668,9 +668,6 @@ class Planner(Service):
         self.register("plan/shutdown", shutdown)
 
         _ = self.kernel.translation
-        bed_dim = self.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
 
         rotary_context = self.get_context("rotary/1")
         rotary_context.setting(bool, "rotary", False)
@@ -1072,10 +1069,10 @@ class Planner(Service):
             except Exception:
                 pass
             x_distance = x_distance.value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
             )
             y_distance = y_distance.value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
             )
             x_last = 0
             y_last = 0
