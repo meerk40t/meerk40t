@@ -547,8 +547,8 @@ class CutPlan:
         scale_str = "scale(%f,%f,%f,%f)" % (
             r.scale_x,
             r.scale_y,
-            input_driver.current_x,
-            input_driver.current_y,
+            self.context.device.current_x,
+            self.context.device.current_x,
         )
         for o in self.plan:
             if isinstance(o, LaserOperation):
