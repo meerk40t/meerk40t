@@ -1,3 +1,4 @@
+from meerk40t.core.output import FileOutput, TCPOutput
 from meerk40t.core.spoolers import Spooler
 from meerk40t.kernel import Service
 from meerk40t.kernel import CommandMatchRejected
@@ -67,6 +68,151 @@ class LegacyDevice(Service):
         self.setting(float, "current_x", 0.0)
         self.setting(float, "current_y", 0.0)
         self.setting(str, "active", "0")
+
+        ########################
+        # OUTPUT COMMANDS
+        ########################
+
+        @self.console_option("new", "n", type=str, help=_("new output type"))
+        @self.console_command(
+            "output",
+            help=_("output<?> <command>"),
+            regex=True,
+            input_type=(None, "input", "driver"),
+            output_type="output",
+        )
+        def output_base(
+            command, channel, _, data=None, new=None, remainder=None, **kwgs
+        ):
+            input_driver = None
+            if data is None:
+                if len(command) > 6:
+                    device_name = command[6:]
+                    self.active = device_name
+                else:
+                    device_name = self.active
+            else:
+                input_driver, device_name = data
+
+            output = self.get_or_make_output(device_name, new)
+
+            if output is None:
+                raise SyntaxError("No Output")
+
+            self.signal("output", device_name, 1)
+
+            if input_driver is not None:
+                input_driver.next = output
+                output.prev = input_driver
+
+                input_driver.output = output
+                output.input = input_driver
+            elif remainder is None:
+                pass
+
+            return "output", (output, device_name)
+
+        @self.console_argument("filename")
+        @self.console_command(
+            "outfile",
+            help=_("outfile filename"),
+            input_type=(None, "input", "driver"),
+            output_type="output",
+        )
+        def output_outfile(command, channel, _, data=None, filename=None, **kwgs):
+            if filename is None:
+                raise SyntaxError("No file specified.")
+            input_driver = None
+            if data is None:
+                if len(command) > 6:
+                    device_name = command[6:]
+                else:
+                    device_name = self.active
+            else:
+                input_driver, device_name = data
+
+            output = FileOutput(filename)
+            self.put_output(device_name, output)
+
+            if input_driver is not None:
+                input_driver.next = output
+                output.prev = input_driver
+
+                input_driver.output = output
+                output.input = input_driver
+            return "output", (output, device_name)
+
+        @self.console_argument("address", type=str, help=_("tcp address"))
+        @self.console_argument("port", type=int, help=_("tcp/ip port"))
+        @self.console_command(
+            "tcp",
+            help=_("network <address> <port>"),
+            input_type=(None, "input", "driver"),
+            output_type="output",
+        )
+        def output_tcp(command, channel, _, data=None, address=None, port=None, **kwgs):
+            if port is None:
+                raise SyntaxError(_("No address/port specified"))
+            input_driver = None
+            if data is None:
+                if len(command) > 3:
+                    device_name = command[3:]
+                else:
+                    device_name = self.active
+            else:
+                input_driver, device_name = data
+
+            output = TCPOutput(self, address, port)
+            self.put_output(device_name, output)
+
+            if input_driver is not None:
+                input_driver.next = output
+                output.prev = input_driver
+
+                input_driver.output = output
+                output.input = input_driver
+            return "output", (output, device_name)
+
+        @self.console_command(
+            "list",
+            help=_("output<?> list, list current outputs"),
+            input_type="output",
+            output_type="output",
+        )
+        def output_list(command, channel, _, data_type=None, data=None, **kwgs):
+            output, output_name = data
+            channel(_("----------"))
+            channel(_("Output:"))
+            for i, pname in enumerate(self._outputs):
+                channel("%d: %s" % (i, pname))
+            channel(_("----------"))
+            channel(_("Output %s: %s" % (output_name, str(output))))
+            channel(_("----------"))
+            return data_type, data
+
+        @self.console_command(
+            "type", help=_("list output types"), input_type="output"
+        )
+        def output_types(channel, _, **kwgs):
+            channel(_("----------"))
+            channel(_("Output types:"))
+            for i, name in enumerate(self.match("output/", suffix=True)):
+                channel("%d: %s" % (i + 1, name))
+            channel(_("----------"))
+
+        @self.console_argument(
+            "port", type=int, help=_("Port of TCPOutput to change.")
+        )
+        @self.console_command(
+            "port",
+            help=_("change the port of the tcpdevice"),
+            input_type="tcpout",
+        )
+        def tcpport(channel, _, port, data=None, **kwargs):
+            spooler, input_driver, output = data
+            old_port = output.port
+            output.port = port
+            channel(_("TCP port changed: %s -> %s" % (str(old_port), str(port))))
 
         ########################
         # DRIVERS COMMANDS
@@ -459,3 +605,32 @@ class LegacyDevice(Service):
         if v is None:
             return None, None, None
         return v
+
+    def get_or_make_output(self, device_name, output_type=None, **kwargs):
+        device = self.lookup("device", device_name)
+        if device is None:
+            device = [None, None, None]
+            self.register("device/%s" % device_name, device)
+        if device[2] is not None and output_type is None:
+            return device[2]
+        try:
+            for output_class, itype, sname in self.find("output", output_type):
+                output = output_class(self, device_name, **kwargs)
+                device[2] = output
+                return output
+        except (KeyError, IndexError):
+            return None
+
+    def put_output(self, device_name, output):
+        device = self.lookup("device", device_name)
+        if device is None:
+            device = [None, None, None]
+            self.register("device/%s" % device_name, device)
+
+        try:
+            device[2] = output
+        except (KeyError, IndexError):
+            pass
+
+    def default_output(self):
+        return self.get_or_make_output(self.active)
