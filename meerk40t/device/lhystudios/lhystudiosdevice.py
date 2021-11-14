@@ -499,8 +499,7 @@ def plugin(kernel, lifecycle=None):
 
         @kernel.console_command("lhyemulator", help=_("activate the lhyemulator."))
         def lhyemulator(channel, _, **kwargs):
-            root = kernel.root
-            name = root.device.active
+            name = kernel.device.active
             driver_context = kernel.get_context("lhystudios/driver/%s" % name)
             try:
                 driver_context.open_as("emulator/lhystudios", "lhyemulator%s" % name)
