@@ -35,9 +35,9 @@ class SimulationPanel(wx.Panel, Job):
         self.process = self.animate_sim
         self.interval = 0.1
         if plan_name:
-            cutplan = self.context.root.planner.get_or_make_plan(plan_name)
+            cutplan = self.context.planner.get_or_make_plan(plan_name)
         else:
-            cutplan = self.context.root.default_plan()
+            cutplan = self.context.planner.default_plan
         self.plan_name = cutplan.name
         self.operations = cutplan.plan
         self.cutcode = CutCode()

@@ -179,7 +179,7 @@ def plugin(kernel, lifecycle):
             dlg.ShowModal()
             dlg.Destroy()
 
-        kernel_root.register("function/interrupt", interrupt_popup)
+        kernel_root.planner.register("function/interrupt", interrupt_popup)
 
         def interrupt():
             from ..device.lasercommandconstants import (
@@ -190,7 +190,7 @@ def plugin(kernel, lifecycle):
             yield COMMAND_WAIT_FINISH
             yield COMMAND_FUNCTION, kernel_root.lookup("function/interrupt")
 
-        kernel_root.register("plan/interrupt", interrupt)
+        kernel_root.planner.register("plan/interrupt", interrupt)
 
         if GUI_START:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
