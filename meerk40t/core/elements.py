@@ -3683,13 +3683,12 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            spooler, input_driver, output = self.lookup("device", self.root.active)
             try:
-                tx = input_driver.current_x
+                tx = self.device.current_x
             except AttributeError:
                 tx = 0
             try:
-                ty = input_driver.current_y
+                ty = self.device.current_y
             except AttributeError:
                 ty = 0
             try:
@@ -4320,12 +4319,7 @@ class Elemental(Service):
             input_type=(None, "elements"),
         )
         def trace_trace_hull(command, channel, _, data=None, **kwgs):
-            active = self.root.active
-            try:
-                spooler, input_device, output = self.lookup("device", active)
-            except TypeError:
-                channel(_("No active device found."))
-                return
+            spooler = self.device.spooler
             if data is None:
                 data = list(self.elems(emphasized=True))
             pts = []
@@ -4359,12 +4353,7 @@ class Elemental(Service):
             "trace_quick", help=_("quick trace the bounding box of current elements")
         )
         def trace_trace_quick(command, channel, _, **kwgs):
-            active = self.root.active
-            try:
-                spooler, input_device, output = self.lookup("device", active)
-            except TypeError:
-                channel(_("No active device found."))
-                return
+            spooler = self.device.spooler
             bbox = self.selected_area()
             if bbox is None:
                 channel(_("No elements bounds to trace."))
