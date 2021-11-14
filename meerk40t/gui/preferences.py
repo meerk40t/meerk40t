@@ -13,6 +13,7 @@ _ = wx.GetTranslation
 
 MILS_IN_MM = 39.3701
 
+
 class PreferencesPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -56,10 +57,10 @@ class PreferencesPanel(wx.Panel):
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
         self.spin_bedwidth = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "8268.0", min=1.0, max=80000.0
+            self, wx.ID_ANY, str(self.context.device.bedwidth), min=1.0, max=80000.0, inc=MILS_IN_MM
         )
         self.spin_bedheight = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "12205.0", min=1.0, max=80000.0
+            self, wx.ID_ANY, str(self.context.device.bedheight), min=1.0, max=80000.0, inc=MILS_IN_MM
         )
         self.__set_properties()
         self.__do_layout()
@@ -162,13 +163,13 @@ class PreferencesPanel(wx.Panel):
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Width"))
         sizer_5.Add(label_2, 0, 0, 0)
         sizer_5.Add(self.spin_bedwidth, 0, 0, 0)
-        label_17 = wx.StaticText(self, wx.ID_ANY, _("mm"))
+        label_17 = wx.StaticText(self, wx.ID_ANY, _("steps"))
         sizer_5.Add(label_17, 0, 0, 0)
         sizer_bed.Add(sizer_5, 1, 0, 0)
         label_3 = wx.StaticText(self, wx.ID_ANY, _("Height"))
         sizer_6.Add(label_3, 0, 0, 0)
         sizer_6.Add(self.spin_bedheight, 0, 0, 0)
-        label_18 = wx.StaticText(self, wx.ID_ANY, _("mm"))
+        label_18 = wx.StaticText(self, wx.ID_ANY, _("steps"))
         sizer_6.Add(label_18, 0, 0, 0)
         sizer_bed.Add(sizer_6, 1, 0, 0)
         sizer_gui_options.Add(sizer_bed, 0, 0, 0)
