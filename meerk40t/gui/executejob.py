@@ -195,7 +195,7 @@ class PlannerPanel(wx.Panel):
                     ppi=1000.0,
                     relative_length=width
                     if width is not None
-                    else self.context.device.bed_width * MILS_PER_MM,
+                    else self.context.device.bedwidth,
                 )
             except ValueError:
                 dlg.Destroy()
@@ -223,7 +223,7 @@ class PlannerPanel(wx.Panel):
                     ppi=1000.0,
                     relative_length=height
                     if height is not None
-                    else self.context.device.bed_height * MILS_PER_MM,
+                    else self.context.device.bedheight,
                 )
             except ValueError:
                 dlg.Destroy()

@@ -11,6 +11,7 @@ from .propertiespanel import PropertiesPanel
 
 _ = wx.GetTranslation
 
+MILS_IN_MM = 39.3701
 
 class PreferencesPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -55,10 +56,10 @@ class PreferencesPanel(wx.Panel):
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
         self.spin_bedwidth = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "330.0", min=1.0, max=1000.0
+            self, wx.ID_ANY, "8268.0", min=1.0, max=80000.0
         )
         self.spin_bedheight = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "230.0", min=1.0, max=1000.0
+            self, wx.ID_ANY, "12205.0", min=1.0, max=80000.0
         )
         self.__set_properties()
         self.__do_layout()
@@ -89,11 +90,11 @@ class PreferencesPanel(wx.Panel):
         self.context.setting(str, "units_name", "mm")
         self.context.setting(int, "units_marks", 10)
         self.context.setting(int, "units_index", 0)
-        self.context.setting(float, "units_convert", 39.3701)
+        self.context.setting(float, "units_convert", MILS_IN_MM)
         self.radio_units.SetSelection(self.context.units_index)
         self.combo_language.SetSelection(self.context.language)
-        self.spin_bedwidth.SetValue(self.context.device.bed_width)
-        self.spin_bedheight.SetValue(self.context.device.bed_height)
+        self.spin_bedwidth.SetValue(self.context.device.bedwidth)
+        self.spin_bedheight.SetValue(self.context.device.bedheight)
         self.text_scale_x.SetValue("%.3f" % self.context.device.scale_x)
         self.text_scale_y.SetValue("%.3f" % self.context.device.scale_y)
         self.Children[0].SetFocus()
@@ -275,17 +276,17 @@ class PreferencesPanel(wx.Panel):
         p.signal("units")
 
     def spin_on_bedwidth(self, event=None):
-        self.context.device.bed_width = int(self.spin_bedwidth.GetValue())
-        self.context.device.bed_height = int(self.spin_bedheight.GetValue())
+        self.context.device.bedwidth = float(self.spin_bedwidth.GetValue())
+        self.context.device.bedheight = float(self.spin_bedheight.GetValue())
         self.context.signal(
-            "bed_size", (self.context.device.bed_width, self.context.device.bed_height)
+            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
 
     def spin_on_bedheight(self, event=None):
-        self.context.device.bed_width = int(self.spin_bedwidth.GetValue())
-        self.context.device.bed_height = int(self.spin_bedheight.GetValue())
+        self.context.device.bedwidth = float(self.spin_bedwidth.GetValue())
+        self.context.device.bedheight = float(self.spin_bedheight.GetValue())
         self.context.signal(
-            "bed_size", (self.context.device.bed_width, self.context.device.bed_height)
+            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
 
     def on_text_x_scale(self, event=None):

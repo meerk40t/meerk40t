@@ -22,7 +22,7 @@ def plugin(kernel, lifecycle):
             channel(_("Embroidery Filling"))
             if distance is not None:
                 distance = distance.value(
-                    ppi=1000.0, relative_length=context.device.bed_height * MILS_IN_MM
+                    ppi=1000.0, relative_length=context.device.bedheight
                 )
             else:
                 distance = 16

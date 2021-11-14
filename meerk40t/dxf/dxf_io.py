@@ -71,7 +71,7 @@ class DxfLoader:
 
         for entity in dxf.entities:
             DxfLoader.entity_to_svg(
-                elements, dxf, entity, scale, kernel.device.bed_height * MILS_PER_MM
+                elements, dxf, entity, scale, kernel.device.bedheight
             )
 
         kernel.setting(bool, "dxf_center", True)
@@ -80,8 +80,8 @@ class DxfLoader:
             g.extend(elements)
             bbox = g.bbox()
             if bbox is not None:
-                bw = kernel.device.bed_width * MILS_PER_MM
-                bh = kernel.device.bed_height * MILS_PER_MM
+                bw = kernel.device.bedwidth
+                bh = kernel.device.bedheight
                 bx = 0
                 by = 0
                 x = bbox[0]

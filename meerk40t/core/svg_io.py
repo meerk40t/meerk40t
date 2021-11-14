@@ -76,12 +76,12 @@ class SVGWriter:
         # Native unit is mils, these must convert to mm and to px
         # mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        mm_width = context.device.bed_width
-        mm_height = context.device.bed_height
-        root.set(SVG_ATTR_WIDTH, "%fmm" % mm_width)
-        root.set(SVG_ATTR_HEIGHT, "%fmm" % mm_height)
-        px_width = mm_width * MILS_IN_MM * px_per_mils
-        px_height = mm_height * MILS_IN_MM * px_per_mils
+        step_width = context.device.bedwidth
+        step_height = context.device.bedheight
+        root.set(SVG_ATTR_WIDTH, str(step_width))
+        root.set(SVG_ATTR_HEIGHT, str(step_height))
+        px_width = step_width * px_per_mils
+        px_height = step_height * px_per_mils
 
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
         scale = "scale(%f)" % px_per_mils
@@ -271,8 +271,8 @@ class SVGLoader:
         svg = SVG.parse(
             source=source,
             reify=True,
-            width="%fmm" % context.device.bed_width,
-            height="%fmm" % context.device.bed_height,
+            width=str(context.device.bedwidth),
+            height=str(context.device.bedheight),
             ppi=ppi,
             color="none",
             transform="scale(%f)" % scale_factor,

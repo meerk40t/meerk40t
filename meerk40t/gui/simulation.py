@@ -276,8 +276,8 @@ class SimulationPanel(wx.Panel, Job):
         bbox = (
             0,
             0,
-            self.context.device.bed_width * MILS_IN_MM,
-            self.context.device.bed_height * MILS_IN_MM,
+            self.context.device.bedwidth,
+            self.context.device.bedheight,
         )
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1

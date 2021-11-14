@@ -1069,10 +1069,10 @@ class Planner(Service):
             except Exception:
                 pass
             x_distance = x_distance.value(
-                ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.device.bedwidth
             )
             y_distance = y_distance.value(
-                ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
+                ppi=1000.0, relative_length=self.device.bedheight
             )
             x_last = 0
             y_last = 0

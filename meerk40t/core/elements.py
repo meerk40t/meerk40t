@@ -2045,7 +2045,7 @@ class Elemental(Service):
             if overscan is not None:
                 op.settings.overscan = int(
                     overscan.value(
-                        ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                        ppi=1000.0, relative_length=self.device.bedwidth
                     )
                 )
             if command == "cut":
@@ -2746,10 +2746,10 @@ class Elemental(Service):
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
             for node in data:
-                bw = self.device.bed_width
-                bh = self.device.bed_height
-                dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
-                dy = (bh * MILS_IN_MM - top_edge - bottom_edge) / 2.0
+                bw = self.device.bedwidth
+                bh = self.device.bedheight
+                dx = (bw - left_edge - right_edge) / 2.0
+                dy = (bh - top_edge - bottom_edge) / 2.0
                 matrix = "translate(%f, %f)" % (dx, dy)
                 for q in node.flat(types="elem"):
                     obj = q.object
@@ -2848,14 +2848,14 @@ class Elemental(Service):
                 "none",
             ):
                 for node in data:
-                    bw = self.device.bed_width
-                    bh = self.device.bed_height
+                    bw = self.device.bedwidth
+                    bh = self.device.bedheight
 
                     matrix = Viewbox.viewbox_transform(
                         0,
                         0,
-                        bw * MILS_IN_MM,
-                        bh * MILS_IN_MM,
+                        bw,
+                        bh,
                         left_edge,
                         top_edge,
                         right_edge - left_edge,
@@ -2979,8 +2979,8 @@ class Elemental(Service):
             circ = Circle(cx=x_pos, cy=y_pos, r=r_pos)
             circ.render(
                 ppi=1000.0,
-                width="%fmm" % self.device.bed_width,
-                height="%fmm" % self.device.bed_height,
+                width=self.device.bedwidth,
+                height=self.device.bedheight,
             )
             self.add_element(circ)
             if data is None:
@@ -3005,8 +3005,8 @@ class Elemental(Service):
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
             ellip.render(
                 ppi=1000.0,
-                width="%fmm" % self.device.bed_width,
-                height="%fmm" % self.device.bed_height,
+                width=self.device.bedwidth,
+                height=self.device.bedheight,
             )
             self.add_element(ellip)
             if data is None:
@@ -3050,8 +3050,8 @@ class Elemental(Service):
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             rect.render(
                 ppi=1000.0,
-                width="%fmm" % self.device.bed_width,
-                height="%fmm" % self.device.bed_height,
+                width=self.device.bedwidth,
+                height=self.device.bedheight,
             )
             # rect = Path(rect)
             self.add_element(rect)
@@ -3080,8 +3080,8 @@ class Elemental(Service):
             simple_line = SimpleLine(x0, y0, x1, y1)
             simple_line.render(
                 ppi=1000.0,
-                width="%fmm" % self.device.bed_width,
-                height="%fmm" % self.device.bed_height,
+                width=self.device.bedwidth,
+                height=self.device.bedheight,
             )
             self.add_element(simple_line)
             if data is None:
@@ -3207,7 +3207,7 @@ class Elemental(Service):
                 channel(_("No selected elements."))
                 return
             stroke_width = stroke_width.value(
-                ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.device.bedwidth
             )
             if isinstance(stroke_width, Length):
                 raise SyntaxError
@@ -3448,13 +3448,13 @@ class Elemental(Service):
 
             if cx is not None:
                 cx = cx.value(
-                    ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedwidth
                 )
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
                 cy = cy.value(
-                    ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedheight
                 )
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
@@ -3544,13 +3544,13 @@ class Elemental(Service):
                 scale_y = scale_x
             if px is not None:
                 center_x = px.value(
-                    ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedwidth
                 )
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if py is not None:
                 center_y = py.value(
-                    ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedheight
                 )
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
@@ -3637,13 +3637,13 @@ class Elemental(Service):
                 return
             if tx is not None:
                 tx = tx.value(
-                    ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedwidth
                 )
             else:
                 tx = 0
             if ty is not None:
                 ty = ty.value(
-                    ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedheight
                 )
             else:
                 ty = 0
@@ -3723,16 +3723,16 @@ class Elemental(Service):
                 raise SyntaxError
             try:
                 x_pos = x_pos.value(
-                    ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedwidth
                 )
                 y_pos = y_pos.value(
-                    ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedheight
                 )
                 width = width.value(
-                    ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedwidth
                 )
                 height = height.value(
-                    ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
+                    ppi=1000.0, relative_length=self.device.bedheight
                 )
                 area = self.selected_area()
                 if area is None:
@@ -3806,10 +3806,10 @@ class Elemental(Service):
                     sy,
                     ky,
                     tx.value(
-                        ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                        ppi=1000.0, relative_length=self.device.bedwidth
                     ),
                     ty.value(
-                        ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
+                        ppi=1000.0, relative_length=self.device.bedheight
                     ),
                 )
                 for e in data:
@@ -4224,13 +4224,13 @@ class Elemental(Service):
                     dx = 0
                 else:
                     dx = dx.value(
-                        ppi=1000.0, relative_length=self.device.bed_width * MILS_IN_MM
+                        ppi=1000.0, relative_length=self.device.bedwidth
                     )
                 if dy is None:
                     dy = 0
                 else:
                     dy = dy.value(
-                        ppi=1000.0, relative_length=self.device.bed_height * MILS_IN_MM
+                        ppi=1000.0, relative_length=self.device.bedheight
                     )
                 m = Matrix("translate(%s, %s)" % (dx, dy))
                 for e in pasted:

@@ -668,8 +668,8 @@ class MovePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         try:
-            width = self.context.device.bed_width * MILS_IN_MM
-            height = self.context.device.bed_height * MILS_IN_MM
+            width = self.context.device.bedwidth
+            height = self.context.device.bedheight
             x = Length(self.text_position_x.GetValue()).value(
                 ppi=1000.0, relative_length=width
             )

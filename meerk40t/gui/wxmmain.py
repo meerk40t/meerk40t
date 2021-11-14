@@ -194,8 +194,8 @@ class MeerK40t(MWindow):
                 m = m.replace("$x", str(context.device.current_x))
                 m = m.replace("$y", str(context.device.current_y))
                 mx = Matrix(m)
-                wmils = context.device.bed_width * 39.37
-                hmils = context.device.bed_height * 39.37
+                wmils = context.device.bedwidth
+                hmils = context.device.bedheight
                 mx.render(ppi=1000, width=wmils, height=hmils)
                 if mx.is_identity():
                     dlg.Destroy()
@@ -227,8 +227,8 @@ class MeerK40t(MWindow):
             )
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
-                wmils = context.device.bed_width * MILS_IN_MM
-                # hmils = context.device.bed_height * MILS_IN_MM
+                wmils = context.device.bedwidth
+                # hmils = context.device.bedheight
                 length = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=wmils)
                 mx = Matrix()
                 mx.post_scale(-1.0, 1, length / 2.0, 0)

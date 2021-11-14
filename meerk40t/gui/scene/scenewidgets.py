@@ -858,8 +858,8 @@ class GridWidget(Widget):
         """
         context = self.scene.context
         if context is not None:
-            wmils = context.device.bed_width * MILS_IN_MM
-            hmils = context.device.bed_height * MILS_IN_MM
+            wmils = context.device.bedwidth
+            hmils = context.device.bedheight
         else:
             wmils = 310 * MILS_IN_MM
             hmils = 210 * MILS_IN_MM
@@ -891,8 +891,8 @@ class GridWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             if context is not None:
-                wmils = context.device.bed_width * MILS_IN_MM
-                hmils = context.device.bed_height * MILS_IN_MM
+                wmils = context.device.bedwidth
+                hmils = context.device.bedheight
             else:
                 wmils = 320 * MILS_IN_MM
                 hmils = 210 * MILS_IN_MM
