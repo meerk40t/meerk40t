@@ -204,6 +204,10 @@ class LegacyDevice(Service):
     def current_x(self):
         return self.default_driver().current_y
 
+    @property
+    def spooler(self):
+        return self.default_spooler()
+
     def attach(self, *args, **kwargs):
         # self.register("plan/interrupt", interrupt)
         _ = self.kernel.translation
