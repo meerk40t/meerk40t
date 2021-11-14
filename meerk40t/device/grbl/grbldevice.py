@@ -614,7 +614,8 @@ class GRBLEmulator(Module):
         Module.__init__(self, context, path)
         self.cutcode = None
 
-        self.spooler, self.input_driver, self.output = context.lookup("device", context.root.active)
+        self.spooler = context.device.spooler
+        self.device = context.device
 
         self.home_adjust = None
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
@@ -690,29 +691,29 @@ class GRBLEmulator(Module):
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
-        driver = self.input_driver
+        device = self.device
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            if driver.state == 0:
+            if device.state == 0:
                 state = "Idle"
             else:
                 state = "Busy"
-            x = driver.current_x / self.scale
-            y = driver.current_y / self.scale
+            x = device.current_x / self.scale
+            y = device.current_y / self.scale
             z = 0.0
             parts = list()
             parts.append(state)
             parts.append("MPos:%f,%f,%f" % (x, y, z))
-            f = self.feed_invert(driver.settings.speed)
-            s = driver.settings.power
+            f = self.feed_invert(device.settings.speed)
+            s = device.settings.power
             parts.append("FS:%f,%d" % (f, s))
             self.grbl_write("<%s>\r\n" % "|".join(parts))
         elif bytes_to_write == "~":  # Resume.
-            driver.realtime_command(REALTIME_RESUME)
+            self.context("resume\n")
         elif bytes_to_write == "!":  # Pause.
-            driver.realtime_command(REALTIME_PAUSE)
+            self.context("pause\n")
         elif bytes_to_write == "\x18":  # Soft reset.
-            driver.realtime_command(REALTIME_RESET)
+            self.context("estop\n")
 
     def write(self, data, reply=None, channel=None, elements=None):
         self.reply = reply
