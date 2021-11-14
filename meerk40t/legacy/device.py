@@ -635,7 +635,7 @@ class LegacyDevice(Service):
         )
         def minus_laser(data, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
             spooler.job(COMMAND_LASER_OFF)
             return "spooler", data
@@ -651,7 +651,7 @@ class LegacyDevice(Service):
         )
         def direction(command, channel, _, data=None, amount=None, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
             if amount is None:
                 amount = Length("1mm")
@@ -682,7 +682,7 @@ class LegacyDevice(Service):
         )
         def jog(command, channel, _, data, force=False, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
             try:
                 idx = int(spooler._dx)
@@ -713,7 +713,7 @@ class LegacyDevice(Service):
         )
         def move(channel, _, x, y, data=None, force=False, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
             if y is None:
                 raise SyntaxError
@@ -735,7 +735,7 @@ class LegacyDevice(Service):
         )
         def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
             if dy is None:
                 raise SyntaxError
@@ -756,7 +756,7 @@ class LegacyDevice(Service):
         )
         def home(x=None, y=None, data=None, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
             if x is not None and y is not None:
                 x = x.value(ppi=1000.0, relative_length=self.bedwidth)
@@ -774,7 +774,7 @@ class LegacyDevice(Service):
         )
         def unlock(data=None, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
             spooler.job(COMMAND_UNLOCK)
             return "spooler", data
@@ -787,7 +787,7 @@ class LegacyDevice(Service):
         )
         def lock(data, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
             spooler.job(COMMAND_LOCK)
             return "spooler", data
@@ -799,7 +799,7 @@ class LegacyDevice(Service):
         )
         def run_home_and_dot_test(data, **kwgs):
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
 
             def home_dot_test():
@@ -840,7 +840,7 @@ class LegacyDevice(Service):
             else:
                 raise SyntaxError
             if data is None:
-                data = self.default_spooler(), self.active
+                data = self.spooler, self.active
             spooler, device_name = data
 
             def jog_transition_test():
@@ -1118,9 +1118,9 @@ class LegacyDevice(Service):
 
     def device(self):
         v = self.lookup("device", self.active)
-        if v is None:
-            return None, None, None
-        return v
+        if v is not None:
+            return v
+        return None, None, None
 
     def get_or_make_output(self, device_name, output_type=None, **kwargs):
         device = self.lookup("device", device_name)
