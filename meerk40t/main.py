@@ -144,10 +144,6 @@ def run():
 
     kernel.add_plugin(spoolers.plugin)
 
-    from .core import drivers
-
-    kernel.add_plugin(drivers.plugin)
-
     from .core import output
 
     kernel.add_plugin(output.plugin)

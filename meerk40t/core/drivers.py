@@ -19,13 +19,6 @@ PLOT_AXIS = 64
 PLOT_DIRECTION = 32
 
 
-def plugin(kernel, lifecycle=None):
-    if lifecycle == "register":
-        pass
-    elif lifecycle == "boot":
-        pass
-
-
 class Driver:
     """
     A driver takes spoolable commands and turns those commands into states and code in a language
