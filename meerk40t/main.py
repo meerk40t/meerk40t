@@ -148,10 +148,6 @@ def run():
 
     kernel.add_plugin(output.plugin)
 
-    from .core import inputs
-
-    kernel.add_plugin(inputs.plugin)
-
     from .core import elements
 
     kernel.add_plugin(elements.plugin)
