@@ -704,8 +704,14 @@ class GRBLEmulator(Module):
             parts = list()
             parts.append(state)
             parts.append("MPos:%f,%f,%f" % (x, y, z))
-            f = self.feed_invert(device.settings.speed)
-            s = device.settings.power
+            speed = device.settings.speed
+            if speed is None:
+                speed = 30.0
+            f = self.feed_invert(speed)
+            power = device.settings.power
+            if power is None:
+                power = 1000
+            s = power
             parts.append("FS:%f,%d" % (f, s))
             self.grbl_write("<%s>\r\n" % "|".join(parts))
         elif bytes_to_write == "~":  # Resume.
@@ -795,7 +801,7 @@ class GRBLEmulator(Module):
         if data.startswith("cat"):
             return 2
         commands = {}
-        for c in self._tokenize_code(data):
+        for c in _tokenize_code(data):
             g = c[0]
             if g not in commands:
                 commands[g] = []
