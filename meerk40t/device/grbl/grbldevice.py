@@ -106,6 +106,7 @@ def plugin(kernel, lifecycle=None):
                 emulator.home_adjust = (adjust_x, adjust_y)
 
                 ctx.channel("grbl/recv").watch(emulator.write)
+                emulator.reply = ctx.channel("grbl/send")
                 channel(_("TCP Server for GRBL Emulator on port: %d" % port))
             except OSError:
                 channel(_("Server failed on port: %d") % port)
@@ -721,10 +722,7 @@ class GRBLEmulator(Module):
         elif bytes_to_write == "\x18":  # Soft reset.
             self.context("estop\n")
 
-    def write(self, data, reply=None, channel=None, elements=None):
-        self.reply = reply
-        self.channel = channel
-        self.elements = elements
+    def write(self, data):
         if isinstance(data, bytes):
             data = data.decode()
         if "?" in data:
