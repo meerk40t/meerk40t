@@ -140,10 +140,6 @@ def run():
 
     kernel.add_plugin(legacydevice.plugin)
 
-    from .core import output
-
-    kernel.add_plugin(output.plugin)
-
     from .core import elements
 
     kernel.add_plugin(elements.plugin)
