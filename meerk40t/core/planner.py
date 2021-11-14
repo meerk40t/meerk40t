@@ -27,7 +27,7 @@ def plugin(kernel, lifecycle=None):
         kernel.add_service("planner", Planner(kernel))
 
     elif lifecycle == "boot":
-        context = kernel.root.planner
+        context = kernel.get_context("planner")  # specifically get this planner context
         _ = context._
         choices = [
             {
