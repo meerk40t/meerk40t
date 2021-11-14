@@ -7,8 +7,6 @@ from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 
-MILS_IN_MM = 39.3701
-
 
 class LhystudiosConfigurationPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

@@ -6,7 +6,6 @@ from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scene import ScenePanel
 from meerk40t.gui.scene.scenewidgets import (
-    MILS_IN_MM,
     ElementsWidget,
     GridWidget,
     GuideWidget,

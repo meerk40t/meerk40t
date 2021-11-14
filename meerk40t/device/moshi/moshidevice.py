@@ -41,8 +41,6 @@ from .moshiblob import (
     swizzle_table,
 )
 
-MILS_IN_MM = 39.3701
-
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING
 

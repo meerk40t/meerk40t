@@ -6,8 +6,6 @@ from ..core.planner import make_actual, needs_actualization
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 from .actualize import actualize
 
-MILS_IN_MM = 39.3701
-
 
 def plugin(kernel, lifecycle=None):
     """

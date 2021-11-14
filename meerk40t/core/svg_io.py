@@ -44,8 +44,6 @@ from ..svgelements import (
 )
 from .elements import LaserOperation
 
-MILS_IN_MM = 39.3701
-
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":

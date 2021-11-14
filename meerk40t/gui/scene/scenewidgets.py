@@ -21,8 +21,6 @@ from meerk40t.gui.laserrender import (
 )
 from meerk40t.svgelements import Color
 
-MILS_IN_MM = 39.3701
-
 HITCHAIN_HIT = 0
 HITCHAIN_DELEGATE = 1
 HITCHAIN_HIT_AND_DELEGATE = 2
@@ -857,12 +855,8 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         context = self.scene.context
-        if context is not None:
-            wmils = context.device.bedwidth
-            hmils = context.device.bedheight
-        else:
-            wmils = 310 * MILS_IN_MM
-            hmils = 210 * MILS_IN_MM
+        wmils = context.device.bedwidth
+        hmils = context.device.bedheight
         kernel_root = context.root
         convert = kernel_root.units_convert
         marks = kernel_root.units_marks
@@ -890,12 +884,8 @@ class GridWidget(Widget):
         """
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
-            if context is not None:
-                wmils = context.device.bedwidth
-                hmils = context.device.bedheight
-            else:
-                wmils = 320 * MILS_IN_MM
-                hmils = 210 * MILS_IN_MM
+            wmils = context.device.bedwidth
+            hmils = context.device.bedheight
             background = self.background
             if background is None:
                 gc.SetBrush(wx.WHITE_BRUSH)

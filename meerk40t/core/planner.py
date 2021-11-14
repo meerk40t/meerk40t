@@ -19,8 +19,6 @@ from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .elements import LaserOperation
 
-MILS_IN_MM = 39.3701
-
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":

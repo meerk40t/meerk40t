@@ -11,8 +11,6 @@ import wx
 
 from meerk40t.svgelements import Path, Point, Rect
 
-MILS_IN_MM = 39.3701
-
 HITCHAIN_HIT = 0
 HITCHAIN_DELEGATE = 1
 HITCHAIN_HIT_AND_DELEGATE = 2

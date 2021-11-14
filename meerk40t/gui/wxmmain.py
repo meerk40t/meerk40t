@@ -41,8 +41,6 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
-MILS_IN_MM = 39.3701
-
 ID_MENU_IMPORT = wx.NewId()
 ID_MENU_RECENT = wx.NewId()
 ID_MENU_ZOOM_OUT = wx.NewId()

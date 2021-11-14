@@ -38,8 +38,6 @@ from .laserspeed import LaserSpeed
 from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 from ...svgelements import Length
 
-MILS_IN_MM = 39.3701
-
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":

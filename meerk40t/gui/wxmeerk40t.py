@@ -59,8 +59,6 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 """
 
-MILS_IN_MM = 39.3701
-
 GUI_START = True
 
 _ = wx.GetTranslation

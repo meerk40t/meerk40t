@@ -10,8 +10,6 @@ from meerk40t.svgelements import Length
 
 from ..device.lasercommandconstants import *
 
-from ..core.elements import MILS_IN_MM
-
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
