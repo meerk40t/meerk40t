@@ -196,11 +196,17 @@ class LegacyDevice(Service):
     def __init__(self, kernel, *args, **kwargs):
         Service.__init__(self, kernel, "legacy")
 
+    @property
+    def current_y(self):
+        return self.default_driver().current_y
+
+    @property
+    def current_x(self):
+        return self.default_driver().current_y
+
     def attach(self, *args, **kwargs):
         # self.register("plan/interrupt", interrupt)
         _ = self.kernel.translation
-        self.setting(float, "current_x", 0.0)
-        self.setting(float, "current_y", 0.0)
         self.setting(str, "active", "0")
 
         ########################
