@@ -1,3 +1,4 @@
+from meerk40t.core.spoolers import Spooler
 from meerk40t.kernel import Service
 from meerk40t.kernel import CommandMatchRejected
 
@@ -67,18 +68,88 @@ class LegacyDevice(Service):
         self.setting(float, "current_y", 0.0)
         self.setting(str, "active", "0")
 
-        device_context = self.get_context("devices")
-        index = 0
-        for d in device_context.kernel.keylist(device_context.path):
-            suffix = d.split("/")[-1]
-            if not suffix.startswith("device_"):
-                continue
-            line = device_context.setting(str, suffix, None)
-            if line is not None and len(line):
-                device_context(line + "\n")
-                device_context.setting(str, "device_%d" % index, None)
-            index += 1
-        device_context._devices = index
+        ########################
+        # SPOOLER DEVICE COMMANDS
+        ########################
+
+        @self.console_option(
+            "register",
+            "r",
+            type=bool,
+            action="store_true",
+            help=_("Register this device"),
+        )
+        @self.console_command(
+            "spool",
+            help=_("spool<?> <command>"),
+            regex=True,
+            input_type=(None, "plan", "device"),
+            output_type="spooler",
+        )
+        def spool(
+            command, channel, _, data=None, register=False, remainder=None, **kwgs
+        ):
+            if len(command) > 5:
+                device_name = command[5:]
+            else:
+                if register:
+                    device_context = self.get_context("devices")
+                    index = 0
+                    while hasattr(device_context, "device_%d" % index):
+                        index += 1
+                    device_name = str(index)
+                else:
+                    device_name = self.active
+            if register:
+                device_context = self.get_context("devices")
+                setattr(
+                    device_context,
+                    "device_%s" % device_name,
+                    ("spool%s -r " % device_name) + remainder + "\n",
+                )
+
+            spooler = self.get_or_make_spooler(device_name)
+            if data is not None:
+                # If plan data is in data, then we copy that and move on to next step.
+                spooler.jobs(data.plan)
+                channel(_("Spooled Plan."))
+                self.signal("plan", data.name, 6)
+
+            if remainder is None:
+                channel(_("----------"))
+                channel(_("Spoolers:"))
+                for d, d_name in enumerate(self.match("device", suffix=True)):
+                    channel("%d: %s" % (d, d_name))
+                channel(_("----------"))
+                channel(_("Spooler %s:" % device_name))
+                for s, op_name in enumerate(spooler.queue):
+                    channel("%d: %s" % (s, op_name))
+                channel(_("----------"))
+
+            return "spooler", (spooler, device_name)
+
+        @self.console_command(
+            "list",
+            help=_("spool<?> list"),
+            input_type="spooler",
+            output_type="spooler",
+        )
+        def spooler_list(command, channel, _, data_type=None, data=None, **kwgs):
+            spooler, device_name = data
+            channel(_("----------"))
+            channel(_("Spoolers:"))
+            for d, d_name in enumerate(self.match("device", suffix=True)):
+                channel("%d: %s" % (d, d_name))
+            channel(_("----------"))
+            channel(_("Spooler %s:" % device_name))
+            for s, op_name in enumerate(spooler.queue):
+                channel("%d: %s" % (s, op_name))
+            channel(_("----------"))
+            return data_type, data
+
+        ########################
+        # BASE DEVICE COMMANDS
+        ########################
 
         @self.console_option(
             "out",
@@ -238,6 +309,38 @@ class LegacyDevice(Service):
                 self.register("device/%s" % device_name, [None, None, None])
             except (KeyError, ValueError):
                 raise SyntaxError(_("Invalid device-string index."))
+
+        ########################
+        # LEGACY DEVICE BOOT SEQUENCE
+        ########################
+
+        device_context = self.get_context("devices")
+        index = 0
+        for d in device_context.kernel.keylist(device_context.path):
+            suffix = d.split("/")[-1]
+            if not suffix.startswith("device_"):
+                continue
+            line = device_context.setting(str, suffix, None)
+            if line is not None and len(line):
+                device_context(line + "\n")
+                device_context.setting(str, "device_%d" % index, None)
+            index += 1
+        device_context._devices = index
+
+        for i in range(5):
+            self.get_or_make_spooler(str(i))
+
+    def get_or_make_spooler(self, device_name):
+        device = self.lookup("device", device_name)
+        if device is None:
+            device = [None, None, None]
+            self.register("device/%s" % device_name, device)
+        if device[0] is None:
+            device[0] = Spooler(self, device_name)
+        return device[0]
+
+    def default_spooler(self):
+        return self.get_or_make_spooler(self.active)
 
     def device(self):
         v = self.lookup("device", self.active)
