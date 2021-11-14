@@ -136,9 +136,9 @@ def run():
 
     kernel.add_plugin(ch341.plugin)
 
-    from .device import basedevice
+    from .legacy import device as legacydevice
 
-    kernel.add_plugin(basedevice.plugin)
+    kernel.add_plugin(legacydevice.plugin)
 
     from .core import spoolers
 
