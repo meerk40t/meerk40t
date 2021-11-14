@@ -202,7 +202,7 @@ class LegacyDevice(Service):
 
     @property
     def current_x(self):
-        return self.default_driver().current_y
+        return self.default_driver().current_x
 
     @property
     def settings(self):
