@@ -140,10 +140,6 @@ def run():
 
     kernel.add_plugin(legacydevice.plugin)
 
-    from .core import spoolers
-
-    kernel.add_plugin(spoolers.plugin)
-
     from .core import output
 
     kernel.add_plugin(output.plugin)
