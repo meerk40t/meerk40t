@@ -117,7 +117,7 @@ def plugin(kernel, lifecycle):
             {
                 "attr": "mouse_wheel_pan",
                 "object": kernel.root,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("MouseWheel Pan"),
                 "tip": "\n".join(

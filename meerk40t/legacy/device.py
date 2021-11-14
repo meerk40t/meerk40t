@@ -23,18 +23,18 @@ def plugin(kernel, lifecycle=None):
         _ = context._
         choices = [
             {
-                "attr": "bed_width",
+                "attr": "bedwidth",
                 "object": context,
-                "default": 310,
-                "type": int,
+                "default": 12205.0,
+                "type": float,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
             },
             {
-                "attr": "bed_height",
+                "attr": "bedheight",
                 "object": context,
-                "default": 210,
-                "type": int,
+                "default": 8268.0,
+                "type": float,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
             },
@@ -585,10 +585,10 @@ class LegacyDevice(Service):
 
         def execute_absolute_position(position_x, position_y):
             x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=self.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.bedwidth
             )
             y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=self.bed_height * MILS_IN_MM
+                ppi=1000.0, relative_length=self.bedheight
             )
 
             def move():
@@ -600,10 +600,10 @@ class LegacyDevice(Service):
 
         def execute_relative_position(position_x, position_y):
             x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=self.bed_width * MILS_IN_MM
+                ppi=1000.0, relative_length=self.bedwidth
             )
             y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=self.bed_height * MILS_IN_MM
+                ppi=1000.0, relative_length=self.bedheight
             )
 
             def move():
@@ -657,8 +657,8 @@ class LegacyDevice(Service):
             spooler, device_name = data
             if amount is None:
                 amount = Length("1mm")
-            max_bed_height = self.bed_height * MILS_IN_MM
-            max_bed_width = self.bed_width * MILS_IN_MM
+            max_bed_height = self.bedheight
+            max_bed_width = self.bedwidth
             if not hasattr(spooler, "_dx"):
                 spooler._dx = 0
             if not hasattr(spooler, "_dy"):
@@ -761,8 +761,8 @@ class LegacyDevice(Service):
                 data = self.default_spooler(), self.active
             spooler, device_name = data
             if x is not None and y is not None:
-                x = x.value(ppi=1000.0, relative_length=self.bed_width * MILS_IN_MM)
-                y = y.value(ppi=1000.0, relative_length=self.bed_height * MILS_IN_MM)
+                x = x.value(ppi=1000.0, relative_length=self.bedwidth)
+                y = y.value(ppi=1000.0, relative_length=self.bedheight)
                 spooler.job(COMMAND_HOME, int(x), int(y))
                 return "spooler", data
             spooler.job(COMMAND_HOME)
