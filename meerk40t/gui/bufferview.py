@@ -19,16 +19,8 @@ class BufferViewPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-    def window_open(self):
-        active = self.context.root.active
-        spooler, input_device, output = self.context.lookup("device", active)
-        # pipe = self.context.open("pipe")
-        buffer = None
-        if output is not None:
-            try:
-                buffer = output.viewbuffer()
-            except AttributeError:
-                buffer = None
+    def initialize(self):
+        buffer = self.context.device.viewbuffer
         if buffer is None:
             buffer = _("Could not find buffer.\n")
 
@@ -68,3 +60,6 @@ class BufferView(MWindow):
     def window_preserve(self):
         return False
 
+    def window_open(self):
+        self.context.close(self.name)
+        self.panel.initialize()
