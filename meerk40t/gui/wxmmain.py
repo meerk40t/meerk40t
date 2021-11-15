@@ -572,7 +572,7 @@ class MeerK40t(MWindow):
         register_panel(self, self.context)
 
         # Define Devices.
-        from .panes.devicespanel import register_panel
+        from meerk40t.gui.legacy.devicespanel import register_panel
 
         register_panel(self, self.context)
 

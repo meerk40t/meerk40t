@@ -1,7 +1,7 @@
 import wx
 
-from .icons import icons8_usb_connector_50
-from .mwindow import MWindow
+from meerk40t.gui.icons import icons8_usb_connector_50
+from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 

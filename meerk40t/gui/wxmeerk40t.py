@@ -17,24 +17,15 @@ from ..kernel import Module
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
-from .configuration import Configuration
-from .controller import Controller
 from .executejob import ExecuteJob
-from .file.fileoutput import FileOutput
 from .groupproperties import GroupProperty
 from .imageproperty import ImageProperty
 from .keymap import Keymap
 from .laserrender import LaserRender
-from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
-from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
-from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
-from .moshi.moshicontrollergui import MoshiControllerGui
-from .moshi.moshidrivergui import MoshiDriverGui
 from .notes import Notes
 from .operationproperty import OperationProperty
 from .panes.camerapanel import CameraInterface
 from .panes.consolepanel import Console
-from .panes.devicespanel import DeviceManager
 from .panes.navigationpanels import Navigation
 from .panes.spoolerpanel import JobSpooler
 from .pathproperty import PathProperty
@@ -42,9 +33,7 @@ from .preferences import Preferences
 from .rasterwizard import RasterWizard
 from .rotarysettings import RotarySettings
 from .simulation import Simulation
-from .tcp.tcpcontroller import TCPController
 from .textproperty import TextProperty
-from .usbconnect import UsbConnect
 from .wxmmain import MeerK40t
 
 """
@@ -319,9 +308,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Preferences", Preferences)
         kernel.register("window/Rotary", RotarySettings)
         kernel.register("window/About", About)
-        kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Keymap", Keymap)
-        kernel.register("window/UsbConnect", UsbConnect)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
         kernel.register("window/JobSpooler", JobSpooler)
@@ -330,19 +317,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Scene", SceneWindow)
-
-        kernel.register("window/default/Controller", Controller)
-        kernel.register("window/default/Configuration", Configuration)
-        kernel.register("window/tcp/Controller", TCPController)
-        kernel.register("window/file/Controller", FileOutput)
-        kernel.register("window/lhystudios/Configuration", LhystudiosDriverGui)
-        kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
-        kernel.register(
-            "window/lhystudios/AccelerationChart", LhystudiosAccelerationChart
-        )
-        kernel.register("window/moshi/Configuration", MoshiDriverGui)
-        kernel.register("window/moshi/Controller", MoshiControllerGui)
-
         context = kernel.root
 
         @kernel.console_option(
