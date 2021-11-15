@@ -64,9 +64,9 @@ jobs:
     - name: Build meerk40t
       id: build
       run: |
-        ##git clone https://github.com/meerk40t/meerk40t.git
-        ##cd meerk40t
-        ##git pull
+        ## git clone https://github.com/meerk40t/meerk40t.git
+        ## cd meerk40t
+        ## git pull
         git clone https://github.com/ronaldoussoren/py2app.git
         cd py2app
         git checkout master
@@ -95,26 +95,26 @@ jobs:
         mv mk40t.py meerk40t.py
         rm -rf dist/MeerK40t
         sed -i "" "s|$MKVERSION|0.0.0|g" setup_mac.py
-        # Backwards compatibility
+        ## Backwards compatibility
         rm dist/MeerK40t.app/Contents/MacOS/libusb-1.0.dylib
         cp libusb-1.0.dylib dist/MeerK40t.app/Contents/MacOS/libusb-1.0.dylib
-        #plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/meerk40t.app/Contents/Info.plist
+        ## plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/meerk40t.app/Contents/Info.plist
         plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/meerk40t.app/Contents/Info.plist
         plutil -insert CFBundleDevelopmentRegion -string en dist/meerk40t.app/Contents/Info.plist
         plutil -insert CFAppleHelpAnchor -string YES dist/meerk40t.app/Contents/Info.plist
         plutil -replace CFBundleIdentifier -string org.tatarize.MeerK40t dist/meerk40t.app/Contents/Info.plist
         plutil -replace CFBundleShortVersionString -string $MKVERSION dist/meerk40t.app/Contents/Info.plist
         plutil -insert CFBundleSupportedPlatforms -string MacOSX dist/meerk40t.app/Contents/Info.plist
-        #plutil -insert CFBundleTypeExtensions -string "*" dist/meerk40t.app/Contents/Info.plist
+        ## plutil -insert CFBundleTypeExtensions -string "*" dist/meerk40t.app/Contents/Info.plist
         plutil -insert CFBundleTypeRole -string Editor dist/meerk40t.app/Contents/Info.plist
         plutil -insert CFBundleVersion -string $MKVERSION dist/meerk40t.app/Contents/Info.plist
         plutil -insert LSApplicationCategoryType -string public.app-category.utilities dist/meerk40t.app/Contents/Info.plist
-        #plutil -insert LSFileQuarantineEnabled -string YES dist/meerk40t.app/Contents/Info.plist
-        #plutil -insert NSAppleScriptEnabled -bool NO dist/meerk40t.app/Contents/Info.plist
+        ## plutil -insert LSFileQuarantineEnabled -string YES dist/meerk40t.app/Contents/Info.plist
+        ## plutil -insert NSAppleScriptEnabled -bool NO dist/meerk40t.app/Contents/Info.plist
         plutil -insert NSHumanReadableCopyright -string "Copyright © 2019-2021 MeerK40t Developers, MIT License" dist/meerk40t.app/Contents/Info.plist
 
-        #plutil -insert  -string  dist/meerk40t.app/Contents/Info.plist
-        #plutil -replace  -string  dist/meerk40t.app/Contents/Info.plist
+        ## plutil -insert  -string  dist/meerk40t.app/Contents/Info.plist
+        ## plutil -replace  -string  dist/meerk40t.app/Contents/Info.plist
         SIG="-"
         plutil -replace CFBundleSupportedPlatforms -xml "<array><string>MacOSX</string></array>" dist/MeerK40t.app/Contents/Info.plist
         echo "Codesign for GITHUB"
@@ -131,18 +131,18 @@ jobs:
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/ezdxf/acc/*.so
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/cv2/*.so
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.dylib
-        #codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.so
+        ## codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.so
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/MeerK40t
 
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app
-        ##codesign -s $SIG --deep --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/meerk40t.app
+        ## codesign -s $SIG --deep --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/meerk40t.app
 
         echo "DMG Build..."
-        hdiutil create -volname "MeerK40t Mac" -srcfolder dist -ov MeerK40t_Mac11_Autobuild.dmg
-            ##GUI function check
-        ##open dist/MeerK40t.app
-            ##Binary bundle CLI function check
-        ##dist/MeerK40t.app/Contents/MacOS/MeerK40t -V
+        hdiutil create -volname "MeerK40t Mac" -srcfolder dist -ov MeerK40t_unsigned.dmg
+            ## GUI function check
+        ## open dist/MeerK40t.app
+            ## Binary bundle CLI function check
+        dist/MeerK40t.app/Contents/MacOS/MeerK40t -V
             ##I don't do this part; mv dist/meerk40t dist/MeerK40t-Ubuntu-Latest
 
     - name: Directory contents
@@ -161,4 +161,4 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: ${{ steps.build.outputs.mkversion }}
         files: |
-          MeerK40t_Mac11_Autobuild.dmg
+          MeerK40t_unsigned.dmg
