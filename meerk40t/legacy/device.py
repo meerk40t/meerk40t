@@ -57,7 +57,7 @@ def plugin(kernel, lifecycle=None):
                 ),
             },
         ]
-        kernel.register_choices("bed_dim", choices)
+        context.register_choices("bed_dim", choices)
 
 
 class FileOutput:
@@ -246,7 +246,6 @@ class LegacyDevice(Service):
         self.signal("active", self.active)
 
     def attach(self, *args, **kwargs):
-        # self.register("plan/interrupt", interrupt)
         _ = self.kernel.translation
         self.setting(str, "active", "0")
         self.signal("active", self.active)
@@ -1106,6 +1105,7 @@ class LegacyDevice(Service):
             self.register("device/%s" % device_name, device)
         if device[0] is None:
             device[0] = Spooler(self, device_name)
+        self.register("spooler/%s" % device_name, device[0])
         return device[0]
 
     def default_spooler(self):

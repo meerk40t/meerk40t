@@ -393,14 +393,6 @@ class Context:
         """
         return self.lookup(feature) is not None
 
-    def lookup(self, *args) -> Any:
-        """
-        Lookup a value in the kernel or services.
-
-        @param args: arguments
-        @return:
-        """
-        return self._kernel.lookup(*args)
 
     def find(self, *args):
         """
@@ -421,6 +413,24 @@ class Context:
         :yield: matched entries.
         """
         yield from self._kernel.match(matchtext, suffix)
+
+    def lookup(self, *args) -> Any:
+        """
+        Lookup a value in the kernel or services.
+
+        @param args: arguments
+        @return:
+        """
+        return self._kernel.lookup(*args)
+
+    def lookup_all(self, *args) -> Any:
+        """
+        Lookup all matching values in the kernel or services.
+
+        @param args: arguments
+        @return:
+        """
+        yield from self._kernel.lookup_all(*args)
 
     def console(self, data: str) -> None:
         """
@@ -1295,6 +1305,16 @@ class Kernel:
             return self._registered[value]
         except KeyError:
             return None
+
+    def lookup_all(self, *args):
+        """
+        Lookup registered values from the registered dictionary checking the active devices first.
+
+        :param args: parts of matchtext
+        :return:
+        """
+        for obj, name, sname in self.find(*args):
+            yield obj
 
     def register(self, path: str, obj: Any) -> None:
         """
