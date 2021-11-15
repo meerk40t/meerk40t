@@ -52,6 +52,8 @@ def plugin(kernel, lifecycle):
 
     legacy_device = kernel.get_context('legacy')
     if lifecycle == "register":
+        legacy_device.register("window/Controller", Controller)
+        legacy_device.register("window/Configuration", Configuration)
         legacy_device.register("window/DeviceManager", DeviceManager)
         legacy_device.register("window/UsbConnect", UsbConnect)
         legacy_device.listen("active", on_active_switch)

@@ -479,7 +479,7 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_BUTTON,
-            ConsoleFunction(self.context, "dev estop\n"),
+            ConsoleFunction(self.context, "estop\n"),
             stop,
         )
         stop.SetBackgroundColour(wx.Colour(127, 0, 0))
@@ -507,7 +507,7 @@ class MeerK40t(MWindow):
 
         def on_pause_button(event=None):
             try:
-                self.context("dev pause\n")
+                self.context("pause\n")
                 # if self.pipe_state != 3:
                 #     pause.SetBitmap(icons8_play_50.GetBitmap())
                 # else:
