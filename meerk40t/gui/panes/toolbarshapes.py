@@ -8,15 +8,20 @@ from ..icons import (
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
-    icons8_type_50, icons8_vector_50,
+    icons8_type_50,
+    icons8_vector_50,
+    icons8_pencil_drawing_50,
+    icons8_cursor_50,
 )
 
+ID_TOOL_MOUSE = wx.NewId()
 ID_TOOL_POSITION = wx.NewId()
 ID_TOOL_OVAL = wx.NewId()
 ID_TOOL_CIRCLE = wx.NewId()
 ID_TOOL_POLYGON = wx.NewId()
 ID_TOOL_POLYLINE = wx.NewId()
 ID_TOOL_RECT = wx.NewId()
+ID_TOOL_VECTOR = wx.NewId()
 ID_TOOL_TEXT = wx.NewId()
 
 _ = wx.GetTranslation
@@ -25,6 +30,14 @@ _ = wx.GetTranslation
 def register_shapes_tools(context, gui):
     toolbar = aui.AuiToolBar()
 
+    toolbar.AddTool(
+        ID_TOOL_MOUSE, _("Regular Scene"), icons8_cursor_50.GetBitmap()
+    )
+    toolbar.Bind(
+        wx.EVT_TOOL,
+        lambda e: context("tool none\n"),
+        id=ID_TOOL_MOUSE,
+    )
     if context.has_feature("tool/position"):
         toolbar.AddTool(
             ID_TOOL_POSITION, _("Set Position"), icons8_place_marker_50.GetBitmap()
@@ -36,7 +49,7 @@ def register_shapes_tools(context, gui):
         )
     if context.has_feature("tool/draw"):
         toolbar.AddTool(
-            ID_TOOL_POSITION, _("Draw"), icons8_vector_50.GetBitmap()
+            ID_TOOL_POSITION, _("Draw"), icons8_pencil_drawing_50.GetBitmap()
         )
         toolbar.Bind(
             wx.EVT_TOOL,
@@ -89,6 +102,14 @@ def register_shapes_tools(context, gui):
             wx.EVT_TOOL,
             lambda e: context("tool rect\n"),
             id=ID_TOOL_RECT,
+        )
+    if context.has_feature("tool/vector"):
+        toolbar.AddTool(ID_TOOL_VECTOR, _("Vector"), icons8_vector_50.GetBitmap())
+
+        toolbar.Bind(
+            wx.EVT_TOOL,
+            lambda e: context("tool vector\n"),
+            id=ID_TOOL_VECTOR,
         )
     if context.has_feature("tool/text"):
         toolbar.AddTool(
