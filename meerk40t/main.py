@@ -233,6 +233,7 @@ def run():
         try:
             from .gui import wxmeerk40t
             from .gui.scene import scene
+            from .gui.legacy import legacy
         except Mk40tImportAbort as e:
             args.no_gui = True
             print(
@@ -242,6 +243,7 @@ def run():
         else:
             kernel.add_plugin(wxmeerk40t.plugin)
             kernel.add_plugin(scene.plugin)
+            kernel.add_plugin(legacy.plugin)
     else:
         # Complete Gui Suppress implies no-gui.
         args.no_gui = True
