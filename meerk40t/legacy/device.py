@@ -226,6 +226,9 @@ class LegacyDevice(Service):
             self.default_output().type,
         )
 
+    def set_active(self, active):
+        self.active = active
+
     def attach(self, *args, **kwargs):
         # self.register("plan/interrupt", interrupt)
         _ = self.kernel.translation
@@ -250,7 +253,7 @@ class LegacyDevice(Service):
             if data is None:
                 if len(command) > 6:
                     device_name = command[6:]
-                    self.active = device_name
+                    self.set_active(device_name)
                 else:
                     device_name = self.active
             else:
@@ -395,7 +398,7 @@ class LegacyDevice(Service):
             if data is None:
                 if len(command) > 6:
                     device_name = command[6:]
-                    self.active = device_name
+                    self.set_active(device_name)
                 else:
                     device_name = self.active
             else:
@@ -989,7 +992,7 @@ class LegacyDevice(Service):
         )
         def device(channel, _, index, **kwargs):
             spools = list(self.match("device", suffix=True))
-            self.active = spools[index]
+            self.set_active(spools[index])
             self.signal("active", index)
             channel(_("Activated device %s at index %d." % (self.active, index)))
             return "device", (None, str(index))
