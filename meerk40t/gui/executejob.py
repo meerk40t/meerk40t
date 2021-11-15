@@ -456,6 +456,9 @@ class ExecuteJob(MWindow):
         self.panel = PlannerPanel(
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
+        self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel)
+        self.panel.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations)
+        self.panel.list_command.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
@@ -473,6 +476,15 @@ class ExecuteJob(MWindow):
         # ==========
         # MENUBAR END
         # ==========
+
+    def on_menu(self, event):
+        from .wxutils import create_menu_for_choices
+
+        menu = create_menu_for_choices(
+            self, self.context.registered["choices/planner"]
+        )
+        self.PopupMenu(menu)
+        menu.Destroy()
 
     def create_menu(self, append):
         from .wxutils import create_menu_for_choices
