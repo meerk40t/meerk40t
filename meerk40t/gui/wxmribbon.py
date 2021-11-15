@@ -301,21 +301,19 @@ class RibbonPanel(wx.Panel):
                 lambda v: self.context("window toggle Controller\n"),
                 id=ID_CONTROLLER,
             )
-        if self.context.has_feature("command/pause"):
-            button_bar.AddToggleButton(
-                ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), _("Pause the laser")
-            )
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE
-            )
-        if self.context.has_feature("command/estop"):
-            button_bar.AddButton(
-                ID_STOP,
-                _("Stop"),
-                icons8_emergency_stop_button_50.GetBitmap(),
-                _("Emergency stop the laser"),
-            )
-            button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_stop, id=ID_STOP)
+        button_bar.AddToggleButton(
+            ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), _("Pause the laser")
+        )
+        button_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE
+        )
+        button_bar.AddButton(
+            ID_STOP,
+            _("Stop"),
+            icons8_emergency_stop_button_50.GetBitmap(),
+            _("Emergency stop the laser"),
+        )
+        button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_stop, id=ID_STOP)
 
         # ==========
         # SETTINGS PANEL

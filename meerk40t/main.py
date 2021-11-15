@@ -136,13 +136,13 @@ def run():
 
     kernel.add_plugin(ch341.plugin)
 
-    from .device import device as default_device
-
-    kernel.add_plugin(default_device.plugin)
-
     from .legacy import device as legacydevice
 
     kernel.add_plugin(legacydevice.plugin)
+
+    from .device import device as default_device
+
+    kernel.add_plugin(default_device.plugin)
 
     from .core import elements
 
