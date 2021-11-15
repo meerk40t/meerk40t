@@ -134,7 +134,7 @@ class CutObject:
     reversed.
     """
 
-    def __init__(self, start=None, end=None, settings=None, parent=None):
+    def __init__(self, start=None, end=None, settings=None, parent=None, passes=1):
         if settings is None:
             settings = LaserSettings()
         self.settings = settings
@@ -145,6 +145,7 @@ class CutObject:
         self.next = None
         self.previous = None
         self.permitted = True
+        self.burns_remaining = passes
 
         self.mode = None
         self.inside = None
@@ -219,7 +220,7 @@ class CutObject:
             return False
         for c in self.contains:
             for pp in c.flat():
-                if pp.permitted:
+                if pp.permitted and pp.burns_remaining >= 1:
                     return True
         return False
 
@@ -227,7 +228,7 @@ class CutObject:
         yield self
 
     def candidate(self):
-        if self.permitted:
+        if self.permitted and self.burns_remaining >= 1:
             yield self
 
 
@@ -238,7 +239,8 @@ class CutGroup(list, CutObject, ABC):
     """
 
     def __init__(
-        self, parent, children=(), settings=None, constrained=False, closed=False
+        self, parent, children=(),
+        settings=None, constrained=False, closed=False
     ):
         list.__init__(self, children)
         CutObject.__init__(self, parent=parent, settings=settings)
@@ -283,7 +285,7 @@ class CutGroup(list, CutObject, ABC):
 
     def candidate(self):
         """
-        Candidates are permitted cutobjects permitted to be cut, this is any cut object that
+        Candidates are permitted cutobjects with at least one burn remaining, this is any cut object that
         is not itself containing another constrained cutcode object. Which is to say that the
         inner-most non-containing cutcode are the only candidates for cutting.
         """
@@ -293,13 +295,13 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 if s is None:
                     continue
-                if s.permitted:
+                if s.permitted and s.burns_remaining >= 1:
                     yield s
 
 
 class CutCode(CutGroup):
-    def __init__(self, seq=()):
-        CutGroup.__init__(self, None, seq)
+    def __init__(self, seq=(), settings=None):
+        CutGroup.__init__(self, None, seq, settings=settings)
         self.output = True
         self.operation = "CutCode"
 
@@ -486,8 +488,8 @@ class CutCode(CutGroup):
 
 
 class LineCut(CutObject):
-    def __init__(self, start_point, end_point, settings=None):
-        CutObject.__init__(self, start_point, end_point, settings=settings)
+    def __init__(self, start_point, end_point, settings=None, passes=1):
+        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
         settings.raster_step = 0
 
     def generator(self):
@@ -497,8 +499,8 @@ class LineCut(CutObject):
 
 
 class QuadCut(CutObject):
-    def __init__(self, start_point, control_point, end_point, settings=None):
-        CutObject.__init__(self, start_point, end_point, settings=settings)
+    def __init__(self, start_point, control_point, end_point, settings=None, passes=1):
+        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
         settings.raster_step = 0
         self._control = control_point
 
@@ -525,8 +527,8 @@ class QuadCut(CutObject):
 
 
 class CubicCut(CutObject):
-    def __init__(self, start_point, control1, control2, end_point, settings=None):
-        CutObject.__init__(self, start_point, end_point, settings=settings)
+    def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1):
+        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
         settings.raster_step = 0
         self._control1 = control1
         self._control2 = control2
@@ -567,8 +569,8 @@ class RasterCut(CutObject):
     this is a crosshatched cut or not.
     """
 
-    def __init__(self, image, tx, ty, settings=None, crosshatch=False):
-        CutObject.__init__(self, settings=settings)
+    def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1):
+        CutObject.__init__(self, settings=settings, passes=passes)
         assert image.mode in ("L", "1")
 
         self.image = image
