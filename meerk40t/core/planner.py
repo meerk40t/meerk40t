@@ -361,69 +361,69 @@ class CutPlan:
                 group = []
             group.append(c)
         grouped_plan.append(group)
-        print(repr(grouped_plan))
 
         # If Merge operations and not merge passes we need to iterate passes first and operations second
         passes_first = context.opt_merge_ops and not context.opt_merge_passes
         blob_plan = list()
         for plan in grouped_plan:
             burning = True
-            pass_idx = 0
+            pass_idx = -1
             while (burning):
                 burning = False
                 pass_idx += 1
-                for c in plan:
-                    try:
-                        if c.operation == "Dots":
-                            if pass_idx == 1:
-                                blob_plan.append(c)
+                for op in plan:
+                    if not isinstance(op, LaserOperation):
+                        blob_plan.append(op)
+                        continue
+                    if op.operation == "Dots":
+                        if pass_idx == 1:
+                            blob_plan.append(op)
+                        continue
+                    copies = op.settings.implicit_passes
+                    if passes_first:
+                        if pass_idx > copies - 1:
                             continue
-                        copies = c.settings.implicit_passes
-                        if passes_first:
-                            if pass_idx > copies:
-                                continue
-                            copies = 1
-                            burning = True
-                        # When optimising travel, merge passes is handled by the greedy algorithm
-                        passes = 1
-                        if context.opt_nearest_neighbor and context.opt_merge_passes:
-                            passes = copies
-                            copies = 1
-                        for p in range(copies):
-                            cutcode = CutCode(
-                                c.as_cutobjects(closed_distance=context.opt_closed_distance, passes=passes),
-                                settings=c.settings,
-                            )
-                            if len(cutcode) == 0:
-                                break
-                            cutcode.constrained = (
-                                c.operation == "Cut" and context.opt_inner_first
-                            )
-                            cutcode.pass_index = pass_idx if passes_first else p
-                            cutcode.original_op = c.operation
-                            blob_plan.append(cutcode)
-                    except AttributeError:
-                        blob_plan.append(c)
+                        copies = 1
+                        burning = True
+                    # When optimising travel, merge passes is handled by the greedy algorithm
+                    passes = 1
+                    if context.opt_nearest_neighbor and context.opt_merge_passes:
+                        passes = copies
+                        copies = 1
+                    print(passes_first,repr(op),passes,copies,pass_idx)
+                    for p in range(copies):
+                        cutcode = CutCode(
+                            op.as_cutobjects(closed_distance=context.opt_closed_distance, passes=passes),
+                            settings=op.settings,
+                        )
+                        if len(cutcode) == 0:
+                            break
+                        cutcode.constrained = (
+                            op.operation == "Cut" and context.opt_inner_first
+                        )
+                        cutcode.pass_index = pass_idx if passes_first else p
+                        cutcode.original_op = op.operation
+                        blob_plan.append(cutcode)
 
         self.plan.clear()
-        for i in range(len(blob_plan)):
-            c = blob_plan[i]
+        for blob in blob_plan:
+            #print(repr(blob),
             try:
-                c.settings.jog_distance = context.opt_jog_minimum
-                c.settings.jog_enable = context.opt_rapid_between
+                blob.settings.jog_distance = context.opt_jog_minimum
+                blob.settings.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
             # We can only merge and check for other criteria if we have the right objects
             merge = (
                 len(self.plan)
                 and isinstance(self.plan[-1], CutCode)
-                and isinstance(blob_plan[i], CutObject)
+                and isinstance(blob, CutObject)
             )
             # Override merge if opt_merge_passes is off, and pass_index do not match
             if (
                 merge
                 and not context.opt_merge_passes
-                and self.plan[-1].pass_index != c.pass_index
+                and self.plan[-1].pass_index != blob.pass_index
             ):
                 merge = False
             # Override merge if opt_merge_ops is off, and operations original ops do not match
@@ -431,7 +431,7 @@ class CutPlan:
             if (
                 merge
                 and not context.opt_merge_ops
-                and self.plan[-1].settings is not c.settings
+                and self.plan[-1].settings is not blob.settings
             ):
                 merge = False
             # Override merge if opt_inner_first is off, and operation was originally a cut.
@@ -443,21 +443,19 @@ class CutPlan:
                 merge = False
 
             if merge:
-                if blob_plan[i].constrained:
-                    self.plan[
-                        -1
-                    ].constrained = (
+                if blob.constrained:
+                    self.plan[-1].constrained = (
                         True  # if merge is constrained new blob is constrained.
                     )
-                self.plan[-1].extend(blob_plan[i])
+                self.plan[-1].extend(blob)
             else:
-                if isinstance(c, CutObject) and not isinstance(c, CutCode):
-                    cc = CutCode([c])
-                    cc.original_op = c.original_op
-                    cc.pass_index = c.pass_index
+                if isinstance(blob, CutObject) and not isinstance(blob, CutCode):
+                    cc = CutCode([blob])
+                    cc.original_op = blob.original_op
+                    cc.pass_index = blob.pass_index
                     self.plan.append(cc)
                 else:
-                    self.plan.append(c)
+                    self.plan.append(blob)
 
     def preopt(self):
         context = self.context
