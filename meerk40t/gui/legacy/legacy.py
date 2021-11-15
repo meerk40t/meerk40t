@@ -18,37 +18,42 @@ except ImportError as e:
 
     raise Mk40tImportAbort("wxpython")
 
+global legacy_device
+
+
+def on_active_switch(origin, *args):
+    output = legacy_device.default_output()
+    if output is None:
+        legacy_device.register("window/Controller", Controller)
+        Controller.required_path = legacy_device.root.path
+    elif output.type == "lhystudios":
+        legacy_device.register("window/Controller", LhystudiosControllerGui)
+        legacy_device.register("window/AccelerationChart", LhystudiosAccelerationChart)
+        LhystudiosControllerGui.required_path = output.context.path
+        LhystudiosAccelerationChart.required_path = output.context.path
+    elif output.type == "moshi":
+        legacy_device.register("window/Controller", MoshiControllerGui)
+        MoshiControllerGui.required_path = output.context.path
+    elif output.type == "tcp":
+        legacy_device.register("window/Controller", TCPController)
+        TCPController.required_path = output.context.path
+    elif output.type == "file":
+        legacy_device.register("window/Controller", FileOutput)
+        FileOutput.required_path = output.context.path
+    driver = legacy_device.default_driver()
+    if driver is None:
+        legacy_device.register("window/Configuration", Configuration)
+        Configuration.required_path = legacy_device.root.path
+    elif driver.type == "lhystudios":
+        legacy_device.register("window/Configuration", LhystudiosDriverGui)
+        LhystudiosDriverGui.required_path = output.context.path
+    elif driver.type == "moshi":
+        legacy_device.register("window/Configuration", MoshiDriverGui)
+        MoshiDriverGui.required_path = output.context.path
+
 
 def plugin(kernel, lifecycle):
-    def on_active_switch(origin, *args):
-        output = legacy_device.default_output()
-        if output is None:
-            legacy_device.register("window/Controller", Controller)
-            Controller.required_path = kernel.root.path
-        elif output.type == "lhystudios":
-            legacy_device.register("window/Controller", LhystudiosControllerGui)
-            legacy_device.register("window/AccelerationChart", LhystudiosAccelerationChart)
-            LhystudiosControllerGui.required_path = output.context.path
-            LhystudiosAccelerationChart.required_path = output.context.path
-        elif output.type == "moshi":
-            legacy_device.register("window/Controller", MoshiControllerGui)
-            MoshiControllerGui.required_path = output.context.path
-        elif output.type == "tcp":
-            legacy_device.register("window/Controller", TCPController)
-            TCPController.required_path = output.context.path
-        elif output.type == "file":
-            legacy_device.register("window/Controller", FileOutput)
-            FileOutput.required_path = output.context.path
-        driver = legacy_device.default_driver()
-        if driver is None:
-            legacy_device.register("window/Configuration", Configuration)
-            Configuration.required_path = kernel.root.path
-        elif driver.type == "lhystudios":
-            legacy_device.register("window/Configuration", LhystudiosDriverGui)
-            LhystudiosDriverGui.required_path = output.context.path
-        elif driver.type == "moshi":
-            legacy_device.register("window/Configuration", MoshiDriverGui)
-            MoshiDriverGui.required_path = output.context.path
+    global legacy_device
 
     legacy_device = kernel.get_context('legacy')
     if lifecycle == "register":
