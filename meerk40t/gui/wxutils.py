@@ -310,3 +310,11 @@ def get_key_name(event):
     else:
         keyvalue += chr(key)
     return keyvalue.lower()
+
+
+def disable_window(window):
+    for m in window.Children:
+        if hasattr(m, "Disable"):
+            m.Disable()
+        if hasattr(m, "Children"):
+            disable_window(m)

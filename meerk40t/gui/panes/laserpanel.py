@@ -11,6 +11,7 @@ from meerk40t.gui.icons import (
     icons8_pentagon_50,
 )
 from meerk40t.gui.propertiespanel import PropertiesPanel
+from meerk40t.gui.wxutils import disable_window
 
 _ = wx.GetTranslation
 
@@ -72,10 +73,6 @@ class LaserPanel(wx.Panel):
                 index = i
                 break
         self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
-        if index == -1:
-            for m in self.Children:
-                if isinstance(m, wx.Window):
-                    m.Disable()
         spools = [s.name for s in self.available_spoolers]
 
         self.combo_devices = wx.ComboBox(
@@ -181,6 +178,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_devices, self.combo_devices)
         # end wxGlade
+        if index == -1:
+            disable_window(self)
 
     def initialize(self):
         self.context.listen("plan", self.plan_update)

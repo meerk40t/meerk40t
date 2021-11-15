@@ -1,10 +1,5 @@
-import socket
-import threading
-import time
-
 from meerk40t.core.spoolers import Spooler
 from meerk40t.kernel import Service
-from meerk40t.kernel import CommandMatchRejected
 
 from meerk40t.svgelements import Length
 from ..core.cutcode import LaserSettings
@@ -78,7 +73,6 @@ class DefaultDevice(Service):
 
     def attach(self, *args, **kwargs):
         _ = self.kernel.translation
-        self.register("spooler/default", self.spooler)
 
         @self.console_command(
             "spool",

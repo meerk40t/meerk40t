@@ -2,6 +2,7 @@ import math
 
 import wx
 
+from .wxutils import disable_window
 from ..core.cutcode import CutCode, LineCut
 from ..kernel import Job
 from ..svgelements import Matrix
@@ -86,10 +87,6 @@ class SimulationPanel(wx.Panel, Job):
                 index = i
                 break
         self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
-        if index == -1:
-            for m in self.Children:
-                if isinstance(m, wx.Window):
-                    m.Disable()
         spools = [s.name for s in self.available_spoolers]
 
         self.combo_device = wx.ComboBox(
@@ -123,6 +120,8 @@ class SimulationPanel(wx.Panel, Job):
         self.reticle = SimReticleWidget(self.widget_scene, self)
         self.widget_scene.add_interfacewidget(self.reticle)
         self.running = False
+        if index == -1:
+            disable_window(self)
 
     def __set_properties(self):
         self.text_distance_laser.SetToolTip(_("Time Estimate: Lasering Time"))

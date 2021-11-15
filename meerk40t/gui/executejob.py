@@ -2,6 +2,7 @@ import math
 
 import wx
 
+from .wxutils import disable_window
 from ..core.elements import LaserOperation
 from ..svgelements import Length, Group
 from .icons import icons8_laser_beam_52
@@ -29,10 +30,6 @@ class PlannerPanel(wx.Panel):
                 index = i
                 break
         self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
-        if index == -1:
-            for m in self.Children:
-                if isinstance(m, wx.Window):
-                    m.Disable()
         spools = [s.name for s in self.available_spoolers]
 
         self.combo_device = wx.ComboBox(
@@ -65,6 +62,8 @@ class PlannerPanel(wx.Panel):
         )
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         self.stage = 0
+        if index == -1:
+            disable_window(self)
 
     def __set_properties(self):
         # begin wxGlade: Preview.__set_properties

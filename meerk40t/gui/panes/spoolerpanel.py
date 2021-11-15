@@ -3,6 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_route_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import disable_window
 
 _ = wx.GetTranslation
 
@@ -44,10 +45,6 @@ class SpoolerPanel(wx.Panel):
                 index = i
                 break
         self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
-        if index == -1:
-            for m in self.Children:
-                if isinstance(m, wx.Window):
-                    m.Disable()
         spools = [s.name for s in self.available_spoolers]
 
         self.combo_device = wx.ComboBox(
@@ -78,6 +75,8 @@ class SpoolerPanel(wx.Panel):
         self.command_index = 0
         self.listener_list = None
         self.list_lookup = {}
+        if index == -1:
+            disable_window(self)
 
     def __set_properties(self):
         # begin wxGlade: SpoolerPanel.__set_properties
