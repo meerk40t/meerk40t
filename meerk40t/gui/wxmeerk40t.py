@@ -422,7 +422,6 @@ class wxMeerK40t(wx.App, Module):
             except AttributeError:
                 parent = None
             window_uri = "window/%s" % window
-            active = context.device.active
 
             def window_open(*a, **k):
                 path.open(window_uri, parent, *args)
@@ -439,11 +438,10 @@ class wxMeerK40t(wx.App, Module):
                     raise SyntaxError
             else:
                 if context.lookup(window_uri) is not None:
-                    try:
-                        w = path.opened[window_uri]
+                    if window_uri in path.opened:
                         kernel.run_later(window_close, None)
                         channel(_("Window Closed."))
-                    except KeyError:
+                    else:
                         kernel.run_later(window_open, None)
                         channel(_("Window Opened."))
                 else:
