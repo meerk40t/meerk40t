@@ -393,7 +393,6 @@ class Context:
         """
         return self.lookup(feature) is not None
 
-
     def find(self, *args):
         """
         Delegate of Kernel match.

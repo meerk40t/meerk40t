@@ -25,18 +25,19 @@ _ = wx.GetTranslation
 def register_control_tools(context, gui):
     toolbar = aui.AuiToolBar()
 
-    toolbar.AddTool(
-        ID_NAV,
-        _("Navigation"),
-        icons8_move_50.GetBitmap(),
-        kind=wx.ITEM_NORMAL,
-        short_help_string=_("Opens Navigation Window"),
-    )
-    toolbar.Bind(
-        wx.EVT_TOOL,
-        lambda v: context("window toggle Navigation\n"),
-        id=ID_NAV,
-    )
+    if context.has_feature("window/Navigation"):
+        toolbar.AddTool(
+            ID_NAV,
+            _("Navigation"),
+            icons8_move_50.GetBitmap(),
+            kind=wx.ITEM_NORMAL,
+            short_help_string=_("Opens Navigation Window"),
+        )
+        toolbar.Bind(
+            wx.EVT_TOOL,
+            lambda v: context("window toggle Navigation\n"),
+            id=ID_NAV,
+        )
     if context.has_feature("modifier/Camera"):
         toolbar.AddTool(
             ID_CAMERA,
@@ -87,45 +88,48 @@ def register_control_tools(context, gui):
             on_camera_dropdown,
             id=ID_CAMERA,
         )
-
-    toolbar.AddTool(
-        ID_SPOOLER,
-        _("Spooler"),
-        icons8_route_50.GetBitmap(),
-        kind=wx.ITEM_NORMAL,
-        short_help_string=_("Opens Spooler Window"),
-    )
-    toolbar.Bind(
-        wx.EVT_TOOL,
-        lambda v: context("window toggle JobSpooler\n"),
-        id=ID_SPOOLER,
-    )
-    toolbar.AddTool(
-        ID_CONTROLLER,
-        _("Controller"),
-        icons8_connected_50.GetBitmap(),
-        kind=wx.ITEM_NORMAL,
-        short_help_string=_("Opens Controller Window"),
-    )
-    toolbar.Bind(
-        wx.EVT_TOOL,
-        lambda v: context("window toggle Controller\n"),
-        id=ID_CONTROLLER,
-    )
+    if context.has_feature("window/JobSpooler"):
+        toolbar.AddTool(
+            ID_SPOOLER,
+            _("Spooler"),
+            icons8_route_50.GetBitmap(),
+            kind=wx.ITEM_NORMAL,
+            short_help_string=_("Opens Spooler Window"),
+        )
+        toolbar.Bind(
+            wx.EVT_TOOL,
+            lambda v: context("window toggle JobSpooler\n"),
+            id=ID_SPOOLER,
+        )
+    if context.has_feature("window/Controller"):
+        toolbar.AddTool(
+            ID_CONTROLLER,
+            _("Controller"),
+            icons8_connected_50.GetBitmap(),
+            kind=wx.ITEM_NORMAL,
+            short_help_string=_("Opens Controller Window"),
+        )
+        toolbar.Bind(
+            wx.EVT_TOOL,
+            lambda v: context("window toggle Controller\n"),
+            id=ID_CONTROLLER,
+        )
     toolbar.Create(gui)
 
+    width = toolbar.ToolCount * 58
     pane = (
         aui.AuiPaneInfo()
         .Name("control_toolbar")
         .Top()
         .ToolbarPane()
-        .FloatingSize(230, 58)
+        .FloatingSize(width, 58)
         .Layer(1)
         .Caption(_("Control"))
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 230
+
+    pane.dock_proportion = width
     pane.control = toolbar
     pane.submenu = _("Toolbars")
     gui.on_pane_add(pane)
