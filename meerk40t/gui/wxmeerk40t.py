@@ -401,7 +401,6 @@ class wxMeerK40t(wx.App, Module):
                 path = context.get_context(window_class.required_path)
 
             def window_open(*a, **k):
-
                 path.open(window_uri, parent, *args)
 
             def window_close(*a, **k):

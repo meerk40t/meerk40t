@@ -24,7 +24,7 @@ def plugin(kernel, lifecycle):
         output = legacy_device.default_output()
         if output is None:
             legacy_device.register("window/Controller", Controller)
-            Controller.required_path = kernel.root
+            Controller.required_path = kernel.root.path
         elif output.type == "lhystudios":
             legacy_device.register("window/Controller", LhystudiosControllerGui)
             legacy_device.register("window/AccelerationChart", LhystudiosAccelerationChart)
@@ -42,7 +42,7 @@ def plugin(kernel, lifecycle):
         driver = legacy_device.default_driver()
         if driver is None:
             legacy_device.register("window/Configuration", Configuration)
-            Configuration.required_path = kernel.root
+            Configuration.required_path = kernel.root.path
         elif driver.type == "lhystudios":
             legacy_device.register("window/Configuration", LhystudiosDriverGui)
             LhystudiosDriverGui.required_path = output.context.path

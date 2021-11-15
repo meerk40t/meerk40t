@@ -220,10 +220,25 @@ class LegacyDevice(Service):
 
     @property
     def name(self):
+        spooler_name = "None"
+        try:
+            spooler_name = self.spooler.name
+        except AttributeError:
+            pass
+        driver_type = "None"
+        try:
+            driver_type = self.default_driver().type
+        except AttributeError:
+            pass
+        output_type = "None"
+        try:
+            output_type = self.default_output().type
+        except AttributeError:
+            pass
         return "(%s -> %s -> %s)" % (
-            self.default_spooler().name,
-            self.default_driver().type,
-            self.default_output().type,
+            spooler_name,
+            driver_type,
+            output_type,
         )
 
     def set_active(self, active):
@@ -1138,7 +1153,7 @@ class LegacyDevice(Service):
                 output = output_class(self, device_name, **kwargs)
                 device[2] = output
                 return output
-        except (KeyError, IndexError):
+        except TypeError:
             return None
 
     def put_output(self, device_name, output):
