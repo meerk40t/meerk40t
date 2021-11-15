@@ -1294,7 +1294,9 @@ class LaserOperation(Node):
                     )
                 )
                 cut = RasterCut(
-                    pil_image, matrix.value_trans_x(), matrix.value_trans_y(), settings
+                    pil_image, matrix.value_trans_x(), matrix.value_trans_y(),
+                    settings= settings,
+                    passes=passes,
                 )
                 cut.path = path
                 cut.original_op = self._operation
