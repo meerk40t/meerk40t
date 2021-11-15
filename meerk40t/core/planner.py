@@ -1622,21 +1622,33 @@ def short_travel_cutcode(context: CutCode, channel=None):
                             closest = cut
                             backwards = True
                             if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                                # Need to swap to next segment forward if it is coincident and permitted
-                                if (
-                                    cut.next
-                                    and cut.next.permitted
-                                    and cut.next.burns_remaining >= 1
-                                    and cut.next.start == cut.end
-                                ):
-                                    closest = cut.next
-                                    backwards = False
                                 break
                             distance = d
                             closest_length = l
 
         if closest is None:
             break
+
+        # Change direction if other direction is coincident and has more burns remaining
+        if backwards:
+            if (
+                closest.next
+                and closest.next.permitted
+                and closent.next.burns_remaining >= closest.burns_remaining
+                and closest.next.start == closest.end
+            ):
+                closest = closest.next
+                backwards = False
+        else:
+            if (
+                closest.prev
+                and closest.prev.permitted
+                and closent.prev.burns_remaining > closest.burns_remaining
+                and closest.prev.end == closest.start
+            ):
+                closest = closest.next
+                backwards = False
+
         closest.burns_remaining -= 1
         if closest.burns_remaining == 0:
             closest.permitted = False
