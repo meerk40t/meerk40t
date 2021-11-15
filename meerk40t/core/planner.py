@@ -1579,6 +1579,11 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     closest = cut
                     distance = abs(complex(closest.end()) - curr)
                     backwards = True
+            # Gap or continuing on path not permitted, try reversing
+            if distance > 50 and last_segment.permitted and last_segment.burns_remaining >= 1:
+                closest = last_segment
+                distance = 0  # By definition
+                backwards = closest.normal
 
         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
         # Travel only if path is complete or gap > 1/20"
