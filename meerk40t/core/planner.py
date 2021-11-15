@@ -361,6 +361,7 @@ class CutPlan:
                 group = []
             group.append(c)
         grouped_plan.append(group)
+        print(repr(grouped_plan))
 
         # If Merge operations and not merge passes we need to iterate passes first and operations second
         passes_first = context.opt_merge_ops and not context.opt_merge_passes
@@ -1639,17 +1640,17 @@ def short_travel_cutcode(context: CutCode, channel=None):
             if (
                 closest.next
                 and closest.next.permitted
-                and closent.next.burns_remaining >= closest.burns_remaining
+                and closest.next.burns_remaining >= closest.burns_remaining
                 and closest.next.start == closest.end
             ):
                 closest = closest.next
                 backwards = False
         else:
             if (
-                closest.prev
-                and closest.prev.permitted
-                and closent.prev.burns_remaining > closest.burns_remaining
-                and closest.prev.end == closest.start
+                closest.previous
+                and closest.previous.permitted
+                and closest.previous.burns_remaining > closest.burns_remaining
+                and closest.previous.end == closest.start
             ):
                 closest = closest.next
                 backwards = False
