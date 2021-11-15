@@ -147,10 +147,10 @@ jobs:
 
         echo "DMG Build..."
         hdiutil create -volname "MeerK40t Mac" -srcfolder dist -ov MeerK40t_unsigned.dmg
-            ## GUI function check
+            ## GUI function check - Fails on runner (security settings).
         ## open dist/MeerK40t.app
-            ## Binary bundle CLI function check
-        dist/MeerK40t.app/Contents/MacOS/MeerK40t -V
+            ## Binary bundle CLI function check - Fails on runner (security settings).
+        ##. dist/MeerK40t.app/Contents/MacOS/MeerK40t -V
             ##I don't do this part; mv dist/meerk40t dist/MeerK40t-Ubuntu-Latest
 
     - name: Directory contents
