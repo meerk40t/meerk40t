@@ -289,7 +289,7 @@ class RibbonPanel(wx.Panel):
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle -o Controller\n"),
+            lambda v: self.context("window toggle Controller\n"),
             id=ID_CONTROLLER,
         )
         button_bar.AddToggleButton(
@@ -339,7 +339,7 @@ class RibbonPanel(wx.Panel):
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle -d Configuration\n"),
+            lambda v: self.context("window toggle Configuration\n"),
             id=ID_CONFIGURATION,
         )
 

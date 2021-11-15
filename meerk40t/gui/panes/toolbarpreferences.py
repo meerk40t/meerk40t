@@ -43,7 +43,7 @@ def register_preferences_tools(context, gui):
     )
     toolbar.Bind(
         wx.EVT_TOOL,
-        lambda v: context("window toggle -d Configuration\n"),
+        lambda v: context("window toggle Configuration\n"),
         id=ID_CONFIGURATION,
     )
 

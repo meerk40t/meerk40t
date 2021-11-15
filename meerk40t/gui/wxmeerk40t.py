@@ -398,32 +398,9 @@ class wxMeerK40t(wx.App, Module):
             channel(_("Windows Registered:"))
             for i, name in enumerate(context.match("window")):
                 name = name[7:]
-                if "/" in name:
-                    channel("%d: Specific Window: %s" % (i + 1, name))
-                else:
-                    channel("%d: %s" % (i + 1, name))
+                channel("%d: %s" % (i + 1, name))
             return "window", data
 
-        @kernel.console_option(
-            "driver",
-            "d",
-            type=bool,
-            action="store_true",
-            help=_("Load Driver Specific Window"),
-        )
-        @kernel.console_option(
-            "output",
-            "o",
-            type=bool,
-            action="store_true",
-            help=_("Load Output Specific Window"),
-        )
-        @kernel.console_option(
-            "source",
-            "s",
-            type=str,
-            help=_("Specify source window type"),
-        )
         @kernel.console_argument("window", type=str, help=_("window to be opened"))
         @kernel.console_command(
             ("open", "toggle"),
@@ -436,9 +413,6 @@ class wxMeerK40t(wx.App, Module):
             _,
             data,
             window=None,
-            driver=False,
-            output=False,
-            source=None,
             args=(),
             **kwargs
         ):
@@ -449,35 +423,6 @@ class wxMeerK40t(wx.App, Module):
                 parent = None
             window_uri = "window/%s" % window
             active = context.device.active
-            if source is not None:
-                active = source
-            if output or driver:
-                # Specific class subwindow
-                try:
-                    _spooler, _input_driver, _output = context.lookup("device", active)
-                except TypeError:
-                    channel(_("Device not found."))
-                    return
-                if output:
-                    q = _output
-                elif driver:
-                    q = _input_driver
-                else:
-                    q = _input_driver
-                t = "default"
-                m = "/"
-                if q is not None:
-                    obj = q
-                    try:
-                        t = obj.type
-                        m = obj.context.path
-                    except AttributeError:
-                        pass
-                path = context.get_context(m)
-                window_uri = "window/%s/%s" % (t, window)
-                v = context.lookup(window_uri)
-                if v is None:
-                    window_uri = "window/%s/%s" % ("default", window)
 
             def window_open(*a, **k):
                 path.open(window_uri, parent, *args)
@@ -486,7 +431,6 @@ class wxMeerK40t(wx.App, Module):
                 path.close(window_uri, *args)
 
             if command == "open":
-
                 if context.lookup(window_uri) is not None:
                     kernel.run_later(window_open, None)
                     channel(_("Window Opened."))

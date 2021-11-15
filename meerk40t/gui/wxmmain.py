@@ -1260,7 +1260,7 @@ class MeerK40t(MWindow):
             )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window toggle -d Configuration\n"),
+            lambda v: self.context("window toggle Configuration\n"),
             id=ID_MENU_CONFIG,
         )
         self.Bind(
@@ -1270,7 +1270,7 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window toggle -o Controller\n"),
+            lambda v: self.context("window toggle Controller\n"),
             id=ID_MENU_CONTROLLER,
         )
         self.Bind(
@@ -1494,7 +1494,7 @@ class MeerK40t(MWindow):
     def on_usb_error(self, origin, value):
         if value == 5:
             device = origin.split("/")[-1]
-            self.context("window open -os %s Controller\n" % device)
+            self.context("window open Controller %s\n" % device)
             dlg = wx.MessageDialog(
                 None,
                 _("All attempts to connect to USB have failed."),

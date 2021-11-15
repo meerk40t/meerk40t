@@ -109,7 +109,7 @@ def register_control_tools(context, gui):
     )
     toolbar.Bind(
         wx.EVT_TOOL,
-        lambda v: context("window toggle -o Controller\n"),
+        lambda v: context("window toggle Controller\n"),
         id=ID_CONTROLLER,
     )
     toolbar.Create(gui)
