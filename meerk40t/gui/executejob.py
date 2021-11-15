@@ -21,33 +21,19 @@ class PlannerPanel(wx.Panel):
         self.context = context
 
         self.plan_name = plan_name
-
-        self.available_devices = [
-            data for data, name, suffix_name in self.context.find("device")
-        ]
-        selected_spooler = self.context.device.active
-        spools = list(self.context.match("device", suffix=True))
-        try:
-            index = spools.index(selected_spooler)
-        except ValueError:
-            index = 0
-        self.connected_name = spools[index]
-        self.connected_spooler, self.connected_driver, self.connected_output = (
-            None,
-            None,
-            None,
-        )
-        try:
-            (
-                self.connected_spooler,
-                self.connected_driver,
-                self.connected_output,
-            ) = self.available_devices[index]
-        except IndexError:
+        self.available_spoolers = list(self.context.lookup_all("spooler"))
+        self.selected_spooler = self.context.device.spooler
+        index = -1
+        for i, s in enumerate(self.available_spoolers):
+            if s is self.selected_spooler:
+                index = i
+                break
+        self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
+        if index == -1:
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        spools = [s.name for s in self.available_spoolers]
 
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
@@ -269,16 +255,8 @@ class PlannerPanel(wx.Panel):
         self.update_gui()
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.available_devices = [
-            data for data, name, sname in self.context.find("device")
-        ]
         index = self.combo_device.GetSelection()
-        (
-            self.connected_spooler,
-            self.connected_driver,
-            self.connected_output,
-        ) = self.available_devices[index]
-        self.connected_name = list(self.context.match("device", suffix=True))[index]
+        self.selected_spooler = self.available_spoolers[index]
 
     def on_listbox_operation_click(self, event):  # wxGlade: JobInfo.<event_handler>
         event.Skip()

@@ -63,32 +63,20 @@ class LaserPanel(wx.Panel):
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
         # Devices Initialize.
-        self.available_devices = [
-            data for data, name, sname in self.context.find("device")
-        ]
-        selected_spooler = self.context.device.active
-        spools = list(self.context.match("device", suffix=True))
-        try:
-            index = spools.index(selected_spooler)
-        except ValueError:
-            index = 0
-        self.connected_name = spools[index]
-        self.connected_spooler, self.connected_driver, self.connected_output = (
-            None,
-            None,
-            None,
-        )
-        try:
-            (
-                self.connected_spooler,
-                self.connected_driver,
-                self.connected_output,
-            ) = self.available_devices[index]
-        except IndexError:
+        self.available_spoolers = list(self.context.lookup_all("spooler"))
+
+        self.selected_spooler = self.context.device.spooler
+        index = -1
+        for i, s in enumerate(self.available_spoolers):
+            if s is self.selected_spooler:
+                index = i
+                break
+        self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
+        if index == -1:
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        spools = [s.name for s in self.available_spoolers]
 
         self.combo_devices = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -211,7 +199,7 @@ class LaserPanel(wx.Panel):
 
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
-        s = self.connected_spooler.name
+        s = self.selected_spooler.name
         if plan.plan:
             self.context("planz spool%s\n" % s)
         else:
@@ -266,13 +254,5 @@ class LaserPanel(wx.Panel):
         self.context("window toggle DeviceManager\n")
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.available_devices = [
-            data for data, name, sname in self.context.find("device")
-        ]
         index = self.combo_devices.GetSelection()
-        (
-            self.connected_spooler,
-            self.connected_driver,
-            self.connected_output,
-        ) = self.available_devices[index]
-        self.context("device activate %s\n" % str(index))
+        self.selected_spooler = self.available_spoolers[index]
