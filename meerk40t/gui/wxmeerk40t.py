@@ -396,8 +396,12 @@ class wxMeerK40t(wx.App, Module):
             except AttributeError:
                 parent = None
             window_uri = "window/%s" % window
+            window_class = context.lookup(window_uri)
+            if hasattr(window_class, "required_path"):
+                path = context.get_context(window_class.required_path)
 
             def window_open(*a, **k):
+
                 path.open(window_uri, parent, *args)
 
             def window_close(*a, **k):
@@ -411,7 +415,7 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
             else:
-                if context.lookup(window_uri) is not None:
+                if window_class is not None:
                     if window_uri in path.opened:
                         kernel.run_later(window_close, None)
                         channel(_("Window Closed."))

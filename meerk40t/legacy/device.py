@@ -228,11 +228,13 @@ class LegacyDevice(Service):
 
     def set_active(self, active):
         self.active = active
+        self.signal("active", self.active)
 
     def attach(self, *args, **kwargs):
         # self.register("plan/interrupt", interrupt)
         _ = self.kernel.translation
         self.setting(str, "active", "0")
+        self.signal("active", self.active)
 
         ########################
         # OUTPUT COMMANDS
@@ -993,7 +995,6 @@ class LegacyDevice(Service):
         def device(channel, _, index, **kwargs):
             spools = list(self.match("device", suffix=True))
             self.set_active(spools[index])
-            self.signal("active", index)
             channel(_("Activated device %s at index %d." % (self.active, index)))
             return "device", (None, str(index))
 
