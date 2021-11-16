@@ -334,7 +334,8 @@ class wxMeerK40t(wx.App, Module):
             Opens a MeerK40t window or provides information. This command is restricted to use with the wxMeerK40t gui.
             This also allows use of a -p flag that sets the context path for this window to operate at. This should
             often be restricted to where the windows are typically opened since their function and settings usually
-            depend on the context used. The default root path is "/". Eg. "window -p / open Settings"
+            depend on the context used. Windows often cannot open multiple copies of the same window at the same context
+            The default root path is "/". Eg. "window -p / open Preferences"
             """
             context = kernel.root
             if path is None:
