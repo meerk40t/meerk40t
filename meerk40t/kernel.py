@@ -973,7 +973,28 @@ class Kernel:
             self._available_services[domain] = services
         services.append(service)
 
-    def activate(self, domain: str, index=0):
+    def activate_service_path(self, domain: str, path: str):
+        """
+        Activate service at domain and path.
+
+        @param domain:
+        @param path:
+        @return:
+        """
+        if domain not in self._available_services:
+            raise ValueError
+        services = self._available_services[domain]
+
+        index = -1
+        for i, serv in enumerate(services):
+            if serv.path == path:
+                index = i
+                break
+        if index == -1:
+            raise ValueError
+        self.activate(domain, index)
+
+    def activate(self, domain: str, index: int):
         """
         Activate the service at the given domain and index.
 
@@ -988,6 +1009,10 @@ class Kernel:
         services = self._available_services[domain]
 
         service = services[index]
+        if domain in self._active_services:
+            previous_active = self._active_services[domain]
+            if service is previous_active:
+                return
 
         setattr(self, domain, None)
         if domain in self._active_services:
