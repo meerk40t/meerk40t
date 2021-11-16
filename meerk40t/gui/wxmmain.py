@@ -501,6 +501,7 @@ class MeerK40t(MWindow):
             .MinSize(40, 40)
             .FloatingSize(98, 98)
             .Name("stop")
+            .Hide()
             .CaptionVisible(not self.context.pane_lock)
         )
         pane.dock_proportion = 98
@@ -539,6 +540,7 @@ class MeerK40t(MWindow):
             .MinSize(40, 40)
             .FloatingSize(98, 98)
             .Name("pause")
+            .Hide()
             .CaptionVisible(not self.context.pane_lock)
         )
         pane.dock_proportion = 98
@@ -558,6 +560,7 @@ class MeerK40t(MWindow):
             .MinSize(40, 40)
             .FloatingSize(98, 98)
             .Name("home")
+            .Hide()
             .CaptionVisible(not self.context.pane_lock)
         )
         pane.dock_proportion = 98
