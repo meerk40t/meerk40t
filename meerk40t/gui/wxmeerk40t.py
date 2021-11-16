@@ -507,17 +507,21 @@ class wxMeerK40t(wx.App, Module):
         context.app = self  # Registers self as kernel.app
 
         context.setting(int, "language", None)
-        context.register("control/Delete Settings", self.clear_control)
         language = context.language
         if language is not None and language != 0:
             self.update_language(language)
 
-    def clear_control(self):
-        kernel = self.context.kernel
-        if kernel._config is not None:
-            kernel._config.DeleteAll()
-            kernel._config = None
-            kernel.shutdown()
+        @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
+        @context.console_command("nuke_settings", hidden=True)
+        def nuke_settings(command, channel, _, sure=None, **kwargs):
+            if sure == "yes":
+                kernel = self.context.kernel
+                if kernel._config is not None:
+                    kernel._config.DeleteAll()
+                    kernel._config = None
+                    kernel.shutdown()
+            else:
+                channel('Argument "sure" is required. Requires typing: "nuke_settings yes"')
 
     def update_language(self, lang):
         """
