@@ -172,10 +172,10 @@ class LaserPanel(wx.Panel):
         )
         sizer_source.Add(self.text_plan, 2, 0, 0)
 
-        self.context.setting(bool, "laserpane_preserve", False)
+        self.context.setting(bool, "laserpane_hold", False)
         self.checkbox_hold = wx.CheckBox(self, wx.ID_ANY, _("Hold"))
         self.checkbox_hold.SetToolTip(_("Preserve the job between running, rerunning, and execution"))
-        self.checkbox_hold.SetValue(self.context.laserpane_preserve)
+        self.checkbox_hold.SetValue(self.context.laserpane_hold)
         sizer_source.Add(self.checkbox_hold, 1, 0, 0)
 
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
@@ -219,7 +219,7 @@ class LaserPanel(wx.Panel):
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
         s = self.connected_spooler.name
-        if plan.plan and self.context.laserpane_preserve:
+        if plan.plan and self.context.laserpane_hold:
             self.context("planz spool%s\n" % s)
         else:
             if self.checkbox_optimize.GetValue():
@@ -259,7 +259,7 @@ class LaserPanel(wx.Panel):
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         with wx.BusyInfo(_("Preparing simulation...")):
             plan = self.context.planner.get_or_make_plan("z")
-            if not plan.plan or not self.context.laserpane_preserve:
+            if not plan.plan or not self.context.laserpane_hold:
                 if self.checkbox_optimize.GetValue():
                     self.context(
                         "planz clear copy preprocess validate blob preopt optimize\n"
@@ -270,7 +270,7 @@ class LaserPanel(wx.Panel):
             self.context("window toggle Simulation z 0\n"),
 
     def on_check_hold(self, event):
-        self.context.laserpane_preserve = self.checkbox_hold.GetValue()
+        self.context.laserpane_hold = self.checkbox_hold.GetValue()
 
     def on_button_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("window toggle DeviceManager\n")
