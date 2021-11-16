@@ -390,7 +390,6 @@ class CutPlan:
                     if context.opt_nearest_neighbor and context.opt_merge_passes:
                         passes = copies
                         copies = 1
-                    print(passes_first,repr(op),passes,copies,pass_idx)
                     for p in range(copies):
                         cutcode = CutCode(
                             op.as_cutobjects(closed_distance=context.opt_closed_distance, passes=passes),
@@ -407,7 +406,6 @@ class CutPlan:
 
         self.plan.clear()
         for blob in blob_plan:
-            #print(repr(blob),
             try:
                 blob.settings.jog_distance = context.opt_jog_minimum
                 blob.settings.jog_enable = context.opt_rapid_between
@@ -1569,28 +1567,25 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 cut = last_segment.next
                 if cut and cut.permitted and cut.burns_remaining >= 1:
                     closest = cut
-                    distance = abs(complex(closest.start()) - curr)
                     backwards = False
+                    distance = abs(complex(closest.start()) - curr)
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
                 if cut and cut.permitted and cut.burns_remaining >= 1:
                     closest = cut
-                    distance = abs(complex(closest.end()) - curr)
                     backwards = True
+                    distance = abs(complex(closest.end()) - curr)
             # Gap or continuing on path not permitted, try reversing
             if distance > 50 and last_segment.permitted and last_segment.burns_remaining >= 1:
-                closest = last_segment
-                distance = 0  # By definition
-                backwards = closest.normal
+                # last_segment is a copy so we cannot use it to decrement burns_remaining
+                closest = last_segment.next.previous
+                backwards = last_segment.normal
+                distance = 0  # By definition since we are reversing and reburning
 
         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
         # Travel only if path is complete or gap > 1/20"
         if distance > 50:
-            if closest:
-                closest_length = closest.length()
-            else:
-                closest_length = float("inf")
             for cut in context.candidate():
                 s = cut.start()
                 if (
@@ -1599,16 +1594,11 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 ):
                     d = abs(complex(s) - curr)
                     if d <= distance:
-                        l = cut.length()
-                        if d < distance or (
-                            d == distance and (backwards or l < closest_length)
-                        ):
-                            closest = cut
-                            backwards = False
-                            if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                                break
-                            distance = d
-                            closest_length = l
+                        closest = cut
+                        backwards = False
+                        if d <= 0.1:  # Distance in px is zero, we cannot improve.
+                            break
+                        distance = d
 
                 if not cut.reversible():
                     continue
@@ -1618,17 +1608,12 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     and abs(e.y - curr.imag) <= distance
                 ):
                     d = abs(complex(e) - curr)
-                    if d <= distance:
-                        l = cut.length()
-                        if d < distance or (
-                            d == distance and backwards and l < closest_length
-                        ):
-                            closest = cut
-                            backwards = True
-                            if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                                break
-                            distance = d
-                            closest_length = l
+                    if d < distance:
+                        closest = cut
+                        backwards = True
+                        # if d <= 0.1:  # Distance in px is zero, we cannot improve.
+                            # break
+                        distance = d
 
         if closest is None:
             break
@@ -1639,7 +1624,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 closest.next
                 and closest.next.permitted
                 and closest.next.burns_remaining >= closest.burns_remaining
-                and closest.next.start == closest.end
+                and closest.next.start() == closest.end()
             ):
                 closest = closest.next
                 backwards = False
@@ -1648,13 +1633,13 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 closest.previous
                 and closest.previous.permitted
                 and closest.previous.burns_remaining > closest.burns_remaining
-                and closest.previous.end == closest.start
+                and closest.previous.end() == closest.start()
             ):
-                closest = closest.next
-                backwards = False
+                closest = closest.previous
+                backwards = True
 
         closest.burns_remaining -= 1
-        if closest.burns_remaining == 0:
+        if closest.burns_remaining <= 0:
             closest.permitted = False
         c = copy(closest)
         if backwards:

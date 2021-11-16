@@ -265,11 +265,13 @@ class CutGroup(list, CutObject, ABC):
     def start(self):
         if len(self) == 0:
             return None
+        # handle group normal/reverse - start and end already handle segment reverse
         return self[0].start() if self.normal else self[-1].end()
 
     def end(self):
         if len(self) == 0:
             return None
+        # handle group normal/reverse - start and end already handle segment reverse
         return self[-1].end() if self.normal else self[0].start()
 
     def flat(self):
