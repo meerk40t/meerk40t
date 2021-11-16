@@ -1098,6 +1098,9 @@ class LegacyDevice(Service):
         for i in range(5):
             self.get_or_make_spooler(str(i))
 
+        for device in self.lookup_all("device"):
+            device[0].label = device_as_name(device)
+
     def get_or_make_spooler(self, device_name):
         device = self.lookup("device", device_name)
         if device is None:
@@ -1169,3 +1172,26 @@ class LegacyDevice(Service):
 
     def default_output(self):
         return self.get_or_make_output(self.active)
+
+
+def device_as_name(device):
+    spooler_name = "None"
+    try:
+        spooler_name = device[0].name
+    except AttributeError:
+        pass
+    driver_type = "None"
+    try:
+        driver_type = device[1].type
+    except AttributeError:
+        pass
+    output_type = "None"
+    try:
+        output_type = device[2].type
+    except AttributeError:
+        pass
+    return "(%s -> %s -> %s)" % (
+        spooler_name,
+        driver_type,
+        output_type,
+    )

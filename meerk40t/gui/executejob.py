@@ -30,7 +30,7 @@ class PlannerPanel(wx.Panel):
                 index = i
                 break
         self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
-        spools = [s.name for s in self.available_spoolers]
+        spools = [s.label for s in self.available_spoolers]
 
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN

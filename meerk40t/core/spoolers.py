@@ -20,6 +20,7 @@ class Spooler:
         self.queue_lock = Lock()
         self._queue = []
         self.next = None
+        self.label = spooler_name
 
     def __repr__(self):
         return "Spooler(%s)" % str(self.name)
