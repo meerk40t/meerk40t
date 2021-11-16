@@ -170,7 +170,13 @@ class LaserPanel(wx.Panel):
         self.text_plan = wx.TextCtrl(
             self, wx.ID_ANY, _(_("--- Empty ---")), style=wx.TE_READONLY
         )
-        sizer_source.Add(self.text_plan, 3, 0, 0)
+        sizer_source.Add(self.text_plan, 2, 0, 0)
+
+        self.context.setting(bool, "laserpane_preserve", False)
+        self.checkbox_hold = wx.CheckBox(self, wx.ID_ANY, _("Hold"))
+        self.checkbox_hold.SetToolTip(_("Preserve the job between running, rerunning, and execution"))
+        self.checkbox_hold.SetValue(self.context.laserpane_preserve)
+        sizer_source.Add(self.checkbox_hold, 1, 0, 0)
 
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
@@ -180,6 +186,7 @@ class LaserPanel(wx.Panel):
         self.SetSizer(sizer_main)
         self.Layout()
 
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_hold, self.checkbox_hold)
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
@@ -261,6 +268,9 @@ class LaserPanel(wx.Panel):
                     self.context("planz copy preprocess validate blob\n")
 
             self.context("window toggle Simulation z 0\n"),
+
+    def on_check_hold(self, event):
+        self.context.laserpane_preserve = self.checkbox_hold.GetValue()
 
     def on_button_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("window toggle DeviceManager\n")
