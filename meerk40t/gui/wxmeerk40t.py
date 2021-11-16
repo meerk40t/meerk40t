@@ -398,6 +398,10 @@ class wxMeerK40t(wx.App, Module):
                 parent = None
             window_uri = "window/%s" % window
             window_class = context.lookup(window_uri)
+            if isinstance(window_class, str):
+                window_uri = window_class
+                window_class = context.lookup(window_uri)
+
             if hasattr(window_class, "required_path"):
                 path = context.get_context(window_class.required_path)
 

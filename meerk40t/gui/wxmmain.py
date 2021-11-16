@@ -1491,7 +1491,7 @@ class MeerK40t(MWindow):
 
     def on_usb_error(self, origin, value):
         if value == 5:
-            self.context("window -p %s open Controller\n" % origin)
+            self.context.signal("controller", origin)
             dlg = wx.MessageDialog(
                 None,
                 _("All attempts to connect to USB have failed."),
