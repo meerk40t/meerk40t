@@ -340,7 +340,7 @@ class MeerK40t(MWindow):
                 if not pathname.lower().endswith(".svg"):
                     pathname += ".svg"
                 context.save(pathname)
-                gui.needs_saving = False
+                gui.validate_save()
                 gui.working_file = pathname
                 gui.set_file_as_recently_used(gui.working_file)
 
@@ -1491,6 +1491,15 @@ class MeerK40t(MWindow):
 
     def on_invalidate_save(self, origin, *args):
         self.needs_saving = True
+        app = self.context.app.GetTopWindow()
+        if isinstance(app, wx.TopLevelWindow):
+            app.OSXSetModified(self.needs_saving)
+
+    def validate_save(self):
+        self.needs_saving = False
+        app = self.context.app.GetTopWindow()
+        if isinstance(app, wx.TopLevelWindow):
+            app.OSXSetModified(self.needs_saving)
 
     def on_warning_signal(self, origin, message, caption, style):
         dlg = wx.MessageDialog(
@@ -1762,7 +1771,7 @@ class MeerK40t(MWindow):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
                         # TODO: Disabled uniform_svg, no longer detecting namespace.
                         self.working_file = pathname
-                        self.needs_saving = False
+                        self.validate_save()
                 except AttributeError:
                     pass
                 return True
@@ -1804,7 +1813,7 @@ class MeerK40t(MWindow):
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         context = self.context
         self.working_file = None
-        self.needs_saving = False
+        self.validate_save()
         context.elements.clear_all()
         self.context(".laserpath_clear\n")
 
@@ -1822,7 +1831,7 @@ class MeerK40t(MWindow):
             self.on_click_save_as(event)
         else:
             self.set_file_as_recently_used(self.working_file)
-            self.needs_saving = False
+            self.validate_save()
             self.context.save(self.working_file)
 
     def on_click_save_as(self, event=None):
