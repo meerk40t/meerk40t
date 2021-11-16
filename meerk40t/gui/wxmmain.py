@@ -872,13 +872,8 @@ class MeerK40t(MWindow):
 
         self.file_menu.Append(wx.ID_NEW, _("&New\tCtrl-N"), "")
         self.file_menu.Append(wx.ID_OPEN, _("&Open Project\tCtrl-O"), "")
-        from sys import platform as _platform
-
-        if _platform != "darwin" or not getattr(sys, "frozen", False):
-            # This is not included for OSX if within a build. This is because of a sandbox issue
-            # where recent file menu objects cannot actually load.
-            self.recent_file_menu = wx.Menu()
-            self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
+        self.recent_file_menu = wx.Menu()
+        self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
         self.file_menu.Append(ID_MENU_IMPORT, _("&Import File"), "")
         # self.file_menu.Append(wx.ID_NEW, _("&Close\tCtrl-W"), "")
         self.file_menu.AppendSeparator()
