@@ -886,7 +886,7 @@ class MeerK40t(MWindow):
         self.file_menu.Append(wx.ID_SAVEAS, _("Save &As\tCtrl-Shift-S"), "")
         self.file_menu.AppendSeparator()
 
-        self.file_menu.Append(wx.ID_EXIT, _("E&xit"), "")
+        self.file_menu.Append(wx.ID_EXIT, _("E&xit\tCtrl-W"), "")
         self.main_menubar.Append(self.file_menu, _("File"))
 
         # ==========
