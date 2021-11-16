@@ -69,7 +69,12 @@ class DefaultDevice(Service):
         self.settings = LaserSettings()
         self.state = 0
         self.spooler = Spooler(self, "default")
+        self.spooler.activate = self.activate_spooler
         self.viewbuffer = ""
+        self.root.register("spooler/default", self.spooler)
+
+    def activate_spooler(self):
+        self.kernel.activate_service_path("device", "default_device")
 
     def attach(self, *args, **kwargs):
         _ = self.kernel.translation

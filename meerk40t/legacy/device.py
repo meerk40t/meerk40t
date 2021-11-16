@@ -1116,7 +1116,7 @@ class LegacyDevice(Service):
             self.register("device/%s" % device_name, device)
         if device[0] is None:
             device[0] = Spooler(self, device_name)
-        self.register("spooler/%s" % device_name, device[0])
+        self.root.register("spooler/%s" % device_name, device[0])
         return device[0]
 
     def default_spooler(self):
