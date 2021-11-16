@@ -219,15 +219,15 @@ class LaserPanel(wx.Panel):
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
         s = self.connected_spooler.name
-        if plan.plan:
+        if plan.plan and self.context.laserpane_preserve:
             self.context("planz spool%s\n" % s)
         else:
             if self.checkbox_optimize.GetValue():
                 self.context(
-                    "planz copy preprocess validate blob preopt optimize spool%s\n" % s
+                    "planz clear copy preprocess validate blob preopt optimize spool%s\n" % s
                 )
             else:
-                self.context("planz copy preprocess validate blob spool%s\n" % s)
+                self.context("planz clear copy preprocess validate blob spool%s\n" % s)
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
@@ -259,13 +259,13 @@ class LaserPanel(wx.Panel):
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         with wx.BusyInfo(_("Preparing simulation...")):
             plan = self.context.planner.get_or_make_plan("z")
-            if not plan.plan:
+            if not plan.plan or not self.context.laserpane_preserve:
                 if self.checkbox_optimize.GetValue():
                     self.context(
-                        "planz copy preprocess validate blob preopt optimize\n"
+                        "planz clear copy preprocess validate blob preopt optimize\n"
                     )
                 else:
-                    self.context("planz copy preprocess validate blob\n")
+                    self.context("planz clear copy preprocess validate blob\n")
 
             self.context("window toggle Simulation z 0\n"),
 
