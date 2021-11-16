@@ -51,28 +51,29 @@ class LegacyGui(Modifier):
             legacy_device.register("window/Controller", Controller)
             Controller.required_path = legacy_device.root.path
         elif output.type == "lhystudios":
-            legacy_device.register("window/Controller", LhystudiosControllerGui)
+            legacy_device.register("window/Controller", "window/lhystudios/Controller")
             LhystudiosControllerGui.required_path = output.context.path
-            legacy_device.register("window/AccelerationChart", LhystudiosAccelerationChart)
+            legacy_device.register("window/AccelerationChart", "window/lhystudios/AccelerationChart")
             LhystudiosAccelerationChart.required_path = output.context.path
         elif output.type == "moshi":
-            legacy_device.register("window/Controller", MoshiControllerGui)
+            legacy_device.register("window/Controller", "window/moshi/Controller")
             MoshiControllerGui.required_path = output.context.path
         elif output.type == "tcp":
-            legacy_device.register("window/Controller", TCPController)
+            legacy_device.register("window/Controller", "window/tcp/Controller")
             TCPController.required_path = output.context.path
         elif output.type == "file":
-            legacy_device.register("window/Controller", FileOutput)
+            legacy_device.register("window/Controller", "window/file/Controller")
             FileOutput.required_path = output.context.path
+
         driver = legacy_device.default_driver()
         if driver is None:
             legacy_device.register("window/Configuration", Configuration)
             Configuration.required_path = legacy_device.root.path
         elif driver.type == "lhystudios":
-            legacy_device.register("window/Configuration", LhystudiosDriverGui)
+            legacy_device.register("window/Configuration", "window/lhystudios/Configuration")
             LhystudiosDriverGui.required_path = output.context.path
         elif driver.type == "moshi":
-            legacy_device.register("window/Configuration", MoshiDriverGui)
+            legacy_device.register("window/Configuration", "window/moshi/Configuration")
             MoshiDriverGui.required_path = output.context.path
 
     @staticmethod
