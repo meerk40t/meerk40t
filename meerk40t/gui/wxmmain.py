@@ -879,8 +879,10 @@ class MeerK40t(MWindow):
         self.file_menu.Append(wx.ID_SAVE, _("&Save\tCtrl-S"), "")
         self.file_menu.Append(wx.ID_SAVEAS, _("Save &As\tCtrl-Shift-S"), "")
         self.file_menu.AppendSeparator()
+        from sys import platform
 
-        self.file_menu.Append(wx.ID_CLOSE, _("&Close Window\tCtrl-W"), "")
+        if platform == "darwin":
+            self.file_menu.Append(wx.ID_CLOSE, _("&Close Window\tCtrl-W"), "")
         self.file_menu.Append(wx.ID_EXIT, _("E&xit"), "")
         self.main_menubar.Append(self.file_menu, _("File"))
 
@@ -1140,7 +1142,6 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_IMPORT)
         self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
-        self.Bind(wx.EVT_MENU, self.on_click_exit, id=wx.ID_CLOSE)
 
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
