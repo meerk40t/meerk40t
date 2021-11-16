@@ -1127,7 +1127,7 @@ class LaserOperation(Node):
                 yield COMMAND_WAIT, (self.settings.speed / 1000.0)
                 yield COMMAND_LASER_OFF
 
-    def as_cutobjects(self, closed_distance=15):
+    def as_cutobjects(self, closed_distance=15, passes=1):
         """
         Generator of cutobjects for a particular operation.
         """
@@ -1162,7 +1162,7 @@ class LaserOperation(Node):
                         isinstance(sp[-1], Close)
                         or abs(sp.z_point - sp.current_point) <= closed_distance
                     )
-                    group = CutGroup(None, closed=closed)
+                    group = CutGroup(None, closed=closed, settings=settings)
                     group.path = Path(subpath)
                     group.original_op = self._operation
                     for seg in subpath:
@@ -1171,12 +1171,12 @@ class LaserOperation(Node):
                         elif isinstance(seg, Close):
                             if seg.start != seg.end:
                                 group.append(
-                                    LineCut(seg.start, seg.end, settings=settings)
+                                    LineCut(seg.start, seg.end, settings=settings, passes=passes)
                                 )
                         elif isinstance(seg, Line):
                             if seg.start != seg.end:
                                 group.append(
-                                    LineCut(seg.start, seg.end, settings=settings)
+                                    LineCut(seg.start, seg.end, settings=settings, passes=passes)
                                 )
                         elif isinstance(seg, QuadraticBezier):
                             group.append(
@@ -1185,6 +1185,7 @@ class LaserOperation(Node):
                                     seg.control,
                                     seg.end,
                                     settings=settings,
+                                    passes=passes,
                                 )
                             )
                         elif isinstance(seg, CubicBezier):
@@ -1195,6 +1196,7 @@ class LaserOperation(Node):
                                     seg.control2,
                                     seg.end,
                                     settings=settings,
+                                    passes=passes,
                                 )
                             )
                     for i, cut_obj in enumerate(group):
@@ -1234,7 +1236,8 @@ class LaserOperation(Node):
                     pil_image,
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
-                    settings,
+                    settings=settings,
+                    passes=passes,
                 )
                 cut.path = path
                 cut.original_op = self._operation
@@ -1244,8 +1247,9 @@ class LaserOperation(Node):
                         pil_image,
                         matrix.value_trans_x(),
                         matrix.value_trans_y(),
-                        settings,
                         crosshatch=True,
+                        settings=settings,
+                        passes=passes,
                     )
                     cut.path = path
                     cut.original_op = self._operation
@@ -1290,7 +1294,9 @@ class LaserOperation(Node):
                     )
                 )
                 cut = RasterCut(
-                    pil_image, matrix.value_trans_x(), matrix.value_trans_y(), settings
+                    pil_image, matrix.value_trans_x(), matrix.value_trans_y(),
+                    settings= settings,
+                    passes=passes,
                 )
                 cut.path = path
                 cut.original_op = self._operation
@@ -1301,8 +1307,9 @@ class LaserOperation(Node):
                         pil_image,
                         matrix.value_trans_x(),
                         matrix.value_trans_y(),
-                        settings,
                         crosshatch=True,
+                        settings=settings,
+                        passes=passes,
                     )
                     cut.path = path
                     cut.original_op = self._operation

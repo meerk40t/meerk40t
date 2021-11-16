@@ -333,77 +333,127 @@ class CutPlan:
         self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
 
-    def blob(self):
-        context = self.context
-        blob_plan = list()
-        for i in range(len(self.plan)):
-            c = self.plan[i]
-            try:
-                if c.operation == "Dots":
-                    blob_plan.append(c)
-                    continue
-                for p in range(c.settings.implicit_passes):
-                    cutcode = CutCode(
-                        c.as_cutobjects(closed_distance=context.opt_closed_distance)
-                    )
-                    cutcode.constrained = (
-                        c.operation == "Cut" and context.opt_inner_first
-                    )
-                    cutcode.pass_index = p
-                    cutcode.original_op = c.operation
-                    if len(cutcode):
-                        blob_plan.append(cutcode)
-            except AttributeError:
-                blob_plan.append(c)
-        self.plan.clear()
 
-        for i in range(len(blob_plan)):
-            c = blob_plan[i]
+    def blob(self):
+        """
+        blob converts User operations to CutCode objects.
+
+        In order to have CutCode objects in the correct sequence for merging we need to:
+        a. Break operations into grouped sequences of LaserOperations and special operations.
+           We can only merge within groups of Laser operations.
+        b. The sequence of CutObjects needs to reflect merge settings
+           Normal sequence is to iterate operations and then passes for each operation.
+           With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
+        """
+
+        if not self.plan:
+            return
+        context = self.context
+
+        grouped_plan = list()
+        group = [self.plan[0]]
+        for c in self.plan[1:]:
+            if (
+                (type(group[-1]) == LaserOperation or type(c) == LaserOperation)
+                and type(group[-1]) != type(c)
+            ):
+                grouped_plan.append(group)
+                group = []
+            group.append(c)
+        grouped_plan.append(group)
+
+        # If Merge operations and not merge passes we need to iterate passes first and operations second
+        passes_first = context.opt_merge_ops and not context.opt_merge_passes
+        blob_plan = list()
+        for plan in grouped_plan:
+            burning = True
+            pass_idx = -1
+            while (burning):
+                burning = False
+                pass_idx += 1
+                for op in plan:
+                    if not isinstance(op, LaserOperation):
+                        blob_plan.append(op)
+                        continue
+                    if op.operation == "Dots":
+                        if pass_idx == 1:
+                            blob_plan.append(op)
+                        continue
+                    copies = op.settings.implicit_passes
+                    if passes_first:
+                        if pass_idx > copies - 1:
+                            continue
+                        copies = 1
+                        burning = True
+                    # When optimising travel, merge passes is handled by the greedy algorithm
+                    passes = 1
+                    if context.opt_nearest_neighbor and context.opt_merge_passes:
+                        passes = copies
+                        copies = 1
+                    for p in range(copies):
+                        cutcode = CutCode(
+                            op.as_cutobjects(closed_distance=context.opt_closed_distance, passes=passes),
+                            settings=op.settings,
+                        )
+                        if len(cutcode) == 0:
+                            break
+                        cutcode.constrained = (
+                            op.operation == "Cut" and context.opt_inner_first
+                        )
+                        cutcode.pass_index = pass_idx if passes_first else p
+                        cutcode.original_op = op.operation
+                        blob_plan.append(cutcode)
+
+        self.plan.clear()
+        for blob in blob_plan:
             try:
-                c.settings.jog_distance = context.opt_jog_minimum
-                c.settings.jog_enable = context.opt_rapid_between
+                blob.settings.jog_distance = context.opt_jog_minimum
+                blob.settings.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
+            # We can only merge and check for other criteria if we have the right objects
             merge = (
                 len(self.plan)
                 and isinstance(self.plan[-1], CutCode)
-                and isinstance(blob_plan[i], CutObject)
-            )  # Sets merge whether appending to cutcode objects
+                and isinstance(blob, CutObject)
+            )
+            # Override merge if opt_merge_passes is off, and pass_index do not match
             if (
                 merge
                 and not context.opt_merge_passes
-                and self.plan[-1].pass_index != c.pass_index
-            ):  # Override merge if opt_merge_passes is off, and pass_index do not match
+                and self.plan[-1].pass_index != blob.pass_index
+            ):
                 merge = False
+            # Override merge if opt_merge_ops is off, and operations original ops do not match
+            # Same settings object implies same original operation
             if (
                 merge
                 and not context.opt_merge_ops
-                and self.plan[-1].original_op != c.original_op
-            ):  # Override merge if opt_merge_ops is off, and operations original ops do not match
+                and self.plan[-1].settings is not blob.settings
+            ):
                 merge = False
+            # Override merge if opt_inner_first is off, and operation was originally a cut.
             if (
                 merge
                 and not context.opt_inner_first
                 and self.plan[-1].original_op == "Cut"
-            ):  # Override merge if opt_inner_first is off, and operation was originally a cut.
+            ):
                 merge = False
 
             if merge:
-                if blob_plan[i].constrained:
-                    self.plan[
-                        -1
-                    ].constrained = (
+                if blob.constrained:
+                    self.plan[-1].constrained = (
                         True  # if merge is constrained new blob is constrained.
                     )
-                self.plan[-1].extend(blob_plan[i])
+                self.plan[-1].extend(blob)
             else:
-                if isinstance(c, CutObject) and not isinstance(c, CutCode):
-                    cc = CutCode([c])
-                    cc.original_op = c.original_op
-                    cc.pass_index = c.pass_index
+                if isinstance(blob, CutObject) and not isinstance(blob, CutCode):
+                    cc = CutCode([blob])
+                    cc.original_op = blob.original_op
+                    cc.pass_index = blob.pass_index
                     self.plan.append(cc)
                 else:
-                    self.plan.append(c)
+                    self.plan.append(blob)
 
     def preopt(self):
         context = self.context
@@ -1477,7 +1527,7 @@ def inner_first_cutcode(context: CutGroup, channel=None):
 
 def short_travel_cutcode(context: CutCode, channel=None):
     """
-    Selects cutcode from candidate cutcode permitted, optimizing with greedy/brute for
+    Selects cutcode from candidate cutcode (permitted and with burns remaining), optimizing with greedy/brute for
     shortest distances optimizations.
 
     For paths starting at exactly the same point forward paths are preferred over reverse paths
@@ -1515,25 +1565,27 @@ def short_travel_cutcode(context: CutCode, channel=None):
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
                 cut = last_segment.next
-                if cut and cut.permitted:
+                if cut and cut.permitted and cut.burns_remaining >= 1:
                     closest = cut
-                    distance = abs(complex(closest.start()) - curr)
                     backwards = False
+                    distance = abs(complex(closest.start()) - curr)
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
-                if cut and cut.permitted:
+                if cut and cut.permitted and cut.burns_remaining >= 1:
                     closest = cut
-                    distance = abs(complex(closest.end()) - curr)
                     backwards = True
+                    distance = abs(complex(closest.end()) - curr)
+            # Gap or continuing on path not permitted, try reversing
+            if distance > 50 and last_segment.permitted and last_segment.burns_remaining >= 1:
+                # last_segment is a copy so we cannot use it to decrement burns_remaining
+                closest = last_segment.next.previous
+                backwards = last_segment.normal
+                distance = 0  # By definition since we are reversing and reburning
 
         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
         # Travel only if path is complete or gap > 1/20"
         if distance > 50:
-            if closest:
-                closest_length = closest.length()
-            else:
-                closest_length = float("inf")
             for cut in context.candidate():
                 s = cut.start()
                 if (
@@ -1542,16 +1594,11 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 ):
                     d = abs(complex(s) - curr)
                     if d <= distance:
-                        l = cut.length()
-                        if d < distance or (
-                            d == distance and (backwards or l < closest_length)
-                        ):
-                            closest = cut
-                            backwards = False
-                            if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                                break
-                            distance = d
-                            closest_length = l
+                        closest = cut
+                        backwards = False
+                        if d <= 0.1:  # Distance in px is zero, we cannot improve.
+                            break
+                        distance = d
 
                 if not cut.reversible():
                     continue
@@ -1561,29 +1608,39 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     and abs(e.y - curr.imag) <= distance
                 ):
                     d = abs(complex(e) - curr)
-                    if d <= distance:
-                        l = cut.length()
-                        if d < distance or (
-                            d == distance and backwards and l < closest_length
-                        ):
-                            closest = cut
-                            backwards = True
-                            if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                                # Need to swap to next segment forward if it is coincident and permitted
-                                if (
-                                    cut.next
-                                    and cut.next.permitted
-                                    and cut.next.start == cut.end
-                                ):
-                                    closest = cut.next
-                                    backwards = False
-                                break
-                            distance = d
-                            closest_length = l
+                    if d < distance:
+                        closest = cut
+                        backwards = True
+                        # if d <= 0.1:  # Distance in px is zero, we cannot improve.
+                            # break
+                        distance = d
 
         if closest is None:
             break
-        closest.permitted = False
+
+        # Change direction if other direction is coincident and has more burns remaining
+        if backwards:
+            if (
+                closest.next
+                and closest.next.permitted
+                and closest.next.burns_remaining >= closest.burns_remaining
+                and closest.next.start() == closest.end()
+            ):
+                closest = closest.next
+                backwards = False
+        else:
+            if (
+                closest.previous
+                and closest.previous.permitted
+                and closest.previous.burns_remaining > closest.burns_remaining
+                and closest.previous.end() == closest.start()
+            ):
+                closest = closest.previous
+                backwards = True
+
+        closest.burns_remaining -= 1
+        if closest.burns_remaining <= 0:
+            closest.permitted = False
         c = copy(closest)
         if backwards:
             c.reverse()
@@ -1738,6 +1795,7 @@ def inner_selection_cutcode(context: CutCode, channel=None):
     for c in context.flat():
         c.permitted = True
     ordered = CutCode()
+    iterations = 0
     while True:
         c = list(context.candidate())
         if len(c) == 0:
@@ -1745,9 +1803,10 @@ def inner_selection_cutcode(context: CutCode, channel=None):
         ordered.extend(c)
         for o in ordered.flat():
             o.permitted = False
+        iterations += 1
     if channel:
         channel(
-            "Length at end: %f, optimized in %f seconds"
-            % (ordered.length_travel(True), time() - start_time)
+            "Length at end: %f, optimized in %f seconds in %d iterations"
+            % (ordered.length_travel(True), time() - start_time, iterations)
         )
     return ordered
