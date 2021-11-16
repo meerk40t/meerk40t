@@ -1098,8 +1098,16 @@ class LegacyDevice(Service):
         for i in range(5):
             self.get_or_make_spooler(str(i))
 
+        def activate_device(device_name):
+            def specific():
+                self.kernel.activate_service_path("device", "legacy")
+                self("device activate %s\n" % device_name)
+
+            return specific
+
         for device in self.lookup_all("device"):
             device[0].label = device_as_name(device)
+            device[0].activate = activate_device(device[0].name)
 
     def get_or_make_spooler(self, device_name):
         device = self.lookup("device", device_name)
