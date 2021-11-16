@@ -255,3 +255,6 @@ class LaserPanel(wx.Panel):
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()
         self.selected_spooler = self.available_spoolers[index]
+        if self.selected_spooler.activate is not None:
+            self.selected_spooler.activate()
+

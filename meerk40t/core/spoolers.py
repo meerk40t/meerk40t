@@ -21,6 +21,7 @@ class Spooler:
         self._queue = []
         self.next = None
         self.label = spooler_name
+        self.activate = None
 
     def __repr__(self):
         return "Spooler(%s)" % str(self.name)
