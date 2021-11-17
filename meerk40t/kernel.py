@@ -380,6 +380,15 @@ class Context:
         """
         return Kernel.console_command(self._kernel, *args, **kwargs)
 
+    def console_command_remove(self, *args, **kwargs) -> Callable:
+        """
+        Delegate to Kernel
+
+        Uses current context to be passed to the console_command being removed.
+        """
+        return Kernel.console_command_remove(self._kernel, *args, **kwargs)
+
+
     @property
     def contexts(self) -> Dict[str, "Context"]:
         return self._kernel.contexts
@@ -713,6 +722,14 @@ class Service(Context):
         Uses the current registration to register the given command.
         """
         return Kernel.console_command(self, *args, **kwargs)
+
+    def console_command_remove(self, *args, **kwargs) -> Callable:
+        """
+        Delegate to Kernel
+
+        Uses current context to be passed to the console_command being removed.
+        """
+        return Kernel.console_command_remove(self, *args, **kwargs)
 
     def register_choices(self, sheet, choices):
         """
