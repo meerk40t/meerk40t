@@ -15,41 +15,11 @@ except ImportError as e:
 
     raise Mk40tImportAbort("numpy")
 
-from meerk40t.kernel import Modifier
+from meerk40t.kernel import Service
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/CameraHub", CameraHub)
-    if lifecycle == "boot":
-        camera_root = kernel.get_context("camera")
-        camera_root.activate("modifier/CameraHub")
-
-
-CORNER_SIZE = 25
-
-
-class CameraHub(Modifier):
-    """
-    CameraHub serves as a hub for camera interfacing. This provides support for the camera command in console as well
-    as allowing for the indexing and launcing of cameras with various contexts.
-
-    This is expected to be attached at /camera and the various camera objects are expected to be subdirectories.
-    """
-
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
-        self.current_camera = "0"
-
-    def __repr__(self):
-        return "CameraHub()"
-
-    @staticmethod
-    def sub_register(device):
-        device.register("modifier/Camera", Camera)
-
-    def attach(self, *a, **kwargs):
-        kernel = self.context._kernel
         _ = kernel.translation
 
         @kernel.console_option(
@@ -69,17 +39,21 @@ class CameraHub(Modifier):
         )
         def camera(command, uri=None, width=None, height=None, contrast=None, nocontrast=None, **kwargs):
             if len(command) > 6:
-                self.current_camera = command[6:]
-            camera_context = self.context.derive(self.current_camera)
-            cam = camera_context.activate("modifier/Camera")
+                current_camera = command[6:]
+                camera_path = "camera/%s" % current_camera
+                if camera_path in kernel.contexts:
+                    kernel.activate_service_path(camera_path)
+                else:
+                    kernel.add_service("camera", Camera(kernel, camera_path))
+            cam = kernel.camera
             if contrast:
-                camera_context.autonormal = True
+                cam.autonormal = True
             if nocontrast:
-                camera_context.autonormal = False
+                cam.autonormal = False
             if width:
-                camera_context.width = width
+                cam.width = width
             if height:
-                camera_context.height = height
+                cam.height = height
             if uri is not None:
                 cam.set_uri(uri)
             return "camera", cam
@@ -203,7 +177,7 @@ class CameraHub(Modifier):
         @kernel.console_command(
             "list", help="list camera settings", input_type="camera"
         )
-        def set_camera(command, _, channel, data=None, **kwargs):
+        def list_camera(command, _, channel, data=None, **kwargs):
             if data.capture is None:
                 channel(_("Camera is not currently running..."))
                 return
@@ -223,13 +197,12 @@ class CameraHub(Modifier):
                 except:
                     pass
 
-    def detach(self, *args, **kwargs):
-        pass
+CORNER_SIZE = 25
 
 
-class Camera(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+class Camera(Service):
+    def __init__(self, kernel, camera_path, *args, **kwargs):
+        Service.__init__(self, kernel, camera_path)
         self.uri = 0
         self.fisheye_k = None
         self.fisheye_d = None
@@ -259,42 +232,30 @@ class Camera(Modifier):
         self.camera_thread = None
         self.max_tries_connect = 10
         self.max_tries_frame = 10
-
-    def __repr__(self):
-        return "Camera()"
-
-    def attach(self, *a, **kwargs):
-        self.context.setting(int, "width", 640)
-        self.context.setting(int, "height", 480)
-        self.context.setting(int, "fps", 1)
-        self.context.setting(bool, "correction_fisheye", False)
-        self.context.setting(bool, "correction_perspective", False)
-        self.context.setting(str, "fisheye", "")
-        self.context.setting(str, "perspective", "")
-        self.context.setting(str, "uri", "0")
-        self.context.setting(int, "index", 0)
-        self.context.setting(bool, "autonormal", False)
+        self.setting(int, "width", 640)
+        self.setting(int, "height", 480)
+        self.setting(int, "fps", 1)
+        self.setting(bool, "correction_fisheye", False)
+        self.setting(bool, "correction_perspective", False)
+        self.setting(str, "fisheye", "")
+        self.setting(str, "perspective", "")
+        self.setting(str, "uri", "0")
+        self.setting(int, "index", 0)
+        self.setting(bool, "autonormal", False)
 
         # TODO: regex confirm fisheye and perspective.
-        if self.context.fisheye is not None and len(self.context.fisheye) != 0:
-            self.fisheye_k, self.fisheye_d = eval(self.context.fisheye)
-        if self.context.perspective is not None and len(self.context.perspective) != 0:
-            self.perspective = eval(self.context.perspective)
-        self.uri = self.context.uri
+        if self.fisheye is not None and len(self.fisheye) != 0:
+            self.fisheye_k, self.fisheye_d = eval(self.fisheye)
+        if self.perspective is not None and len(self.perspective) != 0:
+            self.perspective = eval(self.perspective)
+        self.uri = self.uri
         try:
             self.uri = int(self.uri)  # URI is an index.
         except ValueError:
             pass
-        self.context.camera = self
-        self.context.fisheye_capture = self.fisheye_capture
-        self.context.open_camera = self.open_camera
-        self.context.close_camera = self.close_camera
-        self.context.reset_perspective = self.reset_perspective
-        self.context.reset_fisheye = self.reset_fisheye
-        self.context.background = self.background
-        self.context.spooler = self.export
-        self.context.frame = self.get_frame
-        self.context.raw = self.get_raw()
+
+    def __repr__(self):
+        return "Camera()"
 
     def get_frame(self):
         return self.last_frame
@@ -302,7 +263,7 @@ class Camera(Modifier):
     def get_raw(self):
         return self.last_raw
 
-    def detach(self, *args, **kwargs):
+    def shutdown(self, *args, **kwargs):
         self.close_camera()
 
     def fisheye_capture(self):
@@ -314,7 +275,7 @@ class Camera(Modifier):
         :param frame:
         :return:
         """
-        _ = self.context._kernel.translation
+        _ = self._
         frame = self.last_raw
         if frame is None:
             return
@@ -347,7 +308,7 @@ class Camera(Modifier):
             cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), subpix_criteria)
             self.imgpoints.append(corners)
         else:
-            self.context.root.signal(
+            self.signal(
                 "warning",
                 _("Checkerboard 6x9 pattern not found."),
                 _("Pattern not found."),
@@ -374,17 +335,17 @@ class Camera(Modifier):
         except cv2.error:
             # Ill conditioned matrix for input values.
             self.backtrack_fisheye()
-            self.context.root.signal(
+            self.signal(
                 "warning", _("Ill-conditioned Matrix. Keep trying."), _("Matrix."), 4
             )
             return
-        self.context.root.signal(
+        self.signal(
             "warning",
             _("Success. %d images so far.") % len(self.objpoints),
             _("Image Captured"),
             4 | 2048,
         )
-        self.context.fisheye = repr([K.tolist(), D.tolist()])
+        self.fisheye = repr([K.tolist(), D.tolist()])
         self.fisheye_k = K.tolist()
         self.fisheye_d = D.tolist()
 
@@ -402,9 +363,9 @@ class Camera(Modifier):
                 self.quit_thread = True  # Inform previous thread it must die, if it doesn't already know.
                 t.join()  # Join previous thread, before starting new thread.
                 self.quit_thread = False
-            self.camera_thread = self.context.threaded(
+            self.camera_thread = self.threaded(
                 self.threaded_image_fetcher,
-                thread_name="CameraFetcher-%s-%s" % (self.context._path, self.uri),
+                thread_name="CameraFetcher-%s-%s" % (self._path, self.uri),
             )
 
     def close_camera(self):
@@ -420,7 +381,7 @@ class Camera(Modifier):
         if (
             self.fisheye_k is not None
             and self.fisheye_d is not None
-            and self.context.correction_fisheye
+            and self.correction_fisheye
         ):
             # Unfisheye the drawing
             K = np.array(self.fisheye_k)
@@ -436,10 +397,10 @@ class Camera(Modifier):
                 interpolation=cv2.INTER_LINEAR,
                 borderMode=cv2.BORDER_CONSTANT,
             )
-        if self.context.correction_perspective:
+        if self.correction_perspective:
             # Perspective the drawing.
-            dest_width = self.context.width
-            dest_height = self.context.height
+            dest_width = self.width
+            dest_height = self.height
             width, height = frame.shape[:2][::-1]
             if self.perspective is None:
                 rect = np.array(
@@ -460,13 +421,13 @@ class Camera(Modifier):
             M = cv2.getPerspectiveTransform(rect, dst)
             frame = cv2.warpPerspective(frame, M, (dest_width, dest_height))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        if self.context.autonormal:
+        if self.autonormal:
             cv2.normalize(frame, frame, 0, 255, cv2.NORM_MINMAX)
         self.last_frame = self.current_frame
         self.current_frame = frame
 
     def _attempt_recovery(self):
-        channel = self.context.channel("camera")
+        channel = self.channel("camera")
         if self.quit_thread:
             return False
         self.connection_attempts += 1
@@ -474,7 +435,7 @@ class Camera(Modifier):
             self.capture.release()
             self.capture = None
         uri = self.uri
-        self.context.signal("camera_reconnect")
+        self.signal("camera_reconnect")
         self.capture = cv2.VideoCapture(uri)
         channel("Capture: %s" % str(self.capture))
         if self.capture is None:
@@ -482,7 +443,7 @@ class Camera(Modifier):
         return True
 
     def threaded_image_fetcher(self):
-        channel = self.context.channel("camera")
+        channel = self.channel("camera")
         self.quit_thread = (
             True  # If another thread exists this will let it die gracefully.
         )
@@ -495,46 +456,9 @@ class Camera(Modifier):
             if uri is None:
                 return
             channel("Connecting %s" % str(uri))
-            self.context.signal("camera_state", 1)
+            self.signal("camera_state", 1)
             self.capture = cv2.VideoCapture(uri)
             channel("Capture: %s" % str(self.capture))
-            # if self.capture is None:
-            #     return  # No capture the thread dies.
-            # else:
-            #     self.context.setting(int, "cam_fps", None)
-            #     if self.context.cam_fps is not None:
-            #         self.capture.set(cv2.CAP_PROP_FPS, self.context.cam_fps)
-            #     self.context.setting(int, "width", None)
-            #     if self.context.width is not None:
-            #         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.context.width)
-            #     self.context.setting(int, "height", None)
-            #     if self.context.height is not None:
-            #         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.context.height)
-            #     self.context.setting(float, "brightness", None)
-            #     if self.context.brightness is not None:
-            #         self.capture.set(cv2.CAP_PROP_BRIGHTNESS, self.context.brightness)
-            #     self.context.setting(float, "contrast", None)
-            #     if self.context.contrast is not None:
-            #         self.capture.set(cv2.CAP_PROP_CONTRAST, self.context.contrast)
-            #     self.context.setting(float, "saturation", None)
-            #     if self.context.saturation is not None:
-            #         self.capture.set(cv2.CAP_PROP_SATURATION, self.context.saturation)
-            #     self.context.setting(float, "hue", None)
-            #     if self.context.hue is not None:
-            #         self.capture.set(cv2.CAP_PROP_HUE, self.context.hue)
-            #     self.context.setting(int, "gain", None)
-            #     if self.context.gain is not None:
-            #         self.capture.set(cv2.CAP_PROP_GAIN, self.context.gain)
-            #     self.context.setting(int, "exposure", None)
-            #     if self.context.exposure is not None:
-            #         self.capture.set(cv2.CAP_PROP_EXPOSURE, self.context.exposure)
-            #
-            #     self.context.setting(bool, "convert_rgb", None)
-            #     if self.context.convert_rgb:
-            #         self.capture.set(cv2.CAP_PROP_CONVERT_RGB, self.context.convert_rgb)
-            #     self.context.setting(int, "rectification", None)
-            #     if self.context.rectification:
-            #         self.capture.set(cv2.CAP_PROP_RECTIFICATION, self.context.rectification)
 
             while not self.quit_thread:
                 if self.connection_attempts > self.max_tries_connect:
@@ -584,8 +508,8 @@ class Camera(Modifier):
                 self.capture.release()
                 self.capture = None
                 channel("Released: %s" % str(uri))
-        if self.context is not None:
-            self.context.signal("camera_state", 0)
+        if self is not None:
+            self.signal("camera_state", 0)
         channel("Camera Thread Exiting: %s" % str(uri))
 
     def reset_perspective(self):
@@ -596,7 +520,7 @@ class Camera(Modifier):
         :return:
         """
         self.perspective = None
-        self.context.perspective = ""
+        self.perspective = ""
 
     def backtrack_fisheye(self):
         if self.objpoints:
@@ -614,11 +538,11 @@ class Camera(Modifier):
         self.fisheye_d = None
         self.objpoints = []
         self.imgpoints = []
-        self.context.fisheye = ""
+        self.fisheye = ""
 
     def set_uri(self, uri):
         self.uri = uri
-        self.context.uri = self.uri
+        self.uri = self.uri
         try:
             self.uri = int(self.uri)  # URI is an index.
         except ValueError:
@@ -632,9 +556,8 @@ class Camera(Modifier):
         """
         frame = self.last_frame
         if frame is not None:
-            root = self.context.root
             self.image_height, self.image_width = frame.shape[:2]
-            root.signal("background", (self.image_width, self.image_height, frame))
+            self.signal("background", (self.image_width, self.image_height, frame))
             return (self.image_width, self.image_height, frame)
         return None
 
@@ -644,8 +567,7 @@ class Camera(Modifier):
         """
         frame = self.last_frame
         if frame is not None:
-            root = self.context.root
             self.image_height, self.image_width = frame.shape[:2]
-            root.signal("export-image", (self.image_width, self.image_height, frame))
+            self.signal("export-image", (self.image_width, self.image_height, frame))
             return (self.image_width, self.image_height, frame)
         return None
