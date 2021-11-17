@@ -970,6 +970,11 @@ class Kernel:
             plugin(self, lifecycle)
         self.signal("lifecycle;%s" % lifecycle, None, True)
 
+    def registration(self):
+        self.bootstrap("preregister")
+        self.bootstrap("register")
+        self.bootstrap("configure")
+
     def boot(self) -> None:
         """
         Kernel boot sequence. This should be called after all the registered devices are established.

@@ -269,9 +269,7 @@ def run():
 
     kernel_root = kernel.root
 
-    kernel.bootstrap("preregister")
-    kernel.bootstrap("register")
-    kernel.bootstrap("configure")
+    kernel.registration()
     kernel.boot()
     elements = kernel_root.elements
 
