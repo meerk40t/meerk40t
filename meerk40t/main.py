@@ -268,8 +268,6 @@ def run():
         kernel.bootstrap("gui")
 
     kernel_root = kernel.root
-    kernel_root.device_version = APPLICATION_VERSION
-    kernel_root.device_name = "MeerK40t"
 
     kernel.bootstrap("preregister")
     kernel.bootstrap("register")
@@ -295,12 +293,6 @@ def run():
 
         elements.load(os.path.realpath(args.input.name))
         elements.classify(list(elements.elems()))
-
-    if args.mock:
-        # TODO: Mock needs to find the settings of the active output and set that value there.
-        # Set the device to mock.
-        kernel_root.setting(bool, "mock", True)
-        kernel_root.mock = True
 
     if args.set is not None:
         # Set the variables requested here.

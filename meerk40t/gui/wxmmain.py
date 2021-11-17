@@ -1537,10 +1537,7 @@ class MeerK40t(MWindow):
     def __set_titlebar(self):
         device_name = ""
         device_version = ""
-        if self.context is not None:
-            device_version = self.context.device_version
-            device_name = str(self.context.device_name)
-        title = _("%s v%s") % (device_name, device_version)
+        title = _("%s v%s") % (str(self.context.kernel.name), self.context.kernel.version)
         title += "      %s" % self.context.device.name
         self.SetTitle(title)
 
