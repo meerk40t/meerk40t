@@ -17,13 +17,13 @@ def plugin(kernel, lifecycle=None):
         kernel.register("output/file", FileOutput)
         kernel.register("output/tcp", TCPOutput)
     elif lifecycle == "boot":
-        context = kernel.get_context("legacy")
-        context.boot()
-        _ = context._
+        legacy_device = kernel.get_context("legacy")
+        legacy_device.boot()
+        _ = legacy_device._
         choices = [
             {
                 "attr": "bedwidth",
-                "object": context,
+                "object": legacy_device,
                 "default": 12205.0,
                 "type": float,
                 "label": _("Width"),
@@ -31,7 +31,7 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "bedheight",
-                "object": context,
+                "object": legacy_device,
                 "default": 8268.0,
                 "type": float,
                 "label": _("Height"),
@@ -39,7 +39,7 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "scale_x",
-                "object": context,
+                "object": legacy_device,
                 "default": 1.000,
                 "type": float,
                 "label": _("X Scale Factor"),
@@ -49,7 +49,7 @@ def plugin(kernel, lifecycle=None):
             },
             {
                 "attr": "scale_y",
-                "object": context,
+                "object": legacy_device,
                 "default": 1.000,
                 "type": float,
                 "label": _("Y Scale Factor"),
@@ -58,7 +58,7 @@ def plugin(kernel, lifecycle=None):
                 ),
             },
         ]
-        context.register_choices("bed_dim", choices)
+        legacy_device.register_choices("bed_dim", choices)
 
 
 class FileOutput:
