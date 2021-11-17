@@ -145,7 +145,8 @@ class CutObject:
         self.next = None
         self.previous = None
         self.permitted = True
-        self.burns_remaining = passes
+        self.passes = passes
+        self.burns_done = 0
 
         self.mode = None
         self.inside = None
@@ -220,7 +221,7 @@ class CutObject:
             return False
         for c in self.contains:
             for pp in c.flat():
-                if pp.permitted and pp.burns_remaining >= 1:
+                if pp.permitted and pp.burns_done < pp.passes:
                     return True
         return False
 
@@ -228,7 +229,7 @@ class CutObject:
         yield self
 
     def candidate(self):
-        if self.permitted and self.burns_remaining >= 1:
+        if self.permitted and self.burns_done < self.passes:
             yield self
 
 
@@ -297,7 +298,7 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 if s is None:
                     continue
-                if s.permitted and s.burns_remaining >= 1:
+                if s.permitted and s.burns_done < s.passes:
                     yield s
 
 
