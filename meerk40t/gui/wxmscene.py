@@ -66,7 +66,6 @@ class MeerK40tScenePanel(wx.Panel):
         sizer_2.Fit(self)
         self.Layout()
 
-        self.triggered_keys = dict()
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -284,27 +283,12 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            if keyvalue not in self.triggered_keys:
-                self.triggered_keys[keyvalue] = 1
-                action = keymap[keyvalue]
-                self.context(action + "\n")
-        else:
+        if self.context.bind.trigger(keyvalue):
             event.Skip()
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            if keyvalue in self.triggered_keys:
-                del self.triggered_keys[keyvalue]
-            action = keymap[keyvalue]
-            if action.startswith("+"):
-                # Keyup commands only trigger if the down command started with +
-                action = "-" + action[1:]
-                self.context(action + "\n")
-        else:
+        if self.context.bind.untrigger(keyvalue):
             event.Skip()
 
 

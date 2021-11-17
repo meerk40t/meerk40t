@@ -62,7 +62,7 @@ class KeymapPanel(wx.Panel):
     def on_item_activated(self, event):
         element = event.Text
         self.text_key_name.SetValue(element)
-        self.text_command_name.SetValue(self.context.keymap[element])
+        self.text_command_name.SetValue(self.context.bind.keymap[element])
 
     def on_item_rightclick(self, event):
         element = event.Text
@@ -87,7 +87,7 @@ class KeymapPanel(wx.Panel):
     def on_tree_popup_delete(self, element):
         def delete(event=None):
             try:
-                del self.context.keymap[element]
+                del self.context.bind.keymap[element]
                 self.list_keymap.DeleteAllItems()
                 self.reload_keymap()
             except KeyError:
@@ -97,8 +97,8 @@ class KeymapPanel(wx.Panel):
 
     def reload_keymap(self):
         i = 0
-        for key in self.context.keymap:
-            value = self.context.keymap[key]
+        for key in self.context.bind.keymap:
+            value = self.context.bind.keymap[key]
             m = self.list_keymap.InsertItem(i, str(key))
             i += 1
             if m != -1:
@@ -128,7 +128,7 @@ class KeymapPanel(wx.Panel):
             dlg.Destroy()
             self.text_command_name.SetFocus()
             return
-        self.context.keymap[
+        self.context.bind.keymap[
             self.text_key_name.GetValue()
         ] = self.text_command_name.GetValue()
         self.text_key_name.SetValue("")
@@ -145,11 +145,11 @@ class KeymapPanel(wx.Panel):
             self.text_key_name.SetValue("")
         else:
             self.text_key_name.SetValue(keyvalue)
-            for i, key in enumerate(self.context.keymap):
+            for i, key in enumerate(self.context.bind.keymap):
                 if key == keyvalue:
                     self.list_keymap.Select(i, True)
                     self.list_keymap.Focus(i)
-                    self.text_command_name.SetValue(self.context.keymap[key])
+                    self.text_command_name.SetValue(self.context.bind.keymap[key])
                 else:
                     self.list_keymap.Select(i, False)
 

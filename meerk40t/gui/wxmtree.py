@@ -106,23 +106,12 @@ class TreePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            action = keymap[keyvalue]
-            self.context(action + "\n")
-        else:
+        if self.context.bind.trigger(keyvalue):
             event.Skip()
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            action = keymap[keyvalue]
-            if action.startswith("+"):
-                # Keyup commands only trigger if the down command started with +
-                action = "-" + action[1:]
-                self.context(action + "\n")
-        else:
+        if self.context.bind.untrigger(keyvalue):
             event.Skip()
 
     def initialize(self):
