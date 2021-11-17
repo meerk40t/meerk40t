@@ -974,6 +974,7 @@ class Kernel:
         self.signal("lifecycle;%s" % lifecycle, None, True)
 
     def registration(self):
+        self.bootstrap("init")
         self.bootstrap("preregister")
         self.bootstrap("register")
         self.bootstrap("configure")

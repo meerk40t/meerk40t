@@ -56,7 +56,7 @@ _ = wx.GetTranslation
 def plugin(kernel, lifecycle):
     global GUI_START
     kernel_root = kernel.root
-    if lifecycle == "console":
+    if lifecycle == "init" and kernel.args.no_gui:
         GUI_START = False
 
         @kernel.console_command("gui", help=_("starts the gui"))

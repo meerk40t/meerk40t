@@ -266,11 +266,6 @@ def run():
             else:
                 kernel.add_plugin(plugin)
 
-    if args.no_gui:
-        kernel.bootstrap("console")
-    else:
-        kernel.bootstrap("gui")
-
     kernel_root = kernel.root
 
     kernel.registration()
