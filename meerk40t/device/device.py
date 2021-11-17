@@ -73,10 +73,6 @@ class DefaultDevice(Service):
         self.viewbuffer = ""
         self.root.register("spooler/default", self.spooler)
 
-    def activate_spooler(self):
-        self.kernel.activate_service_path("device", "default_device")
-
-    def attach(self, *args, **kwargs):
         _ = self.kernel.translation
 
         @self.console_command(
@@ -442,3 +438,6 @@ class DefaultDevice(Service):
                     yield COMMAND_WAIT_FINISH
 
             spooler.job(jog_transition_test)
+
+    def activate_spooler(self):
+        self.kernel.activate_service_path("device", "default_device")

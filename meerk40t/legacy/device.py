@@ -194,59 +194,7 @@ class LegacyDevice(Service):
     def __init__(self, kernel, *args, **kwargs):
         Service.__init__(self, kernel, "legacy")
 
-    @property
-    def current_y(self):
-        return self.default_driver().current_y
-
-    @property
-    def current_x(self):
-        return self.default_driver().current_x
-
-    @property
-    def settings(self):
-        return self.default_driver().settings
-
-    @property
-    def state(self):
-        return self.default_driver().state
-
-    @property
-    def spooler(self):
-        return self.default_spooler()
-
-    @property
-    def viewbuffer(self):
-        return self.default_output().viewbuffer()
-
-    @property
-    def name(self):
-        spooler_name = "None"
-        try:
-            spooler_name = self.spooler.name
-        except AttributeError:
-            pass
-        driver_type = "None"
-        try:
-            driver_type = self.default_driver().type
-        except AttributeError:
-            pass
-        output_type = "None"
-        try:
-            output_type = self.default_output().type
-        except AttributeError:
-            pass
-        return "(%s -> %s -> %s)" % (
-            spooler_name,
-            driver_type,
-            output_type,
-        )
-
-    def set_active(self, active):
-        self.active = active
-        self.signal("active", self.active)
-
-    def attach(self, *args, **kwargs):
-        _ = self.kernel.translation
+        _ = kernel.translation
         self.setting(str, "active", "0")
         self.signal("active", self.active)
 
@@ -1108,6 +1056,38 @@ class LegacyDevice(Service):
         for device in self.lookup_all("device"):
             device[0].label = device_as_name(device)
             device[0].activate = activate_device(device[0].name)
+
+    @property
+    def current_y(self):
+        return self.default_driver().current_y
+
+    @property
+    def current_x(self):
+        return self.default_driver().current_x
+
+    @property
+    def settings(self):
+        return self.default_driver().settings
+
+    @property
+    def state(self):
+        return self.default_driver().state
+
+    @property
+    def spooler(self):
+        return self.default_spooler()
+
+    @property
+    def viewbuffer(self):
+        return self.default_output().viewbuffer()
+
+    @property
+    def name(self):
+        return device_as_name([self.spooler, self.default_driver(), self.default_output()])
+
+    def set_active(self, active):
+        self.active = active
+        self.signal("active", self.active)
 
     def get_or_make_spooler(self, device_name):
         device = self.lookup("device", device_name)
