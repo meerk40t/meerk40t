@@ -22,6 +22,8 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         _ = kernel.translation
 
+        kernel.register("modifier/Camera", True)
+
         @kernel.console_option(
             "width", "w", type=int, help="force the camera width"
         )
@@ -41,10 +43,9 @@ def plugin(kernel, lifecycle=None):
             if len(command) > 6:
                 current_camera = command[6:]
                 camera_path = "camera/%s" % current_camera
-                if camera_path in kernel.contexts:
-                    kernel.activate_service_path(camera_path)
-                else:
+                if camera_path not in kernel.contexts:
                     kernel.add_service("camera", Camera(kernel, camera_path))
+                kernel.activate_service_path("camera", camera_path)
             cam = kernel.camera
             if contrast:
                 cam.autonormal = True
@@ -197,6 +198,7 @@ def plugin(kernel, lifecycle=None):
                 except:
                     pass
 
+
 CORNER_SIZE = 25
 
 
@@ -242,6 +244,8 @@ class Camera(Service):
         self.setting(str, "uri", "0")
         self.setting(int, "index", 0)
         self.setting(bool, "autonormal", False)
+        self.setting(bool, "aspect", False)
+        self.setting(str, "preserve_aspect", "xMinYMin meet")
 
         # TODO: regex confirm fisheye and perspective.
         if self.fisheye is not None and len(self.fisheye) != 0:
