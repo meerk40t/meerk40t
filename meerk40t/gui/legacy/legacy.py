@@ -10,7 +10,7 @@ from meerk40t.gui.legacy.devicespanel import DeviceManager
 from meerk40t.gui.legacy.tcp.tcpcontroller import TCPController
 from meerk40t.gui.legacy.usbconnect import UsbConnect
 
-from meerk40t.kernel import Modifier
+from meerk40t.kernel import Module
 
 try:
     import wx
@@ -22,20 +22,20 @@ except ImportError as e:
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
-        kernel.register("modifier/LegacyGui", LegacyGui)
+        kernel.register("module/LegacyGui", LegacyGui)
     elif lifecycle == "boot":
-        kernel.get_context('legacy').activate("modifier/LegacyGui")
+        kernel.get_context('legacy').open("module/LegacyGui")
 
 
-class LegacyGui(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+class LegacyGui(Module):
+    def __init__(self, context, path):
+        Module.__init__(self, context, path)
 
-    def attach(self, *a, **kwargs):
+    def initialize(self, *a, **kwargs):
         self.context.listen("active", self.on_active_switch)
         self.context.listen("controller", self.on_controller)
 
-    def detach(self, *args, **kwargs):
+    def finalize(self, *args, **kwargs):
         self.context.unlisten("active", self.on_active_switch)
         self.context.unlisten("controller", self.on_controller)
 
