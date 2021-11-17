@@ -1057,6 +1057,9 @@ class LegacyDevice(Service):
             device[0].label = device_as_name(device)
             device[0].activate = activate_device(device[0].name)
 
+    def __str__(self):
+        return 'LegacyDevice(<kernel>, "%s")' % (str(self.path))
+
     @property
     def current_y(self):
         return self.default_driver().current_y
