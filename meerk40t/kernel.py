@@ -34,12 +34,7 @@ _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
 
 class Modifier:
     """
-    A modifier alters a context with additional functionality set during attachment and detachment.
-
-    These are also booted and shutdown with the kernel's lifecycle. The modifications to the kernel are not expected
-    to be undone. Rather the detach should kill any secondary processes the modifier may possess.
-
-    A modifiers can only be called once at any particular context.
+    Modifiers are deprecated. This will be removed.
     """
 
     def __init__(self, context: "Context", name: str = None, channel: "Channel" = None):
@@ -48,28 +43,12 @@ class Modifier:
         self.state = STATE_INITIALIZE
 
     def boot(self, *args, **kwargs):
-        """
-        Called when the context the modifier attached to is booted. This is typical for devices.
-        """
         pass
 
     def attach(self, *args, **kwargs):
-        """
-        Called by activate to attach module to device.
-
-        This should be overloaded when making a specific module type for reuse, where using init would require specific
-        subclassing, or for modules that are intended to expand the functionality of a device rather than compliment
-        that functionality.
-        """
         pass
 
     def detach(self, *args, **kwargs):
-        """
-        Called by deactivate to detach the module from device.
-
-        Devices are not expected to undo all changes they made. This would typically only happen on the closing of a
-        particular context.
-        """
         pass
 
 
@@ -79,8 +58,9 @@ class Module:
     a context. When close() is called on the context, it will close and delete references to the opened module and call
     finalize().
 
-    If an opened module is tries to open() a second time in a context and it was never closed. The device restore()
-    function is called for the device, with the same args and kwargs that would have been called on __init__().
+    If an opened module is tries to open() a second time in a context with the same name, and it was never closed.
+    The device restore() function is called for the device, with the same args and kwargs that would have been called
+    on __init__().
 
     Multiple instances of a module can be opened but this requires a different initialization name. Modules are not
     expected to modify their contexts.
@@ -111,15 +91,13 @@ class Context:
     """
     Contexts serve as path-relevant snapshots of the kernel. These are are the primary interaction between the modules
     and the kernel. They permit getting other contexts of the kernel as well. This should serve as the primary interface
-    code between the kernel and the modules. And the location where modifiers are applied and modules are opened.
+    code between the kernel and the modules.
 
-    Context store the persistent settings and settings from these locations are saved and loaded.
+    Contexts store the persistent settings and settings from at their path locations.
 
-    Contexts have settings located at .<setting> and so long as this setting does not begin with _ or 'implicit' it
-    will be reloaded when .setting() is called for the given attribute. This should be called by any module that intends
-    access to an attribute even if it was already called.
-
-    Most modules and functions are applied at the root level '/'.
+    Contexts have attribute settings located at .<setting> and so long as this setting does not begin with _ or
+    'implicit' it will be reloaded when .setting() is called for the given attribute. This should be called by any
+    module that intends access to an attribute even if it was already called.
     """
 
     def __init__(self, kernel: "Kernel", path: str):
@@ -577,21 +555,12 @@ class Context:
         instance.finalize(*args, **kwargs)
 
     # ==========
-    # MODIFIERS
+    # MODIFIERS DEPRECATED
     # ==========
 
     def activate(self, registered_path: str, *args, **kwargs) -> "Modifier":
         """
-        Activates a modifier at this context. activate() calls and attaches a modifier located at the given path
-        to be attached to this context.
-
-        The modifier is opened and attached at the current context. Unlike modules there is no instance_path and the
-        registered_path should be a singleton. It is expected that attached modifiers will modify the context.
-
-        :param registered_path: registered_path location of the modifier.
-        :param args: arguments to call the modifier
-        :param kwargs: kwargs to call the modifier
-        :return: Modifier object.
+        Deprecated.
         """
         try:
             find = self.attached[registered_path]
@@ -614,13 +583,7 @@ class Context:
 
     def deactivate(self, instance_path: str, *args, **kwargs) -> None:
         """
-        Deactivate a modifier attached to this context.
-        The detach() is called on the modifier and modifier is deleted from the list of attached. This should be called
-        during the shutdown of the Kernel. There is no expectation that modifiers actually remove their functions during
-        this call.
-
-        :param instance_path: Attached path location.
-        :return:
+        Deprectated
         """
         instance = self.attached[instance_path]
         instance.detach(self, *args, **kwargs)
@@ -690,9 +653,17 @@ class Context:
 
 class Service(Context):
     """
-    A service is a context that alters the kernel and all contexts with additional functionality.
+    A service is a context that with additional capabilities. These get registered by a domain in the kernel as a
+    particular aspect. For example, .device or .gui could be a service and this service would be found at that attribute
+    at for any context. A service does not exist pathwise at a particular domain. The path is the saving/loading
+    location for persistent settings. This also allows several services to be registered for the same domain. These are
+    swapped with the activate_service commands in the kernel.
 
-    Services have their own registered values.
+    Each service has its own registered lookup of data. This extends the lookup of the kernel but only for those
+    services which are currently active. This extends to various types of things that are registered in the kernel such
+    as choices and console commands. The currently active service can modify these simply by being activated.
+
+    Unlike contexts which can be derived or gotten at a particular path. Services can be directly instanced.
     """
 
     def __init__(self, kernel: "Kernel", path: str):
@@ -759,29 +730,24 @@ class Service(Context):
 
 class Kernel:
     """
-    The Kernel serves as the central hub of communication between different objects within the system. These are mapped
-    to particular contexts that have locations within the kernel. The contexts can have modules opened and modifiers
-    applied to them. The kernel serves to store the location of registered objects, as well as providing a scheduler,
-    signals, channels, and a command console to be used by the modules, modifiers, devices, and other objects.
+    The Kernel serves as the central hub of communication between different objects within the system, stores the
+    main lookup of registered objects, as well as providing a scheduler, signals, channels, and a command console to be
+    used within the system.
 
     The Kernel stores a persistence object, thread interactions, contexts, a translation routine, a run_later operation,
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
-
-    Devices are contexts with a device. These are expected to have a Spooler attached, and the path should consist
-    of numbers.
-
     """
 
     def __init__(
         self, name: str, version: str, profile: str, path: str = "/", config=None
     ):
         """
-        Initialize the Kernel. This sets core attributes of the ecosystem that are accessable to all modules.
+        Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
 
         Name: The application name.
         Version: The version number of the application.
-        Profile: The name to save our data under (this is often the same as name except if we want unused setting).
-        Path: The subpath all data should be saved under. This is a prefix of data to silently add to all data.
+        Profile: The name to save our data under (this is often the same as app name).
+        Path: The path prefix to silently add to all data. This allows the same profile to be used without the same data
         Config: This is the persistence object used to save. While official agnostic, it's actually strikingly identical
                     to a wx.Config object.
         """
@@ -789,6 +755,9 @@ class Kernel:
         self.profile = profile
         self.version = version
         self._path = path
+
+        # Boot State
+        self._booted = False
         self.lifecycle = "init"
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
@@ -805,7 +774,7 @@ class Kernel:
         self.threads = {}
         self.thread_lock = Lock()
 
-        # All registered locations within the kernel.
+        # All registered lookups within the kernel.
         self._registered = {}
 
         # The translation object to be overridden by any valid transition functions
@@ -818,6 +787,8 @@ class Kernel:
         # Scheduler
         self.jobs = {}
         self.scheduler_thread = None
+
+        # Signal Listener
         self.signal_job = None
         self.listeners = {}
         self.adding_listeners = []
@@ -830,25 +801,26 @@ class Kernel:
         # Channels
         self.channels = {}
 
-        # Registered Commands.
+        # Console Commands.
         self.commands = []
         self.console_job = Job(
             job_name="kernel.console.ticks",
             process=self._console_job_tick,
             interval=0.05,
         )
-        self._current_directory = "."
         self._console_buffer = ""
         self.queue = []
         self._console_channel = self.channel("console", timestamp=True)
         self._console_channel.timestamp = True
         self.console_channel_file = None
 
+        self._current_directory = "."
+
+        # Persistent Settings
         if config is not None:
             self.set_config(config)
         else:
             self._config = None
-        self._booted = False
 
     def __str__(self):
         return "Kernel()"
