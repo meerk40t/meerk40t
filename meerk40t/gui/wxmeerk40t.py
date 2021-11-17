@@ -61,7 +61,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command("gui", help=_("starts the gui"))
         def gui_start(**kwargs):
-            del kernel._registered["command/None/gui"]
+            kernel.console_command_remove("gui")
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
