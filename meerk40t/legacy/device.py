@@ -18,6 +18,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("output/tcp", TCPOutput)
     elif lifecycle == "boot":
         context = kernel.get_context("legacy")
+        context.boot()
         _ = context._
         choices = [
             {
@@ -1026,6 +1027,7 @@ class LegacyDevice(Service):
             except (KeyError, ValueError):
                 raise SyntaxError(_("Invalid device-string index."))
 
+    def boot(self):
         ########################
         # LEGACY DEVICE BOOT SEQUENCE
         ########################
