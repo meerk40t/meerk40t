@@ -755,6 +755,9 @@ class Kernel:
         else:
             self._config = None
 
+        # Arguments Objects
+        self.args = None
+
     def __str__(self):
         return "Kernel()"
 

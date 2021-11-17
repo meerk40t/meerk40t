@@ -122,6 +122,7 @@ def run():
     else:
         path = ""
     kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME, path)
+    kernel.args = args
 
     """
     These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
