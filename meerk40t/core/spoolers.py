@@ -1,6 +1,11 @@
 from threading import Lock
 
 
+def plugin(kernel, lifecycle):
+    if lifecycle == "register":
+        _ = kernel.translation
+
+
 class Spooler:
     """
     A spooler stores spoolable lasercode events as a synchronous queue.

@@ -143,6 +143,10 @@ def run():
 
     kernel.add_plugin(default_device.plugin)
 
+    from .core import spoolers
+
+    kernel.add_plugin(spoolers.plugin)
+
     from .core import elements
 
     kernel.add_plugin(elements.plugin)
