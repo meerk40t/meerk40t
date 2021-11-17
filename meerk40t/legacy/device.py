@@ -1033,7 +1033,7 @@ class LegacyDevice(Service):
         ########################
 
         device_context = self.get_context("devices")
-        index = 0
+        devices_booted = 0
         for d in device_context.kernel.keylist(device_context.path):
             suffix = d.split("/")[-1]
             if not suffix.startswith("device_"):
@@ -1042,11 +1042,18 @@ class LegacyDevice(Service):
             if line is not None and len(line):
                 device_context(line + "\n")
                 device_context.setting(str, suffix, None)
-                index += 1
-        device_context._devices = index
+                devices_booted += 1
 
         for i in range(5):
             self.get_or_make_spooler(str(i))
+
+        if devices_booted == 0:
+            # Check if there are no devices. Initialize one if needed.
+            if self.kernel.args.device == "Moshi":
+                dev = "spool0 -r driver -n moshi output -n moshi\n"
+            else:
+                dev = "spool0 -r driver -n lhystudios output -n lhystudios\n"
+            self(dev)
 
         def activate_device(device_name):
             def specific():
@@ -1054,14 +1061,6 @@ class LegacyDevice(Service):
                 self("device activate %s\n" % device_name)
 
             return specific
-
-        if not hasattr(device_context, "_devices") or device_context._devices == 0:
-            # Check if there are no devices. Initialize one if needed.
-            if self.kernel.args.device == "Moshi":
-                dev = "spool0 -r driver -n moshi output -n moshi\n"
-            else:
-                dev = "spool0 -r driver -n lhystudios output -n lhystudios\n"
-            self(dev)
 
         for device in self.lookup_all("device"):
             device[0].label = device_as_name(device)
