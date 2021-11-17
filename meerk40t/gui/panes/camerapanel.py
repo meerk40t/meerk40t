@@ -67,13 +67,10 @@ class CameraPanel(wx.Panel, Job):
         self.process = self.update_camera_frame
         self.run_main = True
 
-        self.camera = None
+        self.context("camera%d\n" % self.index) # command activates Camera service
+        self.camera = self.context.get_context("camera/%d" % self.index) # camera service location.
+
         self.last_frame_index = -1
-
-        self.camera_setting = self.context.get_context("camera")
-        self.setting = self.camera_setting.derive(str(self.index))
-
-        self.root_context = self.context.root
 
         if not pane:
             self.button_update = wx.BitmapButton(
@@ -154,40 +151,13 @@ class CameraPanel(wx.Panel, Job):
         self.SetDoubleBuffered(True)
         # end wxGlade
 
-        self.setting.setting(int, "width", 640)
-        self.setting.setting(int, "height", 480)
-        self.setting.setting(bool, "aspect", False)
-        self.setting.setting(str, "preserve_aspect", "xMinYMin meet")
-        self.setting.setting(int, "index", 0)
-        self.setting.setting(int, "fps", 1)
-        self.setting.setting(bool, "correction_fisheye", False)
-        self.setting.setting(str, "fisheye", "")
-        self.setting.setting(bool, "correction_perspective", False)
-        self.setting.setting(str, "perspective", "")
-        self.setting.setting(str, "uri", "0")
-
-        try:
-            self.camera = self.setting.activate("modifier/Camera")
-        except ValueError:
-            return
-
         if not pane:
-            self.check_fisheye.SetValue(self.setting.correction_fisheye)
-            self.check_perspective.SetValue(self.setting.correction_perspective)
-            self.slider_fps.SetValue(self.setting.fps)
+            self.check_fisheye.SetValue(self.camera.correction_fisheye)
+            self.check_perspective.SetValue(self.camera.correction_perspective)
+            self.slider_fps.SetValue(self.camera.fps)
             self.on_slider_fps()
 
-        if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
-            self.fisheye_k, self.fisheye_d = eval(self.setting.fisheye)
-        else:
-            self.fisheye_k = None
-            self.fisheye_d = None
-
-        if self.setting.perspective is not None and len(self.setting.perspective) != 0:
-            self.camera.perspective = eval(self.setting.perspective)
-        else:
-            self.camera.perspective = None
-        self.widget_scene.widget_root.set_aspect(self.setting.aspect)
+        self.widget_scene.widget_root.set_aspect(self.camera.aspect)
 
         self.widget_scene.background_brush = wx.WHITE_BRUSH
         self.widget_scene.add_scenewidget(CamSceneWidget(self.widget_scene, self))
@@ -199,9 +169,9 @@ class CameraPanel(wx.Panel, Job):
     def initialize(self, *args):
         from sys import platform as _platform
 
-        if _platform == "darwin" and not hasattr(self.setting, "_first"):
+        if _platform == "darwin" and not hasattr(self.camera, "_first"):
             self.context("camera%d start -t 1\n" % self.index)
-            self.setting._first = False
+            self.camera._first = False
         else:
             self.context("camera%d start\n" % self.index)
         self.context.schedule(self)
@@ -236,7 +206,7 @@ class CameraPanel(wx.Panel, Job):
         if not self.frame_bitmap:
             # Initial set.
             self.widget_scene.widget_root.set_view(
-                0, 0, self.image_width, self.image_height, self.setting.preserve_aspect
+                0, 0, self.image_width, self.image_height, self.camera.preserve_aspect
             )
         self.frame_bitmap = wx.Bitmap.FromBuffer(
             self.image_width, self.image_height, frame
@@ -244,17 +214,17 @@ class CameraPanel(wx.Panel, Job):
         if self.camera.perspective is None:
             self.camera.perspective = (
                 [0, 0],
-                [self.setting.width, 0],
-                [self.setting.width, self.setting.height],
-                [0, self.setting.height],
+                [self.camera.width, 0],
+                [self.camera.width, self.camera.height],
+                [0, self.camera.height],
             )
-        if self.setting.correction_perspective:
+        if self.camera.correction_perspective:
             if (
-                self.setting.width != self.image_width
-                or self.setting.height != self.image_height
+                self.camera.width != self.image_width
+                or self.camera.height != self.image_height
             ):
-                self.image_width = self.setting.width
-                self.image_height = self.setting.height
+                self.image_width = self.camera.width
+                self.image_height = self.camera.height
 
         self.widget_scene.request_refresh()
 
@@ -282,7 +252,7 @@ class CameraPanel(wx.Panel, Job):
         :param event:
         :return:
         """
-        self.setting.correction_perspective = self.check_perspective.GetValue()
+        self.camera.correction_perspective = self.check_perspective.GetValue()
 
     def on_check_fisheye(self, event=None):
         """
@@ -290,7 +260,7 @@ class CameraPanel(wx.Panel, Job):
         :param event:
         :return:
         """
-        self.setting.correction_fisheye = self.check_fisheye.GetValue()
+        self.camera.correction_fisheye = self.check_fisheye.GetValue()
 
     def on_button_update(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
@@ -332,7 +302,7 @@ class CameraPanel(wx.Panel, Job):
             tick = 5
         else:
             tick = 1.0 / fps
-        self.setting.fps = fps
+        self.camera.fps = fps
         self.interval = tick
 
     def on_button_detect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
@@ -377,26 +347,26 @@ class CamInterfaceWidget(Widget):
         if event_type == "rightdown":
 
             def enable_aspect(*args):
-                self.cam.setting.aspect = not self.cam.setting.aspect
-                self.scene.widget_root.set_aspect(self.cam.setting.aspect)
+                self.cam.camera.aspect = not self.cam.camera.aspect
+                self.scene.widget_root.set_aspect(self.cam.camera.aspect)
                 self.scene.widget_root.set_view(
                     0,
                     0,
                     self.cam.image_width,
                     self.cam.image_height,
-                    self.cam.setting.preserve_aspect,
+                    self.cam.camera.preserve_aspect,
                 )
 
             def set_aspect(aspect):
                 def asp(event=None):
-                    self.cam.setting.preserve_aspect = aspect
-                    self.scene.widget_root.set_aspect(self.cam.setting.aspect)
+                    self.cam.camera.preserve_aspect = aspect
+                    self.scene.widget_root.set_aspect(self.cam.camera.aspect)
                     self.scene.widget_root.set_view(
                         0,
                         0,
                         self.cam.image_width,
                         self.cam.image_height,
-                        self.cam.setting.preserve_aspect,
+                        self.cam.camera.preserve_aspect,
                     )
 
                 return asp
@@ -442,7 +412,7 @@ class CamInterfaceWidget(Widget):
 
             sub_menu = wx.Menu()
             center = menu.Append(wx.ID_ANY, _("Aspect"), "", wx.ITEM_CHECK)
-            if self.cam.setting.aspect:
+            if self.cam.camera.aspect:
                 center.Check(True)
             self.cam.Bind(wx.EVT_MENU, enable_aspect, center)
             self.cam.Bind(
@@ -468,41 +438,41 @@ class CamInterfaceWidget(Widget):
 
             menu.Append(
                 wx.ID_ANY,
-                _("Preserve: %s") % self.cam.setting.preserve_aspect,
+                _("Preserve: %s") % self.cam.camera.preserve_aspect,
                 sub_menu,
             )
             menu.AppendSeparator()
 
             fisheye = menu.Append(wx.ID_ANY, _("Correct Fisheye"), "", wx.ITEM_CHECK)
-            fisheye.Check(self.cam.setting.correction_fisheye)
-            self.cam.setting.correction_fisheye = fisheye.IsChecked()
+            fisheye.Check(self.cam.camera.correction_fisheye)
+            self.cam.camera.correction_fisheye = fisheye.IsChecked()
 
             def check_fisheye(event=None):
-                self.cam.setting.correction_fisheye = fisheye.IsChecked()
+                self.cam.camera.correction_fisheye = fisheye.IsChecked()
 
             self.cam.Bind(wx.EVT_MENU, check_fisheye, fisheye)
 
             perspect = menu.Append(
                 wx.ID_ANY, _("Correct Perspective"), "", wx.ITEM_CHECK
             )
-            perspect.Check(self.cam.setting.correction_perspective)
-            self.cam.setting.correction_perspective = perspect.IsChecked()
+            perspect.Check(self.cam.camera.correction_perspective)
+            self.cam.camera.correction_perspective = perspect.IsChecked()
 
             def check_perspect(event=None):
-                self.cam.setting.correction_perspective = perspect.IsChecked()
+                self.cam.camera.correction_perspective = perspect.IsChecked()
 
             self.cam.Bind(wx.EVT_MENU, check_perspect, perspect)
             menu.AppendSeparator()
             item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.setting("camera%d perspective reset\n" % self.cam.index),
+                lambda e: self.cam.camera("camera%d perspective reset\n" % self.cam.index),
                 id=item.GetId(),
             )
             item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.setting("camera%d fisheye reset\n" % self.cam.index),
+                lambda e: self.cam.camera("camera%d fisheye reset\n" % self.cam.index),
                 id=item.GetId(),
             )
             menu.AppendSeparator()
@@ -515,9 +485,9 @@ class CamInterfaceWidget(Widget):
                 id=item.GetId()
             )
 
-            camera_setting = self.cam.context.get_context("camera")
-            keylist = camera_setting.kernel.load_persistent_string_dict(
-                camera_setting.path, suffix=True
+            camera_context = self.cam.context.get_context("camera")
+            keylist = camera_context.kernel.load_persistent_string_dict(
+                camera_context.path, suffix=True
             )
             if keylist is not None:
                 keys = [q for q in keylist]
@@ -583,9 +553,9 @@ class CamPerspectiveWidget(Widget):
 
     def process_draw(self, gc):
         if (
-            not self.cam.setting.correction_perspective
+            not self.cam.camera.correction_perspective
             and self.cam.camera.perspective
-            and not self.cam.setting.aspect
+            and not self.cam.camera.aspect
         ):
             gc.SetPen(self.pen)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -618,7 +588,7 @@ class CamPerspectiveWidget(Widget):
                 for w in self.parent:
                     if isinstance(w, CamPerspectiveWidget):
                         w.update()
-                self.cam.setting.perspective = repr(perspective)
+                self.cam.camera.perspective = repr(perspective)
                 self.cam.context.signal("refresh_scene", self.scene.name)
             return RESPONSE_CONSUME
 
@@ -629,7 +599,7 @@ class CamSceneWidget(Widget):
         self.cam = camera
 
     def process_draw(self, gc):
-        if not self.cam.setting.correction_perspective and not self.cam.setting.aspect:
+        if not self.cam.camera.correction_perspective and not self.cam.camera.aspect:
             if self.cam.camera.perspective:
                 if not len(self):
                     for i in range(4):
@@ -762,7 +732,6 @@ class CameraURIPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_add_uri, self.button_add)
         self.Bind(wx.EVT_TEXT, self.on_text_uri, self.text_uri)
         # end wxGlade
-        self.camera_setting = None
         self.uri_list = None
         self.changed = False
 
@@ -786,9 +755,9 @@ class CameraURIPanel(wx.Panel):
         # end wxGlade
 
     def initialize(self):
-        self.camera_setting = self.context.get_context("camera")
-        keylist = self.camera_setting.kernel.load_persistent_string_dict(
-            self.camera_setting.path, suffix=True
+        camera_context = self.context.get_context("camera")
+        keylist = camera_context.kernel.load_persistent_string_dict(
+            camera_context.path, suffix=True
         )
         if keylist is not None:
             keys = [q for q in keylist if isinstance(q, str) and q.startswith("uri")]
@@ -802,17 +771,18 @@ class CameraURIPanel(wx.Panel):
     def commit(self):
         if not self.changed:
             return
-        for c in dir(self.camera_setting):
+        camera_context = self.context.get_context("camera")
+        for c in dir(camera_context):
             if not c.startswith("uri"):
                 continue
-            setattr(self.camera_setting, c, None)
-        for c in list(self.camera_setting.kernel.keylist(self.camera_setting.path)):
-            self.camera_setting.kernel.delete_persistent(c)
+            setattr(camera_context, c, None)
+        for c in list(camera_context.kernel.keylist(camera_context.path)):
+            camera_context.kernel.delete_persistent(c)
 
         for i, uri in enumerate(self.uri_list):
             key = "uri%d" % i
-            setattr(self.camera_setting, key, uri)
-        self.camera_setting.flush()
+            setattr(camera_context, key, uri)
+        camera_context.flush()
         self.context.signal("camera_uri_changed", True)
 
     def on_list_refresh(self):
