@@ -1558,6 +1558,25 @@ class Kernel:
 
         return decorator
 
+    def console_command_remove(
+            self,
+            path: Union[str, Tuple[str, ...]] = None,
+            input_type: Union[str, Tuple[str, ...]] = None,
+    ):
+        """
+        Removes a console command with the given input_type at the given path.
+
+        @param path: path or tuple of paths to delete.
+        @param input_type: type or tuple of types to delete
+        @return:
+        """
+        cmds = path if isinstance(path, tuple) else (path,)
+        ins = input_type if isinstance(input_type, tuple) else (input_type,)
+        for cmd in cmds:
+            for i in ins:
+                p = "command/%s/%s" % (i, cmd)
+                del self._registered[p]
+
     # ==========
     # PATH & CONTEXTS
     # ==========
