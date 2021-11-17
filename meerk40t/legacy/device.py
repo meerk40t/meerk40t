@@ -1041,8 +1041,8 @@ class LegacyDevice(Service):
             line = device_context.setting(str, suffix, None)
             if line is not None and len(line):
                 device_context(line + "\n")
-                device_context.setting(str, "device_%d" % index, None)
-            index += 1
+                device_context.setting(str, suffix, None)
+                index += 1
         device_context._devices = index
 
         for i in range(5):
@@ -1054,6 +1054,14 @@ class LegacyDevice(Service):
                 self("device activate %s\n" % device_name)
 
             return specific
+
+        if not hasattr(device_context, "_devices") or device_context._devices == 0:
+            # Check if there are no devices. Initialize one if needed.
+            if self.kernel.args.device == "Moshi":
+                dev = "spool0 -r driver -n moshi output -n moshi\n"
+            else:
+                dev = "spool0 -r driver -n lhystudios output -n lhystudios\n"
+            self(dev)
 
         for device in self.lookup_all("device"):
             device[0].label = device_as_name(device)
