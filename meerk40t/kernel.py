@@ -388,7 +388,6 @@ class Context:
         """
         return Kernel.console_command_remove(self._kernel, *args, **kwargs)
 
-
     @property
     def contexts(self) -> Dict[str, "Context"]:
         return self._kernel.contexts
@@ -1370,6 +1369,10 @@ class Kernel:
             obj.sub_register(self)
         except AttributeError:
             pass
+
+    # ==========
+    # COMMAND REGISTRATION
+    # ==========
 
     @staticmethod
     def console_option(name: str, short: str = None, **kwargs) -> Callable:
