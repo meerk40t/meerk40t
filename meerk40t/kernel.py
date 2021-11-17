@@ -32,26 +32,6 @@ _cmd_parse = [
 _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
 
 
-class Modifier:
-    """
-    Modifiers are deprecated. This will be removed.
-    """
-
-    def __init__(self, context: "Context", name: str = None, channel: "Channel" = None):
-        self.context = context
-        self.name = name
-        self.state = STATE_INITIALIZE
-
-    def boot(self, *args, **kwargs):
-        pass
-
-    def attach(self, *args, **kwargs):
-        pass
-
-    def detach(self, *args, **kwargs):
-        pass
-
-
 class Module:
     """
     Modules are a generic lifecycle object. These are registered in the kernel as modules and when open() is called for
@@ -105,24 +85,12 @@ class Context:
         self._path = path
         self._state = STATE_UNKNOWN
         self.opened = {}
-        self.attached = {}
 
     def __str__(self):
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
         return self._kernel.console(data)
-
-    def boot(self, channel: "Channel" = None):
-        """
-        Boot calls all attached modifiers with the boot command.
-
-        :param channel:
-        :return:
-        """
-        for attached_name in self.attached:
-            attached = self.attached[attached_name]
-            attached.boot(channel=channel)
 
     # ==========
     # PATH INFORMATION
@@ -502,7 +470,7 @@ class Context:
         args and kwargs that were intended for the init() routine.
 
         :param registered_path: path of object being opened.
-        :param instance_path: path of object should be attached.
+        :param instance_path: instance_path of object.
         :param args: Args to pass to newly opened module.
         :param kwargs: Kwargs to pass to newly opened module.
         :return: Opened module.
@@ -553,41 +521,6 @@ class Context:
         except AttributeError:
             pass
         instance.finalize(*args, **kwargs)
-
-    # ==========
-    # MODIFIERS DEPRECATED
-    # ==========
-
-    def activate(self, registered_path: str, *args, **kwargs) -> "Modifier":
-        """
-        Deprecated.
-        """
-        try:
-            find = self.attached[registered_path]
-            try:
-                find.restore(*args, **kwargs)
-            except AttributeError:
-                pass
-            return find
-        except KeyError:
-            pass
-        try:
-            open_object = self.lookup(registered_path)
-        except KeyError:
-            raise ValueError("Modifier not found.")
-
-        instance = open_object(self, registered_path, *args, **kwargs)
-        self.attached[registered_path] = instance
-        instance.attach(self, *args, **kwargs)
-        return instance
-
-    def deactivate(self, instance_path: str, *args, **kwargs) -> None:
-        """
-        Deprectated
-        """
-        instance = self.attached[instance_path]
-        instance.detach(self, *args, **kwargs)
-        del self.attached[instance_path]
 
     # ==========
     # DELEGATES via PATH.
@@ -1061,9 +994,6 @@ class Kernel:
         self._booted = True
 
         self.register("control/Debug Device", self._start_debugging)
-        for context_name in list(self.contexts):
-            context = self.contexts[context_name]
-            context.boot()
         self.bootstrap("postboot")
 
     def shutdown(self):
@@ -1073,7 +1003,6 @@ class Kernel:
         Suspends all signals.
         Each initialized context is flushed and shutdown.
         Each opened module within the context is stopped and closed.
-        Each attached modifier is shutdown and deactivated.
 
         All threads are stopped.
 
@@ -1125,22 +1054,6 @@ class Kernel:
                 context.close(opened_name, channel=channel, shutdown=True)
 
         self.process_queue()  # Process last events.
-
-        # Detach Modifiers
-        for context_name in list(self.contexts):
-            try:
-                context = self.contexts[context_name]
-            except KeyError:
-                # Context was deleted by the deactivation of another context.
-                continue
-            for attached_name in list(context.attached):
-                obj = context.attached[attached_name]
-                if channel:
-                    channel(
-                        _("%s: Detaching %s: %s")
-                        % (str(context), attached_name, str(obj))
-                    )
-                context.deactivate(attached_name, channel=channel)
 
         # Close services.
         for domain in self._active_services:
@@ -2599,49 +2512,6 @@ class Kernel:
                 else:
                     channel(_("Module '%s' not found.") % index)
             return
-
-        @self.console_option(
-            "path", "p", type=str, default="/", help=_("Path of variables to set.")
-        )
-        @self.console_command(
-            "modifier", help=_("modifier [(open|close) <module_name>]")
-        )
-        def modifier(channel, _, path=None, args=tuple(), **kwargs):
-            if path is None:
-                path = "/"
-            path_context = self.get_context(path)
-
-            if len(args) == 0:
-                channel(_("----------"))
-                channel(_("Modifiers Registered:"))
-                for i, name in enumerate(self.match("modifier")):
-                    channel("%d: %s" % (i + 1, name))
-                channel(_("----------"))
-
-                channel(_("Loaded Modifiers in Context %s:") % str(path_context.path))
-                for i, name in enumerate(path_context.attached):
-                    modifier = path_context.attached[name]
-                    channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
-                channel(_("----------"))
-                channel(_("Loaded Modifiers in Device %s:") % str(path_context.path))
-                for i, name in enumerate(path_context.attached):
-                    modifier = path_context.attached[name]
-                    channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
-                channel(_("----------"))
-            else:
-                value = args[0]
-                if value == "open":
-                    index = args[1]
-                    if self.lookup(index) is not None:
-                        path_context.activate(index)
-                    else:
-                        channel(_("Modifier '%s' not found.") % index)
-                elif value == "close":
-                    index = args[1]
-                    if index in path_context.attached:
-                        path_context.deactivate(index)
-                    else:
-                        channel(_("Modifier '%s' not found.") % index)
 
         @self.console_command("schedule", help=_("show scheduled events"))
         def schedule(channel, _, **kwargs):
