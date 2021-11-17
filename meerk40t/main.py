@@ -60,7 +60,6 @@ parser.add_argument(
 parser.add_argument(
     "-v", "--verbose", action="store_true", help="display verbose debugging"
 )
-parser.add_argument("-m", "--mock", action="store_true", help="uses mock usb device")
 parser.add_argument(
     "-q", "--quit", action="store_true", help="quit on spooler complete"
 )
