@@ -959,6 +959,12 @@ class Kernel:
     # LIFECYCLE PROCESSES
     # ==========
 
+    def __call__(self):
+        self.registration()
+        self.boot()
+        self.start()
+        self.main()
+
     def bootstrap(self, lifecycle: str) -> None:
         """
         Bootstraps all plugins at this particular lifecycle event.
@@ -1002,8 +1008,64 @@ class Kernel:
         self.bootstrap("boot")
         self._booted = True
 
-        self.register("control/Debug Device", self._start_debugging)
+        if hasattr(self.args, "verbose") and self.args.verbose:
+            self._start_debugging()
         self.bootstrap("postboot")
+
+    def start(self):
+        self.bootstrap("prestart")
+
+        if hasattr(self.args, "set") and self.args.set is not None:
+            # Set the variables requested here.
+            for v in self.args.set:
+                try:
+                    attr = v[0]
+                    value = v[1]
+                    self.console("set %s %s\n" % (attr, value))
+                except IndexError:
+                    break
+        self.bootstrap("start")
+
+        if hasattr(self.args, "execute") and self.args.execute:
+            # Any execute code segments gets executed here.
+            self.channel("console").watch(print)
+            for v in self.args.execute:
+                if v is None:
+                    continue
+                self.console(v.strip() + "\n")
+            self.channel("console").unwatch(print)
+
+        if hasattr(self.args, "batch") and self.args.batch:
+            # If a batch file is specified it gets processed here.
+            self.channel("console").watch(print)
+            with self.args.batch as batch:
+                for line in batch:
+                    self.console(line.strip() + "\n")
+            self.channel("console").unwatch(print)
+
+        self.bootstrap("poststart")
+
+    def main(self):
+        if hasattr(self.args, "console") and self.args.console:
+            self.channel("console").watch(print)
+            import sys
+
+            async def aio_readline(loop):
+                while self.lifecycle != "shutdown":
+                    print(">>", end="", flush=True)
+
+                    line = await loop.run_in_executor(None, sys.stdin.readline)
+                    self.console("." + line + "\n")
+                    if line in ("quit", "shutdown"):
+                        break
+
+            import asyncio
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(aio_readline(loop))
+            loop.close()
+            self.channel("console").unwatch(print)
+
+        self.bootstrap("mainloop")  # This is where the GUI loads and runs.
 
     def shutdown(self):
         """

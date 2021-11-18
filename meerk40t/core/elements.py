@@ -58,7 +58,7 @@ def plugin(kernel, lifecycle=None):
         kernel.add_service("elements", Elemental(kernel))
     elif lifecycle == "postboot":
         _ = kernel.root._
-        elements = kernel.root.elements
+        elements = kernel.elements
         choices = [
             {
                 "attr": "uniform_svg",
@@ -123,6 +123,21 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
+    elif lifecycle == "prestart":
+        if hasattr(kernel.args, "input") and kernel.args.input is not None:
+            # Load any input file
+            from os.path import realpath
+            elements = kernel.elements
+
+            elements.load(realpath(kernel.args.input.name))
+            elements.classify(list(elements.elems()))
+    elif lifecycle == "poststart":
+        if hasattr(kernel.args, "output") and kernel.args.output is not None:
+            # output the file you have at this point.
+            from os.path import realpath
+            elements = kernel.elements
+
+            elements.save(realpath(kernel.args.output.name))
 
 
 MILS_IN_MM = 39.3701

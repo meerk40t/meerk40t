@@ -222,6 +222,24 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("optimize", choices)
+    elif lifecycle == "poststart":
+        if hasattr(kernel.args, "auto") and kernel.args.auto:
+            elements = kernel.elements
+            planner = kernel.planner
+            # Auto start does the planning and spooling of the data.
+            if hasattr(kernel.args, "speed") and kernel.args.speed is not None:
+                for o in elements.ops():
+                    o.speed = kernel.args.speed
+            planner("plan copy preprocess validate blob preopt optimize\n")
+            if hasattr(kernel.args, "origin") and kernel.args.origin:
+                planner("plan append origin\n")
+            if hasattr(kernel.args, "quit") and kernel.args.quit:
+                planner("plan append shutdown\n")
+            planner("plan spool\n")
+        else:
+            if hasattr(kernel.args, "quit") and kernel.args.quit:
+                # Flag quitting on complete.
+                kernel.root._quit = True
 
 
 class CutPlan:
