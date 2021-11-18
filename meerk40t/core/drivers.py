@@ -69,13 +69,13 @@ class Driver:
         self.rapid_override_speed_y = 50.0
         self._thread = None
         self._shutdown = False
-        self.context.kernel.listen("lifecycle;ready", "", self.start_driver)
+        self.context.kernel.listen("lifecycle;start", "", self.start_driver)
         self.context.kernel.listen("lifecycle;shutdown", "", self.shutdown)
 
         self.last_fetch = None
 
     def shutdown(self, *args, **kwargs):
-        self.context.kernel.unlisten("lifecycle;ready", "", self.start_driver)
+        self.context.kernel.unlisten("lifecycle;start", "", self.start_driver)
         self.context.kernel.unlisten("lifecycle;shutdown", "", self.shutdown)
         self._shutdown = True
 

@@ -718,7 +718,7 @@ class MoshiController:
         context.setting(int, "packet_count", 0)
         context.setting(int, "rejected_count", 0)
 
-        self.context.root.listen("lifecycle;ready", self.on_controller_ready)
+        self.context.root.listen("lifecycle;start", self.on_controller_ready)
 
     def viewbuffer(self):
         """
@@ -736,7 +736,7 @@ class MoshiController:
         self.start()
 
     def finalize(self, *args, **kwargs):
-        self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
+        self.context.root.unlisten("lifecycle;start", self.on_controller_ready)
         if self._thread is not None:
             self.is_shutdown = True
 
