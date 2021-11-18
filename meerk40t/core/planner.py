@@ -234,20 +234,14 @@ def plugin(kernel, lifecycle=None):
                 )
                 + "\n\n"
                 + _(
-                    "This option should only be selected if you are cutting the material "
-                    + "i.e. burning right through the material to the other side."
-                )
-                + "\n\n"
-                + _(
                     "If you have a complex design with many paths, "
-                    + "using this option can significantly INCREASE the optimisation time."
-                )
-                + "\n\n"
-                + _(
-                    "If optimising takes too long with this checked, "
-                    + "try disabling Merge Operations. "
-                    + "Whilst you will not get the maximum travel time savings, "
-                    + "you should still get the majority of them."
+                    + "using this option can significantly INCREASE the optimisation time. "
+                    + "This option should therefore only be selected if you are cutting the material "
+                    + "i.e. burning right through the material to the other side. "
+                    + "The time taken for Cut Inner First to run can be minimised by: \n"
+                    + "* Putting the inner paths into a separate earlier operation(s) and not using Cut Inner First \n"
+                    + "* Not using Merge Operations"
+                    + "* Using Merge Passes"
                 ),
             },
             {
@@ -420,9 +414,13 @@ class CutPlan:
                             continue
                         copies = 1
                         burning = True
-                    # When optimising travel, merge passes is handled by the greedy algorithm
+                    # Providing we do some sort of post-processing of blobs,
+                    # then merge passes is handled by the greedy or inner_first algorithms
                     passes = 1
-                    if context.opt_nearest_neighbor and context.opt_merge_passes:
+                    if (
+                        context.opt_merge_passes
+                        and (context.opt_nearest_neighbor or context.opt_inner_first)
+                    ):
                         passes = copies
                         copies = 1
                     for p in range(copies):
@@ -503,7 +501,13 @@ class CutPlan:
         if not has_cutcode:
             return
 
-        if context.opt_reduce_travel:
+        if (
+            context.opt_reduce_travel
+            and (
+                context.opt_nearest_neighbor
+                or context.opt_2opt
+            )
+        ):
             if context.opt_nearest_neighbor:
                 self.commands.append(self.optimize_travel)
             if context.opt_2opt and not context.opt_inner_first:
@@ -1523,7 +1527,7 @@ def inner_first_cutcode(context: CutGroup, channel=None):
         start_length=context.length_travel(True)
         start_time = time()
         start_times = times()
-        channel("Executing Inner First Preprocess Optimization")
+        channel("Executing Inner-First Identification")
         channel("Length at start: {length:.0f} mils".format(length=start_length))
 
     ordered = CutCode()
@@ -1577,11 +1581,10 @@ def inner_first_cutcode(context: CutGroup, channel=None):
 
 def short_travel_cutcode(context: CutCode, channel=None):
     """
-    Selects cutcode from candidate cutcode (permitted and with burns remaining), optimizing with greedy/brute for
-    shortest distances optimizations.
+    Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
+    optimizing with greedy/brute for shortest distances optimizations.
 
     For paths starting at exactly the same point forward paths are preferred over reverse paths
-    and within this shorter paths are preferred over longer ones.
 
     We start at either 0,0 or the value given in context.start
 
@@ -1602,7 +1605,6 @@ def short_travel_cutcode(context: CutCode, channel=None):
         curr = complex(curr[0], curr[1])
 
     for c in context.flat():
-        c.permitted = True
         c.burns_done = 0
 
     ordered = CutCode()
@@ -1619,19 +1621,19 @@ def short_travel_cutcode(context: CutCode, channel=None):
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
                 cut = last_segment.next
-                if cut and cut.permitted and cut.burns_done < cut.passes:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = False
                     distance = abs(complex(closest.start()) - curr)
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
-                if cut and cut.permitted and cut.burns_done < cut.passes:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = True
                     distance = abs(complex(closest.end()) - curr)
             # Gap or continuing on path not permitted, try reversing
-            if distance > 50 and last_segment.permitted and last_segment.burns_done < last_segment.passes:
+            if distance > 50 and last_segment.burns_done < last_segment.passes:
                 # last_segment is a copy so we cannot use it to increment burns_done
                 closest = last_segment.next.previous
                 backwards = last_segment.normal
@@ -1676,7 +1678,6 @@ def short_travel_cutcode(context: CutCode, channel=None):
         if backwards:
             if (
                 closest.next
-                and closest.next.permitted
                 and closest.next.burns_done <= closest.burns_done
                 and closest.next.start() == closest.end()
             ):
@@ -1685,7 +1686,6 @@ def short_travel_cutcode(context: CutCode, channel=None):
         else:
             if (
                 closest.previous
-                and closest.previous.permitted
                 and closest.previous.burns_done < closest.burns_done
                 and closest.previous.end() == closest.start()
             ):
@@ -1693,8 +1693,6 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 backwards = True
 
         closest.burns_done += 1
-        if closest.burns_done >= closest.passes:
-            closest.permitted = False
         c = copy(closest)
         if backwards:
             c.reverse()
@@ -1875,18 +1873,21 @@ def inner_selection_cutcode(context: CutCode, channel=None):
         start_times = times()
         channel("Executing Inner Selection-Only optimization")
         channel("Length at start: {length:.0f} mils".format(length=start_length))
+
     for c in context.flat():
-        c.permitted = True
+        c.burns_done = 0
+
     ordered = CutCode()
     iterations = 0
     while True:
         c = list(context.candidate())
         if len(c) == 0:
             break
+        for o in c:
+            o.burns_done += 1
         ordered.extend(c)
-        for o in ordered.flat():
-            o.permitted = False
         iterations += 1
+
     if channel:
         end_times = times()
         end_length = ordered.length_travel(True)

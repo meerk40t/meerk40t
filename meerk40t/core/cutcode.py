@@ -144,7 +144,6 @@ class CutObject:
         self.parent = parent
         self.next = None
         self.previous = None
-        self.permitted = True
         self.passes = passes
         self.burns_done = 0
 
@@ -221,7 +220,7 @@ class CutObject:
             return False
         for c in self.contains:
             for pp in c.flat():
-                if pp.permitted and pp.burns_done < pp.passes:
+                if pp.burns_done < pp.passes:
                     return True
         return False
 
@@ -229,7 +228,7 @@ class CutObject:
         yield self
 
     def candidate(self):
-        if self.permitted and self.burns_done < self.passes:
+        if self.burns_done < self.passes:
             yield self
 
 
@@ -288,8 +287,8 @@ class CutGroup(list, CutObject, ABC):
 
     def candidate(self):
         """
-        Candidates are permitted cutobjects with at least one burn remaining, this is any cut object that
-        is not itself containing another constrained cutcode object. Which is to say that the
+        Candidates are cutobjects with burns done < passes that do not contain
+        another constrained cutcode object. Which is to say that the
         inner-most non-containing cutcode are the only candidates for cutting.
         """
         for c in self:
@@ -298,7 +297,7 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 if s is None:
                     continue
-                if s.permitted and s.burns_done < s.passes:
+                if s.burns_done < s.passes:
                     yield s
 
 
