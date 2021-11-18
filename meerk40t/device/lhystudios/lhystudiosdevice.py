@@ -1,5 +1,6 @@
 import threading
 import time
+from hashlib import md5
 
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
@@ -368,6 +369,20 @@ def plugin(kernel, lifecycle=None):
                 output.write(
                     bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
                 )
+
+        @context.console_command(
+            "challenge",
+            input_type="lhystudios",
+            help=_("Challenge code, challenge <serial number>"),
+        )
+        def challenge_egv(command, channel, _, data=None, remainder=None, **kwargs):
+            spooler, driver, output = data
+            if len(remainder) == 0:
+                raise SyntaxError
+            else:
+                challenge = bytearray.fromhex(md5(bytes(remainder.upper(), "utf8")).hexdigest())
+                code = b"A%s\n" % challenge
+                output.write(code)
 
         @context.console_command(
             "start", input_type="lhystudios", help=_("Start Pipe to Controller")
