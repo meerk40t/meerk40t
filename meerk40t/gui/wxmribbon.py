@@ -277,7 +277,7 @@ class RibbonPanel(wx.Panel):
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
 
-        if self.context.has_feature("window/Spooler"):
+        if self.context.has_feature("window/JobSpooler"):
             button_bar.AddButton(
                 ID_SPOOLER,
                 _("Spooler"),
