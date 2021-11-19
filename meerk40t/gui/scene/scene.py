@@ -356,6 +356,7 @@ class Scene(Module, Job):
             conditional=lambda: self.screen_refresh_is_requested,
             run_main=True,
         )
+        self.log = context.channel("scene")
         self.gui = gui
         self.matrix = Matrix()
         self.hittable_elements = list()
@@ -367,6 +368,7 @@ class Scene(Module, Job):
         self.last_position = None
         self.time = None
         self.distance = None
+        self._cursor = None
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
@@ -745,6 +747,31 @@ class Scene(Module, Job):
                 self.hit_chain[i] = None
             else:
                 break
+
+    def cursor(self, cursor):
+        """
+        Routine to centralize and correct cursor info.
+        @param cursor:
+        @return:
+        """
+        if cursor == "sizing":
+            new_cursor = wx.CURSOR_SIZING
+        elif cursor in ("size_nw", "size_se"):
+            new_cursor = wx.CURSOR_SIZENWSE
+        elif cursor in ("size_sw", "size_ne"):
+            new_cursor = wx.CURSOR_SIZENESW
+        elif cursor in ("size_n", "size_s"):
+            new_cursor = wx.CURSOR_SIZENS
+        elif cursor in ("size_e", "size_w"):
+            new_cursor = wx.CURSOR_SIZEWE
+        elif cursor == "arrow":
+            new_cursor = wx.CURSOR_ARROW
+        else:
+            new_cursor = wx.CURSOR_ARROW
+            self.log("Invalid cursor.")
+        if new_cursor != self._cursor:
+            self._cursor = new_cursor
+            self.gui.SetCursor(wx.Cursor(self._cursor))
 
     def add_scenewidget(self, widget, properties=ORIENTATION_RELATIVE):
         """

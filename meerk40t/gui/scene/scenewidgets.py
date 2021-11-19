@@ -150,12 +150,10 @@ class SelectionWidget(Widget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.elements
         if event_type == "hover_start":
-            self.cursor = wx.CURSOR_SIZING
-            self.scene.gui.SetCursor(wx.Cursor(self.cursor))
+            self.scene.cursor("sizing")
             return RESPONSE_CHAIN
         elif event_type == "hover_end" or event_type == "lost":
-            self.cursor = wx.CURSOR_ARROW
-            self.scene.gui.SetCursor(wx.Cursor(self.cursor))
+            self.scene.cursor("arrow")
             return RESPONSE_CHAIN
         elif event_type == "hover":
             matrix = self.parent.matrix
@@ -180,46 +178,41 @@ class SelectionWidget(Widget):
             )
             xmax = self.width - xmin
             ymax = self.height - ymin
-            cursor = self.cursor
             for e in elements.elems(emphasized=True):
                 try:
                     if e.lock:
-                        self.cursor = wx.CURSOR_SIZING
+                        self.scene.cursor("sizing")
                         self.tool = self.tool_translate
-                        if self.cursor != cursor:
-                            self.scene.gui.SetCursor(wx.Cursor(self.cursor))
                         return RESPONSE_CHAIN
                 except (ValueError, AttributeError):
                     pass
             if xin >= xmax and yin >= ymax:
-                self.cursor = wx.CURSOR_SIZENWSE
+                self.scene.cursor("size_se")
                 self.tool = self.tool_scalexy_se
             elif xin <= xmin and yin <= ymin:
-                self.cursor = wx.CURSOR_SIZENWSE
+                self.scene.cursor("size_nw")
                 self.tool = self.tool_scalexy_nw
             elif xin >= xmax and yin <= ymin:
-                self.cursor = wx.CURSOR_SIZENESW
+                self.scene.cursor("size_ne")
                 self.tool = self.tool_scalexy_ne
             elif xin <= xmin and yin >= ymax:
-                self.cursor = wx.CURSOR_SIZENESW
+                self.scene.cursor("size_sw")
                 self.tool = self.tool_scalexy_sw
             elif xin <= xmin:
-                self.cursor = wx.CURSOR_SIZEWE
+                self.scene.cursor("size_w")
                 self.tool = self.tool_scalex_w
             elif yin <= ymin:
-                self.cursor = wx.CURSOR_SIZENS
+                self.scene.cursor("size_s")
                 self.tool = self.tool_scaley_n
             elif xin >= xmax:
-                self.cursor = wx.CURSOR_SIZEWE
+                self.scene.cursor("size_e")
                 self.tool = self.tool_scalex_e
             elif yin >= ymax:
-                self.cursor = wx.CURSOR_SIZENS
+                self.scene.cursor("size_n")
                 self.tool = self.tool_scaley_s
             else:
-                self.cursor = wx.CURSOR_SIZING
+                self.scene.cursor("sizing")
                 self.tool = self.tool_translate
-            if self.cursor != cursor:
-                self.scene.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         dx = space_pos[4]
         dy = space_pos[5]
