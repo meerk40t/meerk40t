@@ -1044,6 +1044,7 @@ class Kernel:
             self.channel("console").unwatch(print)
 
         self.bootstrap("poststart")
+        self.bootstrap("ready")
 
     def main(self):
         if hasattr(self.args, "console") and self.args.console:
