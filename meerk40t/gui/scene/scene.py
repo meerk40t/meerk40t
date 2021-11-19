@@ -357,6 +357,7 @@ class Scene(Module, Job):
             run_main=True,
         )
         self.log = context.channel("scene")
+        self.log_events = context.channel("scene-events")
         self.gui = gui
         self.matrix = Matrix()
         self.hittable_elements = list()
@@ -667,6 +668,8 @@ class Scene(Module, Job):
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
         consider the dropped element within the hitchain.
         """
+        if self.log_events:
+            self.log_events("%s: %s" % (event_type, str(window_pos)))
         if window_pos is None:
             # Capture Lost
             for i, hit in enumerate(self.hit_chain):
