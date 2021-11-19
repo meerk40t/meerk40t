@@ -260,7 +260,10 @@ def run():
 
         for entry_point in pkg_resources.iter_entry_points("meerk40t.plugins"):
             try:
-                plugin = entry_point.load()
+                try:
+                    plugin = entry_point.load()
+                except ImportError:
+                    continue  # Registered plugin suffered import error.
             except pkg_resources.DistributionNotFound:
                 pass
             else:
