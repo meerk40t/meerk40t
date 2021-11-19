@@ -778,6 +778,7 @@ class Scene(Module, Job):
             self._cursor = new_cursor
             self.gui.SetCursor(wx.Cursor(self._cursor))
             self.log("Cursor changed to %s" % cursor)
+            self.screen_refresh_is_requested = True
 
     def add_scenewidget(self, widget, properties=ORIENTATION_RELATIVE):
         """
