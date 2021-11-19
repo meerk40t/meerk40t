@@ -788,6 +788,8 @@ class Scene(Module, Job):
                 new_cursor = wx.CURSOR_SIZENWSE
             elif cursor in ("size_nw", "size_se"):
                 new_cursor = wx.CURSOR_SIZING
+            elif cursor in ("size_sw", "size_ne"):
+                new_cursor = wx.CURSOR_SIZING
         if new_cursor != self._cursor or always:
             self._cursor = new_cursor
             self.gui.scene_panel.SetCursor(wx.Cursor(self._cursor))
