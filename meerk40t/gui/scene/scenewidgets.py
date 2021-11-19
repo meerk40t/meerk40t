@@ -202,13 +202,13 @@ class SelectionWidget(Widget):
                 self.scene.cursor("size_w")
                 self.tool = self.tool_scalex_w
             elif yin <= ymin:
-                self.scene.cursor("size_s")
+                self.scene.cursor("size_n")
                 self.tool = self.tool_scaley_n
             elif xin >= xmax:
                 self.scene.cursor("size_e")
                 self.tool = self.tool_scalex_e
             elif yin >= ymax:
-                self.scene.cursor("size_n")
+                self.scene.cursor("size_s")
                 self.tool = self.tool_scaley_s
             else:
                 self.scene.cursor("sizing")
