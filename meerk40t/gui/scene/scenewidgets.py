@@ -136,7 +136,6 @@ class SelectionWidget(Widget):
                 self.bottom += height
 
             self.clear()
-            self.scene.request_refresh()
             return HITCHAIN_HIT
         else:
             self.left = float("inf")
