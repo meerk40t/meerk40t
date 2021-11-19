@@ -121,7 +121,7 @@ class UDPServer(Module):
             while True:
                 try:
                     message, address = self.socket.recvfrom(1024)
-                except socket.timeout:
+                except (socket.timeout, AttributeError):
                     if self.state == STATE_TERMINATE:
                         return
                     continue

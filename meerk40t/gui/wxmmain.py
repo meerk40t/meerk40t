@@ -117,7 +117,9 @@ class MeerK40t(MWindow):
     """
 
     def __init__(self, *args, **kwds):
-        super().__init__(1200, 600, *args, **kwds)
+        width, height = wx.DisplaySize()
+
+        super().__init__(int(width*0.9), int(height*0.9), *args, **kwds)
         try:
             self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
         except AttributeError:
@@ -338,7 +340,7 @@ class MeerK40t(MWindow):
                 if not pathname.lower().endswith(".svg"):
                     pathname += ".svg"
                 context.save(pathname)
-                gui.needs_saving = False
+                gui.validate_save()
                 gui.working_file = pathname
                 gui.set_file_as_recently_used(gui.working_file)
 
@@ -499,6 +501,7 @@ class MeerK40t(MWindow):
             .MinSize(40, 40)
             .FloatingSize(98, 98)
             .Name("stop")
+            .Hide()
             .CaptionVisible(not self.context.pane_lock)
         )
         pane.dock_proportion = 98
@@ -537,6 +540,7 @@ class MeerK40t(MWindow):
             .MinSize(40, 40)
             .FloatingSize(98, 98)
             .Name("pause")
+            .Hide()
             .CaptionVisible(not self.context.pane_lock)
         )
         pane.dock_proportion = 98
@@ -556,6 +560,7 @@ class MeerK40t(MWindow):
             .MinSize(40, 40)
             .FloatingSize(98, 98)
             .Name("home")
+            .Hide()
             .CaptionVisible(not self.context.pane_lock)
         )
         pane.dock_proportion = 98
@@ -870,12 +875,14 @@ class MeerK40t(MWindow):
         self.recent_file_menu = wx.Menu()
         self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
         self.file_menu.Append(ID_MENU_IMPORT, _("&Import File"), "")
-        # self.file_menu.Append(wx.ID_NEW, _("&Close\tCtrl-W"), "")
         self.file_menu.AppendSeparator()
         self.file_menu.Append(wx.ID_SAVE, _("&Save\tCtrl-S"), "")
         self.file_menu.Append(wx.ID_SAVEAS, _("Save &As\tCtrl-Shift-S"), "")
         self.file_menu.AppendSeparator()
+        from sys import platform
 
+        if platform == "darwin":
+            self.file_menu.Append(wx.ID_CLOSE, _("&Close Window\tCtrl-W"), "")
         self.file_menu.Append(wx.ID_EXIT, _("E&xit"), "")
         self.main_menubar.Append(self.file_menu, _("File"))
 
@@ -1136,7 +1143,9 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
 
+        self.Bind(wx.EVT_MENU, self.on_click_close, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=wx.ID_EXIT)
+
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_size, id=ID_MENU_ZOOM_SIZE)
@@ -1484,6 +1493,15 @@ class MeerK40t(MWindow):
 
     def on_invalidate_save(self, origin, *args):
         self.needs_saving = True
+        app = self.context.app.GetTopWindow()
+        if isinstance(app, wx.TopLevelWindow):
+            app.OSXSetModified(self.needs_saving)
+
+    def validate_save(self):
+        self.needs_saving = False
+        app = self.context.app.GetTopWindow()
+        if isinstance(app, wx.TopLevelWindow):
+            app.OSXSetModified(self.needs_saving)
 
     def on_warning_signal(self, origin, message, caption, style):
         dlg = wx.MessageDialog(
@@ -1622,6 +1640,9 @@ class MeerK40t(MWindow):
             self.load(pathname)
 
     def populate_recent_menu(self):
+        if not hasattr(self, "recent_file_menu"):
+            return  # No menu, cannot populate.
+
         for i in range(self.recent_file_menu.MenuItemCount):
             self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
         context = self.context
@@ -1752,7 +1773,7 @@ class MeerK40t(MWindow):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
                         # TODO: Disabled uniform_svg, no longer detecting namespace.
                         self.working_file = pathname
-                        self.needs_saving = False
+                        self.validate_save()
                 except AttributeError:
                     pass
                 return True
@@ -1794,7 +1815,7 @@ class MeerK40t(MWindow):
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         context = self.context
         self.working_file = None
-        self.needs_saving = False
+        self.validate_save()
         context.elements.clear_all()
         self.context(".laserpath_clear\n")
 
@@ -1812,11 +1833,20 @@ class MeerK40t(MWindow):
             self.on_click_save_as(event)
         else:
             self.set_file_as_recently_used(self.working_file)
-            self.needs_saving = False
+            self.validate_save()
             self.context.save(self.working_file)
 
     def on_click_save_as(self, event=None):
         self.context("dialog_save\n")
+
+    def on_click_close(self, event=None):
+        try:
+            window = self.context.app.GetTopWindow().FindFocus().GetTopLevelParent()
+            if window is self:
+                return
+            window.Close(False)
+        except RuntimeError:
+            pass
 
     def on_click_exit(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         try:

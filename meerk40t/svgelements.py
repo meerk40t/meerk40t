@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.3"
+SVGELEMENTS_VERSION = "1.6.4"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -195,6 +195,7 @@ PATTERN_TRANSFORM_UNITS = (
 )
 
 REGEX_IRI = re.compile(r"url\(#?(.*)\)")
+REGEX_DATA_URL = re.compile(r"^data:([^,]*),(.*)")
 REGEX_FLOAT = re.compile(PATTERN_FLOAT)
 REGEX_COORD_PAIR = re.compile(
     "(%s)%s(%s)" % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT)
@@ -914,7 +915,7 @@ class Length(object):
         font_size=None,
         font_height=None,
         viewbox=None,
-        **kwargs
+        **kwargs,
     ):
         if self.amount is None:
             return None
@@ -2688,7 +2689,7 @@ class Matrix:
         font_size=None,
         font_height=None,
         viewbox=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Provides values to turn trans_x and trans_y values into user units floats rather
@@ -4285,8 +4286,8 @@ class QuadraticBezier(Curve):
         def _compute_point(position):
             # compute factors
             n_pos = 1 - position
-            pos_2 = position ** 2
-            n_pos_2 = n_pos ** 2
+            pos_2 = position * position
+            n_pos_2 = n_pos * n_pos
             n_pos_pos = n_pos * position
 
             return (
@@ -4336,9 +4337,9 @@ class QuadraticBezier(Curve):
         try:
             # For an explanation of this case, see
             # http://www.malczak.info/blog/quadratic-bezier-curve-length/
-            A = 4 * (a.real ** 2 + a.imag ** 2)
+            A = 4 * (a.real * a.real + a.imag * a.imag)
             B = 4 * (a.real * b.real + a.imag * b.imag)
-            C = b.real ** 2 + b.imag ** 2
+            C = b.real * b.real + b.imag * b.imag
 
             Sabc = 2 * sqrt(A + B + C)
             A2 = sqrt(A)
@@ -4349,7 +4350,7 @@ class QuadraticBezier(Curve):
             s = (
                 A32 * Sabc
                 + A2 * B * (Sabc - C2)
-                + (4 * C * A - B ** 2) * log((2 * A2 + BA + Sabc) / (BA + C2))
+                + (4 * C * A - B * B) * log((2 * A2 + BA + Sabc) / (BA + C2))
             ) / (4 * A32)
         except (ZeroDivisionError, ValueError):
             # a_dot_b = a.real * b.real + a.imag * b.imag
@@ -4360,7 +4361,7 @@ class QuadraticBezier(Curve):
                 if k >= 2:
                     s = abs(b) - abs(a)
                 else:
-                    s = abs(a) * (k ** 2 / 2 - k + 1)
+                    s = abs(a) * (k * k / 2 - k + 1)
         return s
 
     def is_smooth_from(self, previous):
@@ -4482,9 +4483,9 @@ class CubicBezier(Curve):
 
         def _compute_point(position):
             # compute factors
-            pos_3 = position ** 3
+            pos_3 = position * position * position
             n_pos = 1 - position
-            n_pos_3 = n_pos ** 3
+            n_pos_3 = n_pos * n_pos * n_pos
             pos_2_n_pos = position * position * n_pos
             n_pos_2_pos = n_pos * n_pos * position
             return (
@@ -4519,7 +4520,9 @@ class CubicBezier(Curve):
         a = [c[v] for c in self]
         denom = a[0] - 3 * a[1] + 3 * a[2] - a[3]
         if abs(denom) >= 1e-12:
-            delta = a[1] ** 2 - (a[0] + a[1]) * a[2] + a[2] ** 2 + (a[0] - a[1]) * a[3]
+            delta = (
+                a[1] * a[1] - (a[0] + a[1]) * a[2] + a[2] * a[2] + (a[0] - a[1]) * a[3]
+            )
             if delta >= 0:  # otherwise no local extrema
                 sqdelta = sqrt(delta)
                 tau = a[0] - 2 * a[1] + a[2]
@@ -4768,17 +4771,15 @@ class Arc(Curve):
                 if r < hq:
                     kwargs["r"] = r = hq  # Correct potential math domain error.
                 self.center = Point(
-                    mid.x + sqrt(r ** 2 - hq ** 2) * (self.start.y - self.end.y) / q,
-                    mid.y + sqrt(r ** 2 - hq ** 2) * (self.end.x - self.start.x) / q,
+                    mid.x + sqrt(r * r - hq * hq) * (self.start.y - self.end.y) / q,
+                    mid.y + sqrt(r * r - hq * hq) * (self.end.x - self.start.x) / q,
                 )
                 cw = bool(Point.orientation(self.start, self.center, self.end) == 1)
                 if "ccw" in kwargs and kwargs["ccw"] and cw or not cw:
                     # ccw arg exists, is true, and we found the cw center, or we didn't find the cw center.
                     self.center = Point(
-                        mid.x
-                        - sqrt(r ** 2 - hq ** 2) * (self.start.y - self.end.y) / q,
-                        mid.y
-                        - sqrt(r ** 2 - hq ** 2) * (self.end.x - self.start.x) / q,
+                        mid.x - sqrt(r * r - hq * hq) * (self.start.y - self.end.y) / q,
+                        mid.y - sqrt(r * r - hq * hq) * (self.end.x - self.start.x) / q,
                     )
             elif "rx" in kwargs and "ry" in kwargs:
                 # This formulation will assume p1 and p2 are both axis aligned.
@@ -4991,7 +4992,8 @@ class Arc(Curve):
         def ellipse_part_integral(t1, t2, a, b, n=100000):
             # function to integrate
             def f(t):
-                return sqrt(1 - (1 - a ** 2 / b ** 2) * sin(t) ** 2)
+                sint = sin(t)
+                return sqrt(1 - (1 - (a * a) / (b * b)) * sint * sint)
 
             start = min(t1, t2)
             seg_len = abs(t1 - t2) / n
@@ -5009,11 +5011,11 @@ class Arc(Curve):
 
         a = self.rx
         b = self.ry
+        adb = a / b
+        m = 1 - adb * adb
         phi = self.get_start_t()
-        m = 1 - (a / b) ** 2
         d1 = ellipeinc(phi, m)
         phi = phi + self.sweep
-        m = 1 - (a / b) ** 2
         d2 = ellipeinc(phi, m)
         return b * abs(d2 - d1)
 
@@ -6841,7 +6843,7 @@ class _RoundShape(Shape):
         b = self.implicit_ry
         if b > a:
             a, b = b, a
-        h = (a - b) ** 2 / (a + b) ** 2
+        h = ((a - b) * (a - b)) / ((a + b) * (a + b))
         return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
 
 
@@ -7335,19 +7337,29 @@ class Subpath:
             return slice(start, stop, step)
         return self._numeric_index(index)
 
-    def bbox(self):
-        """returns a bounding box for the input Path"""
+    def bbox(self, transformed=True, with_stroke=False):
+        """returns a bounding box for the subpath"""
+        if transformed:
+            return Path(self).bbox(transformed=transformed, with_stroke=with_stroke)
+
         segments = self._path._segments[self._start : self._end + 1]
         bbs = [seg.bbox() for seg in segments if not isinstance(Close, Move)]
         try:
             xmins, ymins, xmaxs, ymaxs = list(zip(*bbs))
         except ValueError:
             return None  # No bounding box items existed. So no bounding box.
-        xmin = min(xmins)
-        xmax = max(xmaxs)
-        ymin = min(ymins)
-        ymax = max(ymaxs)
-        return xmin, ymin, xmax, ymax
+
+        if with_stroke and self._path.stroke_width is not None:
+            delta = float(self._path.stroke_width) / 2.0
+        else:
+            delta = 0.0
+
+        return (
+            min(xmins) - delta,
+            min(ymins) - delta,
+            max(xmaxs) + delta,
+            max(ymaxs) + delta,
+        )
 
     def d(self, relative=None, smooth=None):
         segments = self._path._segments[self._start : self._end + 1]
@@ -7930,6 +7942,7 @@ class Image(SVGElement, GraphicObject, Transformable):
     def __init__(self, *args, **kwargs):
         self.url = None
         self.data = None
+        self.media_type = None
         self.viewbox = None
         self.preserve_aspect_ratio = None
         self.x = None
@@ -7947,18 +7960,19 @@ class Image(SVGElement, GraphicObject, Transformable):
         )  # Dataurl requires this be processed first.
 
         if self.url is not None:
-            if self.url.startswith("data:image/"):
+            match = REGEX_DATA_URL.match(self.url)
+            if match:
                 # Data URL
-                from base64 import b64decode
+                self.media_type = match.group(1).split(";")
+                self.data = match.group(2)
+                if "base64" in self.media_type:
+                    from base64 import b64decode
 
-                if self.url.startswith("data:image/png;base64,"):
-                    self.data = b64decode(self.url[22:])
-                elif self.url.startswith("data:image/jpg;base64,"):
-                    self.data = b64decode(self.url[22:])
-                elif self.url.startswith("data:image/jpeg;base64,"):
-                    self.data = b64decode(self.url[23:])
-                elif self.url.startswith("data:image/svg+xml;base64,"):
-                    self.data = b64decode(self.url[26:])
+                    self.data = b64decode(self.data)
+                else:
+                    from urllib.parse import unquote_to_bytes
+
+                    self.data = unquote_to_bytes(self.data)
 
     def __repr__(self):
         values = []
@@ -8450,8 +8464,8 @@ class SVG(Group):
         source,
         reify=True,
         ppi=DEFAULT_PPI,
-        width=1000,
-        height=1000,
+        width=None,
+        height=None,
         color="black",
         transform=None,
         context=None,
@@ -8492,7 +8506,7 @@ class SVG(Group):
                 stack.append((context, values))
                 if (
                     SVG_ATTR_DISPLAY in values
-                    and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE
+                    and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
                 ):
                     continue  # Values has a display=none. Do not render anything. No Shadow Dom.
                 current_values = values
@@ -8586,13 +8600,22 @@ class SVG(Group):
                 values[SVG_STRUCT_ATTRIB] = attributes
                 if (
                     SVG_ATTR_DISPLAY in values
-                    and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE
+                    and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
                 ):
                     continue  # If the attributes flags our values to display=none, stop rendering.
                 if SVG_NAME_TAG == tag:
                     # The ordering for transformations on the SVG object are:
                     # explicit transform, parent transforms, attribute transforms, viewport transforms
                     s = SVG(values)
+
+                    if width is None:
+                        # If a dim was not provided but a viewbox was, use the viewbox dim as physical size, else 1000
+                        width = (
+                            s.viewbox.width if s.viewbox is not None else 1000
+                        )  # 1000 default no information.
+                    if height is None:
+                        height = s.viewbox.height if s.viewbox is not None else 1000
+
                     s.render(ppi=ppi, width=width, height=height)
                     height, width = s.width, s.height
                     if s.viewbox is not None:

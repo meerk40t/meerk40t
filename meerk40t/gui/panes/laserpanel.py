@@ -32,7 +32,7 @@ def register_panel(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Left()
-        .MinSize(325, 190)
+        .MinSize(250, 210)
         .FloatingSize(400, 200)
         .MaxSize(500, 300)
         .Caption(_("Laser"))
@@ -40,7 +40,7 @@ def register_panel(window, context):
         .Name("laser")
     )
     pane.control = notebook
-    pane.dock_proportion = 190
+    pane.dock_proportion = 210
     notebook.AddPage(laser_panel, _("Laser"))
     notebook.AddPage(optimize_panel, _("Optimize"))
 
@@ -170,7 +170,13 @@ class LaserPanel(wx.Panel):
         self.text_plan = wx.TextCtrl(
             self, wx.ID_ANY, _(_("--- Empty ---")), style=wx.TE_READONLY
         )
-        sizer_source.Add(self.text_plan, 3, 0, 0)
+        sizer_source.Add(self.text_plan, 2, 0, 0)
+
+        self.context.setting(bool, "laserpane_hold", False)
+        self.checkbox_hold = wx.CheckBox(self, wx.ID_ANY, _("Hold"))
+        self.checkbox_hold.SetToolTip(_("Preserve the job between running, rerunning, and execution"))
+        self.checkbox_hold.SetValue(self.context.laserpane_hold)
+        sizer_source.Add(self.checkbox_hold, 1, 0, 0)
 
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
@@ -180,6 +186,7 @@ class LaserPanel(wx.Panel):
         self.SetSizer(sizer_main)
         self.Layout()
 
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_hold, self.checkbox_hold)
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
@@ -212,15 +219,15 @@ class LaserPanel(wx.Panel):
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
         s = self.connected_spooler.name
-        if plan.plan:
+        if plan.plan and self.context.laserpane_hold:
             self.context("planz spool%s\n" % s)
         else:
             if self.checkbox_optimize.GetValue():
                 self.context(
-                    "planz copy preprocess validate blob preopt optimize spool%s\n" % s
+                    "planz clear copy preprocess validate blob preopt optimize spool%s\n" % s
                 )
             else:
-                self.context("planz copy preprocess validate blob spool%s\n" % s)
+                self.context("planz clear copy preprocess validate blob spool%s\n" % s)
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
@@ -252,15 +259,18 @@ class LaserPanel(wx.Panel):
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         with wx.BusyInfo(_("Preparing simulation...")):
             plan = self.context.planner.get_or_make_plan("z")
-            if not plan.plan:
+            if not plan.plan or not self.context.laserpane_hold:
                 if self.checkbox_optimize.GetValue():
                     self.context(
-                        "planz copy preprocess validate blob preopt optimize\n"
+                        "planz clear copy preprocess validate blob preopt optimize\n"
                     )
                 else:
-                    self.context("planz copy preprocess validate blob\n")
+                    self.context("planz clear copy preprocess validate blob\n")
 
             self.context("window toggle Simulation z 0\n"),
+
+    def on_check_hold(self, event):
+        self.context.laserpane_hold = self.checkbox_hold.GetValue()
 
     def on_button_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("window toggle DeviceManager\n")

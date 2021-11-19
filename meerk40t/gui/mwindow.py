@@ -44,21 +44,6 @@ class MWindow(wx.Frame, Module):
             self.SetSize(width, height)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
-        self.accelerator_table(self)
-
-    def accelerator_table(self, window):
-        def close_window(event=None):
-            try:
-                window.Close(False)
-            except RuntimeError:
-                pass
-
-        table = [
-            (wx.ACCEL_CTRL, ord("W"), wx.NewId()),
-        ]
-        accel_tbl = wx.AcceleratorTable(table)
-        window.Bind(wx.EVT_MENU, close_window, id=table[0][2])
-        window.SetAcceleratorTable(accel_tbl)
 
     def on_menu_request(self, event):
         menu = wx.Menu()
