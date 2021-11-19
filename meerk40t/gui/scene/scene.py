@@ -253,6 +253,7 @@ class ScenePanel(wx.Panel):
         """
         if event.Moving():
             self.scene.event(event.GetPosition(), "hover")
+            self.scene.cursor("cross", True)
         else:
             self.scene.event(event.GetPosition(), "move")
 
@@ -759,7 +760,7 @@ class Scene(Module, Job):
             else:
                 break
 
-    def cursor(self, cursor):
+    def cursor(self, cursor, always=False):
         """
         Routine to centralize and correct cursor info.
         @param cursor:
@@ -777,10 +778,12 @@ class Scene(Module, Job):
             new_cursor = wx.CURSOR_SIZEWE
         elif cursor == "arrow":
             new_cursor = wx.CURSOR_ARROW
+        elif cursor == "cross":
+            new_cursor = wx.CROSS_CURSOR
         else:
             new_cursor = wx.CURSOR_ARROW
             self.log("Invalid cursor.")
-        if new_cursor != self._cursor:
+        if new_cursor != self._cursor or always:
             self._cursor = new_cursor
             self.gui.SetCursor(wx.Cursor(self._cursor))
             self.log("Cursor changed to %s" % cursor)
