@@ -759,7 +759,7 @@ class Scene(Module, Job):
             else:
                 break
 
-    def cursor(self, cursor, always=True):
+    def cursor(self, cursor, always=False):
         """
         Routine to centralize and correct cursor info.
         @param cursor:
@@ -784,7 +784,7 @@ class Scene(Module, Job):
             self.log("Invalid cursor.")
         if new_cursor != self._cursor or always:
             self._cursor = new_cursor
-            self.gui.SetCursor(wx.Cursor(self._cursor))
+            self.context.app.GetTopWindow().FindFocus().GetTopLevelParent().SetCursor(wx.Cursor(self._cursor))
             self.log("Cursor changed to %s" % cursor)
 
     def add_scenewidget(self, widget, properties=ORIENTATION_RELATIVE):
