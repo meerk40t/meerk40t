@@ -253,7 +253,6 @@ class ScenePanel(wx.Panel):
         """
         if event.Moving():
             self.scene.event(event.GetPosition(), "hover")
-            self.scene.cursor("cross", True)
         else:
             self.scene.event(event.GetPosition(), "move")
 
@@ -760,7 +759,7 @@ class Scene(Module, Job):
             else:
                 break
 
-    def cursor(self, cursor, always=False):
+    def cursor(self, cursor, always=True):
         """
         Routine to centralize and correct cursor info.
         @param cursor:
