@@ -573,6 +573,8 @@ class Scene(Module, Job):
         """
         if self.widget_root is not None:
             self.widget_root.draw(canvas)
+            if self.log:
+                self.log("Redraw Canvas")
 
     def convert_scene_to_window(self, position):
         """
