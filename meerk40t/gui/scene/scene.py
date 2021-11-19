@@ -741,6 +741,8 @@ class Scene(Module, Job):
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("hover_start", str(window_pos)))
                 previous_top_element = current_widget
+            else:
+                return
             if event_type == "leftup" and time.time() - self.time <= 0.15:
                 response = current_widget.event(window_pos, space_pos, "leftclick")
                 if self.log_events:
