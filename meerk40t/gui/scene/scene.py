@@ -765,23 +765,44 @@ class Scene(Module, Job):
         @param cursor:
         @return:
         """
-        if cursor == "sizing":
-            new_cursor = wx.CURSOR_SIZING
-        elif cursor in ("size_nw", "size_se"):
-            new_cursor = wx.CURSOR_SIZENWSE
-        elif cursor in ("size_sw", "size_ne"):
-            new_cursor = wx.CURSOR_SIZENESW
-        elif cursor in ("size_n", "size_s"):
-            new_cursor = wx.CURSOR_SIZENS
-        elif cursor in ("size_e", "size_w"):
-            new_cursor = wx.CURSOR_SIZEWE
-        elif cursor == "arrow":
-            new_cursor = wx.CURSOR_ARROW
-        elif cursor == "cross":
-            new_cursor = wx.CROSS_CURSOR
-        else:
-            new_cursor = wx.CURSOR_ARROW
-            self.log("Invalid cursor.")
+        from sys import platform
+
+        if platform == "linux":
+            if cursor == "sizing":
+                new_cursor = wx.CURSOR_SIZING
+            elif cursor in ("size_nw", "size_se"):
+                new_cursor = wx.CURSOR_SIZENWSE
+            elif cursor in ("size_sw", "size_ne"):
+                new_cursor = wx.CURSOR_SIZENESW
+            elif cursor in ("size_n", "size_s"):
+                new_cursor = wx.CURSOR_SIZENS
+            elif cursor in ("size_e", "size_w"):
+                new_cursor = wx.CURSOR_SIZEWE
+            elif cursor == "arrow":
+                new_cursor = wx.CURSOR_ARROW
+            elif cursor == "cross":
+                new_cursor = wx.CROSS_CURSOR
+            else:
+                new_cursor = wx.CURSOR_ARROW
+                self.log("Invalid cursor.")
+        else: # Use correct values.
+            if cursor == "sizing":
+                new_cursor = wx.CURSOR_SIZING
+            elif cursor in ("size_nw", "size_se"):
+                new_cursor = wx.CURSOR_SIZENWSE
+            elif cursor in ("size_sw", "size_ne"):
+                new_cursor = wx.CURSOR_SIZENESW
+            elif cursor in ("size_n", "size_s"):
+                new_cursor = wx.CURSOR_SIZENS
+            elif cursor in ("size_e", "size_w"):
+                new_cursor = wx.CURSOR_SIZEWE
+            elif cursor == "arrow":
+                new_cursor = wx.CURSOR_ARROW
+            elif cursor == "cross":
+                new_cursor = wx.CROSS_CURSOR
+            else:
+                new_cursor = wx.CURSOR_ARROW
+                self.log("Invalid cursor.")
         if new_cursor != self._cursor or always:
             self._cursor = new_cursor
             self.gui.scene_panel.SetCursor(wx.Cursor(self._cursor))
