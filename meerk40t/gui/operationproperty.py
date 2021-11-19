@@ -1050,6 +1050,8 @@ class OperationProperty(MWindow):
         self.panel.operation = node
         self.panel.set_widgets()
         self.panel.on_size()
+        self.Refresh()
+        self.Update()
 
     def window_open(self):
         self.panel.initialize()

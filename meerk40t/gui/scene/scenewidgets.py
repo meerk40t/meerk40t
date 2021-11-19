@@ -151,7 +151,7 @@ class SelectionWidget(Widget):
             self.cursor = wx.CURSOR_SIZING
             self.scene.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
-        elif event_type == "hover_end":
+        elif event_type == "hover_end" or event_type == "lost":
             self.cursor = wx.CURSOR_ARROW
             self.scene.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN

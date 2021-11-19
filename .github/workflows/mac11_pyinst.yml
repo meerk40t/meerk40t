@@ -47,6 +47,10 @@ jobs:
         cd jpeg-9c
         ./configure && make && sudo make install
         cd ..
+        ## git clone https://github.com/numpy/numpy.git
+        ## cd numpy
+        ## python3.8 -m pip install .
+        ## cd ..
 
     - name: Ensure latest pip and meerk40t-camera
       run: |
@@ -54,7 +58,11 @@ jobs:
         python3.8 -m pip install meerk40t-camera opencv-python-headless==3.4.13.47
         ## python3.8 -m pip install meerk40t-camera opencv-python
         python3.8 -m pip install --upgrade pyinstaller==4.3 
+        
+        ## numpy toggle based on 32 bit fix
         python3.8 -m pip install wheel six numpy ezdxf
+        ## python3.8 -m pip install wheel six ezdxf
+        
         ## python3.8 -m pip install wheel six numpy
         ## python3.8 -m pip install pyinstaller py2app wheel six numpy
         python3.8 -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
@@ -117,6 +125,12 @@ jobs:
         ## plutil -replace  -string  dist/meerk40t.app/Contents/Info.plist
         SIG="-"
         plutil -replace CFBundleSupportedPlatforms -xml "<array><string>MacOSX</string></array>" dist/MeerK40t.app/Contents/Info.plist
+        
+        ## Fix the numpy 32 bit issue inside the app bundle - or install numpy from source.
+        lipo dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib -remove i386 -output dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib
+        rm dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
+        mv dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
+        
         echo "Codesign for GITHUB"
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.zip
 
@@ -139,10 +153,10 @@ jobs:
 
         echo "DMG Build..."
         hdiutil create -volname "MeerK40t Mac" -srcfolder dist -ov MeerK40t_unsigned.dmg
-            ## GUI function check
+            ## GUI function check - Fails on runner (security settings).
         ## open dist/MeerK40t.app
-            ## Binary bundle CLI function check
-        dist/MeerK40t.app/Contents/MacOS/MeerK40t -V
+            ## Binary bundle CLI function check - Fails on runner (security settings).
+        ##. dist/MeerK40t.app/Contents/MacOS/MeerK40t -V
             ##I don't do this part; mv dist/meerk40t dist/MeerK40t-Ubuntu-Latest
 
     - name: Directory contents

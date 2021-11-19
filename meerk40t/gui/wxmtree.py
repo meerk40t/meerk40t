@@ -629,6 +629,8 @@ class ShadowTree:
             item = node.item
         except AttributeError:
             return  # Node.item can be none if launched from ExecuteJob where the nodes are not part of the tree.
+        if node.item is None:
+            return
         data_object = node.object
         tree = root.wxtree
         if icon is None:
