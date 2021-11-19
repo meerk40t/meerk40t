@@ -769,19 +769,19 @@ class Scene(Module, Job):
 
         if platform == "linux":
             if cursor == "sizing":
-                new_cursor = wx.CURSOR_SIZING
+                new_cursor = wx.CURSOR_HAND
             elif cursor in ("size_nw", "size_se"):
-                new_cursor = wx.CURSOR_SIZENWSE
+                new_cursor = wx.CURSOR_SIZING
             elif cursor in ("size_sw", "size_ne"):
-                new_cursor = wx.CURSOR_SIZENESW
+                new_cursor = wx.CURSOR_CROSS
             elif cursor in ("size_n", "size_s"):
-                new_cursor = wx.CURSOR_SIZENS
+                new_cursor = wx.CURSOR_BULLSEYE
             elif cursor in ("size_e", "size_w"):
-                new_cursor = wx.CURSOR_SIZEWE
+                new_cursor = wx.CURSOR_ARROWWAIT
             elif cursor == "arrow":
-                new_cursor = wx.CURSOR_ARROW
+                new_cursor = wx.CURSOR_MAGNIFIER
             elif cursor == "cross":
-                new_cursor = wx.CROSS_CURSOR
+                new_cursor = wx.CURSOR_CHAR
             else:
                 new_cursor = wx.CURSOR_ARROW
                 self.log("Invalid cursor.")
