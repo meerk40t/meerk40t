@@ -1,5 +1,6 @@
 from copy import copy
 from time import time
+from os import times
 
 from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..device.lasercommandconstants import (
@@ -156,11 +157,22 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Reduce Travel Time"),
                 "tip": _(
-                    "Reduce the travel time by optimizing the order of the elements. "
-                    + "When this option is NOT checked, elements are burned in the order "
-                    + "they appear in the Operation tree. "
-                    + "With this option checked, Meerk40t will find a nearby path instead."
-                ),
+                    "Using this option can significantly reduce the time spent "
+                    + "moving between elements with the laser off "
+                    + "by optimizing the sequence that elements are burned. "
+                )
+                + "\n\n"
+                + _(
+                    "When this option is NOT checked, elements are burned strictly "
+                    + "in the order they appear in the Operation tree, "
+                    + "and the Merge options will have no effect on the burn time. "
+                )
+                + "\n\n"
+                + _(
+                    "When this option IS checked, Meerk40t will burn each subpath "
+                    + "and then move to the nearest remaining subpath instead, "
+                    + "reducing the time taken moving between burn items."
+                )
             },
             {
                 "attr": "opt_merge_passes",
@@ -169,9 +181,23 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Merge Passes"),
                 "tip": _(
-                    "Combine passes into the same optimization. "
-                    + "This will typically result in each path being burned multiple times in succession, "
-                    + "before Meerk40 moves to the next path. "
+                    "Combine multiple passes into the same optimization. "
+                    + "This will typically result in each subpath being burned multiple times in succession, "
+                    + "burning closed paths round-and-round "
+                    + "and non-closed paths back-and-forth, "
+                    + "before Meerk40t moves to the next path. "
+                )
+                + "\n\n"
+                + _(
+                    "If you have a complex design with many paths and are burning with multiple passes, "
+                    + "using this option can significantly REDUCE the optimisation time. "
+                )
+                + "\n\n"
+                + _(
+                    "NOTE: Where you burn very short paths multiple times in quick succession, "
+                    + "this does not allow time for the material to cool down between burns, "
+                    + "and this can result in greater charring "
+                    + "or even an increased risk of the material catching fire."
                 ),
             },
             {
@@ -181,11 +207,19 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Merge Operations"),
                 "tip": _(
-                    "Combine all operations and optimise across them globally. "
+                    "Combine multiple consecutive burn operations and optimise across them globally. "
                     + "Operations of different types will be optimised together to reduce travel time, "
                     + "so vector and raster burns will be mixed. "
+                )
+                + "\n\n"
+                + _(
                     "If Merge Passes is not checked, Operations with >1 passes will only have the same passes merged. "
                     + "If Merge Passes is also checked, then all burns will be optimised globally."
+                )
+                + "\n\n"
+                + _(
+                    "If you have a complex design with many paths across multiple consecutive burn operations, "
+                    + "using this option can significantly INCREASE the optimisation time. "
                 ),
             },
             {
@@ -200,19 +234,14 @@ def plugin(kernel, lifecycle=None):
                 )
                 + "\n\n"
                 + _(
-                    "Note: This is a very CPU intensive activity, dependent on the square "
-                    + "of the total number of path segments being optimised, and may take a long time "
-                    + "particularly when used with Merge Operations or Merge Passes, "
-                    + "both of which increase the number of path segments being optimised. "
-                    + "For example, with Operations Passes = 4, Cut Inner First optimisation "
-                    + "will take 16x longer with Merge Passes than without."
-                )
-                + "\n\n"
-                + _(
-                    "If optimising takes too long with this checked, "
-                    + "try disabling Merge Operations and / or Merge Passes. "
-                    + "Whilst you will not get the maximum travel time savings, "
-                    + "you should still get the majority of them."
+                    "If you have a complex design with many paths, "
+                    + "using this option can significantly INCREASE the optimisation time. "
+                    + "This option should therefore only be selected if you are cutting the material "
+                    + "i.e. burning right through the material to the other side. "
+                    + "The time taken for Cut Inner First to run can be minimised by: \n"
+                    + "* Putting the inner paths into a separate earlier operation(s) and not using Cut Inner First \n"
+                    + "* Not using Merge Operations"
+                    + "* Using Merge Passes"
                 ),
             },
             {
@@ -385,9 +414,13 @@ class CutPlan:
                             continue
                         copies = 1
                         burning = True
-                    # When optimising travel, merge passes is handled by the greedy algorithm
+                    # Providing we do some sort of post-processing of blobs,
+                    # then merge passes is handled by the greedy or inner_first algorithms
                     passes = 1
-                    if context.opt_nearest_neighbor and context.opt_merge_passes:
+                    if (
+                        context.opt_merge_passes
+                        and (context.opt_nearest_neighbor or context.opt_inner_first)
+                    ):
                         passes = copies
                         copies = 1
                     for p in range(copies):
@@ -468,7 +501,13 @@ class CutPlan:
         if not has_cutcode:
             return
 
-        if context.opt_reduce_travel:
+        if (
+            context.opt_reduce_travel
+            and (
+                context.opt_nearest_neighbor
+                or context.opt_2opt
+            )
+        ):
             if context.opt_nearest_neighbor:
                 self.commands.append(self.optimize_travel)
             if context.opt_2opt and not context.opt_inner_first:
@@ -1484,17 +1523,22 @@ def inner_first_cutcode(context: CutGroup, channel=None):
     Creates .inside and .contains lists for all cut objects with regard to whether
     they are inside or contain the other object.
     """
-    start_time = time()
+    if channel:
+        start_length=context.length_travel(True)
+        start_time = time()
+        start_times = times()
+        channel("Executing Inner-First Identification")
+        channel("Length at start: {length:.0f} mils".format(length=start_length))
+
     ordered = CutCode()
     closed_groups = list(extract_closed_groups(context))
     if len(closed_groups):
         ordered.contains = closed_groups
         ordered.extend(closed_groups)
+
     ordered.extend(context.flat())
-    if channel:
-        channel("Executing Inner First Preprocess Optimization")
-        channel("Length at start: %f" % ordered.length_travel(True))
     context.clear()
+
     for oj in ordered:
         for ok in ordered:
             if oj is ok:
@@ -1518,38 +1562,50 @@ def inner_first_cutcode(context: CutGroup, channel=None):
 
     ordered.constrained = True
     if channel:
+        end_times = times()
+        end_length = ordered.length_travel(True)
         channel(
-            "Length at end: %f, optimized in %f seconds"
-            % (ordered.length_travel(True), time() - start_time)
+            (
+                "Length at end: {length:.0f} mils ({delta:.0f}%), "
+                + "optimized in {elapsed:.3f} elapsed seconds "
+                + "using {cpu:.3f} seconds CPU"
+            ).format(
+                length=end_length,
+                delta=(end_length - start_length) / start_length * 100,
+                elapsed=time() - start_time,
+                cpu=end_times[0] - start_times[0],
+            )
         )
     return ordered
 
 
 def short_travel_cutcode(context: CutCode, channel=None):
     """
-    Selects cutcode from candidate cutcode (permitted and with burns remaining), optimizing with greedy/brute for
-    shortest distances optimizations.
+    Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
+    optimizing with greedy/brute for shortest distances optimizations.
 
     For paths starting at exactly the same point forward paths are preferred over reverse paths
-    and within this shorter paths are preferred over longer ones.
 
     We start at either 0,0 or the value given in context.start
 
     This is time-intense hyper-optimized code, so it contains several seemingly redundant
     checks.
     """
-    start_time = time()
+    if channel:
+        start_length=context.length_travel(True)
+        start_time = time()
+        start_times = times()
+        channel("Executing Greedy Short-Travel optimization")
+        channel("Length at start: {length:.0f} mils".format(length=start_length))
+
     curr = context.start
     if curr is None:
         curr = 0
     else:
         curr = complex(curr[0], curr[1])
-    if channel:
-        channel("Executing Greedy Short-Travel optimization")
-        channel("Length at start: %f" % context.length_travel(True))
 
     for c in context.flat():
-        c.permitted = True
+        c.burns_done = 0
 
     ordered = CutCode()
     while True:
@@ -1565,20 +1621,20 @@ def short_travel_cutcode(context: CutCode, channel=None):
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
                 cut = last_segment.next
-                if cut and cut.permitted and cut.burns_remaining >= 1:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = False
                     distance = abs(complex(closest.start()) - curr)
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
-                if cut and cut.permitted and cut.burns_remaining >= 1:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = True
                     distance = abs(complex(closest.end()) - curr)
             # Gap or continuing on path not permitted, try reversing
-            if distance > 50 and last_segment.permitted and last_segment.burns_remaining >= 1:
-                # last_segment is a copy so we cannot use it to decrement burns_remaining
+            if distance > 50 and last_segment.burns_done < last_segment.passes:
+                # last_segment is a copy so we cannot use it to increment burns_done
                 closest = last_segment.next.previous
                 backwards = last_segment.normal
                 distance = 0  # By definition since we are reversing and reburning
@@ -1593,7 +1649,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     and abs(s.y - curr.imag) <= distance
                 ):
                     d = abs(complex(s) - curr)
-                    if d <= distance:
+                    if d < distance:
                         closest = cut
                         backwards = False
                         if d <= 0.1:  # Distance in px is zero, we cannot improve.
@@ -1611,8 +1667,8 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     if d < distance:
                         closest = cut
                         backwards = True
-                        # if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                            # break
+                        if d <= 0.1:  # Distance in px is zero, we cannot improve.
+                            break
                         distance = d
 
         if closest is None:
@@ -1622,8 +1678,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
         if backwards:
             if (
                 closest.next
-                and closest.next.permitted
-                and closest.next.burns_remaining >= closest.burns_remaining
+                and closest.next.burns_done <= closest.burns_done
                 and closest.next.start() == closest.end()
             ):
                 closest = closest.next
@@ -1631,16 +1686,13 @@ def short_travel_cutcode(context: CutCode, channel=None):
         else:
             if (
                 closest.previous
-                and closest.previous.permitted
-                and closest.previous.burns_remaining > closest.burns_remaining
+                and closest.previous.burns_done < closest.burns_done
                 and closest.previous.end() == closest.start()
             ):
                 closest = closest.previous
                 backwards = True
 
-        closest.burns_remaining -= 1
-        if closest.burns_remaining <= 0:
-            closest.permitted = False
+        closest.burns_done += 1
         c = copy(closest)
         if backwards:
             c.reverse()
@@ -1650,9 +1702,19 @@ def short_travel_cutcode(context: CutCode, channel=None):
 
     ordered.start = context.start
     if channel:
+        end_times = times()
+        end_length = ordered.length_travel(True)
         channel(
-            "Length at end: %f, optimized in %f seconds"
-            % (ordered.length_travel(True), time() - start_time)
+            (
+                "Length at end: {length:.0f} mils ({delta:.0f}%), "
+                + "optimized in {elapsed:.3f} elapsed seconds "
+                + "using {cpu:.3f} seconds CPU"
+            ).format(
+                length=end_length,
+                delta=(end_length - start_length) / start_length * 100,
+                elapsed=time() - start_time,
+                cpu=end_times[0] - start_times[0],
+            )
         )
     return ordered
 
@@ -1676,23 +1738,30 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         import numpy as np
     except ImportError:
         return context
-    start_time = time()
-    ordered = CutCode(context.flat())
+
     if channel:
+        start_length=context.length_travel(True)
+        start_time = time()
+        start_times = times()
         channel("Executing 2-Opt Short-Travel optimization")
-        channel("Length at start: %f" % ordered.length_travel(True))
-    if len(ordered) <= 1:
+        channel("Length at start: {length:.0f} mils".format(length=start_length))
+
+    ordered = CutCode(context.flat())
+    length = len(ordered)
+    if length <= 1:
         if channel:
             channel("2-Opt: Not enough elements to optimize.")
         return ordered
+
     curr = context.start
     if curr is None:
         curr = 0
     else:
         curr = complex(curr)
+
     current_pass = 1
     min_value = -1e-10  # Do not swap on rounding error.
-    length = len(ordered)
+
     endpoints = np.zeros((length, 4), dtype="complex")
     # start, index, reverse-index, end
     for i in range(length):
@@ -1776,9 +1845,19 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     order = endpoints[:, 1].real.astype(int)
     ordered.reordered(order)
     if channel:
+        end_times = times()
+        end_length = ordered.length_travel(True)
         channel(
-            "Length at end: %f, optimized in %f seconds"
-            % (ordered.length_travel(True), time() - start_time)
+            (
+                "Length at end: {length:.0f} mils ({delta:.0f}%), "
+                + "optimized in {elapsed:.3f} elapsed seconds "
+                + "using {cpu:.3f} seconds CPU"
+            ).format(
+                length=end_length,
+                delta=(end_length - start_length) / start_length * 100,
+                elapsed=time() - start_time,
+                cpu=end_times[0] - start_times[0],
+            )
         )
     return ordered
 
@@ -1788,25 +1867,42 @@ def inner_selection_cutcode(context: CutCode, channel=None):
     Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
     finding a valid solution.
     """
-    start_time = time()
     if channel:
+        start_length=context.length_travel(True)
+        start_time = time()
+        start_times = times()
         channel("Executing Inner Selection-Only optimization")
-        channel("Length at start: %f" % context.length_travel(True))
+        channel("Length at start: {length:.0f} mils".format(length=start_length))
+
     for c in context.flat():
-        c.permitted = True
+        c.burns_done = 0
+
     ordered = CutCode()
     iterations = 0
     while True:
         c = list(context.candidate())
         if len(c) == 0:
             break
+        for o in c:
+            o.burns_done += 1
         ordered.extend(c)
-        for o in ordered.flat():
-            o.permitted = False
         iterations += 1
+
     if channel:
+        end_times = times()
+        end_length = ordered.length_travel(True)
         channel(
-            "Length at end: %f, optimized in %f seconds in %d iterations"
-            % (ordered.length_travel(True), time() - start_time, iterations)
+            (
+                "Length at end: {length:.0f} mils ({delta:.0f}%), "
+                + "optimized in {elapsed:.3f} elapsed seconds "
+                + "using {cpu:.3f} seconds CPU "
+                + "in {iterations} iterations"
+            ).format(
+                length=end_length,
+                delta=(end_length - start_length) / start_length * 100,
+                elapsed=time() - start_time,
+                cpu=end_times[0] - start_times[0],
+                iterations=iterations,
+            )
         )
     return ordered
