@@ -784,7 +784,7 @@ class Scene(Module, Job):
             self.log("Invalid cursor.")
         if new_cursor != self._cursor or always:
             self._cursor = new_cursor
-            self.context.app.GetTopWindow().FindFocus().GetTopLevelParent().SetCursor(wx.Cursor(self._cursor))
+            self.context.app.GetTopWindow().SetCursor(wx.Cursor(self._cursor))
             self.log("Cursor changed to %s" % cursor)
 
     def add_scenewidget(self, widget, properties=ORIENTATION_RELATIVE):
