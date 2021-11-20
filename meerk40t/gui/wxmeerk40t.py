@@ -419,10 +419,10 @@ class wxMeerK40t(wx.App, Module):
                     try:
                         w = path.opened[window_uri]
                         kernel.run_later(window_close, None)
-                        channel(_("Window Closed."))
+                        channel(_("Window closed: {window}").format(window=window))
                     except KeyError:
                         kernel.run_later(window_open, None)
-                        channel(_("Window Opened."))
+                        channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
