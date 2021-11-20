@@ -101,4 +101,5 @@ def bootstrap():
     kernel.boot()
     kernel.bootstrap("ready")
     kernel.bootstrap("mainloop")
+    kernel.console("channel print console\n")
     return kernel
