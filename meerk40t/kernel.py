@@ -1407,7 +1407,10 @@ class Kernel:
         """
         for matchtext in self.lookup_listeners:
             listeners = self.lookup_listeners[matchtext]
-            previous_matches = self.lookup_previous[matchtext]
+            try:
+                previous_matches = self.lookup_previous[matchtext]
+            except KeyError:
+                previous_matches = None
             new_matches = list(self.find(matchtext))
             if previous_matches != new_matches:
                 self.lookup_previous[matchtext] = new_matches
