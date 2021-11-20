@@ -1891,7 +1891,8 @@ class Kernel:
 
     def last_signal(self, signal: str, path: str) -> Optional[Tuple]:
         """
-        Queries the last signal for a particular code.
+        Queries the last signal for a particular signal/path
+
         :param signal: signal to query.
         :param path: path for the given signal to query.
         :return: Last signal sent through the kernel for that signal and path
@@ -1908,6 +1909,15 @@ class Kernel:
         funct: Callable,
         lifecycle_object: Any = None,
     ) -> None:
+        """
+        Attaches callable to a particular signal. This will be attached next time the signals are processed.
+
+        @param signal:
+        @param path:
+        @param funct:
+        @param lifecycle_object:
+        @return:
+        """
         self._signal_lock.acquire(True)
         self._adding_listeners.append((signal, path, funct, lifecycle_object))
         self._signal_lock.release()
@@ -1919,6 +1929,15 @@ class Kernel:
         funct: Callable,
         lifecycle_object: Any = None,
     ) -> None:
+        """
+        Removes callabel listener for a given signal. This will be detached next time the signals code runs.
+
+        @param signal:
+        @param path:
+        @param funct:
+        @param lifecycle_object:
+        @return:
+        """
         self._signal_lock.acquire(True)
         self._removing_listeners.append((signal, path, funct, lifecycle_object))
         self._signal_lock.release()
@@ -1927,6 +1946,12 @@ class Kernel:
         self,
         lifecycle_object: Any,
     ) -> None:
+        """
+        Detach all signals attached to this lifecycle object.
+
+        @param lifecycle_object:
+        @return:
+        """
         self._signal_lock.acquire(True)
         for signal in self.listeners:
             listens = self.listeners[signal]
@@ -1945,6 +1970,12 @@ class Kernel:
         self,
         lifecycle_object: Union[Service, Module, None] = None,
     ) -> None:
+        """
+        Attaches any signals flagged as "@signal_listener" to listen to that signal.
+
+        @param lifecycle_object:
+        @return:
+        """
         for attr in dir(lifecycle_object):
             print(attr)
             func = getattr(lifecycle_object, attr)
