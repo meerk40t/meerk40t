@@ -46,10 +46,11 @@ class Module:
     expected to modify their contexts.
     """
 
-    def __init__(self, context: "Context", name: str = None, *args, **kwargs):
+    def __init__(self, context: "Context", name: str = None, delegates=None, *args, **kwargs):
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
+        self._delegates = delegates
 
     def initialize(self, *args, **kwargs):
         """Initialize() is called after open() to setup the module and allow it to register various hooks into the
@@ -65,6 +66,11 @@ class Module:
         """Finalize is called after close() to unhook various kernelspace hooks. This will happen if kernel is being
         shutdown or if this individual module is being closed on its own."""
         pass
+
+    def add_delegate(self, delegate):
+        if self._delegates is None:
+            self._delegates = []
+        self._delegates.append(delegate)
 
 
 class Context:
@@ -467,11 +473,23 @@ class Context:
         try:
             find = self.opened[instance_path]
             try:
+                # Module found, attempt restore call.
                 find.restore(*args, **kwargs)
             except AttributeError:
                 pass
+            try:
+                # Apply restore call to all lifecycle delegates
+                delegates = find._delegates
+                for d in delegates:
+                    try:
+                        d.restore(*args, **kwargs)
+                    except AttributeError:
+                        pass
+            except (AttributeError, TypeError):
+                pass
             return find
         except KeyError:
+            # Module not found.
             pass
 
         try:
@@ -481,7 +499,16 @@ class Context:
 
         instance = open_object(self, instance_path, *args, **kwargs)
         channel = self._kernel.channel("open", self._path)
+        # Call initialize lifecycle event.
         instance.initialize(channel=channel)
+        # Apply initialize call to all lifecycle delegates
+        delegates = instance._delegates
+        if delegates is not None:
+            for d in delegates:
+                try:
+                    d.initialize()
+                except AttributeError:
+                    pass
 
         self.opened[instance_path] = instance
         return instance
@@ -509,8 +536,19 @@ class Context:
             instance.close()
         except AttributeError:
             pass
-        self.silence(instance)
+        self._signal_detach(instance)
+        # Call finalize lifecycle event.
         instance.finalize(*args, **kwargs)
+        try:
+            # Apply finalize call to all lifecycle delegates
+            delegates = instance._delegates
+            for d in delegates:
+                try:
+                    d.finalize(*args, **kwargs)
+                except AttributeError:
+                    pass
+        except (AttributeError, TypeError):
+            pass
 
     # ==========
     # SIGNALS DELEGATES
@@ -557,8 +595,11 @@ class Context:
         """
         self._kernel.unlisten(signal, self._path, process)
 
-    def silence(self, lifecycle_object: Union["Service",Module,None]):
-        self._kernel.silence(lifecycle_object)
+    def _signal_detach(self, lifecycle_object: Union["Service", Module, None]):
+        self._kernel._signal_detach(lifecycle_object)
+
+    def _signal_attach(self, lifecycle_object: Union["Service", Module, None]):
+        self._kernel._signal_attach(lifecycle_object)
 
     # ==========
     # CHANNEL DELEGATES
@@ -956,7 +997,7 @@ class Kernel:
         if domain in self._active_services:
             previous_active = self._active_services[domain]
             if previous_active is not None:
-                self.silence(previous_active)
+                self._signal_detach(previous_active)
                 previous_active.detach(self)
             for context_name in self.contexts:
                 # For every registered context, set the given domain to None.
@@ -1865,7 +1906,7 @@ class Kernel:
         signal: str,
         path: str,
         funct: Callable,
-        lifecycle_object: Union[Service, Module, None] = None,
+        lifecycle_object: Any = None,
     ) -> None:
         self._signal_lock.acquire(True)
         self._adding_listeners.append((signal, path, funct, lifecycle_object))
@@ -1876,15 +1917,15 @@ class Kernel:
         signal: str,
         path: str,
         funct: Callable,
-        lifecycle_object: Union[Service, Module, None] = None,
+        lifecycle_object: Any = None,
     ) -> None:
         self._signal_lock.acquire(True)
         self._removing_listeners.append((signal, path, funct, lifecycle_object))
         self._signal_lock.release()
 
-    def silence(
+    def _signal_detach(
         self,
-        lifecycle_object: Union[Service, Module, None] = None,
+        lifecycle_object: Any,
     ) -> None:
         self._signal_lock.acquire(True)
         for signal in self.listeners:
@@ -1893,7 +1934,30 @@ class Kernel:
                 if lso is lifecycle_object:
                     self._removing_listeners.append((signal, None, listener, lifecycle_object))
         self._signal_lock.release()
+        try:
+            delegates = lifecycle_object._delegates
+            for d in delegates:
+                self._signal_detach(d)
+        except (AttributeError, TypeError):
+            pass
 
+    def _signal_attach(
+        self,
+        lifecycle_object: Union[Service, Module, None] = None,
+    ) -> None:
+        for attr in dir(lifecycle_object):
+            print(attr)
+            func = getattr(lifecycle_object, attr)
+            if hasattr(func, "signal_listener"):
+                print(True)
+                for sl in func.signal_listener:
+                    self.listen(sl, self._path, func, lifecycle_object)
+        try:
+            delegates = lifecycle_object._delegates
+            for d in delegates:
+                self._signal_attach(d)
+        except (AttributeError, TypeError):
+            pass
     # ==========
     # CHANNEL PROCESSING
     # ==========
@@ -3103,6 +3167,7 @@ def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
             for letter in value[1:]:
                 yield kind, letter, start, start + 1
                 start += 1
+
 
 def signal_listener(param):
     def decor(func):
