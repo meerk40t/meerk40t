@@ -509,7 +509,7 @@ class Context:
                     d.initialize()
                 except AttributeError:
                     pass
-
+        self._signal_attach(instance)
         self.opened[instance_path] = instance
         return instance
 
@@ -1949,7 +1949,6 @@ class Kernel:
             print(attr)
             func = getattr(lifecycle_object, attr)
             if hasattr(func, "signal_listener"):
-                print(True)
                 for sl in func.signal_listener:
                     self.listen(sl, self._path, func, lifecycle_object)
         try:
