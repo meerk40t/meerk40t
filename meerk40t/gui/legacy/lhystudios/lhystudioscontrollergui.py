@@ -316,35 +316,36 @@ class LhystudiosControllerPanel(wx.Panel):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 
-        self.context.listen("pipe;index", self.on_update_pipe_index)
-        self.context.listen("pipe;chipv", self.on_update_pipe_chipv)
-        self.context.listen("pipe;bus", self.on_update_pipe_bus)
-        self.context.listen("pipe;address", self.on_update_pipe_address)
+        self.context.listen("pipe;index", self.on_update_pipe_index, self)
+        self.context.listen("pipe;chipv", self.on_update_pipe_chipv, self)
+        self.context.listen("pipe;bus", self.on_update_pipe_bus, self)
+        self.context.listen("pipe;address", self.on_update_pipe_address, self)
 
-        self.context.listen("pipe;status", self.update_status)
-        self.context.listen("pipe;packet_text", self.update_packet_text)
-        self.context.listen("pipe;usb_status", self.on_connection_status_change)
-        self.context.listen("pipe;state", self.on_connection_state_change)
-        self.context.listen("pipe;thread", self.on_control_state)
-        self.context.listen("pipe;failing", self.on_usb_failing)
-        self.context.listen("active", self.on_active_change)
+        self.context.listen("pipe;status", self.update_status, self)
+        self.context.listen("pipe;packet_text", self.update_packet_text, self)
+        self.context.listen("pipe;usb_status", self.on_connection_status_change, self)
+        self.context.listen("pipe;state", self.on_connection_state_change, self)
+        self.context.listen("pipe;thread", self.on_control_state, self)
+        self.context.listen("pipe;failing", self.on_usb_failing, self)
+        self.context.listen("active", self.on_active_change, self)
 
     def finalize(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
+        self.context.silence(self)
 
-        self.context.unlisten("pipe;index", self.on_update_pipe_index)
-        self.context.unlisten("pipe;chipv", self.on_update_pipe_chipv)
-        self.context.unlisten("pipe;bus", self.on_update_pipe_bus)
-        self.context.unlisten("pipe;address", self.on_update_pipe_address)
-
-        self.context.unlisten("pipe;status", self.update_status)
-        self.context.unlisten("pipe;packet_text", self.update_packet_text)
-        self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
-        self.context.unlisten("pipe;state", self.on_connection_state_change)
-        self.context.unlisten("pipe;thread", self.on_control_state)
-        self.context.unlisten("pipe;failing", self.on_usb_failing)
-        self.context.unlisten("active", self.on_active_change)
+        # self.context.unlisten("pipe;index", self.on_update_pipe_index)
+        # self.context.unlisten("pipe;chipv", self.on_update_pipe_chipv)
+        # self.context.unlisten("pipe;bus", self.on_update_pipe_bus)
+        # self.context.unlisten("pipe;address", self.on_update_pipe_address)
+        #
+        # self.context.unlisten("pipe;status", self.update_status)
+        # self.context.unlisten("pipe;packet_text", self.update_packet_text)
+        # self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
+        # self.context.unlisten("pipe;state", self.on_connection_state_change)
+        # self.context.unlisten("pipe;thread", self.on_control_state)
+        # self.context.unlisten("pipe;failing", self.on_usb_failing)
+        # self.context.unlisten("active", self.on_active_change)
 
     def on_active_change(self, origin, active):
         # self.Close()

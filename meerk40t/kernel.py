@@ -545,7 +545,7 @@ class Context:
         """
         return self._kernel.last_signal(code, self._path)
 
-    def listen(self, signal: str, process: Callable) -> None:
+    def listen(self, signal: str, process: Callable, lifecycle_object:Union["Service",Module,None]=None) -> None:
         """
         Listen at a particular signal with a given process.
 
@@ -553,7 +553,7 @@ class Context:
         :param process: listener to be attached
         :return:
         """
-        self._kernel.listen(signal, self._path, process)
+        self._kernel.listen(signal, self._path, process, lifecycle_object)
 
     def unlisten(self, signal: str, process: Callable):
         """
@@ -566,6 +566,9 @@ class Context:
         :return:
         """
         self._kernel.unlisten(signal, self._path, process)
+
+    def silence(self, lifecycle_object: Union["Service",Module,None]):
+        self._kernel.silence(lifecycle_object)
 
     # ==========
     # CHANNEL DELEGATES
@@ -1065,6 +1068,7 @@ class Kernel:
                         break
 
             import asyncio
+
             loop = asyncio.get_event_loop()
             loop.run_until_complete(aio_readline(loop))
             loop.close()
@@ -1135,9 +1139,7 @@ class Kernel:
         for domain in self._active_services:
             previous_active = self._active_services[domain]
             if channel:
-                channel(
-                    _("Detatching service: {domain}").format(domain=domain)
-                )
+                channel(_("Detatching service: {domain}").format(domain=domain))
             previous_active.detach(self)
             for context_name in self.contexts:
                 # For every registered context, set the given domain to None.
@@ -1150,7 +1152,9 @@ class Kernel:
                     service.shutdown(self)
                     if channel:
                         channel(
-                            _("Shutdown {path} for service {path}").format(path=service.path, domain=domain)
+                            _("Shutdown {path} for service {path}").format(
+                                path=service.path, domain=domain
+                            )
                         )
                 except AttributeError:
                     pass
@@ -1517,7 +1521,9 @@ class Kernel:
                 return value, remainder, out_type
 
             if hasattr(inner, "arguments"):
-                raise MalformedCommandRegistration("Applying console_command() to console_command()")
+                raise MalformedCommandRegistration(
+                    "Applying console_command() to console_command()"
+                )
 
             # Main Decorator
             cmds = path if isinstance(path, tuple) else (path,)
@@ -1541,9 +1547,9 @@ class Kernel:
         return decorator
 
     def console_command_remove(
-            self,
-            path: Union[str, Tuple[str, ...]] = None,
-            input_type: Union[str, Tuple[str, ...]] = None,
+        self,
+        path: Union[str, Tuple[str, ...]] = None,
+        input_type: Union[str, Tuple[str, ...]] = None,
     ):
         """
         Removes a console command with the given input_type at the given path.
@@ -1706,7 +1712,7 @@ class Kernel:
             dictionary[k] = item
         return dictionary
 
-    def keylist(self, path: str, suffix: bool=False) -> Generator[str, None, None]:
+    def keylist(self, path: str, suffix: bool = False) -> Generator[str, None, None]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
 
@@ -2083,6 +2089,18 @@ class Kernel:
     ) -> None:
         self._signal_lock.acquire(True)
         self._removing_listeners.append((signal, path, funct, lifecycle_object))
+        self._signal_lock.release()
+
+    def silence(
+        self,
+        lifecycle_object: Union[Service, Module, None] = None,
+    ) -> None:
+        self._signal_lock.acquire(True)
+        for signal in self.listeners:
+            listens = self.listeners[signal]
+            for listener, lso in listens:
+                if lso is lifecycle_object:
+                    self._removing_listeners.append((signal, None, listener, lifecycle_object))
         self._signal_lock.release()
 
     # ==========
