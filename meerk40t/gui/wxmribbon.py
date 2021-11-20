@@ -100,7 +100,16 @@ class RibbonPanel(wx.Panel):
 
     def set_buttons(self, new_values, button_bar):
         button_bar.ClearButtons()
+        buttons = []
         for button, name, sname in new_values:
+            buttons.append(button)
+
+        def sort_priority(elem):
+            return elem['priority'] if 'priority' in elem else 0
+
+        buttons.sort(key=sort_priority)
+
+        for button in buttons:
             new_id = wx.NewId()
             button_bar.AddButton(
                 new_id,
