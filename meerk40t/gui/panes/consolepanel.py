@@ -155,6 +155,18 @@ class Console(MWindow):
         self.SetTitle(_("Console"))
         self.Layout()
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/project/Console",
+            {
+                "label": _("Console"),
+                "icon": icons8_console_50,
+                "tip": _("Open Console Window"),
+                "action": lambda v: kernel.console("window toggle Console\n"),
+            },
+        )
+
     def window_open(self):
         self.panel.pane_show()
 

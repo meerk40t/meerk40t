@@ -699,6 +699,15 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        kernel.register(
+            "button/control/Camera",
+            {
+                "label": _("Camera"),
+                "icon": icons8_camera_50,
+                "tip": _("Opens Camera Window"),
+                "action": lambda e: kernel.console("window toggle CameraInterface %d\n" % 1),
+            },
+        )
         kernel.register("window/CameraURI", CameraURI)
 
         @kernel.console_argument("index", type=int)

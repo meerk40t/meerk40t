@@ -513,6 +513,25 @@ class Simulation(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
 
+    @staticmethod
+    def sub_register(kernel):
+
+        def open_simulator(v=None):
+            with wx.BusyInfo(_("Preparing simulation...")):
+                kernel.console(
+                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
+                ),
+
+        kernel.register(
+            "button/project/Simulation",
+            {
+                "label": _("Simulate"),
+                "icon": icons8_laser_beam_hazard2_50,
+                "tip": _("Simulate the current laser job"),
+                "action": open_simulator
+            },
+        )
+
     def window_open(self):
         self.panel.pane_show()
 

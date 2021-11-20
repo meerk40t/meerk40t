@@ -1172,6 +1172,18 @@ class Navigation(MWindow):
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/control/Navigation",
+            {
+                "label": _("Navigation"),
+                "icon": icons8_move_50,
+                "tip": _("Opens Navigation Window"),
+                "action": lambda v: kernel.console("window toggle Navigation\n"),
+            },
+        )
+
     def window_open(self):
         self.panel.pane_show()
 

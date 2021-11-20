@@ -165,6 +165,18 @@ class Keymap(MWindow):
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle(_("Keymap Settings"))
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/config/Keymap",
+            {
+                "label": _("Keymap"),
+                "icon": icons8_keyboard_50,
+                "tip": _("Opens Keymap Window"),
+                "action": lambda v: kernel.console("window toggle Keymap\n"),
+            },
+        )
+
     def window_open(self):
         self.panel.pane_show()
 

@@ -1,4 +1,7 @@
-from meerk40t.gui.icons import icons8_move_50, icons8_route_50, icons8_connected_50
+from meerk40t.gui.icons import icons8_move_50, icons8_route_50, icons8_connected_50, icons8_opened_folder_50, \
+    icons8_save_50, icons8_laser_beam_52, icons8_laser_beam_hazard2_50, icons8_fantasy_50, icons8_comments_50, \
+    icons8_console_50, icons8_camera_50, icons8_pause_50, icons8_emergency_stop_button_50, icons8_manager_50, \
+    icons8_computer_support_50, icons8_administrative_tools_50, icons8_keyboard_50, icons8_roll_50
 from meerk40t.gui.legacy.configuration import Configuration
 from meerk40t.gui.legacy.controller import Controller
 from meerk40t.gui.legacy.file.fileoutput import FileOutput
@@ -100,6 +103,7 @@ class LegacyGui(Module):
         legacy_device.register("window/Configuration", Configuration)
         legacy_device.register("window/DeviceManager", DeviceManager)
         legacy_device.register("window/UsbConnect", UsbConnect)
+
         legacy_device.register("window/default/Controller", Controller)
         legacy_device.register("window/default/Configuration", Configuration)
         legacy_device.register("window/lhystudios/Controller", LhystudiosControllerGui)
@@ -113,30 +117,191 @@ class LegacyGui(Module):
         legacy_device.register("window/file/Controller", FileOutput)
         _ = kernel.translation
 
+        context = legacy_device
         legacy_device.register(
-            "button/control/Navigation",
+            "button/project/Open",
             {
-                "label": _("Navigation"),
-                "icon": icons8_move_50.GetBitmap(),
-                "tip": _("Opens Navigation Window"),
-                "action": lambda v: legacy_device("window toggle Navigation\n"),
+                "label": _("Open"),
+                "icon": icons8_opened_folder_50,
+                "tip": _("Opens new project"),
+                "action": lambda e: context(".dialog_load\n"),
             },
         )
         legacy_device.register(
-            "button/control/Spooler",
+            "button/project/Save",
             {
-                "label": _("Spooler"),
-                "icon": icons8_route_50.GetBitmap(),
-                "tip": _("Opens Spooler Window"),
-                "action": lambda v: legacy_device("window toggle JobSpooler\n"),
+                "label": _("Save"),
+                "icon": icons8_save_50,
+                "tip": _("Saves a project to disk"),
+                "action": lambda e: context(".dialog_save\n"),
             },
         )
+        #
+        # legacy_device.register(
+        #     "button/project/ExecuteJob",
+        #     {
+        #         "label": _("Execute Job"),
+        #         "icon": icons8_laser_beam_52,
+        #         "tip": _("Execute the current laser project"),
+        #         "action": lambda v: context("window toggle ExecuteJob 0\n"),
+        #     },
+        # )
+
+        # def open_simulator(v=None):
+        #     with wx.BusyInfo(_("Preparing simulation...")):
+        #         context(
+        #             "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
+        #         ),
+        #
+        # legacy_device.register(
+        #     "button/project/Simulation",
+        #     {
+        #         "label": _("Simulate"),
+        #         "icon": icons8_laser_beam_hazard2_50,
+        #         "tip": _("Simulate the current laser job"),
+        #         "action": open_simulator
+        #     },
+        # )
+
+        # legacy_device.register(
+        #     "button/project/RasterWizard",
+        #     {
+        #         "label": _("RasterWizard"),
+        #         "icon": icons8_fantasy_50,
+        #         "tip": _("Run RasterWizard"),
+        #         "action": lambda v: context("window toggle RasterWizard\n"),
+        #     },
+        # )
+
+        # legacy_device.register(
+        #     "button/project/Notes",
+        #     {
+        #         "label": _("Notes"),
+        #         "icon": icons8_comments_50,
+        #         "tip": _("Open Notes Window"),
+        #         "action": lambda v: context("window toggle Notes\n"),
+        #     },
+        # )
+        # legacy_device.register(
+        #     "button/project/Console",
+        #     {
+        #         "label": _("Console"),
+        #         "icon": icons8_console_50,
+        #         "tip": _("Open Console Window"),
+        #         "action": lambda v: context("window toggle Console\n"),
+        #     },
+        # )
+
+        # ==========
+        # CONTROL PANEL
+        # ==========
+
+        # legacy_device.register(
+        #     "button/control/Navigation",
+        #     {
+        #         "label": _("Navigation"),
+        #         "icon": icons8_move_50,
+        #         "tip": _("Opens Navigation Window"),
+        #         "action": lambda v: legacy_device("window toggle Navigation\n"),
+        #     },
+        # )
+
+        # legacy_device.register(
+        #     "button/control/Camera",
+        #     {
+        #         "label": _("Camera"),
+        #         "icon": icons8_camera_50,
+        #         "tip": _("Opens Camera Window"),
+        #         "action": context("window toggle CameraInterface %d\n" % 1),
+        #     },
+        # )
+
+        # legacy_device.register(
+        #     "button/control/Spooler",
+        #     {
+        #         "label": _("Spooler"),
+        #         "icon": icons8_route_50,
+        #         "tip": _("Opens Spooler Window"),
+        #         "action": lambda v: legacy_device("window toggle JobSpooler\n"),
+        #     },
+        # )
+        # legacy_device.register(
+        #     "button/control/Controller",
+        #     {
+        #         "label": _("Controller"),
+        #         "icon": icons8_connected_50,
+        #         "tip": _("Opens Controller Window"),
+        #         "action": lambda v: legacy_device("window toggle Controller\n"),
+        #     },
+        # )
+
         legacy_device.register(
-            "button/control/Controller",
+            "button/control/Pause",
             {
-                "label": _("Controller"),
-                "icon": icons8_connected_50.GetBitmap(),
-                "tip": _("Opens Controller Window"),
-                "action": lambda v: legacy_device("window toggle Controller\n"),
+                "label": _("Pause"),
+                "icon": icons8_emergency_stop_button_50,
+                "tip": _("Pause the laser"),
+                "action": lambda v: context("pause\n"),
             },
         )
+
+        legacy_device.register(
+            "button/control/Stop",
+            {
+                "label": _("Stop"),
+                "icon": icons8_pause_50,
+                "tip": _("Emergency stop the laser"),
+                "action": lambda v: context("estop\n"),
+            },
+        )
+        # ==========
+        # CONFIGURATION PANEL
+        # ==========
+
+        # legacy_device.register(
+        #     "button/config/DeviceManager",
+        #     {
+        #         "label": _("Devices"),
+        #         "icon": icons8_manager_50,
+        #         "tip": _("Opens DeviceManager Window"),
+        #         "action": lambda v: context("window toggle DeviceManager\n"),
+        #     },
+        # )
+        # legacy_device.register(
+        #     "button/config/Configuration",
+        #     {
+        #         "label": _("Config"),
+        #         "icon": icons8_computer_support_50,
+        #         "tip": _("Opens device-specfic configuration window"),
+        #         "action": lambda v: context("window toggle Configuration\n"),
+        #     },
+        # )
+        # from sys import platform
+        # if platform != "darwin":
+        #     legacy_device.register(
+        #         "button/config/Preferences",
+        #         {
+        #             "label": _("Preferences"),
+        #             "icon": icons8_administrative_tools_50,
+        #             "tip": _("Opens Preferences Window"),
+        #             "action": lambda v: context("window toggle Preferences\n"),
+        #         },
+        #     )
+        # legacy_device.register(
+        #     "button/config/Keymap",
+        #     {
+        #         "label": _("Keymap"),
+        #         "icon": icons8_keyboard_50,
+        #         "tip": _("Opens Keymap Window"),
+        #         "action": lambda v: context("window toggle Keymap\n"),
+        #     },
+        # )
+        # legacy_device.register(
+        #     "button/config/Rotary",
+        #     {
+        #         "label": _("Rotary"),
+        #         "icon": icons8_roll_50,
+        #         "tip": _("Opens Rotary Window"),
+        #         "action": lambda v: context("window -p rotary/1 toggle Rotary\n"),
+        #     },
+        # )

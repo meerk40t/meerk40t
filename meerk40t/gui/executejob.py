@@ -522,6 +522,18 @@ class ExecuteJob(MWindow):
             wx_menu.Append(wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")),
         )
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/project/ExecuteJob",
+            {
+                "label": _("Execute Job"),
+                "icon": icons8_laser_beam_52,
+                "tip": _("Execute the current laser project"),
+                "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
+            },
+        )
+
     def window_open(self):
         self.panel.pane_show()
 

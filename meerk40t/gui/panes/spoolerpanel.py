@@ -231,6 +231,18 @@ class JobSpooler(MWindow):
         self.SetTitle(_("Job Spooler"))
         self.Layout()
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/control/Spooler",
+            {
+                "label": _("Spooler"),
+                "icon": icons8_route_50,
+                "tip": _("Opens Spooler Window"),
+                "action": lambda v: kernel.console("window toggle JobSpooler\n"),
+            },
+        )
+
     def window_open(self):
         self.panel.pane_show()
 

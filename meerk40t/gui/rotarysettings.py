@@ -197,6 +197,18 @@ class RotarySettings(MWindow):
         # begin wxGlade: RotarySettings.__set_properties
         self.SetTitle(_("RotarySettings"))
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/config/Rotary",
+            {
+                "label": _("Rotary"),
+                "icon": icons8_roll_50,
+                "tip": _("Opens Rotary Window"),
+                "action": lambda v: kernel.console("window -p rotary/1 toggle Rotary\n"),
+            },
+        )
+
     def window_open(self):
         self.panel.pane_show()
 

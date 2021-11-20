@@ -1956,6 +1956,18 @@ class RasterWizard(MWindow):
         # begin wxGlade: RasterWizard.__set_properties
         self.SetTitle(_("Raster Wizard"))
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/project/RasterWizard",
+            {
+                "label": _("RasterWizard"),
+                "icon": icons8_fantasy_50,
+                "tip": _("Run RasterWizard"),
+                "action": lambda v: kernel.console("window toggle RasterWizard\n"),
+            },
+        )
+
     def restore(self, *args, script=None, **kwargs):
         if script is not None:
             self.panel.script = script

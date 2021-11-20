@@ -18,6 +18,19 @@ class Notes(MWindow):
         self.SetTitle(_("Notes"))
         self.Children[0].SetFocus()
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/project/Notes",
+            {
+                "label": _("Notes"),
+                "icon": icons8_comments_50,
+                "tip": _("Open Notes Window"),
+                "action": lambda v: kernel.console("window toggle Notes\n"),
+            },
+        )
+
+
     def window_open(self):
         self.context.close(self.name)
         self.panel.pane_show()

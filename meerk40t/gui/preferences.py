@@ -333,6 +333,20 @@ class Preferences(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
 
+    @staticmethod
+    def sub_register(kernel):
+        from sys import platform
+        if platform != "darwin":
+            kernel.register(
+                "button/config/Preferences",
+                {
+                    "label": _("Preferences"),
+                    "icon": icons8_administrative_tools_50,
+                    "tip": _("Opens Preferences Window"),
+                    "action": lambda v: kernel.console("window toggle Preferences\n"),
+                },
+            )
+
     def window_open(self):
         self.panel.pane_show()
 

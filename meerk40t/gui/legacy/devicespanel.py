@@ -337,6 +337,18 @@ class DeviceManager(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Device Manager"))
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/config/DeviceManager",
+            {
+                "label": _("Devices"),
+                "icon": icons8_manager_50,
+                "tip": _("Opens DeviceManager Window"),
+                "action": lambda v: kernel.console("window toggle DeviceManager\n"),
+            },
+        )
+
     def window_open(self):
         self.panel.pane_show()
 
