@@ -2062,8 +2062,9 @@ class Kernel:
                     channel(command_name.split("/")[-1])
 
         @self.console_command("loop", help=_("loop <command>"))
-        def loop(args=tuple(), **kwargs):
-            self._tick_command(" ".join(args))
+        def loop(remainder, **kwargs):
+            if remainder:
+                self._tick_command(remainder)
 
         @self.console_command("end", help=_("end <commmand>"))
         def end(args=tuple(), **kwargs):
