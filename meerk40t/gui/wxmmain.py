@@ -180,6 +180,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_opened_folder_50,
                 "tip": _("Opens new project"),
                 "action": lambda e: kernel.console(".dialog_load\n"),
+                "priority": -200
             },
         )
         kernel.register(
@@ -189,6 +190,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_save_50,
                 "tip": _("Saves a project to disk"),
                 "action": lambda e: kernel.console(".dialog_save\n"),
+                "priority": -100
             },
         )
 
