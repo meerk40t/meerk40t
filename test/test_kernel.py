@@ -17,6 +17,8 @@ class TestKernel(unittest.TestCase):
                 cmd = kernel.registered[command]
                 if "server" in command:
                     continue
+                if "ruida" in command:
+                    continue
                 if command in ("quit", "shutdown", "loop"):
                     continue
                 if not cmd.regex:
