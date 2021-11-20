@@ -23,6 +23,7 @@ from meerk40t.kernel import (
     STATE_PAUSE,
     STATE_TERMINATE,
     STATE_WAIT,
+    signal_listener,
 )
 
 _ = wx.GetTranslation
@@ -316,23 +317,14 @@ class LhystudiosControllerPanel(wx.Panel):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 
-        self.context.listen("pipe;index", self.on_update_pipe_index, self)
-        self.context.listen("pipe;chipv", self.on_update_pipe_chipv, self)
-        self.context.listen("pipe;bus", self.on_update_pipe_bus, self)
-        self.context.listen("pipe;address", self.on_update_pipe_address, self)
-
-        self.context.listen("pipe;status", self.update_status, self)
-        self.context.listen("pipe;packet_text", self.update_packet_text, self)
-        self.context.listen("pipe;usb_status", self.on_connection_status_change, self)
-        self.context.listen("pipe;state", self.on_connection_state_change, self)
-        self.context.listen("pipe;thread", self.on_control_state, self)
-        self.context.listen("pipe;failing", self.on_usb_failing, self)
-        self.context.listen("active", self.on_active_change, self)
-
     def finalize(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
 
+    def restore(self, *args, **kwargs):
+        self.set_widgets()
+
+    @signal_listener("active")
     def on_active_change(self, origin, active):
         # self.Close()
         pass
@@ -373,26 +365,31 @@ class LhystudiosControllerPanel(wx.Panel):
 
         return menu_element
 
+    @signal_listener("pipe;index")
     def on_update_pipe_index(self, origin, value):
         if origin != self.context.path:
             return
         self.text_device_index.SetValue(str(value))
 
+    @signal_listener("pipe;chipv")
     def on_update_pipe_chipv(self, origin, value):
         if origin != self.context.path:
             return
         self.text_device_version.SetValue(str(value))
 
+    @signal_listener("pipe;bus")
     def on_update_pipe_bus(self, origin, value):
         if origin != self.context.path:
             return
         self.text_device_bus.SetValue(str(value))
 
+    @signal_listener("pipe;address")
     def on_update_pipe_address(self, origin, value):
         if origin != self.context.path:
             return
         self.text_device_address.SetValue(str(value))
 
+    @signal_listener("pipe;status")
     def update_status(self, origin, status_data, code_string):
         if origin != self.context.path:
             return
@@ -412,17 +409,20 @@ class LhystudiosControllerPanel(wx.Panel):
         self.packet_count_text.SetValue(str(self.context.packet_count))
         self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
 
+    @signal_listener("pipe;packet_text")
     def update_packet_text(self, origin, string_data):
         if origin != self.context._path:
             return
         if string_data is not None and len(string_data) != 0:
             self.packet_text_text.SetValue(str(string_data))
 
+    @signal_listener("pipe;usb_status")
     def on_connection_status_change(self, origin, status):
         if origin != self.context._path:
             return
         self.text_connection_status.SetValue(str(status))
 
+    @signal_listener("pipe;state")
     def on_connection_state_change(self, origin, state):
         if origin != self.context._path:
             return
@@ -518,6 +518,7 @@ class LhystudiosControllerPanel(wx.Panel):
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
             self.context("dev usb_disconnect\n")
 
+    @signal_listener("pipe;thread")
     def on_control_state(self, origin, state):
         if origin != self.context._path:
             return
@@ -587,6 +588,7 @@ class LhystudiosControllerPanel(wx.Panel):
             button.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(use_theme=False))
             button.Enable(True)
 
+    @signal_listener("pipe;failing")
     def on_usb_failing(self, origin, count):
         self.retries = count
 
@@ -641,6 +643,7 @@ class LhystudiosControllerGui(MWindow):
         # ==========
 
         self.panel = LhystudiosControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.add_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
@@ -669,15 +672,6 @@ class LhystudiosControllerGui(MWindow):
         )
         self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
         append(wxglade_tmp_menu, _("Views"))
-
-    def restore(self, *args, **kwargs):
-        self.panel.set_widgets()
-
-    def window_open(self):
-        self.panel.initialize()
-
-    def window_close(self):
-        self.panel.finalize()
 
     def window_preserve(self):
         return False
