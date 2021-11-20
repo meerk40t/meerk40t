@@ -18,6 +18,7 @@ class TestKernel(unittest.TestCase):
                 if "server" in command:
                     continue
                 if not cmd.regex:
+                    print("Testing command: %s" % command)
                     kernel.console(command.split("/")[-1] + "\n")
         finally:
             kernel.shutdown()
