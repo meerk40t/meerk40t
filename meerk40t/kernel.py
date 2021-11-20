@@ -50,6 +50,7 @@ class Module:
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
+        self.lifecycle = "init"
         self._delegates = delegates
 
     def initialize(self, *args, **kwargs):
@@ -71,6 +72,7 @@ class Module:
         if self._delegates is None:
             self._delegates = []
         self._delegates.append(delegate)
+        self.kernel.delegate_object(delegate, self)
 
 
 class Context:
@@ -501,6 +503,7 @@ class Context:
         channel = self._kernel.channel("open", self._path)
         # Call initialize lifecycle event.
         instance.initialize(channel=channel)
+        instance.lifecycle = "initialized"
         # Apply initialize call to all lifecycle delegates
         delegates = instance._delegates
         if delegates is not None:
@@ -512,6 +515,7 @@ class Context:
         self._signal_attach(instance)
         self._lookup_attach(instance)
         self.opened[instance_path] = instance
+        instance.lifecycle = "opened"
         return instance
 
     def close(self, instance_path: str, *args, **kwargs) -> None:
@@ -537,10 +541,12 @@ class Context:
             instance.close()
         except AttributeError:
             pass
+        instance.lifecycle = "closing"
         self._signal_detach(instance)
         self._lookup_detach(instance)
         # Call finalize lifecycle event.
         instance.finalize(*args, **kwargs)
+        instance.lifecycle = "closed"
         try:
             # Apply finalize call to all lifecycle delegates
             delegates = instance._delegates
@@ -653,6 +659,7 @@ class Service(Context):
         super().__init__(kernel, path)
         kernel.contexts[path] = self
         self._registered = {}
+        self.lifecycle = "init"
         self._delegates = delegates
 
     def register(self, path: str, obj: Any) -> None:
@@ -973,6 +980,7 @@ class Kernel:
         else:
             services = []
             self._available_services[domain] = services
+            service.lifecycle = "added"
         services.append(service)
 
     def activate_service_path(self, domain: str, path: str):
@@ -1021,6 +1029,7 @@ class Kernel:
         self.deactivate(domain)
 
         self._active_services[domain] = service
+        service.lifecycle = "attaching"
         service.attach(self)
         self._signal_attach(service)
         self._lookup_attach(service)
@@ -1039,7 +1048,7 @@ class Kernel:
             # For every registered context, set the given domain to this service
             context = self.contexts[context_name]
             setattr(context, domain, service)
-
+        service.lifecycle = "attached"
         self.lookup_change()
 
     def deactivate(self, domain):
@@ -1047,6 +1056,7 @@ class Kernel:
         if domain in self._active_services:
             previous_active = self._active_services[domain]
             if previous_active is not None:
+                previous_active.lifecycle = "detaching"
                 self._signal_detach(previous_active)
                 self._lookup_detach(previous_active)
                 try:
@@ -1060,6 +1070,7 @@ class Kernel:
                 except (AttributeError, TypeError):
                     pass
                 previous_active.detach(self)
+                previous_active.lifecycle = "detached"
 
             for context_name in self.contexts:
                 # For every registered context, set the given domain to None.
@@ -1237,6 +1248,7 @@ class Kernel:
                         % (str(context), opened_name, str(obj))
                     )
                 context.close(opened_name, channel=channel, shutdown=True)
+                obj.lifecycle = "shutdown"
 
         self.process_queue()  # Process last events.
 
@@ -1263,6 +1275,7 @@ class Kernel:
                         )
                 except AttributeError:
                     pass
+                service.lifecycle = "shutdown"
 
         # Context Flush and Shutdown
         for context_name in list(self.contexts):
@@ -2152,7 +2165,6 @@ class Kernel:
                 self._lookup_attach(d)
         except (AttributeError, TypeError):
             pass
-
 
     # ==========
     # CHANNEL PROCESSING
