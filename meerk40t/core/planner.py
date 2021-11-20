@@ -234,14 +234,11 @@ def plugin(kernel, lifecycle=None):
                 )
                 + "\n\n"
                 + _(
-                    "If you have a complex design with many paths, "
-                    + "using this option can significantly INCREASE the optimisation time. "
-                    + "This option should therefore only be selected if you are cutting the material "
-                    + "i.e. burning right through the material to the other side. "
-                    + "The time taken for Cut Inner First to run can be minimised by: \n"
-                    + "* Putting the inner paths into a separate earlier operation(s) and not using Cut Inner First \n"
-                    + "* Not using Merge Operations"
-                    + "* Using Merge Passes"
+                    "If you find that using this option significantly increases the optimisation time, "
+                    + "alternatives are: \n"
+                    + "* Deselectinbg Cut Inner First if you are not cutting fully through your material \n"
+                    + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
+                    + "* If you are using multiple passes, check Merge Passes"
                 ),
             },
             {
@@ -1533,16 +1530,16 @@ def inner_first_ident(context: CutGroup, channel=None):
     context.constrained = constrained
 
     # for g in groups:
-    #     if g.contains is not None:
-    #         for inner in g.contains:
-    #             assert inner in context_flat
-    #             assert inner is not g
-    #             assert g in inner.inside
-    #     if g.inside is not None:
-    #         for outer in c.inside:
-    #             assert outer in groups
-    #             assert outer is not g
-    #             assert g in outer.contains
+        # if g.contains is not None:
+            # for inner in g.contains:
+                # assert inner in groups
+                # assert inner is not g
+                # assert g in inner.inside
+        # if g.inside is not None:
+            # for outer in g.inside:
+                # assert outer in groups
+                # assert outer is not g
+                # assert g in outer.contains
 
     if channel:
         end_times = times()
