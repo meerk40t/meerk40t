@@ -100,21 +100,21 @@ class RibbonPanel(wx.Panel):
 
     @lookup_listener("button/control")
     def set_control_buttons(self, new_values, old_values):
-        print("Updated!")
         self.window_button_bar.ClearButtons()
-        for button in new_values:
+        for button, name, sname in new_values:
             new_id = wx.NewId()
             self.window_button_bar.AddButton(
                 new_id,
                 button['label'],
                 button['icon'],
-                button['top'],
+                button['tip'],
             )
             self.window_button_bar.Bind(
                 RB.EVT_RIBBONBUTTONBAR_CLICKED,
                 button['action'],
                 id=new_id
             )
+        self._ribbon.Realize()
 
     @property
     def is_dark(self):
