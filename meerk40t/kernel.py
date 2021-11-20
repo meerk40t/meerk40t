@@ -759,7 +759,7 @@ class Kernel:
         self._clean_lookup = Job(
             process=self._registered_data_changed,
             job_name="kernel.lookup.clean",
-            interval=5,
+            interval=0.3,
             times=1
         )
         self._registered = {}
@@ -1396,10 +1396,8 @@ class Kernel:
 
         @return:
         """
-        print("lookup_change")
         if not self._dirty_lookup:
             self._dirty_lookup = True
-            self._clean_lookup.times = 1
             self.schedule(self._clean_lookup)
 
     def _registered_data_changed(self):
@@ -1407,7 +1405,6 @@ class Kernel:
         Triggered on events which can changed the registered data within the lookup.
         @return:
         """
-        print("Cleaning Lookup.")
         for matchtext in self.lookup_listeners:
             listeners = self.lookup_listeners[matchtext]
             previous_matches = self.lookup_previous[matchtext]
