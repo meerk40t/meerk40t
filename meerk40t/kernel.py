@@ -2050,6 +2050,14 @@ class Kernel:
         self._removing_listeners.append((signal, path, funct, lifecycle_object))
         self._signal_lock.release()
 
+    def delegate_lifecycle(self, delegate, lifecycle_object):
+        Kernel._signal_attach(lifecycle_object, delegate)
+        Kernel._lookup_attach(lifecycle_object, delegate)
+
+    def undelegate_lifecycle(self, delegate, lifecycle_object):
+        Kernel._signal_detach(lifecycle_object, delegate)
+        Kernel._lookup_detach(lifecycle_object, delegate)
+
     def _signal_attach(
         self,
         lifecycle_object: Union[Service, Module, None] = None,
