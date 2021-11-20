@@ -924,9 +924,9 @@ class Kernel:
                 break
         if index == -1:
             raise ValueError
-        self.activate(domain, index)
+        self.activate_service_index(domain, index)
 
-    def activate(self, domain: str, index: int):
+    def activate_service_index(self, domain: str, index: int):
         """
         Activate the service at the given domain and index.
 
@@ -945,15 +945,11 @@ class Kernel:
             previous_active = self._active_services[domain]
             if service is previous_active:
                 return
+        self.activate(domain, service)
 
-        setattr(self, domain, None)
-        if domain in self._active_services:
-            previous_active = self._active_services[domain]
-            previous_active.detach(self)
-            for context_name in self.contexts:
-                # For every registered context, set the given domain to None.
-                context = self.contexts[context_name]
-                setattr(context, domain, None)
+    def activate(self, domain, service):
+        self.deactivate(domain)
+
         self._active_services[domain] = service
         service.attach(self)
 
@@ -962,6 +958,18 @@ class Kernel:
             # For every registered context, set the given domain to this service
             context = self.contexts[context_name]
             setattr(context, domain, service)
+
+    def deactivate(self, domain):
+        setattr(self, domain, None)
+        if domain in self._active_services:
+            previous_active = self._active_services[domain]
+            if previous_active is not None:
+                self.silence(previous_active)
+                previous_active.detach(self)
+            for context_name in self.contexts:
+                # For every registered context, set the given domain to None.
+                context = self.contexts[context_name]
+                setattr(context, domain, None)
 
     # ==========
     # LIFECYCLE PROCESSES
@@ -1004,7 +1012,7 @@ class Kernel:
         self.choices_boot()
         for domain in self._available_services:
             # for each domain activate the first service.
-            self.activate(domain, 0)
+            self.activate_service_index(domain, 0)
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
