@@ -72,7 +72,6 @@ class Module:
         if self._delegates is None:
             self._delegates = []
         self._delegates.append(delegate)
-        self.kernel.delegate_object(delegate, self)
 
 
 class Context:
@@ -500,10 +499,13 @@ class Context:
             raise ValueError
 
         instance = open_object(self, instance_path, *args, **kwargs)
+        instance.lifecycle = "opened"
         channel = self._kernel.channel("open", self._path)
         # Call initialize lifecycle event.
+        instance.lifecycle = "initialing"
         instance.initialize(channel=channel)
         instance.lifecycle = "initialized"
+
         # Apply initialize call to all lifecycle delegates
         delegates = instance._delegates
         if delegates is not None:
