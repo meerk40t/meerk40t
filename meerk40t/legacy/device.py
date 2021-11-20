@@ -695,19 +695,23 @@ class LegacyDevice(Service):
 
     @property
     def current_y(self):
-        return self.default_driver().current_y
+        driver = self.default_driver()
+        return driver.current_y if driver is not None else None
 
     @property
     def current_x(self):
-        return self.default_driver().current_x
+        driver = self.default_driver()
+        return driver.current_x if driver is not None else None
 
     @property
     def settings(self):
-        return self.default_driver().settings
+        driver = self.default_driver()
+        return driver.settings if driver is not None else None
 
     @property
     def state(self):
-        return self.default_driver().state
+        driver = self.default_driver()
+        return driver.state if driver is not None else None
 
     @property
     def spooler(self):
@@ -715,7 +719,8 @@ class LegacyDevice(Service):
 
     @property
     def viewbuffer(self):
-        return self.default_output().viewbuffer()
+        output = self.default_output()
+        return output.viewbuffer() if output is not None else None
 
     @property
     def name(self):
