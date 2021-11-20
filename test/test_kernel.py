@@ -7,7 +7,7 @@ from test import bootstrap
 class TestKernel(unittest.TestCase):
     def test_kernel_commands(self):
         """
-        Tests all commands with no arguments to test for crashes.
+        Tests all commands with no arguments to test for crashes...
 
         :return:
         """
