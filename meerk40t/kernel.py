@@ -523,7 +523,7 @@ class Context:
         instance.finalize(*args, **kwargs)
 
     # ==========
-    # DELEGATES via PATH.
+    # SIGNALS DELEGATES
     # ==========
 
     def signal(self, code: str, *message) -> None:
@@ -566,6 +566,10 @@ class Context:
         :return:
         """
         self._kernel.unlisten(signal, self._path, process)
+
+    # ==========
+    # CHANNEL DELEGATES
+    # ==========
 
     def channel(self, channel: str, *args, **kwargs) -> "Channel":
         """
@@ -724,11 +728,11 @@ class Kernel:
         # Signal Listener
         self.signal_job = None
         self.listeners = {}
-        self.adding_listeners = []
-        self.removing_listeners = []
-        self.last_message = {}
-        self.queue_lock = Lock()
-        self.message_queue = {}
+        self._adding_listeners = []
+        self._removing_listeners = []
+        self._last_message = {}
+        self._signal_lock = Lock()
+        self._message_queue = {}
         self._is_queue_processing = False
 
         # Channels
@@ -1228,7 +1232,7 @@ class Kernel:
                         _("WARNING: Listener '%s' still registered to %s.")
                         % (key, str(listener))
                     )
-        self.last_message = {}
+        self._last_message = {}
         self.listeners = {}
         if (
             self.scheduler_thread != threading.current_thread()
@@ -1962,9 +1966,9 @@ class Kernel:
         :param path: Path of signal
         :param message: Message to send.
         """
-        self.queue_lock.acquire(True)
-        self.message_queue[code] = path, message
-        self.queue_lock.release()
+        self._signal_lock.acquire(True)
+        self._message_queue[code] = path, message
+        self._signal_lock.release()
 
     def process_queue(self, *args) -> None:
         """
@@ -1976,24 +1980,29 @@ class Kernel:
         :return:
         """
         if (
-            len(self.message_queue) == 0
-            and len(self.adding_listeners) == 0
-            and len(self.removing_listeners) == 0
+            len(self._message_queue) == 0
+            and len(self._adding_listeners) == 0
+            and len(self._removing_listeners) == 0
         ):
             return
         self._is_queue_processing = True
+        self._signal_lock.acquire(True)
+
         add = None
+        if len(self._adding_listeners) != 0:
+            add = self._adding_listeners
+            self._adding_listeners = []
+
         remove = None
-        self.queue_lock.acquire(True)
-        queue = self.message_queue
-        if len(self.adding_listeners) != 0:
-            add = self.adding_listeners
-            self.adding_listeners = []
-        if len(self.removing_listeners):
-            remove = self.removing_listeners
-            self.removing_listeners = []
-        self.message_queue = {}
-        self.queue_lock.release()
+        if len(self._removing_listeners):
+            remove = self._removing_listeners
+            self._removing_listeners = []
+
+        queue = self._message_queue
+        self._message_queue = {}
+
+        self._signal_lock.release()
+
         # Process any adding listeners.
         if add is not None:
             for signal, path, funct in add:
@@ -2002,9 +2011,10 @@ class Kernel:
                     listeners.append(funct)
                 else:
                     self.listeners[signal] = [funct]
-                if path + signal in self.last_message:
-                    last_message = self.last_message[path + signal]
+                if path + signal in self._last_message:
+                    last_message = self._last_message[path + signal]
                     funct(path, *last_message)
+
         # Process any removing listeners.
         if remove is not None:
             for signal, path, funct in remove:
@@ -2014,6 +2024,7 @@ class Kernel:
                         listeners.remove(funct)
                     except ValueError:
                         print("Value error removing: %s  %s" % (str(listeners), signal))
+
         # Process signals.
         signal_channel = self.channel("signals")
         for signal, payload in queue.items():
@@ -2028,9 +2039,9 @@ class Kernel:
                             % (path, signal, str(listener), str(message))
                         )
             if path is None:
-                self.last_message[signal] = message
+                self._last_message[signal] = message
             else:
-                self.last_message[path + signal] = message
+                self._last_message[path + signal] = message
         self._is_queue_processing = False
 
     def last_signal(self, signal: str, path: str) -> Optional[Tuple]:
@@ -2041,19 +2052,19 @@ class Kernel:
         :return: Last signal sent through the kernel for that signal and path
         """
         try:
-            return self.last_message[path + signal]
+            return self._last_message[path + signal]
         except KeyError:
             return None
 
     def listen(self, signal: str, path: str, funct: Callable) -> None:
-        self.queue_lock.acquire(True)
-        self.adding_listeners.append((signal, path, funct))
-        self.queue_lock.release()
+        self._signal_lock.acquire(True)
+        self._adding_listeners.append((signal, path, funct))
+        self._signal_lock.release()
 
     def unlisten(self, signal: str, path: str, funct: Callable) -> None:
-        self.queue_lock.acquire(True)
-        self.removing_listeners.append((signal, path, funct))
-        self.queue_lock.release()
+        self._signal_lock.acquire(True)
+        self._removing_listeners.append((signal, path, funct))
+        self._signal_lock.release()
 
     # ==========
     # CHANNEL PROCESSING
