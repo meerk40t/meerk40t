@@ -537,7 +537,7 @@ class CutPlan:
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_cutcode(
+                    self.plan[i] = inner_first_ident(
                         c, channel=self.context.channel("optimize")
                     )
                     c = self.plan[i]
@@ -550,7 +550,7 @@ class CutPlan:
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_cutcode(
+                    self.plan[i] = inner_first_ident(
                         c, channel=self.context.channel("optimize")
                     )
                     c = self.plan[i]
@@ -1492,91 +1492,70 @@ def correct_empty(context: CutGroup):
             del context[index]
 
 
-def extract_closed_groups(context: CutGroup):
+def inner_first_ident(context: CutGroup, channel=None):
     """
-    yields all closed groups within the current cutcode.
-    Removing those groups from this cutcode.
-    """
-    try:
-        index = len(context) - 1
-    except TypeError:
-        index = -1
-    while index != -1:
-        c = context[index]
-        if isinstance(c, CutGroup):
-            if c.closed:
-                del context[index]
-                yield c
-            index -= 1
-            continue
-        for s in extract_closed_groups(c):
-            yield s
-        index -= 1
+    Identifies closed CutGroups and then identifies any other CutGroups which
+    are entirely inside.
 
+    The CutGroup candidate generator uses this information to not offer the outer CutGroup
+    as a candidate for a burn unless all contained CutGroups are cut.
 
-def inner_first_cutcode(context: CutGroup, channel=None):
-    """
-    Extract all closed groups and place them at the start of the cutcode.
-    Place all cuts that are not closed groups after these extracted elements.
-    Brute force each object to see if it is located within another object.
-
-    Creates .inside and .contains lists for all cut objects with regard to whether
-    they are inside or contain the other object.
+    The Cutcode is resequenced in either short_travel_cutcode or inner_selection_cutcode
+    based on this information, as used in the
     """
     if channel:
-        start_length=context.length_travel(True)
         start_time = time()
         start_times = times()
         channel("Executing Inner-First Identification")
-        channel("Length at start: {length:.0f} mils".format(length=start_length))
 
-    ordered = CutCode()
-    closed_groups = list(extract_closed_groups(context))
-    if len(closed_groups):
-        ordered.contains = closed_groups
-        ordered.extend(closed_groups)
+    groups = [cut for cut in context if isinstance(cut, CutGroup)]
+    closed_groups = [g for g in groups if g.closed]
+    context.contains = closed_groups
 
-    ordered.extend(context.flat())
-    context.clear()
-
-    for oj in ordered:
-        for ok in ordered:
-            if oj is ok:
+    constrained = False
+    for outer in closed_groups:
+        for inner in groups:
+            if outer is inner:
                 continue
-            if is_inside(ok, oj):
-                if ok.inside is None:
-                    ok.inside = list()
-                if oj.contains is None:
-                    oj.contains = list()
-                ok.inside.append(oj)
-                oj.contains.append(ok)
-    # for j, c in enumerate(ordered):
-    #     if c.contains is not None:
-    #         for k, q in enumerate(c.contains):
-    #             assert q in ordered
-    #             assert q is not c
-    #     if c.inside is not None:
-    #         for m, q in enumerate(c.inside):
-    #             assert q in ordered
-    #             assert q is not c
+            # if outer is inside inner, then inner cannot be inside outer
+            if inner.contains and outer in inner.contains:
+                continue
+            if is_inside(inner, outer):
+                constrained = True
+                if outer.contains is None:
+                    outer.contains = list()
+                outer.contains.append(inner)
 
-    ordered.constrained = True
+                # if inner.inside is None:
+                    # inner.inside = list()
+                # inner.inside.append(outer)
+
+    context.constrained = constrained
+
+    # for g in groups:
+    #     if g.contains is not None:
+    #         for inner in g.contains:
+    #             assert inner in context_flat
+    #             assert inner is not g
+    #             assert g in inner.inside
+    #     if g.inside is not None:
+    #         for outer in c.inside:
+    #             assert outer in groups
+    #             assert outer is not g
+    #             assert g in outer.contains
+
     if channel:
         end_times = times()
-        end_length = ordered.length_travel(True)
         channel(
             (
-                "Length at end: {length:.0f} mils ({delta:.0f}%), "
-                + "optimized in {elapsed:.3f} elapsed seconds "
+                "Inner paths identified in {elapsed:.3f} elapsed seconds "
                 + "using {cpu:.3f} seconds CPU"
             ).format(
-                length=end_length,
-                delta=(end_length - start_length) / start_length * 100,
                 elapsed=time() - start_time,
                 cpu=end_times[0] - start_times[0],
             )
         )
-    return ordered
+    return context
 
 
 def short_travel_cutcode(context: CutCode, channel=None):
@@ -1706,12 +1685,12 @@ def short_travel_cutcode(context: CutCode, channel=None):
         end_length = ordered.length_travel(True)
         channel(
             (
-                "Length at end: {length:.0f} mils ({delta:.0f}%), "
+                "Length at end: {length:.0f} mils ({delta:+.0%}), "
                 + "optimized in {elapsed:.3f} elapsed seconds "
                 + "using {cpu:.3f} seconds CPU"
             ).format(
                 length=end_length,
-                delta=(end_length - start_length) / start_length * 100,
+                delta=(end_length - start_length) / start_length,
                 elapsed=time() - start_time,
                 cpu=end_times[0] - start_times[0],
             )
@@ -1849,12 +1828,12 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         end_length = ordered.length_travel(True)
         channel(
             (
-                "Length at end: {length:.0f} mils ({delta:.0f}%), "
+                "Length at end: {length:.0f} mils ({delta:+.0%}), "
                 + "optimized in {elapsed:.3f} elapsed seconds "
                 + "using {cpu:.3f} seconds CPU"
             ).format(
                 length=end_length,
-                delta=(end_length - start_length) / start_length * 100,
+                delta=(end_length - start_length) / start_length,
                 elapsed=time() - start_time,
                 cpu=end_times[0] - start_times[0],
             )
@@ -1866,6 +1845,8 @@ def inner_selection_cutcode(context: CutCode, channel=None):
     """
     Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
     finding a valid solution.
+
+    This routine runs if opt_inner first is selected and opt_greedy is not selected.
     """
     if channel:
         start_length=context.length_travel(True)
@@ -1893,13 +1874,13 @@ def inner_selection_cutcode(context: CutCode, channel=None):
         end_length = ordered.length_travel(True)
         channel(
             (
-                "Length at end: {length:.0f} mils ({delta:.0f}%), "
+                "Length at end: {length:.0f} mils ({delta:+.0%}), "
                 + "optimized in {elapsed:.3f} elapsed seconds "
                 + "using {cpu:.3f} seconds CPU "
                 + "in {iterations} iterations"
             ).format(
                 length=end_length,
-                delta=(end_length - start_length) / start_length * 100,
+                delta=(end_length - start_length) / start_length,
                 elapsed=time() - start_time,
                 cpu=end_times[0] - start_times[0],
                 iterations=iterations,
