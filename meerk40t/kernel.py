@@ -1977,7 +1977,6 @@ class Kernel:
         @return:
         """
         for attr in dir(lifecycle_object):
-            print(attr)
             func = getattr(lifecycle_object, attr)
             if hasattr(func, "signal_listener"):
                 for sl in func.signal_listener:
