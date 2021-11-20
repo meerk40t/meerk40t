@@ -729,7 +729,6 @@ class MoshiController:
         buffer = "Current Working Buffer: %s\n" % str(self._buffer)
         for p in self._programs:
             buffer += "%s\n" % str(p.data)
-        buffer += "Building Buffer: %s\n" % str(self._queue)
         return buffer
 
     def on_controller_ready(self, origin, *args):
