@@ -655,6 +655,11 @@ class Service(Context):
             obj.sub_register(self)
         except AttributeError:
             pass
+        self._kernel.lookup_change()
+
+    def unregister(self, path: str) -> None:
+        del self._registered[path]
+        self._kernel.lookup_change()
 
     def console_command(self, *args, **kwargs) -> Callable:
         """
@@ -662,7 +667,9 @@ class Service(Context):
 
         Uses the current registration to register the given command.
         """
-        return console_command(self, *args, **kwargs)
+        c = console_command(self, *args, **kwargs)
+        self._kernel.lookup_change()
+        return c
 
     def console_command_remove(self, *args, **kwargs) -> Callable:
         """
@@ -670,7 +677,9 @@ class Service(Context):
 
         Uses current context to be passed to the console_command being removed.
         """
-        return console_command_remove(self, *args, **kwargs)
+        c = console_command_remove(self, *args, **kwargs)
+        self._kernel.lookup_change()
+        return c
 
     def register_choices(self, sheet, choices):
         """
@@ -682,6 +691,7 @@ class Service(Context):
         @return:
         """
         Kernel.register_choices(self, sheet, choices)
+        self._kernel.lookup_change()
 
     def attach(self, *args, **kwargs):
         pass
@@ -746,7 +756,16 @@ class Kernel:
         self.thread_lock = Lock()
 
         # All registered lookups within the kernel.
+        self._clean_lookup = Job(
+            process=self._registered_data_changed,
+            job_name="kernel.lookup.clean",
+            interval=5,
+            times=1
+        )
         self._registered = {}
+        self.lookup_listeners = {}
+        self.lookup_previous = {}
+        self._dirty_lookup = False
 
         # The translation object to be overridden by any valid transition functions
         self.translation = lambda e: e
@@ -991,6 +1010,7 @@ class Kernel:
             # For every registered context, set the given domain to this service
             context = self.contexts[context_name]
             setattr(context, domain, service)
+        self.lookup_change()
 
     def deactivate(self, domain):
         setattr(self, domain, None)
@@ -1003,6 +1023,7 @@ class Kernel:
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
+        self.lookup_change()
 
     # ==========
     # LIFECYCLE PROCESSES
@@ -1363,6 +1384,40 @@ class Kernel:
         for obj, name, sname in self.find(*args):
             yield obj
 
+    def lookup_listener(self, matchtext, funct):
+        if matchtext not in self.lookup_listeners:
+            self.lookup_listeners[matchtext] = list()
+        self.lookup_listeners[matchtext].append(funct)
+
+    def lookup_change(self):
+        """
+        Manual call for lookup_change. Called during changing events register, unregister, activate_service, and the
+        equal service events.
+
+        @return:
+        """
+        print("lookup_change")
+        if not self._dirty_lookup:
+            self._dirty_lookup = True
+            self._clean_lookup.times = 1
+            self.schedule(self._clean_lookup)
+
+    def _registered_data_changed(self):
+        """
+        Triggered on events which can changed the registered data within the lookup.
+        @return:
+        """
+        print("Cleaning Lookup.")
+        for matchtext in self.lookup_listeners:
+            listeners = self.lookup_listeners[matchtext]
+            previous_matches = self.lookup_previous[matchtext]
+            new_matches = list(self.find(matchtext))
+            if previous_matches != new_matches:
+                self.lookup_previous[matchtext] = new_matches
+                for listener in listeners:
+                    listener(new_matches, previous_matches)
+        self._dirty_lookup = False
+
     def register(self, path: str, obj: Any) -> None:
         """
         Register an element at a given subpath.
@@ -1376,6 +1431,11 @@ class Kernel:
             obj.sub_register(self)
         except AttributeError:
             pass
+        self.lookup_change()
+
+    def unregister(self, path: str):
+        del self._registered[path]
+        self.lookup_change()
 
     # ==========
     # COMMAND REGISTRATION
@@ -3167,7 +3227,7 @@ def console_command_remove(
     for cmd in cmds:
         for i in ins:
             p = "command/%s/%s" % (i, cmd)
-            del registration._registered[p]
+            registration.unregister(p)
 
 
 def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
