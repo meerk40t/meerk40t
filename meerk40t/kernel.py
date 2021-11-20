@@ -2062,17 +2062,18 @@ class Kernel:
                     channel(command_name.split("/")[-1])
 
         @self.console_command("loop", help=_("loop <command>"))
-        def loop(remainder, **kwargs):
+        def loop(remainder=None, **kwargs):
             if remainder:
                 self._tick_command(remainder)
 
         @self.console_command("end", help=_("end <commmand>"))
-        def end(args=tuple(), **kwargs):
-            if len(args) == 0:
+        def end(remainder=None, **kwargs):
+            if remainder:
+                self._untick_command(remainder)
+            else:
                 self.commands.clear()
                 self.schedule(self.console_job)
-            else:
-                self._untick_command(" ".join(args))
+
 
         @self.console_option(
             "off", "o", action="store_true", help=_("Turn this timer off")
