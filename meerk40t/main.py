@@ -340,10 +340,17 @@ def run():
     if args.batch:
         # If a batch file is specified it gets processed here.
         kernel_root.channel("console").watch(print)
+        unprint_console = True
         with args.batch as batch:
             for line in batch:
-                kernel_root(line.strip() + "\n")
-        kernel_root.channel("console").unwatch(print)
+                line = line.strip()
+                if line == "channel print console":
+                    kernel_root.channel("console")(line, indent=False)
+                    unprint_console = False
+                    continue
+                kernel_root(line + "\n")
+        if unprint_console:
+            kernel_root.channel("console").unwatch(print)
 
     if args.auto:
         # Auto start does the planning and spooling of the data.

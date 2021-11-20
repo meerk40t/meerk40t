@@ -410,7 +410,7 @@ class wxMeerK40t(wx.App, Module):
             if command == "open":
                 if window_uri in context.registered:
                     kernel.run_later(window_open, None)
-                    channel(_("Window Opened."))
+                    channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
