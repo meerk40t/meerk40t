@@ -1420,6 +1420,7 @@ class Kernel:
         @param output_type: What is the outgoing context for the command
         @return:
         """
+
         def decorator(func: Callable):
             @functools.wraps(func)
             def inner(command: str, remainder: str, channel: "Channel", **ik):
@@ -2005,24 +2006,31 @@ class Kernel:
 
         # Process any adding listeners.
         if add is not None:
-            for signal, path, funct in add:
+            for signal, path, funct, lso in add:
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
-                    listeners.append(funct)
+                    listeners.append((funct, lso))
                 else:
-                    self.listeners[signal] = [funct]
+                    self.listeners[signal] = [(funct, lso)]
                 if path + signal in self._last_message:
                     last_message = self._last_message[path + signal]
                     funct(path, *last_message)
 
         # Process any removing listeners.
         if remove is not None:
-            for signal, path, funct in remove:
+            for signal, path, remove_funct, remove_lso in remove:
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
-                    try:
-                        listeners.remove(funct)
-                    except ValueError:
+                    removed = False
+                    for i, listen in enumerate(listeners):
+                        listen_funct, listen_lso = listen
+                        if (listen_funct == remove_funct or remove_funct is None) and (
+                            listen_lso is remove_lso or remove_lso is None
+                        ):
+                            del listeners[i]
+                            removed = True
+                            break
+                    if not removed:
                         print("Value error removing: %s  %s" % (str(listeners), signal))
 
         # Process signals.
@@ -2031,17 +2039,16 @@ class Kernel:
             path, message = payload
             if signal in self.listeners:
                 listeners = self.listeners[signal]
-                for listener in listeners:
+                for listener, listen_lso in listeners:
                     listener(path, *message)
                     if signal_channel:
                         signal_channel(
                             "%s %s: %s was sent %s"
                             % (path, signal, str(listener), str(message))
                         )
-            if path is None:
-                self._last_message[signal] = message
-            else:
-                self._last_message[path + signal] = message
+            if path is not None:
+                signal = path + signal
+            self._last_message[signal] = message
         self._is_queue_processing = False
 
     def last_signal(self, signal: str, path: str) -> Optional[Tuple]:
@@ -2056,14 +2063,26 @@ class Kernel:
         except KeyError:
             return None
 
-    def listen(self, signal: str, path: str, funct: Callable) -> None:
+    def listen(
+        self,
+        signal: str,
+        path: str,
+        funct: Callable,
+        lifecycle_object: Union[Service, Module, None] = None,
+    ) -> None:
         self._signal_lock.acquire(True)
-        self._adding_listeners.append((signal, path, funct))
+        self._adding_listeners.append((signal, path, funct, lifecycle_object))
         self._signal_lock.release()
 
-    def unlisten(self, signal: str, path: str, funct: Callable) -> None:
+    def unlisten(
+        self,
+        signal: str,
+        path: str,
+        funct: Callable,
+        lifecycle_object: Union[Service, Module, None] = None,
+    ) -> None:
         self._signal_lock.acquire(True)
-        self._removing_listeners.append((signal, path, funct))
+        self._removing_listeners.append((signal, path, funct, lifecycle_object))
         self._signal_lock.release()
 
     # ==========
@@ -2170,7 +2189,9 @@ class Kernel:
             command = command.lower()
             command_executed = False
             # Process command matches.
-            for command_funct, command_name, cmd_re in self.find("command", str(input_type), ".*"):
+            for command_funct, command_name, cmd_re in self.find(
+                "command", str(input_type), ".*"
+            ):
                 if command_funct.regex:
                     match = re.compile(cmd_re)
                     if not match.match(command):
@@ -2268,7 +2289,9 @@ class Kernel:
             """
             if extended_help is not None:
                 found = False
-                for func, command_name, sname in self.find("command", ".*", extended_help):
+                for func, command_name, sname in self.find(
+                    "command", ".*", extended_help
+                ):
                     parts = command_name.split("/")
                     input_type = parts[1]
                     command_item = parts[2]
@@ -2473,7 +2496,9 @@ class Kernel:
                 for i, r in enumerate(service._registered):
                     if match.match(r):
                         obj = service._registered[r]
-                        channel(_("%s, %d: %s type of %s") % (domain, i + 1, r, str(obj)))
+                        channel(
+                            _("%s, %d: %s type of %s") % (domain, i + 1, r, str(obj))
+                        )
             for i, r in enumerate(self._registered):
                 if match.match(r):
                     obj = self._registered[r]
