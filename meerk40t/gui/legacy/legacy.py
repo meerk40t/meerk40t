@@ -118,24 +118,24 @@ class LegacyGui(Module):
         _ = kernel.translation
 
         context = legacy_device
-        legacy_device.register(
-            "button/project/Open",
-            {
-                "label": _("Open"),
-                "icon": icons8_opened_folder_50,
-                "tip": _("Opens new project"),
-                "action": lambda e: context(".dialog_load\n"),
-            },
-        )
-        legacy_device.register(
-            "button/project/Save",
-            {
-                "label": _("Save"),
-                "icon": icons8_save_50,
-                "tip": _("Saves a project to disk"),
-                "action": lambda e: context(".dialog_save\n"),
-            },
-        )
+        # legacy_device.register(
+        #     "button/project/Open",
+        #     {
+        #         "label": _("Open"),
+        #         "icon": icons8_opened_folder_50,
+        #         "tip": _("Opens new project"),
+        #         "action": lambda e: context(".dialog_load\n"),
+        #     },
+        # )
+        # legacy_device.register(
+        #     "button/project/Save",
+        #     {
+        #         "label": _("Save"),
+        #         "icon": icons8_save_50,
+        #         "tip": _("Saves a project to disk"),
+        #         "action": lambda e: context(".dialog_save\n"),
+        #     },
+        # )
         #
         # legacy_device.register(
         #     "button/project/ExecuteJob",

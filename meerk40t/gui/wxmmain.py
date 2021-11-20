@@ -11,7 +11,7 @@ from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
-    icons8_pause_50,
+    icons8_pause_50, icons8_opened_folder_50, icons8_save_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -170,6 +170,27 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/project/Open",
+            {
+                "label": _("Open"),
+                "icon": icons8_opened_folder_50,
+                "tip": _("Opens new project"),
+                "action": lambda e: kernel.console(".dialog_load\n"),
+            },
+        )
+        kernel.register(
+            "button/project/Save",
+            {
+                "label": _("Save"),
+                "icon": icons8_save_50,
+                "tip": _("Saves a project to disk"),
+                "action": lambda e: kernel.console(".dialog_save\n"),
+            },
+        )
 
     def __set_dialogs(self):
         context = self.context
