@@ -67,7 +67,7 @@ class Module:
         shutdown or if this individual module is being closed on its own."""
         pass
 
-    def add_delegate(self, delegate):
+    def add_module_delegate(self, delegate):
         if self._delegates is None:
             self._delegates = []
         self._delegates.append(delegate)

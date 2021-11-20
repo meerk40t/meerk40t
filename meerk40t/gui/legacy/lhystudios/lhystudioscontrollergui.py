@@ -643,7 +643,7 @@ class LhystudiosControllerGui(MWindow):
         # ==========
 
         self.panel = LhystudiosControllerPanel(self, wx.ID_ANY, context=self.context)
-        self.add_delegate(self.panel)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
