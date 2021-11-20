@@ -510,6 +510,7 @@ class Context:
                 except AttributeError:
                     pass
         self._signal_attach(instance)
+        self._lookup_attach(instance)
         self.opened[instance_path] = instance
         return instance
 
@@ -537,6 +538,7 @@ class Context:
         except AttributeError:
             pass
         self._signal_detach(instance)
+        self._lookup_detach(instance)
         # Call finalize lifecycle event.
         instance.finalize(*args, **kwargs)
         try:
@@ -600,6 +602,16 @@ class Context:
 
     def _signal_attach(self, lifecycle_object: Union["Service", Module, None]):
         self._kernel._signal_attach(lifecycle_object)
+
+    # ==========
+    # LOOKUP ATTACH DELEGATES
+    # ==========
+
+    def _lookup_detach(self, lifecycle_object: Union["Service", Module, None]):
+        self._kernel._lookup_detach(lifecycle_object)
+
+    def _lookup_attach(self, lifecycle_object: Union["Service", Module, None]):
+        self._kernel._lookup_attach(lifecycle_object)
 
     # ==========
     # CHANNEL DELEGATES
@@ -1018,6 +1030,7 @@ class Kernel:
             previous_active = self._active_services[domain]
             if previous_active is not None:
                 self._signal_detach(previous_active)
+                self._lookup_detach(previous_active)
                 previous_active.detach(self)
             for context_name in self.contexts:
                 # For every registered context, set the given domain to None.
@@ -1384,10 +1397,10 @@ class Kernel:
         for obj, name, sname in self.find(*args):
             yield obj
 
-    def lookup_listener(self, matchtext, funct):
+    def lookup_listener(self, matchtext, funct, lifecycleobject):
         if matchtext not in self.lookup_listeners:
             self.lookup_listeners[matchtext] = list()
-        self.lookup_listeners[matchtext].append(funct)
+        self.lookup_listeners[matchtext].append((funct, lifecycleobject))
 
     def lookup_change(self):
         """
@@ -1415,7 +1428,8 @@ class Kernel:
             if previous_matches != new_matches:
                 self.lookup_previous[matchtext] = new_matches
                 for listener in listeners:
-                    listener(new_matches, previous_matches)
+                    funct, lso = listener
+                    funct(new_matches, previous_matches)
         self._dirty_lookup = False
 
     def register(self, path: str, obj: Any) -> None:
@@ -2007,6 +2021,28 @@ class Kernel:
         self._removing_listeners.append((signal, path, funct, lifecycle_object))
         self._signal_lock.release()
 
+    def _signal_attach(
+        self,
+        lifecycle_object: Union[Service, Module, None] = None,
+    ) -> None:
+        """
+        Attaches any signals flagged as "@signal_listener" to listen to that signal.
+
+        @param lifecycle_object:
+        @return:
+        """
+        for attr in dir(lifecycle_object):
+            func = getattr(lifecycle_object, attr)
+            if hasattr(func, "signal_listener"):
+                for sl in func.signal_listener:
+                    self.listen(sl, self._path, func, lifecycle_object)
+        try:
+            delegates = lifecycle_object._delegates
+            for d in delegates:
+                self._signal_attach(d)
+        except (AttributeError, TypeError):
+            pass
+
     def _signal_detach(
         self,
         lifecycle_object: Any,
@@ -2031,27 +2067,56 @@ class Kernel:
         except (AttributeError, TypeError):
             pass
 
-    def _signal_attach(
+    # ==========
+    # LOOKUP_LISTENER ATTACH
+    # ==========
+
+    def _lookup_detach(
+        self,
+        lifecycle_object: Any,
+    ) -> None:
+        """
+        Detach all lookup_listeners attached to this lifecycle object.
+
+        @param lifecycle_object:
+        @return:
+        """
+        for lookup in self.lookup_listeners:
+            listens = self.lookup_listeners[lookup]
+            for index, lul in enumerate(listens):
+                listener, lso = lul
+                if lso is lifecycle_object:
+                    del listens[index]
+        try:
+            delegates = lifecycle_object._delegates
+            for d in delegates:
+                self._lookup_detach(d)
+        except (AttributeError, TypeError):
+            pass
+
+    def _lookup_attach(
         self,
         lifecycle_object: Union[Service, Module, None] = None,
     ) -> None:
         """
-        Attaches any signals flagged as "@signal_listener" to listen to that signal.
+        Attaches any lookup_listeners flagged as "@lookup_listener" to listen to that lookup.
 
         @param lifecycle_object:
         @return:
         """
         for attr in dir(lifecycle_object):
             func = getattr(lifecycle_object, attr)
-            if hasattr(func, "signal_listener"):
-                for sl in func.signal_listener:
-                    self.listen(sl, self._path, func, lifecycle_object)
+            if hasattr(func, "lookup_listener"):
+                for lul in func.lookup_listener:
+                    self.lookup_listener(lul, func, lifecycle_object)
         try:
             delegates = lifecycle_object._delegates
             for d in delegates:
-                self._signal_attach(d)
+                self._lookup_attach(d)
         except (AttributeError, TypeError):
             pass
+
+
     # ==========
     # CHANNEL PROCESSING
     # ==========
@@ -3270,7 +3335,29 @@ def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
                 start += 1
 
 
+def lookup_listener(param):
+    """
+    Flags a method as a lookup_listener. This method will be updated on the changes to find values dynamically.
+    @param param:
+    @return:
+    """
+
+    def decor(func):
+        if not hasattr(func, "lookup_listener"):
+            func.lookup_listener = [param]
+        else:
+            func.lookup_listener.append(param)
+        return func
+
+    return decor
+
+
 def signal_listener(param):
+    """
+    Flags a method as a signal_listener. This will listened when the module is opened.
+    @param param:
+    @return:
+    """
     def decor(func):
         if not hasattr(func, "signal_listener"):
             func.signal_listener = [param]
