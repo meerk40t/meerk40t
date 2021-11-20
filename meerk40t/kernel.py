@@ -2158,8 +2158,8 @@ class Kernel:
         """
         for attr in dir(lifecycle_object):
             func = getattr(lifecycle_object, attr)
-            if hasattr(func, "lookups"):
-                for lul in func.lookups:
+            if hasattr(func, "lookup_decor"):
+                for lul in func.lookup_decor:
                     self.add_lookup(lul, func, lifecycle_object)
         try:
             delegates = lifecycle_object._delegates
@@ -3396,10 +3396,10 @@ def lookup_listener(param):
     """
 
     def decor(func):
-        if not hasattr(func, "lookup_listener"):
-            func.lookup_listener = [param]
+        if not hasattr(func, "lookup_decor"):
+            func.lookup_decor = [param]
         else:
-            func.lookup_listener.append(param)
+            func.lookup_decor.append(param)
         return func
 
     return decor
