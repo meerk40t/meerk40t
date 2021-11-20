@@ -24,12 +24,20 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         kernel.register("module/LegacyGui", LegacyGui)
     elif lifecycle == "boot":
-        kernel.get_context('legacy').open("module/LegacyGui")
+        kernel.get_context('legacy').add_service_delegate(
+            kernel.get_context('legacy').open("module/LegacyGui")
+        )
 
 
 class LegacyGui(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
+
+    def attach(self):
+        pass
+
+    def detach(self):
+        pass
 
     def initialize(self, *a, **kwargs):
         self.context.listen("active", self.on_active_switch)
