@@ -212,7 +212,7 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         context = self.context
         context.listen("driver;mode", self.on_driver_mode)
         context.listen("refresh_scene", self.on_refresh_scene)
@@ -224,7 +224,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.listen("units", self.space_changed)
         context("scene focus -10% -10% 110% 110%\n")
 
-    def finalize(self, *args):
+    def pane_hide(self, *args):
         context = self.context
         context.unlisten("driver;mode", self.on_driver_mode)
         context.unlisten("refresh_scene", self.on_refresh_scene)
@@ -303,7 +303,7 @@ class SceneWindow(MWindow):
         self.Layout()
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

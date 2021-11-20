@@ -150,10 +150,10 @@ class DevicesPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         self.refresh_device_list()
 
-    def finalize(self, *args):
+    def pane_hide(self, *args):
         item = self.devices_list.GetFirstSelected()
         if item != -1:
             uid = self.devices_list.GetItem(item).Text
@@ -338,7 +338,7 @@ class DeviceManager(MWindow):
         self.SetTitle(_("Device Manager"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

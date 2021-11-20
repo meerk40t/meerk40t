@@ -51,10 +51,10 @@ class ControllerDefaultPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def initialize(self):
+    def pane_show(self):
         self.context.listen("active", self.on_active_change)
 
-    def finalize(self):
+    def pane_hide(self):
         self.context.unlisten("active", self.on_active_change)
 
     def on_active_change(self, origin, active):
@@ -73,10 +73,10 @@ class Controller(MWindow):
         self.SetTitle(_("Controller"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()
 
     def window_preserve(self):
         return False

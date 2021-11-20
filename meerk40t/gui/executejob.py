@@ -312,7 +312,7 @@ class PlannerPanel(wx.Panel):
                     pass
         self.update_gui()
 
-    def initialize(self):
+    def pane_show(self):
         rotary_context = self.context.get_context("rotary/1")
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
@@ -348,7 +348,7 @@ class PlannerPanel(wx.Panel):
 
         self.update_gui()
 
-    def finalize(self):
+    def pane_hide(self):
         self.context("plan%s clear\n" % self.plan_name)
 
         self.context.unlisten(
@@ -523,7 +523,7 @@ class ExecuteJob(MWindow):
         )
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

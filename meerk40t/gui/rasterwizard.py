@@ -106,7 +106,7 @@ class RasterWizardPanel(wx.Panel):
         self.Refresh()
         self.on_size()
 
-    def initialize(self):
+    def pane_show(self):
         if self.script is not None:
             self.set_wizard_script(self.script)
 
@@ -123,7 +123,7 @@ class RasterWizardPanel(wx.Panel):
         if self.list_operation.GetCount() > 0:
             self.list_operation.SetSelection(0)
 
-    def finalize(self):
+    def pane_hide(self):
         context_root = self.context.root
         context_root.unlisten("emphasized", self.on_emphasis_change)
         self.context.unlisten(
@@ -1962,7 +1962,7 @@ class RasterWizard(MWindow):
             self.panel.set_wizard_script(script)
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

@@ -19,7 +19,7 @@ class BufferViewPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-    def initialize(self):
+    def pane_show(self):
         buffer = self.context.device.viewbuffer
         if buffer is None:
             buffer = _("Could not find buffer.\n")
@@ -62,4 +62,4 @@ class BufferView(MWindow):
 
     def window_open(self):
         self.context.close(self.name)
-        self.panel.initialize()
+        self.panel.pane_show()

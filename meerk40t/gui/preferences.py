@@ -82,7 +82,7 @@ class PreferencesPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_text_y_scale, self.text_scale_y)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_scale, self.text_scale_y)
 
-    def initialize(self):
+    def pane_show(self):
         context_root = self.context.root
 
         context_root.setting(float, "svg_ppi", 96.0)
@@ -101,7 +101,7 @@ class PreferencesPanel(wx.Panel):
         self.text_scale_y.SetValue("%.3f" % self.context.device.scale_y)
         self.Children[0].SetFocus()
 
-    def finalize(self):
+    def pane_hide(self):
         pass
 
     def __set_properties(self):
@@ -334,7 +334,7 @@ class Preferences(MWindow):
         self.SetTitle(_("Preferences"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

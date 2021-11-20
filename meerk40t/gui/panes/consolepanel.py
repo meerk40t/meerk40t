@@ -78,10 +78,10 @@ class ConsolePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         self.context.channel("console").watch(self.update_text)
 
-    def finalize(self, *args):
+    def pane_hide(self, *args):
         self.context.channel("console").unwatch(self.update_text)
 
     def update_text(self, text):
@@ -156,7 +156,7 @@ class Console(MWindow):
         self.Layout()
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

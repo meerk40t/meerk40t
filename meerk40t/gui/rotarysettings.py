@@ -50,7 +50,7 @@ class RotarySettingsPanel(wx.Panel):
             self.text_rotary_object_circumference,
         )
 
-    def initialize(self):
+    def pane_show(self):
         self.context.setting(bool, "rotary", False)
         self.context.setting(float, "scale_x", 1.0)
         self.context.setting(float, "scale_y", 1.0)
@@ -59,7 +59,7 @@ class RotarySettingsPanel(wx.Panel):
         self.checkbox_rotary.SetValue(self.context.rotary)
         self.on_check_rotary(None)
 
-    def finalize(self):
+    def pane_hide(self):
         pass
 
     def __set_properties(self):
@@ -198,7 +198,7 @@ class RotarySettings(MWindow):
         self.SetTitle(_("RotarySettings"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

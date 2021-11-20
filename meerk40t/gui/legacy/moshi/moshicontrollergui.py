@@ -232,7 +232,7 @@ class MoshiControllerPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def initialize(self):
+    def pane_show(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
         self.context.listen("pipe;status", self.update_status)
@@ -240,7 +240,7 @@ class MoshiControllerPanel(wx.Panel):
         self.context.listen("pipe;state", self.on_connection_state_change)
         self.context.listen("active", self.on_active_change)
 
-    def finalize(self):
+    def pane_hide(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
         self.context.unlisten("pipe;status", self.update_status)
@@ -457,10 +457,10 @@ class MoshiControllerGui(MWindow):
         self.set_widgets()
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()
 
     def window_preserve(self):
         return False

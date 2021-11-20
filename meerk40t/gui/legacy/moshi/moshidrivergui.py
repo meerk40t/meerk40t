@@ -97,11 +97,11 @@ class MoshiConfigurationPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def initialize(self):
+    def pane_show(self):
         # self.context.listen("pipe;buffer", self.on_buffer_update)
         self.context.listen("active", self.on_active_change)
 
-    def finalize(self):
+    def pane_hide(self):
         # self.context.unlisten("pipe;buffer", self.on_buffer_update)
         self.context.unlisten("active", self.on_active_change)
 
@@ -147,10 +147,10 @@ class MoshiDriverGui(MWindow):
         self.SetTitle(_("Moshiboard-Configuration"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()
 
     def window_preserve(self):
         return False

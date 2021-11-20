@@ -136,11 +136,11 @@ class SpoolerPanel(wx.Panel):
         self.PopupMenu(menu)
         menu.Destroy()
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         self.context.listen("spooler;queue", self.on_spooler_update)
         self.refresh_spooler_list()
 
-    def finalize(self, *args):
+    def pane_hide(self, *args):
         self.context.unlisten("spooler;queue", self.on_spooler_update)
 
     @staticmethod
@@ -232,7 +232,7 @@ class JobSpooler(MWindow):
         self.Layout()
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

@@ -262,11 +262,11 @@ class LhystudiosAccelerationChartPanel(wx.Panel):
         self.checkbox_raster_accel_enable.SetValue(context.raster_accel_table)
         self.checkbox_vector_accel_enable.SetValue(context.vector_accel_table)
 
-    def initialize(self):
+    def pane_show(self):
         # self.context.listen("pipe;buffer", self.on_buffer_update)
         self.context.listen("active", self.on_active_change)
 
-    def finalize(self):
+    def pane_hide(self):
         # self.context.unlisten("pipe;buffer", self.on_buffer_update)
         self.context.unlisten("active", self.on_active_change)
 
@@ -313,7 +313,7 @@ class LhystudiosAccelerationChart(MWindow):
         self.SetTitle(_("Acceleration Chart"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

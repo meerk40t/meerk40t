@@ -132,10 +132,10 @@ class OperationPropertyPanel(wx.Panel):
                 if isinstance(m, wx.Window):
                     m.Hide()
 
-    def finalize(self):
+    def pane_hide(self):
         pass
 
-    def initialize(self):
+    def pane_show(self):
         self.set_widgets()
         # self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
         # self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
@@ -1054,10 +1054,10 @@ class OperationProperty(MWindow):
         self.Update()
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()
 
     def window_preserve(self):
         return False

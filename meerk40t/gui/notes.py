@@ -20,7 +20,7 @@ class Notes(MWindow):
 
     def window_open(self):
         self.context.close(self.name)
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

@@ -30,11 +30,11 @@ class KeymapPanel(wx.Panel):
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated, self.list_keymap)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
 
-    def initialize(self):
+    def pane_show(self):
         self.reload_keymap()
         self.Children[0].SetFocus()
 
-    def finalize(self):
+    def pane_hide(self):
         pass
 
     def __set_properties(self):
@@ -166,7 +166,7 @@ class Keymap(MWindow):
         self.SetTitle(_("Keymap Settings"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

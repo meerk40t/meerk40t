@@ -88,10 +88,10 @@ class TextPropertyPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
 
-    def initialize(self):
+    def pane_show(self):
         self.set_widgets()
 
-    def finalize(self):
+    def pane_hide(self):
         pass
 
     def set_widgets(self):
@@ -278,10 +278,10 @@ class TextProperty(MWindow):
         self.panel.set_widgets()
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()
 
     def window_preserve(self):
         return False

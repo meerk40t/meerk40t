@@ -1,8 +1,11 @@
+from meerk40t.gui.icons import icons8_move_50, icons8_route_50, icons8_connected_50
 from meerk40t.gui.legacy.configuration import Configuration
 from meerk40t.gui.legacy.controller import Controller
 from meerk40t.gui.legacy.file.fileoutput import FileOutput
 from meerk40t.gui.legacy.lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
-from meerk40t.gui.legacy.lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
+from meerk40t.gui.legacy.lhystudios.lhystudioscontrollergui import (
+    LhystudiosControllerGui,
+)
 from meerk40t.gui.legacy.lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
 from meerk40t.gui.legacy.moshi.moshicontrollergui import MoshiControllerGui
 from meerk40t.gui.legacy.moshi.moshidrivergui import MoshiDriverGui
@@ -24,8 +27,8 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         kernel.register("module/LegacyGui", LegacyGui)
     elif lifecycle == "boot":
-        kernel.get_context('legacy').add_service_delegate(
-            kernel.get_context('legacy').open("module/LegacyGui")
+        kernel.get_context("legacy").add_service_delegate(
+            kernel.get_context("legacy").open("module/LegacyGui")
         )
 
 
@@ -50,7 +53,9 @@ class LegacyGui(Module):
     def on_controller(self, origin, original_origin, *args):
         split = original_origin.split("/")
         if split[0] == "lhystudios":
-            self.context("window -p %s open %s/Controller\n" % (original_origin, split[0]))
+            self.context(
+                "window -p %s open %s/Controller\n" % (original_origin, split[0])
+            )
 
     def on_active_switch(self, origin, *args):
         legacy_device = self.context
@@ -61,7 +66,9 @@ class LegacyGui(Module):
         elif output.type == "lhystudios":
             legacy_device.register("window/Controller", "window/lhystudios/Controller")
             LhystudiosControllerGui.required_path = output.context.path
-            legacy_device.register("window/AccelerationChart", "window/lhystudios/AccelerationChart")
+            legacy_device.register(
+                "window/AccelerationChart", "window/lhystudios/AccelerationChart"
+            )
             LhystudiosAccelerationChart.required_path = output.context.path
         elif output.type == "moshi":
             legacy_device.register("window/Controller", "window/moshi/Controller")
@@ -78,7 +85,9 @@ class LegacyGui(Module):
             legacy_device.register("window/Configuration", Configuration)
             Configuration.required_path = legacy_device.root.path
         elif driver.type == "lhystudios":
-            legacy_device.register("window/Configuration", "window/lhystudios/Configuration")
+            legacy_device.register(
+                "window/Configuration", "window/lhystudios/Configuration"
+            )
             LhystudiosDriverGui.required_path = output.context.path
         elif driver.type == "moshi":
             legacy_device.register("window/Configuration", "window/moshi/Configuration")
@@ -86,7 +95,7 @@ class LegacyGui(Module):
 
     @staticmethod
     def sub_register(kernel):
-        legacy_device = kernel.get_context('legacy')
+        legacy_device = kernel.get_context("legacy")
         legacy_device.register("window/Controller", Controller)
         legacy_device.register("window/Configuration", Configuration)
         legacy_device.register("window/DeviceManager", DeviceManager)
@@ -95,8 +104,39 @@ class LegacyGui(Module):
         legacy_device.register("window/default/Configuration", Configuration)
         legacy_device.register("window/lhystudios/Controller", LhystudiosControllerGui)
         legacy_device.register("window/lhystudios/Configuration", LhystudiosDriverGui)
-        legacy_device.register("window/lhystudios/AccelerationChart", LhystudiosAccelerationChart)
+        legacy_device.register(
+            "window/lhystudios/AccelerationChart", LhystudiosAccelerationChart
+        )
         legacy_device.register("window/moshi/Controller", MoshiControllerGui)
         legacy_device.register("window/moshi/Configuration", MoshiDriverGui)
         legacy_device.register("window/tcp/Controller", TCPController)
         legacy_device.register("window/file/Controller", FileOutput)
+        _ = kernel.translation
+
+        legacy_device.register(
+            "button/control/Navigation",
+            {
+                "label": _("Navigation"),
+                "icon": icons8_move_50.GetBitmap(),
+                "tip": _("Opens Navigation Window"),
+                "action": lambda v: legacy_device("window toggle Navigation\n"),
+            },
+        )
+        legacy_device.register(
+            "button/control/Spooler",
+            {
+                "label": _("Spooler"),
+                "icon": icons8_route_50.GetBitmap(),
+                "tip": _("Opens Spooler Window"),
+                "action": lambda v: legacy_device("window toggle JobSpooler\n"),
+            },
+        )
+        legacy_device.register(
+            "button/control/Controller",
+            {
+                "label": _("Controller"),
+                "icon": icons8_connected_50.GetBitmap(),
+                "tip": _("Opens Controller Window"),
+                "action": lambda v: legacy_device("window toggle Controller\n"),
+            },
+        )

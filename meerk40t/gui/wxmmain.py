@@ -712,8 +712,8 @@ class MeerK40t(MWindow):
             )
             _pane.control = panel
             self.on_pane_add(_pane)
-            if hasattr(panel,"initialize"):
-                panel.initialize()
+            if hasattr(panel,"pane_show"):
+                panel.pane_show()
             self.context.register("pane/about", _pane)
             self._mgr.Update()
 
@@ -721,13 +721,13 @@ class MeerK40t(MWindow):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
                 window = pane.window
-                if hasattr(window, "finalize"):
-                    window.finalize()
+                if hasattr(window, "pane_hide"):
+                    window.pane_hide()
                 if isinstance(window, wx.aui.AuiNotebook):
                     for i in range(window.GetPageCount()):
                         page = window.GetPage(i)
-                        if hasattr(page, "finalize"):
-                            page.finalize()
+                        if hasattr(page, "pane_hide"):
+                            page.pane_hide()
         self._mgr.LoadPerspective(self.default_perspective, update=True)
         self.on_config_panes()
 
@@ -735,21 +735,21 @@ class MeerK40t(MWindow):
         for pane in self._mgr.GetAllPanes():
             window = pane.window
             if pane.IsShown():
-                if hasattr(window, "initialize"):
-                    window.initialize()
+                if hasattr(window, "pane_show"):
+                    window.pane_show()
                 if isinstance(window, wx.aui.AuiNotebook):
                     for i in range(window.GetPageCount()):
                         page = window.GetPage(i)
-                        if hasattr(page, "initialize"):
-                            page.initialize()
+                        if hasattr(page, "pane_show"):
+                            page.pane_show()
             else:
-                if hasattr(window, "noninitialize"):
-                    window.noninitialize()
+                if hasattr(window, "pane_noshow"):
+                    window.pane_noshow()
                 if isinstance(window, wx.aui.AuiNotebook):
                     for i in range(window.GetPageCount()):
                         page = window.GetPage(i)
-                        if hasattr(page, "noninitialize"):
-                            page.noninitialize()
+                        if hasattr(page, "pane_noshow"):
+                            page.pane_noshow()
         self.on_pane_lock(lock=self.context.pane_lock)
         wx.CallAfter(self.on_pane_changed, None)
 
@@ -767,12 +767,13 @@ class MeerK40t(MWindow):
 
     def on_pane_add(self, paneinfo: aui.AuiPaneInfo):
         pane = self._mgr.GetPane(paneinfo.name)
+        self.add_module_delegate(paneinfo.control)
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
                 pane.CaptionVisible(not self.context.pane_lock)
-                if hasattr(pane.window, "initialize"):
-                    pane.window.initialize()
+                if hasattr(pane.window, "pane_show"):
+                    pane.window.pane_show()
                     wx.CallAfter(self.on_pane_changed, None)
                 self._mgr.Update()
             return
@@ -789,8 +790,8 @@ class MeerK40t(MWindow):
     def on_pane_closed(self, event):
         pane = event.GetPane()
         if pane.IsShown():
-            if hasattr(pane.window, "finalize"):
-                pane.window.finalize()
+            if hasattr(pane.window, "pane_hide"):
+                pane.window.pane_hide()
         wx.CallAfter(self.on_pane_changed, None)
 
     def on_pane_changed(self, *args):
@@ -937,8 +938,8 @@ class MeerK40t(MWindow):
             def toggle(event=None):
                 pane_obj = self._mgr.GetPane(pane_toggle)
                 if pane_obj.IsShown():
-                    if hasattr(pane_obj.window, "finalize"):
-                        pane_obj.window.finalize()
+                    if hasattr(pane_obj.window, "pane_hide"):
+                        pane_obj.window.pane_hide()
                     pane_obj.Hide()
                     self._mgr.Update()
                     return
@@ -1450,8 +1451,8 @@ class MeerK40t(MWindow):
         context.perspective = self._mgr.SavePerspective()
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
-                if hasattr(pane.window, "finalize"):
-                    pane.window.finalize()
+                if hasattr(pane.window, "pane_hide"):
+                    pane.window.pane_hide()
         self._mgr.UnInit()
 
         if context.print_shutdown:

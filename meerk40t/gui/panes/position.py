@@ -76,19 +76,20 @@ class PositionPanel(wx.Panel):
         self.position_units = self.context.units_index
         self._update_position()
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         self.context.listen("units", self.space_changed)
         self.context.listen("emphasized", self._update_position)
         self.context.listen("modified", self._update_position)
         self.context.listen("altered", self._update_position)
-        self.context.kernel.listen("lifecycle;shutdown", "", self.finalize)
 
-    def finalize(self, *args):
+    def pane_hide(self, *args):
         self.context.unlisten("units", self.space_changed)
         self.context.unlisten("emphasized", self._update_position)
         self.context.unlisten("modified", self._update_position)
         self.context.unlisten("altered", self._update_position)
-        self.context.kernel.unlisten("lifecycle;shutdown", "", self.finalize)
+
+    def finalize(self, *args):
+        self.pane_hide()
 
     def __set_properties(self):
         # begin wxGlade: PositionPanel.__set_properties

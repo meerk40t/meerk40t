@@ -4,7 +4,7 @@ import wx
 import wx.ribbon as RB
 from wx import ID_OPEN, ID_SAVE, aui
 
-from ..kernel import STATE_BUSY
+from ..kernel import STATE_BUSY, lookup_listener
 from .icons import (
     icons8_administrative_tools_50,
     icons8_camera_50,
@@ -97,6 +97,24 @@ class RibbonPanel(wx.Panel):
         # self._ribbon
         self.pipe_state = None
         self.ribbon_position_units = self.context.units_index
+
+    @lookup_listener("button/control")
+    def set_control_buttons(self, new_values, old_values):
+        print("Updated!")
+        self.window_button_bar.ClearButtons()
+        for button in new_values:
+            new_id = wx.NewId()
+            self.window_button_bar.AddButton(
+                new_id,
+                button['label'],
+                button['icon'],
+                button['top'],
+            )
+            self.window_button_bar.Bind(
+                RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                button['action'],
+                id=new_id
+            )
 
     @property
     def is_dark(self):
@@ -241,21 +259,23 @@ class RibbonPanel(wx.Panel):
         )
         button_bar = RB.RibbonButtonBar(self.windows_panel)
         self.window_button_bar = button_bar
+
         # So Navigation, Camera, Spooler, Controller, Terminal in one group,
         # Settings, Keymap, Devices, Configuration, Rotary, USB in another.
         # Raster Wizard and Notes should IMO be in the Main Group.
-        if self.context.has_feature("window/Navigation"):
-            button_bar.AddButton(
-                ID_NAV,
-                _("Navigation"),
-                icons8_move_50.GetBitmap(),
-                _("Opens Navigation Window"),
-            )
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                lambda v: self.context("window toggle Navigation\n"),
-                id=ID_NAV,
-            )
+
+        # if self.context.has_feature("window/Navigation"):
+        #     button_bar.AddButton(
+        #         ID_NAV,
+        #         _("Navigation"),
+        #         icons8_move_50.GetBitmap(),
+        #         _("Opens Navigation Window"),
+        #     )
+        #     button_bar.Bind(
+        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #         lambda v: self.context("window toggle Navigation\n"),
+        #         id=ID_NAV,
+        #     )
         if self.context.has_feature("modifier/Camera"):
             button_bar.AddHybridButton(
                 ID_CAMERA,
@@ -277,30 +297,30 @@ class RibbonPanel(wx.Panel):
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
 
-        if self.context.has_feature("window/JobSpooler"):
-            button_bar.AddButton(
-                ID_SPOOLER,
-                _("Spooler"),
-                icons8_route_50.GetBitmap(),
-                _("Opens Spooler Window"),
-            )
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                lambda v: self.context("window toggle JobSpooler\n"),
-                id=ID_SPOOLER,
-            )
-        if self.context.has_feature("window/Controller"):
-            button_bar.AddButton(
-                ID_CONTROLLER,
-                _("Controller"),
-                icons8_connected_50.GetBitmap(),
-                _("Opens Controller Window"),
-            )
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                lambda v: self.context("window toggle Controller\n"),
-                id=ID_CONTROLLER,
-            )
+        # if self.context.has_feature("window/JobSpooler"):
+        #     button_bar.AddButton(
+        #         ID_SPOOLER,
+        #         _("Spooler"),
+        #         icons8_route_50.GetBitmap(),
+        #         _("Opens Spooler Window"),
+        #     )
+        #     button_bar.Bind(
+        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #         lambda v: self.context("window toggle JobSpooler\n"),
+        #         id=ID_SPOOLER,
+        #     )
+        # if self.context.has_feature("window/Controller"):
+        #     button_bar.AddButton(
+        #         ID_CONTROLLER,
+        #         _("Controller"),
+        #         icons8_connected_50.GetBitmap(),
+        #         _("Opens Controller Window"),
+        #     )
+        #     button_bar.Bind(
+        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
+        #         lambda v: self.context("window toggle Controller\n"),
+        #         id=ID_CONTROLLER,
+        #     )
         button_bar.AddToggleButton(
             ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), _("Pause the laser")
         )
@@ -429,10 +449,10 @@ class RibbonPanel(wx.Panel):
             return
         self.toolbar_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
 
-    def initialize(self):
+    def pane_show(self):
         self.context.listen("pipe;thread", self.on_pipe_state)
 
-    def finalize(self):
+    def pane_hide(self):
         self.context.unlisten("pipe;thread", self.on_pipe_state)
 
 
@@ -448,13 +468,13 @@ class Ribbon(MWindow):
 
     def window_open(self):
         try:
-            self.panel.initialize()
+            self.panel.pane_show()
         except AttributeError:
             pass
 
     def window_close(self):
         try:
-            self.panel.finalize()
+            self.panel.pane_hide()
         except AttributeError:
             pass
 

@@ -186,10 +186,10 @@ class LaserPanel(wx.Panel):
         if index == -1:
             disable_window(self)
 
-    def initialize(self):
+    def pane_show(self):
         self.context.listen("plan", self.plan_update)
 
-    def finalize(self):
+    def pane_hide(self):
         self.context.unlisten("plan", self.plan_update)
 
     def plan_update(self, origin, *message):

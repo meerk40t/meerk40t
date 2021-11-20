@@ -114,7 +114,7 @@ class TreePanel(wx.Panel):
         if self.context.bind.untrigger(keyvalue):
             event.Skip()
 
-    def initialize(self):
+    def pane_show(self):
         self.context.listen("rebuild_tree", self.on_rebuild_tree_signal)
         self.context.listen("element_property_update", self.on_element_update)
         self.context.listen("element_property_reload", self.on_force_element_update)
@@ -125,7 +125,7 @@ class TreePanel(wx.Panel):
             "activate_selected_nodes", self.shadow_tree.activate_selected_node
         )
 
-    def finalize(self):
+    def pane_hide(self):
         self.context.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
         self.context.unlisten("element_property_update", self.on_element_update)
         self.context.unlisten("element_property_reload", self.on_force_element_update)
@@ -186,13 +186,13 @@ class ElementsTree(MWindow):
 
     def window_open(self):
         try:
-            self.panel.initialize()
+            self.panel.pane_show()
         except AttributeError:
             pass
 
     def window_close(self):
         try:
-            self.panel.finalize()
+            self.panel.pane_hide()
         except AttributeError:
             pass
 

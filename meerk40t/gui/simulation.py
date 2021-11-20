@@ -251,7 +251,7 @@ class SimulationPanel(wx.Panel, Job):
             self.slider_progress.SetValue(self.max)
             self.request_refresh()
 
-    def initialize(self):
+    def pane_show(self):
         self.context.setting(str, "units_name", "mm")
         self.context.setting(int, "units_marks", 10)
         self.context.setting(int, "units_index", 0)
@@ -299,7 +299,7 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             pass
 
-    def finalize(self):
+    def pane_hide(self):
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
         self.context.unlisten("plan", self.on_plan_change)
         if self.auto_clear:
@@ -514,7 +514,7 @@ class Simulation(MWindow):
         self.SetTitle(_("Simulation"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

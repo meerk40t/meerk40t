@@ -868,11 +868,11 @@ class Transform(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         self.context.listen("emphasized", self.on_emphasized_elements_changed)
         self.update_matrix_text()
 
-    def finalize(self, *args):
+    def pane_hide(self, *args):
         self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
 
     def on_emphasized_elements_changed(self, origin, elements):
@@ -1078,7 +1078,7 @@ class JogDistancePanel(wx.Panel):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_jog_distance, self.spin_jog_inch)
         # end wxGlade
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         self.set_jog_distances(self.context.navigate_jog)
         self.Children[0].SetFocus()
 
@@ -1145,17 +1145,17 @@ class NavigationPanel(wx.Panel):
         ]
         # end wxGlade
 
-    def initialize(self):
+    def pane_show(self):
         for p in self.panels:
             try:
-                p.initialize()
+                p.pane_show()
             except AttributeError:
                 pass
 
-    def finalize(self):
+    def pane_hide(self):
         for p in self.panels:
             try:
-                p.finalize()
+                p.pane_hide()
             except AttributeError:
                 pass
 
@@ -1173,7 +1173,7 @@ class Navigation(MWindow):
         self.SetTitle(_("Navigation"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

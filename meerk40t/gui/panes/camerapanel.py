@@ -166,7 +166,7 @@ class CameraPanel(wx.Panel, Job):
             CamInterfaceWidget(self.widget_scene, self)
         )
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         from sys import platform as _platform
 
         if _platform == "darwin" and not hasattr(self.camera, "_first"):
@@ -176,15 +176,18 @@ class CameraPanel(wx.Panel, Job):
             self.context("camera%d start\n" % self.index)
         self.context.schedule(self)
         self.context.listen("refresh_scene", self.on_refresh_scene)
-        self.context.kernel.listen("lifecycle;shutdown", "", self.finalize)
+        # self.context.kernel.listen("lifecycle;shutdown", "", self.pane_hide)
 
-    def finalize(self, *args):
+    def pane_hide(self, *args):
         self.context("camera%d stop\n" % self.index)
         self.context.unschedule(self)
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
         if not self.pane:
             self.context.close("Camera%s" % str(self.index))
-        self.context.kernel.unlisten("lifecycle;shutdown", "", self.finalize)
+        # self.context.kernel.unlisten("lifecycle;shutdown", "", self.pane_hide)
+
+    def pane_hide(self, *args):
+        self.pane_hide()
 
     def on_refresh_scene(self, origin, *args):
         self.widget_scene.request_refresh(*args)
@@ -689,10 +692,10 @@ class CameraInterface(MWindow):
         append(wxglade_tmp_menu, _("Camera"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()
 
     @staticmethod
     def sub_register(kernel):
@@ -754,7 +757,7 @@ class CameraURIPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def initialize(self):
+    def pane_show(self):
         camera_context = self.context.get_context("camera")
         keylist = camera_context.kernel.load_persistent_string_dict(
             camera_context.path, suffix=True
@@ -765,7 +768,7 @@ class CameraURIPanel(wx.Panel):
             self.uri_list = [keylist[k] for k in keys]
             self.on_list_refresh()
 
-    def finalize(self):
+    def pane_hide(self):
         self.commit()
 
     def commit(self):
@@ -886,7 +889,7 @@ class CameraURI(MWindow):
         self.SetTitle(_("Camera URI"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

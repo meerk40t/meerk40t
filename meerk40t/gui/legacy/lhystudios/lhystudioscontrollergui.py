@@ -313,11 +313,11 @@ class LhystudiosControllerPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def initialize(self):
+    def pane_show(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 
-    def finalize(self):
+    def pane_hide(self):
         active = self.context.path.split("/")[-1]
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
 

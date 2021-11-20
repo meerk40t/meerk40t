@@ -27,12 +27,12 @@ class UsbConnectPanel(wx.Panel):
         self.pipe = None
         self._active_when_loaded = None
 
-    def initialize(self):
+    def pane_show(self):
         active = self.context.device.active
         self._active_when_loaded = active
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 
-    def finalize(self):
+    def pane_hide(self):
         active = self._active_when_loaded
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
 
@@ -80,7 +80,7 @@ class UsbConnect(MWindow):
         self.SetTitle(_("UsbConnect"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()
