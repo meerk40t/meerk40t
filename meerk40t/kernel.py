@@ -649,10 +649,11 @@ class Service(Context):
     Unlike contexts which can be derived or gotten at a particular path. Services can be directly instanced.
     """
 
-    def __init__(self, kernel: "Kernel", path: str):
+    def __init__(self, kernel: "Kernel", path: str, delegates=None):
         super().__init__(kernel, path)
         kernel.contexts[path] = self
         self._registered = {}
+        self._delegates = delegates
 
     def register(self, path: str, obj: Any) -> None:
         """
@@ -720,6 +721,11 @@ class Service(Context):
         """
         pass
 
+    def add_service_delegate(self, delegate):
+        if self._delegates is None:
+            self._delegates = []
+        self._delegates.append(delegate)
+
 
 class Kernel:
     """
@@ -775,7 +781,7 @@ class Kernel:
             times=1
         )
         self._registered = {}
-        self.lookup_listeners = {}
+        self.lookups = {}
         self.lookup_previous = {}
         self._dirty_lookup = False
 
@@ -1016,12 +1022,24 @@ class Kernel:
 
         self._active_services[domain] = service
         service.attach(self)
-
+        self._signal_attach(service)
+        self._lookup_attach(service)
+        try:
+            # Apply attach call to all lifecycle delegates
+            delegates = service._delegates
+            for d in delegates:
+                try:
+                    d.attach()
+                except AttributeError:
+                    pass
+        except (AttributeError, TypeError):
+            pass
         setattr(self, domain, service)
         for context_name in self.contexts:
             # For every registered context, set the given domain to this service
             context = self.contexts[context_name]
             setattr(context, domain, service)
+
         self.lookup_change()
 
     def deactivate(self, domain):
@@ -1031,7 +1049,18 @@ class Kernel:
             if previous_active is not None:
                 self._signal_detach(previous_active)
                 self._lookup_detach(previous_active)
+                try:
+                    # Apply attach call to all lifecycle delegates
+                    delegates = previous_active._delegates
+                    for d in delegates:
+                        try:
+                            d.detach()
+                        except AttributeError:
+                            pass
+                except (AttributeError, TypeError):
+                    pass
                 previous_active.detach(self)
+
             for context_name in self.contexts:
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
@@ -1397,10 +1426,10 @@ class Kernel:
         for obj, name, sname in self.find(*args):
             yield obj
 
-    def lookup_listener(self, matchtext, funct, lifecycleobject):
-        if matchtext not in self.lookup_listeners:
-            self.lookup_listeners[matchtext] = list()
-        self.lookup_listeners[matchtext].append((funct, lifecycleobject))
+    def add_lookup(self, matchtext, funct, lifecycleobject):
+        if matchtext not in self.lookups:
+            self.lookups[matchtext] = list()
+        self.lookups[matchtext].append((funct, lifecycleobject))
 
     def lookup_change(self):
         """
@@ -1418,8 +1447,8 @@ class Kernel:
         Triggered on events which can changed the registered data within the lookup.
         @return:
         """
-        for matchtext in self.lookup_listeners:
-            listeners = self.lookup_listeners[matchtext]
+        for matchtext in self.lookups:
+            listeners = self.lookups[matchtext]
             try:
                 previous_matches = self.lookup_previous[matchtext]
             except KeyError:
@@ -2076,13 +2105,13 @@ class Kernel:
         lifecycle_object: Any,
     ) -> None:
         """
-        Detach all lookup_listeners attached to this lifecycle object.
+        Detach all lookups attached to this lifecycle object.
 
         @param lifecycle_object:
         @return:
         """
-        for lookup in self.lookup_listeners:
-            listens = self.lookup_listeners[lookup]
+        for lookup in self.lookups:
+            listens = self.lookups[lookup]
             for index, lul in enumerate(listens):
                 listener, lso = lul
                 if lso is lifecycle_object:
@@ -2099,16 +2128,16 @@ class Kernel:
         lifecycle_object: Union[Service, Module, None] = None,
     ) -> None:
         """
-        Attaches any lookup_listeners flagged as "@lookup_listener" to listen to that lookup.
+        Attaches any lookups flagged as "@lookup_listener" to listen to that lookup.
 
         @param lifecycle_object:
         @return:
         """
         for attr in dir(lifecycle_object):
             func = getattr(lifecycle_object, attr)
-            if hasattr(func, "lookup_listener"):
-                for lul in func.lookup_listener:
-                    self.lookup_listener(lul, func, lifecycle_object)
+            if hasattr(func, "lookups"):
+                for lul in func.lookups:
+                    self.add_lookup(lul, func, lifecycle_object)
         try:
             delegates = lifecycle_object._delegates
             for d in delegates:
