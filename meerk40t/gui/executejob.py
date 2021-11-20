@@ -453,7 +453,7 @@ class ExecuteJob(MWindow):
         from .wxutils import create_menu_for_choices
 
         menu = create_menu_for_choices(
-            self, self.context.registered["choices/planner"]
+            self, self.context.lookup("choices/planner")
         )
         self.PopupMenu(menu)
         menu.Destroy()
