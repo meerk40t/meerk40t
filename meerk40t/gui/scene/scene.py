@@ -354,6 +354,8 @@ class Scene(Module, Job):
             conditional=lambda: self.screen_refresh_is_requested,
             run_main=True,
         )
+        self.log = context.channel("scene")
+        self.log_events = context.channel("scene-events")
         self.gui = gui
         self.matrix = Matrix()
         self.hittable_elements = list()
@@ -365,6 +367,7 @@ class Scene(Module, Job):
         self.last_position = None
         self.time = None
         self.distance = None
+        self._cursor = None
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
@@ -568,6 +571,8 @@ class Scene(Module, Job):
         """
         if self.widget_root is not None:
             self.widget_root.draw(canvas)
+            if self.log:
+                self.log("Redraw Canvas")
 
     def convert_scene_to_window(self, position):
         """
@@ -663,6 +668,8 @@ class Scene(Module, Job):
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
         consider the dropped element within the hitchain.
         """
+        if self.log_events:
+            self.log_events("%s: %s" % (event_type, str(window_pos)))
         if window_pos is None:
             # Capture Lost
             for i, hit in enumerate(self.hit_chain):
@@ -725,11 +732,17 @@ class Scene(Module, Job):
                 and previous_top_element is not current_widget
             ):
                 if previous_top_element is not None:
+                    if self.log_events:
+                        self.log_events("Converted %s: %s" % ("hover_end", str(window_pos)))
                     previous_top_element.event(window_pos, window_pos, "hover_end")
                 current_widget.event(window_pos, space_pos, "hover_start")
+                if self.log_events:
+                    self.log_events("Converted %s: %s" % ("hover_start", str(window_pos)))
                 previous_top_element = current_widget
             if event_type == "leftup" and time.time() - self.time <= 0.15:
                 response = current_widget.event(window_pos, space_pos, "leftclick")
+                if self.log_events:
+                    self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
             else:
                 response = current_widget.event(window_pos, space_pos, event_type)
             if response == RESPONSE_ABORT:
@@ -743,6 +756,42 @@ class Scene(Module, Job):
                 self.hit_chain[i] = None
             else:
                 break
+
+    def cursor(self, cursor, always=False):
+        """
+        Routine to centralize and correct cursor info.
+        @param cursor:
+        @return:
+        """
+        from sys import platform
+        if cursor == "sizing":
+            new_cursor = wx.CURSOR_SIZING
+        elif cursor in ("size_nw", "size_se"):
+            new_cursor = wx.CURSOR_SIZENWSE
+        elif cursor in ("size_sw", "size_ne"):
+            new_cursor = wx.CURSOR_SIZENESW
+        elif cursor in ("size_n", "size_s"):
+            new_cursor = wx.CURSOR_SIZENS
+        elif cursor in ("size_e", "size_w"):
+            new_cursor = wx.CURSOR_SIZEWE
+        elif cursor == "arrow":
+            new_cursor = wx.CURSOR_ARROW
+        elif cursor == "cross":
+            new_cursor = wx.CROSS_CURSOR
+        else:
+            new_cursor = wx.CURSOR_ARROW
+            self.log("Invalid cursor.")
+        if platform == "linux":
+            if cursor == "sizing":
+                new_cursor = wx.CURSOR_SIZENWSE
+            elif cursor in ("size_nw", "size_se"):
+                new_cursor = wx.CURSOR_SIZING
+            elif cursor in ("size_sw", "size_ne"):
+                new_cursor = wx.CURSOR_SIZING
+        if new_cursor != self._cursor or always:
+            self._cursor = new_cursor
+            self.gui.scene_panel.SetCursor(wx.Cursor(self._cursor))
+            self.log("Cursor changed to %s" % cursor)
 
     def add_scenewidget(self, widget, properties=ORIENTATION_RELATIVE):
         """

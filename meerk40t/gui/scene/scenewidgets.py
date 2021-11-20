@@ -134,7 +134,6 @@ class SelectionWidget(Widget):
                 self.bottom += height
 
             self.clear()
-            self.scene.context.signal("refresh_scene", self.scene.name)
             return HITCHAIN_HIT
         else:
             self.left = float("inf")
@@ -142,18 +141,15 @@ class SelectionWidget(Widget):
             self.right = -float("inf")
             self.bottom = -float("inf")
             self.clear()
-            self.scene.context.signal("refresh_scene", self.scene.name)
             return HITCHAIN_DELEGATE
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.elements
         if event_type == "hover_start":
-            self.cursor = wx.CURSOR_SIZING
-            self.scene.gui.SetCursor(wx.Cursor(self.cursor))
+            self.scene.cursor("sizing")
             return RESPONSE_CHAIN
         elif event_type == "hover_end" or event_type == "lost":
-            self.cursor = wx.CURSOR_ARROW
-            self.scene.gui.SetCursor(wx.Cursor(self.cursor))
+            self.scene.cursor("arrow")
             return RESPONSE_CHAIN
         elif event_type == "hover":
             matrix = self.parent.matrix
@@ -178,46 +174,41 @@ class SelectionWidget(Widget):
             )
             xmax = self.width - xmin
             ymax = self.height - ymin
-            cursor = self.cursor
             for e in elements.elems(emphasized=True):
                 try:
                     if e.lock:
-                        self.cursor = wx.CURSOR_SIZING
+                        self.scene.cursor("sizing")
                         self.tool = self.tool_translate
-                        if self.cursor != cursor:
-                            self.scene.gui.SetCursor(wx.Cursor(self.cursor))
                         return RESPONSE_CHAIN
                 except (ValueError, AttributeError):
                     pass
             if xin >= xmax and yin >= ymax:
-                self.cursor = wx.CURSOR_SIZENWSE
+                self.scene.cursor("size_se")
                 self.tool = self.tool_scalexy_se
             elif xin <= xmin and yin <= ymin:
-                self.cursor = wx.CURSOR_SIZENWSE
+                self.scene.cursor("size_nw")
                 self.tool = self.tool_scalexy_nw
             elif xin >= xmax and yin <= ymin:
-                self.cursor = wx.CURSOR_SIZENESW
+                self.scene.cursor("size_ne")
                 self.tool = self.tool_scalexy_ne
             elif xin <= xmin and yin >= ymax:
-                self.cursor = wx.CURSOR_SIZENESW
+                self.scene.cursor("size_sw")
                 self.tool = self.tool_scalexy_sw
             elif xin <= xmin:
-                self.cursor = wx.CURSOR_SIZEWE
+                self.scene.cursor("size_w")
                 self.tool = self.tool_scalex_w
             elif yin <= ymin:
-                self.cursor = wx.CURSOR_SIZENS
+                self.scene.cursor("size_n")
                 self.tool = self.tool_scaley_n
             elif xin >= xmax:
-                self.cursor = wx.CURSOR_SIZEWE
+                self.scene.cursor("size_e")
                 self.tool = self.tool_scalex_e
             elif yin >= ymax:
-                self.cursor = wx.CURSOR_SIZENS
+                self.scene.cursor("size_s")
                 self.tool = self.tool_scaley_s
             else:
-                self.cursor = wx.CURSOR_SIZING
+                self.scene.cursor("sizing")
                 self.tool = self.tool_translate
-            if self.cursor != cursor:
-                self.scene.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         dx = space_pos[4]
         dy = space_pos[5]
@@ -282,7 +273,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], position[0], position[1]])
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
 
     def tool_scalexy_se(self, position, dx, dy, event=0):
         """
@@ -315,7 +306,7 @@ class SelectionWidget(Widget):
             elements.update_bounds(
                 [b[0], b[1], b[0] + self.save_width, b[1] + self.save_height]
             )
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
 
     def tool_scalexy_nw(self, position, dx, dy, event=0):
         """
@@ -348,7 +339,8 @@ class SelectionWidget(Widget):
             elements.update_bounds(
                 [b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]]
             )
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
+
 
     def tool_scalexy_ne(self, position, dx, dy, event=0):
         """
@@ -381,7 +373,7 @@ class SelectionWidget(Widget):
             elements.update_bounds(
                 [b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]]
             )
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
 
     def tool_scalexy_sw(self, position, dx, dy, event=0):
         """
@@ -414,7 +406,7 @@ class SelectionWidget(Widget):
             elements.update_bounds(
                 [b[2] - self.save_width, b[1], b[2], b[1] + self.save_height]
             )
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
 
     def tool_scalex_e(self, position, dx, dy, event=0):
         """
@@ -439,7 +431,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], position[0], b[3]])
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
 
     def tool_scalex_w(self, position, dx, dy, event=0):
         """
@@ -464,7 +456,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([position[0], b[1], b[2], b[3]])
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
 
     def tool_scaley_s(self, position, dx, dy, event=0):
         """
@@ -489,7 +481,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], b[2], position[1]])
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
 
     def tool_scaley_n(self, position, dx, dy, event=0):
         """
@@ -514,7 +506,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], position[1], b[2], b[3]])
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
 
     def tool_translate(self, position, dx, dy, event=0):
         """
@@ -534,7 +526,7 @@ class SelectionWidget(Widget):
                 e._bounds_dirty = True
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
-        self.scene.context.signal("refresh_scene", self.scene.name)
+        self.scene.request_refresh()
 
     def process_draw(self, gc):
         """
@@ -657,12 +649,12 @@ class RectSelectWidget(Widget):
                         obj.node.emphasized = True
                     else:
                         obj.node.emphasized = False
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
             self.start_location = None
             self.end_location = None
             return RESPONSE_CONSUME
         elif event_type == "move":
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
             self.end_location = space_pos
             return RESPONSE_CONSUME
         elif event_type == "lost":
