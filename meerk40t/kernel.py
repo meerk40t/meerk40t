@@ -520,6 +520,7 @@ class Context:
             instance.close()
         except AttributeError:
             pass
+        self.silence(instance)
         instance.finalize(*args, **kwargs)
 
     # ==========
