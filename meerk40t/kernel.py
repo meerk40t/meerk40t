@@ -1756,11 +1756,11 @@ class Kernel:
                 # Checking if jobs should run.
                 if job.scheduled:
                     job._next_run = 0  # Set to zero while running.
-                    if job.times is not None:
-                        job.times = job.times - 1
-                        if job.times <= 0:
+                    if job._remaining is not None:
+                        job._remaining = job._remaining - 1
+                        if job._remaining <= 0:
                             del jobs[job_name]
-                        if job.times < 0:
+                        if job._remaining < 0:
                             continue
                     try:
                         if job.run_main and self.run_later is not None:
@@ -1779,6 +1779,11 @@ class Kernel:
         self.state = STATE_END
 
     def schedule(self, job: "Job") -> "Job":
+        try:
+            job.reset()
+            # Could be recurring job. Reset on reschedule.
+        except AttributeError:
+            return
         self.jobs[job.job_name] = job
         return job
 
@@ -2955,8 +2960,10 @@ class Job:
         self.args = args
         self.interval = interval
         self.times = times
+
         self._last_run = None
         self._next_run = time.time() + self.interval
+        self._remaining = self.times
 
     def __call__(self, *args, **kwargs):
         self.process(*args, **kwargs)
@@ -2978,8 +2985,13 @@ class Job:
             and (self.conditional is None or self.conditional())
         )
 
+    def reset(self) -> None:
+        self._last_run = None
+        self._next_run = time.time() + self.interval
+        self._remaining = self.times
+
     def cancel(self) -> None:
-        self.times = -1
+        self._remaining = -1
 
 
 class ConsoleFunction(Job):
