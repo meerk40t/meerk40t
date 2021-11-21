@@ -48,12 +48,10 @@ def register_panel(window, context):
 
 class CameraPanel(wx.Panel, Job):
     def __init__(
-        self, *args, context=None, gui=None, index: int = None, pane=False, **kwds
+        self, *args, context=None, gui=None, index: int = 0, pane=False, **kwds
     ):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        if index is None:
-            index = 0
         self.gui = gui
         self.context = context
         self.index = index
@@ -644,8 +642,9 @@ class CamImageWidget(Widget):
 
 
 class CameraInterface(MWindow):
-    def __init__(self, *args, index=0, **kwds):
-        super().__init__(640, 480, *args, **kwds)
+    def __init__(self, context, path, parent, index=0, **kwds):
+        index = int(index)
+        super().__init__(640, 480, context, path, parent, **kwds)
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
 
         # ==========
