@@ -191,17 +191,17 @@ class LaserPanel(wx.Panel):
     def spooler_lookup(self, new_spoolers, old):
         # Devices Initialize.
         self.available_spoolers = [obj for obj, n, s in new_spoolers]
-        print(self.available_spoolers)
-
         self.selected_spooler = self.context.device.spooler
         index = -1
         for i, s in enumerate(self.available_spoolers):
             if s is self.selected_spooler:
                 index = i
                 break
-        print(index)
         self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
+        self.combo_devices.Clear()
         spools = [s.label for s in self.available_spoolers]
+        for i in range(len(spools)):
+            self.combo_devices.Append(spools[i])
         self.combo_devices.SetSelection(index)
 
     def pane_show(self):
