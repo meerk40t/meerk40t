@@ -236,7 +236,7 @@ def plugin(kernel, lifecycle=None):
                 + _(
                     "If you find that using this option significantly increases the optimisation time, "
                     + "alternatives are: \n"
-                    + "* Deselectinbg Cut Inner First if you are not cutting fully through your material \n"
+                    + "* Deselecting Cut Inner First if you are not cutting fully through your material \n"
                     + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
                     + "* If you are using multiple passes, check Merge Passes"
                 ),
