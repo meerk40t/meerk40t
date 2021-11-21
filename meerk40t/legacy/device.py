@@ -731,6 +731,12 @@ class LegacyDevice(Service):
         self.active = active
         self.signal("active", self.active)
 
+    def get_spooler(self, device_name):
+        device = self.lookup("device", device_name)
+        if device is None:
+            return None
+        return device[0]
+
     def get_or_make_spooler(self, device_name):
         device = self.lookup("device", device_name)
         if device is None:
@@ -738,11 +744,11 @@ class LegacyDevice(Service):
             self.register("device/%s" % device_name, device)
         if device[0] is None:
             device[0] = Spooler(self, device_name)
-        self.root.register("spooler/%s" % device_name, device[0])
+            self.root.register("spooler/%s" % device_name, device[0])
         return device[0]
 
     def default_spooler(self):
-        return self.get_or_make_spooler(self.active)
+        return self.get_spooler(self.active)
 
     def get_driver(self, driver_name, **kwargs):
         try:
