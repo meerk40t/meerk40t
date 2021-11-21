@@ -203,9 +203,63 @@ class LaserPanel(wx.Panel):
 
     def initialize(self):
         self.context.listen("plan", self.plan_update)
+        self.context.listen("active", self.active_update)
 
     def finalize(self):
         self.context.unlisten("plan", self.plan_update)
+        self.context.unlisten("active", self.active_update)
+
+    def spooler_label_update(self, origin, *message):
+        """
+        Active 0.7.x devices have fundamentally change and the combo box should be fully refreshed.
+        @param origin:
+        @param message:
+        @return:
+        """
+        self.available_devices = [
+            self.context.registered[i] for i in self.context.match("device")
+        ]
+        selected_spooler = self.context.root.active
+        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        try:
+            index = spools.index(selected_spooler)
+        except ValueError:
+            index = 0
+        self.connected_name = spools[index]
+        self.connected_spooler, self.connected_driver, self.connected_output = (
+            None,
+            None,
+            None,
+        )
+        try:
+            (
+                self.connected_spooler,
+                self.connected_driver,
+                self.connected_output,
+            ) = self.available_devices[index]
+        except IndexError:
+            for m in self.Children:
+                if isinstance(m, wx.Window):
+                    m.Disable()
+        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        for i in range(len(spools)):
+            self.combo_devices.SetString(i, spools[i])
+
+    def active_update(self, origin, *message):
+        """
+        Active 0.7.x device has shifted and we should reflect that.
+
+        @param origin:
+        @param message:
+        @return:
+        """
+        selected_spooler = self.context.root.active
+        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        try:
+            index = spools.index(selected_spooler)
+        except ValueError:
+            index = 0
+        self.combo_devices.SetSelection(index)
 
     def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]
