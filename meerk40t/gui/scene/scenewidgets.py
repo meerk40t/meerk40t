@@ -103,7 +103,10 @@ class SelectionWidget(Widget):
 
     def hit(self):
         elements = self.scene.context.elements
-        bounds = elements.selected_area()
+        try:
+            bounds = elements.selected_area()
+        except AttributeError:
+            bounds = None
         if bounds is not None:
             self.left = bounds[0]
             self.top = bounds[1]
