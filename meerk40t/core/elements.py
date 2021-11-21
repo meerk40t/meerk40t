@@ -5303,17 +5303,27 @@ class Elemental(Service):
             pass
 
     def detach(self, *args, **kwargs):
-        self.save_persistent_operations("previous")
+        # self.save_persistent_operations("previous")
         self.unlisten_tree(self)
+
+        try:
+            self.unlisten_tree(self.kernel.shadow_tree)
+        except:
+            pass
 
     def attach(self, *args, **kwargs):
         self.listen_tree(self)
-        self.setting(bool, "operation_default_empty", True)
-        self.load_persistent_operations("previous")
-        ops = list(self.ops())
-        if not len(ops) and self.operation_default_empty:
-            self.load_default()
-            return
+        try:
+            self.listen_tree(self.kernel.shadow_tree)
+        except:
+            pass
+        # self.load_persistent_operations("previous")
+        #
+        # ops = list(self.ops())
+        # self.setting(bool, "operation_default_empty", True)
+        # if not len(ops) and self.operation_default_empty:
+        #     self.load_default()
+        #     return
 
     def save_persistent_operations(self, name):
         settings = self.derive("operations/" + name)
