@@ -314,6 +314,12 @@ class Context:
         """
         self._kernel.register(path, obj)
 
+    def unregister(self, path: str) -> None:
+        """
+        Delegate to Kernel
+        """
+        self._kernel.unregister(path)
+
     def console_command(self, *args, **kwargs) -> Callable:
         """
         Delegate to Kernel
@@ -680,6 +686,12 @@ class Service(Context):
         self._kernel.lookup_change(path)
 
     def unregister(self, path: str) -> None:
+        """
+        Unregister an element within this service.
+
+        @param path: Path to unregister
+        @return:
+        """
         del self._registered[path]
         self._kernel.lookup_change(path)
 
