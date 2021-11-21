@@ -3388,6 +3388,11 @@ def console_command_remove(
 
 
 def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
+    """
+    Parser for console command events.
+    @param text:
+    @return:
+    """
     pos = 0
     limit = len(text)
     while pos < limit:
