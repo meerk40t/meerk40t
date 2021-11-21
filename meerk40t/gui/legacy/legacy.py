@@ -1,4 +1,5 @@
-from meerk40t.gui.icons import icons8_pause_50, icons8_emergency_stop_button_50, icons8_connected_50
+from meerk40t.gui.icons import icons8_pause_50, icons8_emergency_stop_button_50, icons8_connected_50, \
+    icons8_computer_support_50
 from meerk40t.gui.legacy.configuration import Configuration
 from meerk40t.gui.legacy.controller import Controller
 from meerk40t.gui.legacy.file.fileoutput import FileOutput
@@ -129,6 +130,15 @@ class LegacyGui(Module):
                 "icon": icons8_connected_50,
                 "tip": _("Opens Controller Window"),
                 "action": lambda v: kernel.console("window toggle Controller\n"),
+            },
+        )
+        kernel.register(
+            "button/config/Configuration",
+            {
+                "label": _("Config"),
+                "icon": icons8_computer_support_50,
+                "tip": _("Opens device-specfic configuration window"),
+                "action": lambda v: kernel.console("window toggle Configuration\n"),
             },
         )
         legacy_device.register(

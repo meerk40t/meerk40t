@@ -1514,6 +1514,7 @@ class Kernel:
         @param paths:
         @return:
         """
+        self.channel("lookup")("Changed all: %s" % str(paths))
         self._lookup_lock.acquire(True)
         if not self._dirty_paths:
             self.schedule(self._clean_lookup)
@@ -1527,6 +1528,7 @@ class Kernel:
 
         @return:
         """
+        self.channel("lookup")("Changed %s" % path)
         self._lookup_lock.acquire(True)
         if not self._dirty_paths:
             self.schedule(self._clean_lookup)
@@ -1545,8 +1547,13 @@ class Kernel:
         Triggered on events which can changed the registered data within the lookup.
         @return:
         """
+        channel = self.channel("lookup")
+        if channel:
+            channel("Lookup Change Processing")
         self._lookup_lock.acquire(True)
         for matchtext in self.lookups:
+            if channel:
+                channel("Checking: %s" % matchtext)
             listeners = self.lookups[matchtext]
             try:
                 previous_matches = self.lookup_previous[matchtext]
@@ -1554,12 +1561,19 @@ class Kernel:
                 previous_matches = None
             if previous_matches is not None and not self._matchtext_is_dirty(matchtext):
                 continue
+            if channel:
+                channel("Differences for %s" % matchtext)
             new_matches = list(self.find(matchtext))
             if previous_matches != new_matches:
+                if channel:
+                    channel("Values differ. %s" % matchtext)
                 self.lookup_previous[matchtext] = new_matches
                 for listener in listeners:
                     funct, lso = listener
                     funct(new_matches, previous_matches)
+            else:
+                if channel:
+                    channel("Values identical: %s" % matchtext)
         self._dirty_paths.clear()
         self._lookup_lock.release()
 

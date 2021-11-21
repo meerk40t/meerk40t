@@ -73,18 +73,6 @@ class Configuration(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
-
-    @staticmethod
-    def sub_register(kernel):
-        kernel.register(
-            "button/config/Configuration",
-            {
-                "label": _("Config"),
-                "icon": icons8_computer_support_50,
-                "tip": _("Opens device-specfic configuration window"),
-                "action": lambda v: kernel.console("window toggle Configuration\n"),
-            },
-        )
         
     def window_open(self):
         self.panel.pane_show()
