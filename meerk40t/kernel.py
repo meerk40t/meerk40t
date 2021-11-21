@@ -6,7 +6,7 @@ import re
 import threading
 import time
 from threading import Lock, Thread
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union, List
 
 from .svgelements import Color
 
@@ -1438,14 +1438,67 @@ class Kernel:
         for obj, name, sname in self.find(*args):
             yield obj
 
-    def add_lookup(self, matchtext, funct, lifecycleobject):
+    def _lookup_detach(
+        self,
+        lifecycle_object: Any,
+    ) -> None:
+        """
+        Detach all lookups associated with this lifecycle object.
+
+        @param lifecycle_object:
+        @return:
+        """
+        for lookup in self.lookups:
+            listens = self.lookups[lookup]
+            for index, lul in enumerate(listens):
+                listener, lso = lul
+                if lso is lifecycle_object:
+                    del listens[index]
+        try:
+            delegates = lifecycle_object._delegates
+            for d in delegates:
+                self._lookup_detach(d)
+        except (AttributeError, TypeError):
+            pass
+
+    def _lookup_attach(
+        self,
+        lifecycle_object: Union[Service, Module, None] = None,
+    ) -> None:
+        """
+        Attaches any lookups flagged as "@lookup_listener" to listen to that lookup.
+
+        @param lifecycle_object:
+        @return:
+        """
+        for attr in dir(lifecycle_object):
+            func = getattr(lifecycle_object, attr)
+            if hasattr(func, "lookup_decor"):
+                for lul in func.lookup_decor:
+                    self.add_lookup(lul, func, lifecycle_object)
+        try:
+            delegates = lifecycle_object._delegates
+            for d in delegates:
+                self._lookup_attach(d)
+        except (AttributeError, TypeError):
+            pass
+
+    def add_lookup(self, matchtext: str, funct: Callable, lifecycleobject: Any):
+        """
+        Add matchtext equal lookup to call the given function bound to the given lifecycle object.
+        @param matchtext:
+        @param funct:
+        @param lifecycleobject:
+        @return:
+        """
         if matchtext not in self.lookups:
             self.lookups[matchtext] = list()
         self.lookups[matchtext].append((funct, lifecycleobject))
 
-    def lookup_changes(self, paths):
+    def lookup_changes(self, paths: List[str]) -> None:
         """
-        Call for lookup changes
+        Call for lookup changes, given a list of changed paths.
+
         @param paths:
         @return:
         """
@@ -1455,7 +1508,7 @@ class Kernel:
         self._dirty_paths.extend(paths)
         self._lookup_lock.release()
 
-    def lookup_change(self, path):
+    def lookup_change(self, path: str) -> None:
         """
         Manual call for lookup_change. Called during changing events register, unregister, activate_service, and the
         equal service events.
@@ -1468,14 +1521,14 @@ class Kernel:
         self._dirty_paths.append(path)
         self._lookup_lock.release()
 
-    def _matchtext_is_dirty(self, matchtext):
+    def _matchtext_is_dirty(self, matchtext: str) -> bool:
         match = re.compile(matchtext)
         for r in self._dirty_paths:
             if match.match(r):
                 return True
         return False
 
-    def _registered_data_changed(self):
+    def _registered_data_changed(self) -> None:
         """
         Triggered on events which can changed the registered data within the lookup.
         @return:
@@ -2138,55 +2191,6 @@ class Kernel:
             delegates = lifecycle_object._delegates
             for d in delegates:
                 self._signal_detach(d)
-        except (AttributeError, TypeError):
-            pass
-
-    # ==========
-    # LOOKUP_LISTENER ATTACH
-    # ==========
-
-    def _lookup_detach(
-        self,
-        lifecycle_object: Any,
-    ) -> None:
-        """
-        Detach all lookups attached to this lifecycle object.
-
-        @param lifecycle_object:
-        @return:
-        """
-        for lookup in self.lookups:
-            listens = self.lookups[lookup]
-            for index, lul in enumerate(listens):
-                listener, lso = lul
-                if lso is lifecycle_object:
-                    del listens[index]
-        try:
-            delegates = lifecycle_object._delegates
-            for d in delegates:
-                self._lookup_detach(d)
-        except (AttributeError, TypeError):
-            pass
-
-    def _lookup_attach(
-        self,
-        lifecycle_object: Union[Service, Module, None] = None,
-    ) -> None:
-        """
-        Attaches any lookups flagged as "@lookup_listener" to listen to that lookup.
-
-        @param lifecycle_object:
-        @return:
-        """
-        for attr in dir(lifecycle_object):
-            func = getattr(lifecycle_object, attr)
-            if hasattr(func, "lookup_decor"):
-                for lul in func.lookup_decor:
-                    self.add_lookup(lul, func, lifecycle_object)
-        try:
-            delegates = lifecycle_object._delegates
-            for d in delegates:
-                self._lookup_attach(d)
         except (AttributeError, TypeError):
             pass
 
