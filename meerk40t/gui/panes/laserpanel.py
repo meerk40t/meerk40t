@@ -244,8 +244,14 @@ class LaserPanel(wx.Panel):
                 if isinstance(m, wx.Window):
                     m.Disable()
         spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        self.combo_devices.Clear()
         for i in range(len(spools)):
-            self.combo_devices.SetString(i, spools[i])
+            self.combo_devices.Append(spools[i])
+        try:
+            index = spools.index(selected_spooler)
+        except ValueError:
+            index = 0
+        self.combo_devices.SetSelection(index)
 
     def active_update(self, origin, *message):
         """
