@@ -56,6 +56,7 @@ from .cutcode import (
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
+        kernel.add_service("elements", Elemental(kernel,1))
     elif lifecycle == "postboot":
         _ = kernel.root._
         elements = kernel.elements
@@ -1661,8 +1662,8 @@ class Elemental(Service):
     that information out to inform other interested modules.
     """
 
-    def __init__(self, kernel, *args, **kwargs):
-        Service.__init__(self, kernel, "elements")
+    def __init__(self, kernel, index=None, *args, **kwargs):
+        Service.__init__(self, kernel, "elements" if index is None else "elephants")
 
         self._clipboard = {}
         self._clipboard_default = "0"
