@@ -67,8 +67,10 @@ class CameraPanel(wx.Panel, Job):
         self.process = self.update_camera_frame
         self.run_main = True
 
-        self.context("camera%d\n" % self.index) # command activates Camera service
-        self.camera = self.context.get_context("camera/%d" % self.index) # camera service location.
+        self.context("camera%d\n" % self.index)  # command activates Camera service
+        self.camera = self.context.get_context(
+            "camera/%d" % self.index
+        )  # camera service location.
 
         self.last_frame_index = -1
 
@@ -469,7 +471,9 @@ class CamInterfaceWidget(Widget):
             item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.camera("camera%d perspective reset\n" % self.cam.index),
+                lambda e: self.cam.camera(
+                    "camera%d perspective reset\n" % self.cam.index
+                ),
                 id=item.GetId(),
             )
             item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
@@ -484,8 +488,10 @@ class CamInterfaceWidget(Widget):
             item = sub_menu.Append(wx.ID_ANY, _("Set URI"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.context.open("window/CameraURI", self.cam, index=self.cam.index),
-                id=item.GetId()
+                lambda e: self.cam.context.open(
+                    "window/CameraURI", self.cam, index=self.cam.index
+                ),
+                id=item.GetId(),
             )
 
             camera_context = self.cam.context.get_context("camera")
@@ -699,53 +705,15 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        def camera_click(index=None):
+            def specific(event=None):
+                kernel.root.setting(int, "camera_default", 1)
+                if index is not None:
+                    kernel.root.camera_default = index
+                v = kernel.root.camera_default
+                kernel.console("window toggle CameraInterface %d\n" % v)
 
-        # if self.context.has_feature("modifier/Camera"):
-        #     button_bar.AddHybridButton(
-        #         ID_CAMERA,
-        #         _("Camera"),
-        #         icons8_camera_50.GetBitmap(),
-        #         _("Opens Camera Window"),
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-        #         self.on_camera_dropdown,
-        #         id=ID_CAMERA,
-        #     )
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
-
-        # def on_camera_dropdown(self, event):
-        #     menu = wx.Menu()
-        #     menu.Append(ID_CAMERA1, _("Camera %d") % 1)
-        #     menu.Append(ID_CAMERA2, _("Camera %d") % 2)
-        #     menu.Append(ID_CAMERA3, _("Camera %d") % 3)
-        #     menu.Append(ID_CAMERA4, _("Camera %d") % 4)
-        #     menu.Append(ID_CAMERA5, _("Camera %d") % 5)
-        #     event.PopupMenu(menu)
-        #
-        # def on_camera_click(self, event):
-        #     eid = event.GetId()
-        #     self.context.setting(int, "camera_default", 1)
-        #     if eid == ID_CAMERA1:
-        #         self.context.camera_default = 1
-        #     elif eid == ID_CAMERA2:
-        #         self.context.camera_default = 2
-        #     elif eid == ID_CAMERA3:
-        #         self.context.camera_default = 3
-        #     elif eid == ID_CAMERA4:
-        #         self.context.camera_default = 4
-        #     elif eid == ID_CAMERA5:
-        #         self.context.camera_default = 5
-        #
-        #     v = self.context.camera_default
-        #     self.context("window toggle CameraInterface %d\n" % v)
+            return specific
 
         kernel.register(
             "button/control/Camera",
@@ -753,7 +721,14 @@ class CameraInterface(MWindow):
                 "label": _("Camera"),
                 "icon": icons8_camera_50,
                 "tip": _("Opens Camera Window"),
-                "action": lambda e: kernel.console("window toggle CameraInterface %d\n" % 1),
+                "action": camera_click(),
+                "alt-action": (
+                    (_("Camera %d") % 1, camera_click(1)),
+                    (_("Camera %d") % 2, camera_click(2)),
+                    (_("Camera %d") % 3, camera_click(3)),
+                    (_("Camera %d") % 4, camera_click(4)),
+                    (_("Camera %d") % 5, camera_click(5)),
+                ),
             },
         )
         kernel.register("window/CameraURI", CameraURI)
@@ -774,7 +749,7 @@ class CameraURIPanel(wx.Panel):
         if index is None:
             index = 0
         self.index = index
-        assert(isinstance(self.index, int))
+        assert isinstance(self.index, int)
 
         self.list_uri = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
