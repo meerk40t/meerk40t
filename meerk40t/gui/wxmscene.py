@@ -22,27 +22,30 @@ _ = wx.GetTranslation
 
 
 def register_panel(window, context):
-    # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
-    # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
-    # self.notebook.AddPage(self.scene, "scene")
+    notebook = wx.aui.AuiNotebook(window, -1, size=(200, 150))
+    panel1 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=1)
+    notebook.AddPage(panel1, "scene1")
+    panel2 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=2)
+    notebook.AddPage(panel2, "scene2")
 
-    panel = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
     pane = aui.AuiPaneInfo().CenterPane().Name("scene")
     pane.dock_proportion = 600
-    pane.control = panel
+    pane.control = notebook
 
     window.on_pane_add(pane)
     context.register("pane/console", pane)
 
 
 class MeerK40tScenePanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwargs):
+    def __init__(self, *args, context=None, index=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        if index is None:
+            index = ""
         self.scene = ScenePanel(
-            self.context, self, scene_name="Scene", style=wx.EXPAND | wx.WANTS_CHARS
+            self.context, self, scene_name="Scene%s" % index, style=wx.EXPAND | wx.WANTS_CHARS
         )
         self.widget_scene = self.scene.scene
         context = self.context
