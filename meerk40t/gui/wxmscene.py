@@ -32,6 +32,16 @@ def register_panel(window, context):
     pane.dock_proportion = 600
     pane.control = notebook
 
+    def on_notek_page_change(event=None):
+        if notebook.GetPageText(notebook.GetSelection()) == "scene1":
+            context.kernel.activate_service_path('elements', 'elements')
+        else:
+            context.kernel.activate_service_path('elements', "elephants")
+        context.signal("rebuild_tree", 1)
+        context.signal("request_refresh", 1)
+        context("refresh\n")
+    notebook.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_notek_page_change, notebook)
+
     window.on_pane_add(pane)
     context.register("pane/console", pane)
 
