@@ -1,4 +1,5 @@
 import functools
+import os.path
 import re
 from copy import copy
 
@@ -5123,6 +5124,14 @@ class Elemental(Modifier):
             filepath = node.filepath
             node.remove_node()
             self.load(filepath)
+
+        @self.tree_operation(_("Open in System: '%s'") % "{name}", node_type="file", help="")
+        def open_system_file(node, **kwgs):
+            filepath = node.filepath
+            normalized = os.path.realpath(filepath)
+
+            from os import system as run_in_shell
+            run_in_shell('"%s"' % normalized)
 
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
