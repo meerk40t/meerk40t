@@ -12,6 +12,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.propertiespanel import PropertiesPanel
 from meerk40t.gui.wxutils import disable_window
+from meerk40t.kernel import lookup_listener
 
 _ = wx.GetTranslation
 
@@ -185,6 +186,23 @@ class LaserPanel(wx.Panel):
         # end wxGlade
         if index == -1:
             disable_window(self)
+
+    @lookup_listener("spooler")
+    def spooler_lookup(self, new_spoolers, old):
+        # Devices Initialize.
+        self.available_spoolers = [obj for obj, n, s in new_spoolers]
+        print(self.available_spoolers)
+
+        self.selected_spooler = self.context.device.spooler
+        index = -1
+        for i, s in enumerate(self.available_spoolers):
+            if s is self.selected_spooler:
+                index = i
+                break
+        print(index)
+        self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
+        spools = [s.label for s in self.available_spoolers]
+        self.combo_devices.SetSelection(index)
 
     def pane_show(self):
         self.context.listen("plan", self.plan_update)
