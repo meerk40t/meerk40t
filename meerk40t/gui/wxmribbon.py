@@ -67,23 +67,44 @@ class RibbonPanel(wx.Panel):
             buttons.append(button)
 
         def sort_priority(elem):
-            return elem['priority'] if 'priority' in elem else 0
+            return elem["priority"] if "priority" in elem else 0
 
         buttons.sort(key=sort_priority)
 
         for button in buttons:
             new_id = wx.NewId()
-            button_bar.AddButton(
-                new_id,
-                button['label'],
-                button['icon'].GetBitmap(),
-                button['tip'],
-            )
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                button['action'],
-                id=new_id
-            )
+            if "alt-action" in button:
+                button_bar.AddHybridButton(
+                    new_id,
+                    button["label"],
+                    button["icon"].GetBitmap(),
+                    button["tip"],
+                )
+
+                def drop_bind(alt_action):
+                    def on_dropdown(event):
+                        menu = wx.Menu()
+                        for act_label, act_func in alt_action:
+                            hybrid_id = wx.NewId()
+                            menu.Append(hybrid_id, act_label)
+                            button_bar.Bind(wx.EVT_MENU, act_func, id=hybrid_id)
+                        event.PopupMenu(menu)
+
+                    return on_dropdown
+
+                button_bar.Bind(
+                    RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
+                    drop_bind(button["alt-action"]),
+                    id=new_id,
+                )
+            else:
+                button_bar.AddButton(
+                    new_id,
+                    button["label"],
+                    button["icon"].GetBitmap(),
+                    button["tip"],
+                )
+            button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button["action"], id=new_id)
         self._ribbon.Realize()
 
     @lookup_listener("button/project")
