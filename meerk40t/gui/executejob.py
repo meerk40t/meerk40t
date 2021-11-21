@@ -421,7 +421,7 @@ class ExecuteJob(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(496, 573, *args, **kwds)
 
-        if len(args) >= 4:
+        if len(args) > 3:
             plan_name = args[3]
         else:
             plan_name = 0
