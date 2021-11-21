@@ -648,6 +648,7 @@ class LegacyDevice(Service):
                         except AttributeError:
                             pass
                 self.register("device/%s" % device_name, [None, None, None])
+                self.root.unregister("spooler/%s" % device_name)
             except (KeyError, ValueError):
                 raise SyntaxError(_("Invalid device-string index."))
 
