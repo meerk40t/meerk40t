@@ -677,11 +677,11 @@ class Service(Context):
             obj.sub_register(self)
         except AttributeError:
             pass
-        self._kernel.lookup_change()
+        self._kernel.lookup_change(path)
 
     def unregister(self, path: str) -> None:
         del self._registered[path]
-        self._kernel.lookup_change()
+        self._kernel.lookup_change(path)
 
     def console_command(self, *args, **kwargs) -> Callable:
         """
@@ -689,9 +689,7 @@ class Service(Context):
 
         Uses the current registration to register the given command.
         """
-        c = console_command(self, *args, **kwargs)
-        self._kernel.lookup_change()
-        return c
+        return console_command(self, *args, **kwargs)
 
     def console_command_remove(self, *args, **kwargs) -> Callable:
         """
@@ -699,9 +697,7 @@ class Service(Context):
 
         Uses current context to be passed to the console_command being removed.
         """
-        c = console_command_remove(self, *args, **kwargs)
-        self._kernel.lookup_change()
-        return c
+        return console_command_remove(self, *args, **kwargs)
 
     def register_choices(self, sheet, choices):
         """
@@ -713,7 +709,6 @@ class Service(Context):
         @return:
         """
         Kernel.register_choices(self, sheet, choices)
-        self._kernel.lookup_change()
 
     def attach(self, *args, **kwargs):
         pass
@@ -792,7 +787,8 @@ class Kernel:
         self._registered = {}
         self.lookups = {}
         self.lookup_previous = {}
-        self._dirty_lookup = False
+        self._dirty_paths = []
+        self._lookup_lock = Lock()
 
         # The translation object to be overridden by any valid transition functions
         self.translation = lambda e: e
@@ -1051,7 +1047,7 @@ class Kernel:
             context = self.contexts[context_name]
             setattr(context, domain, service)
         service.lifecycle = "attached"
-        self.lookup_change()
+        self.lookup_changes(list(service._registered))
 
     def deactivate(self, domain):
         setattr(self, domain, None)
@@ -1073,12 +1069,13 @@ class Kernel:
                     pass
                 previous_active.detach(self)
                 previous_active.lifecycle = "detached"
+                self.lookup_changes(list(previous_active._registered))
 
             for context_name in self.contexts:
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
-        self.lookup_change()
+
 
     # ==========
     # LIFECYCLE PROCESSES
@@ -1446,35 +1443,60 @@ class Kernel:
             self.lookups[matchtext] = list()
         self.lookups[matchtext].append((funct, lifecycleobject))
 
-    def lookup_change(self):
+    def lookup_changes(self, paths):
+        """
+        Call for lookup changes
+        @param paths:
+        @return:
+        """
+        self._lookup_lock.acquire(True)
+        if not self._dirty_paths:
+            self.schedule(self._clean_lookup)
+        self._dirty_paths.extend(paths)
+        self._lookup_lock.release()
+
+    def lookup_change(self, path):
         """
         Manual call for lookup_change. Called during changing events register, unregister, activate_service, and the
         equal service events.
 
         @return:
         """
-        if not self._dirty_lookup:
-            self._dirty_lookup = True
+        self._lookup_lock.acquire(True)
+        if not self._dirty_paths:
             self.schedule(self._clean_lookup)
+        self._dirty_paths.append(path)
+        self._lookup_lock.release()
+
+    def _matchtext_is_dirty(self, matchtext):
+        match = re.compile(matchtext)
+        for r in self._dirty_paths:
+            if match.match(r):
+                return True
+        return False
 
     def _registered_data_changed(self):
         """
         Triggered on events which can changed the registered data within the lookup.
         @return:
         """
+        self._lookup_lock.acquire(True)
         for matchtext in self.lookups:
             listeners = self.lookups[matchtext]
             try:
                 previous_matches = self.lookup_previous[matchtext]
             except KeyError:
                 previous_matches = None
+            if previous_matches is not None and not self._matchtext_is_dirty(matchtext):
+                continue
             new_matches = list(self.find(matchtext))
             if previous_matches != new_matches:
                 self.lookup_previous[matchtext] = new_matches
                 for listener in listeners:
                     funct, lso = listener
                     funct(new_matches, previous_matches)
-        self._dirty_lookup = False
+        self._dirty_paths.clear()
+        self._lookup_lock.release()
 
     def register(self, path: str, obj: Any) -> None:
         """
@@ -1489,11 +1511,11 @@ class Kernel:
             obj.sub_register(self)
         except AttributeError:
             pass
-        self.lookup_change()
+        self.lookup_change(path)
 
     def unregister(self, path: str):
         del self._registered[path]
-        self.lookup_change()
+        self.lookup_change(path)
 
     # ==========
     # COMMAND REGISTRATION
@@ -2333,6 +2355,7 @@ class Kernel:
         if key in self._registered:
             others = self._registered[key]
             others.extend(choices)
+            self.register(key, choices)  # Reregister to trigger lookup change
         else:
             self.register(key, choices)
         for c in choices:
