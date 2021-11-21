@@ -790,7 +790,13 @@ class MeerK40t(MWindow):
 
     def on_pane_add(self, paneinfo: aui.AuiPaneInfo):
         pane = self._mgr.GetPane(paneinfo.name)
-        self.add_module_delegate(paneinfo.control)
+        control = paneinfo.control
+        if isinstance(control, wx.aui.AuiNotebook):
+            for i in range(control.GetPageCount()):
+                page = control.GetPage(i)
+                self.add_module_delegate(page)
+        else:
+            self.add_module_delegate(control)
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
@@ -801,7 +807,7 @@ class MeerK40t(MWindow):
                 self._mgr.Update()
             return
         self._mgr.AddPane(
-            paneinfo.control,
+            control,
             paneinfo,
         )
 
