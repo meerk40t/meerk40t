@@ -92,7 +92,6 @@ class SelectionWidget(Widget):
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
-        self.elements = scene.context.elements
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
@@ -103,7 +102,7 @@ class SelectionWidget(Widget):
         self.uniform = True
 
     def hit(self):
-        elements = self.elements
+        elements = self.scene.context.elements
         bounds = elements.selected_area()
         if bounds is not None:
             self.left = bounds[0]
@@ -144,7 +143,7 @@ class SelectionWidget(Widget):
             return HITCHAIN_DELEGATE
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        elements = self.elements
+        elements = self.scene.context.elements
         if event_type == "hover_start":
             self.scene.cursor("sizing")
             return RESPONSE_CHAIN
@@ -239,7 +238,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type in ("middleup", "leftup", "lost"):
             self.tool(space_pos, dx, dy, 1)
-            self.elements.ensure_positive_bounds()
+            self.scene.context.elements.ensure_positive_bounds()
             return RESPONSE_CONSUME
         elif event_type == "move":
             if not elements.has_emphasis():
