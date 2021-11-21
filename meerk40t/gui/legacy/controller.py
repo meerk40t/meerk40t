@@ -72,18 +72,6 @@ class Controller(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Controller"))
 
-    @staticmethod
-    def sub_register(kernel):
-        kernel.register(
-            "button/control/Controller",
-            {
-                "label": _("Controller"),
-                "icon": icons8_connected_50,
-                "tip": _("Opens Controller Window"),
-                "action": lambda v: kernel.console("window toggle Controller\n"),
-            },
-        )
-
     def window_open(self):
         self.panel.pane_show()
 

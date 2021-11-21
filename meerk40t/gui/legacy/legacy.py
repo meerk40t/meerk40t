@@ -1,4 +1,4 @@
-from meerk40t.gui.icons import icons8_pause_50, icons8_emergency_stop_button_50
+from meerk40t.gui.icons import icons8_pause_50, icons8_emergency_stop_button_50, icons8_connected_50
 from meerk40t.gui.legacy.configuration import Configuration
 from meerk40t.gui.legacy.controller import Controller
 from meerk40t.gui.legacy.file.fileoutput import FileOutput
@@ -122,6 +122,15 @@ class LegacyGui(Module):
         #     self.project_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
         # self.context.listen("pipe;thread", self.on_pipe_state)
         # self.context.unlisten("pipe;thread", self.on_pipe_state)
+        kernel.register(
+            "button/control/Controller",
+            {
+                "label": _("Controller"),
+                "icon": icons8_connected_50,
+                "tip": _("Opens Controller Window"),
+                "action": lambda v: kernel.console("window toggle Controller\n"),
+            },
+        )
         legacy_device.register(
             "button/control/Pause",
             {
