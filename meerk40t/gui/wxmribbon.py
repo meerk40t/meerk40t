@@ -2,54 +2,16 @@ import copy
 
 import wx
 import wx.ribbon as RB
-from wx import ID_OPEN, ID_SAVE, aui
+from wx import aui
 
-from ..kernel import STATE_BUSY, lookup_listener
+from ..kernel import lookup_listener
 from .icons import (
-    icons8_administrative_tools_50,
-    icons8_camera_50,
-    icons8_comments_50,
-    icons8_computer_support_50,
     icons8_connected_50,
-    icons8_console_50,
-    icons8_emergency_stop_button_50,
-    icons8_fantasy_50,
-    icons8_keyboard_50,
-    icons8_laser_beam_52,
-    icons8_laser_beam_hazard2_50,
-    icons8_manager_50,
-    icons8_move_50,
     icons8_opened_folder_50,
-    icons8_pause_50,
-    icons8_roll_50,
-    icons8_route_50,
-    icons8_save_50,
 )
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
-
-# ID_JOB = wx.NewId()
-# ID_SIM = wx.NewId()
-# ID_RASTER = wx.NewId()
-# ID_NOTES = wx.NewId()
-# ID_CONSOLE = wx.NewId()
-# ID_NAV = wx.NewId()
-# ID_CAMERA = wx.NewId()
-# ID_CAMERA1 = wx.NewId()
-# ID_CAMERA2 = wx.NewId()
-# ID_CAMERA3 = wx.NewId()
-# ID_CAMERA4 = wx.NewId()
-# ID_CAMERA5 = wx.NewId()
-# ID_SPOOLER = wx.NewId()
-# ID_CONTROLLER = wx.NewId()
-# ID_PAUSE = wx.NewId()
-# ID_STOP = wx.NewId()
-# ID_DEVICES = wx.NewId()
-# ID_CONFIGURATION = wx.NewId()
-# ID_PREFERENCES = wx.NewId()
-# ID_KEYMAP = wx.NewId()
-# ID_ROTARY = wx.NewId()
 
 
 def register_panel(window, context):
@@ -165,11 +127,6 @@ class RibbonPanel(wx.Panel):
             RB.EVT_RIBBONBAR_HELP_CLICK,
             lambda e: self.context("webhelp help\n"),
         )
-        # self.Bind(RB.EVT_RIBBONBAR_TOGGLED, self.ribbon_bar_toggle)
-
-        # ==========
-        # PROJECT PANEL
-        # ==========
 
         self.project_panel = RB.RibbonPanel(
             home,
@@ -180,95 +137,6 @@ class RibbonPanel(wx.Panel):
 
         button_bar = RB.RibbonButtonBar(self.project_panel)
         self.project_button_bar = button_bar
-        #
-        # toolbar.AddButton(
-        #     ID_OPEN,
-        #     _("Open"),
-        #     icons8_opened_folder_50.GetBitmap(),
-        #     _("Opens new project"),
-        # )
-        # toolbar.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context(".dialog_load\n"),
-        #     id=ID_OPEN,
-        # )
-        #
-        # toolbar.AddButton(
-        #     ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), _("Saves a project to disk")
-        # )
-        # toolbar.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #     lambda e: self.context(".dialog_save\n"),
-        #     id=ID_SAVE,
-        # )
-        # if self.context.has_feature("window/ExecuteJob"):
-        #     toolbar.AddButton(
-        #         ID_JOB,
-        #         _("Execute Job"),
-        #         icons8_laser_beam_52.GetBitmap(),
-        #         _("Execute the current laser project"),
-        #     )
-        #     toolbar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle ExecuteJob 0\n"),
-        #         id=ID_JOB,
-        #     )
-        # if self.context.has_feature("window/Simulation"):
-        #     toolbar.AddButton(
-        #         ID_SIM,
-        #         _("Simulate"),
-        #         icons8_laser_beam_hazard2_50.GetBitmap(),
-        #         _("Simulate the current laser job"),
-        #     )
-        #
-        #     def open_simulator(v=None):
-        #         with wx.BusyInfo(_("Preparing simulation...")):
-        #             self.context(
-        #                 "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-        #             ),
-        #
-        #     toolbar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         open_simulator,
-        #         id=ID_SIM,
-        #     )
-        # if self.context.has_feature("window/RasterWizard"):
-        #     toolbar.AddButton(
-        #         ID_RASTER,
-        #         _("RasterWizard"),
-        #         icons8_fantasy_50.GetBitmap(),
-        #         _("Run RasterWizard"),
-        #     )
-        #     toolbar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle RasterWizard\n"),
-        #         id=ID_RASTER,
-        #     )
-        # if self.context.has_feature("window/Notes"):
-        #     toolbar.AddButton(
-        #         ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), _("Open Notes Window")
-        #     )
-        #     toolbar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle Notes\n"),
-        #         id=ID_NOTES,
-        #     )
-        # if self.context.has_feature("window/Console"):
-        #     toolbar.AddButton(
-        #         ID_CONSOLE,
-        #         _("Console"),
-        #         icons8_console_50.GetBitmap(),
-        #         _("Open Console Window"),
-        #     )
-        #     toolbar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle Console\n"),
-        #         id=ID_CONSOLE,
-        #     )
-
-        # ==========
-        # CONTROL PANEL
-        # ==========
 
         self.control_panel = RB.RibbonPanel(
             home,
@@ -280,84 +148,6 @@ class RibbonPanel(wx.Panel):
         button_bar = RB.RibbonButtonBar(self.control_panel)
         self.control_button_bar = button_bar
 
-        # So Navigation, Camera, Spooler, Controller, Terminal in one group,
-        # Settings, Keymap, Devices, Configuration, Rotary, USB in another.
-        # Raster Wizard and Notes should IMO be in the Main Group.
-
-        # if self.context.has_feature("window/Navigation"):
-        #     button_bar.AddButton(
-        #         ID_NAV,
-        #         _("Navigation"),
-        #         icons8_move_50.GetBitmap(),
-        #         _("Opens Navigation Window"),
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle Navigation\n"),
-        #         id=ID_NAV,
-        #     )
-        # if self.context.has_feature("modifier/Camera"):
-        #     button_bar.AddHybridButton(
-        #         ID_CAMERA,
-        #         _("Camera"),
-        #         icons8_camera_50.GetBitmap(),
-        #         _("Opens Camera Window"),
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-        #         self.on_camera_dropdown,
-        #         id=ID_CAMERA,
-        #     )
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
-        #     self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
-
-        # if self.context.has_feature("window/JobSpooler"):
-        #     button_bar.AddButton(
-        #         ID_SPOOLER,
-        #         _("Spooler"),
-        #         icons8_route_50.GetBitmap(),
-        #         _("Opens Spooler Window"),
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle JobSpooler\n"),
-        #         id=ID_SPOOLER,
-        #     )
-        # if self.context.has_feature("window/Controller"):
-        #     button_bar.AddButton(
-        #         ID_CONTROLLER,
-        #         _("Controller"),
-        #         icons8_connected_50.GetBitmap(),
-        #         _("Opens Controller Window"),
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle Controller\n"),
-        #         id=ID_CONTROLLER,
-        #     )
-        # button_bar.AddToggleButton(
-        #     ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), _("Pause the laser")
-        # )
-        # button_bar.Bind(
-        #     RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE
-        # )
-        # button_bar.AddButton(
-        #     ID_STOP,
-        #     _("Stop"),
-        #     icons8_emergency_stop_button_50.GetBitmap(),
-        #     _("Emergency stop the laser"),
-        # )
-        # button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_stop, id=ID_STOP)
-
-        # ==========
-        # SETTINGS PANEL
-        # ==========
         self.config_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
@@ -367,115 +157,14 @@ class RibbonPanel(wx.Panel):
         )
         button_bar = RB.RibbonButtonBar(self.config_panel)
         self.config_button_bar = button_bar
-        # if self.context.has_feature("window/DeviceManager"):
-        #     button_bar.AddButton(
-        #         ID_DEVICES,
-        #         _("Devices"),
-        #         icons8_manager_50.GetBitmap(),
-        #         _("Opens DeviceManager Window"),
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle DeviceManager\n"),
-        #         id=ID_DEVICES,
-        #     )
-        # if self.context.has_feature("window/Configuration"):
-        #     button_bar.AddButton(
-        #         ID_CONFIGURATION,
-        #         _("Config"),
-        #         icons8_computer_support_50.GetBitmap(),
-        #         "",
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle Configuration\n"),
-        #         id=ID_CONFIGURATION,
-        #     )
-        #
-        # from sys import platform
-        #
-        # if self.context.has_feature("window/Preferences"):
-        #     if platform != "darwin":
-        #         button_bar.AddButton(
-        #             ID_PREFERENCES,
-        #             _("Preferences"),
-        #             icons8_administrative_tools_50.GetBitmap(),
-        #             _("Opens Preferences Window"),
-        #         )
-        #
-        #         button_bar.Bind(
-        #             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #             lambda v: self.context("window toggle Preferences\n"),
-        #             id=ID_PREFERENCES,
-        #         )
-        # if self.context.has_feature("window/Keymap"):
-        #     button_bar.AddButton(
-        #         ID_KEYMAP,
-        #         _("Keymap"),
-        #         icons8_keyboard_50.GetBitmap(),
-        #         _("Opens Keymap Window"),
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window toggle Keymap\n"),
-        #         id=ID_KEYMAP,
-        #     )
-        # if self.context.has_feature("window/Rotary"):
-        #     button_bar.AddButton(
-        #         ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), _("Opens Rotary Window")
-        #     )
-        #     button_bar.Bind(
-        #         RB.EVT_RIBBONBUTTONBAR_CLICKED,
-        #         lambda v: self.context("window -p rotary/1 toggle Rotary\n"),
-        #         id=ID_ROTARY,
-        #     )
 
         self._ribbon.Realize()
 
-    def on_click_stop(self, event=None):
-        self.context("estop\n")
-
-    def on_click_pause(self, event=None):
-        self.context("pause\n")
-    #
-    # def on_camera_dropdown(self, event):
-    #     menu = wx.Menu()
-    #     menu.Append(ID_CAMERA1, _("Camera %d") % 1)
-    #     menu.Append(ID_CAMERA2, _("Camera %d") % 2)
-    #     menu.Append(ID_CAMERA3, _("Camera %d") % 3)
-    #     menu.Append(ID_CAMERA4, _("Camera %d") % 4)
-    #     menu.Append(ID_CAMERA5, _("Camera %d") % 5)
-    #     event.PopupMenu(menu)
-    #
-    # def on_camera_click(self, event):
-    #     eid = event.GetId()
-    #     self.context.setting(int, "camera_default", 1)
-    #     if eid == ID_CAMERA1:
-    #         self.context.camera_default = 1
-    #     elif eid == ID_CAMERA2:
-    #         self.context.camera_default = 2
-    #     elif eid == ID_CAMERA3:
-    #         self.context.camera_default = 3
-    #     elif eid == ID_CAMERA4:
-    #         self.context.camera_default = 4
-    #     elif eid == ID_CAMERA5:
-    #         self.context.camera_default = 5
-    #
-    #     v = self.context.camera_default
-    #     self.context("window toggle CameraInterface %d\n" % v)
-    #
-    # def on_pipe_state(self, origin, state):
-    #     if state == self.pipe_state:
-    #         return
-    #     self.project_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
-
     def pane_show(self):
         pass
-        # self.context.listen("pipe;thread", self.on_pipe_state)
 
     def pane_hide(self):
         pass
-        # self.context.unlisten("pipe;thread", self.on_pipe_state)
 
 
 class Ribbon(MWindow):
