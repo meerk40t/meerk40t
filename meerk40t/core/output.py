@@ -163,6 +163,7 @@ class Outputs(Modifier):
         except KeyError:
             device = [None, None, None]
             self.context.registered[dev] = device
+            self.context.signal("legacy_spooler_label", device_name)
         if device[2] is not None and output_type is None:
             return device[2]
         try:
@@ -170,6 +171,7 @@ class Outputs(Modifier):
                 output_class = self.context.registered[itype]
                 output = output_class(self.context, device_name, **kwargs)
                 device[2] = output
+                self.context.signal("legacy_spooler_label", device_name)
                 return output
         except (KeyError, IndexError):
             return None

@@ -206,5 +206,6 @@ def plugin(kernel, lifecycle=None):
                         except AttributeError:
                             pass
                 root.registered["device/%s" % device_name] = [None, None, None]
+                root.signal("legacy_spooler_label", device_name)
             except (KeyError, ValueError):
                 raise SyntaxError(_("Invalid device-string index."))

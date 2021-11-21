@@ -146,6 +146,7 @@ class Spoolers(Modifier):
         except KeyError:
             device = [None, None, None]
             self.context.registered[dev] = device
+            self.context.signal("legacy_spooler_label", device_name)
         if device[0] is None:
             device[0] = Spooler(self.context, device_name)
         return device[0]

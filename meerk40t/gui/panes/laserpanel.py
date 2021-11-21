@@ -204,10 +204,12 @@ class LaserPanel(wx.Panel):
     def initialize(self):
         self.context.listen("plan", self.plan_update)
         self.context.listen("active", self.active_update)
+        self.context.listen("legacy_spooler_label", self.spooler_label_update)
 
     def finalize(self):
         self.context.unlisten("plan", self.plan_update)
         self.context.unlisten("active", self.active_update)
+        self.context.unlisten("legacy_spooler_label", self.spooler_label_update)
 
     def spooler_label_update(self, origin, *message):
         """

@@ -546,6 +546,7 @@ class Drivers(Modifier):
         except KeyError:
             device = [None, None, None]
             self.context.registered[dev] = device
+            self.context.signal("legacy_spooler_label", device_name)
         if device[1] is not None and driver_type is None:
             return device[1]
         try:
@@ -553,6 +554,7 @@ class Drivers(Modifier):
                 driver_class = self.context.registered[itype]
                 driver = driver_class(self.context, device_name, **kwargs)
                 device[1] = driver
+                self.context.signal("legacy_spooler_label", device_name)
                 return driver
         except (KeyError, IndexError):
             return None
