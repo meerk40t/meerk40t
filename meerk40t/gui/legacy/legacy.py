@@ -53,8 +53,6 @@ class LegacyGui(Module):
 
     @signal_listener("active")
     def on_active_switch(self, origin, *args):
-        print("Active Switch %s" % origin)
-        print(args)
         legacy_device = self.context
         output = legacy_device.default_output()
         if output is None:
