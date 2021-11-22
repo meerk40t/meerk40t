@@ -1672,13 +1672,24 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
 
-        _ = kernel.translation
-
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
+        self.setting(bool, "operation_default_empty", True)
+
+        self._init_commands(kernel)
+        self._init_tree(kernel)
+        self.load_persistent_operations("previous")
+
+        ops = list(self.ops())
+        if not len(ops) and self.operation_default_empty:
+            self.load_default()
+
+    def _init_commands(self, kernel):
+
+        _ = kernel.translation
 
         # ==========
         # OPERATION BASE
@@ -4390,9 +4401,10 @@ class Elemental(Service):
 
         # --------------------------- END COMMANDS ------------------------------
 
-        # --------------------------- TREE OPERATIONS ---------------------------
+    def _init_tree(self, kernel):
 
-        _ = self._
+        _ = kernel.translation
+        # --------------------------- TREE OPERATIONS ---------------------------
 
         non_structural_nodes = (
             "op",
@@ -5302,17 +5314,13 @@ class Elemental(Service):
             pass
 
     def service_detach(self, *args, **kwargs):
-        self.save_persistent_operations("previous")
         self.unlisten_tree(self)
 
     def service_attach(self, *args, **kwargs):
         self.listen_tree(self)
-        self.setting(bool, "operation_default_empty", True)
-        self.load_persistent_operations("previous")
-        ops = list(self.ops())
-        if not len(ops) and self.operation_default_empty:
-            self.load_default()
-            return
+
+    def shutdown(self, *args, **kwargs):
+        self.save_persistent_operations("previous")
 
     def save_persistent_operations(self, name):
         settings = self.derive("operations/" + name)
