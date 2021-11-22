@@ -495,7 +495,7 @@ class Scene(Module, Job):
         scale_x = r.scale_x
         scale_y = r.scale_y
         self.widget_root.scene_widget.matrix.post_scale(scale_x, scale_y)
-        self.context.signal("refresh_scene", self.name)
+        self.request_refresh()
 
     def rotary_unstretch(self):
         """
@@ -505,7 +505,7 @@ class Scene(Module, Job):
         scale_x = r.scale_x
         scale_y = r.scale_y
         self.widget_root.scene_widget.matrix.post_scale(1.0 / scale_x, 1.0 / scale_y)
-        self.context.signal("refresh_scene", self.name)
+        self.request_refresh()
 
     def _signal_widget(self, widget, *args, **kwargs):
         """
@@ -1309,11 +1309,11 @@ class SceneSpaceWidget(Widget):
                 self.scene_widget.matrix.post_scale(
                     1.1, 1.1, space_pos[0], space_pos[1]
                 )
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "zoom-in":
             self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "rightdown+alt":
             self._previous_zoom = 1.0
@@ -1338,27 +1338,27 @@ class SceneSpaceWidget(Widget):
                 self.scene_widget.matrix.post_scale(
                     1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1]
                 )
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "zoom-out":
             self.scene_widget.matrix.post_scale(
                 1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1]
             )
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "wheelleft":
             if self.scene.context.mouse_pan_invert:
                 self.scene_widget.matrix.post_translate(25, 0)
             else:
                 self.scene_widget.matrix.post_translate(-25, 0)
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "wheelright":
             if self.scene.context.mouse_pan_invert:
                 self.scene_widget.matrix.post_translate(-25, 0)
             else:
                 self.scene_widget.matrix.post_translate(25, 0)
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "middledown":
             return RESPONSE_CONSUME
@@ -1386,14 +1386,14 @@ class SceneSpaceWidget(Widget):
             )
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
             self._previous_zoom = zoom
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
 
             return RESPONSE_CONSUME
 
         # Movement
         if self._placement_event_type is None:
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
         elif self._placement_event_type == "zoom":
             from math import e
 
@@ -1414,12 +1414,12 @@ class SceneSpaceWidget(Widget):
                     self._placement_event[0],
                     self._placement_event[1],
                 )
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
         elif self._placement_event_type == "pan":
             pan_factor_x = -(space_pos[0] - self._placement_event[0]) / 10
             pan_factor_y = -(space_pos[1] - self._placement_event[1]) / 10
             self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
         return RESPONSE_CONSUME
 
     def set_view(self, x, y, w, h, preserve_aspect=None):
