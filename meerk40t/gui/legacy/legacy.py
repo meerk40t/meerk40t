@@ -26,22 +26,80 @@ except ImportError as e:
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
-        kernel.register("module/LegacyGui", LegacyGui)
+        legacy_device = kernel.get_context("legacy")
+        legacy_device.register("window/Controller", Controller)
+        legacy_device.register("window/Configuration", Configuration)
+        legacy_device.register("window/DeviceManager", DeviceManager)
+        legacy_device.register("window/UsbConnect", UsbConnect)
+
+        legacy_device.register("window/default/Controller", Controller)
+        legacy_device.register("window/default/Configuration", Configuration)
+        legacy_device.register("window/lhystudios/Controller", LhystudiosControllerGui)
+        legacy_device.register("window/lhystudios/Configuration", LhystudiosDriverGui)
+        legacy_device.register(
+            "window/lhystudios/AccelerationChart", LhystudiosAccelerationChart
+        )
+        legacy_device.register("window/moshi/Controller", MoshiControllerGui)
+        legacy_device.register("window/moshi/Configuration", MoshiDriverGui)
+        legacy_device.register("window/tcp/Controller", TCPController)
+        legacy_device.register("window/file/Controller", FileOutput)
+        _ = kernel.translation
+
+        context = legacy_device
+
+        kernel.register(
+            "button/control/Controller",
+            {
+                "label": _("Controller"),
+                "icon": icons8_connected_50,
+                "tip": _("Opens Controller Window"),
+                "action": lambda v: kernel.console("window toggle Controller\n"),
+            },
+        )
+        kernel.register(
+            "button/config/Configuration",
+            {
+                "label": _("Config"),
+                "icon": icons8_computer_support_50,
+                "tip": _("Opens device-specfic configuration window"),
+                "action": lambda v: kernel.console("window toggle Configuration\n"),
+            },
+        )
+        # def on_pipe_state(self, origin, state):
+        #     if state == self.pipe_state:
+        #         return
+        #     self.project_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
+        # self.context.listen("pipe;thread", self.on_pipe_state)
+        # self.context.unlisten("pipe;thread", self.on_pipe_state)
+        legacy_device.register(
+            "button/control/Pause",
+            {
+                "label": _("Pause"),
+                "icon": icons8_emergency_stop_button_50,
+                "tip": _("Pause the laser"),
+                "action": lambda v: context("pause\n"),
+            },
+        )
+
+        legacy_device.register(
+            "button/control/Stop",
+            {
+                "label": _("Stop"),
+                "icon": icons8_pause_50,
+                "tip": _("Emergency stop the laser"),
+                "action": lambda v: context("estop\n"),
+            },
+        )
+
     elif lifecycle == "boot":
         kernel.get_context("legacy").add_service_delegate(
-            kernel.get_context("legacy").open("module/LegacyGui")
+            LegacyGui(kernel.get_context("legacy"))
         )
 
 
-class LegacyGui(Module):
-    def __init__(self, context, path):
-        Module.__init__(self, context, path)
-
-    def service_attach(self):
-        pass
-
-    def service_detach(self):
-        pass
+class LegacyGui:
+    def __init__(self, context):
+        self.context = context
 
     @signal_listener("controller")
     def on_controller(self, origin, original_origin, *args):
@@ -87,70 +145,3 @@ class LegacyGui(Module):
         elif driver.type == "moshi":
             legacy_device.register("window/Configuration", "window/moshi/Configuration")
             MoshiDriverGui.required_path = output.context.path
-
-    @staticmethod
-    def sub_register(kernel):
-        legacy_device = kernel.get_context("legacy")
-        legacy_device.register("window/Controller", Controller)
-        legacy_device.register("window/Configuration", Configuration)
-        legacy_device.register("window/DeviceManager", DeviceManager)
-        legacy_device.register("window/UsbConnect", UsbConnect)
-
-        legacy_device.register("window/default/Controller", Controller)
-        legacy_device.register("window/default/Configuration", Configuration)
-        legacy_device.register("window/lhystudios/Controller", LhystudiosControllerGui)
-        legacy_device.register("window/lhystudios/Configuration", LhystudiosDriverGui)
-        legacy_device.register(
-            "window/lhystudios/AccelerationChart", LhystudiosAccelerationChart
-        )
-        legacy_device.register("window/moshi/Controller", MoshiControllerGui)
-        legacy_device.register("window/moshi/Configuration", MoshiDriverGui)
-        legacy_device.register("window/tcp/Controller", TCPController)
-        legacy_device.register("window/file/Controller", FileOutput)
-        _ = kernel.translation
-
-        context = legacy_device
-
-        # def on_pipe_state(self, origin, state):
-        #     if state == self.pipe_state:
-        #         return
-        #     self.project_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
-        # self.context.listen("pipe;thread", self.on_pipe_state)
-        # self.context.unlisten("pipe;thread", self.on_pipe_state)
-        kernel.register(
-            "button/control/Controller",
-            {
-                "label": _("Controller"),
-                "icon": icons8_connected_50,
-                "tip": _("Opens Controller Window"),
-                "action": lambda v: kernel.console("window toggle Controller\n"),
-            },
-        )
-        kernel.register(
-            "button/config/Configuration",
-            {
-                "label": _("Config"),
-                "icon": icons8_computer_support_50,
-                "tip": _("Opens device-specfic configuration window"),
-                "action": lambda v: kernel.console("window toggle Configuration\n"),
-            },
-        )
-        legacy_device.register(
-            "button/control/Pause",
-            {
-                "label": _("Pause"),
-                "icon": icons8_emergency_stop_button_50,
-                "tip": _("Pause the laser"),
-                "action": lambda v: context("pause\n"),
-            },
-        )
-
-        legacy_device.register(
-            "button/control/Stop",
-            {
-                "label": _("Stop"),
-                "icon": icons8_pause_50,
-                "tip": _("Emergency stop the laser"),
-                "action": lambda v: context("estop\n"),
-            },
-        )
