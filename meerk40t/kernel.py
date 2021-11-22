@@ -670,6 +670,21 @@ class Service(Context):
         self.lifecycle = "init"
         self._delegates = delegates
 
+    def service_attach(self, *args, **kwargs):
+        pass
+
+    def service_detach(self, *args, **kwargs):
+        pass
+
+    def shutdown(self, *args, **kwargs):
+        """
+        Called by kernel during shutdown process for all services.
+        @param args:
+        @param kwargs:
+        @return:
+        """
+        pass
+
     def register(self, path: str, obj: Any) -> None:
         """
         Registers an element within this service.
@@ -721,21 +736,6 @@ class Service(Context):
         @return:
         """
         Kernel.register_choices(self, sheet, choices)
-
-    def attach(self, *args, **kwargs):
-        pass
-
-    def detach(self, *args, **kwargs):
-        pass
-
-    def shutdown(self, *args, **kwargs):
-        """
-        Called by kernel during shutdown process for all services.
-        @param args:
-        @param kwargs:
-        @return:
-        """
-        pass
 
     def add_service_delegate(self, delegate):
         if self._delegates is None:
@@ -1040,15 +1040,15 @@ class Kernel:
 
         self._active_services[domain] = service
         service.lifecycle = "attaching"
-        service.attach(self)
+        service.service_attach(self)
         self._signal_attach(service)
         self._lookup_attach(service)
         try:
-            # Apply attach call to all lifecycle delegates
+            # Apply service_attach call to all lifecycle delegates
             delegates = service._delegates
             for d in delegates:
                 try:
-                    d.attach()
+                    d.service_attach()
                 except AttributeError:
                     pass
         except (AttributeError, TypeError):
@@ -1070,11 +1070,11 @@ class Kernel:
                 self._signal_detach(previous_active)
                 self._lookup_detach(previous_active)
                 try:
-                    # Apply attach call to all lifecycle delegates
+                    # Apply service_detach call to all lifecycle delegates
                     delegates = previous_active._delegates
                     for d in delegates:
                         try:
-                            d.detach()
+                            d.service_detach()
                         except AttributeError:
                             pass
                 except (AttributeError, TypeError):
@@ -2154,7 +2154,7 @@ class Kernel:
         lifecycle_object: Any = None,
     ) -> None:
         """
-        Removes callabel listener for a given signal. This will be detached next time the signals code runs.
+        Removes callable listener for a given signal. This will be detached next time the signals code runs.
 
         @param signal:
         @param path:

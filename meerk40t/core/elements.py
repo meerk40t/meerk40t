@@ -5301,11 +5301,11 @@ class Elemental(Service):
         def reference_opnode(node, **kwgs):
             pass
 
-    def detach(self, *args, **kwargs):
+    def service_detach(self, *args, **kwargs):
         self.save_persistent_operations("previous")
         self.unlisten_tree(self)
 
-    def attach(self, *args, **kwargs):
+    def service_attach(self, *args, **kwargs):
         self.listen_tree(self)
         self.setting(bool, "operation_default_empty", True)
         self.load_persistent_operations("previous")

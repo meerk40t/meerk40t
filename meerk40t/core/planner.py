@@ -752,7 +752,7 @@ class Planner(Service):
     def default_plan(self):
         return self.get_or_make_plan(self._default_plan)
 
-    def attach(self, *args, **kwargs):
+    def service_attach(self, *args, **kwargs):
         self.register("plan/physicalhome", physicalhome)
         self.register("plan/home", home)
         self.register("plan/origin", origin)

@@ -37,10 +37,10 @@ class LegacyGui(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
 
-    def attach(self):
+    def service_attach(self):
         pass
 
-    def detach(self):
+    def service_detach(self):
         pass
 
     def module_open(self, *a, **kwargs):
