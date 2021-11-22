@@ -54,16 +54,56 @@ class Module:
 
     @property
     def lifecycle(self):
-        if self._lifecycle >= 500:
+        if self._lifecycle >= 1000:
             return "shutdown"
-        if self._lifecycle >= 200:
+        if self._lifecycle == 200:
             return "closed"
-        if self._lifecycle >= 150:
-            return "restored"
-        if self._lifecycle >= 100:
+        if self._lifecycle == 100:
+            return "opening"
+        if self._lifecycle == 101:
+            return "initializing"
+        if self._lifecycle == 102:
+            return "initialed"
+        if self._lifecycle == 103:
             return "opened"
-        if self._lifecycle >= 0:
+        if self._lifecycle == 0:
             return "init"
+
+    def set_lifecycle(self, position, module=None, *args, **kwargs):
+        """
+        Advances module's lifecycle to the given position. Calling any lifecycle events
+        that are required in the process.
+
+        @param position:
+        @param module: optional module reference if not self.
+        @param args:
+        @param kwargs:
+        @return:
+        """
+        if module is None:
+            module = self
+
+        kernel = module.context.kernel
+        try:
+            starting_position = self._lifecycle
+        except AttributeError:
+            starting_position = 0
+        ending_position = position if position is not None else starting_position + 1
+        self._lifecycle = position  # opening
+        if starting_position < 100 <= ending_position:
+            if hasattr(self, "module_open"):
+                self.module_open(*args, **kwargs)
+            kernel._signal_attach(self)
+            kernel._lookup_attach(self)
+        if starting_position < 200 <= ending_position:
+            if hasattr(self, "module_close"):
+                self.module_close(*args, **kwargs)
+            kernel._signal_detach(self)
+            kernel._lookup_detach(self)
+        if starting_position < 1000 <= ending_position:
+            if hasattr(self, "shutdown"):
+                self.shutdown()
+        kernel.update_delegate_lifecycles(module)
 
     def restore(self, *args, **kwargs):
         """Called with the same values of __init()__ on an attempted reopen of a module with the same name at the
@@ -79,6 +119,9 @@ class Module:
         """Finalize is called after close() to unhook various kernelspace hooks. This will happen if kernel is being
         shutdown or if this individual module is being closed on its own."""
         pass
+
+    def add_module_delegate(self, delegate):
+        self.context.kernel.add_delegate(delegate, self)
 
 
 class Context:
@@ -491,16 +534,6 @@ class Context:
                 find.restore(*args, **kwargs)
             except AttributeError:
                 pass
-            try:
-                # Apply restore call to all lifecycle delegates
-                delegates = find._delegates
-                for d in delegates:
-                    try:
-                        d.restore(*args, **kwargs)
-                    except AttributeError:
-                        pass
-            except (AttributeError, TypeError):
-                pass
             return find
         except KeyError:
             # Module not found.
@@ -512,25 +545,13 @@ class Context:
             raise ValueError
 
         instance = open_object(self, instance_path, *args, **kwargs)
-        instance.lifecycle = "opened"
-        channel = self._kernel.channel("open", self._path)
+
         # Call module_open lifecycle event.
-        instance.lifecycle = "initialing"
-        instance.module_open(channel=channel)
-        instance.lifecycle = "initialized"
+        instance.set_lifecycle(100)
 
         # Apply module_open call to all lifecycle delegates
-        delegates = instance._delegates
-        if delegates is not None:
-            for d in delegates:
-                try:
-                    d.module_open()
-                except AttributeError:
-                    pass
-        self._signal_attach(instance)
-        self._lookup_attach(instance)
+        self._kernel.update_delegate_lifecycles(instance)
         self.opened[instance_path] = instance
-        instance.lifecycle = "opened"
         return instance
 
     def close(self, instance_path: str, *args, **kwargs) -> None:
@@ -556,22 +577,10 @@ class Context:
             instance.close()
         except AttributeError:
             pass
-        instance.lifecycle = "closing"
-        self._signal_detach(instance)
-        self._lookup_detach(instance)
         # Call module_close lifecycle event.
         instance.module_close(*args, **kwargs)
-        instance.lifecycle = "closed"
-        try:
-            # Apply module_close call to all lifecycle delegates
-            delegates = instance._delegates
-            for d in delegates:
-                try:
-                    d.module_close(*args, **kwargs)
-                except AttributeError:
-                    pass
-        except (AttributeError, TypeError):
-            pass
+        instance._lifecycle = 200
+        self._kernel.update_delegate_lifecycles(instance)
 
     # ==========
     # SIGNALS DELEGATES
@@ -618,22 +627,6 @@ class Context:
         """
         self._kernel.unlisten(signal, self._path, process)
 
-    def _signal_detach(self, lifecycle_object: Union["Service", Module, None]):
-        self._kernel._signal_detach(lifecycle_object)
-
-    def _signal_attach(self, lifecycle_object: Union["Service", Module, None]):
-        self._kernel._signal_attach(lifecycle_object)
-
-    # ==========
-    # LOOKUP ATTACH DELEGATES
-    # ==========
-
-    def _lookup_detach(self, lifecycle_object: Union["Service", Module, None]):
-        self._kernel._lookup_detach(lifecycle_object)
-
-    def _lookup_attach(self, lifecycle_object: Union["Service", Module, None]):
-        self._kernel._lookup_attach(lifecycle_object)
-
     # ==========
     # CHANNEL DELEGATES
     # ==========
@@ -678,14 +671,43 @@ class Service(Context):
 
     @property
     def lifecycle(self):
-        if self._lifecycle >= 500:
+        if self._lifecycle >= 1000:
             return "shutdown"
         if self._lifecycle >= 200:
             return "detached"
         if self._lifecycle >= 100:
             return "attached"
+        if self._lifecycle >= 50:
+            return "added"
         if self._lifecycle >= 0:
             return "init"
+
+    def set_lifecycle(self, position, service=None, *args, **kwargs):
+        if service is None:
+            service = self
+        kernel = service.kernel
+        try:
+            starting_position = self._lifecycle
+        except AttributeError:
+            starting_position = 0
+        ending_position = position if position is not None else starting_position + 1
+
+        if ending_position != starting_position:
+            if starting_position == 100:  # starting attached
+                self.service_detach(*args, **kwargs)
+                kernel._signal_attach(self)
+                kernel._lookup_attach(self)
+            elif ending_position == 100:  # ending attached
+                self.service_attach(*args, **kwargs)
+                kernel._signal_detach(self)
+                kernel._lookup_detach(self)
+        if starting_position < 1000 <= ending_position:
+            try:
+                self.shutdown()
+            except AttributeError:
+                pass
+        self._lifecycle = ending_position
+        kernel.update_delegate_lifecycles(service)
 
     def service_attach(self, *args, **kwargs):
         pass
@@ -755,10 +777,7 @@ class Service(Context):
         Kernel.register_choices(self, sheet, choices)
 
     def add_service_delegate(self, delegate):
-        if self._delegates is None:
-            self._delegates = []
-        self._delegates.append(delegate)
-        print(self.kernel.lifecycle)
+        self.kernel.add_delegate(delegate, self)
 
 
 class Kernel:
@@ -1011,7 +1030,8 @@ class Kernel:
         else:
             services = []
             self._available_services[domain] = services
-            service.lifecycle = "added"
+            service._lifecycle = 50
+            self.update_delegate_lifecycles(service)
         services.append(service)
 
     def activate_service_path(self, domain: str, path: str):
@@ -1057,29 +1077,24 @@ class Kernel:
         self.activate(domain, service)
 
     def activate(self, domain, service):
+        # Deactivate anything on this domain.
         self.deactivate(domain)
 
+        # Set service and attach.
         self._active_services[domain] = service
-        service.lifecycle = "attaching"
-        service.service_attach(self)
-        self._signal_attach(service)
-        self._lookup_attach(service)
-        try:
-            # Apply service_attach call to all lifecycle delegates
-            delegates = service._delegates
-            for d in delegates:
-                try:
-                    d.service_attach()
-                except AttributeError:
-                    pass
-        except (AttributeError, TypeError):
-            pass
+        service.set_lifecycle(100)
+
+        # Set context values for the domain.
         setattr(self, domain, service)
         for context_name in self.contexts:
             # For every registered context, set the given domain to this service
             context = self.contexts[context_name]
             setattr(context, domain, service)
-        service.lifecycle = "attached"
+
+        # Update any delegate lifecycles
+        self.update_delegate_lifecycles(service)
+
+        # Update any lookup changes.
         self.lookup_changes(list(service._registered))
 
     def deactivate(self, domain):
@@ -1087,21 +1102,13 @@ class Kernel:
         if domain in self._active_services:
             previous_active = self._active_services[domain]
             if previous_active is not None:
-                previous_active.lifecycle = "detaching"
+
+                previous_active._lifecycle = 200
                 self._signal_detach(previous_active)
                 self._lookup_detach(previous_active)
-                try:
-                    # Apply service_detach call to all lifecycle delegates
-                    delegates = previous_active._delegates
-                    for d in delegates:
-                        try:
-                            d.service_detach()
-                        except AttributeError:
-                            pass
-                except (AttributeError, TypeError):
-                    pass
+
+                self.update_delegate_lifecycles(previous_active)
                 previous_active.service_detach(self)
-                previous_active.lifecycle = "detached"
                 self.lookup_changes(list(previous_active._registered))
 
             for context_name in self.contexts:
@@ -1123,74 +1130,87 @@ class Kernel:
         @return:
         """
         self.delegates.append((delegate, lifecycle_object))
+        self.match_lifecycle(delegate, lifecycle_object)  # Call all the relevant lifecycle calls.
+
+    def update_delegate_lifecycles(self, lifecycle_object):
+        """
+        Called when lifecycles have been updated and the delegates may no longer match the
+        objects current lifecycle.
+
+        @param lifecycle_object: Lifecycle object that was updated. If none, every lifecycle is updated.
+        @return:
+        """
+        for delegate, lso in self.delegates:
+            if lso is lifecycle_object or lifecycle_object is None:
+                self.match_lifecycle(delegate, lso)
+
+    def set_lifecycle(self, position, kernel=None, *args, **kwargs):
+        """
+        Sets the kernel's lifecycle object
+        @param position: lifecycle position to set
+        @param kernel: optional kernel if not kernel object directly
+        @param args:
+        @param kwargs:
+        @return:
+        """
+        if kernel is None:
+            kernel = self
+        starting_position = self._lifecycle
+        ending_position = position if position is not None else starting_position + 1
+
+        if starting_position < 100 <= ending_position:
+            self.registration()
+        if starting_position < 200 <= ending_position:
+            self.boot()
+            kernel._signal_attach(self)
+            kernel._lookup_attach(self)
+        if starting_position < 300 <= ending_position:
+            self.start()
+        if starting_position < 400 <= ending_position:
+            self.main()
+        if starting_position < 1000 <= ending_position:
+            kernel._signal_detach(self)
+            kernel._lookup_detach(self)
+            try:
+                self.shutdown()
+            except AttributeError:
+                pass
+
+    def match_lifecycle(self, update_object, lifecycle_object):
+        """
+        Matches the lifecycle of the lifecycle_object on the update_object. This should be
+        called if the update_object is set as a delegate of the lifecycle_object or if a
+        lifecycle event occurs requiring the delegate to be updated.
+
+        @param update_object:  object lifecycle being updated.
+        @param lifecycle_object: lifecycled object being mimicked
+        @return:
+        """
+        starting_position = 0
+        try:
+            starting_position = update_object._lifecycle
+        except AttributeError:
+            pass
+        ending_position = lifecycle_object._lifecycle
+
+        if starting_position == ending_position:
+            return
+
         if isinstance(lifecycle_object, Kernel):
-            if lifecycle_object._lifecycle >= 100:
-                try:
-                    delegate.registration()
-                except AttributeError:
-                    pass
-            if lifecycle_object._lifecycle >= 200:
-                try:
-                    delegate.boot()
-                except AttributeError:
-                    pass
-            if lifecycle_object._lifecycle >= 300:
-                try:
-                    delegate.start()
-                except AttributeError:
-                    pass
-            if lifecycle_object._lifecycle >= 400:
-                try:
-                    delegate.main()
-                except AttributeError:
-                    pass
-            if lifecycle_object._lifecycle >= 500:
-                try:
-                    delegate.shutdown()
-                except AttributeError:
-                    pass
+            Kernel.set_lifecycle(update_object, lifecycle_object._lifecycle, kernel=lifecycle_object)
+
         elif isinstance(lifecycle_object, Service):
-            if lifecycle_object._lifecycle >= 100:
-                try:
-                    delegate.service_attached()
-                except AttributeError:
-                    pass
-            if lifecycle_object._lifecycle >= 200:
-                try:
-                    delegate.service_detached()
-                except AttributeError:
-                    pass
-            if lifecycle_object._lifecycle >= 500:
-                try:
-                    delegate.shutdown()
-                except AttributeError:
-                    pass
+            Service.set_lifecycle(update_object, lifecycle_object._lifecycle, service=lifecycle_object)
+
         elif isinstance(lifecycle_object, Module):
-            if lifecycle_object._lifecycle >= 100:
-                try:
-                    delegate.module_open()
-                except AttributeError:
-                    pass
-            if lifecycle_object._lifecycle >= 200:
-                try:
-                    delegate.module_close()
-                except AttributeError:
-                    pass
-            if lifecycle_object._lifecycle >= 500:
-                try:
-                    delegate.shutdown()
-                except AttributeError:
-                    pass
+            Module.set_lifecycle(update_object, lifecycle_object._lifecycle, module=lifecycle_object)
 
     # ==========
     # LIFECYCLE PROCESSES
     # ==========
 
     def __call__(self):
-        self.registration()
-        self.boot()
-        self.start()
-        self.main()
+        self.set_lifecycle(400)
 
     @property
     def lifecycle(self):
@@ -1217,26 +1237,26 @@ class Kernel:
         if self._lifecycle == 303:
             return "ready"
         if self._lifecycle == 400:
+            return "premain"
+        if self._lifecycle == 401:
             return "mainloop"
-        if self._lifecycle == 500:
+        if self._lifecycle == 1000:
             return "shutdown"
 
-    def _lifecycle_event(self, position=None):
-        if self._lifecycle >= 500:
-            return  # No backsies.
-        if position is None:
-            position = self._lifecycle + 1
-        self._lifecycle = position
-
+    def lifecycle_announce(self):
         named_lifecycle = self.lifecycle
         for plugin in self._plugins:
             plugin(self, named_lifecycle)
         self.signal("lifecycle;%s" % named_lifecycle, None, True)
+        self.update_delegate_lifecycles(self)
 
     def registration(self):
-        self._lifecycle_event(100)
-        self._lifecycle_event()
-        self._lifecycle_event()
+        self._lifecycle = 100
+        self.lifecycle_announce()
+        self._lifecycle = 101
+        self.lifecycle_announce()
+        self._lifecycle = 102
+        self.lifecycle_announce()
 
     def boot(self) -> None:
         """
@@ -1244,7 +1264,8 @@ class Kernel:
 
         :return:
         """
-        self._lifecycle_event(200)  # preboot
+        self._lifecycle = 200
+        self.lifecycle_announce()  # preboot
         self.command_boot()
         self.choices_boot()
         for domain in self._available_services:
@@ -1258,15 +1279,18 @@ class Kernel:
             run_main=True,
             conditional=lambda: not self._is_queue_processing,
         )
-        self._lifecycle_event()  # boot
+        self._lifecycle = 201
+        self.lifecycle_announce()  # boot
         self._booted = True
 
         if hasattr(self.args, "verbose") and self.args.verbose:
             self._start_debugging()
-        self._lifecycle_event()  # postboot
+        self._lifecycle = 202
+        self.lifecycle_announce()  # postboot
 
     def start(self):
-        self._lifecycle_event(300)  # prestart
+        self._lifecycle = 300
+        self.lifecycle_announce()  # prestart
 
         if hasattr(self.args, "set") and self.args.set is not None:
             # Set the variables requested here.
@@ -1277,7 +1301,8 @@ class Kernel:
                     self.console("set %s %s\n" % (attr, value))
                 except IndexError:
                     break
-        self._lifecycle_event()  # start
+        self._lifecycle = 301
+        self.lifecycle_announce()  # start
 
         if hasattr(self.args, "execute") and self.args.execute:
             # Any execute code segments gets executed here.
@@ -1296,11 +1321,14 @@ class Kernel:
                     self.console(line.strip() + "\n")
             self.channel("console").unwatch(print)
 
-        self._lifecycle_event()  # poststart
-        self._lifecycle_event()  # ready
+        self._lifecycle = 302
+        self.lifecycle_announce()  # poststart
+        self._lifecycle = 103
+        self.lifecycle_announce()  # ready
 
     def main(self):
-        self._lifecycle_event(400)  #premain
+        self._lifecycle = 400
+        self.lifecycle_announce()  # premain
         if hasattr(self.args, "console") and self.args.console:
             self.channel("console").watch(print)
             import sys
@@ -1321,7 +1349,8 @@ class Kernel:
             loop.close()
             self.channel("console").unwatch(print)
 
-        self._lifecycle_event() # mainloop - This is where the GUI loads and runs.
+        self._lifecycle = 401
+        self.lifecycle_announce()  # mainloop - This is where the GUI loads and runs.
 
     def shutdown(self):
         """
@@ -1338,7 +1367,9 @@ class Kernel:
         :param channel:
         :return:
         """
-        self._lifecycle_event(500)  # Shutdown
+        self._lifecycle = 1000  # Shutdown
+        self.lifecycle_announce()
+
         channel = self.channel("shutdown")
         self.state = STATE_END  # Terminates the Scheduler.
 
@@ -1378,8 +1409,7 @@ class Kernel:
                         _("%s: Finalizing Module %s: %s")
                         % (str(context), opened_name, str(obj))
                     )
-                context.close(opened_name, channel=channel, shutdown=True)
-                obj.lifecycle = "shutdown"
+                obj.set_lifecycle(self._lifecycle, None, opened_name, channel=channel, shutdown=True)
 
         self.process_queue()  # Process last events.
 
@@ -1388,7 +1418,6 @@ class Kernel:
             previous_active = self._active_services[domain]
             if channel:
                 channel(_("Detatching service: {domain}").format(domain=domain))
-            previous_active.service_detach(self)
             for context_name in self.contexts:
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
@@ -1406,7 +1435,7 @@ class Kernel:
                         )
                 except AttributeError:
                     pass
-                service.lifecycle = "shutdown"
+                service.set_lifecycle(self._lifecycle)
 
         # Context Flush and Shutdown
         for context_name in list(self.contexts):
@@ -1572,60 +1601,53 @@ class Kernel:
 
     def _lookup_detach(
         self,
-        lifecycle_object: Any,
+        cookie: Any,
     ) -> None:
         """
-        Detach all lookups associated with this lifecycle object.
+        Detach all lookups associated with this cookie.
 
-        @param lifecycle_object:
+        @param cookie:
         @return:
         """
         for lookup in self.lookups:
             listens = self.lookups[lookup]
             for index, lul in enumerate(listens):
-                listener, lso = lul
-                if lso is lifecycle_object:
+                listener, obj = lul
+                if obj is cookie:
                     del listens[index]
-        try:
-            delegates = lifecycle_object._delegates
-            for d in delegates:
-                self._lookup_detach(d)
-        except (AttributeError, TypeError):
-            pass
 
     def _lookup_attach(
         self,
-        lifecycle_object: Union[Service, Module, None] = None,
+        scan_object: Union[Service, Module, None] = None,
+        cookie: Any = None,
     ) -> None:
         """
         Attaches any lookups flagged as "@lookup_listener" to listen to that lookup.
 
-        @param lifecycle_object:
+        @param scan_object: Object to be scanned for looks to apply
+        @param cookie: Cookie to attach these lookup listeners against
         @return:
         """
-        for attr in dir(lifecycle_object):
-            func = getattr(lifecycle_object, attr)
+        if cookie is None:
+            cookie = scan_object
+        for attr in dir(scan_object):
+            func = getattr(scan_object, attr)
             if hasattr(func, "lookup_decor"):
                 for lul in func.lookup_decor:
-                    self.add_lookup(lul, func, lifecycle_object)
-        try:
-            delegates = lifecycle_object._delegates
-            for d in delegates:
-                self._lookup_attach(d)
-        except (AttributeError, TypeError):
-            pass
+                    self.add_lookup(lul, func, cookie)
 
-    def add_lookup(self, matchtext: str, funct: Callable, lifecycleobject: Any):
+    def add_lookup(self, matchtext: str, funct: Callable, cookie: Any):
         """
         Add matchtext equal lookup to call the given function bound to the given lifecycle object.
+
         @param matchtext:
         @param funct:
-        @param lifecycleobject:
+        @param cookie:
         @return:
         """
         if matchtext not in self.lookups:
             self.lookups[matchtext] = list()
-        self.lookups[matchtext].append((funct, lifecycleobject))
+        self.lookups[matchtext].append((funct, cookie))
 
     def lookup_changes(self, paths: List[str]) -> None:
         """
@@ -2286,59 +2308,44 @@ class Kernel:
         self._removing_listeners.append((signal, path, funct, lifecycle_object))
         self._signal_lock.release()
 
-    def delegate_lifecycle(self, delegate, lifecycle_object):
-        Kernel._signal_attach(lifecycle_object, delegate)
-        Kernel._lookup_attach(lifecycle_object, delegate)
-
-    def undelegate_lifecycle(self, delegate, lifecycle_object):
-        Kernel._signal_detach(lifecycle_object, delegate)
-        Kernel._lookup_detach(lifecycle_object, delegate)
-
     def _signal_attach(
         self,
-        lifecycle_object: Union[Service, Module, None] = None,
+        scan_object: Union[Service, Module, None] = None,
+        cookie: Any = None,
     ) -> None:
         """
         Attaches any signals flagged as "@signal_listener" to listen to that signal.
 
-        @param lifecycle_object:
+        @param scan_object:
         @return:
         """
-        for attr in dir(lifecycle_object):
-            func = getattr(lifecycle_object, attr)
+        if cookie is None:
+            cookie = scan_object
+        for attr in dir(scan_object):
+            func = getattr(scan_object, attr)
             if hasattr(func, "signal_listener"):
                 for sl in func.signal_listener:
-                    self.listen(sl, self._path, func, lifecycle_object)
-        try:
-            delegates = lifecycle_object._delegates
-            for d in delegates:
-                self._signal_attach(d)
-        except (AttributeError, TypeError):
-            pass
+                    self.listen(sl, self._path, func, cookie)
 
     def _signal_detach(
         self,
-        lifecycle_object: Any,
+        cookie: Any,
     ) -> None:
         """
-        Detach all signals attached to this lifecycle object.
+        Detach all signals attached against the given cookie
 
-        @param lifecycle_object:
+        @param cookie: cookie used to bind this listener.
         @return:
         """
         self._signal_lock.acquire(True)
+
         for signal in self.listeners:
             listens = self.listeners[signal]
             for listener, lso in listens:
-                if lso is lifecycle_object:
-                    self._removing_listeners.append((signal, None, listener, lifecycle_object))
+                if lso is cookie:
+                    self._removing_listeners.append((signal, None, listener, cookie))
+
         self._signal_lock.release()
-        try:
-            delegates = lifecycle_object._delegates
-            for d in delegates:
-                self._signal_detach(d)
-        except (AttributeError, TypeError):
-            pass
 
     # ==========
     # CHANNEL PROCESSING
