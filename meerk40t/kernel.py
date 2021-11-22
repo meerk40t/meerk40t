@@ -1158,6 +1158,7 @@ class Kernel:
     def set_lifecycle(self, position, kernel=None, *args, **kwargs):
         """
         Sets the kernel's lifecycle object
+
         @param position: lifecycle position to set
         @param kernel: optional kernel if not kernel object directly
         @param args:

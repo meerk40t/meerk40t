@@ -14,7 +14,7 @@ from meerk40t.gui.legacy.devicespanel import DeviceManager
 from meerk40t.gui.legacy.tcp.tcpcontroller import TCPController
 from meerk40t.gui.legacy.usbconnect import UsbConnect
 
-from meerk40t.kernel import Module
+from meerk40t.kernel import Module, signal_listener
 
 try:
     import wx
@@ -43,14 +43,7 @@ class LegacyGui(Module):
     def service_detach(self):
         pass
 
-    def module_open(self, *a, **kwargs):
-        self.context.listen("active", self.on_active_switch)
-        self.context.listen("controller", self.on_controller)
-
-    def module_close(self, *args, **kwargs):
-        self.context.unlisten("active", self.on_active_switch)
-        self.context.unlisten("controller", self.on_controller)
-
+    @signal_listener("controller")
     def on_controller(self, origin, original_origin, *args):
         split = original_origin.split("/")
         if split[0] == "lhystudios":
@@ -58,7 +51,10 @@ class LegacyGui(Module):
                 "window -p %s open %s/Controller\n" % (original_origin, split[0])
             )
 
+    @signal_listener("active")
     def on_active_switch(self, origin, *args):
+        print("Active Switch %s" % origin)
+        print(args)
         legacy_device = self.context
         output = legacy_device.default_output()
         if output is None:
