@@ -605,7 +605,12 @@ class Context:
         """
         return self._kernel.last_signal(code, self._path)
 
-    def listen(self, signal: str, process: Callable, lifecycle_object:Union["Service",Module,None]=None) -> None:
+    def listen(
+        self,
+        signal: str,
+        process: Callable,
+        lifecycle_object: Union["Service", Module, None] = None,
+    ) -> None:
         """
         Listen at a particular signal with a given process.
 
@@ -694,11 +699,13 @@ class Service(Context):
 
         if ending_position != starting_position:
             if starting_position == 100:  # starting attached
-                self.service_detach(*args, **kwargs)
+                if hasattr(self, "service_detach"):
+                    self.service_detach(*args, **kwargs)
                 kernel._signal_attach(self)
                 kernel._lookup_attach(self)
             elif ending_position == 100:  # ending attached
-                self.service_attach(*args, **kwargs)
+                if hasattr(self, "service_attach"):
+                    self.service_attach(*args, **kwargs)
                 kernel._signal_detach(self)
                 kernel._lookup_detach(self)
         if starting_position < 1000 <= ending_position:
@@ -834,7 +841,7 @@ class Kernel:
             process=self._registered_data_changed,
             job_name="kernel.lookup.clean",
             interval=0.3,
-            times=1
+            times=1,
         )
         self._registered = {}
         self.lookups = {}
@@ -1120,7 +1127,9 @@ class Kernel:
     # DELEGATES API
     # ==========
 
-    def add_delegate(self, delegate: Any, lifecycle_object: Union[Module, Service, "Kernel"]):
+    def add_delegate(
+        self, delegate: Any, lifecycle_object: Union[Module, Service, "Kernel"]
+    ):
         """
         Adds delegate to the kernel that should cause the delegate to mimic the lifecycle
         of the selected object.
@@ -1130,7 +1139,9 @@ class Kernel:
         @return:
         """
         self.delegates.append((delegate, lifecycle_object))
-        self.match_lifecycle(delegate, lifecycle_object)  # Call all the relevant lifecycle calls.
+        self.match_lifecycle(
+            delegate, lifecycle_object
+        )  # Call all the relevant lifecycle calls.
 
     def update_delegate_lifecycles(self, lifecycle_object):
         """
@@ -1159,22 +1170,24 @@ class Kernel:
         ending_position = position if position is not None else starting_position + 1
 
         if starting_position < 100 <= ending_position:
-            self.registration()
+            if hasattr(self, "registration"):
+                self.registration()
         if starting_position < 200 <= ending_position:
-            self.boot()
+            if hasattr(self, "boot"):
+                self.boot()
             kernel._signal_attach(self)
             kernel._lookup_attach(self)
         if starting_position < 300 <= ending_position:
-            self.start()
+            if hasattr(self, "start"):
+                self.start()
         if starting_position < 400 <= ending_position:
-            self.main()
+            if hasattr(self, "main"):
+                self.main()
         if starting_position < 1000 <= ending_position:
             kernel._signal_detach(self)
             kernel._lookup_detach(self)
-            try:
+            if hasattr(self, "shutdown"):
                 self.shutdown()
-            except AttributeError:
-                pass
 
     def match_lifecycle(self, update_object, lifecycle_object):
         """
@@ -1196,14 +1209,20 @@ class Kernel:
         if starting_position == ending_position:
             return
 
-        if isinstance(lifecycle_object, Kernel):
-            Kernel.set_lifecycle(update_object, lifecycle_object._lifecycle, kernel=lifecycle_object)
+        if isinstance(lifecycle_object, Module):
+            Module.set_lifecycle(
+                update_object, lifecycle_object._lifecycle, module=lifecycle_object
+            )
 
         elif isinstance(lifecycle_object, Service):
-            Service.set_lifecycle(update_object, lifecycle_object._lifecycle, service=lifecycle_object)
+            Service.set_lifecycle(
+                update_object, lifecycle_object._lifecycle, service=lifecycle_object
+            )
 
-        elif isinstance(lifecycle_object, Module):
-            Module.set_lifecycle(update_object, lifecycle_object._lifecycle, module=lifecycle_object)
+        elif isinstance(lifecycle_object, Kernel):
+            Kernel.set_lifecycle(
+                update_object, lifecycle_object._lifecycle, kernel=lifecycle_object
+            )
 
     # ==========
     # LIFECYCLE PROCESSES
@@ -1409,7 +1428,9 @@ class Kernel:
                         _("%s: Finalizing Module %s: %s")
                         % (str(context), opened_name, str(obj))
                     )
-                obj.set_lifecycle(self._lifecycle, None, opened_name, channel=channel, shutdown=True)
+                obj.set_lifecycle(
+                    self._lifecycle, None, opened_name, channel=channel, shutdown=True
+                )
 
         self.process_queue()  # Process last events.
 
@@ -2649,7 +2670,6 @@ class Kernel:
                 self.commands.clear()
                 self.schedule(self.console_job)
 
-
         @self.console_option(
             "off", "o", action="store_true", help=_("Turn this timer off")
         )
@@ -3596,6 +3616,7 @@ def signal_listener(param):
     @param param:
     @return:
     """
+
     def decor(func):
         if not hasattr(func, "signal_listener"):
             func.signal_listener = [param]
@@ -3604,4 +3625,3 @@ def signal_listener(param):
         return func
 
     return decor
-
