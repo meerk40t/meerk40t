@@ -674,11 +674,12 @@ class LegacyDevice(Service):
 
         if devices_booted == 0:
             # Check if there are no devices. Initialize one if needed.
-            if self.kernel.args.device == "Moshi":
-                dev = "spool0 -r driver -n moshi output -n moshi\n"
-            else:
-                dev = "spool0 -r driver -n lhystudios output -n lhystudios\n"
-            self(dev)
+            if self.kernel.args is not None:
+                if self.kernel.args.device == "Moshi":
+                    dev = "spool0 -r driver -n moshi output -n moshi\n"
+                else:
+                    dev = "spool0 -r driver -n lhystudios output -n lhystudios\n"
+                self(dev)
 
         def activate_device(device_name):
             def specific():

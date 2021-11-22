@@ -96,10 +96,6 @@ def bootstrap():
         # This module cannot be loaded. ezdxf missing.
         pass
     kernel_root = kernel.get_context("/")
-    kernel.bootstrap("register")
-    kernel.bootstrap("configure")
-    kernel.boot()
-    kernel.bootstrap("ready")
-    kernel.bootstrap("mainloop")
+    kernel()
     kernel.console("channel print console\n")
     return kernel
