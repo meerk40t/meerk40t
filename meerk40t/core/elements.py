@@ -5347,7 +5347,7 @@ class Elemental(Service):
 
     def load_persistent_operations(self, name):
         self.clear_operations()
-        settings = self.get_context("operations/" + name)
+        settings = self.derive("operations/" + name)
         subitems = list(settings.derivable())
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
