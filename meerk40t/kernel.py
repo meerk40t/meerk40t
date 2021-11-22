@@ -53,14 +53,14 @@ class Module:
         self.lifecycle = "init"
         self._delegates = delegates
 
-    def module_open(self, *args, **kwargs):
-        """Initialize() is called after open() to setup the module and allow it to register various hooks into the
-        kernelspace."""
-        pass
-
     def restore(self, *args, **kwargs):
         """Called with the same values of __init()__ on an attempted reopen of a module with the same name at the
         same context."""
+        pass
+
+    def module_open(self, *args, **kwargs):
+        """Initialize() is called after open() to setup the module and allow it to register various hooks into the
+        kernelspace."""
         pass
 
     def module_close(self, *args, **kwargs):

@@ -454,7 +454,7 @@ class MoshiControllerGui(MWindow):
         self.SetMenuBar(self.MoshiController_menubar)
 
     def restore(self, *args, **kwargs):
-        self.set_widgets()
+        self.panel.set_widgets()
 
     def window_open(self):
         self.panel.pane_show()

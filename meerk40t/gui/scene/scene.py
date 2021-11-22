@@ -393,12 +393,6 @@ class Scene(Module, Job):
         context = self.context
         self._init_widget(self.widget_root, context)
 
-    def restore(self, gui, **kwargs):
-        """
-        Called if the scene is reinitialized with a second open command.
-        """
-        self.gui = gui
-
     def module_close(self, *args, **kwargs):
         self._final_widget(self.widget_root, self.context)
         self.context.unlisten("driver;position", self.on_update_position)
