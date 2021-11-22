@@ -1661,9 +1661,8 @@ class Elemental(Service):
     that information out to inform other interested modules.
     """
 
-    def __init__(self, kernel, *args, **kwargs):
-        Service.__init__(self, kernel, "elements")
-
+    def __init__(self, kernel, index=None, *args, **kwargs):
+        Service.__init__(self, kernel, "elements" if index is None else "elements%d" % index)
         self._clipboard = {}
         self._clipboard_default = "0"
 
