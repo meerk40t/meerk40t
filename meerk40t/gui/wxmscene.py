@@ -22,27 +22,37 @@ _ = wx.GetTranslation
 
 
 def register_panel(window, context):
-    # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
-    # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
-    # self.notebook.AddPage(self.scene, "scene")
+    # control = wx.aui.AuiNotebook(window, -1, size=(200, 150))
+    # panel1 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=1)
+    # control.AddPage(panel1, "scene1")
+    # panel2 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=2)
+    # control.AddPage(panel2, "scene2")
 
-    panel = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
+    control = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
     pane = aui.AuiPaneInfo().CenterPane().Name("scene")
     pane.dock_proportion = 600
-    pane.control = panel
+    pane.control = control
+
+    # def on_note_page_change(event=None):
+    #     if control.GetPageText(control.GetSelection()) == "scene1":
+    #         context.kernel.activate_service_path('elements', 'elements')
+    #     else:
+    #         context.kernel.activate_service_path('elements', "elements1")
+    #     context("refresh\n")
+    # control.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_note_page_change, control)
 
     window.on_pane_add(pane)
     context.register("pane/console", pane)
 
 
 class MeerK40tScenePanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwargs):
+    def __init__(self, *args, context=None, index=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.scene = ScenePanel(
-            self.context, self, scene_name="Scene", style=wx.EXPAND | wx.WANTS_CHARS
+            self.context, self, scene_name="Scene" if index is None else "Scene%d" % index, style=wx.EXPAND | wx.WANTS_CHARS
         )
         self.widget_scene = self.scene.scene
         context = self.context
