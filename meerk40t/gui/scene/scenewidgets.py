@@ -79,7 +79,7 @@ class ElementsWidget(Widget):
         if event_type == "leftclick":
             elements = self.scene.context.elements
             elements.set_emphasized_by_position(space_pos)
-            self.scene.context.elements.signal("select_emphasized_tree", 0)
+            elements.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME
         return RESPONSE_DROP
 
@@ -92,7 +92,6 @@ class SelectionWidget(Widget):
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
-        self.elements = scene.context.elements
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
@@ -103,8 +102,11 @@ class SelectionWidget(Widget):
         self.uniform = True
 
     def hit(self):
-        elements = self.elements
-        bounds = elements.selected_area()
+        elements = self.scene.context.elements
+        try:
+            bounds = elements.selected_area()
+        except AttributeError:
+            bounds = None
         if bounds is not None:
             self.left = bounds[0]
             self.top = bounds[1]
@@ -144,7 +146,7 @@ class SelectionWidget(Widget):
             return HITCHAIN_DELEGATE
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        elements = self.elements
+        elements = self.scene.context.elements
         if event_type == "hover_start":
             self.scene.cursor("sizing")
             return RESPONSE_CHAIN
@@ -223,7 +225,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             elements.set_emphasized_by_position(space_pos)
-            self.scene.context.elements.signal("activate_selected_nodes", 0)
+            elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
         elif event_type == "leftdown":
             self.save_width = self.width
@@ -239,7 +241,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type in ("middleup", "leftup", "lost"):
             self.tool(space_pos, dx, dy, 1)
-            self.elements.ensure_positive_bounds()
+            elements.ensure_positive_bounds()
             return RESPONSE_CONSUME
         elif event_type == "move":
             if not elements.has_emphasis():
@@ -340,7 +342,6 @@ class SelectionWidget(Widget):
                 [b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]]
             )
             self.scene.request_refresh()
-
 
     def tool_scalexy_ne(self, position, dx, dy, event=0):
         """
