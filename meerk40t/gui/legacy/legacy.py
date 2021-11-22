@@ -43,11 +43,11 @@ class LegacyGui(Module):
     def detach(self):
         pass
 
-    def initialize(self, *a, **kwargs):
+    def module_open(self, *a, **kwargs):
         self.context.listen("active", self.on_active_switch)
         self.context.listen("controller", self.on_controller)
 
-    def finalize(self, *args, **kwargs):
+    def module_close(self, *args, **kwargs):
         self.context.unlisten("active", self.on_active_switch)
         self.context.unlisten("controller", self.on_controller)
 

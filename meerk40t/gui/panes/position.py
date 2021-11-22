@@ -88,7 +88,7 @@ class PositionPanel(wx.Panel):
         self.context.unlisten("modified", self._update_position)
         self.context.unlisten("altered", self._update_position)
 
-    def finalize(self, *args):
+    def module_close(self, *args):
         self.pane_hide()
 
     def __set_properties(self):

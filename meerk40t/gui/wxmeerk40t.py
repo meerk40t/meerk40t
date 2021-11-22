@@ -482,7 +482,7 @@ class wxMeerK40t(wx.App, Module):
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
 
-    def initialize(self, *args, **kwargs):
+    def module_open(self, *args, **kwargs):
         context = self.context
         kernel = context.kernel
 

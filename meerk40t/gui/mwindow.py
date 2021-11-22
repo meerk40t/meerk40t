@@ -11,9 +11,9 @@ class MWindow(wx.Frame, Module):
     loading the windows sizes and positions, ensuring the module for the class is correctly opened and closed.
     Deduplicating a lot of the repeat code and future proofing for other changes.
 
-    MeerK40t Windows have a hook finalize and initialize into window_open and window_close to register and unregister
-    hooks from the kernel. We register the acceleration table of the main window and handle the window/module open and
-    close events.
+    MeerK40t Windows have a hook module_close and module_open into window_open and window_close to register and
+    unregister hooks from the kernel. We register the acceleration table of the main window and handle the window/module
+    open and close events.
     """
 
     def __init__(self, width, height, context, path, parent, *args, style=-1, **kwds):
@@ -78,7 +78,7 @@ class MWindow(wx.Frame, Module):
     def window_preserve(self):
         return True
 
-    def initialize(self, *args, **kwargs):
+    def module_open(self, *args, **kwargs):
         self.context.close(self.name)
         if self.window_save:
             x, y = self.GetPosition()
@@ -88,7 +88,7 @@ class MWindow(wx.Frame, Module):
         self.Show()
         self.window_open()
 
-    def finalize(self, *args, shutdown=False, **kwargs):
+    def module_close(self, *args, shutdown=False, **kwargs):
         self.window_close()
         if self.window_save:
             try:

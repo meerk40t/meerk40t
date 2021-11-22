@@ -372,7 +372,7 @@ class Scene(Module, Job):
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
 
-    def initialize(self, *args, **kwargs):
+    def module_open(self, *args, **kwargs):
         context = self.context
         context.schedule(self)
         context.listen("driver;position", self.on_update_position)
@@ -399,7 +399,7 @@ class Scene(Module, Job):
         """
         self.gui = gui
 
-    def finalize(self, *args, **kwargs):
+    def module_close(self, *args, **kwargs):
         self._final_widget(self.widget_root, self.context)
         self.context.unlisten("driver;position", self.on_update_position)
         self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.

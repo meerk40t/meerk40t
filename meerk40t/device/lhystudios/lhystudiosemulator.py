@@ -24,13 +24,13 @@ class LhystudiosEmulator(Module):
     def __repr__(self):
         return "LhystudiosEmulator(%s)" % self.name
 
-    def initialize(self, *args, **kwargs):
+    def module_open(self, *args, **kwargs):
         context = self.context
         active = self.context.device.active
         send = context.channel("%s/usb_send" % active)
         send.watch(self.parser.write_packet)
 
-    def finalize(self, *args, **kwargs):
+    def module_close(self, *args, **kwargs):
         context = self.context
         active = self.context.device.active
         send = context.channel("%s/usb_send" % active)

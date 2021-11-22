@@ -36,7 +36,7 @@ class Module:
     """
     Modules are a generic lifecycle object. These are registered in the kernel as modules and when open() is called for
     a context. When close() is called on the context, it will close and delete references to the opened module and call
-    finalize().
+    module_close().
 
     If an opened module is tries to open() a second time in a context with the same name, and it was never closed.
     The device restore() function is called for the device, with the same args and kwargs that would have been called
@@ -53,7 +53,7 @@ class Module:
         self.lifecycle = "init"
         self._delegates = delegates
 
-    def initialize(self, *args, **kwargs):
+    def module_open(self, *args, **kwargs):
         """Initialize() is called after open() to setup the module and allow it to register various hooks into the
         kernelspace."""
         pass
@@ -63,7 +63,7 @@ class Module:
         same context."""
         pass
 
-    def finalize(self, *args, **kwargs):
+    def module_close(self, *args, **kwargs):
         """Finalize is called after close() to unhook various kernelspace hooks. This will happen if kernel is being
         shutdown or if this individual module is being closed on its own."""
         pass
@@ -507,17 +507,17 @@ class Context:
         instance = open_object(self, instance_path, *args, **kwargs)
         instance.lifecycle = "opened"
         channel = self._kernel.channel("open", self._path)
-        # Call initialize lifecycle event.
+        # Call module_open lifecycle event.
         instance.lifecycle = "initialing"
-        instance.initialize(channel=channel)
+        instance.module_open(channel=channel)
         instance.lifecycle = "initialized"
 
-        # Apply initialize call to all lifecycle delegates
+        # Apply module_open call to all lifecycle delegates
         delegates = instance._delegates
         if delegates is not None:
             for d in delegates:
                 try:
-                    d.initialize()
+                    d.module_open()
                 except AttributeError:
                     pass
         self._signal_attach(instance)
@@ -530,7 +530,7 @@ class Context:
         """
         Closes an opened module instance. Located at the instance_path location.
 
-        This calls the close() function on the object (which may not exist). Then calls finalize() on the module,
+        This calls the close() function on the object (which may not exist). Then calls module_close() on the module,
         which should exist.
 
         :param instance_path: Instance path to close.
@@ -552,15 +552,15 @@ class Context:
         instance.lifecycle = "closing"
         self._signal_detach(instance)
         self._lookup_detach(instance)
-        # Call finalize lifecycle event.
-        instance.finalize(*args, **kwargs)
+        # Call module_close lifecycle event.
+        instance.module_close(*args, **kwargs)
         instance.lifecycle = "closed"
         try:
-            # Apply finalize call to all lifecycle delegates
+            # Apply module_close call to all lifecycle delegates
             delegates = instance._delegates
             for d in delegates:
                 try:
-                    d.finalize(*args, **kwargs)
+                    d.module_close(*args, **kwargs)
                 except AttributeError:
                     pass
         except (AttributeError, TypeError):

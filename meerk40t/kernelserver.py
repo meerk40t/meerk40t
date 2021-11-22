@@ -93,7 +93,7 @@ class UDPServer(Module):
         self.socket.bind(("", self.port))
         self.context.threaded(self.run_udp_listener, thread_name=name)
 
-    def finalize(self, *args, **kwargs):
+    def module_close(self, *args, **kwargs):
         _ = self.context._
         self.context.channel("%s/send" % self.name).unwatch(
             self.send
@@ -158,7 +158,7 @@ class TCPServer(Module):
     def stop(self):
         self.state = STATE_TERMINATE
 
-    def finalize(self, *args, **kwargs):
+    def module_close(self, *args, **kwargs):
         _ = self.context._
         self.events_channel(_("Shutting down server."))
         self.state = STATE_TERMINATE

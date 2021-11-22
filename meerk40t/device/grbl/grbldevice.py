@@ -676,7 +676,7 @@ class GRBLEmulator(Module):
         self.channel = None
         self.elements = None
 
-    def initialize(self, *args, **kwargs):
+    def module_open(self, *args, **kwargs):
         self.grbl_channel = self.context.channel("grbl")
 
     def close(self):
