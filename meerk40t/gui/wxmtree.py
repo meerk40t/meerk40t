@@ -490,7 +490,7 @@ class ShadowTree:
         self.set_icon(
             elemtree, icon_meerk40t.GetBitmap(False, resize=(20, 20))
         )
-        self.register_children(self.elemtree)
+        self.register_children(elemtree)
 
         node_operations = elemtree.get(type="branch ops")
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap())
