@@ -701,13 +701,13 @@ class Service(Context):
             if starting_position == 100:  # starting attached
                 if hasattr(self, "service_detach"):
                     self.service_detach(*args, **kwargs)
-                kernel._signal_attach(self)
-                kernel._lookup_attach(self)
+                kernel._signal_detach(self)
+                kernel._lookup_detach(self)
             elif ending_position == 100:  # ending attached
                 if hasattr(self, "service_attach"):
                     self.service_attach(*args, **kwargs)
-                kernel._signal_detach(self)
-                kernel._lookup_detach(self)
+                kernel._signal_attach(self)
+                kernel._lookup_attach(self)
         if starting_position < 1000 <= ending_position:
             try:
                 self.shutdown()
