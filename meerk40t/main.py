@@ -125,7 +125,7 @@ def run():
     kernel.args = args
 
     """
-    These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
+    These are frozen plugins. They are not dynamically found by entry points they are the configured accepted
     hardcoded addons and plugins permitted by MeerK40t in a compiled bundle.
     """
     from . import kernelserver

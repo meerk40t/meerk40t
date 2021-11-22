@@ -46,12 +46,24 @@ class Module:
     expected to modify their contexts.
     """
 
-    def __init__(self, context: "Context", name: str = None, delegates=None, *args, **kwargs):
+    def __init__(self, context: "Context", name: str = None, *args, **kwargs):
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
-        self.lifecycle = "init"
-        self._delegates = delegates
+        self._lifecycle = 0
+
+    @property
+    def lifecycle(self):
+        if self._lifecycle >= 500:
+            return "shutdown"
+        if self._lifecycle >= 200:
+            return "closed"
+        if self._lifecycle >= 150:
+            return "restored"
+        if self._lifecycle >= 100:
+            return "opened"
+        if self._lifecycle >= 0:
+            return "init"
 
     def restore(self, *args, **kwargs):
         """Called with the same values of __init()__ on an attempted reopen of a module with the same name at the
@@ -67,11 +79,6 @@ class Module:
         """Finalize is called after close() to unhook various kernelspace hooks. This will happen if kernel is being
         shutdown or if this individual module is being closed on its own."""
         pass
-
-    def add_module_delegate(self, delegate):
-        if self._delegates is None:
-            self._delegates = []
-        self._delegates.append(delegate)
 
 
 class Context:
@@ -663,12 +670,22 @@ class Service(Context):
     Unlike contexts which can be derived or gotten at a particular path. Services can be directly instanced.
     """
 
-    def __init__(self, kernel: "Kernel", path: str, delegates=None):
+    def __init__(self, kernel: "Kernel", path: str):
         super().__init__(kernel, path)
         kernel.contexts[path] = self
         self._registered = {}
-        self.lifecycle = "init"
-        self._delegates = delegates
+        self._lifecycle = 0
+
+    @property
+    def lifecycle(self):
+        if self._lifecycle >= 500:
+            return "shutdown"
+        if self._lifecycle >= 200:
+            return "detached"
+        if self._lifecycle >= 100:
+            return "attached"
+        if self._lifecycle >= 0:
+            return "init"
 
     def service_attach(self, *args, **kwargs):
         pass
@@ -741,6 +758,7 @@ class Service(Context):
         if self._delegates is None:
             self._delegates = []
         self._delegates.append(delegate)
+        print(self.kernel.lifecycle)
 
 
 class Kernel:
@@ -773,7 +791,7 @@ class Kernel:
 
         # Boot State
         self._booted = False
-        self.lifecycle = "init"
+        self._lifecycle = 0
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
         self._plugins = []
@@ -788,6 +806,9 @@ class Kernel:
         # All registered threads.
         self.threads = {}
         self.thread_lock = Lock()
+
+        # All established delegates
+        self.delegates = []
 
         # All registered lookups within the kernel.
         self._clean_lookup = Job(
@@ -1088,6 +1109,78 @@ class Kernel:
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
 
+    # ==========
+    # DELEGATES API
+    # ==========
+
+    def add_delegate(self, delegate: Any, lifecycle_object: Union[Module, Service, "Kernel"]):
+        """
+        Adds delegate to the kernel that should cause the delegate to mimic the lifecycle
+        of the selected object.
+
+        @param delegate:
+        @param lifecycle_object:
+        @return:
+        """
+        self.delegates.append((delegate, lifecycle_object))
+        if isinstance(lifecycle_object, Kernel):
+            if lifecycle_object._lifecycle >= 100:
+                try:
+                    delegate.registration()
+                except AttributeError:
+                    pass
+            if lifecycle_object._lifecycle >= 200:
+                try:
+                    delegate.boot()
+                except AttributeError:
+                    pass
+            if lifecycle_object._lifecycle >= 300:
+                try:
+                    delegate.start()
+                except AttributeError:
+                    pass
+            if lifecycle_object._lifecycle >= 400:
+                try:
+                    delegate.main()
+                except AttributeError:
+                    pass
+            if lifecycle_object._lifecycle >= 500:
+                try:
+                    delegate.shutdown()
+                except AttributeError:
+                    pass
+        elif isinstance(lifecycle_object, Service):
+            if lifecycle_object._lifecycle >= 100:
+                try:
+                    delegate.service_attached()
+                except AttributeError:
+                    pass
+            if lifecycle_object._lifecycle >= 200:
+                try:
+                    delegate.service_detached()
+                except AttributeError:
+                    pass
+            if lifecycle_object._lifecycle >= 500:
+                try:
+                    delegate.shutdown()
+                except AttributeError:
+                    pass
+        elif isinstance(lifecycle_object, Module):
+            if lifecycle_object._lifecycle >= 100:
+                try:
+                    delegate.module_open()
+                except AttributeError:
+                    pass
+            if lifecycle_object._lifecycle >= 200:
+                try:
+                    delegate.module_close()
+                except AttributeError:
+                    pass
+            if lifecycle_object._lifecycle >= 500:
+                try:
+                    delegate.shutdown()
+                except AttributeError:
+                    pass
 
     # ==========
     # LIFECYCLE PROCESSES
@@ -1099,25 +1192,51 @@ class Kernel:
         self.start()
         self.main()
 
-    def bootstrap(self, lifecycle: str) -> None:
-        """
-        Bootstraps all plugins at this particular lifecycle event.
+    @property
+    def lifecycle(self):
+        if self._lifecycle == 0:
+            return "init"
+        if self._lifecycle == 100:
+            return "preregister"
+        if self._lifecycle == 101:
+            return "register"
+        if self._lifecycle == 102:
+            return "configure"
+        if self._lifecycle == 200:
+            return "preboot"
+        if self._lifecycle == 201:
+            return "boot"
+        if self._lifecycle == 202:
+            return "postboot"
+        if self._lifecycle == 300:
+            return "prestart"
+        if self._lifecycle == 301:
+            return "start"
+        if self._lifecycle == 302:
+            return "poststart"
+        if self._lifecycle == 303:
+            return "ready"
+        if self._lifecycle == 400:
+            return "mainloop"
+        if self._lifecycle == 500:
+            return "shutdown"
 
-        :param lifecycle:
-        :return:
-        """
-        if self.lifecycle == "shutdown":
+    def _lifecycle_event(self, position=None):
+        if self._lifecycle >= 500:
             return  # No backsies.
-        self.lifecycle = lifecycle
+        if position is None:
+            position = self._lifecycle + 1
+        self._lifecycle = position
+
+        named_lifecycle = self.lifecycle
         for plugin in self._plugins:
-            plugin(self, lifecycle)
-        self.signal("lifecycle;%s" % lifecycle, None, True)
+            plugin(self, named_lifecycle)
+        self.signal("lifecycle;%s" % named_lifecycle, None, True)
 
     def registration(self):
-        self.bootstrap("init")
-        self.bootstrap("preregister")
-        self.bootstrap("register")
-        self.bootstrap("configure")
+        self._lifecycle_event(100)
+        self._lifecycle_event()
+        self._lifecycle_event()
 
     def boot(self) -> None:
         """
@@ -1125,7 +1244,7 @@ class Kernel:
 
         :return:
         """
-        self.bootstrap("preboot")
+        self._lifecycle_event(200)  # preboot
         self.command_boot()
         self.choices_boot()
         for domain in self._available_services:
@@ -1139,15 +1258,15 @@ class Kernel:
             run_main=True,
             conditional=lambda: not self._is_queue_processing,
         )
-        self.bootstrap("boot")
+        self._lifecycle_event()  # boot
         self._booted = True
 
         if hasattr(self.args, "verbose") and self.args.verbose:
             self._start_debugging()
-        self.bootstrap("postboot")
+        self._lifecycle_event()  # postboot
 
     def start(self):
-        self.bootstrap("prestart")
+        self._lifecycle_event(300)  # prestart
 
         if hasattr(self.args, "set") and self.args.set is not None:
             # Set the variables requested here.
@@ -1158,7 +1277,7 @@ class Kernel:
                     self.console("set %s %s\n" % (attr, value))
                 except IndexError:
                     break
-        self.bootstrap("start")
+        self._lifecycle_event()  # start
 
         if hasattr(self.args, "execute") and self.args.execute:
             # Any execute code segments gets executed here.
@@ -1177,10 +1296,11 @@ class Kernel:
                     self.console(line.strip() + "\n")
             self.channel("console").unwatch(print)
 
-        self.bootstrap("poststart")
-        self.bootstrap("ready")
+        self._lifecycle_event()  # poststart
+        self._lifecycle_event()  # ready
 
     def main(self):
+        self._lifecycle_event(400)  #premain
         if hasattr(self.args, "console") and self.args.console:
             self.channel("console").watch(print)
             import sys
@@ -1201,7 +1321,7 @@ class Kernel:
             loop.close()
             self.channel("console").unwatch(print)
 
-        self.bootstrap("mainloop")  # This is where the GUI loads and runs.
+        self._lifecycle_event() # mainloop - This is where the GUI loads and runs.
 
     def shutdown(self):
         """
@@ -1218,10 +1338,10 @@ class Kernel:
         :param channel:
         :return:
         """
+        self._lifecycle_event(500)  # Shutdown
         channel = self.channel("shutdown")
         self.state = STATE_END  # Terminates the Scheduler.
 
-        self.bootstrap("shutdown")
         _ = self.translation
 
         try:
