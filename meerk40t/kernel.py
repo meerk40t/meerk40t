@@ -1079,7 +1079,7 @@ class Kernel:
                             pass
                 except (AttributeError, TypeError):
                     pass
-                previous_active.detach(self)
+                previous_active.service_detach(self)
                 previous_active.lifecycle = "detached"
                 self.lookup_changes(list(previous_active._registered))
 
@@ -1268,7 +1268,7 @@ class Kernel:
             previous_active = self._active_services[domain]
             if channel:
                 channel(_("Detatching service: {domain}").format(domain=domain))
-            previous_active.detach(self)
+            previous_active.service_detach(self)
             for context_name in self.contexts:
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
