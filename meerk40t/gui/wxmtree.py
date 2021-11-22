@@ -81,9 +81,7 @@ class TreePanel(wx.Panel):
         self.context.signal("rebuild_tree")
 
     def __set_tree(self):
-        self.shadow_tree = ShadowTree(
-            self.context, self.GetParent(), self.context.elements._tree, self.wxtree
-        )
+        self.shadow_tree = ShadowTree(self.context, self.GetParent(), self.wxtree)
         self.Bind(
             wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
         )
@@ -205,9 +203,8 @@ class ShadowTree:
     reflected in the tree, the shadow tree is updated accordingly.
     """
 
-    def __init__(self, context, gui, root, wxtree):
+    def __init__(self, context, gui, wxtree):
         self.context = context
-        self.elemtree = root
         self.gui = gui
         self.wxtree = wxtree
         self.renderer = gui.renderer
@@ -215,7 +212,6 @@ class ShadowTree:
         self.tree_images = None
         self.object = "Project"
         self.name = "Project"
-        self.context = context
         self.context.elements.listen_tree(self)
         self.do_not_select = False
 
@@ -460,7 +456,8 @@ class ShadowTree:
         """Any tree elements currently displaying wrong data as per elements should be updated to display
         the proper values and contexts and icons."""
         if node is None:
-            node = self.elemtree.item
+            elemtree = self.context.elements._tree
+            node = elemtree.item
         if node is None:
             return
         tree = self.wxtree
@@ -478,6 +475,7 @@ class ShadowTree:
 
         @return:
         """
+        elemtree = self.context.elements._tree
         self.dragging_nodes = None
         self.wxtree.DeleteAllItems()
 
@@ -485,22 +483,22 @@ class ShadowTree:
         self.tree_images.Create(width=20, height=20)
 
         self.wxtree.SetImageList(self.tree_images)
-        self.elemtree.item = self.wxtree.AddRoot(self.name)
+        elemtree.item = self.wxtree.AddRoot(self.name)
 
-        self.wxtree.SetItemData(self.elemtree.item, self.elemtree)
+        self.wxtree.SetItemData(elemtree.item, elemtree)
 
         self.set_icon(
-            self.elemtree, icon_meerk40t.GetBitmap(False, resize=(20, 20))
+            elemtree, icon_meerk40t.GetBitmap(False, resize=(20, 20))
         )
         self.register_children(self.elemtree)
 
-        node_operations = self.elemtree.get(type="branch ops")
+        node_operations = elemtree.get(type="branch ops")
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap())
 
         for n in node_operations.children:
             self.set_icon(n)
 
-        node_elements = self.elemtree.get(type="branch elems")
+        node_elements = elemtree.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap())
 
         # Expand Ops and Element nodes only
