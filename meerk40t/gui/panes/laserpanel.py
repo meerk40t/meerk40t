@@ -67,12 +67,12 @@ class LaserPanel(wx.Panel):
             self.context.registered[i] for i in self.context.match("device")
         ]
         selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        spools_index = [str(i) for i in self.context.match("device", suffix=True)]
         try:
-            index = spools.index(selected_spooler)
+            index = spools_index.index(selected_spooler)
         except ValueError:
             index = 0
-        self.connected_name = spools[index]
+        self.connected_name = spools_index[index]
         self.connected_spooler, self.connected_driver, self.connected_output = (
             None,
             None,
@@ -88,10 +88,10 @@ class LaserPanel(wx.Panel):
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        spools_label = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
 
         self.combo_devices = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN | wx.CB_READONLY
+            self, wx.ID_ANY, choices=spools_label, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_devices.SetToolTip(
             _("Select device from list of configured devices")
@@ -222,12 +222,12 @@ class LaserPanel(wx.Panel):
             self.context.registered[i] for i in self.context.match("device")
         ]
         selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        spools_index = [str(i) for i in self.context.match("device", suffix=True)]
         try:
-            index = spools.index(selected_spooler)
+            index = spools_index.index(selected_spooler)
         except ValueError:
             index = 0
-        self.connected_name = spools[index]
+        self.connected_name = spools_index[index]
         self.connected_spooler, self.connected_driver, self.connected_output = (
             None,
             None,
@@ -243,14 +243,10 @@ class LaserPanel(wx.Panel):
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        spools_label = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
         self.combo_devices.Clear()
-        for i in range(len(spools)):
-            self.combo_devices.Append(spools[i])
-        try:
-            index = spools.index(selected_spooler)
-        except ValueError:
-            index = 0
+        for i in range(len(spools_label)):
+            self.combo_devices.Append(spools_label[i])
         self.combo_devices.SetSelection(index)
 
     def active_update(self, origin, *message):
@@ -262,9 +258,9 @@ class LaserPanel(wx.Panel):
         @return:
         """
         selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
         try:
-            index = spools.index(selected_spooler)
+            spools_index = [str(i) for i in self.context.match("device", suffix=True)]
+            index = spools_index.index(selected_spooler)
         except ValueError:
             index = 0
         self.combo_devices.SetSelection(index)
