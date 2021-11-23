@@ -100,6 +100,7 @@ class Module:
                 self.module_close(*args, **kwargs)
             kernel._signal_detach(self)
             kernel._lookup_detach(self)
+            kernel._remove_delegates(module)
         if starting_position < 1000 <= ending_position:
             if hasattr(self, "shutdown"):
                 self.shutdown()
