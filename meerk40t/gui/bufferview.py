@@ -51,6 +51,7 @@ class BufferView(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(697, 586, *args, **kwds)
         self.panel = BufferViewPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)

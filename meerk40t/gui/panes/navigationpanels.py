@@ -1165,6 +1165,7 @@ class Navigation(MWindow):
         super().__init__(598, 429, *args, **kwds)
 
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_move_50.GetBitmap())

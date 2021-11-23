@@ -307,6 +307,7 @@ class LhystudiosAccelerationChart(MWindow):
         self.panel = LhystudiosAccelerationChartPanel(
             self, wx.ID_ANY, context=self.context
         )
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)

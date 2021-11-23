@@ -332,6 +332,7 @@ class DeviceManager(MWindow):
         super().__init__(653, 332, *args, **kwds)
 
         self.panel = DevicesPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
         self.SetIcon(_icon)

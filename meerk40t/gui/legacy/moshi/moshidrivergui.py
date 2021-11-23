@@ -141,6 +141,7 @@ class MoshiDriverGui(MWindow):
         super().__init__(335, 170, *args, **kwds)
 
         self.panel = MoshiConfigurationPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)

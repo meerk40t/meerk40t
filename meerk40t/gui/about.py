@@ -143,6 +143,7 @@ class About(MWindow):
             **kwds
         )
         self.panel = AboutPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
         self.SetIcon(_icon)

@@ -266,6 +266,7 @@ class TextProperty(MWindow):
         super().__init__(317, 360, *args, **kwds)
 
         self.panel = TextPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
         self.SetIcon(_icon)

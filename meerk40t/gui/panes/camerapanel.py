@@ -646,6 +646,7 @@ class CameraInterface(MWindow):
         index = int(index)
         super().__init__(640, 480, context, path, parent, **kwds)
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
+        self.add_module_delegate(self.panel)
 
         # ==========
         # MENU BAR

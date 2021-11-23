@@ -191,6 +191,7 @@ class RotarySettings(MWindow):
         super().__init__(222, 347, *args, **kwds)
 
         self.panel = RotarySettingsPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
         self.SetIcon(_icon)

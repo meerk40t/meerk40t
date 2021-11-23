@@ -67,6 +67,7 @@ class Controller(MWindow):
         super().__init__(423, 131, *args, **kwds)
 
         self.panel = ControllerDefaultPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)

@@ -4,6 +4,7 @@ from wx import aui
 from meerk40t.gui.icons import icons8_route_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import disable_window
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -137,11 +138,10 @@ class SpoolerPanel(wx.Panel):
         menu.Destroy()
 
     def pane_show(self, *args):
-        self.context.listen("spooler;queue", self.on_spooler_update)
         self.refresh_spooler_list()
 
     def pane_hide(self, *args):
-        self.context.unlisten("spooler;queue", self.on_spooler_update)
+        pass
 
     @staticmethod
     def _name_str(named_obj):
@@ -211,6 +211,7 @@ class SpoolerPanel(wx.Panel):
 
         return delete
 
+    @signal_listener("spooler;queue")
     def on_spooler_update(self, origin, value, *args, **kwargs):
         self.update_spooler = True
         self.refresh_spooler_list()
@@ -225,6 +226,7 @@ class JobSpooler(MWindow):
         self.panel = SpoolerPanel(
             self, wx.ID_ANY, context=self.context, selected_spooler=selected_spooler
         )
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
         self.SetIcon(_icon)

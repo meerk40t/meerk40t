@@ -68,6 +68,7 @@ class Configuration(MWindow):
         super().__init__(423, 110, *args, **kwds)
 
         self.panel = ConfigurationDefaultPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         # begin wxGlade: Properties.__set_properties
         self.SetTitle(_("Configuration"))
         _icon = wx.NullIcon

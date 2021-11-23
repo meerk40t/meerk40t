@@ -149,6 +149,7 @@ class Console(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(581, 410, *args, **kwds)
         self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
         self.SetIcon(_icon)

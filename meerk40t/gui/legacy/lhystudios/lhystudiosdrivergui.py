@@ -388,6 +388,7 @@ class LhystudiosDriverGui(MWindow):
         super().__init__(365, 365, *args, **kwds)
 
         self.panel = LhystudiosConfigurationPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)

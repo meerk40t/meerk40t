@@ -12,6 +12,7 @@ class Notes(MWindow):
         super().__init__(730, 621, *args, **kwds)
 
         self.panel = NotePanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)

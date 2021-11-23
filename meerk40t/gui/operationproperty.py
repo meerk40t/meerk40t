@@ -1040,6 +1040,7 @@ class OperationProperty(MWindow):
         self.panel = OperationPropertyPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.add_module_delegate(self.panel)
         # begin wxGlade: OperationProperty.__set_properties
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
