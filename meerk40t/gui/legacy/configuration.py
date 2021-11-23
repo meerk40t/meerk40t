@@ -2,8 +2,9 @@
 
 import wx
 
-from meerk40t.gui.icons import icons8_administrative_tools_50, icons8_computer_support_50
+from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -27,7 +28,6 @@ class ConfigurationDefaultPanel(wx.Panel):
         # end wxGlade
 
     def __set_properties(self):
-
         self.text_controller_message.SetFont(
             wx.Font(
                 14,
@@ -41,19 +41,12 @@ class ConfigurationDefaultPanel(wx.Panel):
         # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: Properties.__do_layout
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_1.Add(self.text_controller_message, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()
-        # end wxGlade
 
-    def pane_show(self):
-        self.context.listen("active", self.on_active_change)
-
-    def pane_hide(self):
-        self.context.unlisten("active", self.on_active_change)
-
+    @signal_listener("active")
     def on_active_change(self, origin, active):
         if origin == self.context.path:
             return
@@ -74,12 +67,6 @@ class Configuration(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
-        
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
 
     def window_preserve(self):
         return False

@@ -54,7 +54,12 @@ class ControllerDefaultPanel(wx.Panel):
 
     @signal_listener("active")
     def on_active_change(self, origin, active):
-        self.GetParent().Close()
+        if origin == self.context.path:
+            return
+        try:
+            self.GetParent().Close()
+        except (TypeError, AttributeError):
+            pass
 
 
 class Controller(MWindow):
