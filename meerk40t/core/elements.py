@@ -5125,13 +5125,20 @@ class Elemental(Modifier):
             node.remove_node()
             self.load(filepath)
 
-        @self.tree_operation(_("Open in System: '%s'") % "{name}", node_type="file", help="")
+        @self.tree_operation(
+            _("Open in System: '{name}'"),
+            node_type="file",
+            help=_(
+                "Open this file in the system application associated with this type of file"
+            ),
+        )
         def open_system_file(node, **kwgs):
             filepath = node.filepath
             normalized = os.path.realpath(filepath)
 
             from os import system as run_in_shell
-            run_in_shell('"%s"' % normalized)
+
+            run_in_shell('"{file}"'.format(file=normalized))
 
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
