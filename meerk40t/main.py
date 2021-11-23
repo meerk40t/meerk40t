@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import sys
 
 from .core.exceptions import Mk40tImportAbort

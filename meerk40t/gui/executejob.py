@@ -4,6 +4,7 @@ import wx
 
 from .wxutils import disable_window
 from ..core.elements import LaserOperation
+from ..kernel import signal_listener
 from ..svgelements import Length, Group
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow
@@ -328,19 +329,6 @@ class PlannerPanel(wx.Panel):
         self.context.setting(int, "opt_jog_minimum", 256)
         self.context.setting(int, "opt_jog_mode", 0)
 
-        self.context.listen("element_property_reload", self.on_element_property_update)
-        self.context.listen("plan", self.plan_update)
-        #
-        # self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
-        # self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
-        # self.check_merge_passes.SetValue(self.context.opt_merge_passes)
-        # self.check_merge_ops.SetValue(self.context.opt_merge_ops)
-        # self.check_merge_ops.Enable(self.context.opt_reduce_travel)
-        # self.check_merge_passes.Enable(self.context.opt_reduce_travel)
-        # self.check_cut_inner_first.SetValue(self.context.opt_inner_first)
-        # self.check_reduce_direction_changes.SetValue(self.context.opt_reduce_directions)
-        # self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
-
         cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
@@ -351,11 +339,7 @@ class PlannerPanel(wx.Panel):
     def pane_hide(self):
         self.context("plan%s clear\n" % self.plan_name)
 
-        self.context.unlisten(
-            "element_property_reload", self.on_element_property_update
-        )
-        self.context.unlisten("plan", self.plan_update)
-
+    @signal_listener("plan")
     def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]
         if stage is not None:
@@ -363,6 +347,7 @@ class PlannerPanel(wx.Panel):
         self.plan_name = plan_name
         self.update_gui()
 
+    @signal_listener("element_property_reload")
     def on_element_property_update(self, origin, *args):
         self.update_gui()
 
@@ -428,6 +413,7 @@ class ExecuteJob(MWindow):
         self.panel = PlannerPanel(
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
+        self.add_module_delegate(self.panel)
         self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel)
         self.panel.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations)
         self.panel.list_command.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command)
