@@ -14,7 +14,7 @@ from meerk40t.gui.legacy.devicespanel import DeviceManager
 from meerk40t.gui.legacy.tcp.tcpcontroller import TCPController
 from meerk40t.gui.legacy.usbconnect import UsbConnect
 
-from meerk40t.kernel import Module, signal_listener
+from meerk40t.kernel import signal_listener
 
 try:
     import wx

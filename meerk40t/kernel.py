@@ -843,6 +843,7 @@ class Kernel:
             job_name="kernel.lookup.clean",
             interval=0.3,
             times=1,
+            run_main=True,
         )
         self._registered = {}
         self.lookups = {}
@@ -1691,12 +1692,11 @@ class Kernel:
         @param paths:
         @return:
         """
-        self.channel("lookup")("Changed all: %s" % str(paths))
-        self._lookup_lock.acquire(True)
-        if not self._dirty_paths:
-            self.schedule(self._clean_lookup)
-        self._dirty_paths.extend(paths)
-        self._lookup_lock.release()
+        self.channel("lookup")("Changed all: %s (%s)" % (str(paths), str(threading.currentThread().getName())))
+        with self._lookup_lock:
+            if not self._dirty_paths:
+                self.schedule(self._clean_lookup)
+            self._dirty_paths.extend(paths)
 
     def lookup_change(self, path: str) -> None:
         """
@@ -1705,12 +1705,11 @@ class Kernel:
 
         @return:
         """
-        self.channel("lookup")("Changed %s" % path)
-        self._lookup_lock.acquire(True)
-        if not self._dirty_paths:
-            self.schedule(self._clean_lookup)
-        self._dirty_paths.append(path)
-        self._lookup_lock.release()
+        self.channel("lookup")("Changed %s (%s)" % (str(path), str(threading.currentThread().getName())))
+        with self._lookup_lock:
+            if not self._dirty_paths:
+                self.schedule(self._clean_lookup)
+            self._dirty_paths.append(path)
 
     def _matchtext_is_dirty(self, matchtext: str) -> bool:
         match = re.compile(matchtext)
@@ -1719,40 +1718,39 @@ class Kernel:
                 return True
         return False
 
-    def _registered_data_changed(self) -> None:
+    def _registered_data_changed(self, *args, **kwargs) -> None:
         """
         Triggered on events which can changed the registered data within the lookup.
         @return:
         """
         channel = self.channel("lookup")
         if channel:
-            channel("Lookup Change Processing")
-        self._lookup_lock.acquire(True)
-        for matchtext in self.lookups:
-            if channel:
-                channel("Checking: %s" % matchtext)
-            listeners = self.lookups[matchtext]
-            try:
-                previous_matches = self.lookup_previous[matchtext]
-            except KeyError:
-                previous_matches = None
-            if previous_matches is not None and not self._matchtext_is_dirty(matchtext):
-                continue
-            if channel:
-                channel("Differences for %s" % matchtext)
-            new_matches = list(self.find(matchtext))
-            if previous_matches != new_matches:
+            channel("Lookup Change Processing (%s)" % (str(threading.currentThread().getName())))
+        with self._lookup_lock:
+            for matchtext in self.lookups:
                 if channel:
-                    channel("Values differ. %s" % matchtext)
-                self.lookup_previous[matchtext] = new_matches
-                for listener in listeners:
-                    funct, lso = listener
-                    funct(new_matches, previous_matches)
-            else:
+                    channel("Checking: %s" % matchtext)
+                listeners = self.lookups[matchtext]
+                try:
+                    previous_matches = self.lookup_previous[matchtext]
+                except KeyError:
+                    previous_matches = None
+                if previous_matches is not None and not self._matchtext_is_dirty(matchtext):
+                    continue
                 if channel:
-                    channel("Values identical: %s" % matchtext)
-        self._dirty_paths.clear()
-        self._lookup_lock.release()
+                    channel("Differences for %s" % matchtext)
+                new_matches = list(self.find(matchtext))
+                if previous_matches != new_matches:
+                    if channel:
+                        channel("Values differ. %s" % matchtext)
+                    self.lookup_previous[matchtext] = new_matches
+                    for listener in listeners:
+                        funct, lso = listener
+                        funct(new_matches, previous_matches)
+                else:
+                    if channel:
+                        channel("Values identical: %s" % matchtext)
+            self._dirty_paths.clear()
 
     def register(self, path: str, obj: Any) -> None:
         """
