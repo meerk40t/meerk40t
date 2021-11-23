@@ -10,6 +10,7 @@ from math import ceil
 import wx
 
 from ..image.imagetools import RasterScripts
+from ..kernel import signal_listener
 from ..svgelements import Matrix, SVGImage
 from .icons import icons8_fantasy_50
 from .laserrender import LaserRender
@@ -109,30 +110,12 @@ class RasterWizardPanel(wx.Panel):
     def pane_show(self):
         if self.script is not None:
             self.set_wizard_script(self.script)
-
-        context_root = self.context.root
-        context_root.listen("emphasized", self.on_emphasis_change)
-        self.context.listen(
-            "RasterWizard-Refresh", self.on_raster_wizard_refresh_signal
-        )
-        self.context.listen("RasterWizard-Image", self.on_raster_wizard_image_signal)
         self.context.signal("RasterWizard-Image")
-        self.context.listen(
-            "RasterWizard-Refocus", self.on_raster_wizard_refocus_signal
-        )
         if self.list_operation.GetCount() > 0:
             self.list_operation.SetSelection(0)
 
     def pane_hide(self):
-        context_root = self.context.root
-        context_root.unlisten("emphasized", self.on_emphasis_change)
-        self.context.unlisten(
-            "RasterWizard-Refresh", self.on_raster_wizard_refresh_signal
-        )
-        self.context.unlisten("RasterWizard-Image", self.on_raster_wizard_image_signal)
-        self.context.unlisten(
-            "RasterWizard-Refocus", self.on_raster_wizard_refocus_signal
-        )
+        pass
 
     def __set_properties(self):
         self.panel_preview.SetToolTip(_("Processed image preview"))
@@ -203,6 +186,7 @@ class RasterWizardPanel(wx.Panel):
         with self.thread_update_lock:
             self.wizard_thread = None
 
+    @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
         for e in self.context.elements.elems(emphasized=True):
             if isinstance(e, SVGImage):
@@ -452,11 +436,13 @@ class RasterWizardPanel(wx.Panel):
         self.matrix.post_scale(sx, sy, ax, ay)
         self.context.signal("RasterWizard-Refresh")
 
+    @signal_listener("RasterWizard-Refocus")
     def on_raster_wizard_refocus_signal(self, origin, factor, *args):
         """Processes the image signal but flags this as needing refocusing."""
         self.focus_factor = factor
         self.on_raster_wizard_image_signal(origin, *args)
 
+    @signal_listener("RasterWizard-Image")
     def on_raster_wizard_image_signal(self, origin, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
         with self.thread_update_lock:
@@ -465,6 +451,7 @@ class RasterWizardPanel(wx.Panel):
                 self.wizard_thread = self.context.threaded(self.wiz_img)
                 self.context.signal("RasterWizard-Refresh")
 
+    @signal_listener("RasterWizard-Refresh")
     def on_raster_wizard_refresh_signal(self, origin, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
         if wx.IsMainThread():
@@ -1950,10 +1937,10 @@ class RasterWizard(MWindow):
         self.panel = RasterWizardPanel(
             self, wx.ID_ANY, context=self.context, script=script
         )
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_fantasy_50.GetBitmap())
         self.SetIcon(_icon)
-        # begin wxGlade: RasterWizard.__set_properties
         self.SetTitle(_("Raster Wizard"))
 
     @staticmethod
