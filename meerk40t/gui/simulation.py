@@ -4,7 +4,7 @@ import wx
 
 from .wxutils import disable_window
 from ..core.cutcode import CutCode, LineCut
-from ..kernel import Job
+from ..kernel import Job, signal_listener
 from ..svgelements import Matrix
 from .icons import (
     icons8_laser_beam_hazard2_50,
@@ -235,6 +235,7 @@ class SimulationPanel(wx.Panel, Job):
             gui.PopupMenu(menu)
             menu.Destroy()
 
+    @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
         if plan_name == self.plan_name:
             # Refresh cutcode
@@ -256,8 +257,6 @@ class SimulationPanel(wx.Panel, Job):
         self.context.setting(int, "units_marks", 10)
         self.context.setting(int, "units_index", 0)
         self.context.setting(float, "units_convert", MILS_IN_MM)
-        self.context.listen("refresh_scene", self.on_refresh_scene)
-        self.context.listen("plan", self.on_plan_change)
 
         bbox = (
             0,
@@ -300,14 +299,13 @@ class SimulationPanel(wx.Panel, Job):
             pass
 
     def pane_hide(self):
-        self.context.unlisten("refresh_scene", self.on_refresh_scene)
-        self.context.unlisten("plan", self.on_plan_change)
         if self.auto_clear:
             self.context("plan%s clear\n" % self.plan_name)
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False
 
+    @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
@@ -508,6 +506,7 @@ class Simulation(MWindow):
             plan_name=plan_name,
             auto_clear=auto_clear,
         )
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)
