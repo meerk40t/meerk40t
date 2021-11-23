@@ -1143,17 +1143,17 @@ class Kernel:
             delegate, lifecycle_object
         )  # Call all the relevant lifecycle calls.
 
-    def update_delegate_lifecycles(self, lifecycle_object):
+    def update_delegate_lifecycles(self, ref):
         """
         Called when lifecycles have been updated and the delegates may no longer match the
         objects current lifecycle.
 
-        @param lifecycle_object: Lifecycle object that was updated. If none, every lifecycle is updated.
+        @param ref: Reference Object If none, every lifecycle is updated.
         @return:
         """
-        for delegate, lso in self.delegates:
-            if lso is lifecycle_object or lifecycle_object is None:
-                self.match_lifecycle(delegate, lso)
+        for delegate, cookie in self.delegates:
+            if cookie is ref or ref is None:
+                self.match_lifecycle(delegate, cookie)
 
     def set_lifecycle(self, position, kernel=None, *args, **kwargs):
         """
@@ -1190,39 +1190,39 @@ class Kernel:
             if hasattr(self, "shutdown"):
                 self.shutdown()
 
-    def match_lifecycle(self, update_object, lifecycle_object):
+    def match_lifecycle(self, update, matched):
         """
         Matches the lifecycle of the lifecycle_object on the update_object. This should be
         called if the update_object is set as a delegate of the lifecycle_object or if a
         lifecycle event occurs requiring the delegate to be updated.
 
-        @param update_object:  object lifecycle being updated.
-        @param lifecycle_object: lifecycled object being mimicked
+        @param update:  object lifecycle being updated.
+        @param matched: lifecycled object being mimicked
         @return:
         """
         starting_position = 0
         try:
-            starting_position = update_object._lifecycle
+            starting_position = update._lifecycle
         except AttributeError:
             pass
-        ending_position = lifecycle_object._lifecycle
+        ending_position = matched._lifecycle
 
         if starting_position == ending_position:
             return
 
-        if isinstance(lifecycle_object, Module):
+        if isinstance(matched, Module):
             Module.set_lifecycle(
-                update_object, lifecycle_object._lifecycle, module=lifecycle_object
+                update, matched._lifecycle, module=matched
             )
 
-        elif isinstance(lifecycle_object, Service):
+        elif isinstance(matched, Service):
             Service.set_lifecycle(
-                update_object, lifecycle_object._lifecycle, service=lifecycle_object
+                update, matched._lifecycle, service=matched
             )
 
-        elif isinstance(lifecycle_object, Kernel):
+        elif isinstance(matched, Kernel):
             Kernel.set_lifecycle(
-                update_object, lifecycle_object._lifecycle, kernel=lifecycle_object
+                update, matched._lifecycle, kernel=matched
             )
 
     # ==========
@@ -1620,6 +1620,18 @@ class Kernel:
         """
         for obj, name, sname in self.find(*args):
             yield obj
+
+    def _remove_delegates(self, cookie: Any):
+        """
+        Remove any delegates bound to the given cookie.
+
+        @param cookie:
+        @return:
+        """
+        for i in range(len(self.delegates) -1, -1, -1):
+            delegate, ref = self.delegates[i]
+            if cookie is ref:
+                del self.delegates[i]
 
     def _lookup_detach(
         self,
