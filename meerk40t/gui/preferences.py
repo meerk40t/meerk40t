@@ -148,6 +148,14 @@ class PreferencesPanel(wx.Panel):
                 False,
             ),
             (
+                _("Check for beta version updates"),
+                _(
+                    "Check for beta releases in addition to full releases."
+                ),
+                "check_for_betas",
+                False,
+            ),
+            (
                 _("Disable ToolTips"),
                 "\n".join(
                     (
@@ -457,7 +465,7 @@ class Preferences(MWindow):
         from sys import platform as _platform
         super().__init__(
             565,
-            327,
+            347,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX

@@ -212,6 +212,10 @@ def run():
 
     kernel.add_plugin(pathoptimize.plugin)
 
+    from .extra import updater
+
+    kernel.add_plugin(updater.plugin)
+
     if sys.platform == "win32":
         # Windows only plugin.
         try:
