@@ -1106,6 +1106,9 @@ class Kernel:
         # Update any lookup changes.
         self.lookup_changes(list(service._registered))
 
+        # Signal activation
+        self.signal("activate;%s" % domain, "/", service)
+
     def deactivate(self, domain):
         setattr(self, domain, None)
         if domain in self._active_services:
@@ -1124,6 +1127,7 @@ class Kernel:
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
+            self.signal("deactivate;%s" % domain, "/", previous_active)
 
     # ==========
     # DELEGATES API
