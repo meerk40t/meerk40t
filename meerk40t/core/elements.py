@@ -1644,7 +1644,7 @@ class Elemental(Modifier):
         self._emphasized_bounds = None
         self._emphasized_bounds_dirty = True
         self._tree = None
-        self._save_restore_job = ConsoleFunction("save_restore_point\n", times=1)
+        self._save_restore_job = ConsoleFunction(context, "save_restore_point\n", times=1)
 
     def tree_operations_for_node(self, node):
         for m in self.context.match("tree/%s/.*" % node.type):
