@@ -555,7 +555,6 @@ def plugin(kernel, lifecycle=None):
             return
 
 
-
 class LihuiyuDevice(Service):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lhystudios boards.
@@ -2186,13 +2185,11 @@ class LhystudiosController:
 
 
 class TCPOutput:
-    def __init__(self, context, address, port, name=None):
+    def __init__(self, context, name=None):
         super().__init__()
-        self.context = context
+        self.service = context
         self.next = None
         self.prev = None
-        self.address = address
-        self.port = port
         self._stream = None
         self.name = name
 
@@ -2200,35 +2197,32 @@ class TCPOutput:
         self.buffer = bytearray()
         self.thread = None
 
-    def writable(self):
-        return True
-
     def connect(self):
         try:
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._stream.connect((self.address, self.port))
-            self.context.signal("tcp;status", "connected")
+            self._stream.connect((self.service.address, self.service.port))
+            self.service.signal("tcp;status", "connected")
         except (ConnectionError, TimeoutError):
             self.disconnect()
 
     def disconnect(self):
-        self.context.signal("tcp;status", "disconnected")
+        self.service.signal("tcp;status", "disconnected")
         self._stream.close()
         self._stream = None
 
     def write(self, data):
-        self.context.signal("tcp;write", data)
+        self.service.signal("tcp;write", data)
         with self.lock:
             self.buffer += data
-            self.context.signal("tcp;buffer", len(self.buffer))
+            self.service.signal("tcp;buffer", len(self.buffer))
         self._start()
 
     realtime_write = write
 
     def _start(self):
         if self.thread is None:
-            self.thread = self.context.threaded(
-                self._sending, thread_name="sender-%d" % self.port, result=self._stop
+            self.thread = self.service.threaded(
+                self._sending, thread_name="sender-%d" % self.service.port, result=self._stop
             )
 
     def _stop(self, *args):
@@ -2246,7 +2240,7 @@ class TCPOutput:
                     with self.lock:
                         sent = self._stream.send(self.buffer)
                         del self.buffer[:sent]
-                        self.context.signal("tcp;buffer", len(self.buffer))
+                        self.service.signal("tcp;buffer", len(self.buffer))
                     tries = 0
                 else:
                     tries += 1
@@ -2262,15 +2256,11 @@ class TCPOutput:
 
     def __repr__(self):
         if self.name is not None:
-            return "TCPOutput('%s:%s','%s')" % (self.address, self.port, self.name)
-        return "TCPOutput('%s:%s')" % (self.address, self.port)
+            return "TCPOutput('%s:%s','%s')" % (self.service.address, self.service.port, self.name)
+        return "TCPOutput('%s:%s')" % (self.service.address, self.service.port)
 
     def __len__(self):
         return len(self.buffer)
-
-    @property
-    def type(self):
-        return "tcp"
 
 
 class LhystudiosEmulator(Module):
