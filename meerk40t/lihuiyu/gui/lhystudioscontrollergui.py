@@ -37,7 +37,7 @@ class LhystudiosControllerPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
+        self.context = context.device
 
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.text_connection_status = wx.TextCtrl(
@@ -324,11 +324,6 @@ class LhystudiosControllerPanel(wx.Panel):
     def restore(self, *args, **kwargs):
         self.set_widgets()
 
-    @signal_listener("active")
-    def on_active_change(self, origin, active):
-        # self.Close()
-        pass
-
     def update_text(self, text):
         if not wx.IsMainThread():
             wx.CallAfter(self.update_text_gui, text + "\n")
@@ -343,13 +338,6 @@ class LhystudiosControllerPanel(wx.Panel):
             pass
 
     def set_widgets(self):
-        self.context.setting(bool, "show_usb_log", False)
-        self.context.setting(int, "usb_index", -1)
-        self.context.setting(int, "usb_bus", -1)
-        self.context.setting(int, "usb_address", -1)
-        self.context.setting(int, "usb_version", -1)
-        self.context.setting(bool, "mock", False)
-
         self.checkbox_show_usb_log.SetValue(self.context.show_usb_log)
         self.checkbox_mock_usb.SetValue(self.context.mock)
         self.spin_device_index.SetValue(self.context.usb_index)

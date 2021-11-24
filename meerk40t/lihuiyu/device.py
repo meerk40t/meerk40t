@@ -631,6 +631,8 @@ class LihuiyuDevice(Service):
         self.setting(int, "usb_address", -1)
         self.setting(int, "usb_version", -1)
         self.setting(bool, "mock", False)
+        self.setting(bool, "show_usb_log", False)
+
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
         self.setting(str, "serial", None)
