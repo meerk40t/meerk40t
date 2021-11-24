@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.gui.wxutils import disable_window
 from meerk40t.legacy.device import TCPOutput
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
@@ -10,8 +11,8 @@ _ = wx.GetTranslation
 class TCPController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
-        self.output = self.context.device.default_output()
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
+        self.service = self.context.device
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_ip_host = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_port = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -28,6 +29,8 @@ class TCPController(MWindow):
         # end wxGlade
         self.max = 0
         self.state = None
+        if self.service.type != "tcp":
+            disable_window(self)
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
@@ -105,8 +108,8 @@ class TCPController(MWindow):
         # self.context.listen("tcp;write", self.on_tcp_write)
         self.context.listen("tcp;status", self.on_tcp_status)
         self.context.listen("tcp;buffer", self.on_tcp_buffer)
-        self.text_ip_host.SetValue(str(self.output.address))
-        self.text_port.SetValue(str(self.output.port))
+        self.text_ip_host.SetValue(str(self.service.address))
+        self.text_port.SetValue(str(self.service.port))
         self.text_buffer_max.SetValue("0")
         self.text_buffer_length.SetValue("0")
         self.context.listen("active", self.on_active_change)
@@ -151,8 +154,8 @@ class TCPController(MWindow):
         self.text_port.SetValue(str(status))
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
-        if isinstance(self.output, TCPOutput):
+        if self.service.tcp is not None:
             if self.state == "connected":
-                self.output.disconnect()
+                self.service.tcp.disconnect()
             else:
-                self.output.connect()
+                self.service.tcp.connect()
