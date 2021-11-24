@@ -637,6 +637,8 @@ class LihuiyuDevice(Service):
         self.current_y = 0.0
         self.settings = LaserSettings()
         self.state = 0
+        self.type = "usb"
+
         if self.board == "M2":
             self.spooler = Spooler(self, "m2nano-%d" % index)
         else:

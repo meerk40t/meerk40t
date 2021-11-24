@@ -21,15 +21,26 @@ def plugin(kernel, lifecycle):
         service.register("window/Controller", LhystudiosControllerGui)
         service.register("window/Configuration", LhystudiosDriverGui)
         service.register("window/AccelerationChart", LhystudiosAccelerationChart)
-        service.register("window/Tcp-Controller", TCPController)
+        service.register("window/Network-Controller", TCPController)
         _ = kernel.translation
+
+        def controller_click(i=None):
+            if service.type == "tcp":
+                service("window toggle Network-Controller\n")
+            else:
+                service("window toggle Controller\n")
+
         service.register(
             "button/control/Controller",
             {
                 "label": _("Controller"),
                 "icon": icons8_connected_50,
                 "tip": _("Opens Controller Window"),
-                "action": lambda v: kernel.console("window toggle Controller\n"),
+                "action": controller_click(),
+                "alt-action": (
+                    (_("Opens USB-Controller"), lambda e: service("window toggle Controller\n")),
+                    (_("Opens Network-Controller"), lambda e: service("window toggle Network-Controller\n")),
+                ),
             },
         )
         service.register(
