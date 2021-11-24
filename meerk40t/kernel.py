@@ -2578,6 +2578,10 @@ class Kernel:
     def command_boot(self) -> None:
         _ = self.translation
 
+        # ==========
+        # HELP COMMANDS
+        # ==========
+
         @self.console_option("output", "o", help=_("Output type to match"), type=str)
         @self.console_option("input", "i", help=_("Input type to match"), type=str)
         @self.console_argument("extended_help", type=str)
@@ -2672,6 +2676,47 @@ class Kernel:
                     channel("%s %s" % (command_item.ljust(15), help_attribute))
                 else:
                     channel(command_name.split("/")[-1])
+
+        # ==========
+        # THREADS SCHEDULER
+        # ==========
+
+        @self.console_command("thread", help=_("show threads"))
+        def thread(channel, _, **kwargs):
+            """
+            Display the currently registered threads within the Kernel.
+            """
+            channel(_("----------"))
+            channel(_("Registered Threads:"))
+            for i, thread_name in enumerate(list(self.threads)):
+                thread = self.threads[thread_name]
+                parts = list()
+                parts.append("%d:" % (i + 1))
+                parts.append(str(thread))
+                if thread.is_alive:
+                    parts.append(_("is alive."))
+                channel(" ".join(parts))
+            channel(_("----------"))
+
+        @self.console_command("schedule", help=_("show scheduled events"))
+        def schedule(channel, _, **kwargs):
+            channel(_("----------"))
+            channel(_("Scheduled Processes:"))
+            for i, job_name in enumerate(self.jobs):
+                job = self.jobs[job_name]
+                parts = list()
+                parts.append("%d:" % (i + 1))
+                parts.append(str(job))
+                if job.times is None:
+                    parts.append(_("forever,"))
+                else:
+                    parts.append(_("%d times,") % job.times)
+                if job.interval is None:
+                    parts.append(_("never"))
+                else:
+                    parts.append(_("each %f seconds") % job.interval)
+                channel(" ".join(parts))
+            channel(_("----------"))
 
         @self.console_command("loop", help=_("loop <command>"))
         def loop(remainder=None, **kwargs):
@@ -2784,6 +2829,10 @@ class Kernel:
                 channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
             return
 
+        # ==========
+        # CORE OBJECTS COMMANDS
+        # ==========
+
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
             channel(_("----------"))
@@ -2819,61 +2868,6 @@ class Kernel:
                 for name in self._plugins:
                     channel(name.__module__)
             return
-
-        @self.console_option(
-            "path", "p", type=str, default="/", help=_("Path of variables to set.")
-        )
-        @self.console_command("set", help=_("set [<key> <value>]"))
-        def set_command(channel, _, path=None, args=tuple(), **kwargs):
-            relevant_context = self.get_context(path) if path is not None else self.root
-            if len(args) == 0:
-                for attr in dir(relevant_context):
-                    v = getattr(relevant_context, attr)
-                    if attr.startswith("_") or not isinstance(
-                        v, (int, float, str, bool)
-                    ):
-                        continue
-                    channel('"%s" := %s' % (attr, str(v)))
-                return
-            if len(args) >= 2:
-                attr = args[0]
-                value = args[1]
-                try:
-                    if hasattr(relevant_context, attr):
-                        v = getattr(relevant_context, attr)
-                        if isinstance(v, bool):
-                            if value == "False" or value == "false" or value == 0:
-                                setattr(relevant_context, attr, False)
-                            else:
-                                setattr(relevant_context, attr, True)
-                        elif isinstance(v, int):
-                            setattr(relevant_context, attr, int(value))
-                        elif isinstance(v, float):
-                            setattr(relevant_context, attr, float(value))
-                        elif isinstance(v, str):
-                            setattr(relevant_context, attr, str(value))
-                except RuntimeError:
-                    channel(_("Attempt failed. Produced a runtime error."))
-                except ValueError:
-                    channel(_("Attempt failed. Produced a value error."))
-                except AttributeError:
-                    channel(_("Attempt failed. Produced an attribute error."))
-            return
-
-        @self.console_command("control", help=_("control [<executive>]"))
-        def control(channel, _, remainder=None, **kwargs):
-            if remainder is None:
-                for control_name in self.root.match("[0-9]+/control", suffix=True):
-                    channel(control_name)
-                return
-
-            control_name = remainder
-            controls = list(self.match("control/.*", suffix=True))
-            if control_name in controls:
-                self.root.execute(control_name)
-                channel(_("Executed '%s'") % control_name)
-            else:
-                channel(_("Control '%s' not found.") % control_name)
 
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
@@ -2922,42 +2916,9 @@ class Kernel:
                     channel(_("Module '%s' not found.") % index)
             return
 
-        @self.console_command("schedule", help=_("show scheduled events"))
-        def schedule(channel, _, **kwargs):
-            channel(_("----------"))
-            channel(_("Scheduled Processes:"))
-            for i, job_name in enumerate(self.jobs):
-                job = self.jobs[job_name]
-                parts = list()
-                parts.append("%d:" % (i + 1))
-                parts.append(str(job))
-                if job.times is None:
-                    parts.append(_("forever,"))
-                else:
-                    parts.append(_("%d times,") % job.times)
-                if job.interval is None:
-                    parts.append(_("never"))
-                else:
-                    parts.append(_("each %f seconds") % job.interval)
-                channel(" ".join(parts))
-            channel(_("----------"))
-
-        @self.console_command("thread", help=_("show threads"))
-        def thread(channel, _, **kwargs):
-            """
-            Display the currently registered threads within the Kernel.
-            """
-            channel(_("----------"))
-            channel(_("Registered Threads:"))
-            for i, thread_name in enumerate(list(self.threads)):
-                thread = self.threads[thread_name]
-                parts = list()
-                parts.append("%d:" % (i + 1))
-                parts.append(str(thread))
-                if thread.is_alive:
-                    parts.append(_("is alive."))
-                channel(" ".join(parts))
-            channel(_("----------"))
+        # ==========
+        # CHANNEL COMMANDS
+        # ==========
 
         @self.console_command(
             "channel",
@@ -3085,6 +3046,50 @@ class Kernel:
                 self.channel(cn).watch(_console_file_write)
             return "channel", channel_name
 
+        # ==========
+        # SETTINGS
+        # ==========
+
+        @self.console_option(
+            "path", "p", type=str, default="/", help=_("Path of variables to set.")
+        )
+        @self.console_command("set", help=_("set [<key> <value>]"))
+        def set_command(channel, _, path=None, args=tuple(), **kwargs):
+            relevant_context = self.get_context(path) if path is not None else self.root
+            if len(args) == 0:
+                for attr in dir(relevant_context):
+                    v = getattr(relevant_context, attr)
+                    if attr.startswith("_") or not isinstance(
+                        v, (int, float, str, bool)
+                    ):
+                        continue
+                    channel('"%s" := %s' % (attr, str(v)))
+                return
+            if len(args) >= 2:
+                attr = args[0]
+                value = args[1]
+                try:
+                    if hasattr(relevant_context, attr):
+                        v = getattr(relevant_context, attr)
+                        if isinstance(v, bool):
+                            if value == "False" or value == "false" or value == 0:
+                                setattr(relevant_context, attr, False)
+                            else:
+                                setattr(relevant_context, attr, True)
+                        elif isinstance(v, int):
+                            setattr(relevant_context, attr, int(value))
+                        elif isinstance(v, float):
+                            setattr(relevant_context, attr, float(value))
+                        elif isinstance(v, str):
+                            setattr(relevant_context, attr, str(value))
+                except RuntimeError:
+                    channel(_("Attempt failed. Produced a runtime error."))
+                except ValueError:
+                    channel(_("Attempt failed. Produced a value error."))
+                except AttributeError:
+                    channel(_("Attempt failed. Produced an attribute error."))
+            return
+
         @self.console_option(
             "path",
             "p",
@@ -3109,12 +3114,20 @@ class Kernel:
             else:
                 channel(_("No relevant context found."))
 
+        # ==========
+        # LIFECYCLE
+        # ==========
+
         @self.console_command(
             ("quit", "shutdown"), help=_("shuts down all processes and exits")
         )
         def shutdown(**kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()
+
+        # ==========
+        # FILE MANAGER
+        # ==========
 
         @self.console_command(("ls", "dir"), help=_("list directory"))
         def ls(channel, **kwargs):
@@ -3176,6 +3189,25 @@ class Kernel:
                 raise SyntaxError(_("Loading files was not defined"))
             channel(_("loading..."))
             return "file", new_file
+
+        # ==========
+        # DEPRECATED KERNEL COMMANDS
+        # ==========
+
+        @self.console_command("control", help=_("control [<executive>]"))
+        def control(channel, _, remainder=None, **kwargs):
+            if remainder is None:
+                for control_name in self.root.match("[0-9]+/control", suffix=True):
+                    channel(control_name)
+                return
+
+            control_name = remainder
+            controls = list(self.match("control/.*", suffix=True))
+            if control_name in controls:
+                self.root.execute(control_name)
+                channel(_("Executed '%s'") % control_name)
+            else:
+                channel(_("Control '%s' not found.") % control_name)
 
 
 # ==========
