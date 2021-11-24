@@ -2961,6 +2961,18 @@ class Kernel:
                 raise SyntaxError
             self.activate_service_index(domain, index)
 
+        @console_argument("name", help="Name of service to start")
+        @console_argument("index", type=int, help="Index of service to start")
+        @self.console_command("start", input_type="service", help=_("Initialize a provider"))
+        def service_start(channel, _, data=None, index=None, name=None, **kwargs):
+            domain, available, active = data
+            if name is None:
+                raise SyntaxError
+            provider = self.lookup("service/{domain}/{name}".format(domain=domain, name=name) )
+            if provider is None:
+                raise SyntaxError("Bad provider.")
+            self.add_service(domain, provider(self, index))
+
         # ==========
         # CHANNEL COMMANDS
         # ==========
