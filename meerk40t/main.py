@@ -143,6 +143,14 @@ def run():
 
     kernel.add_plugin(moshi_driver.plugin)
 
+    from .grbl import device as grbl_driver
+
+    kernel.add_plugin(grbl_driver.plugin)
+
+    from .ruida import device as ruida_driver
+
+    kernel.add_plugin(ruida_driver.plugin)
+
     # from .legacy import device as legacydevice
     #
     # kernel.add_plugin(legacydevice.plugin)
@@ -174,22 +182,22 @@ def run():
     from .image import imagetools
 
     kernel.add_plugin(imagetools.plugin)
-
-    from .device.lhystudios import lhystudiosdevice
-
-    kernel.add_plugin(lhystudiosdevice.plugin)
-
-    from .device.moshi import moshidevice
-
-    kernel.add_plugin(moshidevice.plugin)
-
-    from .device.grbl import grbldevice
-
-    kernel.add_plugin(grbldevice.plugin)
-
-    from .device.ruida import ruidadevice
-
-    kernel.add_plugin(ruidadevice.plugin)
+    #
+    # from .device.lhystudios import lhystudiosdevice
+    #
+    # kernel.add_plugin(lhystudiosdevice.plugin)
+    #
+    # from .device.moshi import moshidevice
+    #
+    # kernel.add_plugin(moshidevice.plugin)
+    #
+    # from .device.grbl import grbldevice
+    #
+    # kernel.add_plugin(grbldevice.plugin)
+    #
+    # from .device.ruida import ruidadevice
+    #
+    # kernel.add_plugin(ruidadevice.plugin)
 
     from .core import svg_io
 
@@ -247,6 +255,8 @@ def run():
             # from .gui.legacy import legacy
             from .lihuiyu.gui import gui as lhygui
             from .moshi.gui import gui as moshigui
+            from .grbl.gui import gui as grblgui
+            from .ruida.gui import gui as ruidagui
         except Mk40tImportAbort as e:
             args.no_gui = True
             print(
@@ -259,6 +269,8 @@ def run():
             # kernel.add_plugin(legacy.plugin)
             kernel.add_plugin(lhygui.plugin)
             kernel.add_plugin(moshigui.plugin)
+            kernel.add_plugin(grblgui.plugin)
+            kernel.add_plugin(ruidagui.plugin)
     else:
         # Complete Gui Suppress implies no-gui.
         args.no_gui = True
