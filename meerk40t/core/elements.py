@@ -5140,11 +5140,11 @@ class Elemental(Modifier):
             from sys import platform
 
             if platform == "darwin":
-                open_in_shell('"open {file}"'.format(file=normalized))
+                open_in_shell("open '{file}'".format(file=normalized))
             elif "win" in platform:
-                open_in_shell('"{file}"'.format(file=normalized))
+                open_in_shell("'{file}'".format(file=normalized))
             else:
-                open_in_shell('"xdg-open {file}"'.format(file=normalized))
+                open_in_shell("xdg-open '{file}'".format(file=normalized))
 
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
