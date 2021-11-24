@@ -16,7 +16,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
 )
 from ..image.actualize import actualize
-from ..kernel import Modifier
+from ..kernel import Modifier, ConsoleFunction
 from ..svgelements import (
     SVG_STRUCT_ATTRIB,
     Angle,
@@ -179,6 +179,12 @@ class Node:
 
     def __eq__(self, other):
         return other is self
+
+    def __copy__(self):
+        return Node(self.object, self.type)
+
+    def __deepcopy__(self, memodict={}):
+        return Node(copy(self.object), self.type)
 
     def is_movable(self):
         return self.type not in ("branch elems", "branch ops", "root")
@@ -621,6 +627,11 @@ class Node:
             return self.label_from_source_cascade(self.object)
         return str(self)
 
+    def copy_tree_children(self, node):
+        for element in self._children:
+            child_node = node.add(copy(element.object), type=element.type)
+            element.copy_tree_children(child_node)
+
     def _flatten(self, node):
         """
         Yield this node and all descendants in a flat generation.
@@ -828,6 +839,12 @@ class OpNode(Node):
             str(self._parent),
         )
 
+    def __copy__(self):
+        return OpNode(self.object)
+
+    def __deepcopy__(self, memodict={}):
+        return OpNode(self.object)
+
     def notify_destroyed(self, node=None, **kwargs):
         self.object.node._references.remove(self)
         super(OpNode, self).notify_destroyed()
@@ -878,6 +895,12 @@ class GroupNode(Node):
             str(self.object),
             str(self._parent),
         )
+
+    def __copy__(self):
+        return GroupNode(copy(self.object))
+
+    def __deepcopy__(self, memodict={}):
+        return GroupNode(copy(self.object))
 
     def drop(self, drag_node):
         drop_node = self
@@ -1339,6 +1362,9 @@ class CutNode(Node):
     def __copy__(self):
         return CutNode(self.object)
 
+    def __deepcopy__(self, memodict={}):
+        return CutNode(copy(self.object))
+
     def __len__(self):
         return 1
 
@@ -1369,6 +1395,9 @@ class CommandOperation(Node):
 
     def __copy__(self):
         return CommandOperation(self.label, self.command, *self.args)
+
+    def __deepcopy__(self, memodict={}):
+        return copy(self)
 
     def __len__(self):
         return 1
@@ -1402,6 +1431,9 @@ class LaserCodeNode(Node):
 
     def __copy__(self):
         return LaserCodeNode(self.commands, name=self.name)
+
+    def __deepcopy__(self, memodict={}):
+        return LaserCodeNode(copy(self.commands), name=self.name)
 
     def __len__(self):
         return len(self.commands)
@@ -1441,6 +1473,12 @@ class RootNode(Node):
 
     def __repr__(self):
         return "RootNode(%s)" % (str(self.context))
+
+    def __copy__(self):
+        return RootNode(self.context)
+
+    def __deepcopy__(self, memodict={}):
+        return RootNode(self.context)
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -1576,6 +1614,12 @@ class RootNode(Node):
         for listen in self.listeners:
             if hasattr(listen, "focus"):
                 listen.focus(node, **kwargs)
+
+    def copy_tree(self):
+        node = RootNode(self.context)
+        node.object = self.object
+        self.copy_tree_children(node)
+        return node
 
 
 class Elemental(Modifier):
