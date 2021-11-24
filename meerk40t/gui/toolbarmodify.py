@@ -9,7 +9,7 @@ ID_FLIP_VERTICAL = wx.NewId()
 _ = wx.GetTranslation
 
 
-def register_modify_tools(context, gui):
+def register_modify_tools(gui, context):
     toolbar = aui.AuiToolBar()
 
     toolbar.AddTool(

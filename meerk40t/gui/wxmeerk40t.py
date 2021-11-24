@@ -4,7 +4,10 @@ import os
 import sys
 import traceback
 
+from wx import aui
+
 from meerk40t.gui.wxmscene import SceneWindow
+from .icons import icons8_gas_industry_50, icons8_emergency_stop_button_50, icons8_home_filled_50, icons8_pause_50
 
 try:
     import wx
@@ -13,7 +16,7 @@ except ImportError as e:
 
     raise Mk40tImportAbort("wxpython")
 
-from ..kernel import Module
+from ..kernel import Module, ConsoleFunction
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
@@ -191,6 +194,133 @@ def plugin(kernel, lifecycle):
             meerk40tgui.MainLoop()
 
 
+def register_panel_go(window, context):
+    # Define Go
+    go = wx.BitmapButton(window, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
+
+    def busy_go_plan(*args):
+        with wx.BusyInfo(_("Processing and sending...")):
+            context(
+                "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
+            )
+
+    window.Bind(
+        wx.EVT_BUTTON,
+        busy_go_plan,
+        go,
+    )
+    go.SetBackgroundColour(wx.Colour(0, 127, 0))
+    go.SetToolTip(_("One Touch: Send Job To Laser "))
+    go.SetSize(go.GetBestSize())
+    pane = (
+        aui.AuiPaneInfo()
+        .Bottom()
+        .Caption(_("Go"))
+        .MinSize(40, 40)
+        .FloatingSize(98, 98)
+        .Name("go")
+        .CaptionVisible(not context.pane_lock)
+        .Hide()
+    )
+    pane.dock_proportion = 98
+    pane.control = go
+
+    window.on_pane_add(pane)
+    context.register("pane/go", pane)
+
+
+def register_panel_stop(window, context):
+    # Define Stop.
+    stop = wx.BitmapButton(
+        window, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
+    )
+    window.Bind(
+        wx.EVT_BUTTON,
+        ConsoleFunction(context, "estop\n"),
+        stop,
+    )
+    stop.SetBackgroundColour(wx.Colour(127, 0, 0))
+    stop.SetToolTip(_("Emergency stop/reset the controller."))
+    stop.SetSize(stop.GetBestSize())
+    pane = (
+        aui.AuiPaneInfo()
+            .Bottom()
+            .Caption(_("Stop"))
+            .MinSize(40, 40)
+            .FloatingSize(98, 98)
+            .Name("stop")
+            .Hide()
+            .CaptionVisible(not context.pane_lock)
+    )
+    pane.dock_proportion = 98
+    pane.control = stop
+
+    window.on_pane_add(pane)
+    context.register("pane/stop", pane)
+
+
+def register_panel_home(window, context):
+    # Define Home.
+    home = wx.BitmapButton(window, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+    # home.SetBackgroundColour((200, 225, 250))
+    window.Bind(wx.EVT_BUTTON, lambda e: context("home\n"), home)
+    pane = (
+        aui.AuiPaneInfo()
+            .Bottom()
+            .Caption(_("Home"))
+            .MinSize(40, 40)
+            .FloatingSize(98, 98)
+            .Name("home")
+            .Hide()
+            .CaptionVisible(not context.pane_lock)
+    )
+    pane.dock_proportion = 98
+    pane.control = home
+    window.on_pane_add(pane)
+    context.register("pane/home", pane)
+
+
+def register_panel_pause(window, context):
+    # Define Pause.
+    pause = wx.BitmapButton(
+        window, wx.ID_ANY, icons8_pause_50.GetBitmap(use_theme=False)
+    )
+
+    def on_pause_button(event=None):
+        try:
+            context("pause\n")
+            # if self.pipe_state != 3:
+            #     pause.SetBitmap(icons8_play_50.GetBitmap())
+            # else:
+            # pause.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
+        except AttributeError:
+            pass
+
+    window.Bind(
+        wx.EVT_BUTTON,
+        on_pause_button,
+        pause,
+    )
+    pause.SetBackgroundColour(wx.Colour(255, 255, 0))
+    pause.SetToolTip(_("Pause/Resume the controller"))
+    pause.SetSize(pause.GetBestSize())
+    pane = (
+        aui.AuiPaneInfo()
+            .Caption(_("Pause"))
+            .Bottom()
+            .MinSize(40, 40)
+            .FloatingSize(98, 98)
+            .Name("pause")
+            .Hide()
+            .CaptionVisible(not context.pane_lock)
+    )
+    pane.dock_proportion = 98
+    pane.control = pause
+
+    window.on_pane_add(pane)
+    context.register("pane/pause", pane)
+
+
 supported_languages = (
     ("en", u"English", wx.LANGUAGE_ENGLISH),
     ("it", u"italiano", wx.LANGUAGE_ITALIAN),
@@ -319,6 +449,50 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Scene", SceneWindow)
+
+        from meerk40t.gui.wxmribbon import register_panel
+        kernel.register("wxpane/Ribbon", register_panel)
+
+        from meerk40t.gui.wxmscene import register_panel
+        kernel.register("wxpane/ScenePane", register_panel)
+
+        from meerk40t.gui.wxmtree import register_panel
+        kernel.register("wxpane/Tree", register_panel)
+
+        from meerk40t.gui.laserpanel import register_panel
+        kernel.register("wxpane/LaserPanel", register_panel)
+
+        from meerk40t.gui.position import register_panel
+        kernel.register("wxpane/Position", register_panel)
+
+        from meerk40t.gui.toolbarproject import register_project_tools
+
+        kernel.register("wxpane/Tool-Project", register_project_tools)
+
+        from meerk40t.gui.toolbarcontrol import register_control_tools
+
+        kernel.register("wxpane/Tool-Control", register_control_tools)
+
+        from meerk40t.gui.toolbarpreferences import register_preferences_tools
+
+        kernel.register("wxpane/Tool-Preferences", register_preferences_tools)
+
+        from meerk40t.gui.toolbarmodify import register_modify_tools
+
+        kernel.register("wxpane/Tool-Modify", register_modify_tools)
+
+        from meerk40t.gui.toolbaralign import register_align_tools
+
+        kernel.register("wxpane/Tool-Align", register_align_tools)
+
+        from meerk40t.gui.toolbarshapes import register_shapes_tools
+
+        kernel.register("wxpane/Tool-Shape", register_shapes_tools)
+
+        kernel.register("wxpane/Go", register_panel_go)
+        kernel.register("wxpane/Stop", register_panel_stop)
+        kernel.register("wxpane/Home", register_panel_home)
+
         context = kernel.root
 
         @kernel.console_option(

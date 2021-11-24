@@ -23,7 +23,7 @@ ID_ALIGN_SPACE_H = wx.NewId()
 _ = wx.GetTranslation
 
 
-def register_align_tools(context, gui):
+def register_align_tools(gui, context):
     toolbar = aui.AuiToolBar()
 
     toolbar.AddTool(

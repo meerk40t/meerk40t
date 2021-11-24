@@ -23,7 +23,7 @@ ID_RASTER = wx.NewId()
 _ = wx.GetTranslation
 
 
-def register_project_tools(context, gui):
+def register_project_tools(gui, context):
     toolbar = aui.AuiToolBar()
     toolbar.AddTool(
         ID_OPEN,

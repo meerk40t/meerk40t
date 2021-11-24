@@ -4,7 +4,7 @@ import sys
 import wx
 from wx import aui
 
-from ..kernel import ConsoleFunction
+from ..kernel import ConsoleFunction, lookup_listener
 from ..svgelements import Color, Length, Matrix, Path, SVGImage
 from .icons import (
     icon_meerk40t,
@@ -410,178 +410,8 @@ class MeerK40t(MWindow):
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", True)
 
-        from meerk40t.gui.wxmscene import register_panel
-
-        register_panel(self, self.context)
-
-        from meerk40t.gui.navigationpanels import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Tree
-        from .wxmtree import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Laser.
-        from meerk40t.gui.laserpanel import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Position
-        from meerk40t.gui.position import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Ribbon
-        from .wxmribbon import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Toolbars
-
-        from meerk40t.gui.toolbarproject import register_project_tools
-
-        register_project_tools(context=self.context, gui=self)
-
-        from meerk40t.gui.toolbarcontrol import register_control_tools
-
-        register_control_tools(context=self.context, gui=self)
-
-        from meerk40t.gui.toolbarpreferences import register_preferences_tools
-
-        register_preferences_tools(context=self.context, gui=self)
-
-        from meerk40t.gui.toolbarmodify import register_modify_tools
-
-        register_modify_tools(context=self.context, gui=self)
-
-        from meerk40t.gui.toolbaralign import register_align_tools
-
-        register_align_tools(context=self.context, gui=self)
-
-        from meerk40t.gui.toolbarshapes import register_shapes_tools
-
-        register_shapes_tools(context=self.context, gui=self)
-
-        # Define Go
-        go = wx.BitmapButton(self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
-
-        def busy_go_plan(*args):
-            with wx.BusyInfo(_("Processing and sending...")):
-                self.context(
-                    "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
-                )
-
-        self.Bind(
-            wx.EVT_BUTTON,
-            busy_go_plan,
-            go,
-        )
-        go.SetBackgroundColour(wx.Colour(0, 127, 0))
-        go.SetToolTip(_("One Touch: Send Job To Laser "))
-        go.SetSize(go.GetBestSize())
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .Caption(_("Go"))
-            .MinSize(40, 40)
-            .FloatingSize(98, 98)
-            .Name("go")
-            .CaptionVisible(not self.context.pane_lock)
-            .Hide()
-        )
-        pane.dock_proportion = 98
-        pane.control = go
-
-        self.on_pane_add(pane)
-        self.context.register("pane/go", pane)
-
-        # Define Stop.
-        stop = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
-        )
-        self.Bind(
-            wx.EVT_BUTTON,
-            ConsoleFunction(self.context, "estop\n"),
-            stop,
-        )
-        stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-        stop.SetToolTip(_("Emergency stop/reset the controller."))
-        stop.SetSize(stop.GetBestSize())
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .Caption(_("Stop"))
-            .MinSize(40, 40)
-            .FloatingSize(98, 98)
-            .Name("stop")
-            .Hide()
-            .CaptionVisible(not self.context.pane_lock)
-        )
-        pane.dock_proportion = 98
-        pane.control = stop
-
-        self.on_pane_add(pane)
-        self.context.register("pane/stop", pane)
-
-        # Define Pause.
-        pause = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_pause_50.GetBitmap(use_theme=False)
-        )
-
-        def on_pause_button(event=None):
-            try:
-                self.context("pause\n")
-                # if self.pipe_state != 3:
-                #     pause.SetBitmap(icons8_play_50.GetBitmap())
-                # else:
-                # pause.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
-            except AttributeError:
-                pass
-
-        self.Bind(
-            wx.EVT_BUTTON,
-            on_pause_button,
-            pause,
-        )
-        pause.SetBackgroundColour(wx.Colour(255, 255, 0))
-        pause.SetToolTip(_("Pause/Resume the controller"))
-        pause.SetSize(pause.GetBestSize())
-        pane = (
-            aui.AuiPaneInfo()
-            .Caption(_("Pause"))
-            .Bottom()
-            .MinSize(40, 40)
-            .FloatingSize(98, 98)
-            .Name("pause")
-            .Hide()
-            .CaptionVisible(not self.context.pane_lock)
-        )
-        pane.dock_proportion = 98
-        pane.control = pause
-
-        self.on_pane_add(pane)
-        self.context.register("pane/pause", pane)
-
-        # Define Home.
-        home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        # home.SetBackgroundColour((200, 225, 250))
-        self.Bind(wx.EVT_BUTTON, lambda e: self.context("home\n"), home)
-        pane = (
-            aui.AuiPaneInfo()
-            .Bottom()
-            .Caption(_("Home"))
-            .MinSize(40, 40)
-            .FloatingSize(98, 98)
-            .Name("home")
-            .Hide()
-            .CaptionVisible(not self.context.pane_lock)
-        )
-        pane.dock_proportion = 98
-        pane.control = home
-        self.on_pane_add(pane)
-        self.context.register("pane/home", pane)
+        for register_panel in list(self.context.lookup_all("wxpane")):
+            register_panel(self, self.context)
 
         # Define Notes.
         from meerk40t.gui.notespanel import register_panel
@@ -882,6 +712,262 @@ class MeerK40t(MWindow):
         context.setting(str, "file9", None)
         self.populate_recent_menu()
 
+    @lookup_listener("pane")
+    def dynamic_fill_pane_menu(self, new=None, old=None):
+
+        def toggle_pane(pane_toggle):
+            def toggle(event=None):
+                pane_obj = self._mgr.GetPane(pane_toggle)
+                if pane_obj.IsShown():
+                    if hasattr(pane_obj.window, "pane_hide"):
+                        pane_obj.window.pane_hide()
+                    pane_obj.Hide()
+                    self._mgr.Update()
+                    return
+                pane_init = self.context.lookup("pane", pane_toggle)
+                self.on_pane_add(pane_init)
+
+            return toggle
+
+
+        for i in range(self.panes_menu.MenuItemCount):
+            self.panes_menu.Remove(self.panes_menu.FindItemByPosition(0))
+
+        submenus = {}
+        for pane, _path, suffix_path in self.context.find("pane/.*"):
+            submenu = None
+            try:
+                submenu_name = pane.submenu
+                if submenu_name in submenus:
+                    submenu = submenus[submenu_name]
+                elif submenu_name is not None:
+                    submenu = wx.Menu()
+                    self.panes_menu.AppendSubMenu(submenu, submenu_name)
+                    submenus[submenu_name] = submenu
+            except AttributeError:
+                pass
+            menu_context = submenu if submenu is not None else self.panes_menu
+            try:
+                pane_name = pane.name
+            except AttributeError:
+                pane_name = suffix_path
+
+            try:
+                pane_caption = pane.caption
+            except AttributeError:
+                pane_caption = pane_name[0].upper() + pane_name[1:] + "."
+
+            id_new = wx.NewId()
+            menu_item = menu_context.Append(id_new, pane_caption, "", wx.ITEM_CHECK)
+            self.Bind(
+                wx.EVT_MENU,
+                toggle_pane(pane_name),
+                id=id_new,
+            )
+            pane = self._mgr.GetPane(pane_name)
+            try:
+                menu_item.Check(pane.IsShown())
+                pane.window.check = menu_item.Check
+            except AttributeError:
+                pass
+
+        self.panes_menu.AppendSeparator()
+        item = self.main_menubar.panereset = self.panes_menu.Append(
+            ID_MENU_PANE_LOCK, _("Lock Panes"), "", wx.ITEM_CHECK
+        )
+        item.Check(self.context.pane_lock)
+        self.panes_menu.AppendSeparator()
+        self.main_menubar.panereset = self.panes_menu.Append(
+            ID_MENU_PANE_RESET, _("Reset Panes"), ""
+        )
+
+    @lookup_listener("window")
+    def dynamic_fill_window_menu(self, new=None, old=None):
+        def toggle_window(window):
+            def toggle(event=None):
+                self.context("window toggle {window}\n".format(window=window))
+
+            return toggle
+
+        for i in range(self.window_menu.MenuItemCount):
+            self.window_menu.Remove(self.window_menu.FindItemByPosition(0))
+
+        submenus = {}
+        for window, _path, suffix_path in self.context.find("window/.*"):
+            submenu = None
+            try:
+                submenu_name = window.submenu
+                if submenu_name in submenus:
+                    submenu = submenus[submenu_name]
+                elif submenu_name is not None:
+                    submenu = wx.Menu()
+                    self.window_menu.AppendSubMenu(submenu, submenu_name)
+                    submenus[submenu_name] = submenu
+            except AttributeError:
+                pass
+            menu_context = submenu if submenu is not None else self.window_menu
+            try:
+                name = window.name
+            except AttributeError:
+                name = suffix_path
+
+            try:
+                caption = window.caption
+            except AttributeError:
+                caption = name[0].upper() + name[1:]
+
+            id_new = wx.NewId()
+            menu_context.Append(id_new, caption, "", wx.ITEM_NORMAL)
+            self.Bind(
+                wx.EVT_MENU,
+                toggle_window(suffix_path),
+                id=id_new,
+            )
+
+        self.window_menu.AppendSeparator()
+        self.window_menu.windowreset = self.window_menu.Append(
+            ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
+        )
+
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window reset *\n"),
+            id=ID_MENU_WINDOW_RESET,
+        )
+
+        #
+        # self.window_menu.executejob = self.window_menu.Append(
+        #     ID_MENU_JOB, _("E&xecute Job"), ""
+        # )
+        # self.window_menu.simulate = self.window_menu.Append(
+        #     ID_MENU_SIMULATE, _("&Simulate"), ""
+        # )
+        # self.window_menu.rasterwizard = self.window_menu.Append(
+        #     ID_MENU_RASTER_WIZARD, _("&RasterWizard"), ""
+        # )
+        # self.window_menu.notes = self.window_menu.Append(ID_MENU_NOTES, _("&Notes"), "")
+        # self.window_menu.console = self.window_menu.Append(
+        #     ID_MENU_CONSOLE, _("&Console"), ""
+        # )
+        #
+        # self.window_menu.navigation = self.window_menu.Append(
+        #     ID_MENU_NAVIGATION, _("N&avigation"), ""
+        # )
+        # if self.context.has_feature("modifier/Camera"):
+        #     self.window_menu.camera = self.window_menu.Append(
+        #         ID_MENU_CAMERA, _("C&amera"), ""
+        #     )
+        # self.window_menu.jobspooler = self.window_menu.Append(
+        #     ID_MENU_SPOOLER, _("S&pooler"), ""
+        # )
+        #
+        # self.window_menu.controller = self.window_menu.Append(
+        #     ID_MENU_CONTROLLER, _("C&ontroller"), ""
+        # )
+        # self.window_menu.devices = self.window_menu.Append(
+        #     ID_MENU_DEVICE_MANAGER, _("&Devices"), ""
+        # )
+        # self.window_menu.config = self.window_menu.Append(
+        #     ID_MENU_CONFIG, _("Confi&g"), ""
+        # )
+        # self.window_menu.preferences = self.window_menu.Append(
+        #     wx.ID_PREFERENCES, _("Pr&eferences...\tCtrl-,"), ""
+        # )
+        #
+        # self.window_menu.keymap = self.window_menu.Append(
+        #     ID_MENU_KEYMAP, _("&Keymap"), ""
+        # )
+        # self.window_menu.rotary = self.window_menu.Append(
+        #     ID_MENU_ROTARY, _("Rotar&y"), ""
+        # )
+        # self.window_menu.usb = self.window_menu.Append(ID_MENU_USB, _("&USB"), "")
+
+        #
+
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle Console\n"),
+        #     id=ID_MENU_CONSOLE,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle DeviceManager\n"),
+        #     id=ID_MENU_DEVICE_MANAGER,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle Keymap\n"),
+        #     id=ID_MENU_KEYMAP,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle Preferences\n"),
+        #     id=wx.ID_PREFERENCES,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle Notes\n"),
+        #     id=ID_MENU_NOTES,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle Navigation\n"),
+        #     id=ID_MENU_NAVIGATION,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle ExecuteJob 0\n"),
+        #     id=ID_MENU_JOB,
+        # )
+        # if self.context.has_feature("modifier/Camera"):
+        #     self.Bind(
+        #         wx.EVT_MENU,
+        #         lambda v: self.context("window toggle CameraInterface\n"),
+        #         id=ID_MENU_CAMERA,
+        #     )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle Configuration\n"),
+        #     id=ID_MENU_CONFIG,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window -p rotary/1 open Rotary\n"),
+        #     id=ID_MENU_ROTARY,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle Controller\n"),
+        #     id=ID_MENU_CONTROLLER,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle UsbConnect\n"),
+        #     id=ID_MENU_USB,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle JobSpooler\n"),
+        #     id=ID_MENU_SPOOLER,
+        # )
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     lambda v: self.context("window toggle RasterWizard\n"),
+        #     id=ID_MENU_RASTER_WIZARD,
+        # )
+        #
+        # def open_simulator(v=None):
+        #     with wx.BusyInfo(_("Preparing simulation...")):
+        #         self.context(
+        #             "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
+        #         ),
+        #
+        # self.Bind(
+        #     wx.EVT_MENU,
+        #     open_simulator,
+        #     id=ID_MENU_SIMULATE,
+        # )
+
     def __set_menubar(self):
         self.file_menu = wx.Menu()
         # ==========
@@ -965,68 +1051,7 @@ class MeerK40t(MWindow):
         # ==========
 
         self.panes_menu = wx.Menu()
-
-        def toggle_pane(pane_toggle):
-            def toggle(event=None):
-                pane_obj = self._mgr.GetPane(pane_toggle)
-                if pane_obj.IsShown():
-                    if hasattr(pane_obj.window, "pane_hide"):
-                        pane_obj.window.pane_hide()
-                    pane_obj.Hide()
-                    self._mgr.Update()
-                    return
-                pane_init = self.context.lookup("pane", pane_toggle)
-                self.on_pane_add(pane_init)
-
-            return toggle
-
-        submenus = {}
-        for pane, p, sp in self.context.find("pane/.*"):
-            submenu = None
-            try:
-                submenu_name = pane.submenu
-                if submenu_name in submenus:
-                    submenu = submenus[submenu_name]
-                elif submenu_name is not None:
-                    submenu = wx.Menu()
-                    self.panes_menu.AppendSubMenu(submenu, submenu_name)
-                    submenus[submenu_name] = submenu
-            except AttributeError:
-                pass
-            menu_context = submenu if submenu is not None else self.panes_menu
-            try:
-                pane_name = pane.name
-            except AttributeError:
-                pane_name = p.split("/")[-1]
-
-            try:
-                pane_caption = pane.caption
-            except AttributeError:
-                pane_caption = pane_name[0].upper() + pane_name[1:] + "."
-
-            id_new = wx.NewId()
-            menu_item = menu_context.Append(id_new, pane_caption, "", wx.ITEM_CHECK)
-            self.Bind(
-                wx.EVT_MENU,
-                toggle_pane(pane_name),
-                id=id_new,
-            )
-            pane = self._mgr.GetPane(pane_name)
-            try:
-                menu_item.Check(pane.IsShown())
-                pane.window.check = menu_item.Check
-            except AttributeError:
-                pass
-
-        self.panes_menu.AppendSeparator()
-        item = self.main_menubar.panereset = self.panes_menu.Append(
-            ID_MENU_PANE_LOCK, _("Lock Panes"), "", wx.ITEM_CHECK
-        )
-        item.Check(self.context.pane_lock)
-        self.panes_menu.AppendSeparator()
-        self.main_menubar.panereset = self.panes_menu.Append(
-            ID_MENU_PANE_RESET, _("Reset Panes"), ""
-        )
+        self.dynamic_fill_pane_menu()
         self.main_menubar.Append(self.panes_menu, _("Panes"))
 
         # ==========
@@ -1034,58 +1059,7 @@ class MeerK40t(MWindow):
         # ==========
 
         self.window_menu = wx.Menu()
-
-        self.window_menu.executejob = self.window_menu.Append(
-            ID_MENU_JOB, _("E&xecute Job"), ""
-        )
-        self.window_menu.simulate = self.window_menu.Append(
-            ID_MENU_SIMULATE, _("&Simulate"), ""
-        )
-        self.window_menu.rasterwizard = self.window_menu.Append(
-            ID_MENU_RASTER_WIZARD, _("&RasterWizard"), ""
-        )
-        self.window_menu.notes = self.window_menu.Append(ID_MENU_NOTES, _("&Notes"), "")
-        self.window_menu.console = self.window_menu.Append(
-            ID_MENU_CONSOLE, _("&Console"), ""
-        )
-
-        self.window_menu.navigation = self.window_menu.Append(
-            ID_MENU_NAVIGATION, _("N&avigation"), ""
-        )
-        if self.context.has_feature("modifier/Camera"):
-            self.window_menu.camera = self.window_menu.Append(
-                ID_MENU_CAMERA, _("C&amera"), ""
-            )
-        self.window_menu.jobspooler = self.window_menu.Append(
-            ID_MENU_SPOOLER, _("S&pooler"), ""
-        )
-
-        self.window_menu.controller = self.window_menu.Append(
-            ID_MENU_CONTROLLER, _("C&ontroller"), ""
-        )
-        self.window_menu.devices = self.window_menu.Append(
-            ID_MENU_DEVICE_MANAGER, _("&Devices"), ""
-        )
-        self.window_menu.config = self.window_menu.Append(
-            ID_MENU_CONFIG, _("Confi&g"), ""
-        )
-        self.window_menu.preferences = self.window_menu.Append(
-            wx.ID_PREFERENCES, _("Pr&eferences...\tCtrl-,"), ""
-        )
-
-        self.window_menu.keymap = self.window_menu.Append(
-            ID_MENU_KEYMAP, _("&Keymap"), ""
-        )
-        self.window_menu.rotary = self.window_menu.Append(
-            ID_MENU_ROTARY, _("Rotar&y"), ""
-        )
-        self.window_menu.usb = self.window_menu.Append(ID_MENU_USB, _("&USB"), "")
-
-        self.window_menu.AppendSeparator()
-        self.window_menu.windowreset = self.window_menu.Append(
-            ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
-        )
-
+        self.dynamic_fill_window_menu()
         self.main_menubar.Append(self.window_menu, _("Tools"))
 
         # ==========
@@ -1258,100 +1232,6 @@ class MeerK40t(MWindow):
 
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("window toggle About\n"),
-            id=wx.ID_ABOUT,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Console\n"),
-            id=ID_MENU_CONSOLE,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle DeviceManager\n"),
-            id=ID_MENU_DEVICE_MANAGER,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Keymap\n"),
-            id=ID_MENU_KEYMAP,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Preferences\n"),
-            id=wx.ID_PREFERENCES,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Notes\n"),
-            id=ID_MENU_NOTES,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Navigation\n"),
-            id=ID_MENU_NAVIGATION,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle ExecuteJob 0\n"),
-            id=ID_MENU_JOB,
-        )
-        if self.context.has_feature("modifier/Camera"):
-            self.Bind(
-                wx.EVT_MENU,
-                lambda v: self.context("window toggle CameraInterface\n"),
-                id=ID_MENU_CAMERA,
-            )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Configuration\n"),
-            id=ID_MENU_CONFIG,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window -p rotary/1 open Rotary\n"),
-            id=ID_MENU_ROTARY,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Controller\n"),
-            id=ID_MENU_CONTROLLER,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle UsbConnect\n"),
-            id=ID_MENU_USB,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle JobSpooler\n"),
-            id=ID_MENU_SPOOLER,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle RasterWizard\n"),
-            id=ID_MENU_RASTER_WIZARD,
-        )
-
-        def open_simulator(v=None):
-            with wx.BusyInfo(_("Preparing simulation...")):
-                self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-                ),
-
-        self.Bind(
-            wx.EVT_MENU,
-            open_simulator,
-            id=ID_MENU_SIMULATE,
-        )
-
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window reset *\n"),
-            id=ID_MENU_WINDOW_RESET,
-        )
-        self.Bind(
-            wx.EVT_MENU,
             self.on_pane_reset,
             id=ID_MENU_PANE_RESET,
         )
@@ -1360,7 +1240,11 @@ class MeerK40t(MWindow):
             self.on_pane_lock,
             id=ID_MENU_PANE_LOCK,
         )
-
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle About\n"),
+            id=wx.ID_ABOUT,
+        )
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp beginners\n"),

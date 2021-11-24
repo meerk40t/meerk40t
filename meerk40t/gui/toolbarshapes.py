@@ -27,7 +27,7 @@ ID_TOOL_TEXT = wx.NewId()
 _ = wx.GetTranslation
 
 
-def register_shapes_tools(context, gui):
+def register_shapes_tools(gui, context):
     toolbar = aui.AuiToolBar()
 
     toolbar.AddTool(ID_TOOL_MOUSE, _("Regular Scene"), icons8_cursor_50.GetBitmap())

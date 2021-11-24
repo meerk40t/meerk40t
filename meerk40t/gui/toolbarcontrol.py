@@ -22,7 +22,7 @@ ID_SPOOLER = wx.NewId()
 _ = wx.GetTranslation
 
 
-def register_control_tools(context, gui):
+def register_control_tools(gui, context):
     toolbar = aui.AuiToolBar()
 
     if context.has_feature("window/Navigation"):

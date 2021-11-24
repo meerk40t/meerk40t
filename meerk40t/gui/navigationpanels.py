@@ -1175,6 +1175,8 @@ class Navigation(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+
+        kernel.register("wxpane/Navigation", register_panel)
         kernel.register(
             "button/control/Navigation",
             {
