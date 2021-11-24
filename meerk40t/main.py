@@ -139,6 +139,10 @@ def run():
 
     kernel.add_plugin(lhystudios_driver.plugin)
 
+    from .moshi import device as moshi_driver
+
+    kernel.add_plugin(moshi_driver.plugin)
+
     # from .legacy import device as legacydevice
     #
     # kernel.add_plugin(legacydevice.plugin)
@@ -242,6 +246,7 @@ def run():
             from .gui.scene import scene
             # from .gui.legacy import legacy
             from .lihuiyu.gui import gui as lhygui
+            from .moshi.gui import gui as moshigui
         except Mk40tImportAbort as e:
             args.no_gui = True
             print(
@@ -253,6 +258,7 @@ def run():
             kernel.add_plugin(scene.plugin)
             # kernel.add_plugin(legacy.plugin)
             kernel.add_plugin(lhygui.plugin)
+            kernel.add_plugin(moshigui.plugin)
     else:
         # Complete Gui Suppress implies no-gui.
         args.no_gui = True

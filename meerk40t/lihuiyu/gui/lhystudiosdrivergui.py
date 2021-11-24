@@ -12,7 +12,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
+        self.context = context.device
 
         self.combobox_board = wx.ComboBox(
             self,

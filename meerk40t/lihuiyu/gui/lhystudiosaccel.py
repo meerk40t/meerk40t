@@ -12,7 +12,7 @@ class LhystudiosAccelerationChartPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
+        self.context = context.device
         self.checkbox_vector_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
         self.text_vector_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
         self.text_vector_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
