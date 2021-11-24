@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from ..icons import (
+from meerk40t.gui.icons import (
     icons8_align_bottom_50,
     icons8_align_left_50,
     icons8_align_right_50,

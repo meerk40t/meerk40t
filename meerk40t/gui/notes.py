@@ -2,7 +2,7 @@ import wx
 
 from .icons import icons8_comments_50
 from .mwindow import MWindow
-from .panes.notespanel import NotePanel
+from meerk40t.gui.notespanel import NotePanel
 
 _ = wx.GetTranslation
 

@@ -175,7 +175,7 @@ class DevicesPanel(wx.Panel):
             m = self.devices_list.InsertItem(i, str(i))
             if self.context.device.active == str(m):
                 select = i
-                from ..icons import DARKMODE
+                from .icons import DARKMODE
 
                 if DARKMODE:
                     self.devices_list.SetItemBackgroundColour(m, wx.Colour(64, 64, 64))

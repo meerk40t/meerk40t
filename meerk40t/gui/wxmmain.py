@@ -414,7 +414,7 @@ class MeerK40t(MWindow):
 
         register_panel(self, self.context)
 
-        from .panes.navigationpanels import register_panel
+        from meerk40t.gui.navigationpanels import register_panel
 
         register_panel(self, self.context)
 
@@ -424,12 +424,12 @@ class MeerK40t(MWindow):
         register_panel(self, self.context)
 
         # Define Laser.
-        from .panes.laserpanel import register_panel
+        from meerk40t.gui.laserpanel import register_panel
 
         register_panel(self, self.context)
 
         # Define Position
-        from .panes.position import register_panel
+        from meerk40t.gui.position import register_panel
 
         register_panel(self, self.context)
 
@@ -440,27 +440,27 @@ class MeerK40t(MWindow):
 
         # Define Toolbars
 
-        from .panes.toolbarproject import register_project_tools
+        from meerk40t.gui.toolbarproject import register_project_tools
 
         register_project_tools(context=self.context, gui=self)
 
-        from .panes.toolbarcontrol import register_control_tools
+        from meerk40t.gui.toolbarcontrol import register_control_tools
 
         register_control_tools(context=self.context, gui=self)
 
-        from .panes.toolbarpreferences import register_preferences_tools
+        from meerk40t.gui.toolbarpreferences import register_preferences_tools
 
         register_preferences_tools(context=self.context, gui=self)
 
-        from .panes.toolbarmodify import register_modify_tools
+        from meerk40t.gui.toolbarmodify import register_modify_tools
 
         register_modify_tools(context=self.context, gui=self)
 
-        from .panes.toolbaralign import register_align_tools
+        from meerk40t.gui.toolbaralign import register_align_tools
 
         register_align_tools(context=self.context, gui=self)
 
-        from .panes.toolbarshapes import register_shapes_tools
+        from meerk40t.gui.toolbarshapes import register_shapes_tools
 
         register_shapes_tools(context=self.context, gui=self)
 
@@ -584,28 +584,28 @@ class MeerK40t(MWindow):
         self.context.register("pane/home", pane)
 
         # Define Notes.
-        from .panes.notespanel import register_panel
+        from meerk40t.gui.notespanel import register_panel
 
         register_panel(self, self.context)
 
         # Define Spooler.
-        from .panes.spoolerpanel import register_panel
+        from meerk40t.gui.spoolerpanel import register_panel
 
         register_panel(self, self.context)
 
         # Define Console.
-        from .panes.consolepanel import register_panel
+        from meerk40t.gui.consolepanel import register_panel
 
         register_panel(self, self.context)
 
         # Define Devices.
-        from meerk40t.gui.legacy.devicespanel import register_panel
+        from meerk40t.gui.devicespanel import register_panel
 
         register_panel(self, self.context)
 
         # Define Camera
         if self.context.has_feature("modifier/Camera"):
-            from .panes.camerapanel import register_panel
+            from meerk40t.camera.gui.camerapanel import register_panel
 
             register_panel(self, self.context)
 

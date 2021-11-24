@@ -1,16 +1,16 @@
 import wx
 from wx import aui
 
-from ...kernel import Job
-from ...svgelements import Color
-from ..icons import (
+from meerk40t.kernel import Job
+from meerk40t.svgelements import Color
+from meerk40t.gui.icons import (
     icons8_camera_50,
     icons8_connected_50,
     icons8_detective_50,
     icons8_picture_in_picture_alternative_50,
 )
-from ..mwindow import MWindow
-from ..scene.scene import (
+from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.scene.scene import (
     HITCHAIN_HIT,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,

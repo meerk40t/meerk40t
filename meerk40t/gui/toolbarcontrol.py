@@ -2,7 +2,7 @@ import wx
 from wx import aui
 from wx.aui import EVT_AUITOOLBAR_TOOL_DROPDOWN
 
-from ..icons import (
+from meerk40t.gui.icons import (
     icons8_camera_50,
     icons8_connected_50,
     icons8_move_50,

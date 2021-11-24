@@ -24,10 +24,10 @@ from .keymap import Keymap
 from .laserrender import LaserRender
 from .notes import Notes
 from .operationproperty import OperationProperty
-from .panes.camerapanel import CameraInterface
-from .panes.consolepanel import Console
-from .panes.navigationpanels import Navigation
-from .panes.spoolerpanel import JobSpooler
+
+from meerk40t.gui.consolepanel import Console
+from meerk40t.gui.navigationpanels import Navigation
+from meerk40t.gui.spoolerpanel import JobSpooler
 from .pathproperty import PathProperty
 from .preferences import Preferences
 from .rasterwizard import RasterWizard
@@ -305,7 +305,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/ImageProperty", ImageProperty)
         kernel.register("window/OperationProperty", OperationProperty)
         kernel.register("window/GroupProperty", GroupProperty)
-        kernel.register("window/CameraInterface", CameraInterface)
         kernel.register("window/Terminal", Console)
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)

@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from ..icons import icons8_flip_horizontal_50, icons8_flip_vertical_50
+from meerk40t.gui.icons import icons8_flip_horizontal_50, icons8_flip_vertical_50
 
 ID_FLIP_HORIZONTAL = wx.NewId()
 ID_FLIP_VERTICAL = wx.NewId()
