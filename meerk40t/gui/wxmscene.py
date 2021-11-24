@@ -16,6 +16,7 @@ from meerk40t.gui.scene.scenewidgets import (
 )
 from meerk40t.gui.scene.toolwidgets import DrawTool, RectTool, ToolContainer
 from meerk40t.gui.wxutils import get_key_name
+from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle, Length
 
 _ = wx.GetTranslation
@@ -244,6 +245,12 @@ class MeerK40tScenePanel(wx.Panel):
         context.unlisten("modified", self.on_element_modified)
         context.unlisten("altered", self.on_element_modified)
         context.unlisten("units", self.space_changed)
+
+
+    @signal_listener("activate;device")
+    def on_activate_device(self, origin, device):
+        self.request_refresh()
+        self.scene.signal("grid")
 
     def on_size(self, event):
         if self.context is None:
