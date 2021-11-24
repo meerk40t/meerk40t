@@ -4380,6 +4380,8 @@ class Elemental(Modifier):
         )
         def undo_mark(data=None, **kwgs):
             del self._undo_stack[0:self._undo_index]
+            if len(self._undo_stack) > 25:
+                del self._undo_stack[25:]
             self._undo_stack.insert(0, list(map(copy, self.elems())))
             self._undo_index = 0
             return "undo", self._undo_stack[self._undo_index]
@@ -4390,6 +4392,7 @@ class Elemental(Modifier):
         def undo_undo(command, channel, _, **kwgs):
             if not self._undo_stack:
                 return
+            self._undo_index += 1
             try:
                 undo = self._undo_stack[self._undo_index]
             except IndexError:
@@ -4398,7 +4401,6 @@ class Elemental(Modifier):
             self.clear_elements()
             for e in undo:
                 self.add_elem(copy(e), True)
-            self._undo_index += 1
             self.context.signal("refresh_scene")
 
         @context.console_command(
@@ -4410,6 +4412,7 @@ class Elemental(Modifier):
             if self._undo_index == 0:
                 channel("No redo available.")
                 return
+            self._undo_index -= 1
             try:
                 redo = self._undo_stack[self._undo_index - 1]
             except IndexError:
@@ -4418,7 +4421,6 @@ class Elemental(Modifier):
             self.clear_elements()
             for e in redo:
                 self.add_elem(copy(e), True)
-            self._undo_index -= 1
             self.context.signal("refresh_scene")
 
         @context.console_command(
