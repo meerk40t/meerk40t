@@ -413,32 +413,6 @@ class MeerK40t(MWindow):
         for register_panel in list(self.context.lookup_all("wxpane")):
             register_panel(self, self.context)
 
-        # Define Notes.
-        from meerk40t.gui.notespanel import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Spooler.
-        from meerk40t.gui.spoolerpanel import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Console.
-        from meerk40t.gui.consolepanel import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Devices.
-        from meerk40t.gui.devicespanel import register_panel
-
-        register_panel(self, self.context)
-
-        # Define Camera
-        if self.context.has_feature("modifier/Camera"):
-            from meerk40t.camera.gui.camerapanel import register_panel
-
-            register_panel(self, self.context)
-
         # AUI Manager Update.
         self._mgr.Update()
 
@@ -446,6 +420,7 @@ class MeerK40t(MWindow):
         self.context.setting(str, "perspective")
         if self.context.perspective is not None:
             self._mgr.LoadPerspective(self.context.perspective)
+
         self.on_config_panes()
 
         context = self.context

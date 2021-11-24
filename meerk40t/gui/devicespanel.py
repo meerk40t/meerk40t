@@ -340,6 +340,7 @@ class DeviceManager(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        kernel.register("wxpane/DeviceManager", register_panel)
         kernel.register(
             "button/config/DeviceManager",
             {
