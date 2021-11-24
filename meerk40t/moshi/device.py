@@ -152,6 +152,49 @@ def plugin(kernel, lifecycle=None):
             """
             spooler, driver, output = data
             output.abort_waiting = True
+    elif lifecycle == "boot":
+        index = 0
+        context = kernel.get_context("moshi%d" % index)
+        _ = context._
+        choices = [
+            {
+                "attr": "bedwidth",
+                "object": context,
+                "default": 12205.0,
+                "type": float,
+                "label": _("Width"),
+                "tip": _("Width of the laser bed."),
+            },
+            {
+                "attr": "bedheight",
+                "object": context,
+                "default": 8268.0,
+                "type": float,
+                "label": _("Height"),
+                "tip": _("Height of the laser bed."),
+            },
+            {
+                "attr": "scale_x",
+                "object": context,
+                "default": 1.000,
+                "type": float,
+                "label": _("X Scale Factor"),
+                "tip": _(
+                    "Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                ),
+            },
+            {
+                "attr": "scale_y",
+                "object": context,
+                "default": 1.000,
+                "type": float,
+                "label": _("Y Scale Factor"),
+                "tip": _(
+                    "Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                ),
+            },
+        ]
+        context.register_choices("bed_dim", choices)
 
 
 def get_code_string_from_moshicode(code):
