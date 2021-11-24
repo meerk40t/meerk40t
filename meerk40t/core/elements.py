@@ -1,4 +1,5 @@
 import functools
+import os.path
 import re
 from copy import copy
 
@@ -5123,6 +5124,27 @@ class Elemental(Modifier):
             filepath = node.filepath
             node.remove_node()
             self.load(filepath)
+
+        @self.tree_operation(
+            _("Open in System: '{name}'"),
+            node_type="file",
+            help=_(
+                "Open this file in the system application associated with this type of file"
+            ),
+        )
+        def open_system_file(node, **kwgs):
+            filepath = node.filepath
+            normalized = os.path.realpath(filepath)
+
+            from os import system as open_in_shell
+            from sys import platform
+
+            if platform == "darwin":
+                open_in_shell("open '{file}'".format(file=normalized))
+            elif "win" in platform:
+                open_in_shell('"{file}"'.format(file=normalized))
+            else:
+                open_in_shell("xdg-open '{file}'".format(file=normalized))
 
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")

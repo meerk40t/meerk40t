@@ -67,12 +67,12 @@ class LaserPanel(wx.Panel):
             self.context.registered[i] for i in self.context.match("device")
         ]
         selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
+        spools_index = [str(i) for i in self.context.match("device", suffix=True)]
         try:
-            index = spools.index(selected_spooler)
+            index = spools_index.index(selected_spooler)
         except ValueError:
             index = 0
-        self.connected_name = spools[index]
+        self.connected_name = spools_index[index]
         self.connected_spooler, self.connected_driver, self.connected_output = (
             None,
             None,
@@ -88,10 +88,10 @@ class LaserPanel(wx.Panel):
             for m in self.Children:
                 if isinstance(m, wx.Window):
                     m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        spools_label = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
 
         self.combo_devices = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN | wx.CB_READONLY
+            self, wx.ID_ANY, choices=spools_label, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_devices.SetToolTip(
             _("Select device from list of configured devices")
@@ -197,15 +197,73 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
         self.Bind(wx.EVT_BUTTON, self.on_button_simulate, self.button_simulate)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_devices, self.combo_devices)
-        self.Bind(wx.EVT_TEXT, self.on_combo_devices, self.combo_devices)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_devices, self.combo_devices)
+        # self.Bind(wx.EVT_TEXT, self.on_combo_devices, self.combo_devices)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_devices, self.combo_devices)
         # end wxGlade
 
     def initialize(self):
         self.context.listen("plan", self.plan_update)
+        self.context.listen("active", self.active_update)
+        self.context.listen("legacy_spooler_label", self.spooler_label_update)
 
     def finalize(self):
         self.context.unlisten("plan", self.plan_update)
+        self.context.unlisten("active", self.active_update)
+        self.context.unlisten("legacy_spooler_label", self.spooler_label_update)
+
+    def spooler_label_update(self, origin, *message):
+        """
+        Active 0.7.x devices have fundamentally change and the combo box should be fully refreshed.
+        @param origin:
+        @param message:
+        @return:
+        """
+        self.available_devices = [
+            self.context.registered[i] for i in self.context.match("device")
+        ]
+        selected_spooler = self.context.root.active
+        spools_index = [str(i) for i in self.context.match("device", suffix=True)]
+        try:
+            index = spools_index.index(selected_spooler)
+        except ValueError:
+            index = 0
+        self.connected_name = spools_index[index]
+        self.connected_spooler, self.connected_driver, self.connected_output = (
+            None,
+            None,
+            None,
+        )
+        try:
+            (
+                self.connected_spooler,
+                self.connected_driver,
+                self.connected_output,
+            ) = self.available_devices[index]
+        except IndexError:
+            for m in self.Children:
+                if isinstance(m, wx.Window):
+                    m.Disable()
+        spools_label = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        self.combo_devices.Clear()
+        for i in range(len(spools_label)):
+            self.combo_devices.Append(spools_label[i])
+        self.combo_devices.SetSelection(index)
+
+    def active_update(self, origin, *message):
+        """
+        Active 0.7.x device has shifted and we should reflect that.
+
+        @param origin:
+        @param message:
+        @return:
+        """
+        selected_spooler = self.context.root.active
+        try:
+            spools_index = [str(i) for i in self.context.match("device", suffix=True)]
+            index = spools_index.index(selected_spooler)
+        except ValueError:
+            index = 0
+        self.combo_devices.SetSelection(index)
 
     def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]
@@ -276,10 +334,12 @@ class LaserPanel(wx.Panel):
         self.context("window toggle DeviceManager\n")
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
+        index = self.combo_devices.GetSelection()
+        if index == -1:
+            return
         self.available_devices = [
             self.context.registered[i] for i in self.context.match("device")
         ]
-        index = self.combo_devices.GetSelection()
         (
             self.connected_spooler,
             self.connected_driver,
