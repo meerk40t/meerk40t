@@ -1,34 +1,14 @@
 import socket
-
-from meerk40t.core.spoolers import Spooler
-
-from hashlib import md5
-from ..svgelements import Length
-
-from ..core.cutcode import CutCode, LaserSettings, RawCut
-from ..kernel import Module, Service
-from ..device.lasercommandconstants import *
-from .laserspeed import LaserSpeed
-
 import threading
 import time
+from hashlib import md5
 
+from meerk40t.core.spoolers import Spooler
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
+from ..core.cutcode import CutCode, LaserSettings, RawCut
 from ..core.drivers import Driver
 from ..core.plotplanner import grouped
-from ..kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_SUSPEND,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-)
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -45,6 +25,23 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
+from ..device.lasercommandconstants import *
+from ..kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_SUSPEND,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+    Module,
+    Service,
+)
+from ..svgelements import Length
+from .laserspeed import LaserSpeed
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100

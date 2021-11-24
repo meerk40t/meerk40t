@@ -1,5 +1,5 @@
 from meerk40t.grbl.gui.tcpcontroller import TCPController
-from meerk40t.gui.icons import icons8_info_50, icons8_connected_50
+from meerk40t.gui.icons import icons8_connected_50, icons8_info_50
 
 try:
     import wx

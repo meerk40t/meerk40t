@@ -6,7 +6,7 @@ import re
 import threading
 import time
 from threading import Lock, Thread
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union, List
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
 from .svgelements import Color
 

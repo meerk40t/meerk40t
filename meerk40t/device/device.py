@@ -1,9 +1,8 @@
 from meerk40t.core.spoolers import Spooler
 from meerk40t.kernel import Service
-
 from meerk40t.svgelements import Length
-from ..core.cutcode import LaserSettings
 
+from ..core.cutcode import LaserSettings
 from ..device.lasercommandconstants import *
 
 

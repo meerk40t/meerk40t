@@ -1,6 +1,5 @@
 from threading import Lock
 
-
 from meerk40t.svgelements import Length
 
 from ..device.lasercommandconstants import *

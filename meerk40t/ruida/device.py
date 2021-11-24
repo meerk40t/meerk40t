@@ -2,14 +2,11 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from ..core.cutcode import CutCode, LineCut
-from ..kernel import Module
-from ..svgelements import Color, Point
-from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
-
-from ..core.cutcode import LaserSettings
+from ..core.cutcode import CutCode, LaserSettings, LineCut
 from ..core.spoolers import Spooler
-from ..kernel import Service
+from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
+from ..kernel import Module, Service
+from ..svgelements import Color, Point
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0

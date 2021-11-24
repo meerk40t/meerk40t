@@ -3,15 +3,15 @@ from wx import aui
 
 from ..icons import (
     icons8_circle_50,
+    icons8_cursor_50,
     icons8_oval_50,
+    icons8_pencil_drawing_50,
     icons8_place_marker_50,
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
     icons8_type_50,
     icons8_vector_50,
-    icons8_pencil_drawing_50,
-    icons8_cursor_50,
 )
 
 ID_TOOL_MOUSE = wx.NewId()

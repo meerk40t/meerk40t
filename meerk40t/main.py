@@ -250,13 +250,13 @@ def run():
 
     if not args.gui_suppress:
         try:
+            from .grbl.gui import gui as grblgui
             from .gui import wxmeerk40t
             from .gui.scene import scene
 
             # from .gui.legacy import legacy
             from .lihuiyu.gui import gui as lhygui
             from .moshi.gui import gui as moshigui
-            from .grbl.gui import gui as grblgui
             from .ruida.gui import gui as ruidagui
         except Mk40tImportAbort as e:
             args.no_gui = True

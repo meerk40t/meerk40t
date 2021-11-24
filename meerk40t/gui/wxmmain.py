@@ -11,8 +11,8 @@ from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
-    icons8_pause_50,
     icons8_opened_folder_50,
+    icons8_pause_50,
     icons8_save_50,
 )
 from .laserrender import (

@@ -1,14 +1,8 @@
+import os
+import re
 import socket
 import threading
 import time
-
-from ..device.lasercommandconstants import *
-
-import os
-import re
-
-from ..kernel import Module, Service
-
 
 from ..core.cutcode import LaserSettings
 from ..core.drivers import Driver
@@ -29,6 +23,8 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
+from ..device.lasercommandconstants import *
+from ..kernel import Module, Service
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0

@@ -2,7 +2,6 @@ import math
 
 import wx
 
-from .wxutils import disable_window
 from ..core.cutcode import CutCode, LineCut
 from ..kernel import Job, signal_listener
 from ..svgelements import Matrix
@@ -16,6 +15,7 @@ from .laserrender import LaserRender
 from .mwindow import MWindow
 from .scene.scene import ScenePanel, Widget
 from .scene.scenewidgets import GridWidget
+from .wxutils import disable_window
 
 _ = wx.GetTranslation
 

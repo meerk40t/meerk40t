@@ -1,11 +1,12 @@
 from meerk40t.gui.icons import (
-    icons8_pause_50,
-    icons8_emergency_stop_button_50,
-    icons8_connected_50,
     icons8_computer_support_50,
+    icons8_connected_50,
+    icons8_emergency_stop_button_50,
+    icons8_pause_50,
 )
 from meerk40t.gui.legacy.configuration import Configuration
 from meerk40t.gui.legacy.controller import Controller
+from meerk40t.gui.legacy.devicespanel import DeviceManager
 from meerk40t.gui.legacy.file.fileoutput import FileOutput
 from meerk40t.gui.legacy.lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
 from meerk40t.gui.legacy.lhystudios.lhystudioscontrollergui import (
@@ -14,10 +15,8 @@ from meerk40t.gui.legacy.lhystudios.lhystudioscontrollergui import (
 from meerk40t.gui.legacy.lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
 from meerk40t.gui.legacy.moshi.moshicontrollergui import MoshiControllerGui
 from meerk40t.gui.legacy.moshi.moshidrivergui import MoshiDriverGui
-from meerk40t.gui.legacy.devicespanel import DeviceManager
 from meerk40t.gui.legacy.tcp.tcpcontroller import TCPController
 from meerk40t.gui.legacy.usbconnect import UsbConnect
-
 from meerk40t.kernel import signal_listener
 
 try:

@@ -5,18 +5,6 @@ from ..core.cutcode import LaserSettings
 from ..core.drivers import Driver
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
-from ..kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-    Service,
-)
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -32,6 +20,18 @@ from ..device.basedevice import (
     PLOT_RIGHT_LOWER,
     PLOT_SETTING,
     PLOT_START,
+)
+from ..kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+    Service,
 )
 from .moshiblob import (
     MOSHI_EPILOGUE,

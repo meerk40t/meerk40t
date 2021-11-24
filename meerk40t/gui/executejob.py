@@ -2,13 +2,13 @@ import math
 
 import wx
 
-from .wxutils import disable_window
 from ..core.elements import LaserOperation
 from ..kernel import signal_listener
-from ..svgelements import Length, Group
+from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow
 from .propertiespanel import PropertiesPanel
+from .wxutils import disable_window
 
 _ = wx.GetTranslation
 

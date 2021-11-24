@@ -1,6 +1,6 @@
 from copy import copy
-from time import time
 from os import times
+from time import time
 
 from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..device.lasercommandconstants import (

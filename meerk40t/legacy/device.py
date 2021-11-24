@@ -3,8 +3,7 @@ import threading
 import time
 
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import Service
-from meerk40t.kernel import CommandMatchRejected
+from meerk40t.kernel import CommandMatchRejected, Service
 
 
 def plugin(kernel, lifecycle=None):

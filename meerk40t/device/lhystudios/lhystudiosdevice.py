@@ -18,6 +18,7 @@ from ...kernel import (
     STATE_UNKNOWN,
     STATE_WAIT,
 )
+from ...svgelements import Length
 from ..basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -37,7 +38,6 @@ from ..basedevice import (
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
 from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
-from ...svgelements import Length
 
 
 def plugin(kernel, lifecycle=None):

@@ -1,8 +1,8 @@
 import wx
 
-from meerk40t.legacy.device import TCPOutput
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.legacy.device import TCPOutput
 
 _ = wx.GetTranslation
 
