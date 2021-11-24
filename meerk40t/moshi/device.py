@@ -50,6 +50,7 @@ STATUS_PROCESSING = 207  # PROCESSING
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service("device", MoshiDevice(kernel, 0))
+        kernel.register("service/device/moshi", MoshiDevice)
         _ = kernel.translation
         context = kernel.root
 

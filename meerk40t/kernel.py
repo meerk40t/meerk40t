@@ -2925,11 +2925,11 @@ class Kernel:
         def service(channel, _, domain=None, remainder=None, **kwargs):
             if not remainder or domain is None:
                 channel(_("----------"))
-                channel(_("Services Registered:"))
+                channel(_("Service Providers:"))
                 for i, name in enumerate(self.match("service")):
                     channel("%d: %s" % (i + 1, name))
                 channel(_("----------"))
-
+                channel(_("Services:"))
                 for i, _domain in enumerate(self._available_services):
                     if domain is not None and domain != _domain:
                         continue
@@ -2960,8 +2960,6 @@ class Kernel:
             if index is None:
                 raise SyntaxError
             self.activate_service_index(domain, index)
-
-
 
         # ==========
         # CHANNEL COMMANDS

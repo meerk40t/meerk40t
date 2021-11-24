@@ -45,6 +45,7 @@ GRBL device.
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service("device", GRBLDevice(kernel, 0))
+        kernel.register("service/device/grbl", GRBLDevice)
 
         _ = kernel.translation
         kernel.register("driver/grbl", GRBLDriver)

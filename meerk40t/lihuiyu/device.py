@@ -77,6 +77,7 @@ REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Requested horizontal major axis
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service("device", LihuiyuDevice(kernel, 0))
+        kernel.register("service/device/lhystudios", LihuiyuDevice)
 
         _ = kernel.translation
         kernel.register("load/EgvLoader", EgvLoader)

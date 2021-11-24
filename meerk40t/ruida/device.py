@@ -1,46 +1,15 @@
-import threading
-import time
-
 import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from ..core.cutcode import CutCode, LaserSettings, LineCut
+from ..core.cutcode import CutCode, LineCut
 from ..kernel import Module
 from ..svgelements import Color, Point
 from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 
 from ..core.cutcode import LaserSettings
-from ..core.drivers import Driver
-from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
-from ..kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT, Service,
-)
-from ..device.basedevice import (
-    DRIVER_STATE_FINISH,
-    DRIVER_STATE_MODECHANGE,
-    DRIVER_STATE_PROGRAM,
-    DRIVER_STATE_RAPID,
-    DRIVER_STATE_RASTER,
-    PLOT_AXIS,
-    PLOT_DIRECTION,
-    PLOT_FINISH,
-    PLOT_JOG,
-    PLOT_LEFT_UPPER,
-    PLOT_RAPID,
-    PLOT_RIGHT_LOWER,
-    PLOT_SETTING,
-    PLOT_START,
-)
+from ..kernel import Service
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0
@@ -59,6 +28,7 @@ MIL_PER_UM = 1.0 / UM_PER_MIL
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service("device", RuidaDevice(kernel, 0))
+        kernel.register("service/device/ruida", RuidaDevice)
 
         _ = kernel.translation
         kernel.register("load/RDLoader", RDLoader)
