@@ -1,3 +1,4 @@
+import platform
 import os
 import time
 
@@ -281,7 +282,8 @@ class Driver:
             elif command == COMMAND_WAIT_FINISH:
                 self.wait_finish()
             elif command == COMMAND_BEEP:
-                if os.name == "nt":
+                OS_NAME = platform.system()
+                if OS_NAME == "Windows":
                     try:
                         import winsound
 
@@ -289,11 +291,9 @@ class Driver:
                             winsound.Beep(2000, 100)
                     except Exception:
                         pass
-                if os.name == "posix":
-                    # Mac or linux.
-                    print("\a")  # Beep.
-                    os.system('say "Ding"')
-                else:
+                elif OS_NAME == "Darwin": # Mac
+                    os.system('afplay /System/Library/Sounds/Ping.aiff')
+                else: # Assuming other linux like system
                     print("\a")  # Beep.
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:
