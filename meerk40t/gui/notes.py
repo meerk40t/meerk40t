@@ -31,7 +31,6 @@ class Notes(MWindow):
             },
         )
 
-
     def window_open(self):
         self.context.close(self.name)
         self.panel.pane_show()

@@ -1,5 +1,9 @@
-from meerk40t.gui.icons import icons8_pause_50, icons8_emergency_stop_button_50, icons8_connected_50, \
-    icons8_computer_support_50
+from meerk40t.gui.icons import (
+    icons8_pause_50,
+    icons8_emergency_stop_button_50,
+    icons8_connected_50,
+    icons8_computer_support_50,
+)
 
 from meerk40t.kernel import signal_listener
 from meerk40t.lihuiyu.gui.lhystudiosaccel import LhystudiosAccelerationChart
@@ -38,8 +42,14 @@ def plugin(kernel, lifecycle):
                 "tip": _("Opens Controller Window"),
                 "action": controller_click,
                 "alt-action": (
-                    (_("Opens USB-Controller"), lambda e: service("window toggle Controller\n")),
-                    (_("Opens Network-Controller"), lambda e: service("window toggle Network-Controller\n")),
+                    (
+                        _("Opens USB-Controller"),
+                        lambda e: service("window toggle Controller\n"),
+                    ),
+                    (
+                        _("Opens Network-Controller"),
+                        lambda e: service("window toggle Network-Controller\n"),
+                    ),
                 ),
             },
         )
@@ -74,9 +84,7 @@ def plugin(kernel, lifecycle):
 
     elif lifecycle == "boot":
         service = kernel.get_context("lihuiyu0")
-        service.add_service_delegate(
-            LihuiyuGui(service)
-        )
+        service.add_service_delegate(LihuiyuGui(service))
 
 
 class LihuiyuGui:

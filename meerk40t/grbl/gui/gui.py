@@ -55,9 +55,7 @@ def plugin(kernel, lifecycle):
 
     elif lifecycle == "boot":
         service = kernel.get_context("grbl0")
-        service.add_service_delegate(
-            GRBLGui(service)
-        )
+        service.add_service_delegate(GRBLGui(service))
 
 
 class GRBLGui:

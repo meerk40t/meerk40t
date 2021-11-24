@@ -131,6 +131,7 @@ class AboutPanel(wx.Panel):
 class About(MWindow):
     def __init__(self, *args, **kwds):
         from sys import platform as _platform
+
         super().__init__(
             480,
             360,

@@ -24,14 +24,18 @@ def plugin(kernel, lifecycle=None):
 
         kernel.register("modifier/Camera", True)
 
+        @kernel.console_option("width", "w", type=int, help="force the camera width")
+        @kernel.console_option("height", "h", type=int, help="force the camera height")
         @kernel.console_option(
-            "width", "w", type=int, help="force the camera width"
+            "contrast", "c", help="Turn on AutoContrast", type=bool, action="store_true"
         )
         @kernel.console_option(
-            "height", "h", type=int, help="force the camera height"
+            "nocontrast",
+            "C",
+            help="Turn off AutoContrast",
+            type=bool,
+            action="store_true",
         )
-        @kernel.console_option("contrast", "c", help="Turn on AutoContrast", type=bool, action="store_true")
-        @kernel.console_option("nocontrast", "C", help="Turn off AutoContrast", type=bool, action="store_true")
         @kernel.console_option("uri", "u", type=str)
         @kernel.console_command(
             "camera\d*",
@@ -39,7 +43,15 @@ def plugin(kernel, lifecycle=None):
             help="camera commands and modifiers.",
             output_type="camera",
         )
-        def camera(command, uri=None, width=None, height=None, contrast=None, nocontrast=None, **kwargs):
+        def camera(
+            command,
+            uri=None,
+            width=None,
+            height=None,
+            contrast=None,
+            nocontrast=None,
+            **kwargs
+        ):
             if len(command) > 6:
                 current_camera = command[6:]
                 camera_path = "camera/%s" % current_camera
@@ -152,7 +164,9 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(
             "set", help="set a particular setting in the camera", input_type="camera"
         )
-        def set_camera(command, _, channel, data=None, setting=None, value=None, **kwargs):
+        def set_camera(
+            command, _, channel, data=None, setting=None, value=None, **kwargs
+        ):
             if value is None:
                 raise SyntaxError
             if data.capture is None:
@@ -173,7 +187,9 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Attempt to change setting failed, raised cv2 error."))
                 return
             v1 = data.capture.get(setting)
-            channel(_("Attempt camera setting (%s) to %f. %f->%f") % (prop, value, v0, v1))
+            channel(
+                _("Attempt camera setting (%s) to %f. %f->%f") % (prop, value, v0, v1)
+            )
 
         @kernel.console_command(
             "list", help="list camera settings", input_type="camera"

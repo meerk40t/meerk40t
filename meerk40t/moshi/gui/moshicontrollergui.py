@@ -1,4 +1,3 @@
-
 import wx
 
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50

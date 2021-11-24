@@ -98,7 +98,7 @@ def plugin(kernel, lifecycle=None):
             help=_("pulse <time>: Pulse the laser in place."),
         )
         def pulse(
-                command, channel, _, time=None, idonotlovemyhouse=False, data=None, **kwargs
+            command, channel, _, time=None, idonotlovemyhouse=False, data=None, **kwargs
         ):
             spooler, driver, output = data
             if time is None:
@@ -137,12 +137,8 @@ def plugin(kernel, lifecycle=None):
         )
         def move_speed(channel, _, speed, dx, dy, data=None, **kwgs):
             spooler, driver, output = data
-            dx = Length(dx).value(
-                ppi=1000.0
-            )
-            dy = Length(dy).value(
-                ppi=1000.0
-            )
+            dx = Length(dx).value(ppi=1000.0)
+            dy = Length(dy).value(ppi=1000.0)
 
             def move_at_speed():
                 yield COMMAND_SET_SPEED, speed
@@ -168,14 +164,14 @@ def plugin(kernel, lifecycle=None):
             "speed", input_type="lhystudios", help=_("Set current speed of driver.")
         )
         def speed(
-                command,
-                channel,
-                _,
-                data=None,
-                speed=None,
-                increment=False,
-                decrement=False,
-                **kwargs
+            command,
+            channel,
+            _,
+            data=None,
+            speed=None,
+            increment=False,
+            decrement=False,
+            **kwargs
         ):
             spooler, driver, output = data
             if speed is None or (increment and decrement):
@@ -414,7 +410,9 @@ def plugin(kernel, lifecycle=None):
             if len(remainder) == 0:
                 raise SyntaxError
             else:
-                challenge = bytearray.fromhex(md5(bytes(remainder.upper(), "utf8")).hexdigest())
+                challenge = bytearray.fromhex(
+                    md5(bytes(remainder.upper(), "utf8")).hexdigest()
+                )
                 code = b"A%s\n" % challenge
                 output.write(code)
 
@@ -511,7 +509,7 @@ def plugin(kernel, lifecycle=None):
         )
         @kernel.console_command("lhyserver", help=_("activate the lhyserver."))
         def lhyserver(
-                channel, _, port=23, silent=False, watch=False, quit=False, **kwargs
+            channel, _, port=23, silent=False, watch=False, quit=False, **kwargs
         ):
             root = kernel.root
             try:
@@ -675,9 +673,7 @@ class LihuiyuDevice(Service):
             input_type=(None, "plan", "device"),
             output_type="spooler",
         )
-        def spool(
-            command, channel, _, data=None, remainder=None, **kwgs
-        ):
+        def spool(command, channel, _, data=None, remainder=None, **kwgs):
             spooler = self.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
@@ -2223,7 +2219,9 @@ class TCPOutput:
     def _start(self):
         if self.thread is None:
             self.thread = self.service.threaded(
-                self._sending, thread_name="sender-%d" % self.service.port, result=self._stop
+                self._sending,
+                thread_name="sender-%d" % self.service.port,
+                result=self._stop,
             )
 
     def _stop(self, *args):
@@ -2257,7 +2255,11 @@ class TCPOutput:
 
     def __repr__(self):
         if self.name is not None:
-            return "TCPOutput('%s:%s','%s')" % (self.service.address, self.service.port, self.name)
+            return "TCPOutput('%s:%s','%s')" % (
+                self.service.address,
+                self.service.port,
+                self.name,
+            )
         return "TCPOutput('%s:%s')" % (self.service.address, self.service.port)
 
     def __len__(self):
@@ -2749,6 +2751,7 @@ def get_code_string_from_code(code):
     else:
         return "UNK %02x" % code
 
+
 distance_lookup = [
     b"",
     b"a",
@@ -2827,7 +2830,6 @@ def convert_to_list_bytes(data):
         for i in range(0, 30):
             packet[i] = data[i]
         return packet
-
 
 
 crc_table = [

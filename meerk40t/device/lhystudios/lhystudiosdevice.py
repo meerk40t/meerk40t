@@ -103,12 +103,8 @@ def plugin(kernel, lifecycle=None):
         )
         def move_speed(channel, _, speed, dx, dy, data=None, **kwgs):
             spooler, driver, output = data
-            dx = Length(dx).value(
-                ppi=1000.0
-            )
-            dy = Length(dy).value(
-                ppi=1000.0
-            )
+            dx = Length(dx).value(ppi=1000.0)
+            dy = Length(dy).value(ppi=1000.0)
 
             def move_at_speed():
                 yield COMMAND_SET_SPEED, speed
@@ -380,7 +376,9 @@ def plugin(kernel, lifecycle=None):
             if len(remainder) == 0:
                 raise SyntaxError
             else:
-                challenge = bytearray.fromhex(md5(bytes(remainder.upper(), "utf8")).hexdigest())
+                challenge = bytearray.fromhex(
+                    md5(bytes(remainder.upper(), "utf8")).hexdigest()
+                )
                 code = b"A%s\n" % challenge
                 output.write(code)
 

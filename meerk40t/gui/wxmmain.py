@@ -11,7 +11,9 @@ from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
-    icons8_pause_50, icons8_opened_folder_50, icons8_save_50,
+    icons8_pause_50,
+    icons8_opened_folder_50,
+    icons8_save_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -117,7 +119,7 @@ class MeerK40t(MWindow):
     def __init__(self, *args, **kwds):
         width, height = wx.DisplaySize()
 
-        super().__init__(int(width*0.9), int(height*0.9), *args, **kwds)
+        super().__init__(int(width * 0.9), int(height * 0.9), *args, **kwds)
         try:
             self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
         except AttributeError:
@@ -180,7 +182,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_opened_folder_50,
                 "tip": _("Opens new project"),
                 "action": lambda e: kernel.console(".dialog_load\n"),
-                "priority": -200
+                "priority": -200,
             },
         )
         kernel.register(
@@ -190,7 +192,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_save_50,
                 "tip": _("Saves a project to disk"),
                 "action": lambda e: kernel.console(".dialog_save\n"),
-                "priority": -100
+                "priority": -100,
             },
         )
 
@@ -458,7 +460,6 @@ class MeerK40t(MWindow):
 
         register_align_tools(context=self.context, gui=self)
 
-
         from .panes.toolbarshapes import register_shapes_tools
 
         register_shapes_tools(context=self.context, gui=self)
@@ -712,11 +713,13 @@ class MeerK40t(MWindow):
         def create_pane(command, _, channel, pane=None, **kwargs):
             if pane == "about":
                 from .about import AboutPanel as CreatePanel
+
                 caption = _("About")
                 width = 646
                 height = 519
             elif pane == "preferences":
                 from .preferences import PreferencesPanel as CreatePanel
+
                 caption = _("Preferences")
                 width = 565
                 height = 327
@@ -726,16 +729,16 @@ class MeerK40t(MWindow):
             panel = CreatePanel(self, context=context)
             _pane = (
                 aui.AuiPaneInfo()
-                    .Dockable(False)
-                    .Float()
-                    .Caption(caption)
-                    .FloatingSize(width, height)
-                    .Name(pane)
-                    .CaptionVisible(True)
+                .Dockable(False)
+                .Float()
+                .Caption(caption)
+                .FloatingSize(width, height)
+                .Name(pane)
+                .CaptionVisible(True)
             )
             _pane.control = panel
             self.on_pane_add(_pane)
-            if hasattr(panel,"pane_show"):
+            if hasattr(panel, "pane_show"):
                 panel.pane_show()
             self.context.register("pane/about", _pane)
             self._mgr.Update()
@@ -1108,7 +1111,9 @@ class MeerK40t(MWindow):
                     pass
             if not os.path.exists(_resource_path):
                 try:  # Mac py2app resource
-                    _resource_path = os.path.join(os.environ["RESOURCEPATH"], "help/meerk40t.help")
+                    _resource_path = os.path.join(
+                        os.environ["RESOURCEPATH"], "help/meerk40t.help"
+                    )
                 except Exception:
                     pass
             if os.path.exists(_resource_path):
@@ -1124,16 +1129,18 @@ class MeerK40t(MWindow):
                 dlg.Destroy()
 
         if platform == "darwin":
-            self.help_menu.Append(
-                wx.ID_HELP, _("&MeerK40t Help"), ""
-            )
+            self.help_menu.Append(wx.ID_HELP, _("&MeerK40t Help"), "")
             self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
             ONLINE_HELP = wx.NewId()
             self.help_menu.Append(ONLINE_HELP, _("&Online Help"), "")
-            self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=ONLINE_HELP)
+            self.Bind(
+                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=ONLINE_HELP
+            )
         else:
             self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
-            self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
+            self.Bind(
+                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP
+            )
 
         self.help_menu.Append(ID_BEGINNERS, _("&Beginners' Help"), "")
         self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
@@ -1463,8 +1470,10 @@ class MeerK40t(MWindow):
             if answer != wx.YES:
                 return True  # VETO
         if self.needs_saving:
-            message = _("Save changes to project before closing?\n\n"
-                        "Your changes will be lost if you do not save them.")
+            message = _(
+                "Save changes to project before closing?\n\n"
+                "Your changes will be lost if you do not save them."
+            )
             answer = wx.MessageBox(
                 message, _("Save Project..."), wx.YES_NO | wx.CANCEL, None
             )
@@ -1585,7 +1594,10 @@ class MeerK40t(MWindow):
     def __set_titlebar(self):
         device_name = ""
         device_version = ""
-        title = _("%s v%s") % (str(self.context.kernel.name), self.context.kernel.version)
+        title = _("%s v%s") % (
+            str(self.context.kernel.name),
+            self.context.kernel.version,
+        )
         title += "      %s" % self.context.device.name
         self.SetTitle(title)
 
@@ -1762,7 +1774,9 @@ class MeerK40t(MWindow):
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
                 try:
-                    if self.context.elements.uniform_svg and pathname.lower().endswith("svg"):
+                    if self.context.elements.uniform_svg and pathname.lower().endswith(
+                        "svg"
+                    ):
                         # or (len(elements) > 0 and "meerK40t" in elements[0].values):
                         # TODO: Disabled uniform_svg, no longer detecting namespace.
                         self.working_file = pathname

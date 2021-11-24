@@ -16,7 +16,7 @@ def plugin(kernel, lifecycle):
         def popup_info(event):
             dlg = wx.MessageDialog(
                 None,
-                _('Ruida Driver is not yet completed.'),
+                _("Ruida Driver is not yet completed."),
                 _("Non Implemented Device"),
                 wx.OK | wx.ICON_WARNING,
             )
@@ -35,9 +35,7 @@ def plugin(kernel, lifecycle):
 
     elif lifecycle == "boot":
         service = kernel.get_context("ruida0")
-        service.add_service_delegate(
-            RuidaGui(service)
-        )
+        service.add_service_delegate(RuidaGui(service))
 
 
 class RuidaGui:

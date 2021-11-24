@@ -18,7 +18,7 @@ def plugin(kernel, lifecycle):
             output_type="spooler",
         )
         def spooler_send(
-                command, channel, _, data_type=None, op=None, data=None, **kwgs
+            command, channel, _, data_type=None, op=None, data=None, **kwgs
         ):
             spooler = data
             if op is None:

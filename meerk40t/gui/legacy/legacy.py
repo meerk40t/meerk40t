@@ -1,5 +1,9 @@
-from meerk40t.gui.icons import icons8_pause_50, icons8_emergency_stop_button_50, icons8_connected_50, \
-    icons8_computer_support_50
+from meerk40t.gui.icons import (
+    icons8_pause_50,
+    icons8_emergency_stop_button_50,
+    icons8_connected_50,
+    icons8_computer_support_50,
+)
 from meerk40t.gui.legacy.configuration import Configuration
 from meerk40t.gui.legacy.controller import Controller
 from meerk40t.gui.legacy.file.fileoutput import FileOutput

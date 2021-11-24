@@ -25,12 +25,8 @@ class TCPController(MWindow):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect
         )
-        self.Bind(
-            wx.EVT_TEXT, self.on_port_change, self.text_port
-        )
-        self.Bind(
-            wx.EVT_TEXT, self.on_address_change, self.text_ip_host
-        )
+        self.Bind(wx.EVT_TEXT, self.on_port_change, self.text_port)
+        self.Bind(wx.EVT_TEXT, self.on_address_change, self.text_ip_host)
         # end wxGlade
         self.max = 0
         self.state = None

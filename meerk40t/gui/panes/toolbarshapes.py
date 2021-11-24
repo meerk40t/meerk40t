@@ -30,9 +30,7 @@ _ = wx.GetTranslation
 def register_shapes_tools(context, gui):
     toolbar = aui.AuiToolBar()
 
-    toolbar.AddTool(
-        ID_TOOL_MOUSE, _("Regular Scene"), icons8_cursor_50.GetBitmap()
-    )
+    toolbar.AddTool(ID_TOOL_MOUSE, _("Regular Scene"), icons8_cursor_50.GetBitmap())
     toolbar.Bind(
         wx.EVT_TOOL,
         lambda e: context("tool none\n"),

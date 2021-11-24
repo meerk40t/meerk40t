@@ -147,7 +147,7 @@ def plugin(kernel, lifecycle=None):
                     "When this option IS checked, Meerk40t will burn each subpath "
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
-                )
+                ),
             },
             {
                 "attr": "opt_merge_passes",
@@ -355,7 +355,6 @@ class CutPlan:
         self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
 
-
     def blob(self):
         """
         blob converts User operations to CutCode objects.
@@ -376,9 +375,8 @@ class CutPlan:
         group = [self.plan[0]]
         for c in self.plan[1:]:
             if (
-                (type(group[-1]) == LaserOperation or type(c) == LaserOperation)
-                and type(group[-1]) != type(c)
-            ):
+                type(group[-1]) == LaserOperation or type(c) == LaserOperation
+            ) and type(group[-1]) != type(c):
                 grouped_plan.append(group)
                 group = []
             group.append(c)
@@ -390,7 +388,7 @@ class CutPlan:
         for plan in grouped_plan:
             burning = True
             pass_idx = -1
-            while (burning):
+            while burning:
                 burning = False
                 pass_idx += 1
                 for op in plan:
@@ -410,15 +408,17 @@ class CutPlan:
                     # Providing we do some sort of post-processing of blobs,
                     # then merge passes is handled by the greedy or inner_first algorithms
                     passes = 1
-                    if (
-                        context.opt_merge_passes
-                        and (context.opt_nearest_neighbor or context.opt_inner_first)
+                    if context.opt_merge_passes and (
+                        context.opt_nearest_neighbor or context.opt_inner_first
                     ):
                         passes = copies
                         copies = 1
                     for p in range(copies):
                         cutcode = CutCode(
-                            op.as_cutobjects(closed_distance=context.opt_closed_distance, passes=passes),
+                            op.as_cutobjects(
+                                closed_distance=context.opt_closed_distance,
+                                passes=passes,
+                            ),
                             settings=op.settings,
                         )
                         if len(cutcode) == 0:
@@ -468,7 +468,9 @@ class CutPlan:
 
             if merge:
                 if blob.constrained:
-                    self.plan[-1].constrained = (
+                    self.plan[
+                        -1
+                    ].constrained = (
                         True  # if merge is constrained new blob is constrained.
                     )
                 self.plan[-1].extend(blob)
@@ -494,12 +496,8 @@ class CutPlan:
         if not has_cutcode:
             return
 
-        if (
-            context.opt_reduce_travel
-            and (
-                context.opt_nearest_neighbor
-                or context.opt_2opt
-            )
+        if context.opt_reduce_travel and (
+            context.opt_nearest_neighbor or context.opt_2opt
         ):
             if context.opt_nearest_neighbor:
                 self.commands.append(self.optimize_travel)
@@ -788,9 +786,7 @@ class Planner(Service):
         self.setting(bool, "opt_start_from_position", False)
         self.setting(int, "opt_jog_mode", 0)
 
-        @self.console_argument(
-            "alias", type=str, help=_("plan command name to alias")
-        )
+        @self.console_argument("alias", type=str, help=_("plan command name to alias"))
         @self.console_command(
             "plan-alias",
             help=_("Define a spoolable console command"),
@@ -964,9 +960,7 @@ class Planner(Service):
         @self.console_option(
             "index", "i", type=int, help=_("index of location to insert command")
         )
-        @self.console_option(
-            "op", "o", type=str, help=_("unlock, origin, home, etc.")
-        )
+        @self.console_option("op", "o", type=str, help=_("unlock, origin, home, etc."))
         @self.console_command(
             "command",
             help=_("plan<?> command"),
@@ -996,9 +990,7 @@ class Planner(Service):
                 channel(_("No plan command found."))
             return data_type, data
 
-        @self.console_argument(
-            "op", type=str, help=_("unlock, origin, home, etc")
-        )
+        @self.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @self.console_command(
             "append",
             help=_("plan<?> append <op>"),
@@ -1020,9 +1012,7 @@ class Planner(Service):
             channel(_("No plan command found."))
             return data_type, data
 
-        @self.console_argument(
-            "op", type=str, help=_("unlock, origin, home, etc")
-        )
+        @self.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @self.console_command(
             "prepend",
             help=_("plan<?> prepend <op>"),
@@ -1155,13 +1145,13 @@ class Planner(Service):
             data.plan.clear()
             data.commands.clear()
             for cmd, func in pre_plan_items:
-                if (cmd and c_plan[0] is func):
+                if cmd and c_plan[0] is func:
                     data.plan.append(c_plan.pop(0))
                 elif type(c_plan[0]) == str:  # Rotary disabled
                     data.plan.append(c_plan.pop(0))
 
             for cmd, func in post_plan_items:
-                if (cmd and c_plan[-1] is func):
+                if cmd and c_plan[-1] is func:
                     post_plan.insert(0, c_plan.pop())
                 elif type(c_plan[-1]) == str:  # Rotary disabled
                     post_plan.insert(0, c_plan.pop())
@@ -1522,7 +1512,7 @@ def inner_first_ident(context: CutGroup, channel=None):
                 outer.contains.append(inner)
 
                 # if inner.inside is None:
-                    # inner.inside = list()
+                # inner.inside = list()
                 # inner.inside.append(outer)
 
     context.constrained = constrained
@@ -1566,7 +1556,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
     checks.
     """
     if channel:
-        start_length=context.length_travel(True)
+        start_length = context.length_travel(True)
         start_time = time()
         start_times = times()
         channel("Executing Greedy Short-Travel optimization")
@@ -1714,7 +1704,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         return context
 
     if channel:
-        start_length=context.length_travel(True)
+        start_length = context.length_travel(True)
         start_time = time()
         start_times = times()
         channel("Executing 2-Opt Short-Travel optimization")
@@ -1844,7 +1834,7 @@ def inner_selection_cutcode(context: CutCode, channel=None):
     This routine runs if opt_inner first is selected and opt_greedy is not selected.
     """
     if channel:
-        start_length=context.length_travel(True)
+        start_length = context.length_travel(True)
         start_time = time()
         start_times = times()
         channel("Executing Inner Selection-Only optimization")

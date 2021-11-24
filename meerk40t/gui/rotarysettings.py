@@ -206,7 +206,9 @@ class RotarySettings(MWindow):
                 "label": _("Rotary"),
                 "icon": icons8_roll_50,
                 "tip": _("Opens Rotary Window"),
-                "action": lambda v: kernel.console("window -p rotary/1 toggle Rotary\n"),
+                "action": lambda v: kernel.console(
+                    "window -p rotary/1 toggle Rotary\n"
+                ),
             },
         )
 

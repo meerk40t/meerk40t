@@ -609,9 +609,7 @@ def grouped(plot):
         group_dy = y - group_y
         if abs(group_dx) > 1 or abs(group_dy) > 1:
             # The last step was not valid.
-            raise ValueError(
-                "dx(%d) or dy(%d) exceeds 1" % (group_dx, group_dy)
-            )
+            raise ValueError("dx(%d) or dy(%d) exceeds 1" % (group_dx, group_dy))
         group_x = x
         group_y = y
     # There are no more plots.

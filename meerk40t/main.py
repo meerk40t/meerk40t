@@ -252,6 +252,7 @@ def run():
         try:
             from .gui import wxmeerk40t
             from .gui.scene import scene
+
             # from .gui.legacy import legacy
             from .lihuiyu.gui import gui as lhygui
             from .moshi.gui import gui as moshigui
@@ -293,4 +294,3 @@ def run():
                 kernel.add_plugin(plugin)
 
     kernel()
-

@@ -45,7 +45,9 @@ class SpoolerPanel(wx.Panel):
             if s is self.selected_spooler:
                 index = i
                 break
-        self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
+        self.connected_name = (
+            self.selected_spooler.name if self.selected_spooler is not None else "None"
+        )
         spools = [s.label for s in self.available_spoolers]
 
         self.combo_device = wx.ComboBox(

@@ -884,7 +884,7 @@ def plugin(kernel, lifecycle=None):
                 element_bottom.image_width,
                 element_bottom.image_height,
             ) = element_bottom.image.size
-            element_bottom.transform.pre_translate(0,y)
+            element_bottom.transform.pre_translate(0, y)
 
             if hasattr(element, "node"):
                 element.node.remove_node()

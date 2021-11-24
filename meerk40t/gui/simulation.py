@@ -86,7 +86,9 @@ class SimulationPanel(wx.Panel, Job):
             if s is self.selected_spooler:
                 index = i
                 break
-        self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
+        self.connected_name = (
+            self.selected_spooler.name if self.selected_spooler is not None else "None"
+        )
         spools = [s.label for s in self.available_spoolers]
 
         self.combo_device = wx.ComboBox(
@@ -514,7 +516,6 @@ class Simulation(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-
         def open_simulator(v=None):
             with wx.BusyInfo(_("Preparing simulation...")):
                 kernel.console(
@@ -527,7 +528,7 @@ class Simulation(MWindow):
                 "label": _("Simulate"),
                 "icon": icons8_laser_beam_hazard2_50,
                 "tip": _("Simulate the current laser job"),
-                "action": open_simulator
+                "action": open_simulator,
             },
         )
 

@@ -239,8 +239,7 @@ class CutGroup(list, CutObject, ABC):
     """
 
     def __init__(
-        self, parent, children=(),
-        settings=None, constrained=False, closed=False
+        self, parent, children=(), settings=None, constrained=False, closed=False
     ):
         list.__init__(self, children)
         CutObject.__init__(self, parent=parent, settings=settings)
@@ -491,7 +490,9 @@ class CutCode(CutGroup):
 
 class LineCut(CutObject):
     def __init__(self, start_point, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+        CutObject.__init__(
+            self, start_point, end_point, settings=settings, passes=passes
+        )
         settings.raster_step = 0
 
     def generator(self):
@@ -502,7 +503,9 @@ class LineCut(CutObject):
 
 class QuadCut(CutObject):
     def __init__(self, start_point, control_point, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+        CutObject.__init__(
+            self, start_point, end_point, settings=settings, passes=passes
+        )
         settings.raster_step = 0
         self._control = control_point
 
@@ -529,8 +532,12 @@ class QuadCut(CutObject):
 
 
 class CubicCut(CutObject):
-    def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(
+        self, start_point, control1, control2, end_point, settings=None, passes=1
+    ):
+        CutObject.__init__(
+            self, start_point, end_point, settings=settings, passes=passes
+        )
         settings.raster_step = 0
         self._control1 = control1
         self._control2 = control2

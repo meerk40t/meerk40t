@@ -488,9 +488,7 @@ class ShadowTree:
 
         self.wxtree.SetItemData(elemtree.item, elemtree)
 
-        self.set_icon(
-            elemtree, icon_meerk40t.GetBitmap(False, resize=(20, 20))
-        )
+        self.set_icon(elemtree, icon_meerk40t.GetBitmap(False, resize=(20, 20)))
         self.register_children(elemtree)
 
         node_operations = elemtree.get(type="branch ops")

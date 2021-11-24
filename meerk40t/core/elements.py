@@ -92,7 +92,9 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("DXF Centering"),
-                "tip": _("Fit (scale down if necessary) and center a DXF file within the bed"),
+                "tip": _(
+                    "Fit (scale down if necessary) and center a DXF file within the bed"
+                ),
             },
             {
                 "attr": "operation_default_empty",
@@ -100,7 +102,9 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Default Operation Other/Red/Blue"),
-                "tip": _("Sets Operations to Other/Red/Blue if loaded with no operations."),
+                "tip": _(
+                    "Sets Operations to Other/Red/Blue if loaded with no operations."
+                ),
             },
             {
                 "attr": "classify_reverse",
@@ -128,6 +132,7 @@ def plugin(kernel, lifecycle=None):
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
             # Load any input file
             from os.path import realpath
+
             elements = kernel.elements
 
             elements.load(realpath(kernel.args.input.name))
@@ -136,6 +141,7 @@ def plugin(kernel, lifecycle=None):
         if hasattr(kernel.args, "output") and kernel.args.output is not None:
             # output the file you have at this point.
             from os.path import realpath
+
             elements = kernel.elements
 
             elements.save(realpath(kernel.args.output.name))
@@ -1247,12 +1253,22 @@ class LaserOperation(Node):
                         elif isinstance(seg, Close):
                             if seg.start != seg.end:
                                 group.append(
-                                    LineCut(seg.start, seg.end, settings=settings, passes=passes)
+                                    LineCut(
+                                        seg.start,
+                                        seg.end,
+                                        settings=settings,
+                                        passes=passes,
+                                    )
                                 )
                         elif isinstance(seg, Line):
                             if seg.start != seg.end:
                                 group.append(
-                                    LineCut(seg.start, seg.end, settings=settings, passes=passes)
+                                    LineCut(
+                                        seg.start,
+                                        seg.end,
+                                        settings=settings,
+                                        passes=passes,
+                                    )
                                 )
                         elif isinstance(seg, QuadraticBezier):
                             group.append(
@@ -1370,8 +1386,10 @@ class LaserOperation(Node):
                     )
                 )
                 cut = RasterCut(
-                    pil_image, matrix.value_trans_x(), matrix.value_trans_y(),
-                    settings= settings,
+                    pil_image,
+                    matrix.value_trans_x(),
+                    matrix.value_trans_y(),
+                    settings=settings,
                     passes=passes,
                 )
                 cut.path = path
@@ -1663,7 +1681,9 @@ class Elemental(Service):
     """
 
     def __init__(self, kernel, index=None, *args, **kwargs):
-        Service.__init__(self, kernel, "elements" if index is None else "elements%d" % index)
+        Service.__init__(
+            self, kernel, "elements" if index is None else "elements%d" % index
+        )
         self._clipboard = {}
         self._clipboard_default = "0"
 
@@ -1694,9 +1714,7 @@ class Elemental(Service):
         # ==========
         # OPERATION BASE
         # ==========
-        @self.console_command(
-            "operations", help=_("Show information about operations")
-        )
+        @self.console_command("operations", help=_("Show information about operations"))
         def element(**kwgs):
             self(".operation* list\n")
 
@@ -2077,9 +2095,7 @@ class Elemental(Service):
                 op.settings.raster_step = step
             if overscan is not None:
                 op.settings.overscan = int(
-                    overscan.value(
-                        ppi=1000.0, relative_length=self.device.bedwidth
-                    )
+                    overscan.value(ppi=1000.0, relative_length=self.device.bedwidth)
                 )
             if command == "cut":
                 op.operation = "Cut"
@@ -2118,9 +2134,7 @@ class Elemental(Service):
                     op.notify_update()
             return "ops", data
 
-        @self.console_argument(
-            "speed", type=float, help=_("operation speed in mm/s")
-        )
+        @self.console_argument("speed", type=float, help=_("operation speed in mm/s"))
         @self.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
@@ -3054,18 +3068,12 @@ class Elemental(Service):
         @self.console_argument(
             "y_pos", type=Length, help=_("y position for top left corner of rectangle.")
         )
-        @self.console_argument(
-            "width", type=Length, help=_("width of the rectangle.")
-        )
+        @self.console_argument("width", type=Length, help=_("width of the rectangle."))
         @self.console_argument(
             "height", type=Length, help=_("height of the rectangle.")
         )
-        @self.console_option(
-            "rx", "x", type=Length, help=_("rounded rx corner value.")
-        )
-        @self.console_option(
-            "ry", "y", type=Length, help=_("rounded ry corner value.")
-        )
+        @self.console_option("rx", "x", type=Length, help=_("rounded rx corner value."))
+        @self.console_option("ry", "y", type=Length, help=_("rounded ry corner value."))
         @self.console_command(
             "rect",
             help=_("adds rectangle to scene"),
@@ -3308,9 +3316,7 @@ class Elemental(Service):
             return "elements", data
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
-        @self.console_argument(
-            "color", type=Color, help=_("Color to set the fill to")
-        )
+        @self.console_argument("color", type=Color, help=_("Color to set the fill to"))
         @self.console_command(
             "fill",
             help=_("fill <svg color>"),
@@ -3420,9 +3426,7 @@ class Elemental(Service):
                 data.append(element)
                 return "elements", data
 
-        @self.console_argument(
-            "angle", type=Angle.parse, help=_("angle to rotate by")
-        )
+        @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
         @self.console_option("cx", "x", type=Length, help=_("center x"))
         @self.console_option("cy", "y", type=Length, help=_("center y"))
         @self.console_option(
@@ -3480,15 +3484,11 @@ class Elemental(Service):
             rot = angle.as_degrees
 
             if cx is not None:
-                cx = cx.value(
-                    ppi=1000.0, relative_length=self.device.bedwidth
-                )
+                cx = cx.value(ppi=1000.0, relative_length=self.device.bedwidth)
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
-                cy = cy.value(
-                    ppi=1000.0, relative_length=self.device.bedheight
-                )
+                cy = cy.value(ppi=1000.0, relative_length=self.device.bedheight)
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
@@ -3576,15 +3576,11 @@ class Elemental(Service):
             if scale_y is None:
                 scale_y = scale_x
             if px is not None:
-                center_x = px.value(
-                    ppi=1000.0, relative_length=self.device.bedwidth
-                )
+                center_x = px.value(ppi=1000.0, relative_length=self.device.bedwidth)
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if py is not None:
-                center_y = py.value(
-                    ppi=1000.0, relative_length=self.device.bedheight
-                )
+                center_y = py.value(ppi=1000.0, relative_length=self.device.bedheight)
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
             if scale_x == 0 or scale_y == 0:
@@ -3669,15 +3665,11 @@ class Elemental(Service):
                 channel(_("No selected elements."))
                 return
             if tx is not None:
-                tx = tx.value(
-                    ppi=1000.0, relative_length=self.device.bedwidth
-                )
+                tx = tx.value(ppi=1000.0, relative_length=self.device.bedwidth)
             else:
                 tx = 0
             if ty is not None:
-                ty = ty.value(
-                    ppi=1000.0, relative_length=self.device.bedheight
-                )
+                ty = ty.value(ppi=1000.0, relative_length=self.device.bedheight)
             else:
                 ty = 0
             m = Matrix("translate(%f,%f)" % (tx, ty))
@@ -3742,9 +3734,7 @@ class Elemental(Service):
             "y_pos", type=Length, help=_("y position for top left corner")
         )
         @self.console_argument("width", type=Length, help=_("new width of selected"))
-        @self.console_argument(
-            "height", type=Length, help=_("new height of selected")
-        )
+        @self.console_argument("height", type=Length, help=_("new height of selected"))
         @self.console_command(
             "resize",
             help=_("resize <x-pos> <y-pos> <width> <height>"),
@@ -3755,18 +3745,10 @@ class Elemental(Service):
             if height is None:
                 raise SyntaxError
             try:
-                x_pos = x_pos.value(
-                    ppi=1000.0, relative_length=self.device.bedwidth
-                )
-                y_pos = y_pos.value(
-                    ppi=1000.0, relative_length=self.device.bedheight
-                )
-                width = width.value(
-                    ppi=1000.0, relative_length=self.device.bedwidth
-                )
-                height = height.value(
-                    ppi=1000.0, relative_length=self.device.bedheight
-                )
+                x_pos = x_pos.value(ppi=1000.0, relative_length=self.device.bedwidth)
+                y_pos = y_pos.value(ppi=1000.0, relative_length=self.device.bedheight)
+                width = width.value(ppi=1000.0, relative_length=self.device.bedwidth)
+                height = height.value(ppi=1000.0, relative_length=self.device.bedheight)
                 area = self.selected_area()
                 if area is None:
                     return
@@ -3838,12 +3820,8 @@ class Elemental(Service):
                     kx,
                     sy,
                     ky,
-                    tx.value(
-                        ppi=1000.0, relative_length=self.device.bedwidth
-                    ),
-                    ty.value(
-                        ppi=1000.0, relative_length=self.device.bedheight
-                    ),
+                    tx.value(ppi=1000.0, relative_length=self.device.bedwidth),
+                    ty.value(ppi=1000.0, relative_length=self.device.bedheight),
                 )
                 for e in data:
                     try:
@@ -4256,15 +4234,11 @@ class Elemental(Service):
                 if dx is None:
                     dx = 0
                 else:
-                    dx = dx.value(
-                        ppi=1000.0, relative_length=self.device.bedwidth
-                    )
+                    dx = dx.value(ppi=1000.0, relative_length=self.device.bedwidth)
                 if dy is None:
                     dy = 0
                 else:
-                    dy = dy.value(
-                        ppi=1000.0, relative_length=self.device.bedheight
-                    )
+                    dy = dy.value(ppi=1000.0, relative_length=self.device.bedheight)
                 m = Matrix("translate(%s, %s)" % (dx, dy))
                 for e in pasted:
                     e *= m
@@ -4565,9 +4539,7 @@ class Elemental(Service):
         )
         def compile_and_simulate(node, **kwgs):
             node.emphasized = True
-            self(
-                "plan0 copy-selected preprocess validate blob preopt optimize\n"
-            )
+            self("plan0 copy-selected preprocess validate blob preopt optimize\n")
             self("window open Simulation 0\n")
 
         @self.tree_operation(_("Clear all"), node_type="branch ops", help="")
@@ -4767,9 +4739,7 @@ class Elemental(Service):
             return union
 
         @self.tree_submenu(_("Use"))
-        @self.tree_values(
-            "opname", values=self.get_context("operations").derivable
-        )
+        @self.tree_values("opname", values=self.get_context("operations").derivable)
         @self.tree_operation(
             _("Load: %s") % "{opname}", node_type="branch ops", help=""
         )
@@ -4816,16 +4786,12 @@ class Elemental(Service):
         @self.tree_submenu(_("Special operations"))
         @self.tree_operation(_("Add Home"), node_type="branch ops", help="")
         def add_operation_home(node, **kwgs):
-            self.op_branch.add(
-                CommandOperation("Home", COMMAND_HOME), type="cmdop"
-            )
+            self.op_branch.add(CommandOperation("Home", COMMAND_HOME), type="cmdop")
 
         @self.tree_submenu(_("Special operations"))
         @self.tree_operation(_("Add Beep"), node_type="branch ops", help="")
         def add_operation_beep(node, **kwgs):
-            self.op_branch.add(
-                CommandOperation("Beep", COMMAND_BEEP), type="cmdop"
-            )
+            self.op_branch.add(CommandOperation("Beep", COMMAND_BEEP), type="cmdop")
 
         @self.tree_submenu(_("Special operations"))
         @self.tree_operation(_("Add Move Origin"), node_type="branch ops", help="")

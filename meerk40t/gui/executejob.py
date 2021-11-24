@@ -30,7 +30,9 @@ class PlannerPanel(wx.Panel):
             if s is self.selected_spooler:
                 index = i
                 break
-        self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
+        self.connected_name = (
+            self.selected_spooler.name if self.selected_spooler is not None else "None"
+        )
         spools = [s.label for s in self.available_spoolers]
 
         self.combo_device = wx.ComboBox(
@@ -173,7 +175,7 @@ class PlannerPanel(wx.Panel):
             if height:
                 height = "%.1f%s" % (height / conversion, name)
             if width:
-                width  = "%.1f%s" % (width / conversion, name)
+                width = "%.1f%s" % (width / conversion, name)
         dlg.SetValue(str(width) if width is not None else "%f%%" % (100.0 / cols))
         if dlg.ShowModal() == wx.ID_OK:
             try:
@@ -415,8 +417,12 @@ class ExecuteJob(MWindow):
         )
         self.add_module_delegate(self.panel)
         self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel)
-        self.panel.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations)
-        self.panel.list_command.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command)
+        self.panel.list_operations.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations
+        )
+        self.panel.list_command.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
@@ -438,18 +444,14 @@ class ExecuteJob(MWindow):
     def on_menu(self, event):
         from .wxutils import create_menu_for_choices
 
-        menu = create_menu_for_choices(
-            self, self.context.lookup("choices/planner")
-        )
+        menu = create_menu_for_choices(self, self.context.lookup("choices/planner"))
         self.PopupMenu(menu)
         menu.Destroy()
 
     def create_menu(self, append):
         from .wxutils import create_menu_for_choices
 
-        wx_menu = create_menu_for_choices(
-            self, self.context.lookup("choices/planner")
-        )
+        wx_menu = create_menu_for_choices(self, self.context.lookup("choices/planner"))
         append(wx_menu, _("Automatic"))
 
         # ==========

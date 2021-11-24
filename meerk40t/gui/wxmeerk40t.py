@@ -99,7 +99,9 @@ def plugin(kernel, lifecycle):
                 "default": True,
                 "type": bool,
                 "label": _("Launch Spooler on Job Start"),
-                "tip": _("Open the Spooler window automatically when you Execute a Job"),
+                "tip": _(
+                    "Open the Spooler window automatically when you Execute a Job"
+                ),
             },
             {
                 "attr": "mouse_wheel_pan",
@@ -124,7 +126,7 @@ def plugin(kernel, lifecycle):
                 "label": _("Invert MouseWheel Pan"),
                 "tip": _(
                     "Reverses the direction of the MouseWheel for horizontal & vertical pan"
-                )
+                ),
             },
             {
                 "attr": "mouse_zoom_invert",
@@ -156,6 +158,7 @@ def plugin(kernel, lifecycle):
         kernel.register_choices("preferences", choices)
 
     elif lifecycle == "mainloop":
+
         def interrupt_popup():
             dlg = wx.MessageDialog(
                 None,
@@ -382,15 +385,7 @@ class wxMeerK40t(wx.App, Module):
             input_type="window",
             help=_("open/toggle the supplied window"),
         )
-        def window_open(
-            command,
-            channel,
-            _,
-            data,
-            window=None,
-            args=(),
-            **kwargs
-        ):
+        def window_open(command, channel, _, data, window=None, args=(), **kwargs):
             path = data
             try:
                 parent = context.gui
@@ -524,7 +519,9 @@ class wxMeerK40t(wx.App, Module):
                     kernel._config = None
                     kernel.shutdown()
             else:
-                channel('Argument "sure" is required. Requires typing: "nuke_settings yes"')
+                channel(
+                    'Argument "sure" is required. Requires typing: "nuke_settings yes"'
+                )
 
     def update_language(self, lang):
         """

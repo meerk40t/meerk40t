@@ -72,7 +72,7 @@ class FileOutput:
     def write(self, data):
         filename = self.filename.replace("?", "").replace(":", "")
         with open(
-                filename, "ab" if isinstance(data, (bytes, bytearray)) else "a"
+            filename, "ab" if isinstance(data, (bytes, bytearray)) else "a"
         ) as stream:
             stream.write(data)
             stream.flush()
@@ -316,9 +316,7 @@ class LegacyDevice(Service):
             channel(_("----------"))
             return data_type, data
 
-        @self.console_command(
-            "type", help=_("list output types"), input_type="output"
-        )
+        @self.console_command("type", help=_("list output types"), input_type="output")
         def output_types(channel, _, **kwgs):
             channel(_("----------"))
             channel(_("Output types:"))
@@ -326,9 +324,7 @@ class LegacyDevice(Service):
                 channel("%d: %s" % (i + 1, name))
             channel(_("----------"))
 
-        @self.console_argument(
-            "port", type=int, help=_("Port of TCPOutput to change.")
-        )
+        @self.console_argument("port", type=int, help=_("Port of TCPOutput to change."))
         @self.console_command(
             "port",
             help=_("change the port of the tcpdevice"),
@@ -353,7 +349,7 @@ class LegacyDevice(Service):
             output_type="driver",
         )
         def driver_base(
-                command, channel, _, data=None, new=None, remainder=None, **kwgs
+            command, channel, _, data=None, new=None, remainder=None, **kwgs
         ):
             spooler = None
             if data is None:
@@ -726,7 +722,9 @@ class LegacyDevice(Service):
 
     @property
     def name(self):
-        return device_as_name([self.spooler, self.default_driver(), self.default_output()])
+        return device_as_name(
+            [self.spooler, self.default_driver(), self.default_output()]
+        )
 
     def set_active(self, active):
         self.active = active

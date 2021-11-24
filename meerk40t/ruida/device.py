@@ -232,9 +232,7 @@ class RuidaDevice(Service):
             input_type=(None, "plan", "device"),
             output_type="spooler",
         )
-        def spool(
-            command, channel, _, data=None, remainder=None, **kwgs
-        ):
+        def spool(command, channel, _, data=None, remainder=None, **kwgs):
             spooler = self.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.

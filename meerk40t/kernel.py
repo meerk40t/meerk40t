@@ -2921,7 +2921,11 @@ class Kernel:
             return
 
         @console_argument("domain")
-        @self.console_command("service", output_type="service", help=_("Base command to manipulate services"))
+        @self.console_command(
+            "service",
+            output_type="service",
+            help=_("Base command to manipulate services"),
+        )
         def service(channel, _, domain=None, remainder=None, **kwargs):
             if not remainder or domain is None:
                 channel(_("----------"))
@@ -2954,7 +2958,11 @@ class Kernel:
             return "service", (domain, available, active)
 
         @console_argument("index", type=int, help="Index of service to activate.")
-        @self.console_command("activate", input_type="service", help=_("Activate the service at the given index"))
+        @self.console_command(
+            "activate",
+            input_type="service",
+            help=_("Activate the service at the given index"),
+        )
         def service_activate(channel, _, data=None, index=None, **kwargs):
             domain, available, active = data
             if index is None:
@@ -2963,12 +2971,16 @@ class Kernel:
 
         @console_argument("name", help="Name of service to start")
         @console_argument("index", type=int, help="Index of service to start")
-        @self.console_command("start", input_type="service", help=_("Initialize a provider"))
+        @self.console_command(
+            "start", input_type="service", help=_("Initialize a provider")
+        )
         def service_start(channel, _, data=None, index=None, name=None, **kwargs):
             domain, available, active = data
             if name is None:
                 raise SyntaxError
-            provider = self.lookup("service/{domain}/{name}".format(domain=domain, name=name) )
+            provider = self.lookup(
+                "service/{domain}/{name}".format(domain=domain, name=name)
+            )
             if provider is None:
                 raise SyntaxError("Bad provider.")
             self.add_service(domain, provider(self, index))

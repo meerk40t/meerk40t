@@ -58,10 +58,20 @@ class PreferencesPanel(wx.Panel):
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
         self.spin_bedwidth = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, str(self.context.device.bedwidth), min=1.0, max=80000.0, inc=MILS_IN_MM
+            self,
+            wx.ID_ANY,
+            str(self.context.device.bedwidth),
+            min=1.0,
+            max=80000.0,
+            inc=MILS_IN_MM,
         )
         self.spin_bedheight = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, str(self.context.device.bedheight), min=1.0, max=80000.0, inc=MILS_IN_MM
+            self,
+            wx.ID_ANY,
+            str(self.context.device.bedheight),
+            min=1.0,
+            max=80000.0,
+            inc=MILS_IN_MM,
         )
         self.__set_properties()
         self.__do_layout()
@@ -315,6 +325,7 @@ class PreferencesPanel(wx.Panel):
 class Preferences(MWindow):
     def __init__(self, *args, **kwds):
         from sys import platform as _platform
+
         super().__init__(
             565,
             327,
@@ -337,6 +348,7 @@ class Preferences(MWindow):
     @staticmethod
     def sub_register(kernel):
         from sys import platform
+
         if platform != "darwin":
             kernel.register(
                 "button/config/Preferences",

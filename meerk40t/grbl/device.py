@@ -218,9 +218,7 @@ class GRBLDevice(Service):
             input_type=(None, "plan", "device"),
             output_type="spooler",
         )
-        def spool(
-            command, channel, _, data=None, remainder=None, **kwgs
-        ):
+        def spool(command, channel, _, data=None, remainder=None, **kwgs):
             spooler = self.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
@@ -410,7 +408,9 @@ class TCPOutput:
     def _start(self):
         if self.thread is None:
             self.thread = self.service.threaded(
-                self._sending, thread_name="sender-%d" % self.service.port, result=self._stop
+                self._sending,
+                thread_name="sender-%d" % self.service.port,
+                result=self._stop,
             )
 
     def _stop(self, *args):
@@ -444,7 +444,11 @@ class TCPOutput:
 
     def __repr__(self):
         if self.name is not None:
-            return "TCPOutput('%s:%s','%s')" % (self.service.address, self.service.port, self.name)
+            return "TCPOutput('%s:%s','%s')" % (
+                self.service.address,
+                self.service.port,
+                self.name,
+            )
         return "TCPOutput('%s:%s')" % (self.service.address, self.service.port)
 
     def __len__(self):

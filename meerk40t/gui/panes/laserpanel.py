@@ -73,7 +73,9 @@ class LaserPanel(wx.Panel):
             if s is self.selected_spooler:
                 index = i
                 break
-        self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
+        self.connected_name = (
+            self.selected_spooler.name if self.selected_spooler is not None else "None"
+        )
         spools = [s.label for s in self.available_spoolers]
 
         self.combo_devices = wx.ComboBox(
@@ -160,7 +162,9 @@ class LaserPanel(wx.Panel):
 
         self.context.setting(bool, "laserpane_hold", False)
         self.checkbox_hold = wx.CheckBox(self, wx.ID_ANY, _("Hold"))
-        self.checkbox_hold.SetToolTip(_("Preserve the job between running, rerunning, and execution"))
+        self.checkbox_hold.SetToolTip(
+            _("Preserve the job between running, rerunning, and execution")
+        )
         self.checkbox_hold.SetValue(self.context.laserpane_hold)
         sizer_source.Add(self.checkbox_hold, 1, 0, 0)
 
@@ -197,7 +201,9 @@ class LaserPanel(wx.Panel):
             if s is self.selected_spooler:
                 index = i
                 break
-        self.connected_name = self.selected_spooler.name if self.selected_spooler is not None else "None"
+        self.connected_name = (
+            self.selected_spooler.name if self.selected_spooler is not None else "None"
+        )
         self.combo_devices.Clear()
         spools = [s.label for s in self.available_spoolers]
         for i in range(len(spools)):
@@ -227,7 +233,8 @@ class LaserPanel(wx.Panel):
         else:
             if self.checkbox_optimize.GetValue():
                 self.context(
-                    "planz clear copy preprocess validate blob preopt optimize spool%s\n" % s
+                    "planz clear copy preprocess validate blob preopt optimize spool%s\n"
+                    % s
                 )
             else:
                 self.context("planz clear copy preprocess validate blob spool%s\n" % s)
@@ -283,4 +290,3 @@ class LaserPanel(wx.Panel):
         self.selected_spooler = self.available_spoolers[index]
         if self.selected_spooler.activate is not None:
             self.selected_spooler.activate()
-

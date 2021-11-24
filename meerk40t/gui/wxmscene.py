@@ -53,7 +53,10 @@ class MeerK40tScenePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.scene = ScenePanel(
-            self.context, self, scene_name="Scene" if index is None else "Scene%d" % index, style=wx.EXPAND | wx.WANTS_CHARS
+            self.context,
+            self,
+            scene_name="Scene" if index is None else "Scene%d" % index,
+            style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.widget_scene = self.scene.scene
         context = self.context
@@ -245,7 +248,6 @@ class MeerK40tScenePanel(wx.Panel):
         context.unlisten("modified", self.on_element_modified)
         context.unlisten("altered", self.on_element_modified)
         context.unlisten("units", self.space_changed)
-
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
