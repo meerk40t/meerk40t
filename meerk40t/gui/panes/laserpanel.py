@@ -334,10 +334,12 @@ class LaserPanel(wx.Panel):
         self.context("window toggle DeviceManager\n")
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
+        index = self.combo_devices.GetSelection()
+        if index == -1:
+            return
         self.available_devices = [
             self.context.registered[i] for i in self.context.match("device")
         ]
-        index = self.combo_devices.GetSelection()
         (
             self.connected_spooler,
             self.connected_driver,
