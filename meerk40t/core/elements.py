@@ -5142,7 +5142,7 @@ class Elemental(Modifier):
             if platform == "darwin":
                 open_in_shell("open '{file}'".format(file=normalized))
             elif "win" in platform:
-                open_in_shell("'{file}'".format(file=normalized))
+                open_in_shell('"{file}"'.format(file=normalized))
             else:
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
 
