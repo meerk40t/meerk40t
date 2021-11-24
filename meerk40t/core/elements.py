@@ -5136,15 +5136,15 @@ class Elemental(Modifier):
             filepath = node.filepath
             normalized = os.path.realpath(filepath)
 
-            from os import system as run_in_shell
+            from os import system as open_in_shell
             from sys import platform
 
             if platform == "darwin":
-                run_in_shell('"open {file}"'.format(file=normalized))
+                open_in_shell('"open {file}"'.format(file=normalized))
             elif "win" in platform:
-                run_in_shell('"{file}"'.format(file=normalized))
+                open_in_shell('"{file}"'.format(file=normalized))
             else:
-                run_in_shell('"xdg-open {file}"'.format(file=normalized))
+                open_in_shell('"xdg-open {file}"'.format(file=normalized))
 
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
