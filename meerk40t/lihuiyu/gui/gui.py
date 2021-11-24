@@ -36,7 +36,7 @@ def plugin(kernel, lifecycle):
                 "label": _("Controller"),
                 "icon": icons8_connected_50,
                 "tip": _("Opens Controller Window"),
-                "action": controller_click(),
+                "action": controller_click,
                 "alt-action": (
                     (_("Opens USB-Controller"), lambda e: service("window toggle Controller\n")),
                     (_("Opens Network-Controller"), lambda e: service("window toggle Network-Controller\n")),
