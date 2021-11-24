@@ -554,48 +554,6 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Emulator cannot be attached to any device."))
             return
 
-    elif lifecycle == "boot":
-        context = kernel.get_context("lihuiyu0")
-        _ = context._
-        choices = [
-            {
-                "attr": "bedwidth",
-                "object": context,
-                "default": 12205.0,
-                "type": float,
-                "label": _("Width"),
-                "tip": _("Width of the laser bed."),
-            },
-            {
-                "attr": "bedheight",
-                "object": context,
-                "default": 8268.0,
-                "type": float,
-                "label": _("Height"),
-                "tip": _("Height of the laser bed."),
-            },
-            {
-                "attr": "scale_x",
-                "object": context,
-                "default": 1.000,
-                "type": float,
-                "label": _("X Scale Factor"),
-                "tip": _(
-                    "Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
-                ),
-            },
-            {
-                "attr": "scale_y",
-                "object": context,
-                "default": 1.000,
-                "type": float,
-                "label": _("Y Scale Factor"),
-                "tip": _(
-                    "Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
-                ),
-            },
-        ]
-        context.register_choices("bed_dim", choices)
 
 
 class LihuiyuDevice(Service):
@@ -607,6 +565,47 @@ class LihuiyuDevice(Service):
         Service.__init__(self, kernel, "lihuiyu%d" % index)
         self.name = "LihuiyuDevice"
 
+        _ = kernel.translation
+
+        choices = [
+            {
+                "attr": "bedwidth",
+                "object": self,
+                "default": 12205.0,
+                "type": float,
+                "label": _("Width"),
+                "tip": _("Width of the laser bed."),
+            },
+            {
+                "attr": "bedheight",
+                "object": self,
+                "default": 8268.0,
+                "type": float,
+                "label": _("Height"),
+                "tip": _("Height of the laser bed."),
+            },
+            {
+                "attr": "scale_x",
+                "object": self,
+                "default": 1.000,
+                "type": float,
+                "label": _("X Scale Factor"),
+                "tip": _(
+                    "Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                ),
+            },
+            {
+                "attr": "scale_y",
+                "object": self,
+                "default": 1.000,
+                "type": float,
+                "label": _("Y Scale Factor"),
+                "tip": _(
+                    "Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                ),
+            },
+        ]
+        self.register_choices("bed_dim", choices)
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)
         self.setting(int, "opt_jog_minimum", 256)
