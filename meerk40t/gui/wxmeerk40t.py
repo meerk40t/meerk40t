@@ -492,6 +492,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("wxpane/Go", register_panel_go)
         kernel.register("wxpane/Stop", register_panel_stop)
         kernel.register("wxpane/Home", register_panel_home)
+        kernel.register("wxpane/Pause", register_panel_pause)
 
         context = kernel.root
 

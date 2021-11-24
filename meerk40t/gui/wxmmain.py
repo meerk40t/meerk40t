@@ -727,9 +727,12 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pane_name = suffix_path
 
+            pane_caption = pane_name[0].upper() + pane_name[1:] + "."
             try:
                 pane_caption = pane.caption
             except AttributeError:
+                pass
+            if not pane_caption:
                 pane_caption = pane_name[0].upper() + pane_name[1:] + "."
 
             id_new = wx.NewId()
