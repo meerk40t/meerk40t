@@ -4396,6 +4396,7 @@ class Elemental(Modifier):
             try:
                 undo = self._undo_stack[self._undo_index]
             except IndexError:
+                self._undo_index = len(self._undo_stack) - 1
                 channel("No undo available.")
                 return
             self.clear_elements()
@@ -4409,13 +4410,14 @@ class Elemental(Modifier):
         def undo_redo(command, channel, _, data=None, **kwgs):
             if not self._undo_stack:
                 return
-            if self._undo_index == 0:
+            if self._undo_index <= 0:
                 channel("No redo available.")
                 return
             self._undo_index -= 1
             try:
-                redo = self._undo_stack[self._undo_index - 1]
+                redo = self._undo_stack[self._undo_index]
             except IndexError:
+                self._undo_index = 0
                 channel("No redo available.")
                 return
             self.clear_elements()
@@ -5649,6 +5651,7 @@ class Elemental(Modifier):
     def altered(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
+        self.context.schedule(self._save_restore_job)
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
