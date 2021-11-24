@@ -2726,8 +2726,10 @@ class Job:
         self.args = args
         self.interval = interval
         self.times = times
+
         self._last_run = None
         self._next_run = time.time() + self.interval
+        self._remaining = self.times
 
     def __call__(self, *args, **kwargs):
         self.process(*args, **kwargs)
@@ -2749,8 +2751,13 @@ class Job:
             and (self.conditional is None or self.conditional())
         )
 
+    def reset(self) -> None:
+        self._last_run = None
+        self._next_run = time.time() + self.interval
+        self._remaining = self.times
+
     def cancel(self) -> None:
-        self.times = -1
+        self._remaining = -1
 
 
 class ConsoleFunction(Job):
