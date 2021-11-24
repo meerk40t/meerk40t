@@ -705,6 +705,8 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        kernel.register("wxpane/Camera", register_panel)
+
         def camera_click(index=None):
             def specific(event=None):
                 kernel.root.setting(int, "camera_default", 1)
