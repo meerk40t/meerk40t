@@ -1217,19 +1217,13 @@ class Kernel:
             return
 
         if isinstance(matched, Module):
-            Module.set_lifecycle(
-                update, matched._lifecycle, module=matched
-            )
+            Module.set_lifecycle(update, matched._lifecycle, module=matched)
 
         elif isinstance(matched, Service):
-            Service.set_lifecycle(
-                update, matched._lifecycle, service=matched
-            )
+            Service.set_lifecycle(update, matched._lifecycle, service=matched)
 
         elif isinstance(matched, Kernel):
-            Kernel.set_lifecycle(
-                update, matched._lifecycle, kernel=matched
-            )
+            Kernel.set_lifecycle(update, matched._lifecycle, kernel=matched)
 
     # ==========
     # LIFECYCLE PROCESSES
@@ -1634,7 +1628,7 @@ class Kernel:
         @param cookie:
         @return:
         """
-        for i in range(len(self.delegates) -1, -1, -1):
+        for i in range(len(self.delegates) - 1, -1, -1):
             delegate, ref = self.delegates[i]
             if cookie is ref:
                 del self.delegates[i]
@@ -1696,7 +1690,10 @@ class Kernel:
         @param paths:
         @return:
         """
-        self.channel("lookup")("Changed all: %s (%s)" % (str(paths), str(threading.currentThread().getName())))
+        self.channel("lookup")(
+            "Changed all: %s (%s)"
+            % (str(paths), str(threading.currentThread().getName()))
+        )
         with self._lookup_lock:
             if not self._dirty_paths:
                 self.schedule(self._clean_lookup)
@@ -1709,7 +1706,9 @@ class Kernel:
 
         @return:
         """
-        self.channel("lookup")("Changed %s (%s)" % (str(path), str(threading.currentThread().getName())))
+        self.channel("lookup")(
+            "Changed %s (%s)" % (str(path), str(threading.currentThread().getName()))
+        )
         with self._lookup_lock:
             if not self._dirty_paths:
                 self.schedule(self._clean_lookup)
@@ -1729,7 +1728,10 @@ class Kernel:
         """
         channel = self.channel("lookup")
         if channel:
-            channel("Lookup Change Processing (%s)" % (str(threading.currentThread().getName())))
+            channel(
+                "Lookup Change Processing (%s)"
+                % (str(threading.currentThread().getName()))
+            )
         with self._lookup_lock:
             for matchtext in self.lookups:
                 if channel:
@@ -1739,7 +1741,9 @@ class Kernel:
                     previous_matches = self.lookup_previous[matchtext]
                 except KeyError:
                     previous_matches = None
-                if previous_matches is not None and not self._matchtext_is_dirty(matchtext):
+                if previous_matches is not None and not self._matchtext_is_dirty(
+                    matchtext
+                ):
                     continue
                 if channel:
                     channel("Differences for %s" % matchtext)
@@ -2863,7 +2867,7 @@ class Kernel:
             return
 
         @self.console_command("plugin", _("list loaded plugins in kernel"))
-        def context(channel, _, args=tuple(), **kwargs):
+        def plugins(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 for name in self._plugins:
                     channel(name.__module__)
@@ -2916,6 +2920,49 @@ class Kernel:
                     channel(_("Module '%s' not found.") % index)
             return
 
+        @console_argument("domain")
+        @self.console_command("service", output_type="service", help=_("Base command to manipulate services"))
+        def service(channel, _, domain=None, remainder=None, **kwargs):
+            if not remainder or domain is None:
+                channel(_("----------"))
+                channel(_("Services Registered:"))
+                for i, name in enumerate(self.match("service")):
+                    channel("%d: %s" % (i + 1, name))
+                channel(_("----------"))
+
+                for i, _domain in enumerate(self._available_services):
+                    if domain is not None and domain != _domain:
+                        continue
+                    available = self._available_services[_domain]
+                    active = self._active_services[_domain]
+                    for index, s in enumerate(available):
+                        channel(
+                            _("{active}{domain},{index}: {path} of {service}").format(
+                                domain=_domain,
+                                path=(str(s.path)),
+                                service=str(s),
+                                active="*" if s is active else " ",
+                                index=index,
+                            )
+                        )
+                return
+            try:
+                available = self._available_services[domain]
+                active = self._active_services[domain]
+            except KeyError:
+                return None
+            return "service", (domain, available, active)
+
+        @console_argument("index", type=int, help="Index of service to activate.")
+        @self.console_command("activate", input_type="service", help=_("Activate the service at the given index"))
+        def service_activate(channel, _, data=None, index=None, **kwargs):
+            domain, available, active = data
+            if index is None:
+                raise SyntaxError
+            self.activate_service_index(domain, index)
+
+
+
         # ==========
         # CHANNEL COMMANDS
         # ==========
@@ -2963,7 +3010,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_open(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2981,7 +3028,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2999,7 +3046,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -3019,7 +3066,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, filename=None, **kwargs):
+        def channel_save(channel, _, channel_name, filename=None, **kwargs):
             """
             Save a particular channel to disk. Any data sent to that channel within Meerk40t will write out a log.
             """
