@@ -1635,6 +1635,8 @@ class Elemental(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
 
+        self._undo_stack = []
+        self._undo_index = 0
         self._clipboard = {}
         self._clipboard_default = "0"
 
@@ -1642,6 +1644,7 @@ class Elemental(Modifier):
         self._emphasized_bounds = None
         self._emphasized_bounds_dirty = True
         self._tree = None
+        self._save_restore_job = ConsoleFunction("save_restore_point\n", times=1)
 
     def tree_operations_for_node(self, node):
         for m in self.context.match("tree/%s/.*" % node.type):
@@ -4370,6 +4373,63 @@ class Elemental(Modifier):
                     return "elements", list(self.elems(emphasized=True))
 
         # ==========
+        # UNDO/REDO COMMANDS
+        # ==========
+        @context.console_command(
+            "save_restore_point",
+        )
+        def undo_mark(data=None, **kwgs):
+            del self._undo_stack[0:self._undo_index]
+            self._undo_stack.insert(0, list(map(copy, self.elems())))
+            self._undo_index = 0
+            return "undo", self._undo_stack[self._undo_index]
+
+        @context.console_command(
+            "undo",
+        )
+        def undo_undo(command, channel, _, **kwgs):
+            if not self._undo_stack:
+                return
+            try:
+                undo = self._undo_stack[self._undo_index]
+            except IndexError:
+                channel("No undo available.")
+                return
+            self.clear_elements()
+            for e in undo:
+                self.add_elem(copy(e), True)
+            self._undo_index += 1
+            self.context.signal("refresh_scene")
+
+        @context.console_command(
+            "redo",
+        )
+        def undo_redo(command, channel, _, data=None, **kwgs):
+            if not self._undo_stack:
+                return
+            if self._undo_index == 0:
+                channel("No redo available.")
+                return
+            try:
+                redo = self._undo_stack[self._undo_index - 1]
+            except IndexError:
+                channel("No redo available.")
+                return
+            self.clear_elements()
+            for e in redo:
+                self.add_elem(copy(e), True)
+            self._undo_index -= 1
+            self.context.signal("refresh_scene")
+
+        @context.console_command(
+            "undolist",
+        )
+        def clipboard_list(command, channel, _, **kwgs):
+            for i,v in enumerate(self._undo_stack):
+                q = "*" if i == self._undo_index else " "
+                channel("%s%s: undo %s elements" % (q, str(i).ljust(5), str(len(v))))
+
+        # ==========
         # CLIPBOARD COMMANDS
         # ==========
         @context.console_option("name", "n", type=str)
@@ -5591,6 +5651,7 @@ class Elemental(Modifier):
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
+        self.context.schedule(self._save_restore_job)
 
     def listen(self, listener):
         self._tree.listen(listener)
