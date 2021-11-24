@@ -154,10 +154,10 @@ def run():
     # from .legacy import device as legacydevice
     #
     # kernel.add_plugin(legacydevice.plugin)
-
-    from .device import device as default_device
-
-    kernel.add_plugin(default_device.plugin)
+    #
+    # from .device import device as default_device
+    #
+    # kernel.add_plugin(default_device.plugin)
 
     from .core import spoolers
 
