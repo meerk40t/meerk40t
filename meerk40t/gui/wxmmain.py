@@ -4,7 +4,7 @@ import sys
 import wx
 from wx import aui
 
-from ..kernel import ConsoleFunction, lookup_listener
+from ..kernel import ConsoleFunction, lookup_listener, signal_listener
 from ..svgelements import Color, Length, Matrix, Path, SVGImage
 from .icons import (
     icon_meerk40t,
@@ -649,20 +649,6 @@ class MeerK40t(MWindow):
         context.setting(int, "draw_mode", 0)
         context.setting(bool, "print_shutdown", False)
 
-        context.listen("export-image", self.on_export_signal)
-
-        context.listen("device;noactive", self.on_device_noactive)
-        context.listen("pipe;failing", self.on_usb_error)
-        context.listen("pipe;running", self.on_usb_running)
-        context.listen("pipe;usb_status", self.on_usb_state_text)
-        context.listen("pipe;thread", self.on_pipe_state)
-        context.listen("spooler;thread", self.on_spooler_state)
-        context.listen("warning", self.on_warning_signal)
-
-        context.listen("active", self.on_active_change)
-        context.listen("modified", self.on_invalidate_save)
-        context.listen("altered", self.on_invalidate_save)
-
         @context.console_command(
             "theme", help=_("Theming information and assignments"), hidden=True
         )
@@ -703,7 +689,6 @@ class MeerK40t(MWindow):
                 self.on_pane_add(pane_init)
 
             return toggle
-
 
         for i in range(self.panes_menu.MenuItemCount):
             self.panes_menu.Remove(self.panes_menu.FindItemByPosition(0))
@@ -1320,6 +1305,7 @@ class MeerK40t(MWindow):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
+    @signal_listener("active")
     def on_active_change(self, origin, active):
         self.__set_titlebar()
 
@@ -1359,23 +1345,10 @@ class MeerK40t(MWindow):
             context.channel("shutdown").watch(print)
 
         self.context.close("module/Scene")
-
-        context.unlisten("export-image", self.on_export_signal)
-
-        context.unlisten("device;noactive", self.on_device_noactive)
-        context.unlisten("pipe;failing", self.on_usb_error)
-        context.unlisten("pipe;running", self.on_usb_running)
-        context.unlisten("pipe;usb_status", self.on_usb_state_text)
-        context.unlisten("pipe;thread", self.on_pipe_state)
-        context.unlisten("spooler;thread", self.on_spooler_state)
-        context.unlisten("warning", self.on_warning_signal)
-
-        context.unlisten("active", self.on_active_change)
-        context.unlisten("modified", self.on_invalidate_save)
-        context.unlisten("altered", self.on_invalidate_save)
-
         self.context("quit\n")
 
+    @signal_listener("altered")
+    @signal_listener("modified")
     def on_invalidate_save(self, origin, *args):
         self.needs_saving = True
         app = self.context.app.GetTopWindow()
@@ -1388,6 +1361,7 @@ class MeerK40t(MWindow):
         if isinstance(app, wx.TopLevelWindow):
             app.OSXSetModified(self.needs_saving)
 
+    @signal_listener("warning")
     def on_warning_signal(self, origin, message, caption, style):
         dlg = wx.MessageDialog(
             None,
@@ -1398,6 +1372,7 @@ class MeerK40t(MWindow):
         dlg.ShowModal()
         dlg.Destroy()
 
+    @signal_listener("device;noactive")
     def on_device_noactive(self, origin, value):
         dlg = wx.MessageDialog(
             None,
@@ -1408,6 +1383,7 @@ class MeerK40t(MWindow):
         dlg.ShowModal()
         dlg.Destroy()
 
+    @signal_listener("pipe;failing")
     def on_usb_error(self, origin, value):
         if value == 5:
             self.context.signal("controller", origin)
@@ -1420,12 +1396,15 @@ class MeerK40t(MWindow):
             dlg.ShowModal()
             dlg.Destroy()
 
+    @signal_listener("pipe;running")
     def on_usb_running(self, origin, value):
         self.usb_running = value
 
+    @signal_listener("pipe;usb_status")
     def on_usb_state_text(self, origin, value):
         self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
 
+    @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
         if state == self.pipe_state:
             return
@@ -1435,11 +1414,13 @@ class MeerK40t(MWindow):
             _("Controller: %s") % self.context.kernel.get_text_thread_state(state), 1
         )
 
+    @signal_listener("spooler;thread")
     def on_spooler_state(self, origin, value):
         self.main_statusbar.SetStatusText(
             _("Spooler: %s") % self.context.get_text_thread_state(value), 2
         )
 
+    @signal_listener("export-image")
     def on_export_signal(self, origin, frame):
         image_width, image_height, frame = frame
         if frame is not None:
