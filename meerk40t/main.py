@@ -151,13 +151,9 @@ def run():
 
     kernel.add_plugin(ruida_driver.plugin)
 
-    # from .legacy import device as legacydevice
+    # from .device import dummydevice
     #
-    # kernel.add_plugin(legacydevice.plugin)
-    #
-    # from .device import device as default_device
-    #
-    # kernel.add_plugin(default_device.plugin)
+    # kernel.add_plugin(dummydevice.plugin)
 
     from .core import spoolers
 
@@ -182,22 +178,6 @@ def run():
     from .image import imagetools
 
     kernel.add_plugin(imagetools.plugin)
-    #
-    # from .device.lhystudios import lhystudiosdevice
-    #
-    # kernel.add_plugin(lhystudiosdevice.plugin)
-    #
-    # from .device.moshi import moshidevice
-    #
-    # kernel.add_plugin(moshidevice.plugin)
-    #
-    # from .device.grbl import grbldevice
-    #
-    # kernel.add_plugin(grbldevice.plugin)
-    #
-    # from .device.ruida import ruidadevice
-    #
-    # kernel.add_plugin(ruidadevice.plugin)
 
     from .core import svg_io
 
