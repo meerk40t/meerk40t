@@ -1,7 +1,7 @@
 
 import unittest
 
-from meerk40t.device.lhystudios.laserspeed import LaserSpeed
+from meerk40t.lihuiyu.laserspeed import LaserSpeed
 
 codes = (
     "CV0051131001065112C M2 0.4 0",
