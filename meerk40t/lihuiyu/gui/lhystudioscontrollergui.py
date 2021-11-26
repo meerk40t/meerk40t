@@ -499,9 +499,9 @@ class LhystudiosControllerPanel(wx.Panel):
 
         if state == "STATE_FAILED_RETRYING":
             self.retries = 0
-            self.context("dev usb_abort\n")
+            self.context("usb_abort\n")
         elif state == "STATE_FAILED_SUSPENDED":
-            self.context("dev usb_continue\n")
+            self.context("usb_continue\n")
         elif state in (
             "STATE_USB_DISCONNECTED",
             "STATE_UNINITIALIZED",
@@ -510,7 +510,7 @@ class LhystudiosControllerPanel(wx.Panel):
             None,
         ):
             try:
-                self.context("dev usb_connect\n")
+                self.context("usb_connect\n")
             except ConnectionRefusedError:
                 dlg = wx.MessageDialog(
                     None,
@@ -521,7 +521,7 @@ class LhystudiosControllerPanel(wx.Panel):
                 result = dlg.ShowModal()
                 dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
-            self.context("dev usb_disconnect\n")
+            self.context("usb_disconnect\n")
 
     @signal_listener("pipe;thread")
     def on_control_state(self, origin, state):
@@ -539,8 +539,8 @@ class LhystudiosControllerPanel(wx.Panel):
         if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
 
             def f(event=None):
-                self.context("dev start\n")
-                self.context("dev hold\n")
+                self.context("start\n")
+                self.context("hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#009900")
@@ -555,7 +555,7 @@ class LhystudiosControllerPanel(wx.Panel):
         elif state == STATE_WAIT:
 
             def f(event=None):
-                self.context("dev continue\n")
+                self.context("continue\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#dddd00")
@@ -565,7 +565,7 @@ class LhystudiosControllerPanel(wx.Panel):
         elif state == STATE_PAUSE:
 
             def f(event=None):
-                self.context("dev resume\n")
+                self.context("resume\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00dd00")
@@ -575,7 +575,7 @@ class LhystudiosControllerPanel(wx.Panel):
         elif state == STATE_ACTIVE:
 
             def f(event=None):
-                self.context("dev hold\n")
+                self.context("hold\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ff00")
@@ -585,7 +585,7 @@ class LhystudiosControllerPanel(wx.Panel):
         elif state == STATE_TERMINATE:
 
             def f(event=None):
-                self.context("dev abort\n")
+                self.context("abort\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ffff")
@@ -683,7 +683,7 @@ class LhystudiosControllerGui(MWindow):
 
     def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("dev usb_reset\n")
+            self.context("usb_reset\n")
         except AttributeError:
             pass
 
@@ -691,7 +691,7 @@ class LhystudiosControllerGui(MWindow):
         self, event
     ):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("dev usb_release\n")
+            self.context("usb_release\n")
         except AttributeError:
             pass
 
@@ -699,13 +699,13 @@ class LhystudiosControllerGui(MWindow):
         self, event=None
     ):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("dev pause\n")
+            self.context("pause\n")
         except AttributeError:
             pass
 
     def on_menu_stop(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("dev estop\n")
+            self.context("estop\n")
         except AttributeError:
             pass
 

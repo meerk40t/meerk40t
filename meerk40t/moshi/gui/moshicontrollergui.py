@@ -352,7 +352,7 @@ class MoshiControllerPanel(wx.Panel):
             None,
         ):
             try:
-                self.context("dev usb_connect\n")
+                self.context("usb_connect\n")
             except ConnectionRefusedError:
                 dlg = wx.MessageDialog(
                     None,
@@ -363,7 +363,7 @@ class MoshiControllerPanel(wx.Panel):
                 result = dlg.ShowModal()
                 dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
-            self.context("dev usb_disconnect\n")
+            self.context("usb_disconnect\n")
 
     def spin_on_device_index(self, event=None):
         self.context.usb_index = int(self.spin_device_index.GetValue())
@@ -463,7 +463,7 @@ class MoshiControllerGui(MWindow):
 
     def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("dev usb_reset\n")
+            self.context("usb_reset\n")
         except AttributeError:
             pass
 
@@ -471,7 +471,7 @@ class MoshiControllerGui(MWindow):
         self, event
     ):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("dev usb_release\n")
+            self.context("usb_release\n")
         except AttributeError:
             pass
 
@@ -479,13 +479,13 @@ class MoshiControllerGui(MWindow):
         self, event=None
     ):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("dev pause\n")
+            self.context("pause\n")
         except AttributeError:
             pass
 
     def on_menu_stop(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
         try:
-            self.context("dev estop\n")
+            self.context("estop\n")
         except AttributeError:
             pass
 
@@ -496,6 +496,6 @@ class MoshiControllerGui(MWindow):
 
     def on_menu_freemotor(self, event):  # wxGlade: MoshiControllerGui.<event_handler>
         try:
-            self.context("dev unlock\n")
+            self.context("unlock\n")
         except AttributeError:
             pass
