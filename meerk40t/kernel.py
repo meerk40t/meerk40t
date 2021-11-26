@@ -540,9 +540,8 @@ class Context:
             # Module not found.
             pass
 
-        try:
-            open_object = self._kernel.lookup(registered_path)
-        except KeyError:
+        open_object = self._kernel.lookup(registered_path)
+        if open_object is None:
             raise ValueError
 
         instance = open_object(self, instance_path, *args, **kwargs)
