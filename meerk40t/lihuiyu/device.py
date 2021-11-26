@@ -155,34 +155,30 @@ class LihuiyuDevice(Service):
         self.setting(bool, "mock", False)
         self.setting(bool, "show_usb_log", False)
 
+        self.setting(bool, "networked", False)
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
         self.setting(str, "serial", None)
 
-        self.tcp = None
         self.setting(int, "port", 1022)
         self.setting(str, "address", "localhost")
 
         self.current_x = 0.0
         self.current_y = 0.0
         self.state = 0
-        self.type = "usb"
         if self.board == "M2":
             self.spooler = Spooler(self, "m2nano-%d" % index)
         else:
             self.spooler = Spooler(self, "%s-%d" % (self.board, index))
-
         self.spooler.activate = self.activate_spooler
         self.driver = LhystudiosDriver(self, self.spooler.name)
+        self.settings = self.driver.settings
+
+        self.tcp = TCPOutput(self, self.spooler.name)
         self.controller = LhystudiosController(self, self.spooler.name)
 
-        self.settings = self.driver.settings
-        self.spooler.next = self.driver
-        self.driver.prev = self.spooler
-        self.driver.next = self.controller
         self.driver.spooler = self.spooler
-        self.driver.output = self.controller
-        self.controller.prev = self.driver
+        self.driver.output = self.controller if not self.networked else self.tcp
 
         self.viewbuffer = ""
 
@@ -364,10 +360,18 @@ class LihuiyuDevice(Service):
         @self.console_command(
             "code_update",
             hidden=True,
-            help=_("update movement codes for the drivers"),
+            help=_("Update m2nano codes for movement"),
         )
-        def realtime_pause(**kwargs):
+        def codes_update(**kwargs):
             self.driver.update_codes()
+
+        @self.console_command(
+            "network_update",
+            hidden=True,
+            help=_("Updates network state for m2nano networked."),
+        )
+        def network_update(**kwargs):
+            self.driver.output = self.controller if not self.networked else self.tcp
 
         @self.console_command(
             "status",
@@ -636,7 +640,7 @@ class LihuiyuDevice(Service):
         This is the controller in controller mode and the tcp in network mode.
         @return:
         """
-        if self.type == "tcp":
+        if self.networked:
             return self.tcp
         else:
             return self.controller
@@ -1533,9 +1537,6 @@ class LhystudiosController:
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
 
-        self.next = None
-        self.prev = None
-
         self._thread = None
         self._buffer = (
             bytearray()
@@ -2137,8 +2138,6 @@ class TCPOutput:
     def __init__(self, context, name=None):
         super().__init__()
         self.service = context
-        self.next = None
-        self.prev = None
         self._stream = None
         self.name = name
 
