@@ -75,481 +75,10 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service("device", LihuiyuDevice(kernel, 0))
         kernel.register("service/device/lhystudios", LihuiyuDevice)
+        kernel.register("load/EgvLoader", EgvLoader)
+        kernel.register("emulator/lhystudios", LhystudiosEmulator)
 
         _ = kernel.translation
-        kernel.register("load/EgvLoader", EgvLoader)
-        context = kernel.root
-
-        @context.console_option(
-            "idonotlovemyhouse",
-            type=bool,
-            action="store_true",
-            help=_("override one second laser fire pulse duration"),
-        )
-        @context.console_argument(
-            "time", type=float, help=_("laser fire pulse duration")
-        )
-        @context.console_command(
-            "pulse",
-            input_type="lhystudios",
-            help=_("pulse <time>: Pulse the laser in place."),
-        )
-        def pulse(
-            command, channel, _, time=None, idonotlovemyhouse=False, data=None, **kwargs
-        ):
-            spooler, driver, output = data
-            if time is None:
-                channel(_("Must specify a pulse time in milliseconds."))
-                return
-            value = time / 1000.0
-            if value > 1.0:
-                channel(
-                    _('"%s" exceeds 1 second limit to fire a standing laser.') % value
-                )
-                try:
-                    if not idonotlovemyhouse:
-                        return
-                except IndexError:
-                    return
-
-            def timed_fire():
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_LASER_ON
-                yield COMMAND_WAIT, value
-                yield COMMAND_LASER_OFF
-
-            if spooler.job_if_idle(timed_fire):
-                channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
-            else:
-                channel(_("Pulse laser failed: Busy"))
-            return
-
-        @context.console_argument("speed", type=float, help=_("Set the movement speed"))
-        @context.console_argument("dx", type=Length, help=_("change in x"))
-        @context.console_argument("dy", type=Length, help=_("change in y"))
-        @context.console_command(
-            "move_at_speed",
-            input_type="lhystudios",
-            help=_("move_at_speed <speed> <dx> <dy>"),
-        )
-        def move_speed(channel, _, speed, dx, dy, data=None, **kwgs):
-            spooler, driver, output = data
-            dx = Length(dx).value(ppi=1000.0)
-            dy = Length(dy).value(ppi=1000.0)
-
-            def move_at_speed():
-                yield COMMAND_SET_SPEED, speed
-                yield COMMAND_MODE_PROGRAM
-                x = driver.current_x
-                y = driver.current_y
-                yield COMMAND_MOVE, x + dx, y + dy
-                yield COMMAND_MODE_RAPID
-
-            if not spooler.job_if_idle(move_at_speed):
-                channel(_("Busy"))
-            return
-
-        @context.console_option(
-            "difference",
-            "d",
-            type=bool,
-            action="store_true",
-            help=_("Change speed by this amount."),
-        )
-        @context.console_argument("speed", type=str, help=_("Set the driver speed."))
-        @context.console_command(
-            "speed", input_type="lhystudios", help=_("Set current speed of driver.")
-        )
-        def speed(
-            command,
-            channel,
-            _,
-            data=None,
-            speed=None,
-            increment=False,
-            decrement=False,
-            **kwargs
-        ):
-            spooler, driver, output = data
-            if speed is None or (increment and decrement):
-                channel(_("Speed set at: %f mm/s") % driver.speed)
-                return
-            if speed.endswith("%"):
-                speed = speed[:-1]
-                percent = True
-            else:
-                percent = False
-            try:
-                s = float(speed)
-            except ValueError:
-                channel(_("Not a valid speed or percent."))
-                return
-            if percent and increment:
-                s = driver.speed + driver.speed * (s / 100.0)
-            elif increment:
-                s += driver.speed
-            elif percent:
-                s = driver.speed * (s / 100.0)
-            driver.set_speed(s)
-            channel(_("Speed set at: %f mm/s") % driver.speed)
-
-        @context.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
-        @context.console_command(
-            "power", input_type="lhystudios", help=_("Set Driver Power")
-        )
-        def power(command, channel, _, data, ppi=None, **kwargs):
-            spooler, driver, output = data
-            if ppi is None:
-                channel(_("Power set at: %d pulses per inch") % driver.power)
-            else:
-                try:
-                    driver.set_power(ppi)
-                except ValueError:
-                    pass
-
-        @context.console_argument(
-            "accel", type=int, help=_("Acceleration amount [1-4]")
-        )
-        @context.console_command(
-            "acceleration",
-            input_type="lhystudios",
-            help=_("Set Driver Acceleration [1-4]"),
-        )
-        def acceleration(channel, _, data=None, accel=None, **kwargs):
-            """
-            Lhymicro-gl speedcodes have a single character of either 1,2,3,4 which indicates
-            the acceleration value of the laser. This is typically 1 below 25.4, 2 below 60,
-            3 below 127, and 4 at any value greater than that. Manually setting this on the
-            fly can be used to check the various properties of that mode.
-            """
-            spooler, driver, output = data
-            if accel is None:
-                if driver.acceleration is None:
-                    channel(_("Acceleration is set to default."))
-                else:
-                    channel(_("Acceleration: %d") % driver.acceleration)
-
-            else:
-                try:
-                    v = accel
-                    if v not in (1, 2, 3, 4):
-                        driver.set_acceleration(None)
-                        channel(_("Acceleration is set to default."))
-                        return
-                    driver.set_acceleration(v)
-                    channel(_("Acceleration: %d") % driver.acceleration)
-                except ValueError:
-                    channel(_("Invalid Acceleration [1-4]."))
-                    return
-
-        @context.console_command(
-            "code_update",
-            input_type="lhystudios",
-            help=_("update movement codes for the drivers"),
-        )
-        def realtime_pause(data=None, **kwargs):
-            spooler, driver, output = data
-            driver.update_codes()
-
-        @context.console_command(
-            "status",
-            input_type="lhystudios",
-            help=_("abort waiting process on the controller."),
-        )
-        def realtime_pause(channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            try:
-                output.update_status()
-            except ConnectionError:
-                channel(_("Could not check status, usb not connected."))
-
-        @context.console_command(
-            "continue",
-            input_type="lhystudios",
-            help=_("abort waiting process on the controller."),
-        )
-        def realtime_pause(data=None, **kwargs):
-            spooler, driver, output = data
-            output.abort_waiting = True
-
-        @context.console_command(
-            "pause",
-            input_type="lhystudios",
-            help=_("realtime pause/resume of the machine"),
-        )
-        def realtime_pause(data=None, **kwargs):
-            spooler, driver, output = data
-            if driver.is_paused:
-                driver.resume()
-            else:
-                driver.pause()
-
-        @context.console_command(
-            ("estop", "abort"), input_type="lhystudios", help=_("Abort Job")
-        )
-        def pipe_abort(channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            driver.reset()
-            channel(_("Lhystudios Channel Aborted."))
-
-        @context.console_argument(
-            "rapid_x", type=float, help=_("limit x speed for rapid.")
-        )
-        @context.console_argument(
-            "rapid_y", type=float, help=_("limit y speed for rapid.")
-        )
-        @context.console_command(
-            "rapid_override",
-            input_type="lhystudios",
-            help=_("limit speed of typical rapid moves."),
-        )
-        def rapid_override(channel, _, data=None, rapid_x=None, rapid_y=None, **kwargs):
-            spooler, driver, output = data
-            if rapid_x is not None:
-                if rapid_y is None:
-                    rapid_y = rapid_x
-                driver.rapid_override = True
-                driver.rapid_override_speed_x = rapid_x
-                driver.rapid_override_speed_y = rapid_y
-                channel(
-                    _("Rapid Limit: %f, %f")
-                    % (driver.rapid_override_speed_x, driver.rapid_override_speed_y)
-                )
-            else:
-                driver.rapid_override = False
-                channel(_("Rapid Limit Off"))
-
-        @context.console_argument("filename", type=str)
-        @context.console_command(
-            "egv_import",
-            input_type="lhystudios",
-            help=_("Lhystudios Engrave Buffer Import. egv_import <egv_file>"),
-        )
-        def egv_import(filename, data=None, **kwargs):
-            spooler, driver, output = data
-            if filename is None:
-                raise SyntaxError
-
-            def skip(read, byte, count):
-                """Skips forward in the file until we find <count> instances of <byte>"""
-                pos = read.tell()
-                while count > 0:
-                    char = read.read(1)
-                    if char == byte:
-                        count -= 1
-                    if char is None or len(char) == 0:
-                        read.seek(pos, 0)
-                        # If we didn't skip the right stuff, reset the position.
-                        break
-
-            def skip_header(file):
-                skip(file, "\n", 3)
-                skip(file, "%", 5)
-
-            with open(filename, "r") as f:
-                skip_header(f)
-                while True:
-                    data = f.read(1024)
-                    if not data:
-                        break
-                    buffer = bytes(data, "utf8")
-                    output.write(buffer)
-                output.write(b"\n")
-
-        @context.console_argument("filename", type=str)
-        @context.console_command(
-            "egv_export",
-            input_type="lhystudios",
-            help=_("Lhystudios Engrave Buffer Export. egv_export <egv_file>"),
-        )
-        def egv_export(channel, _, filename, data=None, **kwargs):
-            spooler, driver, output = data
-            if filename is None:
-                raise SyntaxError
-            try:
-                with open(filename, "w") as f:
-                    f.write("Document type : LHYMICRO-GL file\n")
-                    f.write("File version: 1.0.01\n")
-                    f.write("Copyright: Unknown\n")
-                    f.write(
-                        "Creator-Software: %s v%s\n"
-                        % (output.context.kernel.name, output.context.kernel.version)
-                    )
-                    f.write("\n")
-                    f.write("%0%0%0%0%\n")
-                    buffer = bytes(output._buffer)
-                    buffer += bytes(output._queue)
-                    f.write(buffer.decode("utf-8"))
-            except (PermissionError, IOError):
-                channel(_("Could not save: %s" % filename))
-
-        @context.console_command(
-            "egv",
-            input_type="lhystudios",
-            help=_("Lhystudios Engrave Code Sender. egv <lhymicro-gl>"),
-        )
-        def egv(command, channel, _, data=None, remainder=None, **kwargs):
-            spooler, driver, output = data
-            if len(remainder) == 0:
-                channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
-            else:
-                output.write(
-                    bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
-                )
-
-        @context.console_command(
-            "challenge",
-            input_type="lhystudios",
-            help=_("Challenge code, challenge <serial number>"),
-        )
-        def challenge_egv(command, channel, _, data=None, remainder=None, **kwargs):
-            spooler, driver, output = data
-            if len(remainder) == 0:
-                raise SyntaxError
-            else:
-                challenge = bytearray.fromhex(
-                    md5(bytes(remainder.upper(), "utf8")).hexdigest()
-                )
-                code = b"A%s\n" % challenge
-                output.write(code)
-
-        @context.console_command(
-            "start", input_type="lhystudios", help=_("Start Pipe to Controller")
-        )
-        def pipe_start(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.update_state(STATE_ACTIVE)
-            output.start()
-            channel(_("Lhystudios Channel Started."))
-
-        @context.console_command(
-            "hold", input_type="lhystudios", help=_("Hold Controller")
-        )
-        def pipe_pause(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.update_state(STATE_PAUSE)
-            output.pause()
-            channel("Lhystudios Channel Paused.")
-
-        @context.console_command(
-            "resume", input_type="lhystudios", help=_("Resume Controller")
-        )
-        def pipe_resume(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.update_state(STATE_ACTIVE)
-            output.start()
-            channel(_("Lhystudios Channel Resumed."))
-
-        @context.console_command(
-            "usb_connect", input_type="lhystudios", help=_("Connects USB")
-        )
-        def usb_connect(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.open()
-            channel(_("CH341 Opened."))
-
-        @context.console_command(
-            "usb_disconnect", input_type="lhystudios", help=_("Disconnects USB")
-        )
-        def usb_disconnect(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.close()
-            channel(_("CH341 Closed."))
-
-        @context.console_command(
-            "usb_reset", input_type="lhystudios", help=_("Reset USB device")
-        )
-        def usb_reset(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.usb_reset()
-
-        @context.console_command(
-            "usb_release", input_type="lhystudios", help=_("Release USB device")
-        )
-        def usb_release(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.usb_release()
-
-        @context.console_command(
-            "usb_abort", input_type="lhystudios", help=_("Stops USB retries")
-        )
-        def usb_abort(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.abort_retry()
-
-        @context.console_command(
-            "usb_continue", input_type="lhystudios", help=_("Continues USB retries")
-        )
-        def usb_continue(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.continue_retry()
-
-        @kernel.console_option(
-            "port", "p", type=int, default=23, help=_("port to listen on.")
-        )
-        @kernel.console_option(
-            "silent",
-            "s",
-            type=bool,
-            action="store_true",
-            help=_("do not watch server channels"),
-        )
-        @kernel.console_option(
-            "watch", "w", type=bool, action="store_true", help=_("watch send/recv data")
-        )
-        @kernel.console_option(
-            "quit",
-            "q",
-            type=bool,
-            action="store_true",
-            help=_("shutdown current lhyserver"),
-        )
-        @kernel.console_command("lhyserver", help=_("activate the lhyserver."))
-        def lhyserver(
-            channel, _, port=23, silent=False, watch=False, quit=False, **kwargs
-        ):
-            root = kernel.root
-            try:
-                output = root.device.default_output()
-                if output is None:
-                    channel(
-                        _(
-                            "Output for device %s does not exist. Lhyserver cannot attach."
-                        )
-                        % root.device.active
-                    )
-                    return
-                server = root.open_as("module/TCPServer", "lhyserver", port=port)
-                if quit:
-                    root.close("lhyserver")
-                    return
-                channel(_("TCP Server for Lhystudios on port: %d" % port))
-                if not silent:
-                    console = kernel.channel("console")
-                    server.events_channel.watch(console)
-                    if watch:
-                        server.data_channel.watch(console)
-                channel(_("Watching Channel: %s") % "server")
-                root.channel("lhyserver/recv").watch(output.write)
-                channel(_("Attached: %s" % repr(output)))
-
-            except OSError:
-                channel(_("Server failed on port: %d") % port)
-            except KeyError:
-                channel(_("Server cannot be attached to any device."))
-            return
-
-        @kernel.console_command("lhyemulator", help=_("activate the lhyemulator."))
-        def lhyemulator(channel, _, **kwargs):
-            name = kernel.device.active
-            driver_context = kernel.get_context("lhystudios/driver/%s" % name)
-            try:
-                driver_context.open_as("emulator/lhystudios", "lhyemulator%s" % name)
-                channel(_("Lhystudios Emulator attached to %s" % str(driver_context)))
-            except KeyError:
-                channel(_("Emulator cannot be attached to any device."))
-            return
-
 
 class LihuiyuDevice(Service):
     """
@@ -690,6 +219,454 @@ class LihuiyuDevice(Service):
                 channel(_("----------"))
 
             return "spooler", spooler
+
+        @self.console_option(
+            "idonotlovemyhouse",
+            type=bool,
+            action="store_true",
+            help=_("override one second laser fire pulse duration"),
+        )
+        @self.console_argument(
+            "time", type=float, help=_("laser fire pulse duration")
+        )
+        @self.console_command(
+            "pulse",
+            help=_("pulse <time>: Pulse the laser in place."),
+        )
+        def pulse(
+            command, channel, _, time=None, idonotlovemyhouse=False, data=None, **kwargs
+        ):
+            spooler, driver, output = data
+            if time is None:
+                channel(_("Must specify a pulse time in milliseconds."))
+                return
+            value = time / 1000.0
+            if value > 1.0:
+                channel(
+                    _('"%s" exceeds 1 second limit to fire a standing laser.') % value
+                )
+                try:
+                    if not idonotlovemyhouse:
+                        return
+                except IndexError:
+                    return
+
+            def timed_fire():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, value
+                yield COMMAND_LASER_OFF
+
+            if spooler.job_if_idle(timed_fire):
+                channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
+            else:
+                channel(_("Pulse laser failed: Busy"))
+            return
+
+        @self.console_argument("speed", type=float, help=_("Set the movement speed"))
+        @self.console_argument("dx", type=Length, help=_("change in x"))
+        @self.console_argument("dy", type=Length, help=_("change in y"))
+        @self.console_command(
+            "move_at_speed",
+            help=_("move_at_speed <speed> <dx> <dy>"),
+        )
+        def move_speed(channel, _, speed, dx, dy, data=None, **kwgs):
+            spooler, driver, output = data
+            dx = Length(dx).value(ppi=1000.0)
+            dy = Length(dy).value(ppi=1000.0)
+
+            def move_at_speed():
+                yield COMMAND_SET_SPEED, speed
+                yield COMMAND_MODE_PROGRAM
+                x = driver.current_x
+                y = driver.current_y
+                yield COMMAND_MOVE, x + dx, y + dy
+                yield COMMAND_MODE_RAPID
+
+            if not spooler.job_if_idle(move_at_speed):
+                channel(_("Busy"))
+            return
+
+        @self.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change speed by this amount."),
+        )
+        @self.console_argument("speed", type=str, help=_("Set the driver speed."))
+        @self.console_command(
+            "speed", help=_("Set current speed of driver.")
+        )
+        def speed(
+            command,
+            channel,
+            _,
+            data=None,
+            speed=None,
+            increment=False,
+            decrement=False,
+            **kwargs
+        ):
+            if speed is None or (increment and decrement):
+                channel(_("Speed set at: %f mm/s") % self.settings.speed)
+                return
+            if speed.endswith("%"):
+                speed = speed[:-1]
+                percent = True
+            else:
+                percent = False
+            try:
+                s = float(speed)
+            except ValueError:
+                channel(_("Not a valid speed or percent."))
+                return
+            if percent and increment:
+                s = self.settings.speed + self.settings.speed * (s / 100.0)
+            elif increment:
+                s += self.settings.speed
+            elif percent:
+                s = self.settings.speed * (s / 100.0)
+            self.settings.set_speed(s)
+            channel(_("Speed set at: %f mm/s") % self.settings.speed)
+
+        @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
+        @self.console_command(
+            "power", help=_("Set Driver Power")
+        )
+        def power(command, channel, _, data, ppi=None, **kwargs):
+            spooler, driver, output = data
+            if ppi is None:
+                channel(_("Power set at: %d pulses per inch") % driver.power)
+            else:
+                try:
+                    driver.set_power(ppi)
+                except ValueError:
+                    pass
+
+        @self.console_argument(
+            "accel", type=int, help=_("Acceleration amount [1-4]")
+        )
+        @self.console_command(
+            "acceleration",
+            help=_("Set Driver Acceleration [1-4]"),
+        )
+        def acceleration(channel, _, data=None, accel=None, **kwargs):
+            """
+            Lhymicro-gl speedcodes have a single character of either 1,2,3,4 which indicates
+            the acceleration value of the laser. This is typically 1 below 25.4, 2 below 60,
+            3 below 127, and 4 at any value greater than that. Manually setting this on the
+            fly can be used to check the various properties of that mode.
+            """
+            spooler, driver, output = data
+            if accel is None:
+                if driver.acceleration is None:
+                    channel(_("Acceleration is set to default."))
+                else:
+                    channel(_("Acceleration: %d") % driver.acceleration)
+
+            else:
+                try:
+                    v = accel
+                    if v not in (1, 2, 3, 4):
+                        driver.set_acceleration(None)
+                        channel(_("Acceleration is set to default."))
+                        return
+                    driver.set_acceleration(v)
+                    channel(_("Acceleration: %d") % driver.acceleration)
+                except ValueError:
+                    channel(_("Invalid Acceleration [1-4]."))
+                    return
+
+        @self.console_command(
+            "code_update",
+            hidden=True,
+            help=_("update movement codes for the drivers"),
+        )
+        def realtime_pause(data=None, **kwargs):
+            spooler, driver, output = data
+            driver.update_codes()
+
+        @self.console_command(
+            "status",
+            help=_("abort waiting process on the controller."),
+        )
+        def realtime_pause(channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            try:
+                output.update_status()
+            except ConnectionError:
+                channel(_("Could not check status, usb not connected."))
+
+        @self.console_command(
+            "continue",
+            help=_("abort waiting process on the controller."),
+        )
+        def realtime_pause(data=None, **kwargs):
+            spooler, driver, output = data
+            output.abort_waiting = True
+
+        @self.console_command(
+            "pause",
+            help=_("realtime pause/resume of the machine"),
+        )
+        def realtime_pause(data=None, **kwargs):
+            spooler, driver, output = data
+            if driver.is_paused:
+                driver.resume()
+            else:
+                driver.pause()
+
+        @self.console_command(
+            ("estop", "abort"), help=_("Abort Job")
+        )
+        def pipe_abort(channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            driver.reset()
+            channel(_("Lhystudios Channel Aborted."))
+
+        @self.console_argument(
+            "rapid_x", type=float, help=_("limit x speed for rapid.")
+        )
+        @self.console_argument(
+            "rapid_y", type=float, help=_("limit y speed for rapid.")
+        )
+        @self.console_command(
+            "rapid_override",
+            help=_("limit speed of typical rapid moves."),
+        )
+        def rapid_override(channel, _, data=None, rapid_x=None, rapid_y=None, **kwargs):
+            spooler, driver, output = data
+            if rapid_x is not None:
+                if rapid_y is None:
+                    rapid_y = rapid_x
+                driver.rapid_override = True
+                driver.rapid_override_speed_x = rapid_x
+                driver.rapid_override_speed_y = rapid_y
+                channel(
+                    _("Rapid Limit: %f, %f")
+                    % (driver.rapid_override_speed_x, driver.rapid_override_speed_y)
+                )
+            else:
+                driver.rapid_override = False
+                channel(_("Rapid Limit Off"))
+
+        @self.console_argument("filename", type=str)
+        @self.console_command(
+            "egv_import",
+            help=_("Lhystudios Engrave Buffer Import. egv_import <egv_file>"),
+        )
+        def egv_import(filename, data=None, **kwargs):
+            spooler, driver, output = data
+            if filename is None:
+                raise SyntaxError
+
+            def skip(read, byte, count):
+                """Skips forward in the file until we find <count> instances of <byte>"""
+                pos = read.tell()
+                while count > 0:
+                    char = read.read(1)
+                    if char == byte:
+                        count -= 1
+                    if char is None or len(char) == 0:
+                        read.seek(pos, 0)
+                        # If we didn't skip the right stuff, reset the position.
+                        break
+
+            def skip_header(file):
+                skip(file, "\n", 3)
+                skip(file, "%", 5)
+
+            with open(filename, "r") as f:
+                skip_header(f)
+                while True:
+                    data = f.read(1024)
+                    if not data:
+                        break
+                    buffer = bytes(data, "utf8")
+                    output.write(buffer)
+                output.write(b"\n")
+
+        @self.console_argument("filename", type=str)
+        @self.console_command(
+            "egv_export",
+            help=_("Lhystudios Engrave Buffer Export. egv_export <egv_file>"),
+        )
+        def egv_export(channel, _, filename, data=None, **kwargs):
+            spooler, driver, output = data
+            if filename is None:
+                raise SyntaxError
+            try:
+                with open(filename, "w") as f:
+                    f.write("Document type : LHYMICRO-GL file\n")
+                    f.write("File version: 1.0.01\n")
+                    f.write("Copyright: Unknown\n")
+                    f.write(
+                        "Creator-Software: %s v%s\n"
+                        % (output.context.kernel.name, output.context.kernel.version)
+                    )
+                    f.write("\n")
+                    f.write("%0%0%0%0%\n")
+                    buffer = bytes(output._buffer)
+                    buffer += bytes(output._queue)
+                    f.write(buffer.decode("utf-8"))
+            except (PermissionError, IOError):
+                channel(_("Could not save: %s" % filename))
+
+        @self.console_command(
+            "egv",
+            help=_("Lhystudios Engrave Code Sender. egv <lhymicro-gl>"),
+        )
+        def egv(command, channel, _, data=None, remainder=None, **kwargs):
+            spooler, driver, output = data
+            if len(remainder) == 0:
+                channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
+            else:
+                output.write(
+                    bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
+                )
+
+        @self.console_command(
+            "challenge",
+            help=_("Challenge code, challenge <serial number>"),
+        )
+        def challenge_egv(command, channel, _, data=None, remainder=None, **kwargs):
+            spooler, driver, output = data
+            if len(remainder) == 0:
+                raise SyntaxError
+            else:
+                challenge = bytearray.fromhex(
+                    md5(bytes(remainder.upper(), "utf8")).hexdigest()
+                )
+                code = b"A%s\n" % challenge
+                output.write(code)
+
+        @self.console_command(
+            "start", help=_("Start Pipe to Controller")
+        )
+        def pipe_start(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.update_state(STATE_ACTIVE)
+            output.start()
+            channel(_("Lhystudios Channel Started."))
+
+        @self.console_command(
+            "hold", help=_("Hold Controller")
+        )
+        def pipe_pause(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.update_state(STATE_PAUSE)
+            output.pause()
+            channel("Lhystudios Channel Paused.")
+
+        @self.console_command(
+            "resume", help=_("Resume Controller")
+        )
+        def pipe_resume(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.update_state(STATE_ACTIVE)
+            output.start()
+            channel(_("Lhystudios Channel Resumed."))
+
+        @self.console_command(
+            "usb_connect", help=_("Connects USB")
+        )
+        def usb_connect(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.open()
+            channel(_("CH341 Opened."))
+
+        @self.console_command(
+            "usb_disconnect", help=_("Disconnects USB")
+        )
+        def usb_disconnect(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.close()
+            channel(_("CH341 Closed."))
+
+        @self.console_command(
+            "usb_reset", help=_("Reset USB device")
+        )
+        def usb_reset(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.usb_reset()
+
+        @self.console_command(
+            "usb_release",help=_("Release USB device")
+        )
+        def usb_release(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.usb_release()
+
+        @self.console_command(
+            "usb_abort", help=_("Stops USB retries")
+        )
+        def usb_abort(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.abort_retry()
+
+        @self.console_command(
+            "usb_continue", help=_("Continues USB retries")
+        )
+        def usb_continue(command, channel, _, data=None, **kwargs):
+            spooler, driver, output = data
+            output.continue_retry()
+
+        @self.console_option(
+            "port", "p", type=int, default=23, help=_("port to listen on.")
+        )
+        @self.console_option(
+            "silent",
+            "s",
+            type=bool,
+            action="store_true",
+            help=_("do not watch server channels"),
+        )
+        @self.console_option(
+            "watch", "w", type=bool, action="store_true", help=_("watch send/recv data")
+        )
+        @self.console_option(
+            "quit",
+            "q",
+            type=bool,
+            action="store_true",
+            help=_("shutdown current lhyserver"),
+        )
+        @self.console_command("lhyserver", help=_("activate the lhyserver."))
+        def lhyserver(
+            channel, _, port=23, silent=False, watch=False, quit=False, **kwargs
+        ):
+            try:
+                server_name = "lhyserver%s" % self.path
+                output = self.controller
+                server = self.open_as("module/TCPServer", server_name, port=port)
+                if quit:
+                    self.close(server_name)
+                    return
+                channel(_("TCP Server for Lhystudios on port: %d" % port))
+                if not silent:
+                    console = kernel.channel("console")
+                    server.events_channel.watch(console)
+                    if watch:
+                        server.data_channel.watch(console)
+                channel(_("Watching Channel: %s") % "server")
+                self.channel("{server_name}/recv".format(server_name=server_name)).watch(output.write)
+                channel(_("Attached: %s" % repr(output)))
+
+            except OSError:
+                channel(_("Server failed on port: %d") % port)
+            except KeyError:
+                channel(_("Server cannot be attached to any device."))
+            return
+
+        @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
+        def lhyemulator(channel, _, **kwargs):
+            try:
+                self.open_as("emulator/lhystudios", "lhyemulator")
+                channel(_("Lhystudios Emulator attached to %s" % str(self)))
+            except KeyError:
+                channel(_("Emulator cannot be attached to any device."))
+            return
 
     def activate_spooler(self):
         self.kernel.activate_service_path("device", self.path)
@@ -1620,10 +1597,9 @@ class LhystudiosController:
         self.usb_send_channel = context.channel("%s/usb_send" % name)
         self.recv_channel = context.channel("%s/recv" % name)
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
-        self.ch341 = self.context.open("module/ch341", log=self.usb_log)
-        context = self.context
+        self.ch341 = context.open("module/ch341", log=self.usb_log)
         self.reset()
-        self.context.root.listen("lifecycle;start", self.on_controller_ready)
+        context.root.listen("lifecycle;start", self.on_controller_ready)
 
     def viewbuffer(self):
         buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
@@ -2264,12 +2240,11 @@ class TCPOutput:
 
 
 class LhystudiosEmulator(Module):
-    def __init__(self, context, path):
-        Module.__init__(self, context, path)
-        self.context.setting(bool, "fix_speeds", False)
-
+    def __init__(self, device, path):
+        Module.__init__(self, device, path)
         self.parser = LhystudiosParser()
-        self.parser.fix_speeds = self.context.fix_speeds
+        device.setting(bool, "fix_speeds", False)
+        self.parser.fix_speeds = device.fix_speeds
         self.parser.channel = self.context.channel("lhy")
 
         def pos(p):
@@ -2285,14 +2260,12 @@ class LhystudiosEmulator(Module):
 
     def module_open(self, *args, **kwargs):
         context = self.context
-        active = self.context.device.active
-        send = context.channel("%s/usb_send" % active)
+        send = context.channel("%s/usb_send" % self.context.path)
         send.watch(self.parser.write_packet)
 
     def module_close(self, *args, **kwargs):
         context = self.context
-        active = self.context.device.active
-        send = context.channel("%s/usb_send" % active)
+        send = context.channel("%s/usb_send" % self.context.path)
         send.unwatch(self.parser.write_packet)
 
 
