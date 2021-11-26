@@ -561,8 +561,11 @@ class LihuiyuDevice(Service):
             "usb_connect", help=_("Connects USB")
         )
         def usb_connect(command, channel, _, **kwargs):
-            self.controller.open()
-            channel(_("CH341 Opened."))
+            try:
+                self.controller.open()
+                channel(_("Usb Connection Opened."))
+            except ConnectionRefusedError:
+                channel(_("Usb Connection Refused"))
 
         @self.console_command(
             "usb_disconnect", help=_("Disconnects USB")
@@ -575,13 +578,22 @@ class LihuiyuDevice(Service):
             "usb_reset", help=_("Reset USB device")
         )
         def usb_reset(command, channel, _, **kwargs):
-            self.controller.usb_reset()
+            try:
+
+                self.controller.usb_reset()
+                channel(_("Usb Connection Reset"))
+            except ConnectionError:
+                channel(_("Usb Connection Error"))
 
         @self.console_command(
             "usb_release",help=_("Release USB device")
         )
         def usb_release(command, channel, _, **kwargs):
-            self.controller.usb_release()
+            try:
+                self.controller.usb_release()
+                channel(_("Usb Connection Released"))
+            except ConnectionError:
+                channel(_("Usb Connection Error"))
 
         @self.console_command(
             "usb_abort", help=_("Stops USB retries")
@@ -1796,10 +1808,16 @@ class LhystudiosController:
         self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
 
     def usb_release(self):
-        self.connection.release()
+        if self.connection:
+            self.connection.release()
+        else:
+            raise ConnectionError
 
     def usb_reset(self):
-        self.connection.reset()
+        if self.connection:
+            self.connection.reset()
+        else:
+            raise ConnectionError
 
     def update_state(self, state):
         if state == self.state:
