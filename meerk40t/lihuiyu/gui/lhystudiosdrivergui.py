@@ -23,6 +23,9 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.checkbox_fix_speeds = wx.CheckBox(
             self, wx.ID_ANY, _("Fix rated to actual speed")
         )
+        self.checkbox_networked = wx.CheckBox(
+            self, wx.ID_ANY, _("Networked")
+        )
         self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
@@ -54,6 +57,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combobox_boardtype, self.combobox_board)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_fix_speeds, self.checkbox_fix_speeds)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_networked, self.checkbox_networked)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_x, self.checkbox_flip_x)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_y, self.checkbox_flip_y)
@@ -105,6 +109,11 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.checkbox_fix_speeds.SetToolTip(
             _(
                 "Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated speed."
+            )
+        )
+        self.checkbox_networked.SetToolTip(
+            _(
+                "Run this device as a networked device. This requires a lhyserver located on the address specified.\nThe M2Nano does not natively provide any network capabilities."
             )
         )
         self.checkbox_flip_x.SetToolTip(
@@ -210,6 +219,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
         label_1 = wx.StaticText(self, wx.ID_ANY, "")
         sizer_board.Add(label_1, 1, 0, 0)
         sizer_board.Add(self.checkbox_fix_speeds, 0, 0, 0)
+        sizer_board.Add(self.checkbox_networked, 0, 0, 0)
         sizer_main.Add(sizer_board, 1, wx.EXPAND, 0)
         sizer_17.Add(self.checkbox_flip_x, 0, 0, 0)
         sizer_17.Add(self.checkbox_home_right, 0, 0, 0)
@@ -285,6 +295,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
         context.setting(bool, "vector_accel_table", False)
 
         self.checkbox_fix_speeds.SetValue(context.fix_speeds)
+        self.checkbox_networked.SetValue(context.networked)
         self.checkbox_swap_xy.SetValue(context.swap_xy)
         self.checkbox_flip_x.SetValue(context.flip_x)
         self.checkbox_flip_y.SetValue(context.flip_y)
@@ -316,24 +327,29 @@ class LhystudiosConfigurationPanel(wx.Panel):
 
     def on_check_swapxy(self, event=None):
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
-        self.context("dev code_update\n")
+        self.context("code_update\n")
 
     def on_check_fix_speeds(self, event=None):
         self.context.fix_speeds = self.checkbox_fix_speeds.GetValue()
+
+    def on_check_networked(self, event=None):
+        self.context.networked = self.checkbox_networked.GetValue()
+        self.context("network_update\n")
+        self.context.signal("network_update")
 
     def on_check_strict(self, event=None):
         self.context.strict = self.checkbox_strict.GetValue()
 
     def on_check_flip_x(self, event=None):
         self.context.flip_x = self.checkbox_flip_x.GetValue()
-        self.context("dev code_update\n")
+        self.context("code_update\n")
 
     def on_check_home_right(self, event=None):
         self.context.home_right = self.checkbox_home_right.GetValue()
 
     def on_check_flip_y(self, event=None):
         self.context.flip_y = self.checkbox_flip_y.GetValue()
-        self.context("dev code_update\n")
+        self.context("code_update\n")
 
     def on_check_home_bottom(self, event=None):
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()

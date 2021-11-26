@@ -14,6 +14,7 @@ from meerk40t.gui.icons import (
     icons8_play_50,
 )
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import disable_window
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -320,10 +321,17 @@ class LhystudiosControllerPanel(wx.Panel):
         self.pane_hide()
 
     def pane_show(self):
-        print(self.context.controller.name)
         self.context.channel(
             "{name}/usb".format(name=self.context.controller.name), buffer_size=500
         ).watch(self.update_text)
+        self.on_network_update()
+
+    @signal_listener("network_update")
+    def on_network_update(self, origin=None, *args):
+        if self.context.networked:
+            self.button_device_connect.Enable(False)
+        else:
+            self.button_device_connect.Enable(True)
 
     def pane_hide(self):
         self.context.channel(

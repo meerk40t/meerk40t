@@ -117,6 +117,14 @@ class TCPController(MWindow):
         self.text_port.SetValue(str(self.service.port))
         self.text_buffer_max.SetValue("0")
         self.text_buffer_length.SetValue("0")
+        self.on_network_update()
+
+    @signal_listener("network_update")
+    def on_network_update(self, origin=None, *args):
+        if not self.service.networked:
+            self.button_device_connect.Enable(False)
+        else:
+            self.button_device_connect.Enable(True)
 
     @signal_listener("tcp;status")
     def on_tcp_status(self, origin, state):
