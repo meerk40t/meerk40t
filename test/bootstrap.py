@@ -4,89 +4,58 @@ from meerk40t.kernel import Kernel
 
 def bootstrap():
     kernel = Kernel("MeerK40t", "0.0.0-testing", "MeerK40t", "")
-    try:
-        from meerk40t import kernelserver
 
-        kernel.add_plugin(kernelserver.plugin)
-    except ImportError:
-        pass
+    from meerk40t import kernelserver
 
-    try:
-        from meerk40t.legacy import device
+    kernel.add_plugin(kernelserver.plugin)
 
-        kernel.add_plugin(device.plugin)
-    except ImportError:
-        pass
+    from meerk40t.device import dummydevice
 
-    try:
-        from meerk40t.core import elements
+    kernel.add_plugin(dummydevice.plugin)
 
-        kernel.add_plugin(elements.plugin)
-    except ImportError:
-        pass
+    from meerk40t.core import elements
 
-    try:
-        from meerk40t.core import bindalias
+    kernel.add_plugin(elements.plugin)
 
-        kernel.add_plugin(bindalias.plugin)
-    except ImportError:
-        pass
+    from meerk40t.core import bindalias
 
-    try:
-        from meerk40t.core import webhelp
+    kernel.add_plugin(bindalias.plugin)
 
-        kernel.add_plugin(webhelp.plugin)
-    except ImportError:
-        pass
+    from meerk40t.core import webhelp
 
-    try:
-        from meerk40t.core import planner
+    kernel.add_plugin(webhelp.plugin)
 
-        kernel.add_plugin(planner.plugin)
-    except ImportError:
-        pass
+    from meerk40t.core import planner
 
-    try:
-        from meerk40t.image import imagetools
+    kernel.add_plugin(planner.plugin)
 
-        kernel.add_plugin(imagetools.plugin)
-    except ImportError:
-        pass
+    from meerk40t.image import imagetools
 
-    try:
-        from meerk40t.device.lhystudios import lhystudiosdevice
+    kernel.add_plugin(imagetools.plugin)
 
-        kernel.add_plugin(lhystudiosdevice.plugin)
-    except ImportError:
-        pass
+    from meerk40t.device.ch341 import ch341
 
-    try:
-        from meerk40t.device.moshi import moshidevice
+    kernel.add_plugin(ch341.plugin)
 
-        kernel.add_plugin(moshidevice.plugin)
-    except ImportError:
-        pass
+    from meerk40t.lihuiyu import device as lhystudiosdevice
 
-    try:
-        from meerk40t.device.grbl import grbldevice
+    kernel.add_plugin(lhystudiosdevice.plugin)
 
-        kernel.add_plugin(grbldevice.plugin)
-    except ImportError:
-        pass
+    from meerk40t.moshi import device as moshidevice
 
-    try:
-        from meerk40t.device.ruida import ruidadevice
+    kernel.add_plugin(moshidevice.plugin)
 
-        kernel.add_plugin(ruidadevice.plugin)
-    except ImportError:
-        pass
+    from meerk40t.grbl import device as grbldevice
 
-    try:
-        from meerk40t.core import svg_io
+    kernel.add_plugin(grbldevice.plugin)
 
-        kernel.add_plugin(svg_io.plugin)
-    except ImportError:
-        pass
+    from meerk40t.ruida import device as ruidadevice
+
+    kernel.add_plugin(ruidadevice.plugin)
+
+    from meerk40t.core import svg_io
+
+    kernel.add_plugin(svg_io.plugin)
 
     try:
         from meerk40t.dxf import dxf_io
@@ -95,7 +64,7 @@ def bootstrap():
     except ImportError:
         # This module cannot be loaded. ezdxf missing.
         pass
-    kernel_root = kernel.get_context("/")
     kernel()
     kernel.console("channel print console\n")
+    kernel.console("service device start dummy 0\n")
     return kernel
