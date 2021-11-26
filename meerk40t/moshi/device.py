@@ -52,108 +52,6 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service("device", MoshiDevice(kernel, 0))
         kernel.register("service/device/moshi", MoshiDevice)
-        _ = kernel.translation
-        context = kernel.root
-
-        @context.console_command(
-            "usb_connect", input_type="moshi", help=_("Connect USB")
-        )
-        def usb_connect(command, channel, _, data=None, **kwargs):
-            """
-            Force USB Connection Event for Moshiboard
-            """
-            spooler, driver, output = data
-            try:
-                output.open()
-            except ConnectionRefusedError:
-                channel("Connection Refused.")
-
-        @context.console_command(
-            "usb_disconnect", input_type="moshi", help=_("Disconnect USB")
-        )
-        def usb_disconnect(command, channel, _, data=None, **kwargs):
-            """
-            Force USB Disconnect Event for Moshiboard
-            """
-            spooler, driver, output = data
-            if output.connection is not None:
-                output.close()
-            else:
-                channel("Usb is not connected.")
-
-        @context.console_command(
-            "start", input_type="moshi", help=_("Start Pipe to Controller")
-        )
-        def pipe_start(command, channel, _, data=None, **kwargs):
-            """
-            Start output sending.
-            """
-            spooler, driver, output = data
-            output.update_state(STATE_ACTIVE)
-            output.start()
-            channel("Moshi Channel Started.")
-
-        @context.console_command("hold", input_type="moshi", help=_("Hold Controller"))
-        def pipe_pause(command, channel, _, data=None, **kwargs):
-            """
-            Pause output sending.
-            """
-            spooler, driver, output = data
-            output.update_state(STATE_PAUSE)
-            output.pause()
-            channel(_("Moshi Channel Paused."))
-
-        @context.console_command(
-            "resume", input_type="moshi", help=_("Resume Controller")
-        )
-        def pipe_resume(command, channel, _, data=None, **kwargs):
-            """
-            Resume output sending.
-            """
-            spooler, driver, output = data
-            output.update_state(STATE_ACTIVE)
-            output.start()
-            channel(_("Moshi Channel Resumed."))
-
-        @context.console_command(
-            ("estop", "abort"), input_type="moshi", help=_("Abort Job")
-        )
-        def pipe_abort(command, channel, _, data=None, **kwargs):
-            """
-            Abort output job. Usually due to the functionality of Moshiboards this will do
-            nothing as the job will have already sent to the backend.
-            """
-            spooler, driver, output = data
-            output.estop()
-            channel(_("Moshi Channel Aborted."))
-
-        @context.console_command(
-            "status",
-            input_type="moshi",
-            help=_("Update moshiboard controller status"),
-        )
-        def realtime_status(channel, _, data=None, **kwargs):
-            """
-            Updates the CH341 Status information for the Moshiboard.
-            """
-            spooler, driver, output = data
-            try:
-                output.update_status()
-            except ConnectionError:
-                channel(_("Could not check status, usb not connected."))
-
-        @context.console_command(
-            "continue",
-            input_type="moshi",
-            help=_("abort waiting process on the controller."),
-        )
-        def realtime_pause(data=None, **kwargs):
-            """
-            Abort the waiting process for Moshiboard. This is usually a wait from BUSY (207) state until the board
-            reports its status as READY (205)
-            """
-            spooler, driver, output = data
-            output.abort_waiting = True
 
 
 def get_code_string_from_moshicode(code):
@@ -291,6 +189,97 @@ class MoshiDevice(Service):
                 channel(_("----------"))
 
             return "spooler", spooler
+
+        @self.console_command(
+            "usb_connect", help=_("Connect USB")
+        )
+        def usb_connect(command, channel, _, **kwargs):
+            """
+            Force USB Connection Event for Moshiboard
+            """
+            try:
+                self.controller.open()
+            except ConnectionRefusedError:
+                channel("Connection Refused.")
+
+        @self.console_command(
+            "usb_disconnect", help=_("Disconnect USB")
+        )
+        def usb_disconnect(command, channel, _, **kwargs):
+            """
+            Force USB Disconnect Event for Moshiboard
+            """
+            if self.controller.connection is not None:
+                self.controller.close()
+            else:
+                channel("Usb is not connected.")
+
+        @self.console_command(
+            "start", help=_("Start Pipe to Controller")
+        )
+        def pipe_start(command, channel, _, data=None, **kwargs):
+            """
+            Start output sending.
+            """
+            self.controller.update_state(STATE_ACTIVE)
+            self.controller.start()
+            channel("Moshi Channel Started.")
+
+        @self.console_command("hold", input_type="moshi", help=_("Hold Controller"))
+        def pipe_pause(command, channel, _, **kwargs):
+            """
+            Pause output sending.
+            """
+            self.controller.update_state(STATE_PAUSE)
+            self.controller.pause()
+            channel(_("Moshi Channel Paused."))
+
+        @self.console_command(
+            "resume", input_type="moshi", help=_("Resume Controller")
+        )
+        def pipe_resume(command, channel, _, **kwargs):
+            """
+            Resume output sending.
+            """
+            self.controller.update_state(STATE_ACTIVE)
+            self.controller.start()
+            channel(_("Moshi Channel Resumed."))
+
+        @self.console_command(
+            ("estop", "abort"), help=_("Abort Job")
+        )
+        def pipe_abort(command, channel, _, **kwargs):
+            """
+            Abort output job. Usually due to the functionality of Moshiboards this will do
+            nothing as the job will have already sent to the backend.
+            """
+            self.controller.estop()
+            channel(_("Moshi Channel Aborted."))
+
+        @self.console_command(
+            "status",
+            input_type="moshi",
+            help=_("Update moshiboard controller status"),
+        )
+        def realtime_status(channel, _, **kwargs):
+            """
+            Updates the CH341 Status information for the Moshiboard.
+            """
+            try:
+                self.controller.update_status()
+            except ConnectionError:
+                channel(_("Could not check status, usb not connected."))
+
+        @self.console_command(
+            "continue",
+            help=_("abort waiting process on the controller."),
+        )
+        def realtime_pause(**kwargs):
+            """
+            Abort the waiting process for Moshiboard. This is usually a wait from BUSY (207) state until the board
+            reports its status as READY (205)
+            """
+            self.controller.abort_waiting = True
 
     def activate_spooler(self):
         self.kernel.activate_service_path("device", self.path)
