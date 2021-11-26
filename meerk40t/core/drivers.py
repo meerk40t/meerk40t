@@ -292,7 +292,19 @@ class Driver:
                     except Exception:
                         pass
                 elif OS_NAME == "Darwin": # Mac
-                    os.system('afplay /System/Library/Sounds/Ping.aiff')
+                    """os.system('afplay /System/Library/Sounds/Ping.aiff')"""
+                    """os.system('plutil -p ~/Library/Preferences/.GlobalPreferences.plist | grep com.apple.sound.beep.sound | cut -d \'"\' -f 4 | xargs afplay')"""
+                    os.system('osascript -e \'display notification "Job Finished" with title "MeerK40t"\'')
+                    """ These don't work, because the console won't play sound """
+                    """os.system('echo -e "\a"')"""
+                    """os.system('tput bel')"""
+                    """os.system('osascript -e \'beep\'')"""
+                    """os.system('osascript -e \'beep\';sleep 1')"""
+                    os.system('osascript -e \'beep\' -e \'delay 3\'')
+                    """os.system('osascript -e \'beep\' && sleep 1')"""
+                    """os.system('osascript -e \'tell application "System Events" to beep\'')"""
+                    """os.system('osascript -e \'beep\' \&\&')"""
+                    """os.system('osascript -e \'display notification "Job Finished" with title "MeerK40t" sound name "Purr"\'')"""
                 else: # Assuming other linux like system
                     print("\a")  # Beep.
             elif command == COMMAND_FUNCTION:
