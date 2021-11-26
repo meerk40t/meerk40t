@@ -305,7 +305,10 @@ class LihuiyuDevice(Service):
         ):
             original_speed = self.settings.speed
             if speed is None:
-                channel(_("Speed set at: %f mm/s") % original_speed)
+                if original_speed is None:
+                    channel(_("Speed is not set."))
+                else:
+                    channel(_("Speed set at: %f mm/s") % original_speed)
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -331,8 +334,12 @@ class LihuiyuDevice(Service):
             "power", help=_("Set Driver Power")
         )
         def power(command, channel, _, ppi=None, **kwargs):
+            original_power = self.settings.power
             if ppi is None:
-                channel(_("Power set at: %d pulses per inch") % self.driver.settings.power)
+                if original_power is None:
+                    channel(_("Power is not set."))
+                else:
+                    channel(_("Power set at: %d pulses per inch") % original_power)
             else:
                 try:
                     self.driver.set_power(ppi)
@@ -387,6 +394,7 @@ class LihuiyuDevice(Service):
         def realtime_pause(channel, _, **kwargs):
             try:
                 self.controller.update_status()
+                channel(str(self.controller._status))
             except ConnectionError:
                 channel(_("Could not check status, usb not connected."))
 
