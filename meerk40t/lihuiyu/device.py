@@ -80,6 +80,7 @@ def plugin(kernel, lifecycle=None):
 
         _ = kernel.translation
 
+
 class LihuiyuDevice(Service):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lhystudios boards.
@@ -166,7 +167,6 @@ class LihuiyuDevice(Service):
 
         self.current_x = 0.0
         self.current_y = 0.0
-        self.settings = LaserSettings()
         self.state = 0
         self.type = "usb"
 
@@ -179,6 +179,7 @@ class LihuiyuDevice(Service):
         self.driver = LhystudiosDriver(self, self.spooler.name)
         self.controller = LhystudiosController(self, self.spooler.name)
 
+        self.settings = self.driver.settings
         self.spooler.next = self.driver
         self.driver.prev = self.spooler
         self.driver.next = self.controller
@@ -234,9 +235,8 @@ class LihuiyuDevice(Service):
             help=_("pulse <time>: Pulse the laser in place."),
         )
         def pulse(
-            command, channel, _, time=None, idonotlovemyhouse=False, data=None, **kwargs
+            command, channel, _, time=None, idonotlovemyhouse=False, **kwargs
         ):
-            spooler, driver, output = data
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -257,7 +257,7 @@ class LihuiyuDevice(Service):
                 yield COMMAND_WAIT, value
                 yield COMMAND_LASER_OFF
 
-            if spooler.job_if_idle(timed_fire):
+            if self.spooler.job_if_idle(timed_fire):
                 channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -270,20 +270,19 @@ class LihuiyuDevice(Service):
             "move_at_speed",
             help=_("move_at_speed <speed> <dx> <dy>"),
         )
-        def move_speed(channel, _, speed, dx, dy, data=None, **kwgs):
-            spooler, driver, output = data
-            dx = Length(dx).value(ppi=1000.0)
-            dy = Length(dy).value(ppi=1000.0)
+        def move_speed(channel, _, speed, dx, dy, **kwgs):
+            dx = Length(dx).value(ppi=1000.0, relative_length=self.bedwidth)
+            dy = Length(dy).value(ppi=1000.0, relative_length=self.bedheight)
 
             def move_at_speed():
                 yield COMMAND_SET_SPEED, speed
                 yield COMMAND_MODE_PROGRAM
-                x = driver.current_x
-                y = driver.current_y
+                x = self.current_x
+                y = self.current_y
                 yield COMMAND_MOVE, x + dx, y + dy
                 yield COMMAND_MODE_RAPID
 
-            if not spooler.job_if_idle(move_at_speed):
+            if not self.spooler.job_if_idle(move_at_speed):
                 channel(_("Busy"))
             return
 
@@ -302,7 +301,6 @@ class LihuiyuDevice(Service):
             command,
             channel,
             _,
-            data=None,
             speed=None,
             increment=False,
             decrement=False,
@@ -327,20 +325,19 @@ class LihuiyuDevice(Service):
                 s += self.settings.speed
             elif percent:
                 s = self.settings.speed * (s / 100.0)
-            self.settings.set_speed(s)
+            self.driver.set_speed(s)
             channel(_("Speed set at: %f mm/s") % self.settings.speed)
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
         @self.console_command(
             "power", help=_("Set Driver Power")
         )
-        def power(command, channel, _, data, ppi=None, **kwargs):
-            spooler, driver, output = data
+        def power(command, channel, _, ppi=None, **kwargs):
             if ppi is None:
-                channel(_("Power set at: %d pulses per inch") % driver.power)
+                channel(_("Power set at: %d pulses per inch") % self.driver.settings.power)
             else:
                 try:
-                    driver.set_power(ppi)
+                    self.driver.set_power(ppi)
                 except ValueError:
                     pass
 
@@ -351,29 +348,28 @@ class LihuiyuDevice(Service):
             "acceleration",
             help=_("Set Driver Acceleration [1-4]"),
         )
-        def acceleration(channel, _, data=None, accel=None, **kwargs):
+        def acceleration(channel, _, accel=None, **kwargs):
             """
             Lhymicro-gl speedcodes have a single character of either 1,2,3,4 which indicates
             the acceleration value of the laser. This is typically 1 below 25.4, 2 below 60,
             3 below 127, and 4 at any value greater than that. Manually setting this on the
             fly can be used to check the various properties of that mode.
             """
-            spooler, driver, output = data
             if accel is None:
-                if driver.acceleration is None:
+                if self.settings.acceleration is None:
                     channel(_("Acceleration is set to default."))
                 else:
-                    channel(_("Acceleration: %d") % driver.acceleration)
+                    channel(_("Acceleration: %d") % self.settings.acceleration)
 
             else:
                 try:
                     v = accel
                     if v not in (1, 2, 3, 4):
-                        driver.set_acceleration(None)
+                        self.driver.set_acceleration(None)
                         channel(_("Acceleration is set to default."))
                         return
-                    driver.set_acceleration(v)
-                    channel(_("Acceleration: %d") % driver.acceleration)
+                    self.driver.set_acceleration(v)
+                    channel(_("Acceleration: %d") % self.driver.settings.acceleration)
                 except ValueError:
                     channel(_("Invalid Acceleration [1-4]."))
                     return
@@ -384,17 +380,15 @@ class LihuiyuDevice(Service):
             help=_("update movement codes for the drivers"),
         )
         def realtime_pause(data=None, **kwargs):
-            spooler, driver, output = data
-            driver.update_codes()
+            self.driver.update_codes()
 
         @self.console_command(
             "status",
             help=_("abort waiting process on the controller."),
         )
         def realtime_pause(channel, _, data=None, **kwargs):
-            spooler, driver, output = data
             try:
-                output.update_status()
+                self.controller.update_status()
             except ConnectionError:
                 channel(_("Could not check status, usb not connected."))
 
@@ -402,27 +396,24 @@ class LihuiyuDevice(Service):
             "continue",
             help=_("abort waiting process on the controller."),
         )
-        def realtime_pause(data=None, **kwargs):
-            spooler, driver, output = data
-            output.abort_waiting = True
+        def realtime_pause(**kwargs):
+            self.controller.abort_waiting = True
 
         @self.console_command(
             "pause",
             help=_("realtime pause/resume of the machine"),
         )
-        def realtime_pause(data=None, **kwargs):
-            spooler, driver, output = data
-            if driver.is_paused:
-                driver.resume()
+        def realtime_pause(**kwargs):
+            if self.driver.is_paused:
+                self.driver.resume()
             else:
-                driver.pause()
+                self.driver.pause()
 
         @self.console_command(
             ("estop", "abort"), help=_("Abort Job")
         )
-        def pipe_abort(channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            driver.reset()
+        def pipe_abort(channel, _, **kwargs):
+            self.driver.reset()
             channel(_("Lhystudios Channel Aborted."))
 
         @self.console_argument(
@@ -435,20 +426,19 @@ class LihuiyuDevice(Service):
             "rapid_override",
             help=_("limit speed of typical rapid moves."),
         )
-        def rapid_override(channel, _, data=None, rapid_x=None, rapid_y=None, **kwargs):
-            spooler, driver, output = data
+        def rapid_override(channel, _, rapid_x=None, rapid_y=None, **kwargs):
             if rapid_x is not None:
                 if rapid_y is None:
                     rapid_y = rapid_x
-                driver.rapid_override = True
-                driver.rapid_override_speed_x = rapid_x
-                driver.rapid_override_speed_y = rapid_y
+                self.driver.rapid_override = True
+                self.driver.rapid_override_speed_x = rapid_x
+                self.driver.rapid_override_speed_y = rapid_y
                 channel(
                     _("Rapid Limit: %f, %f")
-                    % (driver.rapid_override_speed_x, driver.rapid_override_speed_y)
+                    % (self.driver.rapid_override_speed_x, self.driver.rapid_override_speed_y)
                 )
             else:
-                driver.rapid_override = False
+                self.driver.rapid_override = False
                 channel(_("Rapid Limit Off"))
 
         @self.console_argument("filename", type=str)
@@ -456,8 +446,7 @@ class LihuiyuDevice(Service):
             "egv_import",
             help=_("Lhystudios Engrave Buffer Import. egv_import <egv_file>"),
         )
-        def egv_import(filename, data=None, **kwargs):
-            spooler, driver, output = data
+        def egv_import(filename, **kwargs):
             if filename is None:
                 raise SyntaxError
 
@@ -484,16 +473,15 @@ class LihuiyuDevice(Service):
                     if not data:
                         break
                     buffer = bytes(data, "utf8")
-                    output.write(buffer)
-                output.write(b"\n")
+                    self.output.write(buffer)
+                self.output.write(b"\n")
 
         @self.console_argument("filename", type=str)
         @self.console_command(
             "egv_export",
             help=_("Lhystudios Engrave Buffer Export. egv_export <egv_file>"),
         )
-        def egv_export(channel, _, filename, data=None, **kwargs):
-            spooler, driver, output = data
+        def egv_export(channel, _, filename, **kwargs):
             if filename is None:
                 raise SyntaxError
             try:
@@ -503,12 +491,12 @@ class LihuiyuDevice(Service):
                     f.write("Copyright: Unknown\n")
                     f.write(
                         "Creator-Software: %s v%s\n"
-                        % (output.context.kernel.name, output.context.kernel.version)
+                        % (self.kernel.name, self.kernel.version)
                     )
                     f.write("\n")
                     f.write("%0%0%0%0%\n")
-                    buffer = bytes(output._buffer)
-                    buffer += bytes(output._queue)
+                    buffer = bytes(self.controller._buffer)
+                    buffer += bytes(self.controller._queue)
                     f.write(buffer.decode("utf-8"))
             except (PermissionError, IOError):
                 channel(_("Could not save: %s" % filename))
@@ -517,12 +505,11 @@ class LihuiyuDevice(Service):
             "egv",
             help=_("Lhystudios Engrave Code Sender. egv <lhymicro-gl>"),
         )
-        def egv(command, channel, _, data=None, remainder=None, **kwargs):
-            spooler, driver, output = data
+        def egv(command, channel, _, remainder=None, **kwargs):
             if len(remainder) == 0:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
-                output.write(
+                self.output.write(
                     bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
                 )
 
@@ -530,8 +517,7 @@ class LihuiyuDevice(Service):
             "challenge",
             help=_("Challenge code, challenge <serial number>"),
         )
-        def challenge_egv(command, channel, _, data=None, remainder=None, **kwargs):
-            spooler, driver, output = data
+        def challenge_egv(command, channel, _, remainder=None, **kwargs):
             if len(remainder) == 0:
                 raise SyntaxError
             else:
@@ -539,78 +525,69 @@ class LihuiyuDevice(Service):
                     md5(bytes(remainder.upper(), "utf8")).hexdigest()
                 )
                 code = b"A%s\n" % challenge
-                output.write(code)
+                self.output.write(code)
 
         @self.console_command(
             "start", help=_("Start Pipe to Controller")
         )
         def pipe_start(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.update_state(STATE_ACTIVE)
-            output.start()
+            self.controller.update_state(STATE_ACTIVE)
+            self.controller.start()
             channel(_("Lhystudios Channel Started."))
 
         @self.console_command(
             "hold", help=_("Hold Controller")
         )
-        def pipe_pause(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.update_state(STATE_PAUSE)
-            output.pause()
+        def pipe_pause(command, channel, _, **kwargs):
+            self.controller.update_state(STATE_PAUSE)
+            self.controller.pause()
             channel("Lhystudios Channel Paused.")
 
         @self.console_command(
             "resume", help=_("Resume Controller")
         )
-        def pipe_resume(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.update_state(STATE_ACTIVE)
-            output.start()
+        def pipe_resume(command, channel, _, **kwargs):
+            self.controller.update_state(STATE_ACTIVE)
+            self.controller.start()
             channel(_("Lhystudios Channel Resumed."))
 
         @self.console_command(
             "usb_connect", help=_("Connects USB")
         )
-        def usb_connect(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.open()
+        def usb_connect(command, channel, _, **kwargs):
+            self.controller.open()
             channel(_("CH341 Opened."))
 
         @self.console_command(
             "usb_disconnect", help=_("Disconnects USB")
         )
         def usb_disconnect(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.close()
+            self.controller.close()
             channel(_("CH341 Closed."))
 
         @self.console_command(
             "usb_reset", help=_("Reset USB device")
         )
         def usb_reset(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.usb_reset()
+            self.controller.usb_reset()
 
         @self.console_command(
             "usb_release",help=_("Release USB device")
         )
-        def usb_release(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.usb_release()
+        def usb_release(command, channel, _, **kwargs):
+            self.controller.usb_release()
 
         @self.console_command(
             "usb_abort", help=_("Stops USB retries")
         )
-        def usb_abort(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.abort_retry()
+        def usb_abort(command, channel, _, **kwargs):
+            self.controller.abort_retry()
 
         @self.console_command(
             "usb_continue", help=_("Continues USB retries")
         )
-        def usb_continue(command, channel, _, data=None, **kwargs):
-            spooler, driver, output = data
-            output.continue_retry()
+        def usb_continue(command, channel, _, **kwargs):
+            self.controller.continue_retry()
 
         @self.console_option(
             "port", "p", type=int, default=23, help=_("port to listen on.")
@@ -667,6 +644,17 @@ class LihuiyuDevice(Service):
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))
             return
+
+    @property
+    def output(self):
+        """
+        This is the controller in controller mode and the tcp in network mode.
+        @return:
+        """
+        if self.type == "tcp":
+            return self.tcp
+        else:
+            return self.controller
 
     def activate_spooler(self):
         self.kernel.activate_service_path("device", self.path)
