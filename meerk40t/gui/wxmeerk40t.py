@@ -7,7 +7,12 @@ import traceback
 from wx import aui
 
 from meerk40t.gui.wxmscene import SceneWindow
-from .icons import icons8_gas_industry_50, icons8_emergency_stop_button_50, icons8_home_filled_50, icons8_pause_50
+from .icons import (
+    icons8_gas_industry_50,
+    icons8_emergency_stop_button_50,
+    icons8_home_filled_50,
+    icons8_pause_50,
+)
 
 try:
     import wx
@@ -244,13 +249,13 @@ def register_panel_stop(window, context):
     stop.SetSize(stop.GetBestSize())
     pane = (
         aui.AuiPaneInfo()
-            .Bottom()
-            .Caption(_("Stop"))
-            .MinSize(40, 40)
-            .FloatingSize(98, 98)
-            .Name("stop")
-            .Hide()
-            .CaptionVisible(not context.pane_lock)
+        .Bottom()
+        .Caption(_("Stop"))
+        .MinSize(40, 40)
+        .FloatingSize(98, 98)
+        .Name("stop")
+        .Hide()
+        .CaptionVisible(not context.pane_lock)
     )
     pane.dock_proportion = 98
     pane.control = stop
@@ -266,13 +271,13 @@ def register_panel_home(window, context):
     window.Bind(wx.EVT_BUTTON, lambda e: context("home\n"), home)
     pane = (
         aui.AuiPaneInfo()
-            .Bottom()
-            .Caption(_("Home"))
-            .MinSize(40, 40)
-            .FloatingSize(98, 98)
-            .Name("home")
-            .Hide()
-            .CaptionVisible(not context.pane_lock)
+        .Bottom()
+        .Caption(_("Home"))
+        .MinSize(40, 40)
+        .FloatingSize(98, 98)
+        .Name("home")
+        .Hide()
+        .CaptionVisible(not context.pane_lock)
     )
     pane.dock_proportion = 98
     pane.control = home
@@ -306,13 +311,13 @@ def register_panel_pause(window, context):
     pause.SetSize(pause.GetBestSize())
     pane = (
         aui.AuiPaneInfo()
-            .Caption(_("Pause"))
-            .Bottom()
-            .MinSize(40, 40)
-            .FloatingSize(98, 98)
-            .Name("pause")
-            .Hide()
-            .CaptionVisible(not context.pane_lock)
+        .Caption(_("Pause"))
+        .Bottom()
+        .MinSize(40, 40)
+        .FloatingSize(98, 98)
+        .Name("pause")
+        .Hide()
+        .CaptionVisible(not context.pane_lock)
     )
     pane.dock_proportion = 98
     pane.control = pause
@@ -451,18 +456,23 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Scene", SceneWindow)
 
         from meerk40t.gui.wxmribbon import register_panel
+
         kernel.register("wxpane/Ribbon", register_panel)
 
         from meerk40t.gui.wxmscene import register_panel
+
         kernel.register("wxpane/ScenePane", register_panel)
 
         from meerk40t.gui.wxmtree import register_panel
+
         kernel.register("wxpane/Tree", register_panel)
 
         from meerk40t.gui.laserpanel import register_panel
+
         kernel.register("wxpane/LaserPanel", register_panel)
 
         from meerk40t.gui.position import register_panel
+
         kernel.register("wxpane/Position", register_panel)
 
         from meerk40t.gui.toolbarproject import register_project_tools

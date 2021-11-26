@@ -1,4 +1,3 @@
-
 import unittest
 
 from meerk40t.lihuiyu.laserspeed import LaserSpeed

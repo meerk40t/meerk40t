@@ -190,9 +190,7 @@ class MoshiDevice(Service):
 
             return "spooler", spooler
 
-        @self.console_command(
-            "usb_connect", help=_("Connect USB")
-        )
+        @self.console_command("usb_connect", help=_("Connect USB"))
         def usb_connect(command, channel, _, **kwargs):
             """
             Force USB Connection Event for Moshiboard
@@ -202,9 +200,7 @@ class MoshiDevice(Service):
             except ConnectionRefusedError:
                 channel("Connection Refused.")
 
-        @self.console_command(
-            "usb_disconnect", help=_("Disconnect USB")
-        )
+        @self.console_command("usb_disconnect", help=_("Disconnect USB"))
         def usb_disconnect(command, channel, _, **kwargs):
             """
             Force USB Disconnect Event for Moshiboard
@@ -214,9 +210,7 @@ class MoshiDevice(Service):
             else:
                 channel("Usb is not connected.")
 
-        @self.console_command(
-            "start", help=_("Start Pipe to Controller")
-        )
+        @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, data=None, **kwargs):
             """
             Start output sending.
@@ -234,9 +228,7 @@ class MoshiDevice(Service):
             self.controller.pause()
             channel(_("Moshi Channel Paused."))
 
-        @self.console_command(
-            "resume", input_type="moshi", help=_("Resume Controller")
-        )
+        @self.console_command("resume", input_type="moshi", help=_("Resume Controller"))
         def pipe_resume(command, channel, _, **kwargs):
             """
             Resume output sending.
@@ -245,9 +237,7 @@ class MoshiDevice(Service):
             self.controller.start()
             channel(_("Moshi Channel Resumed."))
 
-        @self.console_command(
-            ("estop", "abort"), help=_("Abort Job")
-        )
+        @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(command, channel, _, **kwargs):
             """
             Abort output job. Usually due to the functionality of Moshiboards this will do

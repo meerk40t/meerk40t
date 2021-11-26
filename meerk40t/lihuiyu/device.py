@@ -225,16 +225,12 @@ class LihuiyuDevice(Service):
             action="store_true",
             help=_("override one second laser fire pulse duration"),
         )
-        @self.console_argument(
-            "time", type=float, help=_("laser fire pulse duration")
-        )
+        @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @self.console_command(
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(
-            command, channel, _, time=None, idonotlovemyhouse=False, **kwargs
-        ):
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -292,17 +288,8 @@ class LihuiyuDevice(Service):
             help=_("Change speed by this amount."),
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
-        @self.console_command(
-            "speed", help=_("Set current speed of driver.")
-        )
-        def speed(
-            command,
-            channel,
-            _,
-            speed=None,
-            difference=False,
-            **kwargs
-        ):
+        @self.console_command("speed", help=_("Set current speed of driver."))
+        def speed(command, channel, _, speed=None, difference=False, **kwargs):
             original_speed = self.settings.speed
             if speed is None:
                 if original_speed is None:
@@ -330,9 +317,7 @@ class LihuiyuDevice(Service):
             channel(_("Speed set at: %f mm/s") % self.settings.speed)
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
-        @self.console_command(
-            "power", help=_("Set Driver Power")
-        )
+        @self.console_command("power", help=_("Set Driver Power"))
         def power(command, channel, _, ppi=None, **kwargs):
             original_power = self.settings.power
             if ppi is None:
@@ -346,9 +331,7 @@ class LihuiyuDevice(Service):
                 except ValueError:
                     pass
 
-        @self.console_argument(
-            "accel", type=int, help=_("Acceleration amount [1-4]")
-        )
+        @self.console_argument("accel", type=int, help=_("Acceleration amount [1-4]"))
         @self.console_command(
             "acceleration",
             help=_("Set Driver Acceleration [1-4]"),
@@ -415,9 +398,7 @@ class LihuiyuDevice(Service):
             else:
                 self.driver.pause()
 
-        @self.console_command(
-            ("estop", "abort"), help=_("Abort Job")
-        )
+        @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(channel, _, **kwargs):
             self.driver.reset()
             channel(_("Lhystudios Channel Aborted."))
@@ -441,7 +422,10 @@ class LihuiyuDevice(Service):
                 self.driver.rapid_override_speed_y = rapid_y
                 channel(
                     _("Rapid Limit: %f, %f")
-                    % (self.driver.rapid_override_speed_x, self.driver.rapid_override_speed_y)
+                    % (
+                        self.driver.rapid_override_speed_x,
+                        self.driver.rapid_override_speed_y,
+                    )
                 )
             else:
                 self.driver.rapid_override = False
@@ -533,33 +517,25 @@ class LihuiyuDevice(Service):
                 code = b"A%s\n" % challenge
                 self.output.write(code)
 
-        @self.console_command(
-            "start", help=_("Start Pipe to Controller")
-        )
+        @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwargs):
             self.controller.update_state(STATE_ACTIVE)
             self.controller.start()
             channel(_("Lhystudios Channel Started."))
 
-        @self.console_command(
-            "hold", help=_("Hold Controller")
-        )
+        @self.console_command("hold", help=_("Hold Controller"))
         def pipe_pause(command, channel, _, **kwargs):
             self.controller.update_state(STATE_PAUSE)
             self.controller.pause()
             channel("Lhystudios Channel Paused.")
 
-        @self.console_command(
-            "resume", help=_("Resume Controller")
-        )
+        @self.console_command("resume", help=_("Resume Controller"))
         def pipe_resume(command, channel, _, **kwargs):
             self.controller.update_state(STATE_ACTIVE)
             self.controller.start()
             channel(_("Lhystudios Channel Resumed."))
 
-        @self.console_command(
-            "usb_connect", help=_("Connects USB")
-        )
+        @self.console_command("usb_connect", help=_("Connects USB"))
         def usb_connect(command, channel, _, **kwargs):
             try:
                 self.controller.open()
@@ -567,16 +543,12 @@ class LihuiyuDevice(Service):
             except ConnectionRefusedError:
                 channel(_("Usb Connection Refused"))
 
-        @self.console_command(
-            "usb_disconnect", help=_("Disconnects USB")
-        )
+        @self.console_command("usb_disconnect", help=_("Disconnects USB"))
         def usb_disconnect(command, channel, _, **kwargs):
             self.controller.close()
             channel(_("CH341 Closed."))
 
-        @self.console_command(
-            "usb_reset", help=_("Reset USB device")
-        )
+        @self.console_command("usb_reset", help=_("Reset USB device"))
         def usb_reset(command, channel, _, **kwargs):
             try:
 
@@ -585,9 +557,7 @@ class LihuiyuDevice(Service):
             except ConnectionError:
                 channel(_("Usb Connection Error"))
 
-        @self.console_command(
-            "usb_release",help=_("Release USB device")
-        )
+        @self.console_command("usb_release", help=_("Release USB device"))
         def usb_release(command, channel, _, **kwargs):
             try:
                 self.controller.usb_release()
@@ -595,15 +565,11 @@ class LihuiyuDevice(Service):
             except ConnectionError:
                 channel(_("Usb Connection Error"))
 
-        @self.console_command(
-            "usb_abort", help=_("Stops USB retries")
-        )
+        @self.console_command("usb_abort", help=_("Stops USB retries"))
         def usb_abort(command, channel, _, **kwargs):
             self.controller.abort_retry()
 
-        @self.console_command(
-            "usb_continue", help=_("Continues USB retries")
-        )
+        @self.console_command("usb_continue", help=_("Continues USB retries"))
         def usb_continue(command, channel, _, **kwargs):
             self.controller.continue_retry()
 
@@ -645,7 +611,9 @@ class LihuiyuDevice(Service):
                     if watch:
                         server.data_channel.watch(console)
                 channel(_("Watching Channel: %s") % "server")
-                self.channel("{server_name}/recv".format(server_name=server_name)).watch(output.write)
+                self.channel(
+                    "{server_name}/recv".format(server_name=server_name)
+                ).watch(output.write)
                 channel(_("Attached: %s" % repr(output)))
 
             except OSError:

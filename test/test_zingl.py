@@ -6,7 +6,6 @@ from meerk40t.tools.zinglplotter import ZinglPlotter
 
 
 class TestZingl(unittest.TestCase):
-
     def test_line(self):
         for x, y in ZinglPlotter.plot_line(0, 0, 100, 100):
             self.assertEqual(x, y)
@@ -50,6 +49,7 @@ class TestZingl(unittest.TestCase):
 
     def test_arc(self):
         from math import tau, sqrt
+
         arc = Arc(start=(0, 100), center=(0, 0), end=(0, 100), sweep=tau)
         for x, y in ZinglPlotter.plot_arc(arc):
             r = sqrt(x * x + y * y)
@@ -57,39 +57,56 @@ class TestZingl(unittest.TestCase):
 
     def test_random_cubic(self):
         import random
+
         plotter = ZinglPlotter()
         for i in range(1000):
             x, y = random.randint(0, 100), random.randint(0, 100)
             plotter.single_x = x
             plotter.single_y = y
-            for plot in plotter.plot_cubic_bezier(x, y,
-                                                  (random.random() * 100), (random.random() * 100),
-                                                  (random.random() * 100), (random.random() * 100),
-                                                  random.randint(0, 100), random.randint(0, 100)):
+            for plot in plotter.plot_cubic_bezier(
+                x,
+                y,
+                (random.random() * 100),
+                (random.random() * 100),
+                (random.random() * 100),
+                (random.random() * 100),
+                random.randint(0, 100),
+                random.randint(0, 100),
+            ):
                 pass
 
     def test_random_quad(self):
         import random
+
         plotter = ZinglPlotter()
         for i in range(1000):
             x, y = random.randint(0, 100), random.randint(0, 100)
-            for plot in plotter.plot_quad_bezier(x, y,
-                                                 (random.random() * 100), (random.random() * 100),
-                                                 random.randint(0, 100), random.randint(0, 100)):
+            for plot in plotter.plot_quad_bezier(
+                x,
+                y,
+                (random.random() * 100),
+                (random.random() * 100),
+                random.randint(0, 100),
+                random.randint(0, 100),
+            ):
                 pass
 
     def test_random_line(self):
         import random
+
         plotter = ZinglPlotter()
         for i in range(100000):
             x, y = random.randint(0, 100), random.randint(0, 100)
 
-            for plot in plotter.plot_line(x, y, random.randint(0, 100), random.randint(0, 100)):
+            for plot in plotter.plot_line(
+                x, y, random.randint(0, 100), random.randint(0, 100)
+            ):
                 pass
 
     def test_random_arc(self):
         import random
         from math import isnan
+
         for i in range(1000):
             sx, sy = random.randint(0, 100), random.randint(0, 100)
             cx, cy = random.randint(0, 100), random.randint(0, 100)

@@ -2,6 +2,7 @@ import json
 import sys
 from urllib.request import urlopen, Request
 
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
@@ -9,20 +10,23 @@ def plugin(kernel, lifecycle):
         # https://docs.github.com/en/rest/reference/repos#get-the-latest-release
         GITHUB_LATEST = "https://api.github.com/repos/meerk40t/meerk40t/releases/latest"
         # https://docs.github.com/en/rest/reference/repos#list-releases
-        GITHUB_RELEASES = "https://api.github.com/repos/meerk40t/meerk40t/releases?perpage=100"
+        GITHUB_RELEASES = (
+            "https://api.github.com/repos/meerk40t/meerk40t/releases?perpage=100"
+        )
         GITHUB_HEADER = ("Accept", "application/vnd.github.v3+json")
 
         RESET_VERSION = [0, 0, 0, 0]
 
         UPDATE_MESSAGE = _(
-            "A new {type} release of {name} v{version} is available from\n"
-            + "{url}"
+            "A new {type} release of {name} v{version} is available from\n" + "{url}"
         )
 
         context = kernel.root
         context.setting(bool, "check_for_betas", False)
 
-        @kernel.console_command("check_for_updates", help=_("Check whether a newer version is available"))
+        @kernel.console_command(
+            "check_for_updates", help=_("Check whether a newer version is available")
+        )
         def check_for_updates(channel, _, **kwargs):
             """
             This command checks for updates and outputs the results to the console.
@@ -66,7 +70,7 @@ def plugin(kernel, lifecycle):
                     beta = 9999  # indicates a full version
                 else:
                     beta = int(beta)
-                version = list(map(int,version.split(".")))
+                version = list(map(int, version.split(".")))
                 version.append(beta)
                 return version
 
@@ -105,24 +109,39 @@ def plugin(kernel, lifecycle):
                             continue
                         tag, version, url, assets = extract_from_json(resp)
                         if resp["prerelease"]:  # beta
-                            if (version > version_beta
-                                and (
-                                    context.check_for_betas
-                                    or (
-                                        # If on a temp beta, then only interested in minor beta updates
-                                        version[0:2] == version_current[0:2]
-                                        and version[3] > version_current[3]
-                                    )
+                            if version > version_beta and (
+                                context.check_for_betas
+                                or (
+                                    # If on a temp beta, then only interested in minor beta updates
+                                    version[0:2] == version_current[0:2]
+                                    and version[3] > version_current[3]
                                 )
                             ):
-                                tag_beta, version_beta, url_beta, assets_beta = tag, version, url, assets
+                                tag_beta, version_beta, url_beta, assets_beta = (
+                                    tag,
+                                    version,
+                                    url,
+                                    assets,
+                                )
                         elif version > version_full:
-                            tag_full, version_full, url_full, assets_full = tag, version, url, assets
+                            tag_full, version_full, url_full, assets_full = (
+                                tag,
+                                version,
+                                url,
+                                assets,
+                            )
                     # If full version is latest, disregard betas
                     if version_full > version_beta:
-                        tag_beta, version_beta, url_beta, assets_beta = (None, RESET_VERSION, None, None)
+                        tag_beta, version_beta, url_beta, assets_beta = (
+                            None,
+                            RESET_VERSION,
+                            None,
+                            None,
+                        )
                 else:
-                    tag_full, version_full, url_full, assets_full = extract_from_json(response)
+                    tag_full, version_full, url_full, assets_full = extract_from_json(
+                        response
+                    )
 
                 if version_full > version_current:
                     channel(
@@ -130,7 +149,7 @@ def plugin(kernel, lifecycle):
                             type="full",
                             name=kernel.name,
                             version=tag_full,
-                            url=url_full
+                            url=url_full,
                         )
                     )
 
@@ -140,8 +159,8 @@ def plugin(kernel, lifecycle):
                             type="beta",
                             name=kernel.name,
                             version=tag_beta,
-                            url=url_beta
+                            url=url_beta,
                         )
                     )
 
-            kernel.threaded(update_check,"update_check")
+            kernel.threaded(update_check, "update_check")

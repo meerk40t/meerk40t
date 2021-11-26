@@ -675,7 +675,6 @@ class MeerK40t(MWindow):
 
     @lookup_listener("pane")
     def dynamic_fill_pane_menu(self, new=None, old=None):
-
         def toggle_pane(pane_toggle):
             def toggle(event=None):
                 pane_obj = self._mgr.GetPane(pane_toggle)

@@ -705,7 +705,6 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-
         def camera_click(index=None):
             def specific(event=None):
                 kernel.root.setting(int, "camera_default", 1)

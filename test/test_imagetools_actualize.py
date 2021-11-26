@@ -89,7 +89,9 @@ class TestActualize(unittest.TestCase):
             for component in range(256):
                 svg_image = SVGImage()
                 # each color is a different shade of gray, all marked fully transparent.
-                svg_image.image = Image.new("RGBA", (256, 256), (component, component, component, 0))
+                svg_image.image = Image.new(
+                    "RGBA", (256, 256), (component, component, component, 0)
+                )
                 svg_image.values["raster_step"] = 3
                 draw = ImageDraw.Draw(svg_image.image)
                 draw.ellipse((50, 50, 150, 150), "white")
@@ -134,7 +136,9 @@ class TestActualize(unittest.TestCase):
             for component in range(256):
                 svg_image = SVGImage()
                 # each color is a different shade of gray, all marked fully transparent.
-                svg_image.image = Image.new("RGBA", (256, 256), (component, component, component, 0))
+                svg_image.image = Image.new(
+                    "RGBA", (256, 256), (component, component, component, 0)
+                )
                 svg_image.values["raster_step"] = 3
                 draw = ImageDraw.Draw(svg_image.image)
                 draw.ellipse((50, 50, 150, 150), "black")
@@ -173,13 +177,15 @@ class TestActualize(unittest.TestCase):
         :return:
         """
         for component in range(256):
-            image = Image.new("RGBA", (256, 256), (component, component, component,0))
+            image = Image.new("RGBA", (256, 256), (component, component, component, 0))
             draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 150, 150), "black")
 
             for step in range(1, 20):
                 transform = Matrix()
-                actual, transform = actualize(image, transform, step_level=step, crop=False)
+                actual, transform = actualize(
+                    image, transform, step_level=step, crop=False
+                )
                 self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_white(self):
@@ -209,7 +215,9 @@ class TestActualize(unittest.TestCase):
 
         for step in range(1, 20):
             transform = Matrix()
-            actual, transform = actualize(image, transform, step_level=step, crop=False, inverted=True)
+            actual, transform = actualize(
+                image, transform, step_level=step, crop=False, inverted=True
+            )
             self.assertEqual(actual.getpixel((-1, -1)), 0)
 
         # Note: inverted flag not set. White edge pixel is correct.
