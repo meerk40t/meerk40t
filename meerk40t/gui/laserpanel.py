@@ -187,6 +187,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
         self.Bind(wx.EVT_BUTTON, self.on_button_simulate, self.button_simulate)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_devices, self.combo_devices)
+        # self.Bind(wx.EVT_TEXT, self.on_combo_devices, self.combo_devices)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_devices, self.combo_devices)
         # end wxGlade
         if index == -1:
             disable_window(self)
@@ -227,8 +229,8 @@ class LaserPanel(wx.Panel):
 
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
-        s = self.selected_spooler.name
-        if plan.plan:
+        s = self.connected_spooler.name
+        if plan.plan and self.context.laserpane_hold:
             self.context("planz spool%s\n" % s)
         else:
             if self.checkbox_optimize.GetValue():

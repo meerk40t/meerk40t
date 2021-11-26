@@ -42,7 +42,14 @@ class PreferencesPanel(wx.Panel):
         )
         # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
-
+        # (
+        #     _("Check for beta version updates"),
+        #     _(
+        #         "Check for beta releases in addition to full releases."
+        #     ),
+        #     "check_for_betas",
+        #     False,
+        # ),
         self.text_scale_x = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.text_scale_y = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.checklist_options = PropertiesPanel(
@@ -328,7 +335,7 @@ class Preferences(MWindow):
 
         super().__init__(
             565,
-            327,
+            347,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX
