@@ -96,6 +96,11 @@ class Module:
             kernel._signal_attach(self)
             kernel._lookup_attach(self)
         if starting_position < 200 <= ending_position:
+            try:
+                # If this is a module, we remove it from opened.
+                del self.context.opened[self.name]
+            except (KeyError, AttributeError):
+                pass  # Nothing to close.
             if hasattr(self, "module_close"):
                 self.module_close(*args, **kwargs)
             kernel._signal_detach(self)
