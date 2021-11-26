@@ -167,7 +167,6 @@ class LihuiyuDevice(Service):
         self.current_y = 0.0
         self.state = 0
         self.type = "usb"
-
         if self.board == "M2":
             self.spooler = Spooler(self, "m2nano-%d" % index)
         else:
@@ -1530,7 +1529,7 @@ class LhystudiosController:
 
     def __init__(self, context, name, *args, **kwargs):
         self.context = context
-        self.name = context.path
+        self.name = name
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
 
