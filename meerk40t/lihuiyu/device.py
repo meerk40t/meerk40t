@@ -78,8 +78,6 @@ def plugin(kernel, lifecycle=None):
         kernel.register("load/EgvLoader", EgvLoader)
         kernel.register("emulator/lhystudios", LhystudiosEmulator)
 
-        _ = kernel.translation
-
 
 class LihuiyuDevice(Service):
     """
@@ -302,12 +300,12 @@ class LihuiyuDevice(Service):
             channel,
             _,
             speed=None,
-            increment=False,
-            decrement=False,
+            difference=False,
             **kwargs
         ):
-            if speed is None or (increment and decrement):
-                channel(_("Speed set at: %f mm/s") % self.settings.speed)
+            original_speed = self.settings.speed
+            if speed is None:
+                channel(_("Speed set at: %f mm/s") % original_speed)
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -319,12 +317,12 @@ class LihuiyuDevice(Service):
             except ValueError:
                 channel(_("Not a valid speed or percent."))
                 return
-            if percent and increment:
-                s = self.settings.speed + self.settings.speed * (s / 100.0)
-            elif increment:
-                s += self.settings.speed
+            if percent and difference:
+                s = original_speed + original_speed * (s / 100.0)
+            elif difference:
+                s += original_speed
             elif percent:
-                s = self.settings.speed * (s / 100.0)
+                s = original_speed * (s / 100.0)
             self.driver.set_speed(s)
             channel(_("Speed set at: %f mm/s") % self.settings.speed)
 
@@ -379,14 +377,14 @@ class LihuiyuDevice(Service):
             hidden=True,
             help=_("update movement codes for the drivers"),
         )
-        def realtime_pause(data=None, **kwargs):
+        def realtime_pause(**kwargs):
             self.driver.update_codes()
 
         @self.console_command(
             "status",
             help=_("abort waiting process on the controller."),
         )
-        def realtime_pause(channel, _, data=None, **kwargs):
+        def realtime_pause(channel, _, **kwargs):
             try:
                 self.controller.update_status()
             except ConnectionError:
@@ -530,7 +528,7 @@ class LihuiyuDevice(Service):
         @self.console_command(
             "start", help=_("Start Pipe to Controller")
         )
-        def pipe_start(command, channel, _, data=None, **kwargs):
+        def pipe_start(command, channel, _, **kwargs):
             self.controller.update_state(STATE_ACTIVE)
             self.controller.start()
             channel(_("Lhystudios Channel Started."))
@@ -561,14 +559,14 @@ class LihuiyuDevice(Service):
         @self.console_command(
             "usb_disconnect", help=_("Disconnects USB")
         )
-        def usb_disconnect(command, channel, _, data=None, **kwargs):
+        def usb_disconnect(command, channel, _, **kwargs):
             self.controller.close()
             channel(_("CH341 Closed."))
 
         @self.console_command(
             "usb_reset", help=_("Reset USB device")
         )
-        def usb_reset(command, channel, _, data=None, **kwargs):
+        def usb_reset(command, channel, _, **kwargs):
             self.controller.usb_reset()
 
         @self.console_command(
