@@ -524,7 +524,7 @@ class LihuiyuDevice(Service):
             help=_("Challenge code, challenge <serial number>"),
         )
         def challenge_egv(command, channel, _, remainder=None, **kwargs):
-            if len(remainder) == 0:
+            if not remainder:
                 raise SyntaxError
             else:
                 challenge = bytearray.fromhex(
