@@ -512,7 +512,7 @@ class LihuiyuDevice(Service):
             help=_("Lhystudios Engrave Code Sender. egv <lhymicro-gl>"),
         )
         def egv(command, channel, _, remainder=None, **kwargs):
-            if len(remainder) == 0:
+            if not remainder:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
                 self.output.write(
