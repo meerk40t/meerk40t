@@ -153,7 +153,7 @@ class DevicesPanel(wx.Panel):
     def pane_show(self, *args):
         self.refresh_device_list()
         self.context.listen("active", self.active_update)
-        self.context.listen("legacy_spooler_label", self.spooler_label_update)
+        # self.context.listen("legacy_spooler_label", self.spooler_label_update)
 
     def pane_hide(self, *args):
         item = self.devices_list.GetFirstSelected()
@@ -161,7 +161,7 @@ class DevicesPanel(wx.Panel):
             uid = self.devices_list.GetItem(item).Text
             self.context.device_primary = uid
         self.context.unlisten("active", self.active_update)
-        self.context.unlisten("legacy_spooler_label", self.spooler_label_update)
+        # self.context.unlisten("legacy_spooler_label", self.spooler_label_update)
 
     def spooler_label_update(self, origin, *message):
         self.refresh_device_list()
