@@ -24,7 +24,6 @@ class DummyDevice(Service):
         self.settings = LaserSettings()
         self.state = 0
         self.spooler = Spooler(self, "default")
-        self.spooler.activate = self.activate_spooler
         self.viewbuffer = ""
         self.root.register("spooler/default", self.spooler)
 
@@ -96,6 +95,3 @@ class DummyDevice(Service):
                 channel(_("----------"))
 
             return "spooler", spooler
-
-    def activate_spooler(self):
-        self.kernel.activate_service_path("device", "default_device")

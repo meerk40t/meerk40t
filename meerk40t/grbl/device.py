@@ -235,9 +235,6 @@ class GRBLDevice(Service):
 
             return "spooler", spooler
 
-    def activate_spooler(self):
-        self.kernel.activate_service_path("device", self.path)
-
 
 class GRBLDriver(Driver):
     def __init__(self, context, name):

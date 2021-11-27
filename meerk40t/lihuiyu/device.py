@@ -645,9 +645,6 @@ class LihuiyuDevice(Service):
         else:
             return self.controller
 
-    def activate_spooler(self):
-        self.kernel.activate_service_path("device", self.path)
-
 
 class LhystudiosDriver(Driver):
     """

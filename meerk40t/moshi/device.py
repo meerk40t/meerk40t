@@ -271,9 +271,6 @@ class MoshiDevice(Service):
             """
             self.controller.abort_waiting = True
 
-    def activate_spooler(self):
-        self.kernel.activate_service_path("device", self.path)
-
 
 class MoshiDriver(Driver):
     """
@@ -764,7 +761,6 @@ class MoshiController:
 
     def __init__(self, context, name, channel=None, *args, **kwargs):
         self.context = context
-        self.name = name
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
 

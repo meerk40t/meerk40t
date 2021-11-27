@@ -250,9 +250,6 @@ class RuidaDevice(Service):
 
             return "spooler", spooler
 
-    def activate_spooler(self):
-        self.kernel.activate_service_path("device", self.path)
-
 
 class RuidaEmulator(Module):
     def __init__(self, context, path):
