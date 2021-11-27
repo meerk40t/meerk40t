@@ -1028,15 +1028,28 @@ class Kernel:
     # ==========
 
     def services(self, domain: str, active: bool = False):
+        """
+        Fetch the active or available servers from the kernel.lookup
+        @param domain: domain of service to lookup
+        @param active: look up active or available
+        @return:
+        """
         try:
             if active:
                 return self._registered["service/{domain}/active".format(domain=domain)]
             else:
-                return self._registered["service/{domain}/available".format(domain=domain)]
+                return self._registered[
+                    "service/{domain}/available".format(domain=domain)
+                ]
         except KeyError:
             return None
 
     def services_active(self):
+        """
+        Generate a series of active services.
+
+        @return: domain, service
+        """
         matchtext = "service/(.*)/active"
         match = re.compile(matchtext)
         for r in list(self._registered):
@@ -1045,13 +1058,17 @@ class Kernel:
                 yield result.group(1), self._registered[r]
 
     def services_available(self):
+        """
+        Generate a series of available services.
+
+        @return: domain, service
+        """
         matchtext = "service/(.*)/available"
         match = re.compile(matchtext)
         for r in list(self._registered):
             result = match.match(r)
             if result:
                 yield result.group(1), self._registered[r]
-
 
     def add_service(self, domain: str, service: Service):
         """
@@ -1112,6 +1129,13 @@ class Kernel:
         self.activate(domain, service)
 
     def activate(self, domain, service):
+        """
+        Activate the service specified on the domain specified.
+
+        @param domain: Domain at which to activate service
+        @param service: service to activate
+        @return:
+        """
         # Deactivate anything on this domain.
         self.deactivate(domain)
 
@@ -1136,6 +1160,12 @@ class Kernel:
         self.signal("activate;{domain}".format(domain=domain), "/", service)
 
     def deactivate(self, domain):
+        """
+        Deactivate the service currently active at the given domain.
+
+        @param domain: domain at which to deactivate the service.
+        @return:
+        """
         setattr(self, domain, None)
         active = self.services(domain, True)
         if active is not None:
@@ -1154,7 +1184,9 @@ class Kernel:
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
-            self.signal("deactivate;{domain}".format(domain=domain), "/", previous_active)
+            self.signal(
+                "deactivate;{domain}".format(domain=domain), "/", previous_active
+            )
 
     # ==========
     # DELEGATES API
