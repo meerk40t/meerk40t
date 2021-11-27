@@ -188,11 +188,11 @@ class GRBLDevice(Service):
         self.setting(int, "port", 1022)
         self.setting(str, "address", "localhost")
 
-        self.spooler = Spooler(self, "grbl-%d" % index)
+        self.label = "grbl-%d" % index
+        self.spooler = Spooler(self)
 
-        self.spooler.activate = self.activate_spooler
-        self.driver = GRBLDriver(self, self.spooler.name)
-        self.controller = TCPOutput(self, self.spooler.name)
+        self.driver = GRBLDriver(self)
+        self.controller = TCPOutput(self)
 
         self.spooler.next = self.driver
         self.driver.prev = self.spooler
@@ -237,9 +237,8 @@ class GRBLDevice(Service):
 
 
 class GRBLDriver(Driver):
-    def __init__(self, context, name):
-        context = context.get_context("grbl/driver/%s" % name)
-        Driver.__init__(self, context=context, name=name)
+    def __init__(self, context):
+        Driver.__init__(self, context=context, name=str(context))
         self.context.setting(str, "line_end", "\n")
         self.plot = None
         self.scale = 1000.0  # g21 default.
@@ -364,13 +363,10 @@ class GRBLDriver(Driver):
 
 
 class TCPOutput:
-    def __init__(self, context, name=None):
+    def __init__(self, context):
         super().__init__()
         self.service = context
-        self.next = None
-        self.prev = None
         self._stream = None
-        self.name = name
 
         self.lock = threading.RLock()
         self.buffer = bytearray()
@@ -436,13 +432,10 @@ class TCPOutput:
                         break
 
     def __repr__(self):
-        if self.name is not None:
-            return "TCPOutput('%s:%s','%s')" % (
-                self.service.address,
-                self.service.port,
-                self.name,
-            )
-        return "TCPOutput('%s:%s')" % (self.service.address, self.service.port)
+        return "TCPOutput('%s:%s')" % (
+            self.service.address,
+            self.service.port,
+        )
 
     def __len__(self):
         return len(self.buffer)

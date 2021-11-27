@@ -65,18 +65,15 @@ class LaserPanel(wx.Panel):
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
         # Devices Initialize.
-        self.available_spoolers = list(self.context.lookup_all("spooler"))
+        self.available_devices = self.context.kernel.available_services("device")
 
-        self.selected_spooler = self.context.device.spooler
+        self.selected_device = self.context.device
         index = -1
-        for i, s in enumerate(self.available_spoolers):
-            if s is self.selected_spooler:
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
                 index = i
                 break
-        self.connected_name = (
-            self.selected_spooler.name if self.selected_spooler is not None else "None"
-        )
-        spools = [s.label for s in self.available_spoolers]
+        spools = [s.label for s in self.available_devices]
 
         self.combo_devices = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -196,18 +193,15 @@ class LaserPanel(wx.Panel):
     @lookup_listener("spooler")
     def spooler_lookup(self, new_spoolers, old):
         # Devices Initialize.
-        self.available_spoolers = [obj for obj, n, s in new_spoolers]
-        self.selected_spooler = self.context.device.spooler
+        self.available_devices = self.context.kernel.available_services("device")
+        self.selected_device = self.context.device
         index = -1
-        for i, s in enumerate(self.available_spoolers):
-            if s is self.selected_spooler:
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
                 index = i
                 break
-        self.connected_name = (
-            self.selected_spooler.name if self.selected_spooler is not None else "None"
-        )
         self.combo_devices.Clear()
-        spools = [s.label for s in self.available_spoolers]
+        spools = [s.label for s in self.available_devices]
         for i in range(len(spools)):
             self.combo_devices.Append(spools[i])
         self.combo_devices.SetSelection(index)
@@ -229,17 +223,15 @@ class LaserPanel(wx.Panel):
 
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
-        s = self.connected_spooler.name
         if plan.plan and self.context.laserpane_hold:
-            self.context("planz spool%s\n" % s)
+            self.context("planz spool\n")
         else:
             if self.checkbox_optimize.GetValue():
                 self.context(
-                    "planz clear copy preprocess validate blob preopt optimize spool%s\n"
-                    % s
+                    "planz clear copy preprocess validate blob preopt optimize spool\n"
                 )
             else:
-                self.context("planz clear copy preprocess validate blob spool%s\n" % s)
+                self.context("planz clear copy preprocess validate blob spool\n")
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
@@ -289,6 +281,7 @@ class LaserPanel(wx.Panel):
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()
-        self.selected_spooler = self.available_spoolers[index]
-        if self.selected_spooler.activate is not None:
-            self.selected_spooler.activate()
+        self.selected_device = self.available_devices[index]
+        self.selected_device.kernel.activate_service_path(
+            "device", self.selected_device.path
+        )

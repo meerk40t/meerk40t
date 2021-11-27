@@ -391,23 +391,18 @@ class Spooler:
     * remove(job)
     """
 
-    def __init__(self, context, spooler_name, *args, **kwargs):
+    def __init__(self, context, *args, **kwargs):
         self.context = context
-        self.name = spooler_name
         self.queue_lock = Lock()
         self._queue = []
-        self.next = None
-        self.label = spooler_name
-        self.activate = None
 
     def __repr__(self):
-        return "Spooler(%s)" % str(self.name)
+        return "Spooler(%s)" % str(self.context)
 
     def __del__(self):
         self.name = None
         self.queue_lock = None
         self._queue = None
-        self.next = None
 
     def __len__(self):
         return len(self._queue)

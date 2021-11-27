@@ -212,13 +212,12 @@ class RuidaDevice(Service):
         self.settings = LaserSettings()
         self.state = 0
 
-        self.spooler = Spooler(self, "ruida-%d" % index)
-
-        self.spooler.activate = self.activate_spooler
+        self.label = "ruida-%d" % index
+        self.spooler = Spooler(self)
 
         self.viewbuffer = ""
 
-        self.root.register("spooler/ruida-%d" % index, self.spooler)
+        self.root.register("spooler/%s" % self.label, self.spooler)
 
         _ = self.kernel.translation
 

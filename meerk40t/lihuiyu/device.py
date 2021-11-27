@@ -166,16 +166,16 @@ class LihuiyuDevice(Service):
         self.current_x = 0.0
         self.current_y = 0.0
         self.state = 0
+        self.spooler = Spooler(self)
         if self.board == "M2":
-            self.spooler = Spooler(self, "m2nano-%d" % index)
+            self.label = "m2nano-%d" % index
         else:
-            self.spooler = Spooler(self, "%s-%d" % (self.board, index))
-        self.spooler.activate = self.activate_spooler
-        self.driver = LhystudiosDriver(self, self.spooler.name)
+            self.label = "%s-%d" % (self.board, index)
+        self.driver = LhystudiosDriver(self)
         self.settings = self.driver.settings
 
-        self.tcp = TCPOutput(self, self.spooler.name)
-        self.controller = LhystudiosController(self, self.spooler.name)
+        self.tcp = TCPOutput(self)
+        self.controller = LhystudiosController(self)
 
         self.driver.spooler = self.spooler
         self.driver.output = self.controller if not self.networked else self.tcp
@@ -654,9 +654,9 @@ class LhystudiosDriver(Driver):
     The interpret() ticks to process additional data.
     """
 
-    def __init__(self, context, name, *args, **kwargs):
+    def __init__(self, context, *args, **kwargs):
         self.context = context
-        Driver.__init__(self, context=context, name=name)
+        Driver.__init__(self, context=context, name=str(self.context))
 
         kernel = context._kernel
         _ = kernel.translation
@@ -1528,9 +1528,8 @@ class LhystudiosController:
     log, providing information about the connecting and error status of the USB device.
     """
 
-    def __init__(self, context, name, *args, **kwargs):
+    def __init__(self, context, *args, **kwargs):
         self.context = context
-        self.name = name
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
 
@@ -1563,6 +1562,8 @@ class LhystudiosController:
         self.realtime = False
 
         self.abort_waiting = False
+
+        name = self.context.label
         self.pipe_channel = context.channel("%s/events" % name)
         self.usb_log = context.channel("%s/usb" % name, buffer_size=500)
         self.usb_send_channel = context.channel("%s/usb_send" % name)
@@ -1594,7 +1595,7 @@ class LhystudiosController:
             self.write(b"\x18\n")
 
     def __repr__(self):
-        return "LhystudiosController(%s)" % self.name
+        return "LhystudiosController(%s)" % str(self.context)
 
     def __len__(self):
         """Provides the length of the buffer of this device."""

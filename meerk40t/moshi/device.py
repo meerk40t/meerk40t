@@ -143,11 +143,11 @@ class MoshiDevice(Service):
         self.settings = LaserSettings()
         self.state = 0
 
-        self.spooler = Spooler(self, "moshi-%d" % index)
+        self.label = "moshi-%d" % index
+        self.spooler = Spooler(self)
 
-        self.spooler.activate = self.activate_spooler
-        self.driver = MoshiDriver(self, self.spooler.name)
-        self.controller = MoshiController(self, self.spooler.name)
+        self.driver = MoshiDriver(self)
+        self.controller = MoshiController(self)
 
         self.spooler.next = self.driver
         self.driver.prev = self.spooler
@@ -280,7 +280,7 @@ class MoshiDriver(Driver):
 
     """
 
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
+    def __init__(self, context, channel=None, *args, **kwargs):
         self.context = context
         Driver.__init__(self, context=context)
 
@@ -299,6 +299,7 @@ class MoshiDriver(Driver):
         self.preferred_offset_x = 0
         self.preferred_offset_y = 0
 
+        name = self.context.label
         self.pipe_channel = context.channel("%s/events" % name)
 
     def __repr__(self):
@@ -759,7 +760,7 @@ class MoshiController:
     Checks done before the Epilogue will have 205 state.
     """
 
-    def __init__(self, context, name, channel=None, *args, **kwargs):
+    def __init__(self, context, channel=None, *args, **kwargs):
         self.context = context
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
@@ -786,6 +787,7 @@ class MoshiController:
         self.count = 0
         self.abort_waiting = False
 
+        name = self.context.label
         self.pipe_channel = context.channel("%s/events" % name)
         self.usb_log = context.channel("%s/usb" % name, buffer_size=500)
         self.usb_send_channel = context.channel("%s/usb_send" % name)

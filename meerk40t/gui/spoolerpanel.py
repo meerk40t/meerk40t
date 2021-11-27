@@ -30,25 +30,22 @@ def register_panel(window, context):
 
 
 class SpoolerPanel(wx.Panel):
-    def __init__(self, *args, context=None, selected_spooler=None, **kwds):
+    def __init__(self, *args, context=None, selected_device=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.available_spoolers = list(self.context.lookup_all("spooler"))
-        if selected_spooler is not None:
-            self.selected_spooler = self.available_spoolers[selected_spooler]
+        self.available_devices = context.kernel.available_services("device")
+        if selected_device is not None:
+            self.selected_device = self.available_devices[selected_device]
         else:
-            self.selected_spooler = self.context.device.spooler
+            self.selected_device = self.context.device
         index = -1
-        for i, s in enumerate(self.available_spoolers):
-            if s is self.selected_spooler:
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
                 index = i
                 break
-        self.connected_name = (
-            self.selected_spooler.name if self.selected_spooler is not None else "None"
-        )
-        spools = [s.label for s in self.available_spoolers]
+        spools = [s.label for s in self.available_devices]
 
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
@@ -115,7 +112,7 @@ class SpoolerPanel(wx.Panel):
 
     def on_combo_device(self, event=None):  # wxGlade: Spooler.<event_handler>
         index = self.combo_device.GetSelection()
-        self.selected_spooler = self.available_spoolers[index]
+        self.selected_device = self.available_devices[index]
         self.update_spooler = True
         self.refresh_spooler_list()
 
@@ -124,7 +121,7 @@ class SpoolerPanel(wx.Panel):
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         index = event.Index
-        spooler = self.selected_spooler
+        spooler = self.selected_device.spooler
         try:
             element = spooler._queue[index]
         except IndexError:
@@ -161,7 +158,7 @@ class SpoolerPanel(wx.Panel):
         except RuntimeError:
             return
 
-        spooler = self.selected_spooler
+        spooler = self.selected_device.spooler
         if spooler is None:
             return
         if len(spooler.queue) > 0:
@@ -199,7 +196,7 @@ class SpoolerPanel(wx.Panel):
 
     def on_tree_popup_clear(self, element=None):
         def delete(event=None):
-            spooler = self.selected_spooler
+            spooler = self.selected_device.spooler
             spooler.clear_queue()
             self.refresh_spooler_list()
 
@@ -207,7 +204,7 @@ class SpoolerPanel(wx.Panel):
 
     def on_tree_popup_delete(self, element, index=None):
         def delete(event=None):
-            spooler = self.selected_spooler
+            spooler = self.selected_device.spooler
             spooler.remove(element, index)
             self.refresh_spooler_list()
 
@@ -222,11 +219,11 @@ class SpoolerPanel(wx.Panel):
 class JobSpooler(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(673, 456, *args, **kwds)
-        selected_spooler = None
+        selected_device = None
         if len(args) >= 4 and args[3]:
-            selected_spooler = args[3]
+            selected_device = args[3]
         self.panel = SpoolerPanel(
-            self, wx.ID_ANY, context=self.context, selected_spooler=selected_spooler
+            self, wx.ID_ANY, context=self.context, selected_device=selected_device
         )
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
