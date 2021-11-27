@@ -182,8 +182,6 @@ class LihuiyuDevice(Service):
 
         self.viewbuffer = ""
 
-        self.root.register("spooler/m2nano-%d" % index, self.spooler)
-
         _ = self.kernel.translation
 
         @self.console_command(

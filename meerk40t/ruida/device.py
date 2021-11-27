@@ -217,8 +217,6 @@ class RuidaDevice(Service):
 
         self.viewbuffer = ""
 
-        self.root.register("spooler/%s" % self.label, self.spooler)
-
         _ = self.kernel.translation
 
         @self.console_command(

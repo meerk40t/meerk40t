@@ -25,7 +25,6 @@ class DummyDevice(Service):
         self.state = 0
         self.spooler = Spooler(self, "default")
         self.viewbuffer = ""
-        self.root.register("spooler/default", self.spooler)
 
         _ = self.kernel.translation
         choices = [

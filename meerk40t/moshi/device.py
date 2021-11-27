@@ -149,16 +149,10 @@ class MoshiDevice(Service):
         self.driver = MoshiDriver(self)
         self.controller = MoshiController(self)
 
-        self.spooler.next = self.driver
-        self.driver.prev = self.spooler
-        self.driver.next = self.controller
         self.driver.spooler = self.spooler
         self.driver.output = self.controller
-        self.controller.prev = self.driver
 
         self.viewbuffer = ""
-
-        self.root.register("spooler/moshi-%d" % index, self.spooler)
 
         _ = self.kernel.translation
 

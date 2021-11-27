@@ -203,8 +203,6 @@ class GRBLDevice(Service):
 
         self.viewbuffer = ""
 
-        self.root.register("spooler/grbl-%d" % index, self.spooler)
-
         _ = self.kernel.translation
 
         @self.console_command(
