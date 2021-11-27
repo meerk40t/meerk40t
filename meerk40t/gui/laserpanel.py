@@ -65,7 +65,7 @@ class LaserPanel(wx.Panel):
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
         # Devices Initialize.
-        self.available_devices = self.context.kernel.available_services("device")
+        self.available_devices = self.context.kernel.services("device")
 
         self.selected_device = self.context.device
         index = -1
@@ -193,7 +193,7 @@ class LaserPanel(wx.Panel):
     @lookup_listener("spooler")
     def spooler_lookup(self, new_spoolers, old):
         # Devices Initialize.
-        self.available_devices = self.context.kernel.available_services("device")
+        self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
         index = -1
         for i, s in enumerate(self.available_devices):

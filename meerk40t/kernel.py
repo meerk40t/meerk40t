@@ -830,10 +830,6 @@ class Kernel:
         # All established contexts.
         self.contexts = {}
 
-        # All established services
-        self._available_services = {}
-        self._active_services = {}
-
         # All registered threads.
         self.threads = {}
         self.thread_lock = Lock()
@@ -1031,11 +1027,31 @@ class Kernel:
     # SERVICES API
     # ==========
 
-    def available_services(self, domain: str):
+    def services(self, domain: str, active: bool = False):
         try:
-            return self._available_services[domain]
+            if active:
+                return self._registered["service/{domain}/active".format(domain=domain)]
+            else:
+                return self._registered["service/{domain}/available".format(domain=domain)]
         except KeyError:
-            return []
+            return None
+
+    def services_active(self):
+        matchtext = "service/(.*)/active"
+        match = re.compile(matchtext)
+        for r in list(self._registered):
+            result = match.match(r)
+            if result:
+                yield result.group(1), self._registered[r]
+
+    def services_available(self):
+        matchtext = "service/(.*)/available"
+        match = re.compile(matchtext)
+        for r in list(self._registered):
+            result = match.match(r)
+            if result:
+                yield result.group(1), self._registered[r]
+
 
     def add_service(self, domain: str, service: Service):
         """
@@ -1044,14 +1060,13 @@ class Kernel:
         @param service: service to add
         @return:
         """
-        if domain in self._available_services:
-            services = self._available_services[domain]
-        else:
+        services = self.services(domain)
+        if services is None:
             services = []
-            self._available_services[domain] = services
-            service._lifecycle = 50
-            self.update_delegate_lifecycles(service)
         services.append(service)
+        self.register("service/{domain}/available".format(domain=domain), services)
+        service._lifecycle = 50
+        self.update_delegate_lifecycles(service)
 
     def activate_service_path(self, domain: str, path: str):
         """
@@ -1061,9 +1076,9 @@ class Kernel:
         @param path:
         @return:
         """
-        if domain not in self._available_services:
+        services = self.services(domain)
+        if services is None:
             raise ValueError
-        services = self._available_services[domain]
 
         index = -1
         for i, serv in enumerate(services):
@@ -1084,14 +1099,15 @@ class Kernel:
         @param index: index of the service to activate.
         @return:
         """
-        if domain not in self._available_services:
+        services = self.services(domain)
+        if services is None:
             raise ValueError
-        services = self._available_services[domain]
 
         service = services[index]
-        if domain in self._active_services:
-            previous_active = self._active_services[domain]
-            if service is previous_active:
+        active = self.services(domain, True)
+        if active is not None:
+            if service is active:
+                # Do not set to self
                 return
         self.activate(domain, service)
 
@@ -1100,7 +1116,7 @@ class Kernel:
         self.deactivate(domain)
 
         # Set service and attach.
-        self._active_services[domain] = service
+        self.register("service/{domain}/active".format(domain=domain), service)
         service.set_lifecycle(100)
 
         # Set context values for the domain.
@@ -1117,12 +1133,13 @@ class Kernel:
         self.lookup_changes(list(service._registered))
 
         # Signal activation
-        self.signal("activate;%s" % domain, "/", service)
+        self.signal("activate;{domain}".format(domain=domain), "/", service)
 
     def deactivate(self, domain):
         setattr(self, domain, None)
-        if domain in self._active_services:
-            previous_active = self._active_services[domain]
+        active = self.services(domain, True)
+        if active is not None:
+            previous_active = active
             if previous_active is not None:
 
                 previous_active._lifecycle = 200
@@ -1137,7 +1154,7 @@ class Kernel:
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
-            self.signal("deactivate;%s" % domain, "/", previous_active)
+            self.signal("deactivate;{domain}".format(domain=domain), "/", previous_active)
 
     # ==========
     # DELEGATES API
@@ -1298,7 +1315,7 @@ class Kernel:
         self.lifecycle_announce()  # preboot
         self.command_boot()
         self.choices_boot()
-        for domain in self._available_services:
+        for domain, services in self.services_available():
             # for each domain activate the first service.
             self.activate_service_index(domain, 0)
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
@@ -1446,16 +1463,14 @@ class Kernel:
         self.process_queue()  # Process last events.
 
         # Close services.
-        for domain in self._active_services:
-            previous_active = self._active_services[domain]
+        for domain, previous_active in self.services_active():
             if channel:
                 channel(_("Detatching service: {domain}").format(domain=domain))
             for context_name in self.contexts:
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
-        for domain in self._available_services:
-            services = self._available_services[domain]
+        for domain, services in self.services_available():
             for service in services:
                 try:
                     service.shutdown(self)
@@ -1569,8 +1584,7 @@ class Kernel:
         """
         matchtext = "/".join(args)
         match = re.compile(matchtext)
-        for domain in self._active_services:
-            service = self._active_services[domain]
+        for domain, service in self.services_active():
             for r in service._registered:
                 if match.match(r):
                     yield service._registered[r], r, list(r.split("/"))[-1]
@@ -1587,8 +1601,7 @@ class Kernel:
         :return:
         """
         match = re.compile(matchtext)
-        for domain in self._active_services:
-            service = self._active_services[domain]
+        for domain, service in self.services_active():
             for r in service._registered:
                 if match.match(r):
                     if suffix:
@@ -1610,8 +1623,7 @@ class Kernel:
         @return:
         """
         value = "/".join(args)
-        for domain in self._active_services:
-            service = self._active_services[domain]
+        for domain, service in self.services_active():
             try:
                 return service._registered[value]
             except KeyError:
@@ -1845,8 +1857,7 @@ class Kernel:
         derive = Context(self, path=path)
         if self._booted:
             # If context get after boot, apply all services.
-            for domain in self._active_services:
-                service = self._active_services[domain]
+            for domain, service in self.services_active():
                 setattr(derive, domain, service)
         self.contexts[path] = derive
         return derive
@@ -2855,8 +2866,7 @@ class Kernel:
             if len(args) >= 1:
                 matchtext = str(args[0]) + matchtext
             match = re.compile(matchtext)
-            for domain in self._active_services:
-                service = self._active_services[domain]
+            for domain, service in self.services_active():
                 for i, r in enumerate(service._registered):
                     if match.match(r):
                         obj = service._registered[r]
@@ -2944,11 +2954,11 @@ class Kernel:
                     channel("%d: %s" % (i + 1, name))
                 channel(_("----------"))
                 channel(_("Services:"))
-                for i, _domain in enumerate(self._available_services):
+                for i, value in enumerate(self.services_available()):
+                    _domain, available = value
                     if domain is not None and domain != _domain:
                         continue
-                    available = self._available_services[_domain]
-                    active = self._active_services[_domain]
+                    active = self.services(_domain, True)
                     for index, s in enumerate(available):
                         channel(
                             _("{active}{domain},{index}: {path} of {service}").format(
@@ -2961,8 +2971,8 @@ class Kernel:
                         )
                 return
             try:
-                available = self._available_services[domain]
-                active = self._active_services[domain]
+                available = self.services(domain)
+                active = self.services(domain, True)
             except KeyError:
                 return None
             return "service", (domain, available, active)

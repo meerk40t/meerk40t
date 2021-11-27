@@ -35,7 +35,7 @@ class SpoolerPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.available_devices = context.kernel.available_services("device")
+        self.available_devices = context.kernel.services("device")
         if selected_device is not None:
             self.selected_device = self.available_devices[selected_device]
         else:
