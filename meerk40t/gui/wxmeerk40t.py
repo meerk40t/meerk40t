@@ -7,6 +7,7 @@ import traceback
 from wx import aui
 
 from meerk40t.gui.wxmscene import SceneWindow
+from .devicepanel import DeviceManager
 from .icons import (
     icons8_gas_industry_50,
     icons8_emergency_stop_button_50,
@@ -454,6 +455,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Scene", SceneWindow)
+        kernel.register("window/DeviceManager", DeviceManager)
 
         from meerk40t.gui.wxmribbon import register_panel
 

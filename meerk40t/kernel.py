@@ -1031,6 +1031,12 @@ class Kernel:
     # SERVICES API
     # ==========
 
+    def available_services(self, domain: str):
+        try:
+            return self._available_services[domain]
+        except KeyError:
+            return []
+
     def add_service(self, domain: str, service: Service):
         """
         Adds a reference to a service. This is initialized at kernel.boot.
