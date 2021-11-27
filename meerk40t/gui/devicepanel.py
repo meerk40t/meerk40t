@@ -70,7 +70,7 @@ class DevicePanel(wx.Panel):
     def refresh_device_tree(self):
         self.devices_tree.DeleteAllItems()
         root = self.devices_tree.AddRoot("Devices")
-        for i, device in enumerate(self.context.kernel.available_services("device")):
+        for i, device in enumerate(self.context.kernel.services("device")):
             self.devices_tree.AppendItem(root, str(device), data=device)
         self.devices_tree.SetFocus()
         self.devices_tree.ExpandAllChildren(root)

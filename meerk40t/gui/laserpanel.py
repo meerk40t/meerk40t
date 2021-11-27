@@ -190,7 +190,8 @@ class LaserPanel(wx.Panel):
         if index == -1:
             disable_window(self)
 
-    @lookup_listener("spooler")
+    @lookup_listener("service/device/active")
+    @lookup_listener("service/device/available")
     def spooler_lookup(self, new_spoolers, old):
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
