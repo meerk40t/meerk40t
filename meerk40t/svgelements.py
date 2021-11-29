@@ -3727,7 +3727,11 @@ class Shape(SVGElement, GraphicObject, Transformable):
         except ValueError:
             return None  # No bounding box items existed. So no bounding box.
 
-        if with_stroke and self.stroke_width is not None and self.stroke is not None:
+        if (
+            with_stroke
+            and self.stroke_width is not None
+            and not (self.stroke is None or self.stroke.value is None)
+        ):
             if transformed:
                 delta = float(self.implicit_stroke_width) / 2.0
             else:
@@ -7352,7 +7356,7 @@ class Subpath:
         if (
             with_stroke
             and self._path.stroke_width is not None
-            and self._path.stroke is not None
+            and not (self._path.stroke is None or self._path.stroke.value is None)
         ):
             delta = float(self._path.stroke_width) / 2.0
         else:
@@ -7916,7 +7920,11 @@ class Text(SVGElement, GraphicObject, Transformable):
             xmax = max(p0[0], p1[0], p2[0], p3[0])
             ymax = max(p0[1], p1[1], p2[1], p3[1])
 
-        if with_stroke and self.stroke_width is not None and self.stroke is not None:
+        if (
+            with_stroke
+            and self.stroke_width is not None
+            and not (self.stroke is None or self.stroke.value is None)
+        ):
             if transformed:
                 delta = float(self.implicit_stroke_width) / 2.0
             else:
