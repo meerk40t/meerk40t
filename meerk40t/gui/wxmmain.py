@@ -357,7 +357,7 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 if not pathname.lower().endswith(".svg"):
                     pathname += ".svg"
-                context.save(pathname)
+                context.elements.save(pathname)
                 gui.validate_save()
                 gui.working_file = pathname
                 gui.set_file_as_recently_used(gui.working_file)

@@ -322,7 +322,7 @@ class LhystudiosControllerPanel(wx.Panel):
 
     def pane_show(self):
         self.context.channel(
-            "{name}/usb".format(name=self.context.controller.name), buffer_size=500
+            "{name}/usb".format(name=self.context.label), buffer_size=500
         ).watch(self.update_text)
         self.on_network_update()
 
@@ -335,7 +335,7 @@ class LhystudiosControllerPanel(wx.Panel):
 
     def pane_hide(self):
         self.context.channel(
-            "{name}/usb".format(name=self.context.controller.name)
+            "{name}/usb".format(name=self.context.label)
         ).unwatch(self.update_text)
 
     def restore(self, *args, **kwargs):

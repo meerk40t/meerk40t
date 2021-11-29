@@ -44,7 +44,7 @@ def plugin(kernel, lifecycle):
             for d, d_name in enumerate(kernel.match("device", suffix=True)):
                 channel("%d: %s" % (d, d_name))
             channel(_("----------"))
-            channel(_("Spooler %s:" % spooler.name))
+            channel(_("Spooler on device %s:" % str(kernel.device.label)))
             for s, op_name in enumerate(spooler.queue):
                 channel("%d: %s" % (s, op_name))
             channel(_("----------"))
@@ -149,7 +149,7 @@ def plugin(kernel, lifecycle):
                 spooler._dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
             elif command.endswith("down"):
                 spooler._dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
-            kernel.console(".timer 1 0 spool%s jog\n" % spooler.name)
+            kernel.console(".timer 1 0 spool jog\n")
             return "spooler", spooler
 
         @kernel.console_option("force", "f", type=bool, action="store_true")

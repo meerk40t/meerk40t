@@ -25,6 +25,7 @@ class DummyDevice(Service):
         self.state = 0
         self.spooler = Spooler(self, "default")
         self.viewbuffer = ""
+        self.label = "Dummy Device"
 
         _ = self.kernel.translation
         choices = [
@@ -88,7 +89,7 @@ class DummyDevice(Service):
                 for d, d_name in enumerate(self.match("device", suffix=True)):
                     channel("%d: %s" % (d, d_name))
                 channel(_("----------"))
-                channel(_("Spooler %s:" % self.spooler.name))
+                channel(_("Spooler on device %s:" % str(self.label)))
                 for s, op_name in enumerate(spooler.queue):
                     channel("%d: %s" % (s, op_name))
                 channel(_("----------"))

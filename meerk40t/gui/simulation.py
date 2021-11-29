@@ -79,17 +79,14 @@ class SimulationPanel(wx.Panel, Job):
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
 
-        self.available_spoolers = list(self.context.lookup_all("spooler"))
-        self.selected_spooler = self.context.device.spooler
+        self.available_devices = list(self.context.kernel.services("spooler"))
+        self.selected_device = self.context.device
         index = -1
-        for i, s in enumerate(self.available_spoolers):
-            if s is self.selected_spooler:
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
                 index = i
                 break
-        self.connected_name = (
-            self.selected_spooler.name if self.selected_spooler is not None else "None"
-        )
-        spools = [s.label for s in self.available_spoolers]
+        spools = [s.label for s in self.available_devices]
 
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
@@ -364,10 +361,10 @@ class SimulationPanel(wx.Panel, Job):
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
         index = self.combo_device.GetSelection()
-        self.selected_spooler = self.available_spoolers[index]
+        self.selected_device = self.available_devices[index]
 
     def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
-        self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
+        self.context("plan%s spool\n" % self.plan_name)
         self.context("window close Simulation\n")
 
 
