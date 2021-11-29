@@ -35,10 +35,10 @@ class MWindow(wx.Frame, Module):
         if self.window_save:
             self.window_context.setting(int, "width", width)
             self.window_context.setting(int, "height", height)
-            if self.window_context.width < 100:
-                self.window_context.width = 100
-            if self.window_context.height < 100:
-                self.window_context.height = 100
+            if self.window_context.width < width:
+                self.window_context.width = width
+            if self.window_context.height < height:
+                self.window_context.height = height
             self.SetSize((self.window_context.width, self.window_context.height))
         else:
             self.SetSize(width, height)
