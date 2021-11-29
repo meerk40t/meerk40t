@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.4"
+SVGELEMENTS_VERSION = "1.6.5"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -3727,7 +3727,7 @@ class Shape(SVGElement, GraphicObject, Transformable):
         except ValueError:
             return None  # No bounding box items existed. So no bounding box.
 
-        if with_stroke and self.stroke_width is not None:
+        if with_stroke and self.stroke_width is not None and self.stroke is not None:
             if transformed:
                 delta = float(self.implicit_stroke_width) / 2.0
             else:
@@ -7349,7 +7349,11 @@ class Subpath:
         except ValueError:
             return None  # No bounding box items existed. So no bounding box.
 
-        if with_stroke and self._path.stroke_width is not None:
+        if (
+            with_stroke
+            and self._path.stroke_width is not None
+            and self._path.stroke is not None
+        ):
             delta = float(self._path.stroke_width) / 2.0
         else:
             delta = 0.0
@@ -7912,7 +7916,7 @@ class Text(SVGElement, GraphicObject, Transformable):
             xmax = max(p0[0], p1[0], p2[0], p3[0])
             ymax = max(p0[1], p1[1], p2[1], p3[1])
 
-        if with_stroke and self.stroke_width is not None:
+        if with_stroke and self.stroke_width is not None and self.stroke is not None:
             if transformed:
                 delta = float(self.implicit_stroke_width) / 2.0
             else:
