@@ -485,6 +485,7 @@ class Scene(Module, Job):
         if dm & DRAW_MODE_INVERT != 0:
             dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()
+        dc.SelectObject(wx.NullBitmap)
         del dc
 
     def rotary_stretch(self):

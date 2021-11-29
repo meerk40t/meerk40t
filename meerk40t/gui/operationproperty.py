@@ -768,6 +768,7 @@ class OperationPropertyPanel(wx.Panel):
                     gc.SetPen(self.direction_pen)
                     gc.StrokeLineSegments(starts, ends)
         gc.Destroy()
+        dc.SelectObject(wx.NullBitmap)
         del dc
         self.display_panel.Refresh()
         self.display_panel.Update()

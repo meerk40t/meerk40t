@@ -511,6 +511,7 @@ class LaserRender:
         )
         gc.PopState()
         gc.Destroy()
+        dc.SelectObject(wx.NullBitmap)
         del dc
         if bitmap:
             return bmp

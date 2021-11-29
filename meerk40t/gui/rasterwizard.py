@@ -301,6 +301,7 @@ class RasterWizardPanel(wx.Panel):
         if self.wizard_thread is not None:
             gc.DrawText(_("Processing..."), 0, 0)
         gc.Destroy()
+        dc.SelectObject(wx.NullBitmap)
         del dc
 
     def convert_scene_to_window(self, position):
