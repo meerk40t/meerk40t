@@ -79,7 +79,7 @@ class SimulationPanel(wx.Panel, Job):
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
 
-        self.available_devices = list(self.context.kernel.services("spooler"))
+        self.available_devices = list(self.context.kernel.services("device"))
         self.selected_device = self.context.device
         index = -1
         for i, s in enumerate(self.available_devices):
