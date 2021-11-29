@@ -429,13 +429,13 @@ class Spooler:
 
     def pop(self):
         if len(self._queue) == 0:
-            self.context.signal("spooler;queue", len(self._queue), self.name)
+            self.context.signal("spooler;queue", len(self._queue))
             return None
         self.queue_lock.acquire(True)
         queue_head = self._queue[0]
         del self._queue[0]
         self.queue_lock.release()
-        self.context.signal("spooler;queue", len(self._queue), self.name)
+        self.context.signal("spooler;queue", len(self._queue))
         return queue_head
 
     def job(self, *job):
