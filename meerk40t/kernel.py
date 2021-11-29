@@ -47,6 +47,14 @@ class Modifier:
         self.name = name
         self.state = STATE_INITIALIZE
 
+    def __repr__(self):
+        return '{class_name}({context}, name="{name}", channel={channel})'.format(
+            class_name=self.__class__.__name__,
+            context=repr(self.context),
+            name=self.name,
+            channel='Channel({name})'.format(self.channel.name) if hasattr(self, "channel") and self.channel else "None",
+        )
+
     def boot(self, *args, **kwargs):
         """
         Called when the context the modifier attached to is booted. This is typical for devices.
@@ -91,6 +99,13 @@ class Module:
         self.name = name
         self.state = STATE_INITIALIZE
 
+    def __repr__(self):
+        return '{class_name}({context}, name="{name}")'.format(
+            class_name=self.__class__.__name__,
+            context=repr(self.context),
+            name=self.name,
+        )
+
     def initialize(self, *args, **kwargs):
         """Initialize() is called after open() to setup the module and allow it to register various hooks into the
         kernelspace."""
@@ -129,7 +144,7 @@ class Context:
         self.opened = {}
         self.attached = {}
 
-    def __str__(self):
+    def __repr__(self):
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
@@ -707,7 +722,7 @@ class Kernel:
         # All registered locations within the kernel.
         self.registered = {}
 
-        # The translation object to be overridden by any valid transition functions
+        # The translation object to be overridden by any valid translation functions
         self.translation = lambda e: e
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
@@ -879,7 +894,15 @@ class Kernel:
 
         :param lifecycle:
         :return:
+
+        Meerk40t bootstrap sequence:
+        * console / gui
+        * preregister
+        * register
+        * configure
+        * boot
         """
+
         if self.lifecycle == "shutdown":
             return  # No backsies.
         self.lifecycle = lifecycle
@@ -1094,11 +1117,11 @@ class Kernel:
 
     def register(self, path: str, obj: Any) -> None:
         """
-        Register an element at a given subpath. If this Kernel is not root. Then
-        it is registered relative to this location.
+        Register an element at a given subpath.
+        If this Kernel is not root, then it is registered relative to this location.
 
-        :param path:
-        :param obj:
+        :param path: a "/" separated hierarchical index to the object
+        :param obj: object to be registered
         :return:
         """
         self.registered[path] = obj
@@ -1772,8 +1795,8 @@ class Kernel:
                     listener(path, *message)
                     if signal_channel:
                         signal_channel(
-                            "%s %s: %s was sent %s"
-                            % (path, signal, str(listener), str(message))
+                            "Signal: %s %s: %s:%s%s"
+                            % (path, signal, listener.__module__, listener.__name__, str(message))
                         )
             if path is None:
                 self.last_message[signal] = message
