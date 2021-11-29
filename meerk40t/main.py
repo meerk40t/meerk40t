@@ -28,6 +28,8 @@ if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
     # Otherwise we are running from source
     if os.path.isdir(sys.path[0] + "/.git"):
+        APPLICATION_VERSION += " git"
+    elif os.path.isdir(sys.path[0] + "/.github"):
         APPLICATION_VERSION += " src"
     else:
         APPLICATION_VERSION += " pkg"
