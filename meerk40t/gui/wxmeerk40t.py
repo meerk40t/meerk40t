@@ -700,8 +700,13 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     """
     )
     message += error_log
+    style = wx.YES_NO | wx.CANCEL
+    if " " in APPLICATION_VERSION:
+        ver, exec_type = APPLICATION_VERSION.split(" ", 1)
+        if exec_type == "git":
+            style = wx.OK
     answer = wx.MessageBox(
-        message, _("Crash Detected! Send Log?"), wx.YES_NO | wx.CANCEL, None
+        message, _("Crash Detected! Send Log?"), style, None
     )
     if answer == wx.YES:
         send_data_to_developers(filename, error_log)
