@@ -685,9 +685,15 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     # Ask to send file.
     message = _(
         """
-    Good news MeerK40t User! MeerK40t encountered an crash!
+    The bad news is that MeerK40t encountered a crash,
+    and the developers apologise for this bug!
 
-    You now have the ability to help meerk40t's development by sending us the log.
+    The good news is that you can help us fix this bug
+    by anonymously sending us the crash details.
+
+    Only the crash details below are sent.
+    No data from your MeerK40t project is sent.
+    No personal information is sent either.
 
     Send the following data to the MeerK40t team?
     ------
