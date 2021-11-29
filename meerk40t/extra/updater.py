@@ -130,6 +130,9 @@ class Updater(Modifier, dict):
             self.executable_type = "exe"
             self.executable_path = os.path.dirname(sys.executable)
         elif os.path.isdir(sys.path[0] + "/.git"):
+            self.executable_type = "git"
+            self.executable_path = sys.path[0]
+        elif os.path.isdir(sys.path[0] + "/.github"):
             self.executable_type = "src"
             self.executable_path = sys.path[0]
         else:
@@ -185,11 +188,20 @@ class Updater(Modifier, dict):
         self["DOWNLOAD_MESSAGE"] = _("Do you want to download this new release?")
         self["SOURCE_MESSAGE"] = (
             _(
-                "Because you are running from source you will need to update your source files, "
-                + "either using git or by downloading and unpacking "
+                "Because you are running from downloaded source you will need to update your source files, "
+                + "by downloading and unpacking "
                 + "a new version of the source code to the source directory:"
             )
             + "\n    {path}\n\n" + self["DOWNLOAD_MESSAGE"]
+        )
+        self["GIT_MESSAGE"] = (
+            _(
+                "You appear to be running from Git managed source code."
+            )
+            + "\n\n"
+            + _(
+                "If this is the case, you will need to use Git to update your source code."
+            )
         )
         self["PACKAGE_MESSAGE"] = (
             _(
@@ -720,6 +732,9 @@ class Updater(Modifier, dict):
         style = wx.YES_NO | wx.ICON_QUESTION | wx.CENTRE
         if self.executable_type == "src":
             action = self["SOURCE_MESSAGE"]
+        elif self.executable_type == "git":
+            style = wx.OK | wx.ICON_INFORMATION | wx.CENTRE
+            action = self["GIT_MESSAGE"]
         elif self.executable_type == "pkg":
             style = wx.OK | wx.ICON_INFORMATION | wx.CENTRE
             action = self["PACKAGE_MESSAGE"]
@@ -1046,5 +1061,6 @@ class Updater(Modifier, dict):
 
 
 """
+show publication date of versions
 unittests
 """
