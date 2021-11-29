@@ -1,3 +1,4 @@
+import random
 import unittest
 
 from PIL import Image, ImageDraw
@@ -366,3 +367,39 @@ class TestCutcode(unittest.TestCase):
             self.assertEqual(rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z")
 
             laserop.settings.raster_step = i  # Raster_Step should be ignored, set for next loop
+
+    def test_cutcode_direction_flags(self):
+        """
+        Test the direction flags for different cutcode objects when flagged normal vs. reversed.
+
+        @return:
+        """
+        path = Path("M0,0")
+        for i in range(1000):
+            v = random.randint(0,5)
+            if v == 0:
+                path.line(path.current_point.x, random.randint(0, 5000))
+            if v == 1:
+                path.line(random.randint(0, 5000), path.current_point.y)
+            if v == 2:
+                path.line(path.current_point.x, path.current_point.y)
+            else:
+                path.line((random.randint(0, 5000), random.randint(0, 5000)))
+        laserop = LaserOperation()
+        laserop.operation = "Cut"
+        laserop.add(path, type="opnode")
+        cutcode = CutCode(laserop.as_cutobjects())
+        for cut in cutcode.flat():
+            major = cut.major_axis()
+            x_dir = cut.x_dir()
+            y_dir = cut.y_dir()
+            cut.reverse()
+            cut.reverse()
+            cut.reverse()
+            ry_dir = cut.y_dir()
+            rx_dir = cut.x_dir()
+            self.assertEqual(major, cut.major_axis())
+            if major == 1:
+                self.assertNotEqual(y_dir, ry_dir)
+            else:
+                self.assertNotEqual(x_dir, rx_dir)
