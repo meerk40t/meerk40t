@@ -148,11 +148,28 @@ class PreferencesPanel(wx.Panel):
                 False,
             ),
             (
+                _("Automatic check for updates"),
+                _(
+                    "Periodically check for updates at start-up."
+                ),
+                "updater_check_automated",
+                True,
+            ),
+            (
                 _("Check for beta version updates"),
                 _(
                     "Check for beta releases in addition to full releases."
                 ),
-                "check_for_betas",
+                "updater_check_betas",
+                False,
+            ),
+            (
+                _("Always download updates using browser"),
+                _(
+                    "If you check this box, the internal update downloader will be disabled, "
+                    + "and the download button will always open a browser window."
+                ),
+                "updater_download_browser",
                 False,
             ),
             (
@@ -465,7 +482,7 @@ class Preferences(MWindow):
         from sys import platform as _platform
         super().__init__(
             565,
-            347,
+            387,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX

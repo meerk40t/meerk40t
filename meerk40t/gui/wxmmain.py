@@ -110,6 +110,8 @@ ID_FACEBOOK = wx.NewId()
 ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
 
+ID_CHECK_UPDATES = wx.NewId()
+
 
 class MeerK40t(MWindow):
     """
@@ -1128,6 +1130,7 @@ class MeerK40t(MWindow):
         self.help_menu.Append(ID_MAKERS_FORUM, _("&Makers Forum"), "")
         self.help_menu.Append(ID_IRC, _("&IRC"), "")
         self.help_menu.AppendSeparator()
+        self.help_menu.Append(ID_CHECK_UPDATES, _("Check for &Updates"), "")
         self.help_menu.Append(wx.ID_ABOUT, _("&About MeerK40t"), "")
         self.main_menubar.Append(self.help_menu, _("Help"))
 
@@ -1234,6 +1237,8 @@ class MeerK40t(MWindow):
             self.toggle_draw_mode(DRAW_MODE_FLIPXY),
             id=ID_MENU_SCREEN_FLIPXY,
         )
+
+        self.Bind(wx.EVT_MENU, self.on_click_check_updates, id=ID_CHECK_UPDATES)
 
         self.Bind(
             wx.EVT_MENU,
@@ -1878,6 +1883,14 @@ class MeerK40t(MWindow):
             self.context(
                 "scene focus %f %f %f %f\n" % (bbox[0], bbox[1], bbox[2], bbox[3])
             )
+
+    def on_click_check_updates(self, event=None):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Check for updates selected
+        """
+        update_gui = self.context.kernel.root.registered["updater/gui"]
+        if update_gui:
+            update_gui()
 
     def toggle_draw_mode(self, bits):
         """
