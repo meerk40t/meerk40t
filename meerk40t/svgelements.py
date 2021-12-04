@@ -8739,6 +8739,13 @@ class SVG(Group):
                     root.objects[attributes[SVG_ATTR_ID]] = s
             elif event == "end":  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
+                if (
+                    SVG_ATTR_DISPLAY in values
+                    and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
+                ):
+                    # We are in a display=none, do not render this. Pop values and continue.
+                    context, values = stack.pop()
+                    continue
                 s = None
                 if tag in (
                     SVG_TAG_TEXT,
@@ -8799,5 +8806,6 @@ class SVG(Group):
                 context, values = stack.pop()
             elif event == "start-ns":
                 if elem[0] != SVG_ATTR_DATA:
+                    # Rare wc3 test uses a 'd' namespace.
                     values[elem[0]] = elem[1]
         return root
