@@ -34,7 +34,9 @@ class DevicePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        sizer_1 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Your Devices"), wx.VERTICAL)
+        sizer_1 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Your Devices"), wx.VERTICAL
+        )
 
         self.devices_tree = wx.TreeCtrl(self, wx.ID_ANY)
         sizer_1.Add(self.devices_tree, 7, wx.EXPAND, 0)
@@ -55,10 +57,16 @@ class DevicePanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_tree_device_activated, self.devices_tree)
-        self.Bind(wx.EVT_BUTTON, self.on_button_create_device, self.button_create_device)
+        self.Bind(
+            wx.EVT_TREE_ITEM_ACTIVATED, self.on_tree_device_activated, self.devices_tree
+        )
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_create_device, self.button_create_device
+        )
         self.Bind(wx.EVT_BUTTON, self.on_button_edit_device, self.button_edit_device)
-        self.Bind(wx.EVT_BUTTON, self.on_button_remove_device, self.button_remove_device)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_remove_device, self.button_remove_device
+        )
         # end wxGlade
 
     def pane_show(self, *args):
@@ -80,8 +88,18 @@ class DevicePanel(wx.Panel):
         device.kernel.activate_service_path("device", device.path)
 
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
-        print("Event handler 'on_button_create_device' not implemented!")
-        event.Skip()
+        names = []
+        for obj, name, sname in self.context.find("service", "device"):
+            names.append(sname)
+        with wx.SingleChoiceDialog(
+            None, _("What type of driver is being added?"), _("Device Type"), names
+        ) as dlg:
+            dlg.SetSelection(0)
+            if dlg.ShowModal() == wx.ID_OK:
+                device_type = names[dlg.GetSelection()]
+                self.context(
+                    "service add device {device_type}\n".format(device_type=device_type)
+                )
 
     def on_button_edit_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         print("Event handler 'on_button_edit_device' not implemented!")
@@ -90,6 +108,7 @@ class DevicePanel(wx.Panel):
     def on_button_remove_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         print("Event handler 'on_button_remove_device' not implemented!")
         event.Skip()
+
 
 # end of class DevicePanel
 
