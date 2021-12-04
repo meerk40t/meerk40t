@@ -23,21 +23,16 @@ class WizardPanel(wx.Panel):
             if choices is None:
                 return
         self.choices = choices
+        self.choice_index = 0
+        self.set_panel()
+
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+
+    def set_panel(self):
+        choice = self.choices[self.choice_index]
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         for i, c in enumerate(self.choices):
-            if isinstance(c, tuple):
-                # If c is tuple
-                dict_c = dict()
-                try:
-                    dict_c["object"] = c[0]
-                    dict_c["attr"] = c[1]
-                    dict_c["default"] = c[2]
-                    dict_c["label"] = c[3]
-                    dict_c["tip"] = c[4]
-                    dict_c["type"] = c[5]
-                except IndexError:
-                    pass
-                c = dict_c
             try:
                 attr = c["attr"]
                 obj = c["object"]
@@ -146,5 +141,51 @@ class WizardPanel(wx.Panel):
             except KeyError:
                 pass
 
-        self.SetSizer(sizer_main)
-        sizer_main.Fit(self)
+
+class TreeSelectionPanel(wx.Panel):
+    def __init__(self, choice: dict, *args, **kwds):
+        # begin wxGlade: LayerType.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        main_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, selection_text), wx.VERTICAL)
+
+        self.selected_tree = wx.TreeCtrl(self, wx.ID_ANY)
+        main_sizer.Add(self.controller_tree, 7, wx.EXPAND, 0)
+
+        self.SetSizer(main_sizer)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_tree_laser_activated, self.controller_tree)
+        # end wxGlade
+
+    def on_selected_tree_activated(self, event):  # wxGlade: LayerType.<event_handler>
+        print("Event handler 'on_tree_laser_activated' not implemented!")
+        event.Skip()
+
+
+class TextboxSelectionPanel(wx.Panel):
+    def __init__(self, *args, **kwds):
+        # begin wxGlade: NetworkPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        sizer_6 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Network Address"), wx.VERTICAL)
+
+        sizer_7 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "What is the network address for the laser?"), wx.HORIZONTAL)
+        sizer_6.Add(sizer_7, 1, wx.EXPAND, 0)
+
+        self.text_network_address = wx.TextCtrl(self, wx.ID_ANY, "")
+        sizer_7.Add(self.text_network_address, 1, 0, 0)
+
+        self.SetSizer(sizer_6)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_network_address, self.text_network_address)
+        # end wxGlade
+
+    def on_text_network_address(self, event):  # wxGlade: NetworkPanel.<event_handler>
+        print("Event handler 'on_text_network_address' not implemented!")
+        event.Skip()
