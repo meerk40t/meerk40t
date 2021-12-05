@@ -238,10 +238,11 @@ def run():
 
     if not args.gui_suppress:
         try:
-            from .grbl.gui import gui as grblgui
             from .gui import wxmeerk40t
             from .gui.scene import scene
+
             from .camera.gui import gui as cameragui
+            from .grbl.gui import gui as grblgui
             from .lihuiyu.gui import gui as lhygui
             from .moshi.gui import gui as moshigui
             from .ruida.gui import gui as ruidagui
@@ -254,11 +255,12 @@ def run():
         else:
             kernel.add_plugin(wxmeerk40t.plugin)
             kernel.add_plugin(scene.plugin)
+            kernel.add_plugin(cameragui.plugin)
+
             kernel.add_plugin(lhygui.plugin)
             kernel.add_plugin(moshigui.plugin)
             kernel.add_plugin(grblgui.plugin)
             kernel.add_plugin(ruidagui.plugin)
-            kernel.add_plugin(cameragui.plugin)
     else:
         # Complete Gui Suppress implies no-gui.
         args.no_gui = True
