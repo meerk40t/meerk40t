@@ -583,11 +583,7 @@ class Context:
         except AttributeError:
             pass
         # Call module_close lifecycle event.
-        instance.module_close(*args, **kwargs)
-        instance._lifecycle = 200
-        self._kernel._signal_detach(instance)
-        self._kernel._lookup_detach(instance)
-        self._kernel.update_delegate_lifecycles(instance)
+        instance.set_lifecycle(200)
 
     # ==========
     # SIGNALS DELEGATES
