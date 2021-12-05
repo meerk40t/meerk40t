@@ -10,6 +10,8 @@ except ImportError as e:
 
 
 def plugin(kernel, lifecycle):
+    if lifecycle == "service":
+        return "provider/device/grbl"
     if lifecycle == "register":
         service = kernel.get_context("grbl0")
         service.register("window/Network-Controller", TCPController)

@@ -18,14 +18,16 @@ except ImportError as e:
     raise Mk40tImportAbort("wxpython")
 
 
-def plugin(kernel, lifecycle):
+def plugin(service, lifecycle):
+    if lifecycle == "service":
+        return "provider/device/lhystudios"
+
     if lifecycle == "register":
-        service = kernel.get_context("lihuiyu0")
         service.register("window/Controller", LhystudiosControllerGui)
         service.register("window/Configuration", LhystudiosDriverGui)
         service.register("window/AccelerationChart", LhystudiosAccelerationChart)
         service.register("window/Network-Controller", TCPController)
-        _ = kernel.translation
+        _ = service.kernel.translation
 
         def controller_click(i=None):
             if service.networked:
@@ -80,10 +82,6 @@ def plugin(kernel, lifecycle):
                 "action": lambda v: service("estop\n"),
             },
         )
-
-    elif lifecycle == "boot":
-        service = kernel.get_context("lihuiyu0")
-        service.add_service_delegate(LihuiyuGui(service))
 
 
 class LihuiyuGui:

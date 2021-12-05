@@ -9,6 +9,8 @@ except ImportError as e:
 
 
 def plugin(kernel, lifecycle):
+    if lifecycle == "service":
+        return "provider/device/ruida"
     if lifecycle == "register":
         service = kernel.get_context("ruida0")
         _ = kernel.translation

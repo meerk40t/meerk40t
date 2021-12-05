@@ -17,6 +17,8 @@ except ImportError as e:
 
 
 def plugin(kernel, lifecycle):
+    if lifecycle == "service":
+        return "provider/device/moshi"
     if lifecycle == "register":
         service = kernel.get_context("moshi0")
         service.register("window/Controller", MoshiControllerGui)
