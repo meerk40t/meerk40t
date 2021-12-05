@@ -21,9 +21,8 @@ from meerk40t.kernel import Service
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         _ = kernel.translation
-
-        kernel.register("modifier/Camera", True)
-
+        kernel.register("provider/camera/mk", Camera)
+        
         @kernel.console_option("width", "w", type=int, help="force the camera width")
         @kernel.console_option("height", "h", type=int, help="force the camera height")
         @kernel.console_option(
