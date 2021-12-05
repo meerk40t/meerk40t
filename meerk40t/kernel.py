@@ -555,7 +555,6 @@ class Context:
         instance.set_lifecycle(100)
 
         # Apply module_open call to all lifecycle delegates
-        self._kernel.update_delegate_lifecycles(instance)
         self.opened[instance_path] = instance
         return instance
 
