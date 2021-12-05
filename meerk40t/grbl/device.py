@@ -41,7 +41,7 @@ GRBL device.
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service("device", GRBLDevice(kernel, 0))
-        kernel.register("service/device/grbl", GRBLDevice)
+        kernel.register("provider/device/grbl", GRBLDevice)
 
         _ = kernel.translation
         kernel.register("driver/grbl", GRBLDriver)
@@ -128,7 +128,10 @@ def plugin(kernel, lifecycle=None):
             except OSError:
                 channel(_("Server failed on port: %d") % port)
             return
-
+    if lifecycle == "boot":
+        kernel.root.setting("grbldevices", 0)
+        for i in range(kernel.root.grbldevices):
+            kernel.console("service initialize device grbl {index}".format(index=i))
 
 class GRBLDevice(Service):
     """
@@ -185,7 +188,7 @@ class GRBLDevice(Service):
         self.settings = LaserSettings()
         self.state = 0
 
-        self.setting(int, "port", 1022)
+        self.setting(int, "port", 23)
         self.setting(str, "address", "localhost")
 
         self.label = "grbl-%d" % index

@@ -24,8 +24,7 @@ MIL_PER_UM = 1.0 / UM_PER_MIL
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.add_service("device", RuidaDevice(kernel, 0))
-        kernel.register("service/device/ruida", RuidaDevice)
+        kernel.register("provider/device/ruida", RuidaDevice)
 
         _ = kernel.translation
         kernel.register("load/RDLoader", RDLoader)
@@ -155,7 +154,10 @@ def plugin(kernel, lifecycle=None):
             except OSError:
                 channel(_("Server failed."))
             return
-
+    if lifecycle == "boot":
+        kernel.root.setting("ruidadevices", 0)
+        for i in range(kernel.root.ruidadevices):
+            kernel.console("service initialize device ruida {index}".format(index=i))
 
 class RuidaDevice(Service):
     """
