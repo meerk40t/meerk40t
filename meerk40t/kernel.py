@@ -906,6 +906,7 @@ class Kernel:
         * register
         * configure
         * boot
+        * ready
         """
 
         if self.lifecycle == "shutdown":

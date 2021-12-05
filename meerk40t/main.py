@@ -338,8 +338,6 @@ def run():
             except IndexError:
                 break
 
-    kernel.bootstrap("ready")
-
     if args.execute:
         # Any execute code segments gets executed here.
         kernel_root.channel("console").watch(print)
@@ -356,6 +354,8 @@ def run():
             for line in batch:
                 kernel_root(line.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
+
+    kernel.bootstrap("ready")
 
     if args.auto:
         # Auto start does the planning and spooling of the data.
