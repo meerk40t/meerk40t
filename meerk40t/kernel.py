@@ -691,6 +691,15 @@ class Service(Context):
             return "init"
 
     def set_lifecycle(self, position, service=None, *args, **kwargs):
+        """
+        Service set_lifecycle advances the lifecycle of the service to the given position.
+
+        @param position: position lifecycle should be advanced to.
+        @param service: service to advanced, if not this service.
+        @param args: additional args
+        @param kwargs: additional kwargs
+        @return:
+        """
         if service is None:
             service = self
         kernel = service.kernel
