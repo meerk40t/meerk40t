@@ -656,6 +656,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         wxversion,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    print("\n")
     print(error_log)
     try:
         import datetime
@@ -683,30 +684,55 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    message = _(
-        """
-    The bad news is that MeerK40t encountered a crash,
-    and the developers apologise for this bug!
-
-    The good news is that you can help us fix this bug
-    by anonymously sending us the crash details.
-
-    Only the crash details below are sent.
-    No data from your MeerK40t project is sent.
-    No personal information is sent either.
-
-    Send the following data to the MeerK40t team?
-    ------
-    """
-    )
-    message += error_log
-    style = wx.YES_NO | wx.CANCEL
+    git = False
     if " " in APPLICATION_VERSION:
         ver, exec_type = APPLICATION_VERSION.split(" ", 1)
-        if exec_type == "git":
-            style = wx.OK
-    answer = wx.MessageBox(
-        message, _("Crash Detected! Send Log?"), style, None
+        git = exec_type == "git"
+
+    if git:
+        message = _("Meerk40t has encountered a crash.")
+        ext_msg = _(
+"""
+It appears that you are running Meerk40t from source managed by Git,
+and it is therefore likely that you are a developer.
+
+To avoid reporting crashes during development, automated submission of this
+crash has been disabled. If this is a crash in unrelated to any development work
+that you are undertaking, please create a new Github issue indicating the branch
+you are runing from and using the traceback below which can be found in
+"{filename}".
+
+"""
+        ).format(filename=filename)
+        style = wx.OK | wx.ICON_WARNING
+    else:
+        message = _(
+"""
+The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+
+The good news is that you can help us fix this bug by anonymously sending us the crash details.
+"""
+        )
+        ext_msg = _(
+"""
+Only the crash details below are sent. No data from your MeerK40t project is sent.
+No personal information is sent either.
+
+Send the following data to the MeerK40t team?
+
+------
+
+"""
+        )
+        style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
+    ext_msg += error_log
+    dlg = wx.GenericMessageDialog(
+        None,
+        message,
+        caption=_("Crash Detected! Send Log?"),
+        style=style,
     )
+    dlg.SetExtendedMessage(ext_msg)
+    answer = dlg.ShowModal()
     if answer == wx.YES:
         send_data_to_developers(filename, error_log)
