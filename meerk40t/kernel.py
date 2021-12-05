@@ -2984,7 +2984,7 @@ class Kernel:
             if not remainder or domain is None:
                 channel(_("----------"))
                 channel(_("Service Providers:"))
-                for i, name in enumerate(self.match("service")):
+                for i, name in enumerate(self.match("provider")):
                     channel("%d: %s" % (i + 1, name))
                 channel(_("----------"))
                 channel(_("Services:"))
@@ -3033,7 +3033,7 @@ class Kernel:
             if name is None:
                 raise SyntaxError
             provider = self.lookup(
-                "service/{domain}/{name}".format(domain=domain, name=name)
+                "provider/{domain}/{name}".format(domain=domain, name=name)
             )
             if provider is None:
                 raise SyntaxError("Bad provider.")
