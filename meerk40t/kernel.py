@@ -823,7 +823,7 @@ class Kernel:
         self._lifecycle = 0
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
-        self._plugins = []
+        self._plugins = {}
 
         # All established contexts.
         self.contexts = {}
@@ -1010,16 +1010,27 @@ class Kernel:
 
     def add_plugin(self, plugin: Callable) -> None:
         """
-        Accepts a plugin function. This should accept two arguments: kernel and lifecycle.
+        Accepts a plugin function. Plugins should accept two arguments: kernel and lifecycle.
 
         The kernel is a copy of this kernel as an instanced object and the lifecycle is the stage of the kernel
         in the program lifecycle. Plugins should be added during startup.
+        
+        The "added" lifecycle occurs during plugin add, and is the only lifecycle to care about a return value which
+        in this case serves as a path. If provided this should be the path of a service provider to bind that plugin
+        to the provided service. Unlike other plugins the provided plugin will be bound to the service returned.
 
         :param plugin:
         :return:
         """
-        if plugin not in self._plugins:
-            self._plugins.append(plugin)
+        path = plugin(self, "service")
+        
+        if path not in self._plugins:
+            self._plugins[path] = list()
+        plugins = self._plugins[path]
+        
+        if plugin in plugins:
+            return
+        plugins.append(plugin)
 
     # ==========
     # SERVICES API
@@ -1322,7 +1333,7 @@ class Kernel:
 
     def lifecycle_announce(self):
         named_lifecycle = self.lifecycle
-        for plugin in self._plugins:
+        for plugin in self._plugins[None]:
             plugin(self, named_lifecycle)
         self.signal("lifecycle;%s" % named_lifecycle, None, True)
         self.update_delegate_lifecycles(self)
@@ -2919,8 +2930,10 @@ class Kernel:
         @self.console_command("plugin", _("list loaded plugins in kernel"))
         def plugins(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                for name in self._plugins:
-                    channel(name.__module__)
+                for path in self._plugins:
+                    plugins = self._plugins[path]
+                    for name in plugins:
+                        channel("{path}: {value}".format(path=str(path), value=name.__module__))
             return
 
         @self.console_option(
