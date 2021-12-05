@@ -40,7 +40,6 @@ GRBL device.
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.add_service("device", GRBLDevice(kernel, 0))
         kernel.register("provider/device/grbl", GRBLDevice)
 
         _ = kernel.translation
@@ -129,7 +128,7 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Server failed on port: %d") % port)
             return
     if lifecycle == "boot":
-        kernel.root.setting("grbldevices", 0)
+        kernel.root.setting(int, "grbldevices", 0)
         for i in range(kernel.root.grbldevices):
             kernel.console("service initialize device grbl {index}".format(index=i))
 

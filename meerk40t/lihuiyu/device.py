@@ -77,7 +77,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("load/EgvLoader", EgvLoader)
         kernel.register("emulator/lhystudios", LhystudiosEmulator)
     if lifecycle == "boot":
-        kernel.root.setting("lhydevices", 1)
+        kernel.root.setting(int, "lhydevices", 1)
         for i in range(kernel.root.lhydevices):
             kernel.console("service initialize device lhystudios {index}".format(index=i))
 

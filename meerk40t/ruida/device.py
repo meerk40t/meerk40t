@@ -155,7 +155,7 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Server failed."))
             return
     if lifecycle == "boot":
-        kernel.root.setting("ruidadevices", 0)
+        kernel.root.setting(int, "ruidadevices", 0)
         for i in range(kernel.root.ruidadevices):
             kernel.console("service initialize device ruida {index}".format(index=i))
 
