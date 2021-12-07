@@ -139,13 +139,7 @@ class GRBLDevice(Service):
     GRBLDevice is driver for the Gcode Controllers
     """
 
-    def __init__(self, kernel, *args, **kwargs):
-        prefix = "grbl"
-        path = prefix
-        for i in range(50):
-            path = prefix + str(i)
-            if path not in kernel.contexts:
-                break
+    def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
 

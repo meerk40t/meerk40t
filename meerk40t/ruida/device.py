@@ -165,13 +165,7 @@ class RuidaDevice(Service):
     RuidaDevice is driver for the Ruida Controllers
     """
 
-    def __init__(self, kernel, *args, **kwargs):
-        prefix = "ruida"
-        path = prefix
-        for i in range(50):
-            path = prefix + str(i)
-            if path not in kernel.contexts:
-                break
+    def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "RuidaDevice"
         self.setting(str, "label", path)

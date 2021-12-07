@@ -76,13 +76,7 @@ class MoshiDevice(Service):
     LihuiyuDevice is driver for the M2 Nano and other classes of Lhystudios boards.
     """
 
-    def __init__(self, kernel, *args, **kwargs):
-        prefix = "moshi"
-        path = prefix
-        for i in range(50):
-            path = prefix + str(i)
-            if path not in kernel.contexts:
-                break
+    def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "MoshiDevice"
 

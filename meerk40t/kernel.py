@@ -3141,6 +3141,7 @@ class Kernel:
             self.activate_service_index(domain, index)
 
         @console_argument("name", help="Name of service to start")
+        @console_option("index", "i", help="optional service index value")
         @self.console_command(
             "start", input_type="service", help=_("Initialize a provider")
         )
@@ -3153,7 +3154,16 @@ class Kernel:
 
             if provider is None:
                 raise SyntaxError("Bad provider.")
-            service = provider(self)
+            service_path = name
+            if index is not None:
+                if index == -1:
+                    for i in range(50):
+                        service_path = name + str(i)
+                        if service_path not in self.contexts:
+                            break
+                else:
+                    service_path = name + str(index)
+            service = provider(self, service_path)
             self.add_service(domain, service, path)
 
         # ==========
