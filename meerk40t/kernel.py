@@ -1041,15 +1041,18 @@ class Kernel:
         @param active: look up active or available
         @return:
         """
-        try:
-            if active:
+        if active:
+            try:
                 return self._registered["service/{domain}/active".format(domain=domain)]
-            else:
+            except KeyError:
+                return None
+        else:
+            try:
                 return self._registered[
                     "service/{domain}/available".format(domain=domain)
                 ]
-        except KeyError:
-            return None
+            except KeyError:
+                return []
 
     def services_active(self):
         """
