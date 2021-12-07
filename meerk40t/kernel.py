@@ -1212,6 +1212,21 @@ class Kernel:
     # LIFECYCLE MANAGEMENT
     # ==========
 
+    def get_linked_objects(self, obj: Any, object_list: list = None):
+        """
+        adds
+        @param obj: Object to check for delegate links.
+        @param object_list: list of objects being added to
+        @return: object_list of linked delegates
+        """
+        if object_list is None:
+            object_list = list()
+        object_list.append(obj)
+        for delegate, cookie in self.delegates:
+            if cookie is obj:
+                self.get_linked_objects(delegate, object_list)
+        return object_list
+
     def match_lifecycle(self, obj, model):
         """
         Matches the lifecycle of the obj on the model.
@@ -1251,67 +1266,72 @@ class Kernel:
         ending_position = position if position is not None else starting_position + 1
         if starting_position == ending_position:
             return
+        objects = self.get_linked_objects(kernel)
 
         if starting_position < LIFECYCLE_KERNEL_PREREGISTER <= ending_position:
-            if hasattr(kernel, "preregister"):
-                kernel.preregister()
-            for plugin in kernel._kernel_plugins:
+            for k in objects:
+                if hasattr(k, "preregister"):
+                    k.preregister()
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "preregister")
         if starting_position < LIFECYCLE_KERNEL_REGISTER <= ending_position:
-            if hasattr(kernel, "registration"):
-                kernel.registration()
-            for plugin in kernel._kernel_plugins:
+            for k in objects:
+                if hasattr(k, "registration"):
+                    k.registration()
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "register")
         if starting_position < LIFECYCLE_KERNEL_CONFIGURE <= ending_position:
-            if hasattr(kernel, "configure"):
-                kernel.configure()
-            for plugin in kernel._kernel_plugins:
+            for k in objects:
+                if hasattr(k, "configure"):
+                    k.configure()
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "configure")
         if starting_position < LIFECYCLE_KERNEL_PREBOOT <= ending_position:
-            if hasattr(kernel, "preboot"):
-                kernel.preboot()
-            for plugin in kernel._kernel_plugins:
+            for k in objects:
+                if hasattr(k, "preboot"):
+                    k.preboot()
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "preboot")
         if starting_position < LIFECYCLE_KERNEL_BOOT <= ending_position:
-            if hasattr(kernel, "boot"):
-                kernel.boot()
-            for plugin in kernel._kernel_plugins:
+            for k in objects:
+                if hasattr(k, "boot"):
+                    k.boot()
+                self._signal_attach(k)
+                self._lookup_attach(k)
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "boot")
-
-            kernel._signal_attach(kernel)
-            kernel._lookup_attach(kernel)
         if starting_position < LIFECYCLE_KERNEL_PRESTART <= ending_position:
-            if hasattr(kernel, "prestart"):
-                kernel.prestart()
-            for plugin in kernel._kernel_plugins:
+            for k in objects:
+                if hasattr(k, "prestart"):
+                    k.prestart()
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "prestart")
         if starting_position < LIFECYCLE_KERNEL_START <= ending_position:
-            if hasattr(kernel, "start"):
-                kernel.start()
-            for plugin in kernel._kernel_plugins:
+            for k in objects:
+                if hasattr(k, "start"):
+                    k.start()
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "start")
         if starting_position < LIFECYCLE_KERNEL_PREMAIN <= ending_position:
-            if hasattr(kernel, "premain"):
-                kernel.premain()
-            for plugin in kernel._kernel_plugins:
+            for k in objects:
+                if hasattr(k, "premain"):
+                    k.premain()
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "premain")
         if starting_position < LIFECYCLE_KERNEL_PREMAIN <= ending_position:
-            if hasattr(kernel, "mainloop"):
-                kernel.mainloop()
-            for plugin in kernel._kernel_plugins:
+            for k in objects:
+                if hasattr(k, "mainloop"):
+                    k.mainloop()
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "mainloop")
         if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
-            for plugin in kernel._kernel_plugins:
+            for plugin in self._kernel_plugins:
                 plugin(kernel, "shutdown")
-            kernel._signal_detach(kernel)
-            kernel._lookup_detach(kernel)
-            if hasattr(kernel, "shutdown"):
-                kernel.shutdown()
-
-        # Recursive check for all delegates
-        for delegate, cookie in kernel.delegates:
-            if cookie is kernel:
-                self.set_kernel_lifecycle(delegate, position)
+            for k in objects:
+                self._signal_detach(k)
+                self._lookup_detach(k)
+                if hasattr(k, "shutdown"):
+                    k.shutdown()
 
     def set_service_lifecycle(self, service, position, *args, **kwargs):
         """
@@ -1331,26 +1351,41 @@ class Kernel:
 
         if starting_position == ending_position:
             return
+        objects = self.get_linked_objects(service)
 
         if starting_position == LIFECYCLE_SERVICE_ATTACHED:  # starting attached
-            if hasattr(service, "service_detach"):
-                service.service_detach(*args, **kwargs)
-            self._signal_detach(service)
-            self._lookup_detach(service)
+            for s in objects:
+                if hasattr(s, "service_detach"):
+                    s.service_detach(*args, **kwargs)
+                self._signal_detach(s)
+                self._lookup_detach(s)
+            try:
+                for plugin in self._service_plugins[service.registered_path]:
+                    plugin(service, "service_detach")
+            except KeyError:
+                pass
         elif ending_position == LIFECYCLE_SERVICE_ATTACHED:  # ending attached
-            if hasattr(service, "service_attach"):
-                service.service_attach(*args, **kwargs)
-            self._signal_attach(service)
-            self._lookup_attach(service)
+            for s in objects:
+                if hasattr(s, "service_attach"):
+                    s.service_attach(*args, **kwargs)
+                self._signal_attach(s)
+                self._lookup_attach(s)
+            try:
+                for plugin in self._service_plugins[service.registered_path]:
+                    plugin(service, "service_attach")
+            except KeyError:
+                pass
         if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
             try:
                 service.shutdown()
             except AttributeError:
                 pass
+            try:
+                for plugin in self._service_plugins[service.registered_path]:
+                    plugin(service, "shutdown")
+            except KeyError:
+                pass
         service._service_lifecycle = ending_position
-        for delegate, cookie in self.delegates:
-            if cookie is service:
-                self.set_service_lifecycle(delegate, position)
 
     def set_module_lifecycle(self, module, position, *args, **kwargs):
         """
@@ -1364,37 +1399,39 @@ class Kernel:
         @return:
         """
         try:
-            starting_position = module._lifecycle
+            starting_position = module._module_lifecycle
         except AttributeError:
             starting_position = 0
         ending_position = position if position is not None else starting_position + 1
         if starting_position == ending_position:
             return
-        module._lifecycle = position  # opening
+
+        objects = self.get_linked_objects(module)
+
         if starting_position < LIFECYCLE_MODULE_OPENED <= ending_position:
-            if hasattr(module, "module_open"):
-                module.module_open(*args, **kwargs)
-            self._signal_attach(module)
-            self._lookup_attach(module)
+            for m in objects:
+                if hasattr(m, "module_open"):
+                    m.module_open(*args, **kwargs)
+                self._signal_attach(m)
+                self._lookup_attach(m)
         if starting_position < LIFECYCLE_MODULE_CLOSED <= ending_position:
             try:
                 # If this is a module, we remove it from opened.
                 del module.context.opened[module.name]
             except (KeyError, AttributeError):
                 pass  # Nothing to close.
-            if hasattr(module, "module_close"):
-                module.module_close(*args, **kwargs)
-            self._signal_detach(module)
-            self._lookup_detach(module)
-            self._remove_delegates(module)
+
+            for m in objects:
+                if hasattr(m, "module_close"):
+                    m.module_close(*args, **kwargs)
+                self._signal_detach(m)
+                self._lookup_detach(m)
+                self._remove_delegates(m)
         if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
             if hasattr(module, "shutdown"):
                 module.shutdown()
 
-        # Recursive check for all delegates
-        for delegate, cookie in self.delegates:
-            if cookie is module:
-                self.set_module_lifecycle(delegate, position)
+        module._module_lifecycle = ending_position  # opening
 
     # ==========
     # LIFECYCLE PROCESSES
