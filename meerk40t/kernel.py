@@ -1353,6 +1353,15 @@ class Kernel:
             return
         objects = self.get_linked_objects(service)
 
+        if starting_position < LIFECYCLE_SERVICE_ADDED <= ending_position:
+            for s in objects:
+                if hasattr(s, "added"):
+                    s.added(*args, **kwargs)
+            try:
+                for plugin in self._service_plugins[service.registered_path]:
+                    plugin(service, "added")
+            except KeyError:
+                pass
         if starting_position == LIFECYCLE_SERVICE_ATTACHED:  # starting attached
             for s in objects:
                 if hasattr(s, "service_detach"):
