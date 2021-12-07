@@ -3155,6 +3155,8 @@ class Kernel:
             if provider is None:
                 raise SyntaxError("Bad provider.")
             service_path = name
+            if service_path in self.contexts:
+                index = -1
             if index is not None:
                 if index == -1:
                     for i in range(50):
