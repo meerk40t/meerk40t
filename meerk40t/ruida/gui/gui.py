@@ -8,12 +8,11 @@ except ImportError as e:
     raise Mk40tImportAbort("wxpython")
 
 
-def plugin(kernel, lifecycle):
+def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/ruida"
-    if lifecycle == "register":
-        service = kernel.get_context("ruida0")
-        _ = kernel.translation
+    if lifecycle == "added":
+        _ = service._
 
         def popup_info(event):
             dlg = wx.MessageDialog(
@@ -34,9 +33,6 @@ def plugin(kernel, lifecycle):
                 "action": popup_info,
             },
         )
-
-    elif lifecycle == "boot":
-        service = kernel.get_context("ruida0")
         service.add_service_delegate(RuidaGui(service))
 
 

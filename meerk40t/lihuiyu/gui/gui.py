@@ -22,7 +22,7 @@ def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/lhystudios"
 
-    if lifecycle == "register":
+    if lifecycle == "added":
         service.register("window/Controller", LhystudiosControllerGui)
         service.register("window/Configuration", LhystudiosDriverGui)
         service.register("window/AccelerationChart", LhystudiosAccelerationChart)
@@ -82,7 +82,7 @@ def plugin(service, lifecycle):
                 "action": lambda v: service("estop\n"),
             },
         )
-
+        service.add_service_delegate(LihuiyuGui(service))
 
 class LihuiyuGui:
     def __init__(self, context):

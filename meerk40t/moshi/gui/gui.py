@@ -16,14 +16,13 @@ except ImportError as e:
     raise Mk40tImportAbort("wxpython")
 
 
-def plugin(kernel, lifecycle):
+def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/moshi"
-    if lifecycle == "register":
-        service = kernel.get_context("moshi0")
+    if lifecycle == "added":
         service.register("window/Controller", MoshiControllerGui)
         service.register("window/Configuration", MoshiDriverGui)
-        _ = kernel.translation
+        _ = service._
 
         service.register(
             "button/control/Controller",
@@ -62,9 +61,6 @@ def plugin(kernel, lifecycle):
                 "action": lambda v: service("estop\n"),
             },
         )
-
-    elif lifecycle == "boot":
-        service = kernel.get_context("lihuiyu0")
         service.add_service_delegate(MoshiGui(service))
 
 

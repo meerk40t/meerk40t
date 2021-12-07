@@ -12,7 +12,7 @@ except ImportError as e:
 def plugin(kernel, lifecycle):
     if lifecycle == "service":
         return "provider/device/grbl"
-    if lifecycle == "register":
+    if lifecycle == "added":
         service = kernel.get_context("grbl0")
         service.register("window/Network-Controller", TCPController)
         _ = kernel.translation
@@ -54,9 +54,6 @@ def plugin(kernel, lifecycle):
         #         "action": lambda v: service("estop\n"),
         #     },
         # )
-
-    elif lifecycle == "boot":
-        service = kernel.get_context("grbl0")
         service.add_service_delegate(GRBLGui(service))
 
 
