@@ -1385,10 +1385,9 @@ class Kernel:
             except KeyError:
                 pass
         if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
-            try:
-                service.shutdown()
-            except AttributeError:
-                pass
+            for s in objects:
+                if hasattr(s, "shutdown"):
+                    s.shutdown(*args, **kwargs)
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "shutdown")
