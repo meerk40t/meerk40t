@@ -3213,7 +3213,7 @@ class Kernel:
             try:
                 del data[index-1]
             except IndexError:
-                raise SyntaxError("Index out ")
+                raise SyntaxError("Index out of bounds (1-{length})".format(length=len(data)))
             self.root.batch = ";".join(data)
 
         # ==========
