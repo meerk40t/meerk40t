@@ -21,6 +21,72 @@ STATE_SUSPEND = 6  # Controller is suspended.
 STATE_WAIT = 7  # Controller is waiting for something. This could be aborted.
 STATE_TERMINATE = 10
 
+LIFECYCLE_SHUTDOWN = 1000
+LIFECYCLE_INIT = 0
+LIFECYCLE_KERNEL_PREREGISTER = 100
+LIFECYCLE_KERNEL_REGISTER = 101
+LIFECYCLE_KERNEL_CONFIGURE = 102
+LIFECYCLE_KERNEL_PREBOOT = 200
+LIFECYCLE_KERNEL_BOOT = 201
+LIFECYCLE_KERNEL_POSTBOOT = 202
+LIFECYCLE_KERNEL_PRESTART = 300
+LIFECYCLE_KERNEL_START = 301
+LIFECYCLE_KERNEL_POSTSTART = 302
+LIFECYCLE_KERNEL_READY = 303
+LIFECYCLE_KERNEL_PREMAIN = 400
+LIFECYCLE_KERNEL_MAINLOOP = 401
+
+LIFECYCLE_SERVICE_ADDED = 50
+LIFECYCLE_SERVICE_ATTACHED = 100
+LIFECYCLE_SERVICE_DETACHED = 200
+
+LIFECYCLE_MODULE_OPENED = 100
+LIFECYCLE_MODULE_CLOSED = 200
+
+
+def kernel_lifecycle_name(lifecycle):
+    if lifecycle == LIFECYCLE_INIT:
+        return "init"
+    if lifecycle == LIFECYCLE_KERNEL_PREREGISTER:
+        return "preregister"
+    if lifecycle == LIFECYCLE_KERNEL_REGISTER:
+        return "register"
+    if lifecycle == LIFECYCLE_KERNEL_CONFIGURE:
+        return "configure"
+    if lifecycle == LIFECYCLE_KERNEL_PREBOOT:
+        return "preboot"
+    if lifecycle == LIFECYCLE_KERNEL_BOOT:
+        return "boot"
+    if lifecycle == LIFECYCLE_KERNEL_POSTBOOT:
+        return "postboot"
+    if lifecycle == LIFECYCLE_KERNEL_PRESTART:
+        return "prestart"
+    if lifecycle == LIFECYCLE_KERNEL_START:
+        return "start"
+    if lifecycle == LIFECYCLE_KERNEL_POSTSTART:
+        return "poststart"
+    if lifecycle == LIFECYCLE_KERNEL_READY:
+        return "ready"
+    if lifecycle == LIFECYCLE_KERNEL_PREMAIN:
+        return "premain"
+    if lifecycle == LIFECYCLE_KERNEL_MAINLOOP:
+        return "mainloop"
+    if lifecycle == LIFECYCLE_SHUTDOWN:
+        return "shutdown"
+
+
+def service_lifecycle_name(lifecycle):
+    if lifecycle >= LIFECYCLE_SHUTDOWN:
+        return "shutdown"
+    if lifecycle >= LIFECYCLE_SERVICE_DETACHED:
+        return "detached"
+    if lifecycle >= LIFECYCLE_SERVICE_ATTACHED:
+        return "attached"
+    if lifecycle >= LIFECYCLE_SERVICE_ADDED:
+        return "added"
+    if lifecycle >= LIFECYCLE_INIT:
+        return "init"
+
 
 _cmd_parse = [
     ("OPT", r"-([a-zA-Z]+)"),
@@ -46,9 +112,17 @@ class Module:
     expected to modify their contexts.
     """
 
-    def __init__(self, context: "Context", name: str = None, *args, **kwargs):
+    def __init__(
+        self,
+        context: "Context",
+        name: str = None,
+        registered_path: str = None,
+        *args,
+        **kwargs
+    ):
         self.context = context
         self.name = name
+        self.registered_path = registered_path
         self.state = STATE_INITIALIZE
         self._lifecycle = 0
 
@@ -68,48 +142,6 @@ class Module:
             return "opened"
         if self._lifecycle == 0:
             return "init"
-
-    def set_lifecycle(self, position, module=None, *args, **kwargs):
-        """
-        Advances module's lifecycle to the given position. Calling any lifecycle events
-        that are required in the process.
-
-        @param position:
-        @param module: optional module reference if not self.
-        @param args:
-        @param kwargs:
-        @return:
-        """
-        if module is None:
-            module = self
-
-        kernel = module.context.kernel
-        try:
-            starting_position = self._lifecycle
-        except AttributeError:
-            starting_position = 0
-        ending_position = position if position is not None else starting_position + 1
-        self._lifecycle = position  # opening
-        if starting_position < 100 <= ending_position:
-            if hasattr(self, "module_open"):
-                self.module_open(*args, **kwargs)
-            kernel._signal_attach(self)
-            kernel._lookup_attach(self)
-        if starting_position < 200 <= ending_position:
-            try:
-                # If this is a module, we remove it from opened.
-                del self.context.opened[self.name]
-            except (KeyError, AttributeError):
-                pass  # Nothing to close.
-            if hasattr(self, "module_close"):
-                self.module_close(*args, **kwargs)
-            kernel._signal_detach(self)
-            kernel._lookup_detach(self)
-            kernel._remove_delegates(module)
-        if starting_position < 1000 <= ending_position:
-            if hasattr(self, "shutdown"):
-                self.shutdown()
-        kernel.update_delegate_lifecycles(module)
 
     def restore(self, *args, **kwargs):
         """Called with the same values of __init()__ on an attempted reopen of a module with the same name at the
@@ -550,9 +582,10 @@ class Context:
             raise ValueError
 
         instance = open_object(self, instance_path, *args, **kwargs)
+        instance.registered_path = registered_path
 
         # Call module_open lifecycle event.
-        instance.set_lifecycle(100)
+        self.kernel.set_module_lifecycle(instance, LIFECYCLE_MODULE_OPENED)
 
         # Apply module_open call to all lifecycle delegates
         self.opened[instance_path] = instance
@@ -582,7 +615,7 @@ class Context:
         except AttributeError:
             pass
         # Call module_close lifecycle event.
-        instance.set_lifecycle(200)
+        self.kernel.set_module_lifecycle(instance, LIFECYCLE_MODULE_CLOSED)
 
     # ==========
     # SIGNALS DELEGATES
@@ -670,62 +703,12 @@ class Service(Context):
     Unlike contexts which can be derived or gotten at a particular path. Services can be directly instanced.
     """
 
-    def __init__(self, kernel: "Kernel", path: str):
+    def __init__(self, kernel: "Kernel", path: str, registered_path: str = None):
         super().__init__(kernel, path)
         kernel.contexts[path] = self
+        self.registered_path = registered_path
         self._registered = {}
         self._lifecycle = 0
-
-    @property
-    def lifecycle(self):
-        if self._lifecycle >= 1000:
-            return "shutdown"
-        if self._lifecycle >= 200:
-            return "detached"
-        if self._lifecycle >= 100:
-            return "attached"
-        if self._lifecycle >= 50:
-            return "added"
-        if self._lifecycle >= 0:
-            return "init"
-
-    def set_lifecycle(self, position, service=None, *args, **kwargs):
-        """
-        Service set_lifecycle advances the lifecycle of the service to the given position.
-
-        @param position: position lifecycle should be advanced to.
-        @param service: service to advanced, if not this service.
-        @param args: additional args
-        @param kwargs: additional kwargs
-        @return:
-        """
-        if service is None:
-            service = self
-        kernel = service.kernel
-        try:
-            starting_position = self._lifecycle
-        except AttributeError:
-            starting_position = 0
-        ending_position = position if position is not None else starting_position + 1
-
-        if ending_position != starting_position:
-            if starting_position == 100:  # starting attached
-                if hasattr(self, "service_detach"):
-                    self.service_detach(*args, **kwargs)
-                kernel._signal_detach(self)
-                kernel._lookup_detach(self)
-            elif ending_position == 100:  # ending attached
-                if hasattr(self, "service_attach"):
-                    self.service_attach(*args, **kwargs)
-                kernel._signal_attach(self)
-                kernel._lookup_attach(self)
-        if starting_position < 1000 <= ending_position:
-            try:
-                self.shutdown()
-            except AttributeError:
-                pass
-        self._lifecycle = ending_position
-        kernel.update_delegate_lifecycles(service)
 
     def service_attach(self, *args, **kwargs):
         pass
@@ -831,7 +814,9 @@ class Kernel:
         self._lifecycle = 0
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
-        self._plugins = {}
+        self._kernel_plugins = []
+        self._service_plugins = {}
+        self._module_plugins = {}
 
         # All established contexts.
         self.contexts = {}
@@ -1022,7 +1007,7 @@ class Kernel:
 
         The kernel is a copy of this kernel as an instanced object and the lifecycle is the stage of the kernel
         in the program lifecycle. Plugins should be added during startup.
-        
+
         The "added" lifecycle occurs during plugin add, and is the only lifecycle to care about a return value which
         in this case serves as a path. If provided this should be the path of a service provider to bind that plugin
         to the provided service. Unlike other plugins the provided plugin will be bound to the service returned.
@@ -1030,15 +1015,20 @@ class Kernel:
         :param plugin:
         :return:
         """
-        path = plugin(self, "service")
-        
-        if path not in self._plugins:
-            self._plugins[path] = list()
-        plugins = self._plugins[path]
-        
-        if plugin in plugins:
-            return
-        plugins.append(plugin)
+        service_path = plugin(self, "service")
+        module_path = plugin(self, "module")
+        if service_path is not None:
+            if service_path not in self._service_plugins:
+                self._service_plugins[service_path] = list()
+            plugins = self._service_plugins[service_path]
+        elif module_path is not None:
+            if module_path not in self._module_plugins:
+                self._module_plugins[module_path] = list()
+            plugins = self._module_plugins[module_path]
+        else:
+            plugins = self._kernel_plugins
+        if plugin not in plugins:
+            plugins.append(plugin)
 
     # ==========
     # SERVICES API
@@ -1087,20 +1077,21 @@ class Kernel:
             if result:
                 yield result.group(1), self._registered[r]
 
-    def add_service(self, domain: str, service: Service):
+    def add_service(self, domain: str, service: Service, registered_path: str = None):
         """
         Adds a reference to a service. This is initialized at kernel.boot.
         @param domain: service domain
         @param service: service to add
+        @param registered_path: original provider path of service being added to notify plugins
         @return:
         """
         services = self.services(domain)
         if services is None:
             services = []
         services.append(service)
+        service.registered_path = registered_path
         self.register("service/{domain}/available".format(domain=domain), services)
-        service._lifecycle = 50
-        self.update_delegate_lifecycles(service)
+        self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ADDED)
 
     def activate_service_path(self, domain: str, path: str):
         """
@@ -1158,7 +1149,8 @@ class Kernel:
 
         # Set service and attach.
         self.register("service/{domain}/active".format(domain=domain), service)
-        service.set_lifecycle(100)
+
+        self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ATTACHED)
 
         # Set context values for the domain.
         setattr(self, domain, service)
@@ -1166,9 +1158,6 @@ class Kernel:
             # For every registered context, set the given domain to this service
             context = self.contexts[context_name]
             setattr(context, domain, service)
-
-        # Update any delegate lifecycles
-        self.update_delegate_lifecycles(service)
 
         # Update any lookup changes.
         self.lookup_changes(list(service._registered))
@@ -1188,13 +1177,9 @@ class Kernel:
         if active is not None:
             previous_active = active
             if previous_active is not None:
-
-                previous_active._lifecycle = 200
-                self._signal_detach(previous_active)
-                self._lookup_detach(previous_active)
-
-                self.update_delegate_lifecycles(previous_active)
-                previous_active.service_detach(self)
+                self.set_service_lifecycle(
+                    previous_active, LIFECYCLE_SERVICE_DETACHED
+                )
                 self.lookup_changes(list(previous_active._registered))
 
             for context_name in self.contexts:
@@ -1221,23 +1206,33 @@ class Kernel:
         @return:
         """
         self.delegates.append((delegate, lifecycle_object))
-        self.match_lifecycle(
-            delegate, lifecycle_object
-        )  # Call all the relevant lifecycle calls.
+        self.match_lifecycle(lifecycle_object, delegate)
 
-    def update_delegate_lifecycles(self, ref):
+    # ==========
+    # LIFECYCLE MANAGEMENT
+    # ==========
+
+    def match_lifecycle(self, obj, model):
         """
-        Called when lifecycles have been updated and the delegates may no longer match the
-        objects current lifecycle.
+        Matches the lifecycle of the obj on the model.
 
-        @param ref: Reference Object If none, every lifecycle is updated.
+        @param obj:  object lifecycle being updated.
+        @param model: lifecycled object being mimicked
         @return:
         """
-        for delegate, cookie in self.delegates:
-            if cookie is ref or ref is None:
-                self.match_lifecycle(delegate, cookie)
+        if isinstance(model, Module):
+            lifecycle = model._module_lifecycle
+            self.set_module_lifecycle(obj, lifecycle)
 
-    def set_lifecycle(self, position, kernel=None, *args, **kwargs):
+        elif isinstance(model, Service):
+            lifecycle = model._service_lifecycle
+            self.set_service_lifecycle(obj, lifecycle)
+
+        elif isinstance(model, Kernel):
+            lifecycle = model._kernel_lifecycle
+            self.set_kernel_lifecycle(obj, lifecycle)
+
+    def set_kernel_lifecycle(self, kernel, position, *args, **kwargs):
         """
         Sets the kernel's lifecycle object
 
@@ -1247,112 +1242,170 @@ class Kernel:
         @param kwargs:
         @return:
         """
-        if kernel is None:
-            kernel = self
-        starting_position = self._lifecycle
+
+        try:
+            starting_position = kernel._kernel_lifecycle
+        except AttributeError:
+            starting_position = 0
+
         ending_position = position if position is not None else starting_position + 1
+        if starting_position == ending_position:
+            return
 
-        if starting_position < 100 <= ending_position:
-            if hasattr(self, "registration"):
-                self.registration()
-        if starting_position < 200 <= ending_position:
-            if hasattr(self, "boot"):
-                self.boot()
-            kernel._signal_attach(self)
-            kernel._lookup_attach(self)
-        if starting_position < 300 <= ending_position:
-            if hasattr(self, "start"):
-                self.start()
-        if starting_position < 400 <= ending_position:
-            if hasattr(self, "main"):
-                self.main()
-        if starting_position < 1000 <= ending_position:
-            kernel._signal_detach(self)
-            kernel._lookup_detach(self)
-            if hasattr(self, "shutdown"):
-                self.shutdown()
+        if starting_position < LIFECYCLE_KERNEL_PREREGISTER <= ending_position:
+            if hasattr(kernel, "preregister"):
+                kernel.preregister()
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "preregister")
+        if starting_position < LIFECYCLE_KERNEL_REGISTER <= ending_position:
+            if hasattr(kernel, "registration"):
+                kernel.registration()
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "register")
+        if starting_position < LIFECYCLE_KERNEL_CONFIGURE <= ending_position:
+            if hasattr(kernel, "configure"):
+                kernel.configure()
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "configure")
+        if starting_position < LIFECYCLE_KERNEL_PREBOOT <= ending_position:
+            if hasattr(kernel, "preboot"):
+                kernel.preboot()
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "preboot")
+        if starting_position < LIFECYCLE_KERNEL_BOOT <= ending_position:
+            if hasattr(kernel, "boot"):
+                kernel.boot()
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "boot")
 
-    def match_lifecycle(self, update, matched):
+            kernel._signal_attach(kernel)
+            kernel._lookup_attach(kernel)
+        if starting_position < LIFECYCLE_KERNEL_PRESTART <= ending_position:
+            if hasattr(kernel, "prestart"):
+                kernel.prestart()
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "prestart")
+        if starting_position < LIFECYCLE_KERNEL_START <= ending_position:
+            if hasattr(kernel, "start"):
+                kernel.start()
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "start")
+        if starting_position < LIFECYCLE_KERNEL_PREMAIN <= ending_position:
+            if hasattr(kernel, "premain"):
+                kernel.premain()
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "premain")
+        if starting_position < LIFECYCLE_KERNEL_PREMAIN <= ending_position:
+            if hasattr(kernel, "mainloop"):
+                kernel.mainloop()
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "mainloop")
+        if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
+            for plugin in kernel._kernel_plugins:
+                plugin(kernel, "shutdown")
+            kernel._signal_detach(kernel)
+            kernel._lookup_detach(kernel)
+            if hasattr(kernel, "shutdown"):
+                kernel.shutdown()
+
+        # Recursive check for all delegates
+        for delegate, cookie in kernel.delegates:
+            if cookie is kernel:
+                self.set_kernel_lifecycle(delegate, position)
+
+    def set_service_lifecycle(self, service, position, *args, **kwargs):
         """
-        Matches the lifecycle of the lifecycle_object on the update_object. This should be
-        called if the update_object is set as a delegate of the lifecycle_object or if a
-        lifecycle event occurs requiring the delegate to be updated.
+        Advances the lifecycle of the service to the given position.
 
-        @param update:  object lifecycle being updated.
-        @param matched: lifecycled object being mimicked
+        @param position: position lifecycle should be advanced to.
+        @param service: service to advanced, if not this service.
+        @param args: additional args
+        @param kwargs: additional kwargs
         @return:
         """
-        starting_position = 0
         try:
-            starting_position = update._lifecycle
+            starting_position = service._service_lifecycle
         except AttributeError:
-            pass
-        ending_position = matched._lifecycle
+            starting_position = 0
+        ending_position = position if position is not None else starting_position + 1
 
         if starting_position == ending_position:
             return
 
-        if isinstance(matched, Module):
-            Module.set_lifecycle(update, matched._lifecycle, module=matched)
+        if starting_position == LIFECYCLE_SERVICE_ATTACHED:  # starting attached
+            if hasattr(service, "service_detach"):
+                service.service_detach(*args, **kwargs)
+            self._signal_detach(service)
+            self._lookup_detach(service)
+        elif ending_position == LIFECYCLE_SERVICE_ATTACHED:  # ending attached
+            if hasattr(service, "service_attach"):
+                service.service_attach(*args, **kwargs)
+            self._signal_attach(service)
+            self._lookup_attach(service)
+        if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
+            try:
+                service.shutdown()
+            except AttributeError:
+                pass
+        service._service_lifecycle = ending_position
+        for delegate, cookie in self.delegates:
+            if cookie is service:
+                self.set_service_lifecycle(delegate, position)
 
-        elif isinstance(matched, Service):
-            Service.set_lifecycle(update, matched._lifecycle, service=matched)
+    def set_module_lifecycle(self, module, position, *args, **kwargs):
+        """
+        Advances module's lifecycle to the given position. Calling any lifecycle events
+        that are required in the process.
 
-        elif isinstance(matched, Kernel):
-            Kernel.set_lifecycle(update, matched._lifecycle, kernel=matched)
+        @param position:
+        @param module: optional module reference if not self.
+        @param args:
+        @param kwargs:
+        @return:
+        """
+        try:
+            starting_position = module._lifecycle
+        except AttributeError:
+            starting_position = 0
+        ending_position = position if position is not None else starting_position + 1
+        if starting_position == ending_position:
+            return
+        module._lifecycle = position  # opening
+        if starting_position < LIFECYCLE_MODULE_OPENED <= ending_position:
+            if hasattr(module, "module_open"):
+                module.module_open(*args, **kwargs)
+            self._signal_attach(module)
+            self._lookup_attach(module)
+        if starting_position < LIFECYCLE_MODULE_CLOSED <= ending_position:
+            try:
+                # If this is a module, we remove it from opened.
+                del module.context.opened[module.name]
+            except (KeyError, AttributeError):
+                pass  # Nothing to close.
+            if hasattr(module, "module_close"):
+                module.module_close(*args, **kwargs)
+            self._signal_detach(module)
+            self._lookup_detach(module)
+            self._remove_delegates(module)
+        if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
+            if hasattr(module, "shutdown"):
+                module.shutdown()
+
+        # Recursive check for all delegates
+        for delegate, cookie in self.delegates:
+            if cookie is module:
+                self.set_module_lifecycle(delegate, position)
 
     # ==========
     # LIFECYCLE PROCESSES
     # ==========
 
     def __call__(self):
-        self.set_lifecycle(400)
+        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_MAINLOOP)
 
-    @property
-    def lifecycle(self):
-        if self._lifecycle == 0:
-            return "init"
-        if self._lifecycle == 100:
-            return "preregister"
-        if self._lifecycle == 101:
-            return "register"
-        if self._lifecycle == 102:
-            return "configure"
-        if self._lifecycle == 200:
-            return "preboot"
-        if self._lifecycle == 201:
-            return "boot"
-        if self._lifecycle == 202:
-            return "postboot"
-        if self._lifecycle == 300:
-            return "prestart"
-        if self._lifecycle == 301:
-            return "start"
-        if self._lifecycle == 302:
-            return "poststart"
-        if self._lifecycle == 303:
-            return "ready"
-        if self._lifecycle == 400:
-            return "premain"
-        if self._lifecycle == 401:
-            return "mainloop"
-        if self._lifecycle == 1000:
-            return "shutdown"
-
-    def lifecycle_announce(self):
-        named_lifecycle = self.lifecycle
-        for plugin in self._plugins[None]:
-            plugin(self, named_lifecycle)
-        self.signal("lifecycle;%s" % named_lifecycle, None, True)
-        self.update_delegate_lifecycles(self)
-
-    def registration(self):
-        self._lifecycle = 100
-        self.lifecycle_announce()
-        self._lifecycle = 101
-        self.lifecycle_announce()
-        self._lifecycle = 102
-        self.lifecycle_announce()
+    def preboot(self):
+        self.command_boot()
+        self.choices_boot()
 
     def boot(self) -> None:
         """
@@ -1360,10 +1413,6 @@ class Kernel:
 
         :return:
         """
-        self.command_boot()
-        self.choices_boot()
-        self._lifecycle = 200
-        self.lifecycle_announce()  # preboot
         for domain, services in self.services_available():
             # for each domain activate the first service.
             self.activate_service_index(domain, 0)
@@ -1375,19 +1424,13 @@ class Kernel:
             run_main=True,
             conditional=lambda: not self._is_queue_processing,
         )
-        self._lifecycle = 201
-        self.lifecycle_announce()  # boot
         self._booted = True
 
+    def postboot(self):
         if hasattr(self.args, "verbose") and self.args.verbose:
             self._start_debugging()
-        self._lifecycle = 202
-        self.lifecycle_announce()  # postboot
 
     def start(self):
-        self._lifecycle = 300
-        self.lifecycle_announce()  # prestart
-
         if hasattr(self.args, "set") and self.args.set is not None:
             # Set the variables requested here.
             for v in self.args.set:
@@ -1397,9 +1440,8 @@ class Kernel:
                     self.console("set %s %s\n" % (attr, value))
                 except IndexError:
                     break
-        self._lifecycle = 301
-        self.lifecycle_announce()  # start
 
+    def poststart(self):
         if hasattr(self.args, "execute") and self.args.execute:
             # Any execute code segments gets executed here.
             self.channel("console").watch(print)
@@ -1417,20 +1459,14 @@ class Kernel:
                     self.console(line.strip() + "\n")
             self.channel("console").unwatch(print)
 
-        self._lifecycle = 302
-        self.lifecycle_announce()  # poststart
-        self._lifecycle = 103
-        self.lifecycle_announce()  # ready
-
-    def main(self):
-        self._lifecycle = 400
-        self.lifecycle_announce()  # premain
+    def premain(self):
         if hasattr(self.args, "console") and self.args.console:
             self.channel("console").watch(print)
             import sys
 
             async def aio_readline(loop):
                 while self.lifecycle != "shutdown":
+                    # TODO: CORRECT while loop.
                     print(">>", end="", flush=True)
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
@@ -1444,9 +1480,6 @@ class Kernel:
             loop.run_until_complete(aio_readline(loop))
             loop.close()
             self.channel("console").unwatch(print)
-
-        self._lifecycle = 401
-        self.lifecycle_announce()  # mainloop - This is where the GUI loads and runs.
 
     def shutdown(self):
         """
@@ -1463,9 +1496,6 @@ class Kernel:
         :param channel:
         :return:
         """
-        self._lifecycle = 1000  # Shutdown
-        self.lifecycle_announce()
-
         channel = self.channel("shutdown")
         self.state = STATE_END  # Terminates the Scheduler.
 
@@ -1505,8 +1535,13 @@ class Kernel:
                         _("%s: Finalizing Module %s: %s")
                         % (str(context), opened_name, str(obj))
                     )
-                obj.set_lifecycle(
-                    self._lifecycle, None, opened_name, channel=channel, shutdown=True
+                self.set_module_lifecycle(
+                    obj,
+                    LIFECYCLE_SHUTDOWN,
+                    None,
+                    opened_name,
+                    channel=channel,
+                    shutdown=True,
                 )
 
         self.process_queue()  # Process last events.
@@ -1531,7 +1566,7 @@ class Kernel:
                         )
                 except AttributeError:
                     pass
-                service.set_lifecycle(self._lifecycle)
+                self.set_service_lifecycle(service, LIFECYCLE_SHUTDOWN)
 
         # Context Flush and Shutdown
         for context_name in list(self.contexts):
@@ -2938,10 +2973,30 @@ class Kernel:
         @self.console_command("plugin", _("list loaded plugins in kernel"))
         def plugins(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                for path in self._plugins:
-                    plugins = self._plugins[path]
+                plugins = self._kernel_plugins
+                channel(_("Kernel Plugins:"))
+                for name in plugins:
+                    channel(
+                        "{path}: {value}".format(path="kernel", value=name.__module__)
+                    )
+                channel(_("Service Plugins:"))
+                for path in self._service_plugins:
+                    plugins = self._service_plugins[path]
                     for name in plugins:
-                        channel("{path}: {value}".format(path=str(path), value=name.__module__))
+                        channel(
+                            "{path}: {value}".format(
+                                path=str(path), value=name.__module__
+                            )
+                        )
+                channel(_("Module Plugins:"))
+                for path in self._module_plugins:
+                    plugins = self._module_plugins[path]
+                    for name in plugins:
+                        channel(
+                            "{path}: {value}".format(
+                                path=str(path), value=name.__module__
+                            )
+                        )
             return
 
         @self.console_option(
@@ -2997,7 +3052,7 @@ class Kernel:
             output_type="service",
             help=_("Base command to manipulate services"),
         )
-        def service(channel, _, domain=None, remainder=None, **kwargs):
+        def service_base(channel, _, domain=None, remainder=None, **kwargs):
             if not remainder or domain is None:
                 channel(_("----------"))
                 channel(_("Service Providers:"))
@@ -3049,12 +3104,13 @@ class Kernel:
             domain, available, active = data
             if name is None:
                 raise SyntaxError
-            provider = self.lookup(
-                "provider/{domain}/{name}".format(domain=domain, name=name)
-            )
+            path = "provider/{domain}/{name}".format(domain=domain, name=name)
+            provider = self.lookup(path)
+
             if provider is None:
                 raise SyntaxError("Bad provider.")
-            self.add_service(domain, provider(self, index))
+            service = provider(self, index)
+            self.add_service(domain, service, path)
 
         # ==========
         # CHANNEL COMMANDS
