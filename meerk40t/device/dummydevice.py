@@ -6,7 +6,7 @@ from ..core.cutcode import LaserSettings
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("service/device/dummy", DummyDevice)
+        kernel.register("provider/device/dummy", DummyDevice)
 
 
 class DummyDevice(Service):
@@ -16,8 +16,8 @@ class DummyDevice(Service):
     This is mostly for testing.
     """
 
-    def __init__(self, kernel, *args, index=0, **kwargs):
-        Service.__init__(self, kernel, "dummy")
+    def __init__(self, kernel, path, *args, **kwargs):
+        Service.__init__(self, kernel, path)
         self.name = "Dummy Device"
         self.current_x = 0.0
         self.current_y = 0.0
