@@ -154,10 +154,6 @@ def plugin(kernel, lifecycle=None):
             except OSError:
                 channel(_("Server failed."))
             return
-    if lifecycle == "preboot":
-        kernel.root.setting(int, "ruidadevices", 0)
-        for i in range(kernel.root.ruidadevices):
-            kernel.console("service device start ruida\n")
 
 
 class RuidaDevice(Service):

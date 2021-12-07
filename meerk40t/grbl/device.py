@@ -128,11 +128,6 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Server failed on port: %d") % port)
             return
 
-    if lifecycle == "preboot":
-        kernel.root.setting(int, "grbldevices", 0)
-        for i in range(kernel.root.grbldevices):
-            kernel.console("service start device grbl\n")
-
 
 class GRBLDevice(Service):
     """
