@@ -3090,6 +3090,10 @@ class Kernel:
                     channel(_("Module '%s' not found.") % index)
             return
 
+        # ==========
+        # SERVICE COMMANDS
+        # ==========
+
         @console_argument("domain")
         @self.console_command(
             "service",
@@ -3166,6 +3170,51 @@ class Kernel:
                     service_path = name + str(index)
             service = provider(self, service_path)
             self.add_service(domain, service, path)
+
+        # ==========
+        # BATCH COMMANDS
+        # ==========
+        @self.console_command(
+            "batch",
+            output_type="batch",
+            help=_("Base command to manipulate batch commands."),
+        )
+        def batch_base(channel, _, remainder=None, **kwargs):
+            root = self.root
+            batch = list(root.setting(str, "batch", "").split(";"))
+            if not remainder:
+                channel(_("----------"))
+                channel(_("Batch Commamnds:"))
+                for i, name in enumerate(batch):
+                    channel("%d: %s" % (i + 1, name))
+                channel(_("----------"))
+            return "batch", batch
+
+        @console_option("index", "i", type=int, help="insert position for add")
+        @self.console_command(
+            "add", input_type="batch", help=_("add a batch command 'batch add <line>'")
+        )
+        def batch_add(channel, _, data=None, index=None, remainder=None, **kwargs):
+            if remainder is None:
+                raise SyntaxError
+            if index is not None:
+                data.insert(index, remainder)
+            else:
+                data.append(remainder)
+            self.root.batch = ";".join(data)
+
+        @console_argument("index", type=int, help="line to delete")
+        @self.console_command(
+            "remove", input_type="batch", help=_("delete line located at specific index'")
+        )
+        def batch_add(channel, _, data=None, index=None, **kwargs):
+            if index is None:
+                raise SyntaxError
+            try:
+                del data[index-1]
+            except IndexError:
+                raise SyntaxError("Index out ")
+            self.root.batch = ";".join(data)
 
         # ==========
         # CHANNEL COMMANDS
