@@ -176,7 +176,6 @@ class CameraPanel(wx.Panel, Job):
             self.context("camera%d start\n" % self.index)
         self.context.schedule(self)
         self.context.listen("refresh_scene", self.on_refresh_scene)
-        # self.context.kernel.listen("lifecycle;shutdown", "", self.pane_hide)
 
     def pane_hide(self, *args):
         self.context("camera%d stop\n" % self.index)
@@ -184,7 +183,6 @@ class CameraPanel(wx.Panel, Job):
         self.context.unlisten("refresh_scene", self.on_refresh_scene)
         if not self.pane:
             self.context.close("Camera%s" % str(self.index))
-        # self.context.kernel.unlisten("lifecycle;shutdown", "", self.pane_hide)
 
     def module_close(self, *args):
         self.pane_hide()

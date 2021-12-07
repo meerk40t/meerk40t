@@ -237,10 +237,15 @@ class LihuiyuDevice(Service):
         else:
             self.label = "%s-%d" % (self.board, index)
         self.driver = LhystudiosDriver(self)
+        self.add_service_delegate(self.driver)
+
         self.settings = self.driver.settings
 
         self.tcp = TCPOutput(self)
+        self.add_service_delegate(self.tcp)
+
         self.controller = LhystudiosController(self)
+        self.add_service_delegate(self.controller)
 
         self.driver.spooler = self.spooler
         self.driver.output = self.controller if not self.networked else self.tcp
@@ -1634,7 +1639,6 @@ class LhystudiosController:
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
         self.ch341 = context.open("module/ch341", log=self.usb_log)
         self.reset()
-        context.root.listen("lifecycle;start", self.on_controller_ready)
 
     def viewbuffer(self):
         buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
@@ -1649,11 +1653,13 @@ class LhystudiosController:
             buffer_str = buffer
         return buffer_str
 
-    def on_controller_ready(self, origin, *args):
+    def added(self):
         self.start()
 
-    def finalize(self, *args, **kwargs):
-        self.context.root.unlisten("lifecycle;start", self.on_controller_ready)
+    def service_detach(self):
+        pass
+
+    def shutdown(self, *args, **kwargs):
         if self._thread is not None:
             self.write(b"\x18\n")
 

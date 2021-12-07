@@ -150,7 +150,9 @@ class MoshiDevice(Service):
         self.spooler = Spooler(self)
 
         self.driver = MoshiDriver(self)
+        self.add_service_delegate(self.driver)
         self.controller = MoshiController(self)
+        self.add_service_delegate(self.controller)
 
         self.driver.spooler = self.spooler
         self.driver.output = self.controller
@@ -794,8 +796,6 @@ class MoshiController:
 
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
 
-        self.context.root.listen("lifecycle;start", self.on_controller_ready)
-
     def viewbuffer(self):
         """
         Viewbuffer is used by the BufferView class if such a value exists it provides a view of the
@@ -807,11 +807,10 @@ class MoshiController:
             buffer += "%s\n" % str(p.data)
         return buffer
 
-    def on_controller_ready(self, origin, *args):
+    def added(self, origin, *args):
         self.start()
 
-    def finalize(self, *args, **kwargs):
-        self.context.root.unlisten("lifecycle;start", self.on_controller_ready)
+    def shutdown(self, *args, **kwargs):
         if self._thread is not None:
             self.is_shutdown = True
 
