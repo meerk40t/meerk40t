@@ -51,10 +51,11 @@ STATUS_PROCESSING = 207  # PROCESSING
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/moshi", MoshiDevice)
-    if lifecycle == "boot":
+    if lifecycle == "preboot":
         kernel.root.setting(int, "moshidevices", 0)
         for i in range(kernel.root.moshidevices):
-            kernel.console("service initialize device moshi {index}".format(index=i))
+            kernel.console("service device start moshi {index}\n".format(index=i))
+
 
 def get_code_string_from_moshicode(code):
     """

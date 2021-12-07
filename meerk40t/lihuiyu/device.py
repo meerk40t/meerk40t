@@ -76,10 +76,11 @@ def plugin(kernel, lifecycle=None):
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         kernel.register("load/EgvLoader", EgvLoader)
         kernel.register("emulator/lhystudios", LhystudiosEmulator)
-    if lifecycle == "boot":
+    if lifecycle == "preboot":
         kernel.root.setting(int, "lhydevices", 1)
         for i in range(kernel.root.lhydevices):
-            kernel.console("service initialize device lhystudios {index}".format(index=i))
+            kernel.console("service device start lhystudios {index}\n".format(index=i))
+
 
 class LihuiyuDevice(Service):
     """

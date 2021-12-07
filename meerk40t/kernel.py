@@ -1360,10 +1360,10 @@ class Kernel:
 
         :return:
         """
-        self._lifecycle = 200
-        self.lifecycle_announce()  # preboot
         self.command_boot()
         self.choices_boot()
+        self._lifecycle = 200
+        self.lifecycle_announce()  # preboot
         for domain, services in self.services_available():
             # for each domain activate the first service.
             self.activate_service_index(domain, 0)
@@ -3045,7 +3045,7 @@ class Kernel:
         @self.console_command(
             "start", input_type="service", help=_("Initialize a provider")
         )
-        def service_start(channel, _, data=None, index=None, name=None, **kwargs):
+        def service_init(channel, _, data=None, index=None, name=None, **kwargs):
             domain, available, active = data
             if name is None:
                 raise SyntaxError
