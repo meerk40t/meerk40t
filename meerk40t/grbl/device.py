@@ -131,7 +131,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         kernel.root.setting(int, "grbldevices", 0)
         for i in range(kernel.root.grbldevices):
-            kernel.console("service start device grbl {index}\n".format(index=i))
+            kernel.console("service start device grbl\n")
 
 
 class GRBLDevice(Service):
@@ -139,10 +139,17 @@ class GRBLDevice(Service):
     GRBLDevice is driver for the Gcode Controllers
     """
 
-    def __init__(self, kernel, index, *args, **kwargs):
-        Service.__init__(self, kernel, "grbl%d" % index)
+    def __init__(self, kernel, *args, **kwargs):
+        prefix = "grbl"
+        path = prefix
+        for i in range(50):
+            path = prefix + str(i)
+            if path not in kernel.contexts:
+                break
+        Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
 
+        self.setting(str, "label", path)
         _ = self._
         choices = [
             {
@@ -192,7 +199,6 @@ class GRBLDevice(Service):
         self.setting(int, "port", 23)
         self.setting(str, "address", "localhost")
 
-        self.label = "grbl-%d" % index
         self.spooler = Spooler(self)
 
         self.driver = GRBLDriver(self)

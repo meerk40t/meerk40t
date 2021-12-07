@@ -9,13 +9,12 @@ except ImportError as e:
     raise Mk40tImportAbort("wxpython")
 
 
-def plugin(kernel, lifecycle):
+def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/grbl"
     if lifecycle == "added":
-        service = kernel.get_context("grbl0")
         service.register("window/Network-Controller", TCPController)
-        _ = kernel.translation
+        _ = service._
 
         service.register(
             "button/control/Controller",

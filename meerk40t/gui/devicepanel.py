@@ -89,7 +89,7 @@ class DevicePanel(wx.Panel):
 
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         names = []
-        for obj, name, sname in self.context.find("service", "device"):
+        for obj, name, sname in self.context.find("provider", "device"):
             names.append(sname)
         with wx.SingleChoiceDialog(
             None, _("What type of driver is being added?"), _("Device Type"), names
@@ -98,7 +98,7 @@ class DevicePanel(wx.Panel):
             if dlg.ShowModal() == wx.ID_OK:
                 device_type = names[dlg.GetSelection()]
                 self.context(
-                    "service add device {device_type}\n".format(device_type=device_type)
+                    "service device start {device_type}\n".format(device_type=device_type)
                 )
 
     def on_button_edit_device(self, event):  # wxGlade: DevicePanel.<event_handler>

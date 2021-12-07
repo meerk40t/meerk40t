@@ -54,7 +54,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         kernel.root.setting(int, "moshidevices", 0)
         for i in range(kernel.root.moshidevices):
-            kernel.console("service device start moshi {index}\n".format(index=i))
+            kernel.console("service device start moshi\n")
 
 
 def get_code_string_from_moshicode(code):
@@ -76,8 +76,14 @@ class MoshiDevice(Service):
     LihuiyuDevice is driver for the M2 Nano and other classes of Lhystudios boards.
     """
 
-    def __init__(self, kernel, index, *args, **kwargs):
-        Service.__init__(self, kernel, "moshi%d" % index)
+    def __init__(self, kernel, *args, **kwargs):
+        prefix = "moshi"
+        path = prefix
+        for i in range(50):
+            path = prefix + str(i)
+            if path not in kernel.contexts:
+                break
+        Service.__init__(self, kernel, path)
         self.name = "MoshiDevice"
 
         self.setting(bool, "opt_rapid_between", True)
@@ -99,6 +105,7 @@ class MoshiDevice(Service):
         self.setting(bool, "mock", False)
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
+        self.setting(str, "label", path)
 
         _ = self._
         choices = [
@@ -146,7 +153,6 @@ class MoshiDevice(Service):
         self.settings = LaserSettings()
         self.state = 0
 
-        self.label = "moshi-%d" % index
         self.spooler = Spooler(self)
 
         self.driver = MoshiDriver(self)
@@ -807,7 +813,7 @@ class MoshiController:
             buffer += "%s\n" % str(p.data)
         return buffer
 
-    def added(self, origin, *args):
+    def added(self, *args, **kwargs):
         self.start()
 
     def shutdown(self, *args, **kwargs):

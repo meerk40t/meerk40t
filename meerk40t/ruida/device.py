@@ -157,7 +157,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         kernel.root.setting(int, "ruidadevices", 0)
         for i in range(kernel.root.ruidadevices):
-            kernel.console("service device start ruida {index}\n".format(index=i))
+            kernel.console("service device start ruida\n")
 
 
 class RuidaDevice(Service):
@@ -165,9 +165,16 @@ class RuidaDevice(Service):
     RuidaDevice is driver for the Ruida Controllers
     """
 
-    def __init__(self, kernel, index, *args, **kwargs):
-        Service.__init__(self, kernel, "ruida%d" % index)
+    def __init__(self, kernel, *args, **kwargs):
+        prefix = "ruida"
+        path = prefix
+        for i in range(50):
+            path = prefix + str(i)
+            if path not in kernel.contexts:
+                break
+        Service.__init__(self, kernel, path)
         self.name = "RuidaDevice"
+        self.setting(str, "label", path)
 
         _ = self._
         choices = [
@@ -215,7 +222,6 @@ class RuidaDevice(Service):
         self.settings = LaserSettings()
         self.state = 0
 
-        self.label = "ruida-%d" % index
         self.spooler = Spooler(self)
 
         self.viewbuffer = ""

@@ -79,7 +79,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         kernel.root.setting(int, "lhydevices", 1)
         for i in range(kernel.root.lhydevices):
-            kernel.console("service device start lhystudios {index}\n".format(index=i))
+            kernel.console("service device start lhystudios\n")
 
 
 class LihuiyuDevice(Service):
@@ -87,8 +87,14 @@ class LihuiyuDevice(Service):
     LihuiyuDevice is driver for the M2 Nano and other classes of Lhystudios boards.
     """
 
-    def __init__(self, kernel, index, *args, **kwargs):
-        Service.__init__(self, kernel, "lihuiyu%d" % index)
+    def __init__(self, kernel, *args, **kwargs):
+        prefix = "lihuiyu"
+        path = prefix
+        for i in range(50):
+            path = prefix + str(i)
+            if path not in kernel.contexts:
+                break
+        Service.__init__(self, kernel, path)
         self.name = "LihuiyuDevice"
 
         _ = kernel.translation
@@ -227,15 +233,12 @@ class LihuiyuDevice(Service):
 
         self.setting(int, "port", 1022)
         self.setting(str, "address", "localhost")
+        self.setting(str, "label", "m2nano")
 
         self.current_x = 0.0
         self.current_y = 0.0
         self.state = 0
         self.spooler = Spooler(self)
-        if self.board == "M2":
-            self.label = "m2nano-%d" % index
-        else:
-            self.label = "%s-%d" % (self.board, index)
         self.driver = LhystudiosDriver(self)
         self.add_service_delegate(self.driver)
 
