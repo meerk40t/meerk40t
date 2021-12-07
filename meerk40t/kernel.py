@@ -1177,9 +1177,7 @@ class Kernel:
         if active is not None:
             previous_active = active
             if previous_active is not None:
-                self.set_service_lifecycle(
-                    previous_active, LIFECYCLE_SERVICE_DETACHED
-                )
+                self.set_service_lifecycle(previous_active, LIFECYCLE_SERVICE_DETACHED)
                 self.lookup_changes(list(previous_active._registered))
 
             for context_name in self.contexts:
@@ -1458,6 +1456,7 @@ class Kernel:
 
         :return:
         """
+        self.batch_boot()
         for domain, services in self.services_available():
             # for each domain activate the first service.
             self.activate_service_index(domain, 0)
@@ -3461,6 +3460,12 @@ class Kernel:
             else:
                 channel(_("Control '%s' not found.") % control_name)
 
+    def batch_boot(self):
+        root = self.root
+        if root.setting(str, "batch", None) is None:
+            return
+        for b in root.batch.split(";"):
+            root("{batch}\n".format(batch=b))
 
 # ==========
 # END KERNEL
