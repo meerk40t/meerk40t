@@ -698,7 +698,9 @@ class Service(Context):
     def __str__(self):
         if hasattr(self, "label"):
             return self.label
-        return "Service('{path}', {rpath})".format(path=self._path, rpath=self.registered_path)
+        return "Service('{path}', {rpath})".format(
+            path=self._path, rpath=self.registered_path
+        )
 
     def service_attach(self, *args, **kwargs):
         pass
@@ -1078,7 +1080,7 @@ class Kernel:
     def remove_service(self, service: Service):
         self.set_service_lifecycle(service, LIFECYCLE_SHUTDOWN)
         for path, services in self.services_available():
-            for i in range(len(services)-1, -1, -1):
+            for i in range(len(services) - 1, -1, -1):
                 s = services[i]
                 if s is service:
                     del services[i]
@@ -1222,11 +1224,32 @@ class Kernel:
         @return:
         """
         self.delegates.append((delegate, lifecycle_object))
-        self.match_lifecycle(delegate, lifecycle_object)
+        self.update_linked_lifecycles(lifecycle_object)
 
     # ==========
     # LIFECYCLE MANAGEMENT
     # ==========
+
+    @staticmethod
+    def service_lifecycle_position(obj):
+        try:
+            return obj._service_lifecycle
+        except AttributeError:
+            return 0
+
+    @staticmethod
+    def module_lifecycle_position(obj):
+        try:
+            return obj._module_lifecycle
+        except AttributeError:
+            return 0
+
+    @staticmethod
+    def kernel_lifecycle_position(obj):
+        try:
+            return obj._kernel_lifecycle
+        except AttributeError:
+            return 0
 
     def get_linked_objects(self, obj: Any, object_list: list = None):
         """
@@ -1243,34 +1266,19 @@ class Kernel:
                 self.get_linked_objects(delegate, object_list)
         return object_list
 
-    def match_lifecycle(self, delegate, model):
+    def update_linked_lifecycles(self, model):
         """
         Matches the lifecycle of the obj on the model.
 
-        @param delegate:  object lifecycle being updated.
         @param model: lifecycled object being mimicked
         @return:
         """
         if isinstance(model, Module):
-            try:
-                lifecycle = model._module_lifecycle
-            except AttributeError:
-                lifecycle = 0
-            self.set_module_lifecycle(delegate, lifecycle)
-
+            self.set_module_lifecycle(model, Kernel.module_lifecycle_position(model))
         elif isinstance(model, Service):
-            try:
-                lifecycle = model._service_lifecycle
-            except AttributeError:
-                lifecycle = 0
-            self.set_service_lifecycle(delegate, lifecycle)
-
+            self.set_service_lifecycle(model, Kernel.service_lifecycle_position(model))
         elif isinstance(model, Kernel):
-            try:
-                lifecycle = model._kernel_lifecycle
-            except AttributeError:
-                lifecycle = 0
-            self.set_kernel_lifecycle(delegate, lifecycle)
+            self.set_kernel_lifecycle(model, Kernel.kernel_lifecycle_position(model))
 
     def set_kernel_lifecycle(self, kernel, position, *args, **kwargs):
         """
@@ -1282,111 +1290,180 @@ class Kernel:
         @param kwargs:
         @return:
         """
-
-        try:
-            starting_position = kernel._kernel_lifecycle
-        except AttributeError:
-            starting_position = 0
-
-        ending_position = position if position is not None else starting_position + 1
-        if starting_position == ending_position:
-            return
+        channel = self.channel("kernel-lifecycle")
         objects = self.get_linked_objects(kernel)
+        klp = Kernel.kernel_lifecycle_position
+        start = klp(kernel)
+        end = position
 
-        if starting_position < LIFECYCLE_KERNEL_PREREGISTER <= ending_position:
-            for k in objects:
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_PREREGISTER <= end:
+                if channel:
+                    channel("kernel-preregister: {object}".format(object=str(k)))
                 if hasattr(k, "preregister"):
                     k.preregister()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREREGISTER
+        if start < LIFECYCLE_KERNEL_PREREGISTER <= end:
+            if channel:
+                channel("(plugin) kernel-preregister")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "preregister")
-        if starting_position < LIFECYCLE_KERNEL_REGISTER <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_REGISTER <= end:
+                if channel:
+                    channel("kernel-registration: {object}".format(object=str(k)))
                 if hasattr(k, "registration"):
                     k.registration()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_REGISTER
+        if start < LIFECYCLE_KERNEL_REGISTER <= end:
+            if channel:
+                channel("(plugin) kernel-register")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "register")
-        if starting_position < LIFECYCLE_KERNEL_CONFIGURE <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_CONFIGURE <= end:
+                if channel:
+                    channel("kernel-configure: {object}".format(object=str(k)))
                 if hasattr(k, "configure"):
                     k.configure()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_CONFIGURE
+        if start < LIFECYCLE_KERNEL_CONFIGURE <= end:
+            if channel:
+                channel("(plugin) kernel-configure")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "configure")
-        if starting_position < LIFECYCLE_KERNEL_PREBOOT <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_PREBOOT <= end:
+                if channel:
+                    channel("kernel-preboot: {object}".format(object=str(k)))
                 if hasattr(k, "preboot"):
                     k.preboot()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREBOOT
+        if start < LIFECYCLE_KERNEL_PREBOOT <= end:
+            if channel:
+                channel("(plugin) kernel-preboot")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "preboot")
-        if starting_position < LIFECYCLE_KERNEL_BOOT <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_BOOT <= end:
+                if channel:
+                    channel("kernel-boot: {object} boot".format(object=str(k)))
                 if hasattr(k, "boot"):
                     k.boot()
                 self._signal_attach(k)
                 self._lookup_attach(k)
-                k._kernel_lifecycle = LIFECYCLE_KERNEL_BOOT
+            k._kernel_lifecycle = LIFECYCLE_KERNEL_BOOT
+        if start < LIFECYCLE_KERNEL_BOOT <= end:
+            if channel:
+                channel("(plugin) kernel-boot")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "boot")
-        if starting_position < LIFECYCLE_KERNEL_POSTBOOT <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_POSTBOOT <= end:
+                if channel:
+                    channel("kernel-postboot: {object}".format(object=str(k)))
                 if hasattr(k, "postboot"):
                     k.postboot()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTBOOT
+        if start < LIFECYCLE_KERNEL_POSTBOOT <= end:
+            if channel:
+                channel("(plugin) kernel-postboot")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "postboot")
-        if starting_position < LIFECYCLE_KERNEL_PRESTART <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_PRESTART <= end:
+                if channel:
+                    channel("kernel-prestart: {object}".format(object=str(k)))
                 if hasattr(k, "prestart"):
                     k.prestart()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRESTART
+        if start < LIFECYCLE_KERNEL_PRESTART <= end:
+            if channel:
+                channel("(plugin) kernel-prestart")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "prestart")
-        if starting_position < LIFECYCLE_KERNEL_START <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_START <= end:
+                if channel:
+                    channel("kernel-start: {object}".format(object=str(k)))
                 if hasattr(k, "start"):
                     k.start()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_START
+        if start < LIFECYCLE_KERNEL_START <= end:
+            if channel:
+                channel("(plugin) kernel-start")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "start")
-        if starting_position < LIFECYCLE_KERNEL_POSTSTART <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_POSTSTART <= end:
+                if channel:
+                    channel("kernel-poststart: {object}".format(object=str(k)))
                 if hasattr(k, "poststart"):
                     k.poststart()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTSTART
+        if start < LIFECYCLE_KERNEL_POSTSTART <= end:
+            if channel:
+                channel("(plugin) kernel-poststart")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "poststart")
-        if starting_position < LIFECYCLE_KERNEL_PREMAIN <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_PREMAIN <= end:
+                if channel:
+                    channel("kernel-premain: {object}".format(object=str(k)))
                 if hasattr(k, "premain"):
                     k.premain()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREMAIN
+        if start < LIFECYCLE_KERNEL_PREMAIN <= end:
+            if channel:
+                channel("(plugin) kernel-premain")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "premain")
-        if starting_position < LIFECYCLE_KERNEL_MAINLOOP <= ending_position:
-            for k in objects:
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_MAINLOOP <= end:
+                if channel:
+                    channel("kernel-mainloop: {object}".format(object=str(k)))
                 if hasattr(k, "mainloop"):
                     k.mainloop()
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_MAINLOOP
+        if start < LIFECYCLE_KERNEL_MAINLOOP <= end:
+            if channel:
+                channel("(plugin) kernel-mainloop")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "mainloop")
-        if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
+
+        if start < LIFECYCLE_SHUTDOWN <= end:
+            if channel:
+                channel("(plugin) kernel-shutdown")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "shutdown")
-            for k in objects:
+        for k in objects:
+            if klp(k) < LIFECYCLE_SHUTDOWN <= end:
+                if channel:
+                    channel("kernel-shutdown: {object}".format(object=str(k)))
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "shutdown"):
                     k.shutdown()
                 k._kernel_lifecycle = LIFECYCLE_SHUTDOWN
+
         for k in objects:
-            k._kernel_lifecycle = ending_position
+            k._kernel_lifecycle = end
 
     def set_service_lifecycle(self, service, position, *args, **kwargs):
         """
-        Advances the lifecycle of the service to the given position.
+        Advances the lifecycle of the service to the given position. Any linked elements are advanced to this same
+        position even if those delegates were added later. This will not call the lifecycle events more than once
+        per object unless the lifecycle repeats (attached/detached).
 
         @param position: position lifecycle should be advanced to.
         @param service: service to advanced, if not this service.
@@ -1394,64 +1471,117 @@ class Kernel:
         @param kwargs: additional kwargs
         @return:
         """
-        try:
-            starting_position = service._service_lifecycle
-        except AttributeError:
-            starting_position = 0
-        ending_position = position if position is not None else starting_position + 1
-
-        if starting_position == ending_position:
-            return
+        channel = self.channel("service-lifecycle")
         objects = self.get_linked_objects(service)
+        slp = Kernel.service_lifecycle_position
 
-        if starting_position < LIFECYCLE_SERVICE_ADDED <= ending_position:
-            for s in objects:
+        start = slp(service)
+        end = position
+
+        # Update objects: added
+        for s in objects:
+            if slp(s) < LIFECYCLE_SERVICE_ADDED <= end:
+                if channel:
+                    channel("service-added: {object}".format(object=str(s)))
                 if hasattr(s, "added"):
                     s.added(*args, **kwargs)
                 s._service_lifecycle = LIFECYCLE_SERVICE_ADDED
+
+        # Update plugin: added
+        if start < LIFECYCLE_SERVICE_ADDED <= end:
+            if channel:
+                channel("(plugin) service-added: {object}".format(object=str(service)))
+            start = LIFECYCLE_SERVICE_ADDED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "added")
             except (KeyError, AttributeError):
                 pass
-        if starting_position == LIFECYCLE_SERVICE_ATTACHED:  # starting attached
-            service._service_lifecycle = LIFECYCLE_SERVICE_ATTACHED
-            for s in objects:
+
+        # Update objects: service_detach
+        for s in objects:
+            if (
+                slp(s) == LIFECYCLE_SERVICE_ATTACHED
+                and end != LIFECYCLE_SERVICE_ATTACHED
+            ):  # starting attached
+                if channel:
+                    channel("service-service_detach: {object}".format(object=str(s)))
                 if hasattr(s, "service_detach"):
                     s.service_detach(*args, **kwargs)
                 self._signal_detach(s)
                 self._lookup_detach(s)
                 s._service_lifecycle = LIFECYCLE_SERVICE_DETACHED
+
+        # Update plugin: service_detach
+        if start == LIFECYCLE_SERVICE_ATTACHED and end != LIFECYCLE_SERVICE_ATTACHED:
+            if channel:
+                channel(
+                    "(plugin) service-service_detach: {object}".format(
+                        object=str(service)
+                    )
+                )
+            start = LIFECYCLE_SERVICE_DETACHED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "service_detach")
             except (KeyError, AttributeError):
                 pass
-        elif ending_position == LIFECYCLE_SERVICE_ATTACHED:  # ending attached
-            for s in objects:
+
+        # Update objects: service_attach
+        for s in objects:
+            if (
+                slp(s) != LIFECYCLE_SERVICE_ATTACHED
+                and end == LIFECYCLE_SERVICE_ATTACHED
+            ):  # ending attached
+                if channel:
+                    channel("service-service_attach: {object}".format(object=str(s)))
                 if hasattr(s, "service_attach"):
                     s.service_attach(*args, **kwargs)
                 self._signal_attach(s)
                 self._lookup_attach(s)
                 s._service_lifecycle = LIFECYCLE_SERVICE_ATTACHED
+
+        # Update plugin: service_attach
+        if start != LIFECYCLE_SERVICE_ATTACHED and end == LIFECYCLE_SERVICE_ATTACHED:
+            if channel:
+                channel(
+                    "(plugin) service-service_attach: {object}".format(
+                        object=str(service)
+                    )
+                )
+            start = LIFECYCLE_SERVICE_ATTACHED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "service_attach")
             except (KeyError, AttributeError):
                 pass
-        if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
-            for s in objects:
+
+        # Update objects: service_shutdown
+        for s in objects:
+            if slp(s) < LIFECYCLE_SHUTDOWN <= end:
+                if channel:
+                    channel("service-shutdown: {object}".format(object=str(s)))
                 if hasattr(s, "shutdown"):
                     s.shutdown(*args, **kwargs)
                 s._service_lifecycle = LIFECYCLE_SHUTDOWN
+
+        # Update plugin: shutdown
+        if start < LIFECYCLE_SHUTDOWN <= end:
+            if channel:
+                channel(
+                    "(plugin) service-shutdown: {object}".format(object=str(service))
+                )
+            start = LIFECYCLE_SHUTDOWN
+            self.remove_service(service)
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "shutdown")
             except (KeyError, AttributeError):
                 pass
-            self.remove_service(service)
+
+        # Update objects: position
         for s in objects:
-            s._service_lifecycle = ending_position
+            s._service_lifecycle = end
 
     def set_module_lifecycle(self, module, position, *args, **kwargs):
         """
@@ -1464,42 +1594,86 @@ class Kernel:
         @param kwargs:
         @return:
         """
-        try:
-            starting_position = module._module_lifecycle
-        except AttributeError:
-            starting_position = 0
-        ending_position = position if position is not None else starting_position + 1
-        if starting_position == ending_position:
-            return
-
+        channel = self.channel("module-lifecycle")
         objects = self.get_linked_objects(module)
+        mlp = Kernel.module_lifecycle_position
 
-        if starting_position < LIFECYCLE_MODULE_OPENED <= ending_position:
-            for m in objects:
+        start = mlp(module)
+        end = position
+
+        # Update objects: opened
+        for m in objects:
+            if mlp(m) < LIFECYCLE_MODULE_OPENED <= end:
+                if channel:
+                    channel("module-module_open: {object}".format(object=str(m)))
                 if hasattr(m, "module_open"):
                     m.module_open(*args, **kwargs)
                 self._signal_attach(m)
                 self._lookup_attach(m)
                 m._module_lifecycle = LIFECYCLE_MODULE_OPENED
-        if starting_position < LIFECYCLE_MODULE_CLOSED <= ending_position:
-            try:
-                # If this is a module, we remove it from opened.
-                del module.context.opened[module.name]
-            except (KeyError, AttributeError):
-                pass  # Nothing to close.
 
-            for m in objects:
+        # Update plugin: opened
+        if start < LIFECYCLE_MODULE_OPENED <= end:
+            if channel:
+                channel(
+                    "(plugin) module-module_open: {object}".format(object=str(module))
+                )
+            try:
+                for plugin in self._module_plugins[module.registered_path]:
+                    plugin(module, "module_open")
+            except (KeyError, AttributeError):
+                pass
+
+        # Update objects: closed
+        for m in objects:
+            if mlp(m) < LIFECYCLE_MODULE_CLOSED <= end:
+                if channel:
+                    channel("module-module_closed: {object}".format(object=str(m)))
+                try:
+                    # If this is a module, we remove it from opened.
+                    del m.context.opened[m.name]
+                except (KeyError, AttributeError):
+                    pass  # Nothing to close.
+
                 if hasattr(m, "module_close"):
                     m.module_close(*args, **kwargs)
                 self._signal_detach(m)
                 self._lookup_detach(m)
                 self._remove_delegates(m)
                 m._module_lifecycle = LIFECYCLE_MODULE_CLOSED
-        if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
-            if hasattr(module, "shutdown"):
-                module.shutdown()
+
+        # Update plugin: closed
+        if start < LIFECYCLE_MODULE_CLOSED <= end:
+            if channel:
+                channel(
+                    "(plugin) module-module_close: {object}".format(object=str(module))
+                )
+            try:
+                for plugin in self._module_plugins[module.registered_path]:
+                    plugin(module, "module_close")
+            except (KeyError, AttributeError):
+                pass
+
+        # Update objects: shutdown
         for m in objects:
-            m._module_lifecycle = ending_position
+            if mlp(m) < LIFECYCLE_SHUTDOWN <= end:
+                if channel:
+                    channel("module-shutdown: {object}".format(object=str(m)))
+                if hasattr(m, "shutdown"):
+                    m.shutdown()
+
+        # Update plugin: shutdown
+        if start < LIFECYCLE_SHUTDOWN <= end:
+            if channel:
+                channel("(plugin) module-shutdown: {object}".format(object=str(module)))
+            try:
+                for plugin in self._module_plugins[module.registered_path]:
+                    plugin(module, "shutdown")
+            except (KeyError, AttributeError):
+                pass
+
+        for m in objects:
+            m._module_lifecycle = end
 
     # ==========
     # LIFECYCLE PROCESSES
