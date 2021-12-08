@@ -1222,7 +1222,7 @@ class Kernel:
         @return:
         """
         self.delegates.append((delegate, lifecycle_object))
-        self.match_lifecycle(lifecycle_object, delegate)
+        self.match_lifecycle(delegate, lifecycle_object)
 
     # ==========
     # LIFECYCLE MANAGEMENT
@@ -1243,25 +1243,34 @@ class Kernel:
                 self.get_linked_objects(delegate, object_list)
         return object_list
 
-    def match_lifecycle(self, obj, model):
+    def match_lifecycle(self, delegate, model):
         """
         Matches the lifecycle of the obj on the model.
 
-        @param obj:  object lifecycle being updated.
+        @param delegate:  object lifecycle being updated.
         @param model: lifecycled object being mimicked
         @return:
         """
         if isinstance(model, Module):
-            lifecycle = model._module_lifecycle
-            self.set_module_lifecycle(obj, lifecycle)
+            try:
+                lifecycle = model._module_lifecycle
+            except AttributeError:
+                lifecycle = 0
+            self.set_module_lifecycle(delegate, lifecycle)
 
         elif isinstance(model, Service):
-            lifecycle = model._service_lifecycle
-            self.set_service_lifecycle(obj, lifecycle)
+            try:
+                lifecycle = model._service_lifecycle
+            except AttributeError:
+                lifecycle = 0
+            self.set_service_lifecycle(delegate, lifecycle)
 
         elif isinstance(model, Kernel):
-            lifecycle = model._kernel_lifecycle
-            self.set_kernel_lifecycle(obj, lifecycle)
+            try:
+                lifecycle = model._kernel_lifecycle
+            except AttributeError:
+                lifecycle = 0
+            self.set_kernel_lifecycle(delegate, lifecycle)
 
     def set_kernel_lifecycle(self, kernel, position, *args, **kwargs):
         """
@@ -1403,7 +1412,7 @@ class Kernel:
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "added")
-            except KeyError:
+            except (KeyError, AttributeError):
                 pass
         if starting_position == LIFECYCLE_SERVICE_ATTACHED:  # starting attached
             service._service_lifecycle = LIFECYCLE_SERVICE_ATTACHED
@@ -1416,7 +1425,7 @@ class Kernel:
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "service_detach")
-            except KeyError:
+            except (KeyError, AttributeError):
                 pass
         elif ending_position == LIFECYCLE_SERVICE_ATTACHED:  # ending attached
             for s in objects:
@@ -1428,7 +1437,7 @@ class Kernel:
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "service_attach")
-            except KeyError:
+            except (KeyError, AttributeError):
                 pass
         if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
             for s in objects:
@@ -1438,7 +1447,7 @@ class Kernel:
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "shutdown")
-            except KeyError:
+            except (KeyError, AttributeError):
                 pass
             self.remove_service(service)
         for s in objects:
