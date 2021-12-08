@@ -244,10 +244,10 @@ class Context:
 
     def close_subpaths(self) -> None:
         """
-        Find all subpaths of the current context and set them to None.
+        Find all subpaths of the current context and delete them.
 
         This is not a maintenance operation. It's needed for rare instances during shutdown. All contexts will be
-        shutdown normally during the shutdown in the lifecycle.
+        shutdown, this prevents normal shutdown procedure.
         """
         for e in list(self._kernel.contexts):
             if e.startswith(self._path):
