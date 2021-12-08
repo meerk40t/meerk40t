@@ -1488,7 +1488,6 @@ class Kernel:
     def preboot(self):
         self.command_boot()
         self.choices_boot()
-        self.batch_boot()
 
     def boot(self) -> None:
         """
@@ -1507,6 +1506,7 @@ class Kernel:
         self._booted = True
 
     def postboot(self):
+        self.batch_boot()
         if hasattr(self.args, "verbose") and self.args.verbose:
             self._start_debugging()
 
