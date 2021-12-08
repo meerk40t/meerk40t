@@ -1342,6 +1342,13 @@ class Kernel:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_START
             for plugin in self._kernel_plugins:
                 plugin(kernel, "start")
+        if starting_position < LIFECYCLE_KERNEL_POSTSTART <= ending_position:
+            for k in objects:
+                if hasattr(k, "poststart"):
+                    k.poststart()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTSTART
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "poststart")
         if starting_position < LIFECYCLE_KERNEL_PREMAIN <= ending_position:
             for k in objects:
                 if hasattr(k, "premain"):
