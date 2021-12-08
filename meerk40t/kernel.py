@@ -1321,6 +1321,13 @@ class Kernel:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_BOOT
             for plugin in self._kernel_plugins:
                 plugin(kernel, "boot")
+        if starting_position < LIFECYCLE_KERNEL_POSTBOOT <= ending_position:
+            for k in objects:
+                if hasattr(k, "postboot"):
+                    k.postboot()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTBOOT
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "postboot")
         if starting_position < LIFECYCLE_KERNEL_PRESTART <= ending_position:
             for k in objects:
                 if hasattr(k, "prestart"):
@@ -3214,7 +3221,7 @@ class Kernel:
         )
         def batch_base(channel, _, remainder=None, **kwargs):
             root = self.root
-            batch = list(root.setting(str, "batch", "").split(";"))
+            batch = [b for b in root.setting(str, "batch", "").split(";") if b]
             if not remainder:
                 channel(_("----------"))
                 channel(_("Batch Commands:"))
@@ -3555,7 +3562,7 @@ class Kernel:
 
     def batch_add(self, command, origin="default", index=None):
         root = self.root
-        batch = list(root.setting(str, "batch", "").split(";"))
+        batch = [b for b in root.setting(str, "batch", "").split(";") if b]
         batch_command = "{origin} {command}".format(origin=origin, command=command)
         if index is not None:
             batch.insert(index, batch_command)
@@ -3565,7 +3572,7 @@ class Kernel:
 
     def batch_remove(self, index):
         root = self.root
-        batch = list(root.setting(str, "batch", "").split(";"))
+        batch = [b for b in root.setting(str, "batch", "").split(";") if b]
         del batch[index]
         self.root.batch = ";".join(batch)
 
