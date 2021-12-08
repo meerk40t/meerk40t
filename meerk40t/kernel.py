@@ -2752,7 +2752,7 @@ class Kernel:
         if key in self._registered:
             others = self._registered[key]
             others.extend(choices)
-            self.register(key, choices)  # Reregister to trigger lookup change
+            self.register(key, others)  # Reregister to trigger lookup change
         else:
             self.register(key, choices)
         for c in choices:
