@@ -3129,32 +3129,29 @@ class Kernel:
             self.activate_service_index(domain, index)
 
         @console_argument("name", help="Name of service to start")
-        @console_option("index", "i", help="optional service index value")
+        @console_option("path", "p", help="optional forced path initialize location")
         @self.console_command(
             "start", input_type="service", help=_("Initialize a provider")
         )
-        def service_init(channel, _, data=None, index=None, name=None, **kwargs):
+        def service_init(channel, _, data=None,  name=None, path=None, **kwargs):
             domain, available, active = data
             if name is None:
                 raise SyntaxError
-            path = "provider/{domain}/{name}".format(domain=domain, name=name)
-            provider = self.lookup(path)
-
+            provider_path = "provider/{domain}/{name}".format(domain=domain, name=name)
+            provider = self.lookup(provider_path)
             if provider is None:
                 raise SyntaxError("Bad provider.")
-            service_path = name
-            if service_path in self.contexts:
-                index = -1
-            if index is not None:
-                if index == -1:
-                    for i in range(50):
-                        service_path = name + str(i)
-                        if service_path not in self.contexts:
-                            break
-                else:
-                    service_path = name + str(index)
+            if path is None:
+                path = name
+
+            service_path = path
+            i = 1
+            while service_path in self.contexts:
+                service_path = path + str(i)
+                i += 1
+
             service = provider(self, service_path)
-            self.add_service(domain, service, path)
+            self.add_service(domain, service, provider_path)
 
         # ==========
         # BATCH COMMANDS
