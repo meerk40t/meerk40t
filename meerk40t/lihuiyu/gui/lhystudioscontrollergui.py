@@ -334,9 +334,9 @@ class LhystudiosControllerPanel(wx.Panel):
             self.button_device_connect.Enable(True)
 
     def pane_hide(self):
-        self.context.channel(
-            "{name}/usb".format(name=self.context.label)
-        ).unwatch(self.update_text)
+        self.context.channel("{name}/usb".format(name=self.context.label)).unwatch(
+            self.update_text
+        )
 
     def restore(self, *args, **kwargs):
         self.set_widgets()

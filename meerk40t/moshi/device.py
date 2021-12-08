@@ -61,6 +61,7 @@ def plugin(kernel, lifecycle=None):
                     )
                 )
 
+
 def get_code_string_from_moshicode(code):
     """
     Moshiboard CH341 codes into code strings.

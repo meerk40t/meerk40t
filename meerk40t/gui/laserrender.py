@@ -511,7 +511,7 @@ class LaserRender:
                 "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
             )
         except AssertionError:
-            print(xmin,ymin,xmax,ymax)
+            print(xmin, ymin, xmax, ymax)
         gc.PopState()
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()

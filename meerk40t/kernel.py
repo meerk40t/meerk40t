@@ -1061,7 +1061,13 @@ class Kernel:
             if result:
                 yield result.group(1), self._registered[r]
 
-    def add_service(self, domain: str, service: Service, registered_path: str = None, activate: bool = False):
+    def add_service(
+        self,
+        domain: str,
+        service: Service,
+        registered_path: str = None,
+        activate: bool = False,
+    ):
         """
         Adds a reference to a service. This is initialized at kernel.boot.
         @param domain: service domain
@@ -3133,7 +3139,7 @@ class Kernel:
         @self.console_command(
             "start", input_type="service", help=_("Initialize a provider")
         )
-        def service_init(channel, _, data=None,  name=None, path=None, **kwargs):
+        def service_init(channel, _, data=None, name=None, path=None, **kwargs):
             domain, available, active = data
             if name is None:
                 raise SyntaxError
@@ -3170,33 +3176,44 @@ class Kernel:
                 for i, name in enumerate(batch):
                     find = name.find(" ")
                     origin = name[:find]
-                    text = name[find+1:]
+                    text = name[find + 1 :]
                     if text:
                         channel("%d - %s: %s" % (i + 1, origin, text))
                 channel(_("----------"))
             return "batch", batch
 
-        @console_option("origin", "o", type=str, help="flag added batch command with a specific origin")
+        @console_option(
+            "origin",
+            "o",
+            type=str,
+            help="flag added batch command with a specific origin",
+        )
         @console_option("index", "i", type=int, help="insert position for add")
         @self.console_command(
             "add", input_type="batch", help=_("add a batch command 'batch add <line>'")
         )
-        def batch_add(channel, _, data=None, index=None, origin="cmd", remainder=None, **kwargs):
+        def batch_add(
+            channel, _, data=None, index=None, origin="cmd", remainder=None, **kwargs
+        ):
             if remainder is None:
                 raise SyntaxError
             self.batch_add(remainder, origin, index)
 
         @console_argument("index", type=int, help="line to delete")
         @self.console_command(
-            "remove", input_type="batch", help=_("delete line located at specific index'")
+            "remove",
+            input_type="batch",
+            help=_("delete line located at specific index'"),
         )
         def batch_remove(channel, _, data=None, index=None, **kwargs):
             if index is None:
                 raise SyntaxError
             try:
-                self.batch_remove(index-1)
+                self.batch_remove(index - 1)
             except IndexError:
-                raise SyntaxError("Index out of bounds (1-{length})".format(length=len(data)))
+                raise SyntaxError(
+                    "Index out of bounds (1-{length})".format(length=len(data))
+                )
 
         # ==========
         # CHANNEL COMMANDS
@@ -3514,8 +3531,9 @@ class Kernel:
         for b in root.batch.split(";"):
             if b:
                 find = b.find(" ")
-                text = b[find + 1:]
+                text = b[find + 1 :]
                 root("{batch}\n".format(batch=text))
+
 
 # ==========
 # END KERNEL

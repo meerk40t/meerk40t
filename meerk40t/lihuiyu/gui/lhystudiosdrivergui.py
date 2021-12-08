@@ -23,9 +23,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.checkbox_fix_speeds = wx.CheckBox(
             self, wx.ID_ANY, _("Fix rated to actual speed")
         )
-        self.checkbox_networked = wx.CheckBox(
-            self, wx.ID_ANY, _("Networked")
-        )
+        self.checkbox_networked = wx.CheckBox(self, wx.ID_ANY, _("Networked"))
         self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))

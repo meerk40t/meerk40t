@@ -148,7 +148,9 @@ class TreeSelectionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
 
-        main_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, selection_text), wx.VERTICAL)
+        main_sizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, selection_text), wx.VERTICAL
+        )
 
         self.selected_tree = wx.TreeCtrl(self, wx.ID_ANY)
         main_sizer.Add(self.controller_tree, 7, wx.EXPAND, 0)
@@ -157,7 +159,11 @@ class TreeSelectionPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_tree_laser_activated, self.controller_tree)
+        self.Bind(
+            wx.EVT_TREE_ITEM_ACTIVATED,
+            self.on_tree_laser_activated,
+            self.controller_tree,
+        )
         # end wxGlade
 
     def on_selected_tree_activated(self, event):  # wxGlade: LayerType.<event_handler>
@@ -171,9 +177,14 @@ class TextboxSelectionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
 
-        sizer_6 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Network Address"), wx.VERTICAL)
+        sizer_6 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Network Address"), wx.VERTICAL
+        )
 
-        sizer_7 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "What is the network address for the laser?"), wx.HORIZONTAL)
+        sizer_7 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "What is the network address for the laser?"),
+            wx.HORIZONTAL,
+        )
         sizer_6.Add(sizer_7, 1, wx.EXPAND, 0)
 
         self.text_network_address = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -183,7 +194,9 @@ class TextboxSelectionPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_network_address, self.text_network_address)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_text_network_address, self.text_network_address
+        )
         # end wxGlade
 
     def on_text_network_address(self, event):  # wxGlade: NetworkPanel.<event_handler>

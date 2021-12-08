@@ -98,7 +98,9 @@ class DevicePanel(wx.Panel):
             if dlg.ShowModal() == wx.ID_OK:
                 device_type = names[dlg.GetSelection()]
                 self.context(
-                    "service device start {device_type}\n".format(device_type=device_type)
+                    "service device start {device_type}\n".format(
+                        device_type=device_type
+                    )
                 )
         self.refresh_device_tree()
 

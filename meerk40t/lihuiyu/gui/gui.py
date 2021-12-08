@@ -84,6 +84,7 @@ def plugin(service, lifecycle):
         )
         service.add_service_delegate(LihuiyuGui(service))
 
+
 class LihuiyuGui:
     def __init__(self, context):
         self.context = context
