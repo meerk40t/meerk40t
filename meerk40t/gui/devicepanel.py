@@ -111,7 +111,12 @@ class DevicePanel(wx.Panel):
     def on_button_remove_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         s = self.devices_tree.GetSelection()
         data = self.devices_tree.GetItemData(s)
+        if self.context.device is data:
+            wx.MessageDialog(None, _("Cannot remove the currently active device."), _("Error")).ShowModal()
+            return
         data.destroy()
+
+        self.refresh_device_tree()
 
 
 class DeviceManager(MWindow):
