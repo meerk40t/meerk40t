@@ -140,7 +140,6 @@ class DevicePanel(wx.Panel):
 class DeviceManager(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(653, 332, *args, **kwds)
-
         self.panel = DevicePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon

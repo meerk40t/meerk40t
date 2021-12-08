@@ -12,7 +12,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.propertiespanel import PropertiesPanel
 from meerk40t.gui.wxutils import disable_window
-from meerk40t.kernel import lookup_listener
+from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
 
@@ -190,9 +190,10 @@ class LaserPanel(wx.Panel):
         if index == -1:
             disable_window(self)
 
+    @signal_listener("device;modified")
     @lookup_listener("service/device/active")
     @lookup_listener("service/device/available")
-    def spooler_lookup(self, new_spoolers, old):
+    def spooler_lookup(self, *args):
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
