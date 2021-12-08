@@ -1438,7 +1438,6 @@ class Kernel:
         self.command_boot()
         self.choices_boot()
         self.batch_boot()
-        self.provider_boot()
 
     def boot(self) -> None:
         """
@@ -3172,36 +3171,34 @@ class Kernel:
                 channel(_("----------"))
                 channel(_("Batch Commamnds:"))
                 for i, name in enumerate(batch):
-                    if name:
-                        channel("%d: %s" % (i + 1, name))
+                    find = name.find(" ")
+                    text = name[find:]
+                    if text:
+                        channel("%d: %s" % (i + 1, text))
                 channel(_("----------"))
             return "batch", batch
 
+        @console_option("origin", "o", type=str, help="flag added batch command with a specific origin")
         @console_option("index", "i", type=int, help="insert position for add")
         @self.console_command(
             "add", input_type="batch", help=_("add a batch command 'batch add <line>'")
         )
-        def batch_add(channel, _, data=None, index=None, remainder=None, **kwargs):
+        def batch_add(channel, _, data=None, index=None, origin="cmd", remainder=None, **kwargs):
             if remainder is None:
                 raise SyntaxError
-            if index is not None:
-                data.insert(index, remainder)
-            else:
-                data.append(remainder)
-            self.root.batch = ";".join(data)
+            self.batch_add(remainder, origin, index)
 
         @console_argument("index", type=int, help="line to delete")
         @self.console_command(
             "remove", input_type="batch", help=_("delete line located at specific index'")
         )
-        def batch_add(channel, _, data=None, index=None, **kwargs):
+        def batch_remove(channel, _, data=None, index=None, **kwargs):
             if index is None:
                 raise SyntaxError
             try:
-                del data[index-1]
+                self.batch_remove(index-1)
             except IndexError:
                 raise SyntaxError("Index out of bounds (1-{length})".format(length=len(data)))
-            self.root.batch = ";".join(data)
 
         # ==========
         # CHANNEL COMMANDS
@@ -3496,22 +3493,31 @@ class Kernel:
             else:
                 channel(_("Control '%s' not found.") % control_name)
 
+    def batch_add(self, command, origin="default", index=None):
+        root = self.root
+        batch = list(root.setting(str, "batch", "").split(";"))
+        batch_command = "{origin} {command}".format(origin=origin, command=command)
+        if index is not None:
+            batch.insert(index, batch_command)
+        else:
+            batch.append(batch_command)
+        self.root.batch = ";".join(batch)
+
+    def batch_remove(self, index):
+        root = self.root
+        batch = list(root.setting(str, "batch", "").split(";"))
+        del batch[index]
+        self.root.batch = ";".join(batch)
+
     def batch_boot(self):
         root = self.root
         if root.setting(str, "batch", None) is None:
             return
         for b in root.batch.split(";"):
-            root("{batch}\n".format(batch=b))
-
-    def provider_boot(self):
-        root = self.root
-        if root.setting(str, "providers", None) is None:
-            return
-        for provider in root.providers.split(";"):
-            if provider:
-                p = list(provider.split(" "))
-                root("service {domain} start -i {index} {name}\n".format(domain=p[1], name=p[2], index=p[3]))
-
+            if b:
+                find = b.find(" ")
+                text = b[find:]
+                root("{batch}\n".format(batch=text))
 
 # ==========
 # END KERNEL
