@@ -127,7 +127,15 @@ def plugin(kernel, lifecycle=None):
             except OSError:
                 channel(_("Server failed on port: %d") % port)
             return
-
+    if lifecycle == "preboot":
+        suffix = "grbl"
+        for d in kernel.root.derivable():
+            if d.startswith(suffix):
+                kernel.root(
+                    "service device start -p {path} {suffix}\n".format(
+                        path=d, suffix=suffix
+                    )
+                )
 
 class GRBLDevice(Service):
     """
