@@ -253,6 +253,10 @@ class Context:
             if e.startswith(self._path):
                 del self._kernel.contexts[e]
 
+    def destroy(self):
+        self.clear_persistent()
+        self.close_subpaths()
+
     # ==========
     # PERSISTENT SETTINGS.
     # ==========
@@ -691,6 +695,11 @@ class Service(Context):
         self.registered_path = registered_path
         self._registered = {}
 
+    def __str__(self):
+        if hasattr(self, "label"):
+            return self.label
+        return "Service('{path}', {rpath})".format(path=self._path, rpath=self.registered_path)
+
     def service_attach(self, *args, **kwargs):
         pass
 
@@ -746,6 +755,11 @@ class Service(Context):
         Uses current context to be passed to the console_command being removed.
         """
         return console_command_remove(self, *args, **kwargs)
+
+    def destroy(self):
+        self.kernel.set_service_lifecycle(self, LIFECYCLE_SHUTDOWN)
+        self.clear_persistent()
+        self.close_subpaths()
 
     def register_choices(self, sheet, choices):
         """
@@ -1061,6 +1075,15 @@ class Kernel:
             if result:
                 yield result.group(1), self._registered[r]
 
+    def remove_service(self, service: Service):
+        self.set_service_lifecycle(service, LIFECYCLE_SHUTDOWN)
+        for path, services in self.services_available():
+            for i in range(len(services)-1, -1, -1):
+                s = services[i]
+                if s is service:
+                    del services[i]
+                self.register(path, services)
+
     def add_service(
         self,
         domain: str,
@@ -1069,7 +1092,8 @@ class Kernel:
         activate: bool = False,
     ):
         """
-        Adds a reference to a service. This is initialized at kernel.boot.
+        Adds a reference to a service.
+
         @param domain: service domain
         @param service: service to add
         @param registered_path: original provider path of service being added to notify plugins
@@ -1264,24 +1288,28 @@ class Kernel:
             for k in objects:
                 if hasattr(k, "preregister"):
                     k.preregister()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_PREREGISTER
             for plugin in self._kernel_plugins:
                 plugin(kernel, "preregister")
         if starting_position < LIFECYCLE_KERNEL_REGISTER <= ending_position:
             for k in objects:
                 if hasattr(k, "registration"):
                     k.registration()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_REGISTER
             for plugin in self._kernel_plugins:
                 plugin(kernel, "register")
         if starting_position < LIFECYCLE_KERNEL_CONFIGURE <= ending_position:
             for k in objects:
                 if hasattr(k, "configure"):
                     k.configure()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_CONFIGURE
             for plugin in self._kernel_plugins:
                 plugin(kernel, "configure")
         if starting_position < LIFECYCLE_KERNEL_PREBOOT <= ending_position:
             for k in objects:
                 if hasattr(k, "preboot"):
                     k.preboot()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_PREBOOT
             for plugin in self._kernel_plugins:
                 plugin(kernel, "preboot")
         if starting_position < LIFECYCLE_KERNEL_BOOT <= ending_position:
@@ -1290,30 +1318,35 @@ class Kernel:
                     k.boot()
                 self._signal_attach(k)
                 self._lookup_attach(k)
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_BOOT
             for plugin in self._kernel_plugins:
                 plugin(kernel, "boot")
         if starting_position < LIFECYCLE_KERNEL_PRESTART <= ending_position:
             for k in objects:
                 if hasattr(k, "prestart"):
                     k.prestart()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_PRESTART
             for plugin in self._kernel_plugins:
                 plugin(kernel, "prestart")
         if starting_position < LIFECYCLE_KERNEL_START <= ending_position:
             for k in objects:
                 if hasattr(k, "start"):
                     k.start()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_START
             for plugin in self._kernel_plugins:
                 plugin(kernel, "start")
         if starting_position < LIFECYCLE_KERNEL_PREMAIN <= ending_position:
             for k in objects:
                 if hasattr(k, "premain"):
                     k.premain()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_PREMAIN
             for plugin in self._kernel_plugins:
                 plugin(kernel, "premain")
-        if starting_position < LIFECYCLE_KERNEL_PREMAIN <= ending_position:
+        if starting_position < LIFECYCLE_KERNEL_MAINLOOP <= ending_position:
             for k in objects:
                 if hasattr(k, "mainloop"):
                     k.mainloop()
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_MAINLOOP
             for plugin in self._kernel_plugins:
                 plugin(kernel, "mainloop")
         if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
@@ -1324,6 +1357,9 @@ class Kernel:
                 self._lookup_detach(k)
                 if hasattr(k, "shutdown"):
                     k.shutdown()
+                k._kernel_lifecycle = LIFECYCLE_SHUTDOWN
+        for k in objects:
+            k._kernel_lifecycle = ending_position
 
     def set_service_lifecycle(self, service, position, *args, **kwargs):
         """
@@ -1349,17 +1385,20 @@ class Kernel:
             for s in objects:
                 if hasattr(s, "added"):
                     s.added(*args, **kwargs)
+                s._service_lifecycle = LIFECYCLE_SERVICE_ADDED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "added")
             except KeyError:
                 pass
         if starting_position == LIFECYCLE_SERVICE_ATTACHED:  # starting attached
+            service._service_lifecycle = LIFECYCLE_SERVICE_ATTACHED
             for s in objects:
                 if hasattr(s, "service_detach"):
                     s.service_detach(*args, **kwargs)
                 self._signal_detach(s)
                 self._lookup_detach(s)
+                s._service_lifecycle = LIFECYCLE_SERVICE_DETACHED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "service_detach")
@@ -1371,6 +1410,7 @@ class Kernel:
                     s.service_attach(*args, **kwargs)
                 self._signal_attach(s)
                 self._lookup_attach(s)
+                s._service_lifecycle = LIFECYCLE_SERVICE_ATTACHED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "service_attach")
@@ -1380,12 +1420,15 @@ class Kernel:
             for s in objects:
                 if hasattr(s, "shutdown"):
                     s.shutdown(*args, **kwargs)
+                s._service_lifecycle = LIFECYCLE_SHUTDOWN
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "shutdown")
             except KeyError:
                 pass
-        service._service_lifecycle = ending_position
+            self.remove_service(service)
+        for s in objects:
+            s._service_lifecycle = ending_position
 
     def set_module_lifecycle(self, module, position, *args, **kwargs):
         """
@@ -1414,6 +1457,7 @@ class Kernel:
                     m.module_open(*args, **kwargs)
                 self._signal_attach(m)
                 self._lookup_attach(m)
+                m._module_lifecycle = LIFECYCLE_MODULE_OPENED
         if starting_position < LIFECYCLE_MODULE_CLOSED <= ending_position:
             try:
                 # If this is a module, we remove it from opened.
@@ -1427,11 +1471,12 @@ class Kernel:
                 self._signal_detach(m)
                 self._lookup_detach(m)
                 self._remove_delegates(m)
+                m._module_lifecycle = LIFECYCLE_MODULE_CLOSED
         if starting_position < LIFECYCLE_SHUTDOWN <= ending_position:
             if hasattr(module, "shutdown"):
                 module.shutdown()
-
-        module._module_lifecycle = ending_position  # opening
+        for m in objects:
+            m._module_lifecycle = ending_position
 
     # ==========
     # LIFECYCLE PROCESSES

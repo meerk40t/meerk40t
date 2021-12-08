@@ -111,11 +111,7 @@ class DevicePanel(wx.Panel):
     def on_button_remove_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         s = self.devices_tree.GetSelection()
         data = self.devices_tree.GetItemData(s)
-        data.clear_persistent()
-        data.close_subpaths()
-
-
-# end of class DevicePanel
+        data.destroy()
 
 
 class DeviceManager(MWindow):
