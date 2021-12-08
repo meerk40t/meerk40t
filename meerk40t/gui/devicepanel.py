@@ -100,6 +100,7 @@ class DevicePanel(wx.Panel):
                 self.context(
                     "service device start {device_type}\n".format(device_type=device_type)
                 )
+        self.refresh_device_tree()
 
     def on_button_edit_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         print("Event handler 'on_button_edit_device' not implemented!")
