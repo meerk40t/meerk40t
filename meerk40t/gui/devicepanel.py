@@ -3,6 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -58,6 +59,9 @@ class DevicePanel(wx.Panel):
             wx.EVT_TREE_ITEM_ACTIVATED, self.on_tree_device_activated, self.devices_tree
         )
         self.Bind(
+            wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_tree_device_right_click, self.devices_tree
+        )
+        self.Bind(
             wx.EVT_BUTTON, self.on_button_create_device, self.button_create_device
         )
         self.Bind(
@@ -71,7 +75,8 @@ class DevicePanel(wx.Panel):
     def pane_hide(self, *args):
         pass
 
-    def refresh_device_tree(self):
+    @signal_listener("device;modified")
+    def refresh_device_tree(self, *args):
         self.devices_tree.DeleteAllItems()
         root = self.devices_tree.AddRoot("Devices")
         for i, device in enumerate(self.context.kernel.services("device")):
@@ -82,6 +87,27 @@ class DevicePanel(wx.Panel):
     def on_tree_device_activated(self, event):  # wxGlade: DevicePanel.<event_handler>
         device = self.devices_tree.GetItemData(event.GetItem())
         device.kernel.activate_service_path("device", device.path)
+
+    def on_tree_device_right_click(self, event):
+        index = event.GetItem()
+        data = self.devices_tree.GetItemData(index)
+        menu = wx.Menu()
+        convert = menu.Append(
+            wx.ID_ANY, _("Rename"), "", wx.ITEM_NORMAL
+        )
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_rename(data), convert)
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def on_tree_popup_rename(self, service):
+        def rename(event=None):
+            with wx.TextEntryDialog(None, _("What do you call this device?"), _("Device Label"), "") as dlg:
+                dlg.SetValue(service.label)
+                if dlg.ShowModal() == wx.ID_OK:
+                    service.label = dlg.GetValue()
+            self.context.signal("device;modified")
+
+        return rename
 
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         names = []
