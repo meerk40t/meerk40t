@@ -1438,6 +1438,7 @@ class Kernel:
         self.command_boot()
         self.choices_boot()
         self.batch_boot()
+        self.provider_boot()
 
     def boot(self) -> None:
         """
@@ -3501,6 +3502,16 @@ class Kernel:
             return
         for b in root.batch.split(";"):
             root("{batch}\n".format(batch=b))
+
+    def provider_boot(self):
+        root = self.root
+        if root.setting(str, "providers", None) is None:
+            return
+        for provider in root.providers.split(";"):
+            if provider:
+                p = list(provider.split(" "))
+                root("service {domain} start -i {index} {name}\n".format(domain=p[1], name=p[2], index=p[3]))
+
 
 # ==========
 # END KERNEL
