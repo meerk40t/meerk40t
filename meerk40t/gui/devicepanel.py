@@ -47,9 +47,6 @@ class DevicePanel(wx.Panel):
         self.button_create_device = wx.Button(self, wx.ID_ANY, "Create New Device")
         sizer_3.Add(self.button_create_device, 0, 0, 0)
 
-        self.button_edit_device = wx.Button(self, wx.ID_ANY, "Edit")
-        sizer_3.Add(self.button_edit_device, 0, 0, 0)
-
         self.button_remove_device = wx.Button(self, wx.ID_ANY, "Remove")
         sizer_3.Add(self.button_remove_device, 0, 0, 0)
 
@@ -63,7 +60,6 @@ class DevicePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_create_device, self.button_create_device
         )
-        self.Bind(wx.EVT_BUTTON, self.on_button_edit_device, self.button_edit_device)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_remove_device, self.button_remove_device
         )
@@ -103,10 +99,6 @@ class DevicePanel(wx.Panel):
                     )
                 )
         self.refresh_device_tree()
-
-    def on_button_edit_device(self, event):  # wxGlade: DevicePanel.<event_handler>
-        print("Event handler 'on_button_edit_device' not implemented!")
-        event.Skip()
 
     def on_button_remove_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         s = self.devices_tree.GetSelection()
